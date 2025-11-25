@@ -1,5 +1,10 @@
 # 🏠 Pronajímatel v6 – SaaS aplikace pro správu nájemního portfolia
 
+## 🎨 Ikony v aplikaci
+
+Veškeré použité ikony jsou uvedeny a popsány v souboru [`ICONS.md`](./ICONS.md). Tento soubor slouží jako jediný zdroj pro výběr a správu ikon v celé aplikaci.
+
+
 Tato aplikace je novou verzí systému pro správu pronájmů a nájemních vztahů (verze 6), přepsanou do čisté, konzistentní struktury s důrazem na UX, responzivní design a víceklientskou architekturu (multi-tenant SaaS).
 
 ## 💡 Cíle verze v6:
