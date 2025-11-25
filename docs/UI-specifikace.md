@@ -65,14 +65,14 @@ Pro přidávání ikon do modulů a komponent používejte pouze ikony z tohoto 
 
 ## 🔍 STRUKTURA DETAILU ENTITY
 
-### Záložka 1: Hlavní karta entity
+### část 8: Hlavní karta s detailem entity kterou jsem vybral ve view
 
-* Formulář hlavních údajů (2 sloupce)
+* Formulář hlavních údajů (více sloupců podle šíře obrazovky)
+* Volitelně: kontakty, metadata, štítky 
 * Přílohy (foto, skeny, dokumenty)
 * Systémové údaje (vytvořil, datum, čas)
-* Volitelně: kontakty, metadata, štítky
 
-### Záložky 2+ : Vazby (blok 5)
+### ostatní záložky 2+ : Vazby (blok 9)
 
 Každá záložka obsahuje:
 
@@ -88,14 +88,16 @@ Záložky mají ve všech modulech stejné, fixní pořadí. Příklad:
 
 | Pozice | Obsah               |
 | ------ | ------------------- |
-| 1      | Hlavní karta entity |
-| 2      | Vazba: Pronajímatel |
-| 3      | Vazba: Nemovitosti  |
-| 4      | Vazba: Jednotky     |
-| 5      | Vazba: Nájemníci    |
-| 6      | Vazba: Smlouvy      |
-| 7      | Vazba: Platby       |
-| 8      | Vazba: Finance      |
+| 1      | Vazba: Pronajímatel |
+| 2      | Vazba: Nemovitosti  |
+| 3      | Vazba: Jednotky     |
+| 4      | Vazba: Nájemníci    |
+| 5      | Vazba: Smlouvy      |
+| 6      | Vazba: Platby       |
+| 7      | Vazba: Finance      |
+později možná další...
+
+
 
 ---
 
