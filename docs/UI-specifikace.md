@@ -6,19 +6,60 @@
 
 ## 📘 GLOBÁLNÍ STRUKTURA UI
 
-### 9-blokový layout (vždy aktivní)
 
-1. **Home Button** (logo v levém horním rohu)
-2. **Breadcrumbs** (cesta k aktuální entitě)
-3. **Home Actions** (vyhledávání, profil, notifikace, odhlášení)
-4. **Common Actions** (akce nad entitou - editace, archivace, ...)
-5. **Sidebar** (menu modulů v levém sloupci)
-6. **Content** (hlavní pracovní plocha) ve které se zobrazují:
-7. ***List View*** (přehled dat v modulu)proklikem se zobrazí záložka s konkrétním detailem enity adalčí záložky vazby
-8. ***Detail Entity*** jedná se o hlavní formulář určený také pro změnu entity kterou jsem vybral v List View (formulář + sekce u každého modulu jiné, přílohy, systém)
-9. ***Vazby*** (další související entity, zobrazované jako záložky) kdy každá záložka kromě hlavního pohledu "detail entity" bude dále rozdělené na dvě části:
-10. ****Tabs**** (seznam všech vazeb v dané entitě) 
-11. ****Detail entity**** (detail entity ze seznamu Tabs) s možností přepínat další a předcchozí záznam
+### 🧱 9-blokový layout aplikace (vždy aktivní rozvržení)
+
+Rozhraní aplikace je jednotné napříč celým systémem. Všechna zobrazení pracují s touto pevnou strukturou:
+
+1. **Home Button** – logo aplikace v levém horním rohu (slouží jako návrat na hlavní přehled)
+2. **Sidebar** – vertikální menu modulů (např. Uživatelé, Pronajímatel, Nemovitosti…)
+3. **Breadcrumbs** – zobrazení aktuální cesty (např. Domů > Nemovitosti > Detail)
+4. **Home Actions** – uživatel, notifikace, vyhledávání, odhlášení (vpravo nahoře)
+5. **Common Actions** – akce vztahující se k entitě (např. editace, archivace, export)
+6. **Content** – hlavní pracovní plocha, ve které se zobrazuje buď přehled, nebo detail entity
+
+---
+
+### 🔁 Pracovní obsah `Content` (část 6)
+
+V rámci hlavního pracovního prostoru se zobrazují vždy tyto typy obsahu:
+
+#### 7. **List View**
+
+* Přehled záznamů v modulu (tabulka)
+* Funkce: filtrování, řazení, hledání, kliknutí na řádek otevře detail entity
+
+#### 8. **Detail Entity**
+
+* Hlavní formulář entity (např. Nemovitost, Smlouva)
+* Obsahuje vlastní sekce (formulář, přílohy, systémové info…)
+
+#### 9. **Vazby (Relations)**
+
+* Záložky zobrazující související entity (např. jednotky, nájemníci, smlouvy…)
+* **Každá záložka má dvě části**:
+
+  * **Tabs (seznam)** – horní část se seznamem max. 10 záznamů + scroll
+  * **Detail** – spodní část s detailem právě vybraného záznamu
+  * Lze přepínat mezi záznamy (např. šipkami)
+
+---
+
+### 🎨 Ikony (standardizace UI)
+
+Aplikace používá **jediný centrální zdroj ikon**, který je uveden v souboru:
+📁 [`icon.md`]
+
+Tento soubor definuje:
+
+* seznam dostupných ikon (emoji) pro všechny moduly,
+* použití ikon v tlačítkách, přehledech i formulářích,
+* jednotný styl – každá akce nebo entita má přiřazenou svou ikonu.
+
+Ikony jsou součástí návrhu UI a nejsou nahrazovány SVG knihovnami.
+
+Pro přidávání ikon do modulů a komponent používejte pouze ikony z tohoto seznamu.
+
 
 ---
 
