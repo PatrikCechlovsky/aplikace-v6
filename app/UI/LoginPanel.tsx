@@ -35,7 +35,7 @@ export default function LoginPanel() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded shadow-sm p-6">
+    <div className="login-panel">
 
       {mode === 'login' ? (
         <>
