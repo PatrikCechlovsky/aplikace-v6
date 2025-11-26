@@ -1,12 +1,23 @@
 // app/UI/CommonActions.tsx
 'use client'
 
-export default function CommonActions() {
+type Props = {
+  disabled?: boolean
+}
+
+export default function CommonActions({ disabled = false }: Props) {
   return (
-    <div className="common-actions">
-      <button className="common-actions__btn">Upravit</button>
-      <button className="common-actions__btn">Příloha</button>
-      <button className="common-actions__btn common-actions__btn--secondary">
+    <div className={`common-actions ${disabled ? 'is-disabled' : ''}`}>
+      <button className="common-actions__btn" disabled={disabled}>
+        Upravit
+      </button>
+      <button className="common-actions__btn" disabled={disabled}>
+        Příloha
+      </button>
+      <button
+        className="common-actions__btn common-actions__btn--secondary"
+        disabled={disabled}
+      >
         Archivovat
       </button>
     </div>
