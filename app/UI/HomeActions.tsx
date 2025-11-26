@@ -1,14 +1,31 @@
 // app/UI/HomeActions.tsx
 'use client'
 
-export default function HomeActions() {
+type Props = {
+  disabled?: boolean
+  onLogout?: () => void
+}
+
+export default function HomeActions({ disabled = false, onLogout }: Props) {
   return (
-    <div className="home-actions">
+    <div className={`home-actions ${disabled ? 'is-disabled' : ''}`}>
       <span className="home-actions__user">Páťa</span>
-      <button className="home-actions__icon" title="Hledat">🔍</button>
-      <button className="home-actions__icon" title="Upozornění">🔔</button>
-      <button className="home-actions__icon" title="Profil">👤</button>
-      <button className="home-actions__logout">Odhlásit</button>
+      <button className="home-actions__icon" title="Hledat" disabled={disabled}>
+        🔍
+      </button>
+      <button className="home-actions__icon" title="Upozornění" disabled={disabled}>
+        🔔
+      </button>
+      <button className="home-actions__icon" title="Profil" disabled={disabled}>
+        👤
+      </button>
+      <button
+        className="home-actions__logout"
+        disabled={disabled}
+        onClick={disabled ? undefined : onLogout}
+      >
+        Odhlásit
+      </button>
     </div>
   )
 }
