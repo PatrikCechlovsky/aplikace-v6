@@ -1,11 +1,14 @@
-// FILE: app/UI/CommonActions.tsx
+// app/UI/CommonActions.tsx
+'use client'
 
 export default function CommonActions() {
   return (
-    <div className="flex gap-3 text-sm">
-      <button className="px-3 py-1 border rounded">✏️ Upravit</button>
-      <button className="px-3 py-1 border rounded">📎 Příloha</button>
-      <button className="px-3 py-1 border rounded">🗄 Archivovat</button>
+    <div className="common-actions">
+      <button className="common-actions__btn">Upravit</button>
+      <button className="common-actions__btn">Příloha</button>
+      <button className="common-actions__btn common-actions__btn--secondary">
+        Archivovat
+      </button>
     </div>
   )
 }
