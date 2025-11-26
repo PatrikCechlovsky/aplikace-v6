@@ -16,6 +16,44 @@ Tato aplikace je novou verzí systému pro správu pronájmů a nájemních vzta
 
 📘 Více o návrhu rozhraní najdeš v [`docs/UI-specifikace.md`](docs/UI-specifikace.md)
 
+# Architektura projektu – Aplikace v6 (Pronajímatel)
+
+Používáme záměrně kombinaci **TSX + TS + JS**, protože je to pro tento typ aplikace nejpřehlednější:
+
+- **UI = TSX (React komponenty)**  
+  - všechny vizuální komponenty (Sidebar, Tabs, DetailView, ListView, formuláře…)
+  - umístění: `src/app/UI/*.tsx` a `src/app/page.tsx` apod.
+
+- **Config = JS (konfigurační soubory, metadata)**  
+  - konfigurace modulů, definice přehledů, formulářů, tiles, vazeb
+  - umístění: `src/app/modules/**/module.config.js`, `src/app/modules.index.js`
+  - důvod: snadno se edituje, přehledné, dá se rychle měnit bez zásahu do typů
+
+- **Logika (Supabase, services) = TS (TypeScript)**  
+  - datové služby, přístup do db, helper funkce
+  - umístění: např. `src/app/lib/*.ts`, `src/app/services/*.ts`
+
+- **Moduly = JS (metadata modulů)**  
+  - každý modul má svoji složku a v ní `module.config.js`
+  - tyto configy popisují modul: `id`, `order`, `label`, `icon`, později `forms`, `tiles`, `actions`, `tabs`…
+
+### Proč tento mix:
+
+❤️ To není chyba – to je dokonce **best practice pro konfigurační architekturu**:
+
+- UI komponenty v TSX = moderní, bezpečné, dobře typované
+- Config a moduly v JS = jednoduché, přehledné, snadno upravitelné
+- Logika v TS = TypeScript nám pomůže chytat chyby v práci s daty
+- Nemícháme logiku, konfiguraci a UI v jednom souboru
+
+**Výhoda:**
+
+- neztratíš se,
+- modulový systém máš jednoduchý,
+- UI je moderní,
+- TS ti pomůže, JS tě nezdrží,
+- configy můžeš upravovat klidně jen z webového GitHub editoru.
+
 ## Proces vývoje aplikace
 
 1. **Fáze 0 – Základní kostra**
