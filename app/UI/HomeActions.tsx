@@ -1,11 +1,14 @@
-// FILE: app/UI/HomeActions.tsx
+// app/UI/HomeActions.tsx
+'use client'
 
 export default function HomeActions() {
   return (
-    <div className="flex items-center gap-3 text-xl">
-      <button title="Hledat">🔍</button>
-      <button title="Notifikace">🔔</button>
-      <button title="Uživatel">👤</button>
+    <div className="home-actions">
+      <span className="home-actions__user">Páťa</span>
+      <button className="home-actions__icon" title="Hledat">🔍</button>
+      <button className="home-actions__icon" title="Upozornění">🔔</button>
+      <button className="home-actions__icon" title="Profil">👤</button>
+      <button className="home-actions__logout">Odhlásit</button>
     </div>
   )
 }
