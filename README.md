@@ -319,3 +319,10 @@ Texty jsou primárně česky, do budoucna připravené na i18n.
 Každý push na větev main spouští nový deploy na Vercel.
 
 Produkční URL: https://aplikace-v6.vercel.app
+✅ Stav projektu
+
+Viz:
+
+docs/stav-struktury.md – seznam hotových částí
+
+docs/todo_list.md – další úkoly a fáze
