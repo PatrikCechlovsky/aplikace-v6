@@ -98,68 +98,224 @@ Používáme záměrně kombinaci **TSX + TS + JS**, protože je to pro tento ty
    - Pravidelně upravovat `stav-struktury.md`.
    - Udržovat konzistentní názvy souborů a komponent.
 
-//📂 Struktura souborů
+1️⃣ README.md (root repozitáře)
+# Pronajímatel v6
 
-Každý soubor musí začínat komentářem:
+Modulární aplikace pro správu pronájmů, nemovitostí a souvisejících procesů.
 
-// ----------------------------------------------------
-// File: app/UI/Sidebar.tsx
-// Purpose: Dynamický sidebar modulů
-// Author: Patrik Cechlovský + ChatGPT
-// ----------------------------------------------------
+- **Frontend:** Next.js 14 (App Router), TypeScript + TSX
+- **Backend:** Supabase (Auth, DB, API)
+- **Hosting:** Vercel
+- **Architektura:** modulová, dynamické UI (sidebar, záložky, akce)
+
+---
+
+## 🔧 Technologický stack
+
+- **Next.js 14** – App Router, `app/` struktura
+- **TypeScript** – UI a logika (`*.tsx`, `*.ts`)
+- **Supabase** – autentizace, databáze
+- **Vercel** – CI/CD a produkční nasazení
+- **Vlastní UI** – žádná velká UI knihovna, vše pod kontrolou
+
+---
+
+## 📂 Struktura projektu
+
+Zjednodušený přehled:
+
+```txt
+app/
+  UI/
+    Breadcrumbs.tsx
+    CommonActions.tsx
+    DetailView.tsx
+    HomeActions.tsx
+    HomeButton.tsx
+    ListView.tsx
+    LoginPanel.tsx
+    Sidebar.tsx
+    Tabs.tsx
+    icons.ts           ← centrální ikony
+  lib/
+    supabaseClient.ts  ← klient pro Supabase
+  modules/
+    010-sprava-uzivatelu/
+    020-muj-ucet/
+    030-pronajimatel/
+    040-nemovitost/
+    050-najemnik/
+    060-smlouva/
+    070-sluzby/
+    080-platby/
+    090-finance/
+    100-energie/
+    120-dokumenty/
+    130-komunikace/
+    900-nastaveni/
+  globals.css          ← globální layout + styly
+  layout.tsx           ← kořenový layout (importuje globals.css)
+  modules.index.js     ← seznam zdrojů modulů
+  page.tsx             ← hlavní stránka (login + dashboard)
+
+docs/
+  CODESTYLE.md         ← pravidla psaní kódu
+  UI-specifikace.md    ← popis UI, sekce 1–10
+  layout_auth_ui.md    ← návrh autentizačního layoutu
+  stav-struktury.md    ← co je hotové / rozpracované
+  todo_list.md         ← úkoly
+  (další soubory budou přibývat)
+
+ikons.md               ← surový seznam ikon (zdroj pro icons.ts)
+next.config.mjs
+package.json
+tsconfig.json
+
+🧩 Moduly aplikace
+
+Moduly jsou v adresáři app/modules/.
+
+Každý modul má název:
+
+<pořadí>-<název>/
+např. 040-nemovitost
 
 
-Výhody:
-✔ později víš, co kam patří
-✔ snadné dohledání
-✔ pořádek při rychlém růstu aplikace
+Základní konfig každého modulu:
 
-🎨 Ikony
+// app/modules/040-nemovitost/module.config.js
 
-📄 Ikony jsou:
-→ 100% definované v souboru icons.ts
-→ nikdy se nesmí psát přímo do UI souboru (❌ <span>👤</span>)
-→ vždy jen:
+/*
+ * FILE: app/modules/040-nemovitost/module.config.js
+ * PURPOSE: Konfigurace modulu „Nemovitosti“
+ */
 
-<span>{getIcon("user")}</span>
-
-
-✔ máš kontrolu nad každou ikonou
-✔ snadno změníš design (swap emoji na SVG)
-✔ jednotnost celé aplikace
-
-🧱 Komponenty
-
-Každá komponenta musí mít:
-
-čistou logiku
-
-žádné inline styly
-
-žádné tvrdé texty (jen české stringy z konstant)
-
-props pro vše, co se mění
-
-žádný přímý import z modulů
-
-🧠 Moduly
-
-Každý modul:
-
-app/modules/xxx-nazev/
- ├─ module.config.js
- ├─ tiles/
- ├─ forms/
- ├─ detail/
- └─ services/
-
-
-module.config.js vždy obsahuje:
+import { ICONS } from '@/app/UI/icons'
 
 export default {
-  id: "010-sprava-uzivatelu",
-  label: "Správa uživatelů",
-  icon: "users",
-  order: 10,
+  id: '040-nemovitost',
+  label: 'Nemovitosti',
+  icon: 'building',       // klíč do ICONS
+  order: 40,              // pořadí v sidebaru
   enabled: true
 }
+
+
+UI (Sidebar) načítá moduly dynamicky podle modules.index.js a module.config.js.
+
+Postupně budou moduly doplněny o:
+
+tiles/ – přehledy (seznamy)
+
+forms/ – formuláře pro detail entity
+
+services/ – komunikace se Supabase (CRUD, business logika)
+
+🎨 UI layout – 6 hlavních částí
+
+Layout aplikace je rozdělen na 6 základních bloků (desktop):
+
+HomeButton – logo + název aplikace (oranžový blok vlevo nahoře)
+
+Sidebar – seznam modulů
+
+Breadcrumbs – drobečková navigace
+
+HomeActions – pravý horní panel (uživatel, hledání, notifikace, odhlášení)
+
+CommonActions – lišta obecných akcí (Upravit, Příloha, Archivovat…)
+
+Content – hlavní obsah (přehledy, formuláře, dashboard, login)
+
+Vše je definováno v app/page.tsx pomocí CSS gridu z globals.css.
+
+🔐 Autentizace a přístup
+
+Aplikace používá Supabase Auth.
+
+Co je implementováno
+
+supabaseClient.ts – vytvoření klienta Supabase z env proměnných:
+
+NEXT_PUBLIC_SUPABASE_URL
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+LoginPanel.tsx:
+
+přihlášení (email + heslo)
+
+registrace (email + heslo + jméno)
+
+reset hesla (e-mail s odkazem na obnovu)
+
+page.tsx:
+
+načítání session (supabase.auth.getSession())
+
+posluchač změn session (onAuthStateChange)
+
+přepínání UI:
+
+nepřihlášený uživatel → vidí layout, ale vše je disabled + LoginPanel
+
+přihlášený uživatel → odemčený layout + úvodní dashboard
+
+odhlášení (supabase.auth.signOut())
+
+Další fáze (plán)
+
+MFA (TOTP) na základě Supabase MFA
+
+role & oprávnění (omezení viditelných modulů)
+
+biometrie / Passkeys na telefonu
+
+🎭 Ikony
+
+Surový seznam je definován v ikons.md.
+
+Konkrétní sada pro aplikaci je v app/UI/icons.ts:
+
+exportuje ICONS – mapu klíč → emoji
+
+exportuje getIcon(key) – bezpečné získání ikony
+
+Použití:
+
+import { getIcon } from '@/app/UI/icons'
+
+<span className="sidebar__icon">{getIcon('building')}</span>
+
+
+Přísné pravidlo: v UI se nikdy nepíše emoji přímo. Vždy pouze přes getIcon().
+
+🧠 Code style a pravidla
+
+Základní pravidla (detail v docs/CODESTYLE.md):
+
+Každý soubor začíná komentářem:
+
+/*
+ * FILE: app/UI/Sidebar.tsx
+ * PURPOSE: Dynamický sidebar modulů
+ */
+
+
+UI komponenty (app/UI) neobsahují:
+
+přímé volání Supabase / databáze
+
+složitou logiku
+
+inline styly
+
+Logika / služby budou v app/lib (např. services/auth.ts).
+
+Texty jsou primárně česky, do budoucna připravené na i18n.
+
+🚀 Nasazení
+
+Každý push na větev main spouští nový deploy na Vercel.
+
+Produkční URL: https://aplikace-v6.vercel.app
