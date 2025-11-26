@@ -1,9 +1,10 @@
-// FILE: app/UI/Breadcrumbs.tsx
+// app/UI/Breadcrumbs.tsx
+'use client'
 
 export default function Breadcrumbs() {
   return (
-    <nav className="text-sm text-gray-600">
+    <div className="breadcrumbs">
       Domů › Modul › Přehled › Detail
-    </nav>
+    </div>
   )
 }
