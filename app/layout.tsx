@@ -1,22 +1,17 @@
-// FILE: app/layout.tsx
+// app/layout.tsx
 
 import './globals.css'
+import type { Metadata } from 'next'
 
-export const metadata = {
-  title: 'Aplikace v6',
-  description: 'Pronajímatel – správa nemovitostí v6',
+export const metadata: Metadata = {
+  title: 'Pronajímatel v6',
+  description: 'Správa nájmů',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="cs">
-      <body className="min-h-screen bg-gray-100">
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   )
 }
