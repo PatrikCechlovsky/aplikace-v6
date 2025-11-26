@@ -44,6 +44,7 @@ Umístění: `src/app/modules/[KOD-NÁZEV]/module.config.js`
 | 100  | Energie          | src/app/modules/100-energie/module.config.js         | DONE |                           |
 | 120  | Dokumenty        | src/app/modules/120-dokumenty/module.config.js       | DONE |                           |
 | 130  | Komunikace       | src/app/modules/130-komunikace/module.config.js      | DONE |                           |
+| 900  | Nastavení        | src/app/modules/900-nastaveni/module.config.js           | DONE | základní nastavení systému 
 
 ---
 
