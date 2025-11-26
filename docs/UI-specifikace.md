@@ -43,6 +43,125 @@ V rámci hlavního pracovního prostoru se zobrazují vždy tyto typy obsahu:
   * **Detail** – spodní část s detailem právě vybraného záznamu
   * Lze přepínat mezi záznamy (např. šipkami)
 
+
+📐 Základní rozložení (desktop)
+
+Podle obrázku máme 6 hlavních bloků:
+
+Blok 1 – Logo / Home button („Pronajímatel“)
+
+Vlevo nahoře.
+
+Kliknutí vždy přejde na „Domů“ (výchozí přehled podle role).
+
+Stejný na všech stránkách.
+
+Blok 2 – Sidebar (seznam modulů)
+
+Levý sloupec aplikace.
+
+Obsahuje seznam modulů (Uživatelé, Můj účet, Pronajímatel, Nemovitosti, Nájemník, Smlouvy, Služby, Platby, Finance, Energie, Dokumenty, Komunikace).
+
+Sidebar je dynamický – moduly se načítají z modules.index.js a jednotlivých module.config.js.
+
+Aktivní modul je zvýrazněný.
+
+Blok 3 – Breadcrumbs (drobečková navigace)
+
+V horní části nad contentem, pod logem.
+
+Zobrazuje cestu:
+Domů › [Modul] › [Přehled / Formulář] › [Konkrétní entita].
+
+Vždy je vidět, kde se uživatel právě nachází.
+
+Blok 4 – Home actions (uživatel, hledání, notifikace, odhlášení)
+
+Vpravo nahoře.
+
+Obsahuje:
+
+jméno uživatele,
+
+ikonku lupy (globální hledání),
+
+upozornění (notifikace),
+
+uživatelský profil,
+
+tlačítko Odhlásit.
+
+Stejné chování na všech stránkách.
+
+Blok 5 – Common actions (akční lišta aktuální entity)
+
+Lišta pod breadcrumbs, nad hlavním obsahem.
+
+Obsahuje kontextové akce pro aktuální modul/detail (Nový, Uložit, Upravit, Archivovat, Přílohy, Tisk…).
+
+Je dynamická – akce se budou načítat z konfigurace modulu (do budoucna z module.config.js).
+
+Blok 6 – Content (hlavní obsah obrazovky)
+
+Největší část vpravo dole.
+
+Podle stavu aplikace se zde zobrazuje:
+
+přihlašovací obrazovka,
+
+přehled (tabulka),
+
+detail entity s 10 záložkami a vazbami,
+
+průvodci, formuláře, dashboardy.
+
+V tuto chvíli sem chceme vložit přihlašovací formulář.
+
+Tento nový popis navazuje na předchozí v5/v6 specifikaci UI (10 záložek, hlavní karta, vazby) , ale je zjednodušený na 6 bloků layoutu pro první verzi.
+
+📱 Chování na mobilu
+
+Stejné bloky, ale jinak poskládané:
+
+Horní lišta (blok 1 + 4 dohromady)
+
+Vlevo: ☰ (otevření sidebaru), logo / název aktuálního modulu.
+
+Vpravo: uživatelské akce (hledání, notifikace, profil, odhlášení v menu).
+
+Sidebar (blok 2)
+
+Skrytý jako „hamburger menu“.
+
+Po kliknutí na ☰ se otevře přes celou obrazovku.
+
+Po výběru modulu se sidebar zavře.
+
+Breadcrumbs (blok 3)
+
+Jeden řádek pod horní lištou.
+
+Horizontální scroll, zkrácený tvar (např. … › Nemovitosti › A-101).
+
+Common actions (blok 5)
+
+Krátká lišta pod breadcrumbs.
+
+Akce v podobě ikon + krátký text.
+
+Když je málo místa, může se schovat pod tlačítko „⋯“.
+
+Content (blok 6)
+
+Zobrazuje buď:
+
+přihlašovací formulář,
+
+přehled (list) – přes celou obrazovku,
+
+nebo detail (formulář) – přes celou obrazovku.
+
+U vazeb (list + detail) se na mobilu používá režim nejdřív list → pak detail, ne dva panely vedle sebe.
 ---
 
 ### 🎨 Ikony (standardizace UI)
