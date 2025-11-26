@@ -1,34 +1,40 @@
-// FILE: src/app/UI/Sidebar.tsx
-
+// FILE: app/UI/Sidebar.tsx
 'use client'
-
-// @ts-nocheck  ← klidně tam nech, ať tě TS tady netrápí
 
 import { useEffect, useState } from 'react'
 import { MODULE_SOURCES } from '@/app/modules.index.js'
 
+interface ModuleConfig {
+  id: string
+  order?: number
+  label: string
+  icon?: string
+  enabled?: boolean
+}
+
 export default function Sidebar() {
-  const [modules, setModules] = useState<any[]>([])
+  const [modules, setModules] = useState<ModuleConfig[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadModules() {
-      const loaded: any[] = []
+      const loaded: ModuleConfig[] = []
 
-      for (const load of MODULE_SOURCES) {
+      for (const loader of MODULE_SOURCES) {
         try {
-          const mod: any = await load()
-          const conf: any = mod.default || mod
+          const mod: any = await loader()
+          const conf = (mod.default ?? mod) as ModuleConfig
+
           if (!conf) continue
-          // enabled === false => skryjeme
           if (conf.enabled === false) continue
+
           loaded.push(conf)
         } catch (err) {
           console.warn('Nepodařilo se načíst modul:', err)
         }
       }
 
-      loaded.sort((a, b) => (a.order || 0) - (b.order || 0))
+      loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       setModules(loaded)
       setLoading(false)
     }
@@ -42,4 +48,23 @@ export default function Sidebar() {
 
       {loading && <p className="text-gray-500">Načítání…</p>}
 
-      {!loading && modules.length === 0 &&
+      {!loading && modules.length === 0 && (
+        <p className="text-gray-500 italic">Není nic obsaženo</p>
+      )}
+
+      {!loading && modules.length > 0 && (
+        <ul className="space-y-2 text-sm">
+          {modules.map((m) => (
+            <li
+              key={m.id}
+              className="cursor-pointer hover:underline flex items-center gap-2"
+            >
+              <span>{m.icon}</span>
+              <span>{m.label}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </aside>
+  )
+}
