@@ -1,227 +1,181 @@
-# Codestyle – pravidla
+# CODESTYLE – pravidla projektu Pronajímatel v6
 
-1. **Soubory komponent**
-   - UI komponenty = `*.tsx`
-   - Jedna komponenta = jeden soubor
-   - Název souboru = název komponenty (Sidebar.tsx, Tabs.tsx…)
-
-2. **Pojmenování**
-   - Komponenty: PascalCase (Sidebar, DetailView)
-   - Funkce: camelCase (loadModules, getActions)
-   - Konfigurace: malá písmena (modules, tabs, actions)
-
-3. **Struktura**
-   - `app/` = stránky a layout
-   - `app/UI/` = všechny vizuální komponenty
-   - `app/config/` = datové konfigurace (moduly, záložky, akce)
-   - `docs/` = dokumentace (stav struktury, pravidla)
-
-4. **Styl**
-   - Raději více menších komponent než jedna obří.
-   - Logiku (počítání, mapování, transformace) postupně přesouvat do helperů / configů.
-   - Nepoužívat „magické stringy“ přímo v komponentách – místo toho config.
-
-5. **Commitování**
-   - Každá větší změna = jeden commit.
-   - Commit message česky/anglicky, ale srozumitelná („Přidaný Sidebar a Tabs“, „Napojení na Supabase“).
+Cílem je udržet aplikaci modulární, stabilní, čitelnou a dlouhodobě rozšiřitelnou.
 
 ---
 
-## 2️⃣ `docs/CODESTYLE.md` (přepiš tímto obsahem)
-
-```md
-# CODESTYLE – pravidla pro kód v projektu Pronajímatel v6
-
-Cíl: udržet velkou aplikaci přehlednou, modulární a snadno rozšiřitelnou.
-
----
-
-## 1. Základní principy
+# 1. Obecné principy
 
 1. **UI oddělené od logiky**
-   - Komponenty v `app/UI` řeší pouze vzhled a jednoduchou interakci.
-   - Logika (Supabase, výpočty, validace, business pravidla) bude v `app/lib` (např. `services/auth.ts`).
+   - UI komponenty jsou čisté.
+   - žádné přímé volání Supabase z UI.
 
-2. **Konvence složek**
-   - `app/UI` – sdílené vizuální komponenty (layout, formuláře, přehledy…)
-   - `app/modules` – doménové moduly (Pronajímatel, Nemovitost, Nájemník…)
-   - `app/lib` – pomocné funkce, Supabase klient, služby
-   - `docs` – dokumentace, specifikace, todo
+2. **Logika v `app/lib`**
+   - připojení k databázi
+   - autentizace
+   - helpers
+   - budoucí services
 
-3. **Žádné zbytečné zkratky**
-   - názvy souborů a proměnných raději delší, ale srozumitelné:
-     - `LoginPanel.tsx`, ne `LP.tsx`
-     - `landlord`, ne `ll`
+3. **Modulový systém**
+   - každý modul má vlastní složku
+   - dynamicky načítáno přes `modules.index.js`
+
+4. **Žádné inline CSS**
+   - styly pouze v `globals.css`
 
 ---
 
-## 2. Hlavička každého souboru
+# 2. Povinná hlavička každého souboru
 
-Každý soubor musí začínat tímto komentářem (přizpůsob cestu a účel):
+Každý soubor musí začínat:
 
 ```ts
 /*
  * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Dynamický sidebar s moduly
+ * PURPOSE: Dynamický sidebar modulů
  */
-Výjimka: auto-generované soubory (např. .d.ts, soubory generované nástrojem).
+```
 
-3. TypeScript / TSX vs. JS
+Cesta musí být absolutní v rámci projektu.
 
-UI a logika: TypeScript / TSX (.ts, .tsx)
+---
 
-Modulové konfigurace: JavaScript (module.config.js, modules.index.js)
+# 3. Typy souborů
 
-Konvence:
+| Typ souboru       | Formát | Příklad                     |
+|-------------------|--------|-----------------------------|
+| UI komponenta     | TSX    | HomeButton.tsx             |
+| Logika / helpery  | TS     | supabaseClient.ts          |
+| Modul konfigurace | JS     | module.config.js           |
+| Moduly index      | JS     | modules.index.js           |
 
-UI komponenty: PascalCase soubory (HomeButton.tsx, LoginPanel.tsx)
+---
 
-Služby / helpery: camelCase soubory (supabaseClient.ts, budoucí authService.ts)
+# 4. Pojmenování
 
-4. Ikony
+### Komponenty (UI)
+- PascalCase  
+  `HomeButton.tsx`, `LoginPanel.tsx`, `DetailView.tsx`
 
-Ikony jsou centralizované.
+### Funkce a proměnné
+- camelCase  
+  `loadModules()`, `supabaseClient`
 
-Surový seznam: ikons.md
+### CSS třídy
+- BEM-like  
+  `sidebar__item`, `login-panel__submit`
 
-Implementace pro UI: app/UI/icons.ts
+---
 
-export ICONS – mapa klíč → emoji
+# 5. Ikony
 
-export getIcon(key: IconKey) – bezpečné použití v UI
+Ikony jsou centralizované v:
 
-Pravidlo:
+- `ikons.md` (zdroj)
+- `app/UI/icons.ts` (mapa + funkce)
 
-❌ NE:
+Použití:
 
-<span>🏢</span>
-<span>💰</span>
-
-
-✅ ANO:
-
+```tsx
 import { getIcon } from '@/app/UI/icons'
 
 <span>{getIcon('building')}</span>
-<span>{getIcon('finance')}</span>
+```
 
+❗ Emoji se **nesmí psát přímo** do UI komponent.
 
-Díky tomu lze v budoucnu emoji nahradit SVG ikonami bez zásahu do všech komponent.
+---
 
-5. Stylování
+# 6. Stylování
 
-Globální styly pouze v app/globals.css.
+- všechny styly v `app/globals.css`
+- layout je řešen přes CSS grid
+- žádné inline styly
+- každý UI blok má svoji prefixovanou CSS třídu:
 
-Layout je řešen přes CSS Grid:
+```
+home-button__
+sidebar__
+login-panel__
+```
 
-.layout, .layout__sidebar, .layout__topbar, .layout__actions, .layout__content
+---
 
-BEM-like pojmenování tříd:
-
-home-button, home-button__icon, home-button__text
-
-sidebar__item, sidebar__icon, sidebar__label
-
-login-panel__field, login-panel__error
+# 7. UI komponenty
 
 Pravidla:
 
-Žádné inline styly (style={{ ... }}), pokud to není nutné.
+- jen jednoduchá logika (render, props)
+- žádné dotazy do DB
+- žádné výpočty nebo business logika
+- možnost `disabled`:
 
-Třídy pojmenovávat podle komponenty (login-panel__..., sidebar__...).
-
-Responzivita se bude řešit postupně (breakpointy v globals.css).
-
-6. UI komponenty
-Obecná pravidla
-
-Každá komponenta v app/UI:
-
-přijímá props, nic nedostává přes globální proměnné
-
-je čistá (bez side effectů, pokud to není nutné – např. useEffect pro načtení sidebaru)
-
-nemá přímé volání Supabase – to jde přes služby (app/lib)
-
-Pokud komponenta může být zamčená (disabled), má prop:
-
+```tsx
 type Props = {
   disabled?: boolean
 }
+```
 
+---
 
-A podle toho přidává CSS třídu is-disabled nebo atribut disabled na tlačítka.
+# 8. Moduly (`app/modules`)
 
-7. Moduly (app/modules)
+Struktura modulu:
 
-Každý modul má:
+```
+module.config.js
+tiles/
+forms/
+services/
+```
 
-app/modules/040-nemovitost/
-  module.config.js
-  tiles/          (přehledy)
-  forms/          (formuláře)
-  services/       (komunikace s DB, doménová logika)
+Konfigurace:
 
-
-module.config.js:
-
-definuje základní metadata:
-
+```js
 export default {
   id: '040-nemovitost',
   label: 'Nemovitosti',
-  icon: 'building', // klíč do icons.ts
+  icon: 'building',
   order: 40,
   enabled: true
 }
+```
 
+Moduly se **neimportují přímo**, jen přes `modules.index.js`.
 
-je importovaný pouze přes modules.index.js, nikdy přímo z UI.
+---
 
-8. Autentizace
+# 9. Autentizace
 
-Supabase klient: app/lib/supabaseClient.ts
+- klient: `app/lib/supabaseClient.ts`
+- UI: `LoginPanel.tsx`
+- session: `page.tsx`
 
-UI pro login: app/UI/LoginPanel.tsx
+Do budoucna bude logika přesunuta do `app/lib/services/auth.ts`.
 
-Session a ochrana UI: app/page.tsx
+---
 
-Pravidlo:
+# 10. Commitování
 
-v UI komponentách nejsou natvrdo použité supabase funkce (kromě přechodné fáze – postupně se přesune do služeb v app/lib/services/auth.ts).
+- jedna logická změna = jeden commit
+- pojmenování commitů:
 
-9. Commity a větve
+```
+feat: add login panel with supabase auth
+fix: correct sidebar module loader
+chore: update grid layout in globals.css
+```
 
-Hlavní větev: main
+---
 
-Každá větší změna by měla být:
+# 11. Dokumentace
 
-popsána v docs/todo_list.md
+Všechny dokumenty v `docs/` musí být aktualizované:
 
-zapsaná do commit message tak, aby bylo jasné, co se změnilo:
+- README.md
+- CODESTYLE.md
+- UI-specifikace.md
+- stav-struktury.md
+- todo_list.md
 
-např. feat: add login panel with supabase auth
-
-např. chore: update layout grid and sidebar icons
-
-10. Dokumentace
-
-Stručný přehled v README.md
-
-Detailní technické věci:
-
-docs/UI-specifikace.md – detailní popis layoutu a UI bloků
-
-docs/layout_auth_ui.md – popis obrazovek kolem přihlášení
-
-docs/stav-struktury.md – co je hotovo
-
-docs/todo_list.md – plán práce
-
-docs/CODESTYLE.md – tento soubor, udržovat aktuální
-
-Při větším zásahu do architektury vždy:
-
-Aktualizovat kód.
-
-Zakreslit změnu do příslušného dokumentu v docs/
+Po větší změně je povinná aktualizace dokumentace.
