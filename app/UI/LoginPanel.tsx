@@ -2,105 +2,195 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/app/lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
+
+type Mode = 'login' | 'register' | 'reset'
 
 export default function LoginPanel() {
-  const [mode, setMode] = useState<'login' | 'reset'>('login')
+  const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [message, setMessage] = useState<string|null>(null)
+  const [password2, setPassword2] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  async function handleLogin() {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+  const clearMessages = () => {
+    setMessage(null)
+    setError(null)
+  }
 
-    if (error) {
-      setMessage(error.message)
-    } else {
-      setMessage("Přihlášení proběhlo úspěšně.")
-      window.location.reload()
+  const handleLogin = async () => {
+    clearMessages()
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) throw error
+      setMessage('Přihlášení proběhlo úspěšně.')
+    } catch (err: any) {
+      setError(err.message ?? 'Nepodařilo se přihlásit.')
+    } finally {
+      setLoading(false)
     }
   }
 
-  async function handleReset() {
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
+  const handleRegister = async () => {
+    clearMessages()
 
-    if (error) {
-      setMessage(error.message)
-    } else {
-      setMessage("Odkaz pro změnu hesla byl odeslán.")
+    if (!email || !password || !password2 || !fullName) {
+      setError('Vyplň prosím všechna povinná pole.')
+      return
     }
+    if (password !== password2) {
+      setError('Hesla se neshodují.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      })
+      if (error) throw error
+      setMessage('Účet byl vytvořen. Zkontroluj prosím e-mail (potvrzení).')
+    } catch (err: any) {
+      setError(err.message ?? 'Registrace se nepodařila.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReset = async () => {
+    clearMessages()
+
+    if (!email) {
+      setError('Zadej e-mail pro reset hesla.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        // nastav stejnou URL i v Supabase Auth → Redirect URLs
+        redirectTo: 'https://aplikace-v6.vercel.app',
+      })
+      if (error) throw error
+      setMessage('Odeslali jsme ti e-mail s odkazem pro nastavení nového hesla.')
+    } catch (err: any) {
+      setError(err.message ?? 'Reset hesla se nepodařil.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (mode === 'login') await handleLogin()
+    if (mode === 'register') await handleRegister()
+    if (mode === 'reset') await handleReset()
   }
 
   return (
     <div className="login-panel">
+      <div className="login-panel__tabs">
+        <button
+          type="button"
+          className={`login-panel__tab ${mode === 'login' ? 'login-panel__tab--active' : ''}`}
+          onClick={() => {
+            setMode('login')
+            clearMessages()
+          }}
+        >
+          Přihlášení
+        </button>
+        <button
+          type="button"
+          className={`login-panel__tab ${mode === 'register' ? 'login-panel__tab--active' : ''}`}
+          onClick={() => {
+            setMode('register')
+            clearMessages()
+          }}
+        >
+          Registrace
+        </button>
+        <button
+          type="button"
+          className={`login-panel__tab ${mode === 'reset' ? 'login-panel__tab--active' : ''}`}
+          onClick={() => {
+            setMode('reset')
+            clearMessages()
+          }}
+        >
+          Zapomenuté heslo
+        </button>
+      </div>
 
-      {mode === 'login' ? (
-        <>
-          <h2 className="text-xl font-semibold mb-4">Přihlášení</h2>
-
-          <div className="space-y-3 text-sm">
+      <form onSubmit={onSubmit} className="login-panel__form">
+        {mode === 'register' && (
+          <div className="login-panel__field">
+            <label>Jméno a příjmení *</label>
             <input
-              type="email"
-              className="w-full border rounded px-3 py-2"
-              placeholder="E-mail"
-              onChange={e => setEmail(e.target.value)}
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
             />
-
-            <input
-              type="password"
-              className="w-full border rounded px-3 py-2"
-              placeholder="Heslo"
-              onChange={e => setPassword(e.target.value)}
-            />
-
-            <button
-              onClick={handleLogin}
-              className="w-full mt-2 bg-blue-600 text-white py-2 rounded"
-            >
-              Přihlásit se
-            </button>
-
-            <button
-              onClick={() => setMode('reset')}
-              className="text-xs underline mt-2"
-            >
-              Zapomenuté / změna hesla
-            </button>
           </div>
+        )}
 
-          {message && <p className="text-red-600 text-sm mt-3">{message}</p>}
-        </>
-      ) : (
-        <>
-          <h2 className="text-xl font-semibold mb-4">Změna hesla</h2>
-
+        <div className="login-panel__field">
+          <label>E-mail *</label>
           <input
             type="email"
-            className="w-full border rounded px-3 py-2"
-            placeholder="E-mail"
-            onChange={e => setEmail(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
+        </div>
 
-          <button
-            onClick={handleReset}
-            className="w-full mt-3 bg-blue-600 text-white py-2 rounded"
-          >
-            Poslat odkaz pro změnu hesla
-          </button>
+        {mode !== 'reset' && (
+          <div className="login-panel__field">
+            <label>Heslo *</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+        )}
 
-          <button
-            onClick={() => setMode('login')}
-            className="w-full mt-4 border py-2 rounded text-sm"
-          >
-            ← Zpět
-          </button>
+        {mode === 'register' && (
+          <div className="login-panel__field">
+            <label>Heslo znovu *</label>
+            <input
+              type="password"
+              value={password2}
+              onChange={(e) => setPassword2(e.target.value)}
+            />
+          </div>
+        )}
 
-          {message && <p className="text-red-600 text-sm mt-3">{message}</p>}
-        </>
-      )}
+        {error && <div className="login-panel__error">{error}</div>}
+        {message && <div className="login-panel__message">{message}</div>}
+
+        <button type="submit" className="login-panel__submit" disabled={loading}>
+          {loading
+            ? 'Probíhá...'
+            : mode === 'login'
+            ? 'Přihlásit se'
+            : mode === 'register'
+            ? 'Vytvořit účet'
+            : 'Odeslat reset hesla'}
+        </button>
+      </form>
     </div>
   )
 }
