@@ -1,9 +1,13 @@
 // app/UI/Breadcrumbs.tsx
 'use client'
 
-export default function Breadcrumbs() {
+type Props = {
+  disabled?: boolean
+}
+
+export default function Breadcrumbs({ disabled = false }: Props) {
   return (
-    <div className="breadcrumbs">
+    <div className={`breadcrumbs ${disabled ? 'is-disabled' : ''}`}>
       Domů › Modul › Přehled › Detail
     </div>
   )
