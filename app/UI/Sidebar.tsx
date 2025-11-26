@@ -12,7 +12,11 @@ interface ModuleConfig {
   enabled?: boolean
 }
 
-export default function Sidebar() {
+type Props = {
+  disabled?: boolean
+}
+
+export default function Sidebar({ disabled = false }: Props) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -41,7 +45,7 @@ export default function Sidebar() {
   }, [])
 
   return (
-    <nav className="sidebar">
+    <nav className={`sidebar ${disabled ? 'is-disabled' : ''}`}>
       {loading && <p className="sidebar__empty">Načítání…</p>}
 
       {!loading && modules.length === 0 && (
