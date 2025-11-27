@@ -4,6 +4,6 @@ export default {
   id: '060-smlouva',
   order: 60,
   label: 'Smlouvy',
-  icon: '📜',
+  icon: 'contract',
   enabled: true,
 }
