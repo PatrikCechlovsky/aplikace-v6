@@ -1,9 +1,11 @@
-// FILE: src/app/modules/040-nemovitost/module.config.js
+/*
+ * FILE: app/modules/040-nemovitost/module.config.js
+ */
 
 export default {
   id: '040-nemovitost',
-  order: 40,
   label: 'Nemovitosti',
-  icon: '🏢',
+  icon: 'building',        // 💥 TADY JE KLÍČ!
+  order: 40,
   enabled: true,
 }
