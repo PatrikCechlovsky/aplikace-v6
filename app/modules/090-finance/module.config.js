@@ -4,6 +4,6 @@ export default {
   id: '090-finance',
   order: 90,
   label: 'Finance',
-  icon: '💰',
+  icon: 'finance',
   enabled: true,
 }
