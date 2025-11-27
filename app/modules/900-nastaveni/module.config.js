@@ -4,7 +4,7 @@ export default {
   id: '900-nastaveni',
   order: 900,
   label: 'Nastavení',
-  icon: '⚙️',
+  icon: 'settings',
   enabled: true,
 
   // zde později doplníme jednotlivé sekce nastavení:
