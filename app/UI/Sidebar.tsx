@@ -1,14 +1,19 @@
-// app/UI/Sidebar.tsx
+/*
+ * FILE: app/UI/Sidebar.tsx
+ * PURPOSE: Dynamický sidebar modulů včetně ikon z module.config.js
+ */
+
 'use client'
 
 import { useEffect, useState } from 'react'
 import { MODULE_SOURCES } from '@/app/modules.index.js'
+import { getIcon } from './icons'
 
 interface ModuleConfig {
   id: string
-  order?: number
   label: string
   icon?: string
+  order?: number
   enabled?: boolean
 }
 
@@ -56,7 +61,9 @@ export default function Sidebar({ disabled = false }: Props) {
         <ul className="sidebar__list">
           {modules.map((m) => (
             <li key={m.id} className="sidebar__item">
-              <span className="sidebar__icon">{m.icon}</span>
+              <span className="sidebar__icon">
+                {getIcon(m.icon as any)}
+              </span>
               <span className="sidebar__label">{m.label}</span>
             </li>
           ))}
