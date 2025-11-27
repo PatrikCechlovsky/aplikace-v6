@@ -1,9 +1,12 @@
-// app/page.tsx
+/*
+ * FILE: app/page.tsx
+ * PURPOSE: Hlavní stránka – layout 6 částí + login / obsah po přihlášení
+ */
+
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { supabase } from './lib/supabaseClient'
+import type { Session, AuthChangeEvent } from '@supabase/supabase-js'
 
 import HomeButton from './UI/HomeButton'
 import Sidebar from './UI/Sidebar'
@@ -12,20 +15,27 @@ import HomeActions from './UI/HomeActions'
 import CommonActions from './UI/CommonActions'
 import LoginPanel from './UI/LoginPanel'
 
+import {
+  getCurrentSession,
+  onAuthStateChange,
+  logout as authLogout,
+} from './lib/services/auth'
+
 export default function HomePage() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // načtení session + posluchač změn (login / logout)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+    // inicialní načtení session
+    getCurrentSession().then(({ data }) => {
+      setSession(data.session ?? null)
       setLoading(false)
     })
 
+    // posluchač změn auth stavu
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = onAuthStateChange((event: AuthChangeEvent, newSession: Session | null) => {
       setSession(newSession)
     })
 
@@ -37,7 +47,7 @@ export default function HomePage() {
   const isAuthenticated = !!session
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await authLogout()
   }
 
   return (
@@ -54,12 +64,12 @@ export default function HomePage() {
         <HomeActions disabled={!isAuthenticated} onLogout={handleLogout} />
       </header>
 
-      {/* 5 – common actions */}
+      {/* 5 – společné akce */}
       <div className="layout__actions">
         <CommonActions disabled={!isAuthenticated} />
       </div>
 
-      {/* 6 – content */}
+      {/* 6 – obsah */}
       <main className="layout__content">
         {loading ? (
           <div>Načítání…</div>
@@ -67,9 +77,10 @@ export default function HomePage() {
           <LoginPanel />
         ) : (
           <div>
-            {/* TODO: sem dáme dashboard / výchozí přehled */}
             <h1>Vítej v aplikaci Pronajímatel v6</h1>
-            <p>Zatím jednoduchý dashboard po přihlášení.</p>
+            <p>Zde bude dashboard nebo výchozí přehled po přihlášení.</p>
+
+            {/* Sem později můžeme vložit třeba MfaSetupPanel nebo modulový přehled */}
           </div>
         )}
       </main>
