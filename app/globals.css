@@ -1,4 +1,4 @@
-/* Základ */
+/* Základní nastavení */
 html,
 body {
   margin: 0;
@@ -20,7 +20,7 @@ body {
   min-height: 100vh;
 }
 
-/* 1+2 – levý sloupec */
+/* 1+2 – levý sloupec (HomeButton + Sidebar) */
 .layout__sidebar {
   grid-row: 1 / span 3;
   grid-column: 1;
@@ -32,7 +32,7 @@ body {
   gap: 12px;
 }
 
-/* 3+4 – horní lišta vpravo */
+/* 3+4 – horní lišta vpravo (Breadcrumbs + HomeActions) */
 .layout__topbar {
   grid-column: 2;
   grid-row: 1;
@@ -44,7 +44,7 @@ body {
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* 5 – lišta akcí */
+/* 5 – lišta obecných akcí */
 .layout__actions {
   grid-column: 2;
   grid-row: 2;
@@ -102,6 +102,10 @@ body {
 .sidebar__icon {
   width: 20px;
   text-align: center;
+}
+
+.sidebar__label {
+  white-space: nowrap;
 }
 
 .sidebar__empty {
@@ -238,77 +242,22 @@ body {
   cursor: pointer;
   font-size: 13px;
 }
-/*
- * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Dynamický sidebar modulů včetně ikon z module.config.js
- */
 
-'use client'
+/* Mobilní layout – max. šířka 768px */
+@media (max-width: 768px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+  }
 
-import { useEffect, useState } from 'react'
-import { MODULE_SOURCES } from '@/app/modules.index.js'
-import { getIcon } from './icons'
+  .layout__sidebar,
+  .layout__topbar,
+  .layout__actions,
+  .layout__content {
+    width: 100%;
+  }
 
-interface ModuleConfig {
-  id: string
-  label: string
-  icon?: string
-  order?: number
-  enabled?: boolean
-}
-
-type Props = {
-  disabled?: boolean
-}
-
-export default function Sidebar({ disabled = false }: Props) {
-  const [modules, setModules] = useState<ModuleConfig[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function loadModules() {
-      const loaded: ModuleConfig[] = []
-
-      for (const loader of MODULE_SOURCES) {
-        try {
-          const mod: any = await loader()
-          const conf = (mod.default ?? mod) as ModuleConfig
-          if (!conf) continue
-          if (conf.enabled === false) continue
-          loaded.push(conf)
-        } catch (err) {
-          console.warn('Nepodařilo se načíst modul:', err)
-        }
-      }
-
-      loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      setModules(loaded)
-      setLoading(false)
-    }
-
-    loadModules()
-  }, [])
-
-  return (
-    <nav className={`sidebar ${disabled ? 'is-disabled' : ''}`}>
-      {loading && <p className="sidebar__empty">Načítání…</p>}
-
-      {!loading && modules.length === 0 && (
-        <p className="sidebar__empty">Není nic obsaženo</p>
-      )}
-
-      {!loading && modules.length > 0 && (
-        <ul className="sidebar__list">
-          {modules.map((m) => (
-            <li key={m.id} className="sidebar__item">
-              <span className="sidebar__icon">
-                {getIcon(m.icon as any)}
-              </span>
-              <span className="sidebar__label">{m.label}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </nav>
-  )
+  .layout__content {
+    padding: 12px;
+  }
 }
