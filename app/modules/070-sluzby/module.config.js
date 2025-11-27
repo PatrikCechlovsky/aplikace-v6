@@ -4,6 +4,6 @@ export default {
   id: '070-sluzby',
   order: 70,
   label: 'Služby',
-  icon: '⚙️',
+  icon: 'services',
   enabled: true,
 }
