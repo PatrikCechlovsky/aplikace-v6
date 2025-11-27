@@ -365,3 +365,56 @@ body.theme-orange .layout__actions {
 body.theme-orange .home-button {
   background: #f97316;
 }
+/* Přehled entit (EntityList) */
+.entity-list {
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.entity-list__header-row,
+.entity-list__row {
+  display: grid;
+  grid-template-columns: 6px repeat(auto-fit, minmax(80px, 1fr));
+  align-items: stretch;
+}
+
+.entity-list__header-row {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+}
+
+.entity-list__row {
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+}
+
+.entity-list__row:hover {
+  background: #f1f5f9;
+}
+
+.entity-list__type-col {
+  width: 6px;
+}
+
+.entity-list__cell {
+  padding: 6px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entity-list__cell--header {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.entity-list__empty {
+  padding: 10px;
+  font-size: 13px;
+  color: #6b7280;
+}
