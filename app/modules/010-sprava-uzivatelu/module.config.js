@@ -4,7 +4,7 @@ export default {
   id: '010-sprava-uzivatelu',
   order: 10,
   label: 'Správa uživatelů',
-  icon: '🧑‍💻',
+  icon: 'account',
   enabled: true,
 
   // později: přehledy, formuláře, tiles, actions...
