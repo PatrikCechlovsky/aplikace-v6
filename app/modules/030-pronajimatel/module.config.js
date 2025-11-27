@@ -4,6 +4,6 @@ export default {
   id: '030-pronajimatel',
   order: 30,
   label: 'Pronajímatelé',
-  icon: '🏠',
+  icon: 'landlord',
   enabled: true,
 }
