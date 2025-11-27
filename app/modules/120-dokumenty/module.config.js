@@ -4,6 +4,6 @@ export default {
   id: '120-dokumenty',
   order: 120,
   label: 'Dokumenty',
-  icon: '📂',
+  icon: 'documents',
   enabled: true,
 }
