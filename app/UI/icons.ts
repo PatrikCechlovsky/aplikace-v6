@@ -1,107 +1,96 @@
-// ----------------------------------------------------
-// File: app/UI/icons.ts
-// Source: docs/ikons.md (uživatelské ikony)
-// ----------------------------------------------------
+/*
+ * FILE: app/UI/icons.ts
+ * PURPOSE: Centrální mapa ikon pro celou aplikaci
+ */
 
 export type IconKey =
-  | "home"
-  | "users"
-  | "user"
-  | "account"
-  | "settings"
-  | "payments"
-  | "finance"
-  | "energy"
-  | "documents"
-  | "communication"
-  | "dashboard"
-  | "building"
-  | "apartment"
-  | "apartment-unit"
-  | "list"
-  | "detail"
-  | "edit"
-  | "delete"
-  | "archive"
-  | "attach"
-  | "refresh"
-  | "search"
-  | "star"
-  | "warning"
-  | "notification"
-  | "bell"
-  | "logout"
-  | "login"
-  | "add"
-  | "send"
-  | "history"
-  | "settings"
-  | "wizard"
-  | "folder"
-  | "file"
-  | "chat"
-  | "mail"
-  | "print"
-  | "form"
-  | "grid"
-  | "tile"
-  | "arrow-right"
-  | "arrow-left"
-  | "arrow-up"
-  | "arrow-down";
-
-// ----------------------------------------------------
+  | 'home'
+  | 'users'
+  | 'user'
+  | 'landlord'
+  | 'building'
+  | 'apartment'
+  | 'unit'
+  | 'tenant'
+  | 'contract'
+  | 'services'
+  | 'payments'
+  | 'finance'
+  | 'energy'
+  | 'documents'
+  | 'communication'
+  | 'settings'
+  | 'dashboard'
+  | 'help'
+  | 'list'
+  | 'detail'
+  | 'edit'
+  | 'delete'
+  | 'archive'
+  | 'attach'
+  | 'refresh'
+  | 'search'
+  | 'warning'
+  | 'notification'
+  | 'logout'
+  | 'login'
+  | 'add'
+  | 'send'
+  | 'history'
+  | 'folder'
+  | 'file'
+  | 'chat'
+  | 'mail'
+  | 'print'
+  | 'form'
+  | 'grid'
+  | 'tile'
 
 export const ICONS: Record<IconKey, string> = {
-  home: "🏠",
-  users: "👥",
-  user: "👤",
-  account: "👤",
-  settings: "⚙️",
-  payments: "💳",
-  finance: "💰",
-  energy: "⚡",
-  documents: "📁",
-  communication: "💬",
-  dashboard: "📊",
-  building: "🏢",
-  apartment: "🏘️",
-  apartment-unit: "🚪",
-  list: "📄",
-  detail: "👁️",
-  edit: "✏️",
-  delete: "🗑️",
-  archive: "🗄️",
-  attach: "📎",
-  refresh: "🔄",
-  search: "🔍",
-  star: "⭐",
-  warning: "⚠️",
-  notification: "🔔",
-  bell: "🔔",
-  logout: "🚪",
-  login: "🔐",
-  add: "➕",
-  send: "📤",
-  history: "🕘",
-  wizard: "🧭",
-  folder: "📁",
-  file: "📄",
-  chat: "💬",
-  mail: "✉️",
-  print: "🖨️",
-  form: "📝",
-  grid: "🟦",
-  tile: "🟦",
-  "arrow-right": "▶️",
-  "arrow-left": "◀️",
-  "arrow-up": "▲",
-  "arrow-down": "▼",
-};
-
-// ----------------------------------------------------
+  home: '🏠',
+  users: '👥',
+  user: '👤',
+  landlord: '🏠',
+  building: '🏢',
+  apartment: '🏘️',
+  unit: '🚪',
+  tenant: '🧍‍♂️',
+  contract: '📜',
+  services: '⚙️',
+  payments: '💳',
+  finance: '💰',
+  energy: '⚡',
+  documents: '📁',
+  communication: '💬',
+  settings: '⚙️',
+  dashboard: '📊',
+  help: '❓',
+  list: '📄',
+  detail: '👁️',
+  edit: '✏️',
+  delete: '🗑️',
+  archive: '🗄️',
+  attach: '📎',
+  refresh: '🔄',
+  search: '🔍',
+  warning: '⚠️',
+  notification: '🔔',
+  logout: '🚪',
+  login: '🔐',
+  add: '➕',
+  send: '📤',
+  history: '🕘',
+  folder: '📁',
+  file: '📄',
+  chat: '💬',
+  mail: '✉️',
+  print: '🖨️',
+  form: '📝',
+  grid: '🟦',
+  tile: '🟦',
+}
 
 export function getIcon(key: IconKey | undefined, fallback = '❓') {
   if (!key) return fallback
-  return ICONS[key as IconKey] ?? fallback
+  return ICONS[key] ?? fallback
 }
