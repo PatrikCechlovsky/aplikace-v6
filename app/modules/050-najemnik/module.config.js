@@ -4,6 +4,6 @@ export default {
   id: '050-najemnik',
   order: 50,
   label: 'Nájemníci',
-  icon: 'tenant',
+  icon: 'users',
   enabled: true,
 }
