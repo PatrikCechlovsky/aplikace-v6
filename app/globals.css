@@ -418,3 +418,86 @@ body.theme-orange .home-button {
   font-size: 13px;
   color: #6b7280;
 }
+/* Záložka "vazby" – seznam + detail */
+.relation-pane {
+  display: grid;
+  grid-template-rows: 200px minmax(220px, 1fr);
+  gap: 8px;
+}
+
+.relation-pane__list {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.relation-pane__header {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.relation-pane__list-inner {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px; /* max 10 řádků + scroll */
+  overflow-y: auto;
+}
+
+.relation-pane__item {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+}
+
+.relation-pane__item:hover {
+  background: #f1f5f9;
+}
+
+.relation-pane__item--active {
+  background: #eef2ff;
+}
+
+.relation-pane__item-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.relation-pane__item-primary {
+  font-weight: 500;
+}
+
+.relation-pane__item-secondary {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.relation-pane__item-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e5f0ff;
+  color: #1d4ed8;
+}
+
+.relation-pane__detail {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.relation-pane__empty {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #6b7280;
+}
