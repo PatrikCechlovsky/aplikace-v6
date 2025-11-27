@@ -53,6 +53,50 @@ body {
   border-bottom: 1px solid #e5e7eb;
 }
 
+/* Lišta akcí zarovnaná doprava */
+.common-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.common-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.common-actions__btn:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.common-actions__icon {
+  font-size: 14px;
+}
+
+/* text skrytý, zobrazí se až při hoveru */
+.common-actions__label {
+  white-space: nowrap;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.15s ease;
+}
+
+.common-actions__btn:hover .common-actions__label {
+  opacity: 1;
+  max-width: 80px; /* dostatečné pro "Archivovat" apod. */
+}
+
+
 /* 6 – hlavní obsah */
 .layout__content {
   grid-column: 2;
