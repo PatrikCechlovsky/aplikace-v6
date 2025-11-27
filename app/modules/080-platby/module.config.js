@@ -4,6 +4,6 @@ export default {
   id: '080-platby',
   order: 80,
   label: 'Platby',
-  icon: '💳',
+  icon: 'payments',
   enabled: true,
 }
