@@ -4,6 +4,6 @@ export default {
   id: '130-komunikace',
   order: 130,
   label: 'Komunikace',
-  icon: '💬',
+  icon: 'communication',
   enabled: true,
 }
