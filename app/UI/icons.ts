@@ -101,6 +101,7 @@ export const ICONS: Record<IconKey, string> = {
 
 // ----------------------------------------------------
 
-export function getIcon(key: IconKey, fallback: string = "❓") {
-  return ICONS[key] ?? fallback;
+export function getIcon(key: IconKey | undefined, fallback = '❓') {
+  if (!key) return fallback
+  return ICONS[key as IconKey] ?? fallback
 }
