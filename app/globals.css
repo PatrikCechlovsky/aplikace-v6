@@ -261,3 +261,107 @@ body {
     padding: 12px;
   }
 }
+/* -------------------------------------------------
+   UI motivy (theme)
+   Přepínají se přes className na <body>: theme-light, theme-dark, ...
+   Výchozí styl odpovídá light, takže pro light nic extra není potřeba.
+   ------------------------------------------------- */
+
+/* LIGHT – výchozí (odpovídá stávajícím barvám) */
+/* body.theme-light { } – není nutné nic měnit */
+
+/* DARK – tmavý, moderní */
+body.theme-dark {
+  background-color: #020617;
+  color: #e5e7eb;
+}
+
+body.theme-dark .layout__sidebar {
+  background: #020617;
+  border-right-color: #1f2937;
+}
+
+body.theme-dark .layout__topbar {
+  background: #020617;
+  border-bottom-color: #1f2937;
+}
+
+body.theme-dark .layout__actions {
+  background: #0b1120;
+  border-bottom-color: #1f2937;
+}
+
+body.theme-dark .layout__content {
+  background: #020617;
+}
+
+body.theme-dark .home-button {
+  background: #f97316;
+  color: #0b1120;
+}
+
+body.theme-dark .sidebar__item:hover {
+  background: #111827;
+}
+
+body.theme-dark .login-panel {
+  background: #020617;
+  color: #e5e7eb;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.9);
+}
+
+body.theme-dark .login-panel__field input {
+  background: #020617;
+  border-color: #334155;
+  color: #e5e7eb;
+}
+
+/* BLUE – modrý motiv (světlý základ, modrý accent) */
+body.theme-blue {
+  background-color: #e5f0ff;
+}
+
+body.theme-blue .layout__sidebar {
+  background: #ffffff;
+  border-right-color: #bfdbfe;
+}
+
+body.theme-blue .layout__topbar {
+  background: #eff6ff;
+  border-bottom-color: #bfdbfe;
+}
+
+body.theme-blue .layout__actions {
+  background: #e0f2fe;
+  border-bottom-color: #bfdbfe;
+}
+
+body.theme-blue .home-button {
+  background: #3b82f6;
+}
+
+/* GREEN – zelený accent */
+body.theme-green {
+  background-color: #ecfdf5;
+}
+
+body.theme-green .layout__actions {
+  background: #dcfce7;
+}
+
+body.theme-green .home-button {
+  background: #22c55e;
+}
+
+/* ORANGE – oranžový / teplý accent */
+body.theme-orange {
+  background-color: #fff7ed;
+}
+
+body.theme-orange .layout__actions {
+  background: #ffedd5;
+}
+
+body.theme-orange .home-button {
+  background: #f97316;
+}
