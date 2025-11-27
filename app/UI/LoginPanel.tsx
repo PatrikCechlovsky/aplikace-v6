@@ -1,10 +1,16 @@
-// app/UI/LoginPanel.tsx
+/*
+ * FILE: app/UI/LoginPanel.tsx
+ * PURPOSE: Přihlášení, registrace a reset hesla přes auth servis
+ */
+
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { login, register, resetPassword } from '../lib/services/auth'
 
 type Mode = 'login' | 'register' | 'reset'
+
+const RESET_REDIRECT_URL = 'https://aplikace-v6.vercel.app'
 
 export default function LoginPanel() {
   const [mode, setMode] = useState<Mode>('login')
@@ -25,10 +31,7 @@ export default function LoginPanel() {
     clearMessages()
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { error } = await login(email, password)
       if (error) throw error
       setMessage('Přihlášení proběhlo úspěšně.')
     } catch (err: any) {
@@ -52,15 +55,7 @@ export default function LoginPanel() {
 
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      })
+      const { error } = await register(email, password, fullName)
       if (error) throw error
       setMessage('Účet byl vytvořen. Zkontroluj prosím e-mail (potvrzení).')
     } catch (err: any) {
@@ -80,10 +75,7 @@ export default function LoginPanel() {
 
     setLoading(true)
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        // nastav stejnou URL i v Supabase Auth → Redirect URLs
-        redirectTo: 'https://aplikace-v6.vercel.app',
-      })
+      const { error } = await resetPassword(email, RESET_REDIRECT_URL)
       if (error) throw error
       setMessage('Odeslali jsme ti e-mail s odkazem pro nastavení nového hesla.')
     } catch (err: any) {
