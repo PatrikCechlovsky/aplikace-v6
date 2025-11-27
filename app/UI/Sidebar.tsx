@@ -1,6 +1,6 @@
 /*
  * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Dynamický sidebar modulů včetně ikon z module.config.js
+ * PURPOSE: Dynamický sidebar modulů včetně optional ikonek
  */
 
 'use client'
@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react'
 import { MODULE_SOURCES } from '@/app/modules.index.js'
 import { getIcon } from './icons'
+import { uiConfig } from '../lib/uiConfig'
 
 interface ModuleConfig {
   id: string
@@ -49,6 +50,8 @@ export default function Sidebar({ disabled = false }: Props) {
     loadModules()
   }, [])
 
+  const showIcons = uiConfig.showSidebarIcons
+
   return (
     <nav className={`sidebar ${disabled ? 'is-disabled' : ''}`}>
       {loading && <p className="sidebar__empty">Načítání…</p>}
@@ -61,9 +64,11 @@ export default function Sidebar({ disabled = false }: Props) {
         <ul className="sidebar__list">
           {modules.map((m) => (
             <li key={m.id} className="sidebar__item">
-              <span className="sidebar__icon">
-                {getIcon(m.icon as any)}
-              </span>
+              {showIcons && (
+                <span className="sidebar__icon">
+                  {getIcon(m.icon as any)}
+                </span>
+              )}
               <span className="sidebar__label">{m.label}</span>
             </li>
           ))}
