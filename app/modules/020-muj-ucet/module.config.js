@@ -4,6 +4,6 @@ export default {
   id: '020-muj-ucet',
   order: 20,
   label: 'Můj účet',
-  icon: '👤',
+  icon: 'user',
   enabled: true,
 }
