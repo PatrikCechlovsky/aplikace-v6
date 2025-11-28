@@ -3,8 +3,8 @@
  * PURPOSE: CRUD funkce pro číselník subject_types
  *
  * POZNÁMKA:
- *  - V DB je sloupec "active"
- *  - V aplikaci používáme pole "is_active" (mapujeme přes alias active:is_active)
+ *  - V DB je sloupec "active" (boolean)
+ *  - Typ SubjectType tomu odpovídá
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
@@ -16,7 +16,7 @@ export type SubjectType = {
   color: string | null
   icon: string | null
   sort_order: number | null
-  is_active: boolean // mapuje se na DB sloupec "active"
+  active: boolean        // ← přímo sloupec z DB
   created_at: string | null
 }
 
@@ -27,8 +27,7 @@ export async function fetchSubjectTypes(): Promise<SubjectType[]> {
   const { data, error } = await supabase
     .from('subject_types')
     .select(
-      // active:is_active = DB sloupec "active" vrátíme v objektu jako "is_active"
-      'code, name, description, color, icon, sort_order, active:is_active, created_at',
+      'code, name, description, color, icon, sort_order, active, created_at',
     )
     .order('sort_order', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
@@ -38,6 +37,7 @@ export async function fetchSubjectTypes(): Promise<SubjectType[]> {
     throw error
   }
 
+  // teď tvar odpovědi sedí s typem SubjectType
   return (data ?? []) as SubjectType[]
 }
 
@@ -51,7 +51,7 @@ export async function createSubjectType(input: {
   color?: string
   icon?: string
   order?: number
-  is_active?: boolean
+  is_active?: boolean   // ← z UI můžeš dál posílat is_active
 }): Promise<SubjectType> {
   const payload = {
     code: input.code.trim(),
@@ -61,7 +61,7 @@ export async function createSubjectType(input: {
     icon: input.icon ?? null,
     sort_order:
       typeof input.order === 'number' ? input.order : (null as number | null),
-    // ⚠️ DO DB zapisujeme "active"
+    // DO DB zapisujeme "active"
     active: input.is_active ?? true,
   }
 
@@ -69,7 +69,7 @@ export async function createSubjectType(input: {
     .from('subject_types')
     .insert(payload)
     .select(
-      'code, name, description, color, icon, sort_order, active:is_active, created_at',
+      'code, name, description, color, icon, sort_order, active, created_at',
     )
     .single()
 
@@ -105,7 +105,6 @@ export async function updateSubjectType(
     icon: input.icon ?? null,
     sort_order:
       typeof input.order === 'number' ? input.order : (null as number | null),
-    // ⚠️ DO DB zapisujeme "active"
     active: input.is_active ?? true,
   }
 
@@ -114,7 +113,7 @@ export async function updateSubjectType(
     .update(payload)
     .eq('code', codeKey)
     .select(
-      'code, name, description, color, icon, sort_order, active:is_active, created_at',
+      'code, name, description, color, icon, sort_order, active, created_at',
     )
     .single()
 
