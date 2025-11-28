@@ -1,11 +1,14 @@
 /*
  * FILE: app/modules/900-nastaveni/tiles/SubjectTypesTile.tsx
- * PURPOSE: Přehled + formulář pro číselník subject_types (typy subjektů)
+ * PURPOSE: Číselník typů subjektů napojený na generický UI vzor ConfigListWithForm
  */
 
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import ConfigListWithForm, {
+  ConfigItemBase,
+} from '@/app/UI/ConfigListWithForm'
 import {
   SubjectType,
   fetchSubjectTypes,
@@ -14,31 +17,21 @@ import {
   deleteSubjectType,
 } from '../services/subjectTypes'
 
-type FormState = {
-  id: string | null
-  code: string
-  label: string
-  description: string
-  is_active: boolean
-}
-
-const emptyForm: FormState = {
-  id: null,
-  code: '',
-  label: '',
-  description: '',
-  is_active: true,
+// UI reprezentace jednoho typu subjektu pro ConfigListWithForm
+type SubjectTypeConfigItem = ConfigItemBase & {
+  _dbId?: string        // skutečné id z databáze
+  _isNew?: boolean      // lokálně vytvořený, ještě neuložený v DB
 }
 
 export default function SubjectTypesTile() {
-  const [items, setItems] = useState<SubjectType[]>([])
-  const [form, setForm] = useState<FormState>(emptyForm)
+  const [items, setItems] = useState<SubjectTypeConfigItem[]>([])
+  const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // načtení seznamu při prvním renderu
+  // načtení dat z DB
   useEffect(() => {
     loadData()
   }, [])
@@ -46,101 +39,150 @@ export default function SubjectTypesTile() {
   async function loadData() {
     setLoading(true)
     setError(null)
+    setSuccess(null)
+
     try {
-      const data = await fetchSubjectTypes()
-      setItems(data)
+      const rows: SubjectType[] = await fetchSubjectTypes()
+
+      const mapped: SubjectTypeConfigItem[] = rows.map((r) => ({
+        id: r.id,
+        _dbId: r.id,
+        code: r.code ?? '',
+        name: r.label ?? '',
+        color: undefined,
+        icon: undefined,
+        order: undefined,
+      }))
+
+      setItems(mapped)
+      if (mapped.length > 0) {
+        setSelectedId(mapped[0].id)
+      }
     } catch (err: any) {
-      setError(err?.message ?? 'Chyba při načítání typů subjektů.')
+      setError(err?.message ?? 'Chyba při načítání typů subjektu.')
     } finally {
       setLoading(false)
     }
   }
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) {
-    const { name, value } = e.target
-    setForm(prev => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  function handleCheckboxChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, checked } = e.target
-    setForm(prev => ({
-      ...prev,
-      [name]: checked,
-    }))
-  }
-
-  function handleEditClick(item: SubjectType) {
-    setForm({
-      id: item.id,
-      code: item.code ?? '',
-      label: item.label ?? '',
-      description: item.description ?? '',
-      is_active: item.is_active ?? true,
-    })
-    setSuccess(null)
+  // výběr položky v seznamu
+  function handleSelect(id: string | number) {
+    setSelectedId(id)
     setError(null)
-  }
-
-  function handleCancelEdit() {
-    setForm(emptyForm)
     setSuccess(null)
-    setError(null)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  // změna pole u aktuálně vybrané položky
+  function updateItemField(field: keyof SubjectTypeConfigItem, value: any) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === selectedId ? { ...item, [field]: value } : item,
+      ),
+    )
+  }
+
+  // uložení vybrané položky (nové nebo existující)
+  async function handleSave() {
+    if (selectedId == null) {
+      setError('Není vybrán žádný záznam.')
+      return
+    }
+
+    const item = items.find((i) => i.id === selectedId)
+    if (!item) {
+      setError('Vybraný záznam nebyl nalezen.')
+      return
+    }
+
+    if (!item.code.trim() || !item.name.trim()) {
+      setError('Kód a název jsou povinné.')
+      return
+    }
+
     setSaving(true)
     setError(null)
     setSuccess(null)
 
     try {
-      if (!form.code.trim() || !form.label.trim()) {
-        setError('Kód a název jsou povinné.')
-        setSaving(false)
-        return
-      }
-
-      if (form.id) {
-        // EDIT
-        const updated = await updateSubjectType(form.id, {
-          code: form.code,
-          label: form.label,
-          description: form.description,
-          is_active: form.is_active,
+      if (item._dbId) {
+        // UPDATE existujícího záznamu
+        const updated = await updateSubjectType(item._dbId, {
+          code: item.code,
+          label: item.name,
+          description: '', // zatím nepoužíváme
+          is_active: true,
         })
 
-        setItems(prev =>
-          prev.map(item => (item.id === updated.id ? updated : item))
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? {
+                  ...it,
+                  _dbId: updated.id,
+                  code: updated.code ?? '',
+                  name: updated.label ?? '',
+                }
+              : it,
+          ),
         )
-        setSuccess('Typ subjektu byl upraven.')
+        setSuccess('Typ subjektu byl uložen.')
       } else {
-        // CREATE
+        // CREATE nového záznamu
         const created = await createSubjectType({
-          code: form.code,
-          label: form.label,
-          description: form.description,
-          is_active: form.is_active,
+          code: item.code,
+          label: item.name,
+          description: '',
+          is_active: true,
         })
 
-        setItems(prev => [...prev, created])
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? {
+                  ...it,
+                  id: created.id,
+                  _dbId: created.id,
+                  code: created.code ?? '',
+                  name: created.label ?? '',
+                }
+              : it,
+          ),
+        )
+        setSelectedId(created.id)
         setSuccess('Typ subjektu byl vytvořen.')
       }
-
-      setForm(emptyForm)
     } catch (err: any) {
-      // typicky error z RLS (pokud by to zkoušel ne-admin)
       setError(err?.message ?? 'Chyba při ukládání typu subjektu.')
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleDelete(id: string) {
+  // vytvoření nové položky (zatím jen lokálně, bez DB)
+  function handleNew() {
+    const newId = `new-${Date.now()}`
+    const newItem: SubjectTypeConfigItem = {
+      id: newId,
+      _isNew: true,
+      code: '',
+      name: '',
+      color: undefined,
+      icon: undefined,
+      order: undefined,
+    }
+
+    setItems((prev) => [...prev, newItem])
+    setSelectedId(newId)
+    setError(null)
+    setSuccess(null)
+  }
+
+  // smazání vybrané položky
+  async function handleDelete() {
+    if (selectedId == null) return
+    const item = items.find((i) => i.id === selectedId)
+    if (!item) return
+
     if (!window.confirm('Opravdu smazat tento typ subjektu?')) return
 
     setSaving(true)
@@ -148,12 +190,12 @@ export default function SubjectTypesTile() {
     setSuccess(null)
 
     try {
-      await deleteSubjectType(id)
-      setItems(prev => prev.filter(item => item.id !== id))
-      setSuccess('Typ subjektu byl smazán.')
-      if (form.id === id) {
-        setForm(emptyForm)
+      if (item._dbId) {
+        await deleteSubjectType(item._dbId)
       }
+      setItems((prev) => prev.filter((i) => i.id !== selectedId))
+      setSelectedId(null)
+      setSuccess('Typ subjektu byl smazán.')
     } catch (err: any) {
       setError(err?.message ?? 'Chyba při mazání typu subjektu.')
     } finally {
@@ -161,191 +203,30 @@ export default function SubjectTypesTile() {
     }
   }
 
-  const isEditMode = !!form.id
-
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="text-xl font-semibold">Typy subjektů</h2>
-        <p className="text-sm text-gray-600">
-          Číselník typů subjektů (person, company, landlord, tenant…).
-          Přidávat/upravovat může pouze admin.
+    <div className="tile tile--config">
+      <header className="tile__header">
+        <h2 className="tile__title">Typy subjektů</h2>
+        <p className="tile__subtitle">
+          Číselník typů subjektů (osoba, firma, spolek…). Přidávat / upravovat
+          může pouze admin.
         </p>
       </header>
 
-      {/* Formulář */}
-      <section className="rounded-xl border border-gray-200 p-4 shadow-sm bg-white space-y-4">
-        <h3 className="text-lg font-medium">
-          {isEditMode ? 'Upravit typ subjektu' : 'Nový typ subjektu'}
-        </h3>
+      {error && <div className="msg msg--error">{error}</div>}
+      {success && <div className="msg msg--success">{success}</div>}
 
-        {error && (
-          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium" htmlFor="code">
-                Kód typu subjektu
-              </label>
-              <input
-                id="code"
-                name="code"
-                type="text"
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                value={form.code}
-                onChange={handleChange}
-                placeholder="např. person, company, landlord"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium" htmlFor="label">
-                Název (label)
-              </label>
-              <input
-                id="label"
-                name="label"
-                type="text"
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                value={form.label}
-                onChange={handleChange}
-                placeholder="např. Fyzická osoba, Firma, Pronajímatel"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium" htmlFor="description">
-              Popis
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm min-h-[60px]"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Nepovinný popis typu subjektu..."
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              id="is_active"
-              name="is_active"
-              type="checkbox"
-              className="h-4 w-4"
-              checked={form.is_active}
-              onChange={handleCheckboxChange}
-            />
-            <label htmlFor="is_active" className="text-sm">
-              Aktivní typ subjektu
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            >
-              {saving
-                ? isEditMode
-                  ? 'Ukládám...'
-                  : 'Vytvářím...'
-                : isEditMode
-                ? 'Uložit změny'
-                : 'Vytvořit'}
-            </button>
-
-            {isEditMode && (
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
-              >
-                Zrušit úpravy
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
-
-      {/* Přehled */}
-      <section className="rounded-xl border border-gray-200 p-4 shadow-sm bg-white">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-lg font-medium">Přehled typů subjektů</h3>
-          <button
-            type="button"
-            onClick={loadData}
-            disabled={loading}
-            className="text-sm underline disabled:opacity-60"
-          >
-            {loading ? 'Načítám...' : 'Obnovit seznam'}
-          </button>
-        </div>
-
-        {items.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Zatím nejsou žádné typy subjektů. Přidej první pomocí formuláře
-            nahoře.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-3 py-2 font-medium">Kód</th>
-                  <th className="px-3 py-2 font-medium">Název</th>
-                  <th className="px-3 py-2 font-medium">Popis</th>
-                  <th className="px-3 py-2 font-medium">Aktivní</th>
-                  <th className="px-3 py-2 font-medium text-right">Akce</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map(item => (
-                  <tr key={item.id} className="border-b last:border-0">
-                    <td className="px-3 py-2">{item.code}</td>
-                    <td className="px-3 py-2">{item.label}</td>
-                    <td className="px-3 py-2 text-gray-600">
-                      {item.description}
-                    </td>
-                    <td className="px-3 py-2">
-                      {item.is_active ? 'Ano' : 'Ne'}
-                    </td>
-                    <td className="px-3 py-2 text-right space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEditClick(item)}
-                        className="text-xs text-blue-600 underline"
-                      >
-                        Upravit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.id)}
-                        className="text-xs text-red-600 underline"
-                      >
-                        Smazat
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      <ConfigListWithForm<SubjectTypeConfigItem>
+        title="Typy subjektů"
+        items={items}
+        selectedId={selectedId}
+        onSelect={handleSelect}
+        onChangeField={updateItemField as any}
+        onSave={handleSave}
+        onNew={handleNew}
+        onDelete={handleDelete}
+        loading={loading || saving}
+      />
     </div>
   )
 }
