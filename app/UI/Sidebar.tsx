@@ -1,11 +1,12 @@
 /*
- * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Dynamický sidebar modulů včetně optional ikonek + debug výstup
+ * FILE: src/app/UI/Sidebar.tsx
+ * PURPOSE: Dynamický sidebar modulů s ikonami + odkazy na stránky
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { MODULE_SOURCES } from '@/app/modules.index.js'
 import { getIcon } from './icons'
 import { uiConfig } from '../lib/uiConfig'
@@ -20,6 +21,17 @@ interface ModuleConfig {
 
 type Props = {
   disabled?: boolean
+}
+
+function moduleIdToHref(id: string): string {
+  switch (id) {
+    case '900-nastaveni':
+      return '/nastaveni'
+    default:
+      // zatím všechny ostatní moduly vedou na hlavní dashboard (/)
+      // později můžeš pro každý id udělat vlastní route
+      return '/'
+  }
 }
 
 export default function Sidebar({ disabled = false }: Props) {
@@ -45,11 +57,6 @@ export default function Sidebar({ disabled = false }: Props) {
       loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       setModules(loaded)
       setLoading(false)
-
-      // 🔍 DEBUG: vyhoď načtené moduly na window, ať je vidíme v konzoli
-      if (typeof window !== 'undefined') {
-        ;(window as any).__PRONAJ_SIDEBAR_MODULES__ = loaded
-      }
     }
 
     loadModules()
@@ -67,16 +74,22 @@ export default function Sidebar({ disabled = false }: Props) {
 
       {!loading && modules.length > 0 && (
         <ul className="sidebar__list">
-          {modules.map((m) => (
-            <li key={m.id} className="sidebar__item">
-              {showIcons && (
-                <span className="sidebar__icon">
-                  {getIcon(m.icon as any)}
-                </span>
-              )}
-              <span className="sidebar__label">{m.label}</span>
-            </li>
-          ))}
+          {modules.map((m) => {
+            const href = moduleIdToHref(m.id)
+
+            return (
+              <li key={m.id} className="sidebar__item">
+                <Link href={href} className="sidebar__link">
+                  {showIcons && (
+                    <span className="sidebar__icon">
+                      {getIcon(m.icon as any)}
+                    </span>
+                  )}
+                  <span className="sidebar__label">{m.label}</span>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       )}
     </nav>
