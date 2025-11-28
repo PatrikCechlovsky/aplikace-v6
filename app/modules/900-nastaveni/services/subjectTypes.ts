@@ -2,9 +2,9 @@
  * FILE: app/modules/900-nastaveni/services/subjectTypes.ts
  * PURPOSE: CRUD funkce pro číselník subject_types
  *
- * Tabulka subject_types má sloupce:
- * code, name, description, order_index, icon, color, active, sort_order
- * → používáme: code, name, description, color, icon, sort_order
+ * POZNÁMKA:
+ *  - V DB je sloupec "active"
+ *  - V aplikaci používáme pole "is_active" (mapujeme přes alias active:is_active)
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
@@ -16,6 +16,7 @@ export type SubjectType = {
   color: string | null
   icon: string | null
   sort_order: number | null
+  is_active: boolean // mapuje se na DB sloupec "active"
   created_at: string | null
 }
 
@@ -26,7 +27,8 @@ export async function fetchSubjectTypes(): Promise<SubjectType[]> {
   const { data, error } = await supabase
     .from('subject_types')
     .select(
-      'code, name, description, color, icon, sort_order, created_at',
+      // active:is_active = DB sloupec "active" vrátíme v objektu jako "is_active"
+      'code, name, description, color, icon, sort_order, active:is_active, created_at',
     )
     .order('sort_order', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
@@ -49,6 +51,7 @@ export async function createSubjectType(input: {
   color?: string
   icon?: string
   order?: number
+  is_active?: boolean
 }): Promise<SubjectType> {
   const payload = {
     code: input.code.trim(),
@@ -58,14 +61,15 @@ export async function createSubjectType(input: {
     icon: input.icon ?? null,
     sort_order:
       typeof input.order === 'number' ? input.order : (null as number | null),
-    // sloupec active v DB necháme na defaultní hodnotě
+    // ⚠️ DO DB zapisujeme "active"
+    active: input.is_active ?? true,
   }
 
   const { data, error } = await supabase
     .from('subject_types')
     .insert(payload)
     .select(
-      'code, name, description, color, icon, sort_order, created_at',
+      'code, name, description, color, icon, sort_order, active:is_active, created_at',
     )
     .single()
 
@@ -90,6 +94,7 @@ export async function updateSubjectType(
     color?: string
     icon?: string
     order?: number
+    is_active?: boolean
   },
 ): Promise<SubjectType> {
   const payload = {
@@ -100,6 +105,8 @@ export async function updateSubjectType(
     icon: input.icon ?? null,
     sort_order:
       typeof input.order === 'number' ? input.order : (null as number | null),
+    // ⚠️ DO DB zapisujeme "active"
+    active: input.is_active ?? true,
   }
 
   const { data, error } = await supabase
@@ -107,7 +114,7 @@ export async function updateSubjectType(
     .update(payload)
     .eq('code', codeKey)
     .select(
-      'code, name, description, color, icon, sort_order, created_at',
+      'code, name, description, color, icon, sort_order, active:is_active, created_at',
     )
     .single()
 
