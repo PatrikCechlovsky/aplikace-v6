@@ -1,6 +1,6 @@
 /*
  * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Dynamický sidebar modulů včetně optional ikonek
+ * PURPOSE: Dynamický sidebar modulů včetně optional ikonek + debug výstup
  */
 
 'use client'
@@ -45,6 +45,11 @@ export default function Sidebar({ disabled = false }: Props) {
       loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       setModules(loaded)
       setLoading(false)
+
+      // 🔍 DEBUG: vyhoď načtené moduly na window, ať je vidíme v konzoli
+      if (typeof window !== 'undefined') {
+        ;(window as any).__PRONAJ_SIDEBAR_MODULES__ = loaded
+      }
     }
 
     loadModules()
