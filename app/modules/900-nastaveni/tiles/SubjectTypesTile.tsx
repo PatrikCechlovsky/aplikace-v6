@@ -45,13 +45,13 @@ export default function SubjectTypesTile() {
       const rows: SubjectType[] = await fetchSubjectTypes()
 
       const mapped: SubjectTypeConfigItem[] = rows.map((r) => ({
-        id: r.id,
+       id: r.id,
         _dbId: r.id,
         code: r.code ?? '',
         name: r.label ?? '',
-        color: undefined,
-        icon: undefined,
-        order: undefined,
+        color: r.color ?? '',
+        icon: r.icon ?? '',
+        order: r.sort_order ?? undefined,
       }))
 
       setItems(mapped)
@@ -109,7 +109,10 @@ export default function SubjectTypesTile() {
         const updated = await updateSubjectType(item._dbId, {
           code: item.code,
           label: item.name,
-          description: '', // zatím nepoužíváme
+          description: '',
+          color: item.color,
+          icon: item.icon,
+          order: item.order,
           is_active: true,
         })
 
@@ -132,6 +135,9 @@ export default function SubjectTypesTile() {
           code: item.code,
           label: item.name,
           description: '',
+          color: item.color,
+          icon: item.icon,
+          order: item.order,
           is_active: true,
         })
 
