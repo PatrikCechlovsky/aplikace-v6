@@ -1,33 +1,61 @@
-/*
- * FILE: app/modules/900-nastaveni/tiles/SubjectTypesTile.tsx
- * PURPOSE: Číselník typů subjektů napojený na generický UI vzor ConfigListWithForm
- *
- * Primární klíč v DB = "code" (tabulka subject_types nemá sloupec "id").
- */
-
 'use client'
 
+/*
+ * FILE: app/modules/900-nastaveni/tiles/SubjectTypesTile.tsx
+ * PURPOSE: Přehled + formulář pro číselník subject_types
+ *
+ * Layout:
+ *  - vlevo úzký seznam typů
+ *  - vpravo formulář pro editaci / založení
+ */
+
 import React, { useEffect, useState } from 'react'
-import ConfigListWithForm, {
-  ConfigItemBase,
-} from '@/app/UI/ConfigListWithForm'
+import type { SubjectType } from '../services/subjectTypes'
 import {
-  SubjectType,
   fetchSubjectTypes,
   createSubjectType,
   updateSubjectType,
   deleteSubjectType,
 } from '../services/subjectTypes'
 
-// UI reprezentace jednoho typu subjektu pro ConfigListWithForm
-type SubjectTypeConfigItem = ConfigItemBase & {
-  _dbCode?: string // skutečný klíč v DB (code)
-  _isNew?: boolean
+type FormState = {
+  code: string
+  name: string
+  description: string
+  color: string
+  icon: string
+  order: number | undefined
+  active: boolean
+}
+
+const emptyForm: FormState = {
+  code: '',
+  name: '',
+  description: '',
+  color: '',
+  icon: '',
+  order: undefined,
+  active: true,
+}
+
+function formFromRow(row: SubjectType): FormState {
+  return {
+    code: row.code ?? '',
+    name: row.name ?? '',
+    description: row.description ?? '',
+    color: row.color ?? '',
+    icon: row.icon ?? '',
+    order: row.sort_order ?? undefined,
+    active: row.active ?? true,
+  }
 }
 
 export default function SubjectTypesTile() {
-  const [items, setItems] = useState<SubjectTypeConfigItem[]>([])
-  const [selectedId, setSelectedId] = useState<string | number | null>(null)
+  const [items, setItems] = useState<SubjectType[]>([])
+  const [selectedCode, setSelectedCode] = useState<string | null>(null)
+  const [form, setForm] = useState<FormState>(emptyForm)
+  const [isNew, setIsNew] = useState<boolean>(true)
+
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,59 +72,59 @@ export default function SubjectTypesTile() {
     setSuccess(null)
 
     try {
-      const rows: SubjectType[] = await fetchSubjectTypes()
+      const rows = await fetchSubjectTypes()
+      setItems(rows)
 
-      const mapped: SubjectTypeConfigItem[] = rows.map((r) => ({
-        id: r.code, // v UI používáme jako ID "code"
-        _dbCode: r.code,
-        code: r.code ?? '',
-        name: r.name ?? '',
-        color: r.color ?? '',
-        icon: r.icon ?? '',
-        order: r.sort_order ?? undefined,
-      }))
-
-      setItems(mapped)
-      if (mapped.length > 0) {
-        setSelectedId(mapped[0].id)
+      if (rows.length > 0) {
+        setSelectedCode(rows[0].code)
+        setForm(formFromRow(rows[0]))
+        setIsNew(false)
+      } else {
+        setSelectedCode(null)
+        setForm(emptyForm)
+        setIsNew(true)
       }
     } catch (err: any) {
-      setError(err?.message ?? 'Chyba při načítání typů subjektu.')
+      console.error(err)
+      setError(err?.message ?? 'Chyba při načítání typů subjektů.')
     } finally {
       setLoading(false)
     }
   }
 
-  // výběr položky v seznamu
-  function handleSelect(id: string | number) {
-    setSelectedId(id)
+  function handleSelect(code: string) {
+    const row = items.find((r) => r.code === code)
+    if (!row) return
+
+    setSelectedCode(row.code)
+    setForm(formFromRow(row))
+    setIsNew(false)
     setError(null)
     setSuccess(null)
   }
 
-  // změna pole u aktuálně vybrané položky
-  function updateItemField(field: keyof SubjectTypeConfigItem, value: any) {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === selectedId ? { ...item, [field]: value } : item,
-      ),
-    )
+  function handleFormChange<K extends keyof FormState>(
+    field: K,
+    value: FormState[K],
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
   }
 
-  // uložení vybrané položky (nové nebo existující)
+  function handleOrderChange(value: string) {
+    if (value === '') {
+      handleFormChange('order', undefined)
+      return
+    }
+    const num = Number(value)
+    if (Number.isNaN(num)) return
+    handleFormChange('order', num)
+  }
+
   async function handleSave() {
-    if (selectedId == null) {
-      setError('Není vybrán žádný záznam.')
-      return
-    }
-
-    const item = items.find((i) => i.id === selectedId)
-    if (!item) {
-      setError('Vybraný záznam nebyl nalezen.')
-      return
-    }
-
-    if (!item.code.trim() || !item.name.trim()) {
+    if (!form.code.trim() || !form.name.trim()) {
       setError('Kód a název jsou povinné.')
       return
     }
@@ -106,98 +134,61 @@ export default function SubjectTypesTile() {
     setSuccess(null)
 
     try {
-      if (item._dbCode) {
-        // UPDATE existujícího záznamu
-        const updated = await updateSubjectType(item._dbCode, {
-          code: item.code,
-          name: item.name,
-          description: '',
-          color: item.color,
-          icon: item.icon,
-          order: item.order,
-          is_active: true, // zatím natvrdo, později můžeš udělat přepínač v UI
-        })
-
-        setItems((prev) =>
-          prev.map((it) =>
-            it.id === item.id
-              ? {
-                  ...it,
-                  id: updated.code,
-                  _dbCode: updated.code,
-                  code: updated.code ?? '',
-                  name: updated.name ?? '',
-                  color: updated.color ?? '',
-                  icon: updated.icon ?? '',
-                  order: updated.sort_order ?? undefined,
-                }
-              : it,
-          ),
-        )
-        setSelectedId(updated.code)
-        setSuccess('Typ subjektu byl uložen.')
-      } else {
-        // CREATE nového záznamu
+      if (isNew || !selectedCode) {
+        // CREATE
         const created = await createSubjectType({
-          code: item.code,
-          name: item.name,
-          description: '',
-          color: item.color,
-          icon: item.icon,
-          order: item.order,
-          is_active: true,
+          code: form.code,
+          name: form.name,
+          description: form.description,
+          color: form.color || undefined,
+          icon: form.icon || undefined,
+          order: form.order,
+          is_active: form.active,
+        })
+
+        setItems((prev) => [...prev, created])
+        setSelectedCode(created.code)
+        setForm(formFromRow(created))
+        setIsNew(false)
+        setSuccess('Typ subjektu byl vytvořen.')
+      } else {
+        // UPDATE
+        const updated = await updateSubjectType(selectedCode, {
+          code: form.code,
+          name: form.name,
+          description: form.description,
+          color: form.color || undefined,
+          icon: form.icon || undefined,
+          order: form.order,
+          is_active: form.active,
         })
 
         setItems((prev) =>
-          prev.map((it) =>
-            it.id === item.id
-              ? {
-                  ...it,
-                  id: created.code,
-                  _dbCode: created.code,
-                  code: created.code ?? '',
-                  name: created.name ?? '',
-                  color: created.color ?? '',
-                  icon: created.icon ?? '',
-                  order: created.sort_order ?? undefined,
-                }
-              : it,
-          ),
+          prev.map((r) => (r.code === selectedCode ? updated : r)),
         )
-        setSelectedId(created.code)
-        setSuccess('Typ subjektu byl vytvořen.')
+        setSelectedCode(updated.code)
+        setForm(formFromRow(updated))
+        setIsNew(false)
+        setSuccess('Typ subjektu byl uložen.')
       }
     } catch (err: any) {
+      console.error(err)
       setError(err?.message ?? 'Chyba při ukládání typu subjektu.')
     } finally {
       setSaving(false)
     }
   }
 
-  // vytvoření nové položky (zatím jen lokálně, bez DB)
   function handleNew() {
-    const newId = `new-${Date.now()}`
-    const newItem: SubjectTypeConfigItem = {
-      id: newId,
-      _isNew: true,
-      code: '',
-      name: '',
-      color: undefined,
-      icon: undefined,
-      order: undefined,
-    }
-
-    setItems((prev) => [...prev, newItem])
-    setSelectedId(newId)
+    setSelectedCode(null)
+    setForm(emptyForm)
+    setIsNew(true)
     setError(null)
     setSuccess(null)
   }
 
-  // smazání vybrané položky
   async function handleDelete() {
-    if (selectedId == null) return
-    const item = items.find((i) => i.id === selectedId)
-    if (!item) return
+    if (!selectedCode) return
 
     if (!window.confirm('Opravdu smazat tento typ subjektu?')) return
 
@@ -206,27 +197,369 @@ export default function SubjectTypesTile() {
     setSuccess(null)
 
     try {
-      if (item._dbCode) {
-        await deleteSubjectType(item._dbCode)
+      await deleteSubjectType(selectedCode)
+      const remaining = items.filter((r) => r.code !== selectedCode)
+      setItems(remaining)
+
+      if (remaining.length > 0) {
+        setSelectedCode(remaining[0].code)
+        setForm(formFromRow(remaining[0]))
+        setIsNew(false)
+      } else {
+        setSelectedCode(null)
+        setForm(emptyForm)
+        setIsNew(true)
       }
-      setItems((prev) => prev.filter((i) => i.id !== selectedId))
-      setSelectedId(null)
+
       setSuccess('Typ subjektu byl smazán.')
     } catch (err: any) {
+      console.error(err)
       setError(err?.message ?? 'Chyba při mazání typu subjektu.')
     } finally {
       setSaving(false)
     }
   }
 
-  
-    return (
-    <div style={{ padding: 24, background: '#eee' }}>
-      <h1>TEST CONTENT – Typy subjektů</h1>
-      <p>
-        Jestli tohle vidíš v šedém poli (ta část č. 6 na obrázku), tak víme, že
-        SubjectTypesTile se opravdu vykresluje v hlavním contentu.
-      </p>
+  return (
+    <div style={{ padding: '16px 24px' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
+          Typy subjektů
+        </h2>
+        <p style={{ fontSize: 13, color: '#555' }}>
+          Číselník typů subjektů (osoba, firma, spolek…). Přidávat / upravovat
+          může pouze admin.
+        </p>
+      </header>
+
+      {error && (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: '8px 12px',
+            borderRadius: 6,
+            background: '#ffe5e5',
+            color: '#900',
+            fontSize: 13,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: '8px 12px',
+            borderRadius: 6,
+            background: '#e5ffe8',
+            color: '#086b1f',
+            fontSize: 13,
+          }}
+        >
+          {success}
+        </div>
+      )}
+
+      {loading ? (
+        <div>Načítání…</div>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(220px, 260px) 1fr',
+            gap: 16,
+            alignItems: 'flex-start',
+          }}
+        >
+          {/* LEVÝ SLOUPEC – seznam typů */}
+          <section
+            style={{
+              borderRadius: 8,
+              border: '1px solid #ddd',
+              background: '#fafafa',
+              padding: 8,
+              maxHeight: '480px',
+              overflow: 'auto',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 8,
+              }}
+            >
+              <strong style={{ fontSize: 13 }}>Seznam typů</strong>
+              <button
+                type="button"
+                onClick={handleNew}
+                style={{
+                  fontSize: 12,
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: '#f97316',
+                  color: '#fff',
+                }}
+              >
+                + Nový
+              </button>
+            </div>
+
+            {items.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#777' }}>
+                Zatím žádné položky. Klikni na „Nový“ a vytvoř první typ.
+              </div>
+            ) : (
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {items.map((item) => {
+                  const isSelected = item.code === selectedCode
+                  return (
+                    <li key={item.code} style={{ marginBottom: 4 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelect(item.code)}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          background: isSelected ? '#e0ecff' : 'transparent',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600 }}>
+                          {item.name || '(bez názvu)'}
+                        </div>
+                        <div
+                          style={{ fontSize: 11, color: '#666', marginTop: 2 }}
+                        >
+                          {item.code}
+                          {item.active === false ? ' • neaktivní' : ''}
+                        </div>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </section>
+
+          {/* PRAVÝ SLOUPEC – formulář */}
+          <section
+            style={{
+              borderRadius: 8,
+              border: '1px solid #ddd',
+              background: '#fff',
+              padding: 12,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 12,
+              }}
+            >
+              <strong style={{ fontSize: 13 }}>
+                {isNew ? 'Nový typ subjektu' : 'Detail typu subjektu'}
+              </strong>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    fontSize: 12,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: '#16a34a',
+                    color: '#fff',
+                    opacity: saving ? 0.7 : 1,
+                  }}
+                >
+                  {saving ? 'Ukládám…' : 'Uložit'}
+                </button>
+
+                {!isNew && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={saving}
+                    style={{
+                      fontSize: 12,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: '#dc2626',
+                      color: '#fff',
+                      opacity: saving ? 0.7 : 1,
+                    }}
+                  >
+                    Smazat
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleSave()
+              }}
+            >
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 12,
+                  fontSize: 13,
+                }}
+              >
+                {/* Kód */}
+                <label style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ marginBottom: 2 }}>
+                    Kód <span style={{ color: '#dc2626' }}>*</span>
+                  </span>
+                  <input
+                    type="text"
+                    value={form.code}
+                    onChange={(e) =>
+                      handleFormChange('code', e.target.value.toUpperCase())
+                    }
+                    maxLength={30}
+                    style={{
+                      padding: '4px 6px',
+                      borderRadius: 4,
+                      border: '1px solid #ccc',
+                    }}
+                  />
+                </label>
+
+                {/* Název */}
+                <label style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ marginBottom: 2 }}>
+                    Název <span style={{ color: '#dc2626' }}>*</span>
+                  </span>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => handleFormChange('name', e.target.value)}
+                    maxLength={100}
+                    style={{
+                      padding: '4px 6px',
+                      borderRadius: 4,
+                      border: '1px solid #ccc',
+                    }}
+                  />
+                </label>
+
+                {/* Barva */}
+                <label style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ marginBottom: 2 }}>Barva (hex)</span>
+                  <input
+                    type="text"
+                    value={form.color}
+                    onChange={(e) => handleFormChange('color', e.target.value)}
+                    placeholder="#f97316"
+                    style={{
+                      padding: '4px 6px',
+                      borderRadius: 4,
+                      border: '1px solid #ccc',
+                    }}
+                  />
+                </label>
+
+                {/* Ikona */}
+                <label style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ marginBottom: 2 }}>Ikona (emoji / název)</span>
+                  <input
+                    type="text"
+                    value={form.icon}
+                    onChange={(e) => handleFormChange('icon', e.target.value)}
+                    placeholder="👤"
+                    style={{
+                      padding: '4px 6px',
+                      borderRadius: 4,
+                      border: '1px solid #ccc',
+                    }}
+                  />
+                </label>
+
+                {/* Pořadí */}
+                <label style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ marginBottom: 2 }}>Pořadí</span>
+                  <input
+                    type="number"
+                    value={form.order ?? ''}
+                    onChange={(e) => handleOrderChange(e.target.value)}
+                    style={{
+                      padding: '4px 6px',
+                      borderRadius: 4,
+                      border: '1px solid #ccc',
+                    }}
+                  />
+                </label>
+
+                {/* Aktivní */}
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 20,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.active}
+                    onChange={(e) =>
+                      handleFormChange('active', e.target.checked)
+                    }
+                  />
+                  <span>Aktivní</span>
+                </label>
+              </div>
+
+              {/* Popis přes celou šířku */}
+              <label
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginTop: 12,
+                  fontSize: 13,
+                }}
+              >
+                <span style={{ marginBottom: 2 }}>Popis</span>
+                <textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    handleFormChange('description', e.target.value)
+                  }
+                  rows={3}
+                  style={{
+                    padding: '4px 6px',
+                    borderRadius: 4,
+                    border: '1px solid #ccc',
+                    resize: 'vertical',
+                  }}
+                />
+              </label>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
