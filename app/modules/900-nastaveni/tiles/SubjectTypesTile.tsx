@@ -47,7 +47,7 @@ export default function SubjectTypesTile() {
       const rows: SubjectType[] = await fetchSubjectTypes()
 
       const mapped: SubjectTypeConfigItem[] = rows.map((r) => ({
-        id: r.code, // interní id v UI
+        id: r.code, // v UI používáme jako ID "code"
         _dbCode: r.code,
         code: r.code ?? '',
         name: r.name ?? '',
@@ -67,12 +67,14 @@ export default function SubjectTypesTile() {
     }
   }
 
+  // výběr položky v seznamu
   function handleSelect(id: string | number) {
     setSelectedId(id)
     setError(null)
     setSuccess(null)
   }
 
+  // změna pole u aktuálně vybrané položky
   function updateItemField(field: keyof SubjectTypeConfigItem, value: any) {
     setItems((prev) =>
       prev.map((item) =>
@@ -81,6 +83,7 @@ export default function SubjectTypesTile() {
     )
   }
 
+  // uložení vybrané položky (nové nebo existující)
   async function handleSave() {
     if (selectedId == null) {
       setError('Není vybrán žádný záznam.')
@@ -104,7 +107,7 @@ export default function SubjectTypesTile() {
 
     try {
       if (item._dbCode) {
-        // UPDATE
+        // UPDATE existujícího záznamu
         const updated = await updateSubjectType(item._dbCode, {
           code: item.code,
           name: item.name,
@@ -134,7 +137,7 @@ export default function SubjectTypesTile() {
         setSelectedId(updated.code)
         setSuccess('Typ subjektu byl uložen.')
       } else {
-        // CREATE
+        // CREATE nového záznamu
         const created = await createSubjectType({
           code: item.code,
           name: item.name,
@@ -171,6 +174,7 @@ export default function SubjectTypesTile() {
     }
   }
 
+  // vytvoření nové položky (zatím jen lokálně, bez DB)
   function handleNew() {
     const newId = `new-${Date.now()}`
     const newItem: SubjectTypeConfigItem = {
@@ -189,6 +193,7 @@ export default function SubjectTypesTile() {
     setSuccess(null)
   }
 
+  // smazání vybrané položky
   async function handleDelete() {
     if (selectedId == null) return
     const item = items.find((i) => i.id === selectedId)
