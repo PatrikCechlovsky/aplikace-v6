@@ -47,10 +47,10 @@ export default function SubjectTypesTile() {
       const rows: SubjectType[] = await fetchSubjectTypes()
 
       const mapped: SubjectTypeConfigItem[] = rows.map((r) => ({
-        id: r.code,            // interní id v UI
-        _dbCode: r.code,       // klíč pro update/delete
+        id: r.code, // interní id v UI
+        _dbCode: r.code,
         code: r.code ?? '',
-        name: r.label ?? '',
+        name: r.name ?? '',
         color: r.color ?? '',
         icon: r.icon ?? '',
         order: r.sort_order ?? undefined,
@@ -67,14 +67,12 @@ export default function SubjectTypesTile() {
     }
   }
 
-  // výběr položky v seznamu
   function handleSelect(id: string | number) {
     setSelectedId(id)
     setError(null)
     setSuccess(null)
   }
 
-  // změna pole u aktuálně vybrané položky
   function updateItemField(field: keyof SubjectTypeConfigItem, value: any) {
     setItems((prev) =>
       prev.map((item) =>
@@ -83,7 +81,6 @@ export default function SubjectTypesTile() {
     )
   }
 
-  // uložení vybrané položky (nové nebo existující)
   async function handleSave() {
     if (selectedId == null) {
       setError('Není vybrán žádný záznam.')
@@ -107,10 +104,10 @@ export default function SubjectTypesTile() {
 
     try {
       if (item._dbCode) {
-        // UPDATE existujícího záznamu – klíč je původní code
+        // UPDATE
         const updated = await updateSubjectType(item._dbCode, {
           code: item.code,
-          label: item.name,
+          name: item.name,
           description: '',
           color: item.color,
           icon: item.icon,
@@ -123,10 +120,10 @@ export default function SubjectTypesTile() {
             it.id === item.id
               ? {
                   ...it,
-                  id: updated.code,      // pro případ, že změníš kód
+                  id: updated.code,
                   _dbCode: updated.code,
                   code: updated.code ?? '',
-                  name: updated.label ?? '',
+                  name: updated.name ?? '',
                   color: updated.color ?? '',
                   icon: updated.icon ?? '',
                   order: updated.sort_order ?? undefined,
@@ -137,10 +134,10 @@ export default function SubjectTypesTile() {
         setSelectedId(updated.code)
         setSuccess('Typ subjektu byl uložen.')
       } else {
-        // CREATE nového záznamu
+        // CREATE
         const created = await createSubjectType({
           code: item.code,
-          label: item.name,
+          name: item.name,
           description: '',
           color: item.color,
           icon: item.icon,
@@ -156,7 +153,7 @@ export default function SubjectTypesTile() {
                   id: created.code,
                   _dbCode: created.code,
                   code: created.code ?? '',
-                  name: created.label ?? '',
+                  name: created.name ?? '',
                   color: created.color ?? '',
                   icon: created.icon ?? '',
                   order: created.sort_order ?? undefined,
@@ -174,7 +171,6 @@ export default function SubjectTypesTile() {
     }
   }
 
-  // vytvoření nové položky (zatím jen lokálně, bez DB)
   function handleNew() {
     const newId = `new-${Date.now()}`
     const newItem: SubjectTypeConfigItem = {
@@ -193,7 +189,6 @@ export default function SubjectTypesTile() {
     setSuccess(null)
   }
 
-  // smazání vybrané položky
   async function handleDelete() {
     if (selectedId == null) return
     const item = items.find((i) => i.id === selectedId)
@@ -246,5 +241,3 @@ export default function SubjectTypesTile() {
     </div>
   )
 }
-
-      
