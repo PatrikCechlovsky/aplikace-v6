@@ -2,9 +2,14 @@
  * FILE: app/modules/900-nastaveni/services/subjectTypes.ts
  * PURPOSE: CRUD funkce pro číselník subject_types
  *
- * POZNÁMKA:
- *  - V DB je sloupec "active" (boolean)
- *  - Typ SubjectType tomu odpovídá
+ * V DB:
+ *  - code (text, PK)
+ *  - name (text)
+ *  - description (text, nullable)
+ *  - color (text, nullable)
+ *  - icon (text, nullable)
+ *  - sort_order (integer, nullable)
+ *  - active (boolean)
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
@@ -16,8 +21,7 @@ export type SubjectType = {
   color: string | null
   icon: string | null
   sort_order: number | null
-  active: boolean        // ← přímo sloupec z DB
-  created_at: string | null
+  active: boolean
 }
 
 /**
@@ -26,9 +30,7 @@ export type SubjectType = {
 export async function fetchSubjectTypes(): Promise<SubjectType[]> {
   const { data, error } = await supabase
     .from('subject_types')
-    .select(
-      'code, name, description, color, icon, sort_order, active, created_at',
-    )
+    .select('code, name, description, color, icon, sort_order, active')
     .order('sort_order', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
 
@@ -37,7 +39,6 @@ export async function fetchSubjectTypes(): Promise<SubjectType[]> {
     throw error
   }
 
-  // teď tvar odpovědi sedí s typem SubjectType
   return (data ?? []) as SubjectType[]
 }
 
@@ -51,7 +52,7 @@ export async function createSubjectType(input: {
   color?: string
   icon?: string
   order?: number
-  is_active?: boolean   // ← z UI můžeš dál posílat is_active
+  is_active?: boolean
 }): Promise<SubjectType> {
   const payload = {
     code: input.code.trim(),
@@ -61,16 +62,13 @@ export async function createSubjectType(input: {
     icon: input.icon ?? null,
     sort_order:
       typeof input.order === 'number' ? input.order : (null as number | null),
-    // DO DB zapisujeme "active"
-    active: input.is_active ?? true,
+    active: input.is_active ?? true, // UI → DB
   }
 
   const { data, error } = await supabase
     .from('subject_types')
     .insert(payload)
-    .select(
-      'code, name, description, color, icon, sort_order, active, created_at',
-    )
+    .select('code, name, description, color, icon, sort_order, active')
     .single()
 
   if (error) {
@@ -112,9 +110,7 @@ export async function updateSubjectType(
     .from('subject_types')
     .update(payload)
     .eq('code', codeKey)
-    .select(
-      'code, name, description, color, icon, sort_order, active, created_at',
-    )
+    .select('code, name, description, color, icon, sort_order, active')
     .single()
 
   if (error) {
