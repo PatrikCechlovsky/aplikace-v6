@@ -1,4 +1,7 @@
-// modules/900-nastaveni/module.config.js
+// FILE: app/modules/900-nastaveni/module.config.js
+// PURPOSE: Konfigurace modulu Nastavení + registrace tiles (číselníky)
+
+import SubjectTypesTile from './tiles/SubjectTypesTile'
 
 export default {
   id: '900-nastaveni',
@@ -7,28 +10,29 @@ export default {
   icon: 'settings',
   enabled: true,
 
-  // zde později doplníme jednotlivé sekce nastavení:
-  // - obecné nastavení aplikace
-  // - role a oprávnění
-  // - barevná témata
-  // - uživatelské preference
-  // - číselníky (typy jednotek, typy služeb atd.)
-  // - parametry systému
-  // - volby pro generování dokumentů, identifikátory…
-  
-  // pseudo-příklad:
-  import SubjectTypesTile from './tiles/SubjectTypesTile'
-  
-  export const tiles = [
+  /*
+   * Přehledové obrazovky (zatím prázdné)
+   */
+  overview: [],
+
+  /*
+   * Detailní formuláře (zatím prázdné)
+   */
+  detail: [],
+
+  /*
+   * Tiles – zde registrujeme dlaždice pro modul Nastavení
+   */
+  tiles: [
     {
       id: 'subject-types',
       label: 'Typy subjektů',
       component: SubjectTypesTile,
     },
-  ]
+  ],
 
-  overview: [],   // přehledy nastavení (zatím prázdné)
-  detail: [],     // formuláře nastavení (zatím prázdné)
-  tiles: [],      // dlaždice pro nastavení (zatím prázdné)
-  actions: [],    // akce (zatím prázdné)
+  /*
+   * Akce modulu (zatím prázdné)
+   */
+  actions: [],
 }
