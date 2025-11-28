@@ -31,8 +31,8 @@ export type ConfigListWithFormProps<TItem extends ConfigItemBase> = {
 
 /**
  * Generický UI vzor:
- * - horní panel = seznam typů (code, name, color, icon, order)
- * - dolní panel = formulář vybraného typu
+ * - horní panel = seznam typů (code, name, color, order)
+ * - dolní panel = formulář vybraného typu + barevná paleta
  * Data neřešíme, jen UI a callbacky.
  */
 export default function ConfigListWithForm<TItem extends ConfigItemBase>(
@@ -53,6 +53,21 @@ export default function ConfigListWithForm<TItem extends ConfigItemBase>(
   const selected = items.find((x) => x.id === selectedId) ?? null
   const hasItems = items.length > 0
 
+  const colorPalette = [
+    '#f4d35e',
+    '#e05570',
+    '#1e6fff',
+    '#1fb086',
+    '#d63ae5',
+    '#6b7280',
+    '#ff9f1c',
+    '#0ea5e9',
+    '#22c55e',
+    '#a855f7',
+    '#f97316',
+    '#ef4444',
+  ]
+
   return (
     <div className="relation-pane">
       {/* HORNÍ SEZNAM */}
@@ -71,7 +86,7 @@ export default function ConfigListWithForm<TItem extends ConfigItemBase>(
 
         {!loading && hasItems && (
           <ul className="relation-pane__list-inner">
-            {items.slice(0, 50).map((item) => {
+            {items.slice(0, 200).map((item) => {
               const active = item.id === selectedId
               return (
                 <li
@@ -83,12 +98,27 @@ export default function ConfigListWithForm<TItem extends ConfigItemBase>(
                   onClick={() => onSelect(item.id)}
                 >
                   <div className="relation-pane__item-main">
-                    <span className="relation-pane__item-primary">
-                      {item.name}
-                    </span>
-                    <span className="relation-pane__item-badge">
-                      {item.code}
-                    </span>
+                    <div className="relation-pane__item-line">
+                      <span className="relation-pane__item-primary">
+                        {item.name}
+                      </span>
+                      {typeof item.order === 'number' && (
+                        <span className="relation-pane__item-order">
+                          #{item.order}
+                        </span>
+                      )}
+                    </div>
+                    <div className="relation-pane__item-meta">
+                      <span className="relation-pane__item-badge">
+                        {item.code}
+                      </span>
+                      {item.color && (
+                        <span
+                          className="relation-pane__item-color"
+                          style={{ backgroundColor: item.color }}
+                        />
+                      )}
+                    </div>
                   </div>
                 </li>
               )
@@ -115,7 +145,7 @@ export default function ConfigListWithForm<TItem extends ConfigItemBase>(
           >
             <div className="config-form__grid">
               <div className="config-form__field">
-                <label>Kód role *</label>
+                <label>Kód *</label>
                 <input
                   value={selected.code}
                   onChange={(e) =>
@@ -137,7 +167,7 @@ export default function ConfigListWithForm<TItem extends ConfigItemBase>(
               </div>
 
               <div className="config-form__field">
-                <label>Barva *</label>
+                <label>Barva</label>
                 <input
                   value={selected.color ?? ''}
                   onChange={(e) =>
@@ -145,10 +175,26 @@ export default function ConfigListWithForm<TItem extends ConfigItemBase>(
                   }
                   placeholder="#e05570"
                 />
+                <div className="config-form__color-palette">
+                  {colorPalette.map((hex) => (
+                    <button
+                      key={hex}
+                      type="button"
+                      className={
+                        'config-form__color-swatch' +
+                        (selected.color === hex
+                          ? ' config-form__color-swatch--active'
+                          : '')
+                      }
+                      style={{ backgroundColor: hex }}
+                      onClick={() => onChangeField('color', hex)}
+                    />
+                  ))}
+                </div>
               </div>
 
               <div className="config-form__field">
-                <label>Ikona *</label>
+                <label>Ikona</label>
                 <input
                   value={selected.icon ?? ''}
                   onChange={(e) =>
@@ -162,7 +208,11 @@ export default function ConfigListWithForm<TItem extends ConfigItemBase>(
                 <label>Pořadí</label>
                 <input
                   type="number"
-                  value={selected.order ?? ''}
+                  value={
+                    typeof selected.order === 'number'
+                      ? selected.order
+                      : ''
+                  }
                   onChange={(e) =>
                     onChangeField(
                       'order',
