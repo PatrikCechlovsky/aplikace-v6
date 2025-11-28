@@ -115,7 +115,7 @@ export default function SubjectTypesTile() {
           color: item.color,
           icon: item.icon,
           order: item.order,
-          is_active: true,
+          active: true,
         })
 
         setItems((prev) =>
@@ -145,7 +145,7 @@ export default function SubjectTypesTile() {
           color: item.color,
           icon: item.icon,
           order: item.order,
-          is_active: true,
+          active: true,
         })
 
         setItems((prev) =>
