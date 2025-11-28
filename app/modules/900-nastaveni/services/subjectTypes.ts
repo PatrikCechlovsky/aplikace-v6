@@ -1,12 +1,14 @@
 /*
  * FILE: app/modules/900-nastaveni/services/subjectTypes.ts
  * PURPOSE: CRUD funkce pro číselník subject_types
+ *
+ * POZNÁMKA:
+ *  Tabulka subject_types NEMÁ sloupec "id", používáme "code" jako primární klíč.
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
 
 export type SubjectType = {
-  id: string
   code: string
   label: string
   description: string | null
@@ -18,13 +20,13 @@ export type SubjectType = {
 }
 
 /**
- * Načte všechny typy subjektů seřazené podle sort_order, pak code.
+ * Načte všechny typy subjektů.
  */
 export async function fetchSubjectTypes(): Promise<SubjectType[]> {
   const { data, error } = await supabase
     .from('subject_types')
     .select(
-      'id, code, label, description, color, icon, sort_order, is_active, created_at',
+      'code, label, description, color, icon, sort_order, is_active, created_at',
     )
     .order('sort_order', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
@@ -65,7 +67,7 @@ export async function createSubjectType(input: {
     .from('subject_types')
     .insert(payload)
     .select(
-      'id, code, label, description, color, icon, sort_order, is_active, created_at',
+      'code, label, description, color, icon, sort_order, is_active, created_at',
     )
     .single()
 
@@ -79,9 +81,10 @@ export async function createSubjectType(input: {
 
 /**
  * Upraví existující typ subjektu.
+ * Jako klíč používáme "code".
  */
 export async function updateSubjectType(
-  id: string,
+  codeKey: string,
   input: {
     code: string
     label: string
@@ -106,9 +109,9 @@ export async function updateSubjectType(
   const { data, error } = await supabase
     .from('subject_types')
     .update(payload)
-    .eq('id', id)
+    .eq('code', codeKey)
     .select(
-      'id, code, label, description, color, icon, sort_order, is_active, created_at',
+      'code, label, description, color, icon, sort_order, is_active, created_at',
     )
     .single()
 
@@ -121,13 +124,13 @@ export async function updateSubjectType(
 }
 
 /**
- * Smaže typ subjektu.
+ * Smaže typ subjektu podle "code".
  */
-export async function deleteSubjectType(id: string): Promise<void> {
+export async function deleteSubjectType(codeKey: string): Promise<void> {
   const { error } = await supabase
     .from('subject_types')
     .delete()
-    .eq('id', id)
+    .eq('code', codeKey)
 
   if (error) {
     console.error('deleteSubjectType error', error)
