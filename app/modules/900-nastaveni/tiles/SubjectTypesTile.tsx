@@ -220,29 +220,13 @@ export default function SubjectTypesTile() {
   }
 
   return (
-    <div className="tile tile--config">
-      <header className="tile__header">
-        <h2 className="tile__title">Typy subjektů</h2>
-        <p className="tile__subtitle">
-          Číselník typů subjektů (osoba, firma, spolek…). Přidávat / upravovat
-          může pouze admin.
-        </p>
-      </header>
-
-      {error && <div className="msg msg--error">{error}</div>}
-      {success && <div className="msg msg--success">{success}</div>}
-
-      <ConfigListWithForm<SubjectTypeConfigItem>
-        title="Typy subjektů"
-        items={items}
-        selectedId={selectedId}
-        onSelect={handleSelect}
-        onChangeField={updateItemField as any}
-        onSave={handleSave}
-        onNew={handleNew}
-        onDelete={handleDelete}
-        loading={loading || saving}
-      />
+    return (
+    <div style={{ padding: 24, background: '#eee' }}>
+      <h1>TEST CONTENT – Typy subjektů</h1>
+      <p>
+        Jestli tohle vidíš v šedém poli (ta část č. 6 na obrázku), tak víme, že
+        SubjectTypesTile se opravdu vykresluje v hlavním contentu.
+      </p>
     </div>
   )
 }
