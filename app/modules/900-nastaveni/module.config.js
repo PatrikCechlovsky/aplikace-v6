@@ -15,6 +15,17 @@ export default {
   // - číselníky (typy jednotek, typy služeb atd.)
   // - parametry systému
   // - volby pro generování dokumentů, identifikátory…
+  
+  // pseudo-příklad:
+  import SubjectTypesTile from './tiles/SubjectTypesTile'
+  
+  export const tiles = [
+    {
+      id: 'subject-types',
+      label: 'Typy subjektů',
+      component: SubjectTypesTile,
+    },
+  ]
 
   overview: [],   // přehledy nastavení (zatím prázdné)
   detail: [],     // formuláře nastavení (zatím prázdné)
