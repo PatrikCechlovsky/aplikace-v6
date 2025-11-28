@@ -1,6 +1,8 @@
 /*
  * FILE: app/modules/900-nastaveni/tiles/SubjectTypesTile.tsx
  * PURPOSE: Číselník typů subjektů napojený na generický UI vzor ConfigListWithForm
+ *
+ * Primární klíč v DB = "code" (tabulka subject_types nemá sloupec "id").
  */
 
 'use client'
@@ -19,8 +21,8 @@ import {
 
 // UI reprezentace jednoho typu subjektu pro ConfigListWithForm
 type SubjectTypeConfigItem = ConfigItemBase & {
-  _dbId?: string        // skutečné id z databáze
-  _isNew?: boolean      // lokálně vytvořený, ještě neuložený v DB
+  _dbCode?: string // skutečný klíč v DB (code)
+  _isNew?: boolean
 }
 
 export default function SubjectTypesTile() {
@@ -45,8 +47,8 @@ export default function SubjectTypesTile() {
       const rows: SubjectType[] = await fetchSubjectTypes()
 
       const mapped: SubjectTypeConfigItem[] = rows.map((r) => ({
-       id: r.id,
-        _dbId: r.id,
+        id: r.code,            // interní id v UI
+        _dbCode: r.code,       // klíč pro update/delete
         code: r.code ?? '',
         name: r.label ?? '',
         color: r.color ?? '',
@@ -104,9 +106,9 @@ export default function SubjectTypesTile() {
     setSuccess(null)
 
     try {
-      if (item._dbId) {
-        // UPDATE existujícího záznamu
-        const updated = await updateSubjectType(item._dbId, {
+      if (item._dbCode) {
+        // UPDATE existujícího záznamu – klíč je původní code
+        const updated = await updateSubjectType(item._dbCode, {
           code: item.code,
           label: item.name,
           description: '',
@@ -121,13 +123,18 @@ export default function SubjectTypesTile() {
             it.id === item.id
               ? {
                   ...it,
-                  _dbId: updated.id,
+                  id: updated.code,      // pro případ, že změníš kód
+                  _dbCode: updated.code,
                   code: updated.code ?? '',
                   name: updated.label ?? '',
+                  color: updated.color ?? '',
+                  icon: updated.icon ?? '',
+                  order: updated.sort_order ?? undefined,
                 }
               : it,
           ),
         )
+        setSelectedId(updated.code)
         setSuccess('Typ subjektu byl uložen.')
       } else {
         // CREATE nového záznamu
@@ -146,15 +153,18 @@ export default function SubjectTypesTile() {
             it.id === item.id
               ? {
                   ...it,
-                  id: created.id,
-                  _dbId: created.id,
+                  id: created.code,
+                  _dbCode: created.code,
                   code: created.code ?? '',
                   name: created.label ?? '',
+                  color: created.color ?? '',
+                  icon: created.icon ?? '',
+                  order: created.sort_order ?? undefined,
                 }
               : it,
           ),
         )
-        setSelectedId(created.id)
+        setSelectedId(created.code)
         setSuccess('Typ subjektu byl vytvořen.')
       }
     } catch (err: any) {
@@ -196,8 +206,8 @@ export default function SubjectTypesTile() {
     setSuccess(null)
 
     try {
-      if (item._dbId) {
-        await deleteSubjectType(item._dbId)
+      if (item._dbCode) {
+        await deleteSubjectType(item._dbCode)
       }
       setItems((prev) => prev.filter((i) => i.id !== selectedId))
       setSelectedId(null)
