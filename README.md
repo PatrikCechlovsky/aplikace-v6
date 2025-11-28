@@ -198,3 +198,200 @@ Viz:
 
 - docs/stav-struktury.md
 - docs/todo_list.md
+
+# Databáze a bezpečnost (Supabase)
+
+## Přehled
+
+Projekt používá Supabase (PostgreSQL + Auth + PostgREST) jako backend.  
+Bezpečnost je postavena na:
+
+- Supabase Auth
+- Row Level Security (RLS)
+- číselnících pro role, typy subjektů a oprávnění
+
+Níže je přehled klíčových tabulek a politik.
+
+---
+
+## Tabulka `public.subjects`
+
+Centrální tabulka pro všechny subjekty (osoby, firmy, nájemníky, pronajímatele atd.).
+
+Důležité sloupce:
+
+- `id :: uuid` – primární klíč
+- `subject_type :: text` – typ subjektu (navázáno na `subject_types`)
+- `auth_user_id :: uuid` – vazba na Supabase uživatele (`auth.uid()`)
+- `first_name`, `last_name`, `company_name`, `display_name` – identifikace subjektu
+- `ic`, `dic`, `ic_valid`, `dic_valid` – IČ / DIČ a jejich validace
+- `country`, `city`, `street`, `house_number`, `orientation_number`, `postal_code` – adresa
+- `address_source :: text` – zdroj adresy (ručně, ARES, RÚIAN…)
+- `phone`, `email` – kontaktní údaje
+- `bank_account_id :: uuid` – vazba na bankovní účet (budoucí modul Finance)
+- `delegate_id :: uuid` – vazba na delegáta / zástupce
+- `login`, `password_hash` – volitelné přihlašovací údaje (pokud se použijí)
+- `ares_json :: jsonb` – syrová data z ARES
+- `audit :: jsonb` – auditní metadata
+- `origin_module :: text` – identifikace modulu, kde byl záznam založen
+- `origin_entity :: text` – typ entity v rámci modulu
+- `created_at`, `updated_at`, `created_by :: uuid` – audit
+
+### RLS (Row Level Security)
+
+RLS je zapnuté:
+
+```sql
+ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
+Policy:
+
+SELECT – uživatel vidí pouze subjekty, kde auth_user_id = auth.uid():
+
+CREATE POLICY "Subjects: select own"
+ON public.subjects
+FOR SELECT
+TO authenticated
+USING (auth_user_id = auth.uid());
+
+
+INSERT – uživatel může vložit subjekt pouze s vlastním auth_user_id:
+
+CREATE POLICY "Subjects: insert own"
+ON public.subjects
+FOR INSERT
+TO authenticated
+WITH CHECK (auth_user_id = auth.uid());
+
+
+UPDATE – uživatel může měnit jen své subjekty:
+
+CREATE POLICY "Subjects: update own"
+ON public.subjects
+FOR UPDATE
+TO authenticated
+USING (auth_user_id = auth.uid())
+WITH CHECK (auth_user_id = auth.uid());
+
+
+DELETE – uživatel může mazat jen své subjekty:
+
+CREATE POLICY "Subjects: delete own"
+ON public.subjects
+FOR DELETE
+TO authenticated
+USING (auth_user_id = auth.uid());
+
+
+V UI je nutné při insertech do subjects vždy nastavovat auth_user_id = auth.uid().
+
+Číselníky
+public.role_types
+
+Definuje typy rolí, např. owner, tenant, admin, accountant, …
+
+RLS:
+
+ALTER TABLE public.role_types ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Role types: read all"
+ON public.role_types
+FOR SELECT
+TO authenticated
+USING (true);
+
+public.permission_types
+
+Definuje typy oprávnění, např. can_view_payments, can_edit_contracts, …
+
+RLS:
+
+ALTER TABLE public.permission_types ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Permission types: read all"
+ON public.permission_types
+FOR SELECT
+TO authenticated
+USING (true);
+
+public.subject_types
+
+Definuje typy subjektů, např. person, company, landlord, tenant, …
+
+RLS:
+
+ALTER TABLE public.subject_types ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Subject types: read all"
+ON public.subject_types
+FOR SELECT
+TO authenticated
+USING (true);
+
+Vazby: role a oprávnění
+public.subject_roles
+
+Vazba subjekt ↔ role (např. subjekt je pronajímatel, nájemník…).
+
+RLS:
+
+ALTER TABLE public.subject_roles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Subject roles: own"
+ON public.subject_roles
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.subjects s
+    WHERE s.id = subject_roles.subject_id
+      AND s.auth_user_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM public.subjects s
+    WHERE s.id = subject_roles.subject_id
+      AND s.auth_user_id = auth.uid()
+  )
+);
+
+public.subject_permissions
+
+Vazba subjekt ↔ oprávnění (např. subjekt může vidět platby, editovat smlouvy…).
+
+RLS:
+
+ALTER TABLE public.subject_permissions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Subject permissions: own"
+ON public.subject_permissions
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.subjects s
+    WHERE s.id = subject_permissions.subject_id
+      AND s.auth_user_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM public.subjects s
+    WHERE s.id = subject_permissions.subject_id
+      AND s.auth_user_id = auth.uid()
+  )
+);
+
+Další bezpečnostní kroky
+
+Funkce public.set_updated_at:
+
+nastavit SET search_path = public v definici funkce.
+
+Supabase Auth:
+
+zapnout Leaked Password Protection (kontrola hesel přes HaveIBeenPwned).
