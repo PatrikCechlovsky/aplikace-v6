@@ -219,7 +219,7 @@ export default function SubjectTypesTile() {
     }
   }
 
-  return (
+  
     return (
     <div style={{ padding: 24, background: '#eee' }}>
       <h1>TEST CONTENT – Typy subjektů</h1>
