@@ -10,17 +10,23 @@ export type SubjectType = {
   code: string
   label: string
   description: string | null
+  color: string | null
+  icon: string | null
+  sort_order: number | null
   is_active: boolean
   created_at: string | null
 }
 
 /**
- * Načte všechny typy subjektů seřazené podle code/label.
+ * Načte všechny typy subjektů seřazené podle sort_order, pak code.
  */
 export async function fetchSubjectTypes(): Promise<SubjectType[]> {
   const { data, error } = await supabase
     .from('subject_types')
-    .select('*')
+    .select(
+      'id, code, label, description, color, icon, sort_order, is_active, created_at',
+    )
+    .order('sort_order', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
 
   if (error) {
@@ -39,19 +45,28 @@ export async function createSubjectType(input: {
   code: string
   label: string
   description?: string
+  color?: string
+  icon?: string
+  order?: number
   is_active?: boolean
 }): Promise<SubjectType> {
   const payload = {
     code: input.code.trim(),
     label: input.label.trim(),
     description: input.description?.trim() ?? null,
+    color: input.color ?? null,
+    icon: input.icon ?? null,
+    sort_order:
+      typeof input.order === 'number' ? input.order : (null as number | null),
     is_active: input.is_active ?? true,
   }
 
   const { data, error } = await supabase
     .from('subject_types')
     .insert(payload)
-    .select('*')
+    .select(
+      'id, code, label, description, color, icon, sort_order, is_active, created_at',
+    )
     .single()
 
   if (error) {
@@ -71,13 +86,20 @@ export async function updateSubjectType(
     code: string
     label: string
     description?: string
+    color?: string
+    icon?: string
+    order?: number
     is_active?: boolean
-  }
+  },
 ): Promise<SubjectType> {
   const payload = {
     code: input.code.trim(),
     label: input.label.trim(),
     description: input.description?.trim() ?? null,
+    color: input.color ?? null,
+    icon: input.icon ?? null,
+    sort_order:
+      typeof input.order === 'number' ? input.order : (null as number | null),
     is_active: input.is_active ?? true,
   }
 
@@ -85,7 +107,9 @@ export async function updateSubjectType(
     .from('subject_types')
     .update(payload)
     .eq('id', id)
-    .select('*')
+    .select(
+      'id, code, label, description, color, icon, sort_order, is_active, created_at',
+    )
     .single()
 
   if (error) {
@@ -97,7 +121,7 @@ export async function updateSubjectType(
 }
 
 /**
- * Smaže typ subjektu (volitelné).
+ * Smaže typ subjektu.
  */
 export async function deleteSubjectType(id: string): Promise<void> {
   const { error } = await supabase
