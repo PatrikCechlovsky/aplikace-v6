@@ -106,14 +106,14 @@ Moduly jsou dynamicky načítané podle `modules.index.js`.
 
 Celý layout aplikace je rozdělen na:
 
-1. **HomeButton** – název aplikace vlevo nahoře
-2. **Sidebar** – seznam modulů
-3. **Breadcrumbs** – drobečková navigace
-4. **HomeActions** – horní panel vpravo
-5. **CommonActions** – lišta obecných akcí
+1. **HomeButton** – název aplikace vlevo nahoře  
+2. **Sidebar** – seznam modulů  
+3. **Breadcrumbs** – drobečková navigace  
+4. **HomeActions** – horní panel vpravo  
+5. **CommonActions** – lišta obecných akcí  
 6. **Content** – hlavní plocha (dashboard, přehled, formuláře)
 
-Glóbalní styly a grid definované v `globals.css`.
+Layout je postaven přes CSS grid a nachází se v `globals.css`.
 
 ---
 
@@ -126,7 +126,7 @@ Glóbalní styly a grid definované v `globals.css`.
 - blokace UI pro nepřihlášené uživatele
 - Logout
 
-MFA (TOTP) je aktivní v Supabase a bude doplněno v budoucí fázi.
+MFA (TOTP) je aktivní v Supabase a bude doplněno do aplikace.
 
 ---
 
@@ -135,15 +135,13 @@ MFA (TOTP) je aktivní v Supabase a bude doplněno v budoucí fázi.
 - seznam ikon v `ikons.md`
 - implementace ikon v `app/UI/icons.ts`
 
-Použití:
-
 ```tsx
 import { getIcon } from '@/app/UI/icons'
 
 <span>{getIcon('building')}</span>
 ```
 
-V UI se emoji **nikdy nepíší přímo**, vždy přes `getIcon()`.
+V UI se emoji **nikdy nepíšou přímo** – vždy přes `getIcon()`.
 
 ---
 
@@ -151,35 +149,14 @@ V UI se emoji **nikdy nepíší přímo**, vždy přes `getIcon()`.
 
 Viz `docs/CODESTYLE.md`.
 
-Shrnutí:
+Základní pravidla:
 
 - UI komponenty neobsahují logiku Supabase
 - logika a DB připojení v `app/lib`
 - žádné inline styly
-- každá komponenta má povinnou hlavičku:
-
-```ts
-/*
- * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Popis účelu souboru
- */
-```
-
+- každá komponenta má hlavičku se „FILE“ a „PURPOSE“
 - názvy komponent PascalCase
-- názvy funkcí camelCase
 - moduly pouze přes `module.config.js`
-
----
-
-# 🧾 Dokumentace
-
-V adresáři `docs/` jsou tyto soubory:
-
-- UI-specifikace.md
-- layout_auth_ui.md
-- stav-struktury.md
-- todo_list.md
-- CODESTYLE.md
 
 ---
 
@@ -194,103 +171,92 @@ https://aplikace-v6.vercel.app
 
 # 📌 Stav projektu
 
-Viz:
-
-- docs/stav-struktury.md
-- docs/todo_list.md
-
-# Databáze a bezpečnost (Supabase)
-
-## Přehled
-
-Projekt používá Supabase (PostgreSQL + Auth + PostgREST) jako backend.  
-Bezpečnost je postavena na:
-
-- Supabase Auth
-- Row Level Security (RLS)
-- číselnících pro role, typy subjektů a oprávnění
-
-Níže je přehled klíčových tabulek a politik.
+- `docs/stav-struktury.md`
+- `docs/todo_list.md`
 
 ---
 
-## Tabulka `public.subjects`
+# 🔐 Databáze a bezpečnost (Supabase)
 
-Centrální tabulka pro všechny subjekty (osoby, firmy, nájemníky, pronajímatele atd.).
+Tento projekt používá Supabase jako kompletní backend vrstvu – databázi, autentizaci, REST API (PostgREST) a bezpečnost pomocí **Row Level Security (RLS)**.
 
-Důležité sloupce:
+Cílem je zajistit, že každý uživatel uvidí **pouze své vlastní záznamy**.
 
-- `id :: uuid` – primární klíč
-- `subject_type :: text` – typ subjektu (navázáno na `subject_types`)
-- `auth_user_id :: uuid` – vazba na Supabase uživatele (`auth.uid()`)
-- `first_name`, `last_name`, `company_name`, `display_name` – identifikace subjektu
-- `ic`, `dic`, `ic_valid`, `dic_valid` – IČ / DIČ a jejich validace
-- `country`, `city`, `street`, `house_number`, `orientation_number`, `postal_code` – adresa
-- `address_source :: text` – zdroj adresy (ručně, ARES, RÚIAN…)
-- `phone`, `email` – kontaktní údaje
-- `bank_account_id :: uuid` – vazba na bankovní účet (budoucí modul Finance)
-- `delegate_id :: uuid` – vazba na delegáta / zástupce
-- `login`, `password_hash` – volitelné přihlašovací údaje (pokud se použijí)
-- `ares_json :: jsonb` – syrová data z ARES
-- `audit :: jsonb` – auditní metadata
-- `origin_module :: text` – identifikace modulu, kde byl záznam založen
-- `origin_entity :: text` – typ entity v rámci modulu
-- `created_at`, `updated_at`, `created_by :: uuid` – audit
+---
 
-### RLS (Row Level Security)
+# 🧩 Tabulka `public.subjects`
 
-RLS je zapnuté:
+`subjects` je centrální tabulka celého systému (osoby, firmy, nájemníci, pronajímatelé…).
+
+Klíčový sloupec pro bezpečnost:
+
+- **`auth_user_id :: uuid`** — obsahuje `auth.uid()`
+
+Slouží jako *vlastnictví* řádku.
+
+## 🔐 RLS – Subjects
+
+Zapnutí RLS:
 
 ```sql
 ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
-Policy:
+```
 
-SELECT – uživatel vidí pouze subjekty, kde auth_user_id = auth.uid():
+### SELECT – jen vlastní záznamy
 
+```sql
 CREATE POLICY "Subjects: select own"
 ON public.subjects
 FOR SELECT
 TO authenticated
 USING (auth_user_id = auth.uid());
+```
 
+### INSERT – uživatel může vkládat pouze své subjekty
 
-INSERT – uživatel může vložit subjekt pouze s vlastním auth_user_id:
-
+```sql
 CREATE POLICY "Subjects: insert own"
 ON public.subjects
 FOR INSERT
 TO authenticated
 WITH CHECK (auth_user_id = auth.uid());
+```
 
+### UPDATE – lze měnit pouze vlastní řádky
 
-UPDATE – uživatel může měnit jen své subjekty:
-
+```sql
 CREATE POLICY "Subjects: update own"
 ON public.subjects
 FOR UPDATE
 TO authenticated
 USING (auth_user_id = auth.uid())
 WITH CHECK (auth_user_id = auth.uid());
+```
 
+### DELETE
 
-DELETE – uživatel může mazat jen své subjekty:
-
+```sql
 CREATE POLICY "Subjects: delete own"
 ON public.subjects
 FOR DELETE
 TO authenticated
 USING (auth_user_id = auth.uid());
+```
 
+### ⚠ Důležité pro aplikaci
+Frontend **musí při insertech vždy posílat**:
 
-V UI je nutné při insertech do subjects vždy nastavovat auth_user_id = auth.uid().
+```ts
+auth_user_id: auth.uid()
+```
 
-Číselníky
-public.role_types
+---
 
-Definuje typy rolí, např. owner, tenant, admin, accountant, …
+# 🗂 Číselníky (read-only)
 
-RLS:
+## `public.role_types`
 
+```sql
 ALTER TABLE public.role_types ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Role types: read all"
@@ -298,13 +264,11 @@ ON public.role_types
 FOR SELECT
 TO authenticated
 USING (true);
+```
 
-public.permission_types
+## `public.permission_types`
 
-Definuje typy oprávnění, např. can_view_payments, can_edit_contracts, …
-
-RLS:
-
+```sql
 ALTER TABLE public.permission_types ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Permission types: read all"
@@ -312,13 +276,11 @@ ON public.permission_types
 FOR SELECT
 TO authenticated
 USING (true);
+```
 
-public.subject_types
+## `public.subject_types`
 
-Definuje typy subjektů, např. person, company, landlord, tenant, …
-
-RLS:
-
+```sql
 ALTER TABLE public.subject_types ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Subject types: read all"
@@ -326,14 +288,15 @@ ON public.subject_types
 FOR SELECT
 TO authenticated
 USING (true);
+```
 
-Vazby: role a oprávnění
-public.subject_roles
+---
 
-Vazba subjekt ↔ role (např. subjekt je pronajímatel, nájemník…).
+# 🏷 Vazební tabulky (role & oprávnění)
 
-RLS:
+## `public.subject_roles`
 
+```sql
 ALTER TABLE public.subject_roles ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Subject roles: own"
@@ -356,13 +319,11 @@ WITH CHECK (
       AND s.auth_user_id = auth.uid()
   )
 );
+```
 
-public.subject_permissions
+## `public.subject_permissions`
 
-Vazba subjekt ↔ oprávnění (např. subjekt může vidět platby, editovat smlouvy…).
-
-RLS:
-
+```sql
 ALTER TABLE public.subject_permissions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Subject permissions: own"
@@ -385,13 +346,43 @@ WITH CHECK (
       AND s.auth_user_id = auth.uid()
   )
 );
+```
 
-Další bezpečnostní kroky
+---
 
-Funkce public.set_updated_at:
+# 🔧 Další bezpečnostní kroky
 
-nastavit SET search_path = public v definici funkce.
+## ▶ Funkce `public.set_updated_at` – oprava
 
-Supabase Auth:
+```sql
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+```
 
-zapnout Leaked Password Protection (kontrola hesel přes HaveIBeenPwned).
+## ▶ Supabase Auth
+
+V sekci Authentication → Email:
+
+- zapnout *Leaked Password Protection*
+
+---
+
+# 🧱 Shrnutí
+
+Tato RLS vrstva poskytuje:
+
+- izolaci mezi uživateli,
+- globální číselníky (read-only),
+- propojení rolí/oprávnění na vlastní subjekty,
+- plnou kompatibilitu s modulovým systémem Pronajímatel v6.
+
+Aplikační logika (moduly 010–900) na tom může bezpečně stavět.
+
