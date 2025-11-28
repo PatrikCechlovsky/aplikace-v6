@@ -3,14 +3,15 @@
  * PURPOSE: CRUD funkce pro číselník subject_types
  *
  * POZNÁMKA:
- *  Tabulka subject_types NEMÁ sloupec "id", používáme "code" jako primární klíč.
+ *  Tabulka subject_types nemá "id" ani "label".
+ *  Primární klíč = "code", textový název = "name".
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
 
 export type SubjectType = {
   code: string
-  label: string
+  name: string
   description: string | null
   color: string | null
   icon: string | null
@@ -26,7 +27,7 @@ export async function fetchSubjectTypes(): Promise<SubjectType[]> {
   const { data, error } = await supabase
     .from('subject_types')
     .select(
-      'code, label, description, color, icon, sort_order, is_active, created_at',
+      'code, name, description, color, icon, sort_order, is_active, created_at',
     )
     .order('sort_order', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
@@ -41,11 +42,10 @@ export async function fetchSubjectTypes(): Promise<SubjectType[]> {
 
 /**
  * Vytvoří nový typ subjektu.
- * RLS: INSERT povolený jen pro adminy (viz app_admins).
  */
 export async function createSubjectType(input: {
   code: string
-  label: string
+  name: string
   description?: string
   color?: string
   icon?: string
@@ -54,7 +54,7 @@ export async function createSubjectType(input: {
 }): Promise<SubjectType> {
   const payload = {
     code: input.code.trim(),
-    label: input.label.trim(),
+    name: input.name.trim(),
     description: input.description?.trim() ?? null,
     color: input.color ?? null,
     icon: input.icon ?? null,
@@ -67,7 +67,7 @@ export async function createSubjectType(input: {
     .from('subject_types')
     .insert(payload)
     .select(
-      'code, label, description, color, icon, sort_order, is_active, created_at',
+      'code, name, description, color, icon, sort_order, is_active, created_at',
     )
     .single()
 
@@ -81,13 +81,13 @@ export async function createSubjectType(input: {
 
 /**
  * Upraví existující typ subjektu.
- * Jako klíč používáme "code".
+ * Klíč = původní "code".
  */
 export async function updateSubjectType(
   codeKey: string,
   input: {
     code: string
-    label: string
+    name: string
     description?: string
     color?: string
     icon?: string
@@ -97,7 +97,7 @@ export async function updateSubjectType(
 ): Promise<SubjectType> {
   const payload = {
     code: input.code.trim(),
-    label: input.label.trim(),
+    name: input.name.trim(),
     description: input.description?.trim() ?? null,
     color: input.color ?? null,
     icon: input.icon ?? null,
@@ -111,7 +111,7 @@ export async function updateSubjectType(
     .update(payload)
     .eq('code', codeKey)
     .select(
-      'code, label, description, color, icon, sort_order, is_active, created_at',
+      'code, name, description, color, icon, sort_order, is_active, created_at',
     )
     .single()
 
