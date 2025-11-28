@@ -18,3 +18,9 @@ export const MODULE_SOURCES = [
   () => import('./modules/900-nastaveni/module.config.js'),
   // () => import('./modules/990-help/module.config.js'),
 ]
+
+// 🔍 DEBUG: vyexportuj MODULE_SOURCES do window, abychom je viděli v konzoli
+if (typeof window !== 'undefined') {
+  // dáme to pod rozumný jméno, ať si to nespleteš s něčím jiným
+  window.__PRONAJ_MODULE_SOURCES__ = MODULE_SOURCES
+}
