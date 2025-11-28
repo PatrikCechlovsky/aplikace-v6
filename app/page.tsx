@@ -70,21 +70,18 @@ export default function HomePage() {
         <CommonActions disabled={!isAuthenticated} />
       </div>
 
-      {/* 6 – obsah */}
+           {/* 6 – obsah */}
       <main className="layout__content">
         {loading ? (
           <div>Načítání…</div>
         ) : !isAuthenticated ? (
           <LoginPanel />
         ) : (
-          <div>
-            <h1>Vítej v aplikaci Pronajímatel v6</h1>
-            <p>Zde bude dashboard nebo výchozí přehled po přihlášení.</p>
-
-            {/* Sem později můžeme vložit třeba MfaSetupPanel nebo modulový přehled */}
-          </div>
+          // 👉 TADY TEĎ CHCEME VIDĚT TYPY SUBJEKTŮ
+          <SubjectTypesTile />
         )}
       </main>
+
     </div>
   )
 }
