@@ -2,11 +2,9 @@
 
 /*
  * FILE: app/modules/900-nastaveni/tiles/SubjectTypesTile.tsx
- * PURPOSE: Přehled + formulář pro číselník subject_types
- *
- * Layout:
- *  - vlevo úzký seznam typů
- *  - vpravo formulář pro editaci / založení
+ * LAYOUT:
+ *  - nahoře seznam typů (cca 10 řádků + scroll)
+ *  - pod seznamem formulář
  */
 
 import React, { useEffect, useState } from 'react'
@@ -265,23 +263,15 @@ export default function SubjectTypesTile() {
       {loading ? (
         <div>Načítání…</div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(220px, 260px) 1fr',
-            gap: 16,
-            alignItems: 'flex-start',
-          }}
-        >
-          {/* LEVÝ SLOUPEC – seznam typů */}
+        <>
+          {/* 🔹 HORNÍ BLOK – SEZNAM + tlačítko „Nový“ */}
           <section
             style={{
               borderRadius: 8,
               border: '1px solid #ddd',
               background: '#fafafa',
               padding: 8,
-              maxHeight: '480px',
-              overflow: 'auto',
+              marginBottom: 16,
             }}
           >
             <div
@@ -292,7 +282,7 @@ export default function SubjectTypesTile() {
                 marginBottom: 8,
               }}
             >
-              <strong style={{ fontSize: 13 }}>Seznam typů</strong>
+              <strong style={{ fontSize: 13 }}>Seznam typů subjektů</strong>
               <button
                 type="button"
                 onClick={handleNew}
@@ -310,48 +300,61 @@ export default function SubjectTypesTile() {
               </button>
             </div>
 
-            {items.length === 0 ? (
-              <div style={{ fontSize: 13, color: '#777' }}>
-                Zatím žádné položky. Klikni na „Nový“ a vytvoř první typ.
-              </div>
-            ) : (
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {items.map((item) => {
-                  const isSelected = item.code === selectedCode
-                  return (
-                    <li key={item.code} style={{ marginBottom: 4 }}>
-                      <button
-                        type="button"
-                        onClick={() => handleSelect(item.code)}
-                        style={{
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '6px 8px',
-                          borderRadius: 6,
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          background: isSelected ? '#e0ecff' : 'transparent',
-                        }}
-                      >
-                        <div style={{ fontWeight: 600 }}>
-                          {item.name || '(bez názvu)'}
-                        </div>
-                        <div
-                          style={{ fontSize: 11, color: '#666', marginTop: 2 }}
+            <div
+              style={{
+                maxHeight: 260, // ~10 řádků, pak scroll
+                overflowY: 'auto',
+              }}
+            >
+              {items.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#777', padding: 4 }}>
+                  Zatím žádné položky. Klikni na „Nový“ a vytvoř první typ.
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {items.map((item) => {
+                    const isSelected = item.code === selectedCode
+                    return (
+                      <li key={item.code} style={{ marginBottom: 2 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelect(item.code)}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '6px 8px',
+                            borderRadius: 6,
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: 13,
+                            background: isSelected
+                              ? '#e0ecff'
+                              : 'transparent',
+                          }}
                         >
-                          {item.code}
-                          {item.active === false ? ' • neaktivní' : ''}
-                        </div>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
+                          <div style={{ fontWeight: 600 }}>
+                            {item.name || '(bez názvu)'}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: '#666',
+                              marginTop: 2,
+                            }}
+                          >
+                            {item.code}
+                            {item.active === false ? ' • neaktivní' : ''}
+                          </div>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
           </section>
 
-          {/* PRAVÝ SLOUPEC – formulář */}
+          {/* 🔹 DOLNÍ BLOK – FORMULÁŘ */}
           <section
             style={{
               borderRadius: 8,
@@ -418,16 +421,17 @@ export default function SubjectTypesTile() {
                 e.preventDefault()
                 handleSave()
               }}
+              style={{ fontSize: 13 }}
             >
+              {/* Kód + Název */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateColumns: '1fr 2fr',
                   gap: 12,
-                  fontSize: 13,
+                  marginBottom: 12,
                 }}
               >
-                {/* Kód */}
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ marginBottom: 2 }}>
                     Kód <span style={{ color: '#dc2626' }}>*</span>
@@ -447,7 +451,6 @@ export default function SubjectTypesTile() {
                   />
                 </label>
 
-                {/* Název */}
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ marginBottom: 2 }}>
                     Název <span style={{ color: '#dc2626' }}>*</span>
@@ -464,8 +467,17 @@ export default function SubjectTypesTile() {
                     }}
                   />
                 </label>
+              </div>
 
-                {/* Barva */}
+              {/* Barva + Ikona + Pořadí + Aktivní */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1fr auto',
+                  gap: 12,
+                  marginBottom: 12,
+                }}
+              >
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ marginBottom: 2 }}>Barva (hex)</span>
                   <input
@@ -481,9 +493,8 @@ export default function SubjectTypesTile() {
                   />
                 </label>
 
-                {/* Ikona */}
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ marginBottom: 2 }}>Ikona (emoji / název)</span>
+                  <span style={{ marginBottom: 2 }}>Ikona</span>
                   <input
                     type="text"
                     value={form.icon}
@@ -497,7 +508,6 @@ export default function SubjectTypesTile() {
                   />
                 </label>
 
-                {/* Pořadí */}
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ marginBottom: 2 }}>Pořadí</span>
                   <input
@@ -512,13 +522,12 @@ export default function SubjectTypesTile() {
                   />
                 </label>
 
-                {/* Aktivní */}
                 <label
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    marginTop: 20,
+                    marginTop: 22,
                   }}
                 >
                   <input
@@ -532,16 +541,11 @@ export default function SubjectTypesTile() {
                 </label>
               </div>
 
-              {/* Popis přes celou šířku */}
+              {/* Popis */}
               <label
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  marginTop: 12,
-                  fontSize: 13,
-                }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
               >
-                <span style={{ marginBottom: 2 }}>Popis</span>
+                <span>Popis</span>
                 <textarea
                   value={form.description}
                   onChange={(e) =>
@@ -558,7 +562,7 @@ export default function SubjectTypesTile() {
               </label>
             </form>
           </section>
-        </div>
+        </>
       )}
     </div>
   )
