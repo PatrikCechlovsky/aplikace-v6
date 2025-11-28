@@ -115,7 +115,7 @@ export default function SubjectTypesTile() {
           color: item.color,
           icon: item.icon,
           order: item.order,
-          active: true,
+          is_active: true, // zatím natvrdo, později můžeš udělat přepínač v UI
         })
 
         setItems((prev) =>
@@ -145,7 +145,7 @@ export default function SubjectTypesTile() {
           color: item.color,
           icon: item.icon,
           order: item.order,
-          active: true,
+          is_active: true,
         })
 
         setItems((prev) =>
