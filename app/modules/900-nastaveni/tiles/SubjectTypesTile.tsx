@@ -6,6 +6,14 @@
  *  - nahoře seznam typů (cca 10 řádků + scroll)
  *  - pod seznamem formulář
  */
+'use client'
+
+/*
+ * Jednotný typový pohled (zatím pro Typy subjektů)
+ * - nahoře tabulka s typy + filtr + "Zobrazit archivované"
+ * - dole formulář
+ * - archivace = active = false (mazání jen pro programátora mimo UI)
+ */
 
 import React, { useEffect, useState } from 'react'
 import type { SubjectType } from '../services/subjectTypes'
@@ -13,7 +21,7 @@ import {
   fetchSubjectTypes,
   createSubjectType,
   updateSubjectType,
-  deleteSubjectType,
+  deleteSubjectType, // zatím nepoužíváme v UI, jen pro případný dev nástroj
 } from '../services/subjectTypes'
 
 type FormState = {
@@ -54,12 +62,14 @@ export default function SubjectTypesTile() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [isNew, setIsNew] = useState<boolean>(true)
 
+  const [filterText, setFilterText] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // načtení dat z DB
   useEffect(() => {
     loadData()
   }, [])
@@ -119,6 +129,47 @@ export default function SubjectTypesTile() {
     const num = Number(value)
     if (Number.isNaN(num)) return
     handleFormChange('order', num)
+  }
+
+  // filtrovaný + (ne)archivovaný seznam
+  const normalizedFilter = filterText.trim().toLowerCase()
+
+  const filteredItems = items
+    .filter((item) => (showArchived ? true : item.active !== false))
+    .filter((item) => {
+      if (!normalizedFilter) return true
+      const haystack =
+        (item.name ?? '') +
+        ' ' +
+        (item.code ?? '') +
+        ' ' +
+        (item.description ?? '')
+      return haystack.toLowerCase().includes(normalizedFilter)
+    })
+
+  const selectedIndex = filteredItems.findIndex(
+    (i) => i.code === selectedCode,
+  )
+
+  function selectByIndex(newIndex: number) {
+    if (newIndex < 0 || newIndex >= filteredItems.length) return
+    const row = filteredItems[newIndex]
+    if (!row) return
+    setSelectedCode(row.code)
+    setForm(formFromRow(row))
+    setIsNew(false)
+    setError(null)
+    setSuccess(null)
+  }
+
+  function handlePrev() {
+    if (selectedIndex === -1) return
+    selectByIndex(selectedIndex - 1)
+  }
+
+  function handleNext() {
+    if (selectedIndex === -1) return
+    selectByIndex(selectedIndex + 1)
   }
 
   async function handleSave() {
@@ -185,34 +236,37 @@ export default function SubjectTypesTile() {
     setSuccess(null)
   }
 
-  async function handleDelete() {
+  // archivace = active = false (žádné fyzické mazání)
+  async function handleArchive() {
     if (!selectedCode) return
 
-    if (!window.confirm('Opravdu smazat tento typ subjektu?')) return
+    if (!window.confirm('Opravdu archivovat tento typ subjektu?')) return
 
     setSaving(true)
     setError(null)
     setSuccess(null)
 
     try {
-      await deleteSubjectType(selectedCode)
-      const remaining = items.filter((r) => r.code !== selectedCode)
-      setItems(remaining)
+      const updated = await updateSubjectType(selectedCode, {
+        code: form.code,
+        name: form.name,
+        description: form.description,
+        color: form.color || undefined,
+        icon: form.icon || undefined,
+        order: form.order,
+        is_active: false,
+      })
 
-      if (remaining.length > 0) {
-        setSelectedCode(remaining[0].code)
-        setForm(formFromRow(remaining[0]))
-        setIsNew(false)
-      } else {
-        setSelectedCode(null)
-        setForm(emptyForm)
-        setIsNew(true)
-      }
-
-      setSuccess('Typ subjektu byl smazán.')
+      setItems((prev) =>
+        prev.map((r) => (r.code === selectedCode ? updated : r)),
+      )
+      setSelectedCode(updated.code)
+      setForm(formFromRow(updated))
+      setIsNew(false)
+      setSuccess('Typ subjektu byl archivován.')
     } catch (err: any) {
       console.error(err)
-      setError(err?.message ?? 'Chyba při mazání typu subjektu.')
+      setError(err?.message ?? 'Chyba při archivaci typu subjektu.')
     } finally {
       setSaving(false)
     }
@@ -264,7 +318,7 @@ export default function SubjectTypesTile() {
         <div>Načítání…</div>
       ) : (
         <>
-          {/* 🔹 HORNÍ BLOK – SEZNAM + tlačítko „Nový“ */}
+          {/* 🔹 HORNÍ BLOK – FILTR + TABULKA */}
           <section
             style={{
               borderRadius: 8,
@@ -274,87 +328,245 @@ export default function SubjectTypesTile() {
               marginBottom: 16,
             }}
           >
+            {/* řádek: filtr + "Zobrazit archivované" + tlačítko Nový */}
             <div
               style={{
                 display: 'flex',
-                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 8,
                 alignItems: 'center',
                 marginBottom: 8,
               }}
             >
-              <strong style={{ fontSize: 13 }}>Seznam typů subjektů</strong>
-              <button
-                type="button"
-                onClick={handleNew}
+              <div style={{ flex: '1 1 220px' }}>
+                <input
+                  type="text"
+                  placeholder="Filtrovat…"
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '4px 8px',
+                    borderRadius: 999,
+                    border: '1px solid #ddd',
+                    fontSize: 13,
+                  }}
+                />
+              </div>
+
+              <label
                 style={{
-                  fontSize: 12,
-                  padding: '4px 8px',
-                  borderRadius: 6,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: '#f97316',
-                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 13,
                 }}
               >
-                + Nový
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                />
+                <span>Zobrazit archivované</span>
+              </label>
+
+              <button
+                type="button"
+                title="Nový typ"
+                onClick={handleNew}
+                style={{
+                  marginLeft: 'auto',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  border: 'none',
+                  background: '#f97316',
+                  color: '#fff',
+                  fontSize: 18,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                +
               </button>
             </div>
 
+            {/* tabulka typů */}
             <div
               style={{
-                maxHeight: 260, // ~10 řádků, pak scroll
+                maxHeight: 260, // ~10 řádků
                 overflowY: 'auto',
               }}
             >
-              {items.length === 0 ? (
-                <div style={{ fontSize: 13, color: '#777', padding: 4 }}>
-                  Zatím žádné položky. Klikni na „Nový“ a vytvoř první typ.
-                </div>
-              ) : (
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                  {items.map((item) => {
-                    const isSelected = item.code === selectedCode
-                    return (
-                      <li key={item.code} style={{ marginBottom: 2 }}>
-                        <button
-                          type="button"
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: 13,
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '4px 6px',
+                        borderBottom: '1px solid #ddd',
+                      }}
+                    >
+                      Název
+                    </th>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '4px 6px',
+                        borderBottom: '1px solid #ddd',
+                      }}
+                    >
+                      Ikona
+                    </th>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '4px 6px',
+                        borderBottom: '1px solid #ddd',
+                      }}
+                    >
+                      Barva
+                    </th>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '4px 6px',
+                        borderBottom: '1px solid #ddd',
+                      }}
+                    >
+                      Popis
+                    </th>
+                    <th
+                      style={{
+                        textAlign: 'right',
+                        padding: '4px 6px',
+                        borderBottom: '1px solid #ddd',
+                      }}
+                    >
+                      Pořadí
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredItems.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        style={{
+                          padding: '6px 8px',
+                          color: '#777',
+                          fontStyle: 'italic',
+                        }}
+                      >
+                        Žádné položky neodpovídají filtru.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredItems.map((item) => {
+                      const isSelected = item.code === selectedCode
+                      const bgSelected = '#e0ecff'
+                      const bgColor =
+                        item.color && /^#.{3,6}/.test(item.color)
+                          ? item.color
+                          : isSelected
+                          ? bgSelected
+                          : 'transparent'
+
+                      const rowStyle: React.CSSProperties = {
+                        cursor: 'pointer',
+                        background: isSelected ? '#f1f5ff' : 'transparent',
+                      }
+
+                      const nameCellStyle: React.CSSProperties = {
+                        padding: '6px 6px',
+                        borderBottom: '1px solid #eee',
+                        background: bgColor,
+                        fontWeight: 600,
+                      }
+
+                      const mutedStyle: React.CSSProperties = {
+                        fontSize: 11,
+                        color: '#555',
+                        opacity: item.active === false ? 0.6 : 1,
+                      }
+
+                      return (
+                        <tr
+                          key={item.code}
+                          style={rowStyle}
                           onClick={() => handleSelect(item.code)}
-                          style={{
-                            width: '100%',
-                            textAlign: 'left',
-                            padding: '6px 8px',
-                            borderRadius: 6,
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: 13,
-                            background: isSelected
-                              ? '#e0ecff'
-                              : 'transparent',
-                          }}
                         >
-                          <div style={{ fontWeight: 600 }}>
-                            {item.name || '(bez názvu)'}
-                          </div>
-                          <div
+                          <td style={nameCellStyle}>
+                            <div style={mutedStyle}>
+                              {item.name || '(bez názvu)'}
+                              {item.active === false ? ' • archivováno' : ''}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 10,
+                                color: '#333',
+                                opacity: 0.7,
+                              }}
+                            >
+                              {item.code}
+                            </div>
+                          </td>
+                          <td
                             style={{
-                              fontSize: 11,
-                              color: '#666',
-                              marginTop: 2,
+                              padding: '6px 6px',
+                              borderBottom: '1px solid #eee',
+                              ...mutedStyle,
                             }}
                           >
-                            {item.code}
-                            {item.active === false ? ' • neaktivní' : ''}
-                          </div>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
+                            {item.icon}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 6px',
+                              borderBottom: '1px solid #eee',
+                              ...mutedStyle,
+                            }}
+                          >
+                            {item.color}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 6px',
+                              borderBottom: '1px solid #eee',
+                              ...mutedStyle,
+                            }}
+                          >
+                            {item.description}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 6px',
+                              borderBottom: '1px solid #eee',
+                              textAlign: 'right',
+                              ...mutedStyle,
+                            }}
+                          >
+                            {item.sort_order ?? ''}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </section>
 
-          {/* 🔹 DOLNÍ BLOK – FORMULÁŘ */}
+          {/* 🔹 DOLNÍ BLOK – FORMULÁŘ + předchozí / další + ikony Uložit / Archivovat */}
           <section
             style={{
               borderRadius: 8,
@@ -369,48 +581,117 @@ export default function SubjectTypesTile() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: 12,
+                gap: 8,
               }}
             >
               <strong style={{ fontSize: 13 }}>
                 {isNew ? 'Nový typ subjektu' : 'Detail typu subjektu'}
               </strong>
 
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                {/* Předchozí / další */}
                 <button
                   type="button"
+                  title="Předchozí"
+                  onClick={handlePrev}
+                  disabled={selectedIndex <= 0}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    border: '1px solid #ccc',
+                    background: '#f9fafb',
+                    fontSize: 14,
+                    cursor:
+                      selectedIndex <= 0 ? 'not-allowed' : 'pointer',
+                    opacity: selectedIndex <= 0 ? 0.5 : 1,
+                  }}
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  title="Následující"
+                  onClick={handleNext}
+                  disabled={
+                    selectedIndex === -1 ||
+                    selectedIndex >= filteredItems.length - 1
+                  }
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    border: '1px solid #ccc',
+                    background: '#f9fafb',
+                    fontSize: 14,
+                    cursor:
+                      selectedIndex === -1 ||
+                      selectedIndex >= filteredItems.length - 1
+                        ? 'not-allowed'
+                        : 'pointer',
+                    opacity:
+                      selectedIndex === -1 ||
+                      selectedIndex >= filteredItems.length - 1
+                        ? 0.5
+                        : 1,
+                  }}
+                >
+                  ›
+                </button>
+
+                {/* Uložit */}
+                <button
+                  type="button"
+                  title="Uložit"
                   onClick={handleSave}
                   disabled={saving}
                   style={{
-                    fontSize: 12,
-                    padding: '4px 10px',
-                    borderRadius: 6,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
                     border: 'none',
-                    cursor: 'pointer',
                     background: '#16a34a',
                     color: '#fff',
+                    fontSize: 17,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: saving ? 'default' : 'pointer',
                     opacity: saving ? 0.7 : 1,
                   }}
                 >
-                  {saving ? 'Ukládám…' : 'Uložit'}
+                  💾
                 </button>
 
+                {/* Archivovat */}
                 {!isNew && (
                   <button
                     type="button"
-                    onClick={handleDelete}
+                    title="Archivovat"
+                    onClick={handleArchive}
                     disabled={saving}
                     style={{
-                      fontSize: 12,
-                      padding: '4px 10px',
-                      borderRadius: 6,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
                       border: 'none',
-                      cursor: 'pointer',
                       background: '#dc2626',
                       color: '#fff',
+                      fontSize: 17,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: saving ? 'default' : 'pointer',
                       opacity: saving ? 0.7 : 1,
                     }}
                   >
-                    Smazat
+                    🗄
                   </button>
                 )}
               </div>
@@ -446,7 +727,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid #ccc',
+                      border: '1px solid '#ccc',
                     }}
                   />
                 </label>
@@ -463,7 +744,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid #ccc',
+                      border: '1px solid '#ccc',
                     }}
                   />
                 </label>
@@ -488,7 +769,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid #ccc',
+                      border: '1px solid '#ccc',
                     }}
                   />
                 </label>
@@ -503,7 +784,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid #ccc',
+                      border: '1px solid '#ccc',
                     }}
                   />
                 </label>
@@ -517,7 +798,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid #ccc',
+                      border: '1px solid '#ccc',
                     }}
                   />
                 </label>
@@ -555,7 +836,7 @@ export default function SubjectTypesTile() {
                   style={{
                     padding: '4px 6px',
                     borderRadius: 4,
-                    border: '1px solid #ccc',
+                    border: '1px solid '#ccc',
                     resize: 'vertical',
                   }}
                 />
