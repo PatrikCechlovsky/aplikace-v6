@@ -21,7 +21,7 @@ import {
   fetchSubjectTypes,
   createSubjectType,
   updateSubjectType,
-  deleteSubjectType, // zatím nepoužíváme v UI, jen pro případný dev nástroj
+  // deleteSubjectType, // necháváme pro případný dev nástroj
 } from '../services/subjectTypes'
 
 type FormState = {
@@ -727,7 +727,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid '#ccc',
+                      border: '1px solid #ccc',
                     }}
                   />
                 </label>
@@ -744,7 +744,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid '#ccc',
+                      border: '1px solid #ccc',
                     }}
                   />
                 </label>
@@ -769,7 +769,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid '#ccc',
+                      border: '1px solid #ccc',
                     }}
                   />
                 </label>
@@ -784,7 +784,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid '#ccc',
+                      border: '1px solid #ccc',
                     }}
                   />
                 </label>
@@ -798,7 +798,7 @@ export default function SubjectTypesTile() {
                     style={{
                       padding: '4px 6px',
                       borderRadius: 4,
-                      border: '1px solid '#ccc',
+                      border: '1px solid #ccc',
                     }}
                   />
                 </label>
@@ -836,7 +836,7 @@ export default function SubjectTypesTile() {
                   style={{
                     padding: '4px 6px',
                     borderRadius: 4,
-                    border: '1px solid '#ccc',
+                    border: '1px solid #ccc',
                     resize: 'vertical',
                   }}
                 />
