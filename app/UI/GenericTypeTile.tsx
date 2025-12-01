@@ -4,9 +4,6 @@
  * FILE: app/UI/GenericTypeTile.tsx
  * PURPOSE: Jednotný typový pohled pro číselníky typu:
  *          code, name, description, color, icon, sort_order, active
- *
- * Použití:
- *  - SubjectTypesTile jen napojí CRUD funkce ze svého service souboru.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -29,23 +26,23 @@ export type GenericTypeTileProps = {
   updateItem: (codeKey: string, input: GenericTypeItem) => Promise<GenericTypeItem>
 }
 
-// sjednocené limity pro všechny typové formuláře
+// limity
 const CODE_MAX = 20
 const NAME_MAX = 50
 const COLOR_MAX = 10
 const ORDER_MIN = 0
 const ORDER_MAX = 999
 
-// jednoduchá sdílená paleta barev
+// jednoduchá paleta barev
 const COLOR_PALETTE = [
-  '#f97316', // oranžová
-  '#22c55e', // zelená
-  '#3b82f6', // modrá
-  '#6366f1', // indigo
-  '#eab308', // žlutá
-  '#f97373', // červená světlejší
-  '#14b8a6', // tyrkys
-  '#a855f7', // fialová
+  '#f97316',
+  '#22c55e',
+  '#3b82f6',
+  '#6366f1',
+  '#eab308',
+  '#f97373',
+  '#14b8a6',
+  '#a855f7',
 ]
 
 type FormState = {
@@ -177,7 +174,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     handleFormChange('order', num)
   }
 
-  // filtrovaný + (ne)archivovaný seznam
   const normalizedFilter = filterText.trim().toLowerCase()
 
   const filteredItems = items
@@ -235,7 +231,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
       const payload = rowFromForm(form)
 
       if (isNew || !selectedCode) {
-        // CREATE
         const created = await createItem(payload)
         setItems((prev) => [...prev, created])
         setSelectedCode(created.code)
@@ -243,7 +238,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
         setIsNew(false)
         setSuccess('Záznam byl vytvořen.')
       } else {
-        // UPDATE
         const updated = await updateItem(selectedCode, payload)
         setItems((prev) =>
           prev.map((r) => (r.code === selectedCode ? updated : r)),
@@ -269,7 +263,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     setSuccess(null)
   }
 
-  // archivace = active = false (žádné fyzické mazání)
   async function handleArchive() {
     if (!selectedCode) return
 
@@ -342,7 +335,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
         <div>Načítání…</div>
       ) : (
         <>
-          {/* 🔹 HORNÍ BLOK – FILTR + TABULKA */}
+          {/* horní blok - filtr + tabulka */}
           <section
             style={{
               borderRadius: 8,
@@ -352,7 +345,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               marginBottom: 16,
             }}
           >
-            {/* řádek: filtr + "Zobrazit archivované" + tlačítko Nový */}
             <div
               style={{
                 display: 'flex',
@@ -417,10 +409,9 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               </button>
             </div>
 
-            {/* tabulka typů */}
             <div
               style={{
-                maxHeight: 260, // ~10 řádků
+                maxHeight: 260,
                 overflowY: 'auto',
               }}
             >
@@ -464,7 +455,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                       style={{
                         textAlign: 'left',
                         padding: '4px 6px',
-                        borderBottom: '1px solid '#ddd',
+                        borderBottom: '1px solid #ddd',
                       }}
                     >
                       Popis
@@ -512,7 +503,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
 
                       const nameCellStyle: React.CSSProperties = {
                         padding: '6px 6px',
-                        borderBottom: '1px solid #eee',
+                        borderBottom: '1px solid '#eee',
                         background: bgColor,
                         fontWeight: 600,
                       }
@@ -590,7 +581,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
             </div>
           </section>
 
-          {/* 🔹 DOLNÍ BLOK – FORMULÁŘ + navigace + aktivní + uložit / archivovat */}
+          {/* dolní blok - formulář */}
           <section
             style={{
               borderRadius: 8,
@@ -811,7 +802,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                   marginBottom: 12,
                 }}
               >
-                {/* Barva */}
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ marginBottom: 2 }}>Barva (hex)</span>
                   <input
@@ -832,7 +822,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                       marginBottom: 4,
                     }}
                   />
-                  {/* paleta barev */}
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {COLOR_PALETTE.map((c) => (
                       <button
@@ -857,7 +846,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                   </div>
                 </label>
 
-                {/* Ikona – zatím text, později napojíme na centrální seznam ikon */}
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ marginBottom: 2 }}>Ikona</span>
                   <input
@@ -873,7 +861,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                   />
                 </label>
 
-                {/* Pořadí */}
                 <label style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ marginBottom: 2 }}>Pořadí</span>
                   <input
@@ -891,7 +878,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 </label>
               </div>
 
-              {/* Popis */}
               <label
                 style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
               >
