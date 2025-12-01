@@ -1,19 +1,22 @@
 /*
  * FILE: app/modules/900-nastaveni/services/subjectTypes.ts
- * PURPOSE: CRUD funkce pro číselník subject_types
+ * PURPOSE: CRUD funkce pro číselník public.subject_types (napojení na Supabase)
  *
  * V DB:
- *  - code (text, PK)
- *  - name (text)
+ *  - code        (text, PK)
+ *  - name        (text)
  *  - description (text, nullable)
- *  - color (text, nullable)
- *  - icon (text, nullable)
- *  - sort_order (integer, nullable)
- *  - active (boolean)
+ *  - color       (text, nullable)
+ *  - icon        (text, nullable)
+ *  - sort_order  (integer, nullable)
+ *  - active      (boolean)
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
 
+/**
+ * Datový typ přesně podle tabulky v Supabase.
+ */
 export type SubjectType = {
   code: string
   name: string
@@ -21,7 +24,19 @@ export type SubjectType = {
   color: string | null
   icon: string | null
   sort_order: number | null
-  active: boolean
+  active: boolean | null
+}
+
+/**
+ * Payload pro INSERT/UPDATE – vše kromě PK `code`.
+ */
+export type SubjectTypePayload = {
+  name: string
+  description?: string | null
+  color?: string | null
+  icon?: string | null
+  sort_order?: number | null
+  active?: boolean | null
 }
 
 /**
@@ -44,30 +59,36 @@ export async function fetchSubjectTypes(): Promise<SubjectType[]> {
 
 /**
  * Vytvoří nový typ subjektu.
+ *
+ * - `code` je PK → posílá se zvlášť (např. z formuláře)
+ * - ostatní hodnoty jdou v `payload`
  */
-export async function createSubjectType(input: {
-  code: string
-  name: string
-  description?: string
-  color?: string
-  icon?: string
-  order?: number
-  is_active?: boolean
-}): Promise<SubjectType> {
-  const payload = {
-    code: input.code.trim(),
-    name: input.name.trim(),
-    description: input.description?.trim() ?? null,
-    color: input.color ?? null,
-    icon: input.icon ?? null,
+export async function createSubjectType(
+  code: string,
+  payload: SubjectTypePayload,
+): Promise<SubjectType> {
+  const trimmedCode = code.trim()
+
+  if (!trimmedCode) {
+    throw new Error('Kód typu subjektu nesmí být prázdný')
+  }
+
+  const insertPayload = {
+    code: trimmedCode,
+    name: payload.name.trim(),
+    description: payload.description?.trim() || null,
+    color: payload.color?.trim() || null,
+    icon: payload.icon?.trim() || null,
     sort_order:
-      typeof input.order === 'number' ? input.order : (null as number | null),
-    active: input.is_active ?? true, // UI → DB
+      typeof payload.sort_order === 'number' && !Number.isNaN(payload.sort_order)
+        ? payload.sort_order
+        : null,
+    active: payload.active ?? true,
   }
 
   const { data, error } = await supabase
     .from('subject_types')
-    .insert(payload)
+    .insert(insertPayload)
     .select('code, name, description, color, icon, sort_order, active')
     .single()
 
@@ -80,36 +101,34 @@ export async function createSubjectType(input: {
 }
 
 /**
- * Upraví existující typ subjektu.
- * Klíč = původní "code".
+ * Aktualizuje existující typ subjektu podle `codeKey`.
  */
 export async function updateSubjectType(
   codeKey: string,
-  input: {
-    code: string
-    name: string
-    description?: string
-    color?: string
-    icon?: string
-    order?: number
-    is_active?: boolean
-  },
+  payload: SubjectTypePayload,
 ): Promise<SubjectType> {
-  const payload = {
-    code: input.code.trim(),
-    name: input.name.trim(),
-    description: input.description?.trim() ?? null,
-    color: input.color ?? null,
-    icon: input.icon ?? null,
+  const trimmedKey = codeKey.trim()
+
+  if (!trimmedKey) {
+    throw new Error('Chybí "code" pro update typu subjektu')
+  }
+
+  const updatePayload = {
+    name: payload.name.trim(),
+    description: payload.description?.trim() || null,
+    color: payload.color?.trim() || null,
+    icon: payload.icon?.trim() || null,
     sort_order:
-      typeof input.order === 'number' ? input.order : (null as number | null),
-    active: input.is_active ?? true,
+      typeof payload.sort_order === 'number' && !Number.isNaN(payload.sort_order)
+        ? payload.sort_order
+        : null,
+    active: payload.active ?? true,
   }
 
   const { data, error } = await supabase
     .from('subject_types')
-    .update(payload)
-    .eq('code', codeKey)
+    .update(updatePayload)
+    .eq('code', trimmedKey)
     .select('code, name, description, color, icon, sort_order, active')
     .single()
 
@@ -123,12 +142,19 @@ export async function updateSubjectType(
 
 /**
  * Smaže typ subjektu podle "code".
+ * (Použiješ později – GenericTypeTile zatím delete nepotřebuje.)
  */
 export async function deleteSubjectType(codeKey: string): Promise<void> {
+  const trimmedKey = codeKey.trim()
+
+  if (!trimmedKey) {
+    throw new Error('Chybí "code" pro smazání typu subjektu')
+  }
+
   const { error } = await supabase
     .from('subject_types')
     .delete()
-    .eq('code', codeKey)
+    .eq('code', trimmedKey)
 
   if (error) {
     console.error('deleteSubjectType error', error)
