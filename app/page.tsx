@@ -132,7 +132,7 @@ export default function HomePage() {
             label: cfg.label ?? cfg.id,
             icon: cfg.icon,
             order: cfg.order ?? 9999,
-            enabled: cfg.enabled !== false,
+            enabled: cfg.enabled ?? true,
             tiles: cfg.tiles ?? [],
           })
         }
