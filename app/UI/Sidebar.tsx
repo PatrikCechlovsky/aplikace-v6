@@ -1,4 +1,102 @@
 /*
+ * FILE: app/UI/Sidebar.tsx
+ * PURPOSE: Boční menu modulů – dynamické načítání module.config.js, bez navigace na /nastaveni
+ */
+
+'use client'
+
+import React, { useEffect, useState } from 'react'
+import { MODULE_SOURCES } from '@/app/modules.index'
+import { getIcon, IconKey } from '@/app/UI/icons'
+
+type ModuleConfig = {
+  id: string
+  label: string
+  icon?: IconKey
+  order?: number
+  enabled?: boolean
+}
+
+type Props = {
+  disabled?: boolean
+}
+
+export default function Sidebar({ disabled }: Props) {
+  const [modules, setModules] = useState<ModuleConfig[]>([])
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadModules() {
+      const loaded: ModuleConfig[] = []
+
+      for (const loader of MODULE_SOURCES) {
+        try {
+          const mod = await loader()
+          const cfg = mod.default as ModuleConfig
+
+          // skryjeme moduly s enabled === false
+          if (cfg?.enabled === false) continue
+
+          loaded.push({
+            id: cfg.id,
+            label: cfg.label,
+            icon: cfg.icon,
+            order: cfg.order ?? 0,
+            enabled: cfg.enabled ?? true,
+          })
+        } catch (error) {
+          console.error('Sidebar – chyba při načítání modulu', error)
+        }
+      }
+
+      loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      setModules(loaded)
+
+      // pokud ještě není nic aktivní, nastavíme první modul
+      if (!activeModuleId && loaded.length > 0) {
+        setActiveModuleId(loaded[0].id)
+      }
+    }
+
+    loadModules()
+  }, [activeModuleId])
+
+  return (
+    <aside className="layout__sidebar sidebar">
+      {modules.map((mod) => {
+        const isActive = mod.id === activeModuleId
+
+        const className = [
+          'sidebar__item',
+          isActive ? 'sidebar__item--active' : '',
+          disabled ? 'sidebar__item--disabled' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')
+
+        return (
+          <button
+            key={mod.id}
+            type="button"
+            className={className}
+            onClick={() => {
+              if (disabled) return
+              setActiveModuleId(mod.id)
+              // ❗ TADY ZATÍM NENAVIGUJEME NA ŽÁDNOU URL
+              // později sem můžeme přidat callback, který řekne Contentu, jaký modul má vykreslit
+            }}
+          >
+            <span className="sidebar__icon">
+              {getIcon(mod.icon)}
+            </span>
+            <span className="sidebar__label">{mod.label}</span>
+          </button>
+        )
+      })}
+    </aside>
+  )
+}
+/*
  * FILE: src/app/UI/Sidebar.tsx
  * PURPOSE: Dynamický sidebar modulů s ikonami + odkazy na stránky
  */
