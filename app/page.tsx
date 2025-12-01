@@ -2,7 +2,7 @@
 
 /*
  * FILE: app/page.tsx
- * PURPOSE: Hlavní stránka aplikace – layout + login + přepínání modulů v jednom contentu
+ * PURPOSE: Hlavní stránka aplikace – layout + login + přepínání modulů
  */
 
 import { useEffect, useState } from 'react'
@@ -21,7 +21,7 @@ import {
   logout,
 } from '@/app/lib/services/auth'
 
-// ⚙️ PRVNÍ FORMULÁŘ: Nastavení typů subjektů
+// První napojený formulář v Nastavení
 import SubjectTypesTile from '@/app/modules/900-nastaveni/tiles/SubjectTypesTile'
 
 type SessionUser = {
@@ -33,16 +33,19 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<SessionUser | null>(null)
 
-  // aktivní modul z Sidebaru
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
 
-  // 🧠 1) Načtení session při startu
+  // 1) Načtení session + listener na změny
   useEffect(() => {
     let unsubscribe: (() => void) | undefined
 
     async function initAuth() {
       try {
-        const { data } = await getCurrentSession()
+        const { data, error } = await getCurrentSession()
+        if (error) {
+          console.error('getCurrentSession error:', error)
+        }
+
         const session = data?.session ?? null
 
         if (session?.user) {
@@ -53,16 +56,21 @@ export default function HomePage() {
           setUser(null)
         }
 
-        // Listener změn stavu (login/logout)
-        const { data: sub } = onAuthStateChange((event: string, newSession: any) => {
-          if (newSession?.session?.user) {
-            setIsAuthenticated(true)
-            setUser({ email: newSession.session.user.email })
-          } else {
-            setIsAuthenticated(false)
-            setUser(null)
-          }
-        })
+        // ❗ TADY byla chyba – druhý parametr JE session (ne newSession.session)
+        const { data: sub } = onAuthStateChange(
+          (event: string, session: any) => {
+            console.log('[auth] event', event, session)
+
+            if (session?.user) {
+              setIsAuthenticated(true)
+              setUser({ email: session.user.email })
+            } else {
+              setIsAuthenticated(false)
+              setUser(null)
+              setActiveModuleId(null)
+            }
+          },
+        )
 
         unsubscribe = sub?.subscription?.unsubscribe
       } catch (err) {
@@ -77,19 +85,21 @@ export default function HomePage() {
     initAuth()
 
     return () => {
-      if (unsubscribe) unsubscribe()
+      if (unsubscribe) {
+        unsubscribe()
+      }
     }
   }, [])
 
-  // 🧠 2) Po přihlášení nastavíme výchozí modul (např. Správa uživatelů)
+  // 2) Po přihlášení nastavíme výchozí modul
   useEffect(() => {
     if (isAuthenticated && !activeModuleId) {
-      // výchozí modul – můžeš kdykoliv změnit na '900-nastaveni'
+      // můžeš změnit třeba na '900-nastaveni'
       setActiveModuleId('010-sprava-uzivatelu')
     }
   }, [isAuthenticated, activeModuleId])
 
-  // 🚪 odhlášení
+  // Logout
   async function handleLogout() {
     await logout()
     setIsAuthenticated(false)
@@ -97,15 +107,15 @@ export default function HomePage() {
     setActiveModuleId(null)
   }
 
-  // 🎯 callback ze Sidebaru – nastaví aktivní modul
+  // Klik v Sidebaru
   function handleModuleSelect(moduleId: string) {
     setActiveModuleId(moduleId)
   }
 
-  // 📦 obsah hlavního panelu podle aktivního modulu
+  // Co se ukáže v hlavním panelu
   function renderContent() {
     if (!isAuthenticated) {
-      // nepřihlášený – místo contentu login panel
+      // nepřihlášený → LoginPanel
       return (
         <div className="content content--center">
           <LoginPanel />
@@ -113,7 +123,6 @@ export default function HomePage() {
       )
     }
 
-    // když není vybraný modul
     if (!activeModuleId) {
       return (
         <div className="content">
@@ -123,35 +132,35 @@ export default function HomePage() {
       )
     }
 
-    // 🔧 TADY MÁME PRVNÍ NAPOJENÍ NA FORMULÁŘ Z NASTAVENÍ
+    // Nastavení – první napojený formulář
     if (activeModuleId === '900-nastaveni') {
       return (
         <div className="content">
           <h2>Nastavení – typy subjektů</h2>
           <p className="content__subtitle">
-            První číselník napojený na Supabase: tabulka <code>subject_types</code>.
+            Číselník napojený na Supabase tabulku <code>subject_types</code>.
           </p>
           <SubjectTypesTile />
         </div>
       )
     }
 
-    // ostatní moduly – zatím placeholder
+    // Ostatní moduly zatím jen placeholder
     return (
       <div className="content">
         <h2>Modul: {activeModuleId}</h2>
         <p>
-          Modul je vybraný v sidebaru, ale nemá ještě přiřazený konkrétní přehled/formulář.
-          Až je vytvoříme, napojíme je sem podobně jako <code>SubjectTypesTile</code>.
+          Modul je vybraný v sidebaru, ale ještě nemá svůj přehled/formulář.
+          Napojíme je postupně podobně jako Nastavení.
         </p>
       </div>
     )
   }
 
-  // ⏳ stav načítání autentizace
+  // Stav „načítám autentizaci“
   if (loadingAuth) {
     return (
-      <div className="layout">
+      <div className={`layout theme-${uiConfig.theme}`}>
         <aside className="layout__sidebar sidebar">
           <div className="sidebar__loading">Načítám přihlášení…</div>
         </aside>
@@ -162,7 +171,7 @@ export default function HomePage() {
     )
   }
 
-  // 🧱 Hlavní layout
+  // Hlavní layout – včetně HomeButtonu (domeček)
   return (
     <div className={`layout theme-${uiConfig.theme}`}>
       {/* 1. HomeButton */}
@@ -189,9 +198,7 @@ export default function HomePage() {
 
       {/* 3. Breadcrumbs */}
       <div className="layout__breadcrumbs">
-        <Breadcrumbs
-          disabled={!isAuthenticated}
-        />
+        <Breadcrumbs disabled={!isAuthenticated} />
       </div>
 
       {/* 4. CommonActions (zatím bez konkrétních akcí) */}
@@ -199,10 +206,8 @@ export default function HomePage() {
         <CommonActions disabled={!isAuthenticated} />
       </div>
 
-      {/* 5. Content – tady konečně uvidíš SubjectTypesTile */}
-      <main className="layout__content">
-        {renderContent()}
-      </main>
+      {/* 5. Content */}
+      <main className="layout__content">{renderContent()}</main>
     </div>
   )
 }
