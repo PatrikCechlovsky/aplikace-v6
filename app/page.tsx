@@ -15,7 +15,6 @@ import HomeActions from './UI/HomeActions'
 import CommonActions from './UI/CommonActions'
 import LoginPanel from './UI/LoginPanel'
 
-
 import {
   getCurrentSession,
   onAuthStateChange,
@@ -36,9 +35,11 @@ export default function HomePage() {
     // posluchač změn auth stavu
     const {
       data: { subscription },
-    } = onAuthStateChange((event: AuthChangeEvent, newSession: Session | null) => {
-      setSession(newSession)
-    })
+    } = onAuthStateChange(
+      (event: AuthChangeEvent, newSession: Session | null) => {
+        setSession(newSession)
+      },
+    )
 
     return () => {
       subscription.unsubscribe()
@@ -70,7 +71,7 @@ export default function HomePage() {
         <CommonActions disabled={!isAuthenticated} />
       </div>
 
-                 {/* 6 – obsah */}
+      {/* 6 – obsah */}
       <main className="layout__content">
         {loading ? (
           <div>Načítání…</div>
@@ -83,6 +84,8 @@ export default function HomePage() {
 
             {/* Sem později můžeme vložit třeba MfaSetupPanel nebo modulový přehled */}
           </div>
-  
+        )}
+      </main>
+    </div>
   )
 }
