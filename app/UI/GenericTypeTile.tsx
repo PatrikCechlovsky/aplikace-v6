@@ -295,7 +295,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     } finally {
       setSaving(false)
     }
-  }
+  
 
   return (
     <div style={{ padding: '16px 24px' }}>
