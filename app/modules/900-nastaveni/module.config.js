@@ -2,6 +2,7 @@
 // PURPOSE: Konfigurace modulu Nastavení + registrace tiles (číselníky)
 
 import SubjectTypesTile from './tiles/SubjectTypesTile'
+import TypesSettingsSection from './sections/TypesSettingsSection'
 
 export default {
   id: '900-nastaveni',
@@ -13,7 +14,13 @@ export default {
   /*
    * Přehledové obrazovky (zatím prázdné)
    */
-  overview: [],
+   overview: [
+    {
+      id: 'types-settings',
+      label: 'Nastavení typů',
+      component: TypesSettingsSection,
+    },
+  ],
 
   /*
    * Detailní formuláře (zatím prázdné)
