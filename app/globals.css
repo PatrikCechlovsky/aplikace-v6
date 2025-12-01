@@ -665,3 +665,350 @@ body.theme-orange .home-button {
   color: #b91c1c;
   border-color: #fecaca;
 }
+/* ===========================
+   GenericTypeTile – číselníky
+   =========================== */
+
+.generic-type {
+  margin-top: 16px;
+  padding: 0 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.generic-type__header {
+  margin-bottom: 8px;
+}
+
+.generic-type__title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.generic-type__description {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.generic-type__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Horní seznam */
+
+.generic-type__list {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px 10px;
+}
+
+.generic-type__list-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.generic-type__filter-input {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
+
+.generic-type__checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.generic-type__table-wrapper {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.generic-type__loading,
+.generic-type__empty {
+  padding: 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.generic-type__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.generic-type__th {
+  text-align: left;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.generic-type__th--small {
+  width: 70px;
+}
+
+.generic-type__row {
+  cursor: pointer;
+}
+
+.generic-type__row:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+.generic-type__row--selected {
+  background-color: #e0ebff;
+}
+
+.generic-type__row--archived {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.generic-type__cell {
+  padding: 4px 6px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.generic-type__cell--name {
+  min-width: 180px;
+}
+
+.generic-type__cell--center {
+  text-align: center;
+}
+
+.generic-type__cell--description {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.generic-type__cell--small {
+  width: 60px;
+  text-align: right;
+}
+
+.generic-type__name-main {
+  font-weight: 500;
+}
+
+.generic-type__name-sub {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.generic-type__name-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #ffffff;
+}
+
+/* Barva + ikona v seznamu */
+
+.generic-type__icon-preview {
+  font-size: 15px;
+}
+
+.generic-type__color-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+}
+
+.generic-type__color-dot--empty {
+  background: linear-gradient(45deg, transparent 0 45%, #d1d5db 45% 55%, transparent 55% 100%);
+}
+
+/* Alert mezi seznamem a formulářem */
+
+.generic-type__alert-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.generic-type__alert {
+  min-width: 320px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.generic-type__alert--error {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.generic-type__alert--info {
+  background-color: #dcfce7;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+/* Formulář dole */
+
+.generic-type__form {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px 12px;
+}
+
+.generic-type__form-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.generic-type__form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+@media (max-width: 900px) {
+  .generic-type__form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .generic-type__form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.generic-type__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.generic-type__field--small {
+  max-width: 120px;
+}
+
+.generic-type__field--inline {
+  justify-content: flex-end;
+}
+
+.generic-type__field--full {
+  margin-top: 8px;
+}
+
+.generic-type__label {
+  font-weight: 500;
+}
+
+.generic-type__required {
+  color: #dc2626;
+}
+
+.generic-type__input,
+.generic-type__textarea {
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+
+.generic-type__textarea {
+  resize: vertical;
+}
+
+/* Paleta barev ve formuláři */
+
+.generic-type__palette {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.generic-type__swatch {
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+}
+
+.generic-type__swatch-inner {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.generic-type__swatch--selected {
+  border-color: #4f46e5;
+}
+
+/* Ikona – náhled ve formuláři */
+
+.generic-type__icon-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.generic-type__icon-preview-label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* Tlačítka */
+
+.generic-type__buttons {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.generic-type__button {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 5px 12px;
+  font-size: 13px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.generic-type__button--primary {
+  background-color: #4f46e5;
+  color: #ffffff;
+  border-color: #4f46e5;
+}
+
+.generic-type__button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
