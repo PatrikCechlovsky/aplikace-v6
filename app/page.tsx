@@ -2,7 +2,7 @@
 
 /*
  * FILE: app/page.tsx
- * PURPOSE: Hlavní stránka aplikace – layout + login + přepínání modulů
+ * PURPOSE: Hlavní stránka aplikace – layout (6 bloků) + autentizace + vykreslení modulů
  */
 
 import { useEffect, useState } from 'react'
@@ -21,21 +21,42 @@ import {
   logout,
 } from '@/app/lib/services/auth'
 
-// První napojený formulář v Nastavení
-import SubjectTypesTile from '@/app/modules/900-nastaveni/tiles/SubjectTypesTile'
+import { MODULE_SOURCES } from '@/app/modules.index'
+import type { IconKey } from '@/app/UI/icons'
 
 type SessionUser = {
   email?: string | null
 }
 
+// Minimalistická podoba konfigurace modulu pro potřeby page.tsx
+type ModuleTileConfig = {
+  id: string
+  label: string
+  // libovolný React komponent
+  component: React.ComponentType<any>
+}
+
+type ModuleConfig = {
+  id: string
+  label: string
+  icon?: IconKey
+  order?: number
+  enabled?: boolean
+  tiles?: ModuleTileConfig[]
+}
+
 export default function HomePage() {
-  const [loadingAuth, setLoadingAuth] = useState(true)
+  // 🔐 Stav autentizace
+  const [authLoading, setAuthLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<SessionUser | null>(null)
 
+  // 📦 Moduly a aktivní modul
+  const [modules, setModules] = useState<ModuleConfig[]>([])
+  const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
 
-  // 1) Načtení session + listener na změny
+  // 1) Načtení session + listener na změny (login/logout)
   useEffect(() => {
     let unsubscribe: (() => void) | undefined
 
@@ -56,7 +77,7 @@ export default function HomePage() {
           setUser(null)
         }
 
-        // ❗ TADY byla chyba – druhý parametr JE session (ne newSession.session)
+        // Supabase: callback(event, session)
         const { data: sub } = onAuthStateChange(
           (event: string, session: any) => {
             console.log('[auth] event', event, session)
@@ -78,7 +99,7 @@ export default function HomePage() {
         setIsAuthenticated(false)
         setUser(null)
       } finally {
-        setLoadingAuth(false)
+        setAuthLoading(false)
       }
     }
 
@@ -91,15 +112,65 @@ export default function HomePage() {
     }
   }, [])
 
-  // 2) Po přihlášení nastavíme výchozí modul
+  // 2) Načtení modulů přes MODULE_SOURCES (lazy loading podle dokumentace)
   useEffect(() => {
-    if (isAuthenticated && !activeModuleId) {
-      // můžeš změnit třeba na '900-nastaveni'
-      setActiveModuleId('010-sprava-uzivatelu')
-    }
-  }, [isAuthenticated, activeModuleId])
+    let cancelled = false
 
-  // Logout
+    async function loadModules() {
+      try {
+        const loaded: ModuleConfig[] = []
+
+        for (const loader of MODULE_SOURCES) {
+          const modModule: any = await loader()
+          const cfg: ModuleConfig = modModule.default
+
+          if (!cfg?.id) continue
+          if (cfg.enabled === false) continue
+
+          loaded.push({
+            id: cfg.id,
+            label: cfg.label ?? cfg.id,
+            icon: cfg.icon,
+            order: cfg.order ?? 9999,
+            enabled: cfg.enabled !== false,
+            tiles: cfg.tiles ?? [],
+          })
+        }
+
+        loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+        if (!cancelled) {
+          setModules(loaded)
+        }
+      } catch (err) {
+        console.error('Chyba při načítání modulů:', err)
+      } finally {
+        if (!cancelled) {
+          setModulesLoading(false)
+        }
+      }
+    }
+
+    loadModules()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // 3) Po načtení modulů + přihlášení nastavíme výchozí modul
+  useEffect(() => {
+    if (!isAuthenticated) return
+    if (!modules.length) return
+    if (activeModuleId) return
+
+    const firstEnabled = modules[0]
+    if (firstEnabled) {
+      setActiveModuleId(firstEnabled.id)
+    }
+  }, [isAuthenticated, modules, activeModuleId])
+
+  // 🚪 Odhlášení
   async function handleLogout() {
     await logout()
     setIsAuthenticated(false)
@@ -107,15 +178,24 @@ export default function HomePage() {
     setActiveModuleId(null)
   }
 
-  // Klik v Sidebaru
+  // Klik v Sidebaru → změna aktivního modulu
   function handleModuleSelect(moduleId: string) {
     setActiveModuleId(moduleId)
   }
 
-  // Co se ukáže v hlavním panelu
+  // 🧩 Hlavní obsah (blok 6 – Content)
   function renderContent() {
+    // 1) Načítám autentizaci
+    if (authLoading) {
+      return (
+        <div className="content content--center">
+          <p>Kontroluji přihlášení…</p>
+        </div>
+      )
+    }
+
+    // 2) Nepřihlášený uživatel → LoginPanel
     if (!isAuthenticated) {
-      // nepřihlášený → LoginPanel
       return (
         <div className="content content--center">
           <LoginPanel />
@@ -123,58 +203,88 @@ export default function HomePage() {
       )
     }
 
+    // 3) Přihlášený, ale ještě se načítají moduly
+    if (modulesLoading) {
+      return (
+        <div className="content content--center">
+          <p>Načítám moduly aplikace…</p>
+        </div>
+      )
+    }
+
+    // 4) Nemám žádný modul – chyba konfigurace
+    if (!modules.length) {
+      return (
+        <div className="content content--center">
+          <p>Nebyly nalezeny žádné moduly. Zkontroluj prosím soubor <code>modules.index.js</code>.</p>
+        </div>
+      )
+    }
+
+    // 5) Není vybraný modul → zobrazíme dashboard
     if (!activeModuleId) {
       return (
         <div className="content">
-          <h2>Vyber modul v levém menu</h2>
-          <p>Po kliknutí na modul se tady zobrazí jeho obsah.</p>
+          <h2>Dashboard</h2>
+          <p>Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho obsah.</p>
         </div>
       )
     }
 
-    // Nastavení – první napojený formulář
-    if (activeModuleId === '900-nastaveni') {
+    const activeModule = modules.find((m) => m.id === activeModuleId)
+
+    if (!activeModule) {
       return (
         <div className="content">
-          <h2>Nastavení – typy subjektů</h2>
-          <p className="content__subtitle">
-            Číselník napojený na Supabase tabulku <code>subject_types</code>.
+          <h2>Neznámý modul</h2>
+          <p>
+            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen
+            v konfiguraci. Zkontroluj <code>module.config.js</code>.
           </p>
-          <SubjectTypesTile />
         </div>
       )
     }
 
-    // Ostatní moduly zatím jen placeholder
+    // 6) Pokud má modul definované tiles, vykreslíme je (např. SubjectTypesTile u 900-nastaveni)
+    if (activeModule.tiles && activeModule.tiles.length > 0) {
+      return (
+        <div className="content">
+          <h2>{activeModule.label}</h2>
+          <div className="content__tiles">
+            {activeModule.tiles.map((tile) => {
+              const TileComponent = tile.component
+              return (
+                <section
+                  key={tile.id}
+                  className="content__section"
+                  aria-label={tile.label}
+                >
+                  <h3 className="content__section-title">{tile.label}</h3>
+                  <TileComponent />
+                </section>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
+    // 7) Modul nemá tiles – zatím jen placeholder
     return (
       <div className="content">
-        <h2>Modul: {activeModuleId}</h2>
+        <h2>{activeModule.label}</h2>
         <p>
-          Modul je vybraný v sidebaru, ale ještě nemá svůj přehled/formulář.
-          Napojíme je postupně podobně jako Nastavení.
+          Tento modul zatím nemá nakonfigurované žádné dlaždice ani formuláře.
+          Přidej je do <code>{activeModule.id}/module.config.js</code> (pole <code>tiles</code>, <code>overview</code>, <code>detail</code>).
         </p>
       </div>
     )
   }
 
-  // Stav „načítám autentizaci“
-  if (loadingAuth) {
-    return (
-      <div className={`layout theme-${uiConfig.theme}`}>
-        <aside className="layout__sidebar sidebar">
-          <div className="sidebar__loading">Načítám přihlášení…</div>
-        </aside>
-        <main className="layout__content">
-          <p>Kontroluji session…</p>
-        </main>
-      </div>
-    )
-  }
-
-  // Hlavní layout – včetně HomeButtonu (domeček)
+  // 🧱 Hlavní layout – 6 bloků podle dokumentace
   return (
     <div className={`layout theme-${uiConfig.theme}`}>
-      {/* 1. HomeButton */}
+      {/* 1. HomeButton – vlevo nahoře */}
       <header className="layout__topbar">
         <div className="layout__topbar-inner">
           <HomeButton disabled={!isAuthenticated} />
@@ -187,7 +297,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* 2. Sidebar */}
+      {/* 2. Sidebar – levý sloupec */}
       <aside className="layout__sidebar">
         <Sidebar
           disabled={!isAuthenticated}
@@ -196,18 +306,22 @@ export default function HomePage() {
         />
       </aside>
 
-      {/* 3. Breadcrumbs */}
+      {/* 3. Breadcrumbs – nad obsahem */}
       <div className="layout__breadcrumbs">
         <Breadcrumbs disabled={!isAuthenticated} />
       </div>
 
-      {/* 4. CommonActions (zatím bez konkrétních akcí) */}
+      {/* 4. HomeActions – už je uvnitř topbaru (viz výše) */}
+
+      {/* 5. CommonActions – pod breadcrumbs */}
       <div className="layout__actions">
         <CommonActions disabled={!isAuthenticated} />
       </div>
 
-      {/* 5. Content */}
-      <main className="layout__content">{renderContent()}</main>
+      {/* 6. Content – hlavní plocha */}
+      <main className="layout__content">
+        {renderContent()}
+      </main>
     </div>
   )
 }
