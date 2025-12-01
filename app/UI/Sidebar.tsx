@@ -3,17 +3,16 @@
 /*
  * FILE: app/UI/Sidebar.tsx
  * PURPOSE: Boční menu modulů – načítá module.config.js a neprovádí žádnou URL navigaci.
- *          Pouze volá callback onModuleSelect a drží si interní activeModuleId.
  */
 
 import React, { useEffect, useState } from 'react'
 import { MODULE_SOURCES } from '@/app/modules.index'
-import { getIcon } from '@/app/UI/icons'
+import { getIcon, IconKey } from '@/app/UI/icons'
 
 export type ModuleConfig = {
   id: string
   label: string
-  icon?: string
+  icon?: IconKey
   order?: number
   enabled?: boolean
 }
@@ -52,7 +51,7 @@ export default function Sidebar(props: SidebarProps) {
       for (const loader of MODULE_SOURCES) {
         try {
           const mod = await loader()
-          const cfg = mod.default as ModuleConfig
+          const cfg = mod.default as any
 
           if (!cfg) continue
           if (cfg.enabled === false) continue
@@ -60,7 +59,7 @@ export default function Sidebar(props: SidebarProps) {
           loaded.push({
             id: cfg.id,
             label: cfg.label,
-            icon: cfg.icon,
+            icon: (cfg.icon ?? undefined) as IconKey | undefined,
             order: cfg.order ?? 0,
             enabled: cfg.enabled ?? true,
           })
