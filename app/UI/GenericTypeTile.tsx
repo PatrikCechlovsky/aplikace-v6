@@ -4,9 +4,17 @@
  * FILE: app/UI/GenericTypeTile.tsx
  * PURPOSE: Jednotný typový pohled pro číselníky typu:
  *          code, name, description, color, icon, sort_order, active
+ *
+ * UI vrstva:
+ * - používá generickou komponentu ConfigListWithForm pro layout
+ * - žádná logika Supabase, pouze práce s props fetch/create/update
  */
 
 import React, { useEffect, useState } from 'react'
+import ConfigListWithForm, {
+  type ConfigItemBase,
+  type ConfigListWithFormProps,
+} from '@/app/UI/ConfigListWithForm'
 
 export type GenericTypeItem = {
   code: string
@@ -23,55 +31,34 @@ export type GenericTypeTileProps = {
   description?: string
   fetchItems: () => Promise<GenericTypeItem[]>
   createItem: (input: GenericTypeItem) => Promise<GenericTypeItem>
-  updateItem: (codeKey: string, input: GenericTypeItem) => Promise<GenericTypeItem>
+  updateItem: (
+    codeKey: string,
+    input: GenericTypeItem,
+  ) => Promise<GenericTypeItem>
 }
 
-// limity
+// limity – stejné jako v původní verzi
 const CODE_MAX = 20
 const NAME_MAX = 50
-const COLOR_MAX = 10
-const ORDER_MIN = 0
-const ORDER_MAX = 999
 
-// jednoduchá paleta barev
-const COLOR_PALETTE = [
-  '#f97316',
-  '#22c55e',
-  '#3b82f6',
-  '#6366f1',
-  '#eab308',
-  '#f97373',
-  '#14b8a6',
-  '#a855f7',
-]
-
-type FormState = {
-  code: string
-  name: string
+type InternalItem = ConfigItemBase & {
   description: string
-  color: string
-  icon: string
-  order: number | undefined
   active: boolean
+  /** klientský příznak – nový řádek, ještě není v DB */
+  _isNew?: boolean
 }
 
-const emptyForm: FormState = {
-  code: '',
-  name: '',
-  description: '',
-  color: '',
-  icon: '',
-  order: undefined,
-  active: true,
-}
-
-function formFromRow(row: GenericTypeItem): FormState {
+/**
+ * Mapování z generického API typu do interního typu pro UI
+ */
+function mapRowToInternal(row: GenericTypeItem): InternalItem {
   return {
-    code: row.code ?? '',
-    name: row.name ?? '',
-    description: (row.description ?? '') || '',
-    color: (row.color ?? '') || '',
-    icon: (row.icon ?? '') || '',
+    id: row.code,
+    code: row.code,
+    name: row.name,
+    description: (row.description ?? '').toString(),
+    color: row.color ?? '',
+    icon: row.icon ?? '',
     order:
       typeof row.sort_order === 'number' && !Number.isNaN(row.sort_order)
         ? row.sort_order
@@ -80,28 +67,30 @@ function formFromRow(row: GenericTypeItem): FormState {
   }
 }
 
-function rowFromForm(form: FormState): GenericTypeItem {
+/**
+ * Mapování z interního typu zpět na payload pro API
+ */
+function mapInternalToPayload(item: InternalItem): GenericTypeItem {
   return {
-    code: form.code.trim(),
-    name: form.name.trim(),
-    description: form.description.trim() || null,
-    color: form.color.trim() || null,
-    icon: form.icon.trim() || null,
+    code: item.code.trim(),
+    name: item.name.trim(),
+    description: item.description.trim() || null,
+    color: item.color?.trim() || null,
+    icon: item.icon?.trim() || null,
     sort_order:
-      typeof form.order === 'number' && !Number.isNaN(form.order)
-        ? form.order
+      typeof item.order === 'number' && !Number.isNaN(item.order)
+        ? item.order
         : null,
-    active: form.active,
+    active: item.active,
   }
 }
 
 export default function GenericTypeTile(props: GenericTypeTileProps) {
   const { title, description, fetchItems, createItem, updateItem } = props
 
-  const [items, setItems] = useState<GenericTypeItem[]>([])
-  const [selectedCode, setSelectedCode] = useState<string | null>(null)
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [isNew, setIsNew] = useState<boolean>(true)
+  const [items, setItems] = useState<InternalItem[]>([])
+  const [selectedId, setSelectedId] = useState<string | number | null>(null)
+  const [selectedCodeKey, setSelectedCodeKey] = useState<string | null>(null)
 
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
@@ -112,114 +101,122 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
   const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
-    loadData()
-  }, [])
+    let isMounted = true
 
-  async function loadData() {
-    setLoading(true)
-    setError(null)
-    setSuccess(null)
+    async function load() {
+      setLoading(true)
+      setError(null)
+      try {
+        const rows = await fetchItems()
+        if (!isMounted) return
 
-    try {
-      const rows = await fetchItems()
-      setItems(rows)
+        const mapped = rows.map(mapRowToInternal)
+        setItems(mapped)
 
-      if (rows.length > 0) {
-        setSelectedCode(rows[0].code)
-        setForm(formFromRow(rows[0]))
-        setIsNew(false)
-      } else {
-        setSelectedCode(null)
-        setForm(emptyForm)
-        setIsNew(true)
+        if (mapped.length > 0) {
+          setSelectedId(mapped[0].id)
+          setSelectedCodeKey(mapped[0].code)
+        }
+      } catch (_e) {
+        if (!isMounted) return
+        setError('Nepodařilo se načíst data.')
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
       }
-    } catch (err: any) {
-      console.error(err)
-      setError(err?.message ?? 'Chyba při načítání typů.')
-    } finally {
-      setLoading(false)
     }
-  }
 
-  function handleSelect(code: string) {
-    const row = items.find((r) => r.code === code)
-    if (!row) return
+    load()
 
-    setSelectedCode(row.code)
-    setForm(formFromRow(row))
-    setIsNew(false)
-    setError(null)
-    setSuccess(null)
-  }
-
-  function handleFormChange<K extends keyof FormState>(
-    field: K,
-    value: FormState[K],
-  ) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
-  function handleOrderChange(value: string) {
-    if (value === '') {
-      handleFormChange('order', undefined)
-      return
+    return () => {
+      isMounted = false
     }
-    let num = Number(value)
-    if (Number.isNaN(num)) return
-    if (num < ORDER_MIN) num = ORDER_MIN
-    if (num > ORDER_MAX) num = ORDER_MAX
-    handleFormChange('order', num)
-  }
+  }, [fetchItems])
 
   const normalizedFilter = filterText.trim().toLowerCase()
 
-  const filteredItems = items
-    .filter((item) => (showArchived ? true : item.active !== false))
+  const visibleItems = items
+    .filter((item) => (showArchived ? true : item.active))
     .filter((item) => {
       if (!normalizedFilter) return true
-      const haystack =
-        (item.name ?? '') +
-        ' ' +
-        (item.code ?? '') +
-        ' ' +
-        (item.description ?? '')
-      return haystack.toLowerCase().includes(normalizedFilter)
+      const haystack = `${item.name ?? ''} ${item.code ?? ''} ${
+        item.description ?? ''
+      }`.toLowerCase()
+      return haystack.includes(normalizedFilter)
     })
 
-  const selectedIndex = filteredItems.findIndex(
-    (i) => i.code === selectedCode,
-  )
+  const selectedItem = items.find((x) => x.id === selectedId) ?? null
 
-  function selectByIndex(newIndex: number) {
-    if (newIndex < 0 || newIndex >= filteredItems.length) return
-    const row = filteredItems[newIndex]
-    if (!row) return
-    setSelectedCode(row.code)
-    setForm(formFromRow(row))
-    setIsNew(false)
-    setError(null)
+  function handleSelect(id: string | number) {
+    const found = items.find((x) => x.id === id) ?? null
+    setSelectedId(id)
     setSuccess(null)
+    setError(null)
+    if (found) {
+      setSelectedCodeKey(found.code)
+    } else {
+      setSelectedCodeKey(null)
+    }
   }
 
-  function handlePrev() {
-    if (selectedIndex === -1) return
-    selectByIndex(selectedIndex - 1)
+  function handleChangeField(field: keyof InternalItem, value: any) {
+    if (!selectedId) return
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === selectedId
+          ? {
+              ...item,
+              [field]:
+                field === 'code' || field === 'name'
+                  ? String(value).slice(
+                      0,
+                      field === 'code' ? CODE_MAX : NAME_MAX,
+                    )
+                  : value,
+            }
+          : item,
+      ),
+    )
+    setSuccess(null)
+    setError(null)
   }
 
-  function handleNext() {
-    if (selectedIndex === -1) return
-    selectByIndex(selectedIndex + 1)
+  function handleNew() {
+    setSuccess(null)
+    setError(null)
+
+    const newItem: InternalItem = {
+      id: `__new__-${Date.now()}`,
+      code: '',
+      name: '',
+      description: '',
+      color: '',
+      icon: '',
+      order: undefined,
+      active: true,
+      _isNew: true,
+    }
+
+    setItems((prev) => [newItem, ...prev])
+    setSelectedId(newItem.id)
+    setSelectedCodeKey(null)
   }
 
   async function handleSave() {
-    const trimmedCode = form.code.trim()
-    const trimmedName = form.name.trim()
+    if (!selectedItem) return
 
-    if (!trimmedCode || !trimmedName) {
-      setError('Kód a název jsou povinné.')
+    const trimmedCode = selectedItem.code.trim()
+    const trimmedName = selectedItem.name.trim()
+
+    if (!trimmedCode) {
+      setError('Kód je povinný.')
+      setSuccess(null)
+      return
+    }
+    if (!trimmedName) {
+      setError('Název je povinný.')
+      setSuccess(null)
       return
     }
 
@@ -228,677 +225,120 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     setSuccess(null)
 
     try {
-      const payload = rowFromForm(form)
+      const payload = mapInternalToPayload(selectedItem)
+      let saved: GenericTypeItem
 
-      if (isNew || !selectedCode) {
-        const created = await createItem(payload)
-        setItems((prev) => [...prev, created])
-        setSelectedCode(created.code)
-        setForm(formFromRow(created))
-        setIsNew(false)
-        setSuccess('Záznam byl vytvořen.')
+      if (selectedItem._isNew || !selectedCodeKey) {
+        saved = await createItem(payload)
       } else {
-        const updated = await updateItem(selectedCode, payload)
-        setItems((prev) =>
-          prev.map((r) => (r.code === selectedCode ? updated : r)),
-        )
-        setSelectedCode(updated.code)
-        setForm(formFromRow(updated))
-        setIsNew(false)
-        setSuccess('Záznam byl uložen.')
+        saved = await updateItem(selectedCodeKey, payload)
       }
-    } catch (err: any) {
-      console.error(err)
-      setError(err?.message ?? 'Chyba při ukládání.')
-    } finally {
-      setSaving(false)
-    }
-  }
 
-  function handleNew() {
-    setSelectedCode(null)
-    setForm(emptyForm)
-    setIsNew(true)
-    setError(null)
-    setSuccess(null)
-  }
+      const mapped = mapRowToInternal(saved)
 
-  async function handleArchive() {
-    if (!selectedCode) return
-
-    if (!window.confirm('Opravdu archivovat tento záznam?')) return
-
-    setSaving(true)
-    setError(null)
-    setSuccess(null)
-
-    try {
-      const payload = { ...rowFromForm(form), active: false }
-      const updated = await updateItem(selectedCode, payload)
       setItems((prev) =>
-        prev.map((r) => (r.code === selectedCode ? updated : r)),
+        prev.map((item) =>
+          item.id === selectedItem.id ? mapped : item,
+        ),
       )
-      setSelectedCode(updated.code)
-      setForm(formFromRow(updated))
-      setIsNew(false)
-      setSuccess('Záznam byl archivován.')
-    } catch (err: any) {
-      console.error(err)
-      setError(err?.message ?? 'Chyba při archivaci.')
+      setSelectedId(mapped.id)
+      setSelectedCodeKey(mapped.code)
+      setSuccess('Uloženo.')
+    } catch (_e) {
+      setError('Uložení se nezdařilo.')
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleToggleActive() {
+    if (!selectedItem) return
+    handleChangeField('active', !selectedItem.active)
+  }
+
+  const listProps: ConfigListWithFormProps<InternalItem> = {
+    title,
+    items: visibleItems,
+    selectedId,
+    onSelect: handleSelect,
+    onChangeField: (field, value) =>
+      handleChangeField(field as keyof InternalItem, value),
+    onSave: handleSave,
+    onNew: handleNew,
+    loading: loading || saving,
   }
 
   return (
-    <div style={{ padding: '16px 24px' }}>
-      <header style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
-          {title}
-        </h2>
+    <div className="generic-type-tile">
+      <header className="generic-type-tile__header">
+        <h2 className="generic-type-tile__title">{title}</h2>
         {description && (
-          <p style={{ fontSize: 13, color: '#555' }}>{description}</p>
+          <p className="generic-type-tile__description">
+            {description}
+          </p>
         )}
       </header>
 
-      {error && (
-        <div
-          style={{
-            marginBottom: 12,
-            padding: '8px 12px',
-            borderRadius: 6,
-            background: '#ffe5e5',
-            color: '#900',
-            fontSize: 13,
-          }}
-        >
-          {error}
+      {/* chybové / informační zprávy – sdílíme styly s login panelem */}
+      {error && <p className="login-panel__error">{error}</p>}
+      {success && <p className="login-panel__message">{success}</p>}
+
+      {/* nástroje: filtr + archiv */}
+      <div className="generic-type-tile__toolbar">
+        <div className="generic-type-tile__toolbar-left">
+          <label className="generic-type-tile__filter">
+            <span>Filtrovat</span>
+            <input
+              type="text"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              placeholder="Hledat podle názvu, kódu nebo popisu…"
+            />
+          </label>
         </div>
-      )}
-
-      {success && (
-        <div
-          style={{
-            marginBottom: 12,
-            padding: '8px 12px',
-            borderRadius: 6,
-            background: '#e5ffe8',
-            color: '#086b1f',
-            fontSize: 13,
-          }}
-        >
-          {success}
+        <div className="generic-type-tile__toolbar-right">
+          <label className="generic-type-tile__checkbox">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+            />
+            <span>Zobrazit archivované</span>
+          </label>
         </div>
-      )}
+      </div>
 
-      {loading ? (
-        <div>Načítání…</div>
-      ) : (
-        <>
-          {/* horní blok - filtr + tabulka */}
-          <section
-            style={{
-              borderRadius: 8,
-              border: '1px solid #ddd',
-              background: '#fafafa',
-              padding: 8,
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 8,
-                alignItems: 'center',
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ flex: '1 1 220px' }}>
-                <input
-                  type="text"
-                  placeholder="Filtrovat…"
-                  value={filterText}
-                  onChange={(e) => setFilterText(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '4px 8px',
-                    borderRadius: 999,
-                    border: '1px solid #ddd',
-                    fontSize: 13,
-                  }}
-                />
-              </div>
+      {/* hlavní layout – seznam + formulář (kód, název, barva, ikona, pořadí) */}
+      <ConfigListWithForm<InternalItem> {...listProps} />
 
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 13,
-                }}
-              >
+      {/* doplňková část formuláře – popis + aktivní */}
+      {selectedItem && (
+        <div className="config-form generic-type-tile__extra-form">
+          <div className="config-form__grid">
+            <div className="config-form__field">
+              <label>Popis</label>
+              <textarea
+                value={selectedItem.description}
+                onChange={(e) =>
+                  handleChangeField('description', e.target.value)
+                }
+                rows={3}
+              />
+            </div>
+
+            <div className="config-form__field">
+              <label>Stav</label>
+              <label className="generic-type-tile__checkbox">
                 <input
                   type="checkbox"
-                  checked={showArchived}
-                  onChange={(e) => setShowArchived(e.target.checked)}
+                  checked={selectedItem.active}
+                  onChange={handleToggleActive}
                 />
-                <span>Zobrazit archivované</span>
+                <span>Aktivní záznam</span>
               </label>
-
-              <button
-                type="button"
-                title="Nový záznam"
-                onClick={handleNew}
-                style={{
-                  marginLeft: 'auto',
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  border: 'none',
-                  background: '#f97316',
-                  color: '#fff',
-                  fontSize: 18,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                +
-              </button>
             </div>
-
-            <div
-              style={{
-                maxHeight: 260,
-                overflowY: 'auto',
-              }}
-            >
-              <table
-                style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: 13,
-                }}
-              >
-                <thead>
-                  <tr>
-                    <th
-                      style={{
-                        textAlign: 'left',
-                        padding: '4px 6px',
-                        borderBottom: '1px solid #ddd',
-                      }}
-                    >
-                      Název
-                    </th>
-                    <th
-                      style={{
-                        textAlign: 'left',
-                        padding: '4px 6px',
-                        borderBottom: '1px solid #ddd',
-                      }}
-                    >
-                      Ikona
-                    </th>
-                    <th
-                      style={{
-                        textAlign: 'left',
-                        padding: '4px 6px',
-                        borderBottom: '1px solid #ddd',
-                      }}
-                    >
-                      Barva
-                    </th>
-                    <th
-                      style={{
-                        textAlign: 'left',
-                        padding: '4px 6px',
-                        borderBottom: '1px solid #ddd',
-                      }}
-                    >
-                      Popis
-                    </th>
-                    <th
-                      style={{
-                        textAlign: 'right',
-                        padding: '4px 6px',
-                        borderBottom: '1px solid #ddd',
-                      }}
-                    >
-                      Pořadí
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        style={{
-                          padding: '6px 8px',
-                          color: '#777',
-                          fontStyle: 'italic',
-                        }}
-                      >
-                        Žádné položky neodpovídají filtru.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredItems.map((item) => {
-                      const isSelected = item.code === selectedCode
-                      const bgSelected = '#e0ecff'
-                      const bgColor =
-                        item.color && /^#.{3,6}/.test(item.color)
-                          ? item.color
-                          : isSelected
-                          ? bgSelected
-                          : 'transparent'
-
-                      const rowStyle: React.CSSProperties = {
-                        cursor: 'pointer',
-                        background: isSelected ? '#f1f5ff' : 'transparent',
-                      }
-
-                      const nameCellStyle: React.CSSProperties = {
-                        padding: '6px 6px',
-                        borderBottom: '1px solid '#eee',
-                        background: bgColor,
-                        fontWeight: 600,
-                      }
-
-                      const mutedStyle: React.CSSProperties = {
-                        fontSize: 11,
-                        color: '#555',
-                        opacity: item.active === false ? 0.6 : 1,
-                      }
-
-                      return (
-                        <tr
-                          key={item.code}
-                          style={rowStyle}
-                          onClick={() => handleSelect(item.code)}
-                        >
-                          <td style={nameCellStyle}>
-                            <div style={mutedStyle}>
-                              {item.name || '(bez názvu)'}
-                              {item.active === false ? ' • archivováno' : ''}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 10,
-                                color: '#333',
-                                opacity: 0.7,
-                              }}
-                            >
-                              {item.code}
-                            </div>
-                          </td>
-                          <td
-                            style={{
-                              padding: '6px 6px',
-                              borderBottom: '1px solid #eee',
-                              ...mutedStyle,
-                            }}
-                          >
-                            {item.icon}
-                          </td>
-                          <td
-                            style={{
-                              padding: '6px 6px',
-                              borderBottom: '1px solid #eee',
-                              ...mutedStyle,
-                            }}
-                          >
-                            {item.color}
-                          </td>
-                          <td
-                            style={{
-                              padding: '6px 6px',
-                              borderBottom: '1px solid #eee',
-                              ...mutedStyle,
-                            }}
-                          >
-                            {item.description}
-                          </td>
-                          <td
-                            style={{
-                              padding: '6px 6px',
-                              borderBottom: '1px solid #eee',
-                              textAlign: 'right',
-                              ...mutedStyle,
-                            }}
-                          >
-                            {item.sort_order ?? ''}
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* dolní blok - formulář */}
-          <section
-            style={{
-              borderRadius: 8,
-              border: '1px solid #ddd',
-              background: '#fff',
-              padding: 12,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 12,
-                gap: 8,
-              }}
-            >
-              <strong style={{ fontSize: 13 }}>
-                {isNew ? 'Nový záznam' : 'Detail záznamu'}
-              </strong>
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
-                {/* Aktivní */}
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontSize: 13,
-                    marginRight: 8,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={form.active}
-                    onChange={(e) =>
-                      handleFormChange('active', e.target.checked)
-                    }
-                  />
-                  <span>Aktivní</span>
-                </label>
-
-                {/* Předchozí / další */}
-                <button
-                  type="button"
-                  title="Předchozí"
-                  onClick={handlePrev}
-                  disabled={selectedIndex <= 0}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    border: '1px solid #ccc',
-                    background: '#f9fafb',
-                    fontSize: 14,
-                    cursor:
-                      selectedIndex <= 0 ? 'not-allowed' : 'pointer',
-                    opacity: selectedIndex <= 0 ? 0.5 : 1,
-                  }}
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  title="Následující"
-                  onClick={handleNext}
-                  disabled={
-                    selectedIndex === -1 ||
-                    selectedIndex >= filteredItems.length - 1
-                  }
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    border: '1px solid #ccc',
-                    background: '#f9fafb',
-                    fontSize: 14,
-                    cursor:
-                      selectedIndex === -1 ||
-                      selectedIndex >= filteredItems.length - 1
-                        ? 'not-allowed'
-                        : 'pointer',
-                    opacity:
-                      selectedIndex === -1 ||
-                      selectedIndex >= filteredItems.length - 1
-                        ? 0.5
-                        : 1,
-                  }}
-                >
-                  ›
-                </button>
-
-                {/* Uložit */}
-                <button
-                  type="button"
-                  title="Uložit"
-                  onClick={handleSave}
-                  disabled={saving}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    border: 'none',
-                    background: '#16a34a',
-                    color: '#fff',
-                    fontSize: 17,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: saving ? 'default' : 'pointer',
-                    opacity: saving ? 0.7 : 1,
-                  }}
-                >
-                  💾
-                </button>
-
-                {/* Archivovat */}
-                {!isNew && (
-                  <button
-                    type="button"
-                    title="Archivovat"
-                    onClick={handleArchive}
-                    disabled={saving}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      border: 'none',
-                      background: '#dc2626',
-                      color: '#fff',
-                      fontSize: 17,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: saving ? 'default' : 'pointer',
-                      opacity: saving ? 0.7 : 1,
-                    }}
-                  >
-                    🗄
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                handleSave()
-              }}
-              style={{ fontSize: 13 }}
-            >
-              {/* Kód + Název */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                  gap: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <label style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ marginBottom: 2 }}>
-                    Kód <span style={{ color: '#dc2626' }}>*</span>
-                  </span>
-                  <input
-                    type="text"
-                    value={form.code}
-                    onChange={(e) =>
-                      handleFormChange(
-                        'code',
-                        e.target.value.toUpperCase().slice(0, CODE_MAX),
-                      )
-                    }
-                    maxLength={CODE_MAX}
-                    style={{
-                      padding: '4px 6px',
-                      borderRadius: 4,
-                      border: '1px solid #ccc',
-                    }}
-                  />
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ marginBottom: 2 }}>
-                    Název <span style={{ color: '#dc2626' }}>*</span>
-                  </span>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) =>
-                      handleFormChange(
-                        'name',
-                        e.target.value.slice(0, NAME_MAX),
-                      )
-                    }
-                    maxLength={NAME_MAX}
-                    style={{
-                      padding: '4px 6px',
-                      borderRadius: 4,
-                      border: '1px solid #ccc',
-                    }}
-                  />
-                </label>
-              </div>
-
-              {/* Barva + paleta + Ikona + Pořadí */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                  gap: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <label style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ marginBottom: 2 }}>Barva (hex)</span>
-                  <input
-                    type="text"
-                    value={form.color}
-                    onChange={(e) =>
-                      handleFormChange(
-                        'color',
-                        e.target.value.slice(0, COLOR_MAX),
-                      )
-                    }
-                    maxLength={COLOR_MAX}
-                    placeholder="#f97316"
-                    style={{
-                      padding: '4px 6px',
-                      borderRadius: 4,
-                      border: '1px solid #ccc',
-                      marginBottom: 4,
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {COLOR_PALETTE.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => handleFormChange('color', c)}
-                        title={c}
-                        style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: 999,
-                          border:
-                            form.color === c
-                              ? '2px solid #111827'
-                              : '1px solid #ccc',
-                          background: c,
-                          padding: 0,
-                          cursor: 'pointer',
-                        }}
-                      />
-                    ))}
-                  </div>
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ marginBottom: 2 }}>Ikona</span>
-                  <input
-                    type="text"
-                    value={form.icon}
-                    onChange={(e) => handleFormChange('icon', e.target.value)}
-                    placeholder="👤"
-                    style={{
-                      padding: '4px 6px',
-                      borderRadius: 4,
-                      border: '1px solid #ccc',
-                    }}
-                  />
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ marginBottom: 2 }}>Pořadí</span>
-                  <input
-                    type="number"
-                    value={form.order ?? ''}
-                    onChange={(e) => handleOrderChange(e.target.value)}
-                    min={ORDER_MIN}
-                    max={ORDER_MAX}
-                    style={{
-                      padding: '4px 6px',
-                      borderRadius: 4,
-                      border: '1px solid #ccc',
-                    }}
-                  />
-                </label>
-              </div>
-
-              <label
-                style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
-              >
-                <span>Popis</span>
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    handleFormChange('description', e.target.value)
-                  }
-                  rows={3}
-                  style={{
-                    padding: '4px 6px',
-                    borderRadius: 4,
-                    border: '1px solid #ccc',
-                    resize: 'vertical',
-                  }}
-                />
-              </label>
-            </form>
-          </section>
-        </>
+          </div>
+        </div>
       )}
     </div>
   )
