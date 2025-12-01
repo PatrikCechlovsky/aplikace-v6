@@ -9,14 +9,20 @@ import GenericTypeTile, {
   GenericTypeItem,
 } from '@/app/UI/GenericTypeTile'
 
-import type { SubjectType } from '../services/subjectTypes'
+import type {
+  SubjectType,
+  SubjectTypePayload,
+} from '../services/subjectTypes'
 import {
   fetchSubjectTypes,
   createSubjectType,
   updateSubjectType,
 } from '../services/subjectTypes'
 
-// mapování z DB typu na generický typový záznam
+/**
+ * Mapování z DB řádku (SubjectType) na generický typový záznam
+ * používaný GenericTypeTile.
+ */
 function mapRowToGeneric(row: SubjectType): GenericTypeItem {
   return {
     code: row.code,
@@ -24,21 +30,26 @@ function mapRowToGeneric(row: SubjectType): GenericTypeItem {
     description: row.description,
     color: row.color,
     icon: row.icon,
-    sort_order: row.sort_order,
-    active: row.active,
+    sort_order: row.sort_order ?? null,
+    active: row.active ?? true,
   }
 }
 
-// mapování z generického formuláře zpět na payload pro service
-function mapGenericToPayload(input: GenericTypeItem) {
+/**
+ * Mapování z GenericTypeItem (formulář) na payload pro service.
+ * `code` se předává zvlášť jako parametr funkce.
+ */
+function mapGenericToPayload(input: GenericTypeItem): SubjectTypePayload {
   return {
-    code: input.code,
     name: input.name,
-    description: input.description ?? '',
-    color: input.color ?? undefined,
-    icon: input.icon ?? undefined,
-    order: input.sort_order ?? undefined,
-    is_active: input.active ?? true,
+    description: input.description ?? null,
+    color: input.color ?? null,
+    icon: input.icon ?? null,
+    sort_order:
+      typeof input.sort_order === 'number' && !Number.isNaN(input.sort_order)
+        ? input.sort_order
+        : null,
+    active: input.active ?? true,
   }
 }
 
@@ -46,16 +57,22 @@ export default function SubjectTypesTile() {
   return (
     <GenericTypeTile
       title="Typy subjektů"
-      description="Číselník typů subjektů (osoba, firma, spolek…). Přidávat / upravovat může pouze admin."
+      description="Číselník typů subjektů (osoba, firma, společenství, pronajímatel…)."
+
+      // načtení seznamu – napojení na Supabase přes service
       fetchItems={async () => {
-        const rows: SubjectType[] = await fetchSubjectTypes()
+        const rows = await fetchSubjectTypes()
         return rows.map(mapRowToGeneric)
       }}
+
+      // vytvoření nového záznamu
       createItem={async (input) => {
         const payload = mapGenericToPayload(input)
-        const created = await createSubjectType(payload)
+        const created = await createSubjectType(input.code, payload)
         return mapRowToGeneric(created as SubjectType)
       }}
+
+      // update existujícího záznamu
       updateItem={async (codeKey, input) => {
         const payload = mapGenericToPayload(input)
         const updated = await updateSubjectType(codeKey, payload)
