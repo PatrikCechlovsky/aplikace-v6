@@ -14,7 +14,7 @@ import Breadcrumbs from './UI/Breadcrumbs'
 import HomeActions from './UI/HomeActions'
 import CommonActions from './UI/CommonActions'
 import LoginPanel from './UI/LoginPanel'
-import SubjectTypesTile from './modules/900-nastaveni/tiles/SubjectTypesTile'
+
 
 import {
   getCurrentSession,
