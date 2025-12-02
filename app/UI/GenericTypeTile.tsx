@@ -687,9 +687,10 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 onChange={(e) => handleChangeField('color', e.target.value)}
               />
               <div className="generic-type__palette">
-                {APP_COLOR_PALETTE.map((hex) => {
+                {APP_COLOR_PALETTE.map((c) => {
                   const isSelected =
-                    (form.color ?? '').toLowerCase() === hex.toLowerCase()
+                    (form.color ?? '').toLowerCase() ===
+                    c.hex.toLowerCase()
                   const swatchClassNames = [
                     'generic-type__swatch',
                     isSelected ? 'generic-type__swatch--selected' : '',
@@ -698,15 +699,15 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                     .join(' ')
                   return (
                     <button
-                      key={hex}
+                      key={c.id}
                       type="button"
                       className={swatchClassNames}
-                      onClick={() => handleChangeField('color', hex)}
-                      title={hex}
+                      onClick={() => handleChangeField('color', c.hex)}
+                      title={c.label ?? c.hex}
                     >
                       <span
                         className="generic-type__swatch-inner"
-                        style={{ backgroundColor: hex }}
+                        style={{ backgroundColor: c.hex }}
                       />
                     </button>
                   )
@@ -779,7 +780,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
             />
           </div>
 
-          {/* Spodní tlačítka – můžeš je klidně nechat */}
+          {/* Spodní tlačítka */}
           <div className="generic-type__buttons">
             <button
               type="button"
