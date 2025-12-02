@@ -428,6 +428,23 @@ const data = {
     aliasesCZ: ["doprava","další"],
     aliasesEN: ["right arrow","next"]
   },
+    "prev": {
+    emoji: "◀️",
+    nameCZ: "Předchozí",
+    nameEN: "Previous",
+    category: "ZÁKLAD / NAV",
+    aliasesCZ: ["zpět", "předchozí záznam"],
+    aliasesEN: ["back", "previous", "previous record"]
+  },
+  "next": {
+    emoji: "▶️",
+    nameCZ: "Další",
+    nameEN: "Next",
+    category: "ZÁKLAD / NAV",
+    aliasesCZ: ["vpřed", "další záznam"],
+    aliasesEN: ["forward", "next", "next record"]
+  },
+
   "chevron-up": {
     emoji: "▲",
     nameCZ: "Šipka nahoru",
