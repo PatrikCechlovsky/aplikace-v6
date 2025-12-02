@@ -1,0 +1,37 @@
+name: Generate icons.ts from ikons.md
+
+on:
+  # Spustí se při každém pushi, kde se změní ikony nebo tenhle workflow
+  push:
+    paths:
+      - 'ikons (1).md'
+      - 'docs/ikons.md'
+      - 'scripts/generate-icons-from-md.js'
+      - '.github/workflows/generate-icons.yml'
+  # Můžeš spustit i ručně z karty Actions → Run workflow
+  workflow_dispatch:
+
+jobs:
+  generate-icons:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate icons.ts from MD
+        run: |
+          node scripts/generate-icons-from-md.js
+
+      - name: Commit icons.ts back to repo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: generate icons.ts from ikons.md"
+          file_pattern: "app/icons.ts"
