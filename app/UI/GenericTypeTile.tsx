@@ -6,7 +6,7 @@
  *
  * - Seznam nahoře (filtr, Zobrazit archivované, velké tlačítko Přidat)
  * - Uprostřed hlášky (chyba, info, rozdělaná práce)
- * - Dole detail + navigace: ← Předchozí, → Další, Uložit, Archivovat
+ * - Dole detail + navigace: Předchozí, Další, Uložit, Archivovat
  */
 
 import React, { useEffect, useMemo, useState } from 'react'
@@ -431,8 +431,8 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 <span>Zobrazit archivované</span>
               </label>
 
-              {/* Velké červené tlačítko PŘIDAT */}
-             <button
+              {/* Velké červené tlačítko PŘIDAT – ikona + text na hover */}
+              <button
                 type="button"
                 className="generic-type__button-add-top generic-type__button--with-label"
                 onClick={requestNew}
@@ -440,8 +440,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 title="Přidat nový záznam"
               >
                 <span className="generic-type__button-icon">
-                  {/* tady klidně můžeš později dát getIcon('plus' as IconKey) */}
-                  ➕
+                  {getIcon('plus' as IconKey) /* uprav klíč podle icons.ts */}
                 </span>
                 <span className="generic-type__button-text">Přidat</span>
               </button>
@@ -608,29 +607,37 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
           <div className="generic-type__form-header-row">
             <h2 className="generic-type__form-title">Detail typu</h2>
             <div className="generic-type__form-nav">
-              {/* z prava má být: Archivovat | Uložit | → | ←
-                  → pořadí v DOMu: ←, →, Uložit, Archivovat */}
+              {/* Předchozí */}
               <button
                 type="button"
-                className="generic-type__button-nav"
+                className="generic-type__button-nav generic-type__button--with-label"
                 onClick={requestPrev}
                 disabled={selectedIndex <= 0}
-                title="Předchozí"
+                title="Předchozí záznam"
               >
-                ‹
+                <span className="generic-type__button-icon">
+                  {getIcon('arrow-left' as IconKey) /* uprav klíč podle icons.ts */}
+                </span>
+                <span className="generic-type__button-text">Předchozí</span>
               </button>
+
+              {/* Další */}
               <button
                 type="button"
-                className="generic-type__button-nav"
+                className="generic-type__button-nav generic-type__button--with-label"
                 onClick={requestNext}
                 disabled={
                   selectedIndex < 0 || selectedIndex >= visibleItems.length - 1
                 }
-                title="Další"
+                title="Další záznam"
               >
-                ›
+                <span className="generic-type__button-icon">
+                  {getIcon('arrow-right' as IconKey) /* uprav klíč podle icons.ts */}
+                </span>
+                <span className="generic-type__button-text">Další</span>
               </button>
 
+              {/* Uložit */}
               <button
                 type="button"
                 className="generic-type__button-save-main generic-type__button--with-label"
@@ -639,22 +646,23 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 title="Uložit změny"
               >
                 <span className="generic-type__button-icon">
-                  💾{/* sem můžeš dát getIcon('save' as IconKey) */}
+                  {getIcon('save' as IconKey) /* uprav klíč podle icons.ts */}
                 </span>
                 <span className="generic-type__button-text">
                   {saving ? 'Ukládám…' : 'Uložit'}
                 </span>
               </button>
-              
+
+              {/* Archivovat */}
               <button
                 type="button"
                 className="generic-type__button-archive generic-type__button--with-label"
                 onClick={requestArchive}
-                disabled={!selectedCode || saving}
+                disabled(!selectedCode || saving)
                 title="Archivovat záznam (nejde mazat)"
               >
                 <span className="generic-type__button-icon">
-                  🗄️{/* sem můžeš dát getIcon('archive' as IconKey) */}
+                  {getIcon('archive' as IconKey) /* uprav klíč podle icons.ts */}
                 </span>
                 <span className="generic-type__button-text">Archivovat</span>
               </button>
@@ -700,8 +708,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               <div className="generic-type__palette">
                 {APP_COLOR_PALETTE.map((c) => {
                   const isSelected =
-                    (form.color ?? '').toLowerCase() ===
-                    c.hex.toLowerCase()
+                    (form.color ?? '').toLowerCase() === c.hex.toLowerCase()
                   const swatchClassNames = [
                     'generic-type__swatch',
                     isSelected ? 'generic-type__swatch--selected' : '',
@@ -790,8 +797,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               }
             />
           </div>
-
-         
         </div>
       </div>
     </section>
