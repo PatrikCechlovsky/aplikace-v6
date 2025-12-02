@@ -11,21 +11,6 @@ on:
 permissions:
   contents: write
 
-jobs:
-  generate-icons:
-    runs-on: ubuntu-latest
-    ...
-
-on:
-  # Spustí se při každém pushi, kde se změní ikony nebo tenhle workflow
-  push:
-    paths:
-      - 'ikons (1).md'
-      - 'docs/ikons.md'
-      - 'scripts/generate-icons-from-md.js'
-      - '.github/workflows/generate-icons.yml'
-  # Můžeš spustit i ručně z karty Actions → Run workflow
-  workflow_dispatch:
 
 jobs:
   generate-icons:
