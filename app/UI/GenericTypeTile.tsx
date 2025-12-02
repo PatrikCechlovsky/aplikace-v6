@@ -2,22 +2,17 @@
 
 /*
  * FILE: app/UI/GenericTypeTile.tsx
- * PURPOSE: Generický typový pohled pro číselníky (kód, název, barva, ikona, pořadí, aktivita)
+ * PURPOSE: Generický číselníkový formulář (typy subjektů, typy jednotek…)
  *
- * Použití:
- *  - UI je společné pro všechny číselníky typu:
- *      code, name, description, color, icon, sort_order, active
- *  - Datová logika (Supabase) je schovaná v "wrapper" tiles komponentě
- *    (např. app/modules/900-nastaveni/tiles/SubjectTypesTile.tsx)
+ * - Seznam nahoře (filtr, Zobrazit archivované, velké tlačítko Přidat)
+ * - Uprostřed hlášky (chyba, info, rozdělaná práce)
+ * - Dole detail + navigace: ← Předchozí, → Další, Uložit, Archivovat
  */
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { getIcon, IconKey } from '@/app/UI/icons'
+import { APP_COLOR_PALETTE } from '@/app/lib/colorpalette'
 
-/**
- * Reprezentace jednoho záznamu v číselníku.
- * - všechny hodnoty kromě code a name jsou volitelné
- */
 export type GenericTypeItem = {
   code: string
   name: string
@@ -29,67 +24,32 @@ export type GenericTypeItem = {
 }
 
 type GenericTypeTileProps = {
-  /** Nadpis karty, např. "Typy subjektů" */
   title: string
-  /** Popis pod nadpisem */
   description?: string
 
-  /** Načtení seznamu položek z datové vrstvy */
   fetchItems: () => Promise<GenericTypeItem[]>
-
-  /** Vytvoření nové položky – vrací uložený záznam z DB */
   createItem: (input: GenericTypeItem) => Promise<GenericTypeItem>
-
-  /**
-   * Update existující položky.
-   * @param codeKey původní kód (primární klíč) – může se lišit od input.code, pokud uživatel kód změnil
-   * @param input   nová data
-   */
   updateItem: (codeKey: string, input: GenericTypeItem) => Promise<GenericTypeItem>
 }
 
-/**
- * Centrální paleta barev (24 odstínů).
- * Používá se ve formuláři a můžeš ji znovu použít i jinde.
- */
-const COLOR_PALETTE: string[] = [
-  '#E74C3C',
-  '#E05570',
-  '#A569BD',
-  '#5DADE2',
-  '#1ABC9C',
-  '#3498DB',
-  '#27AE60',
-  '#1E8449',
-  '#F9F635',
-  '#F4D03F',
-  '#F5B041',
-  '#E67E22',
-  '#935633',
-  '#D7CCC8',
-  '#95AA56',
-  '#566573',
-  '#956573',
-  '#424949',
-  '#212F3D',
-  '#F1948A',
-  '#BB8FCE',
-  '#7FB3D5',
-  '#A3E4D7',
-  '#F8C471',
-]
+type PendingAction =
+  | null
+  | { type: 'select'; code: string }
+  | { type: 'new' }
+  | { type: 'prev' }
+  | { type: 'next' }
+  | { type: 'archive' }
 
 export default function GenericTypeTile(props: GenericTypeTileProps) {
   const { title, description, fetchItems, createItem, updateItem } = props
 
   const [items, setItems] = useState<GenericTypeItem[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
-  const [saving, setSaving] = useState<boolean>(false)
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
-
-  const [filter, setFilter] = useState<string>('')
-  const [showArchived, setShowArchived] = useState<boolean>(false)
+  const [filter, setFilter] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
 
   const [form, setForm] = useState<GenericTypeItem>({
     code: '',
@@ -103,7 +63,8 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
 
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
-  const [dirty, setDirty] = useState<boolean>(false)
+  const [dirty, setDirty] = useState(false)
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null)
 
   // ---------------------------------------------------------------------------
   // Načtení dat
@@ -123,23 +84,15 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
           const aOrder = typeof a.sort_order === 'number' ? a.sort_order : 9999
           const bOrder = typeof b.sort_order === 'number' ? b.sort_order : 9999
           if (aOrder !== bOrder) return aOrder - bOrder
-          return (a.name ?? '').localeCompare(b.name ?? '')
+          return (a.name ?? '').localeCompare(b.name ?? '', 'cs')
         })
+
         setItems(sorted)
 
         if (sorted.length > 0) {
-          const first = sorted[0]
-          setSelectedCode(first.code)
-          setForm({
-            code: first.code,
-            name: first.name,
-            description: first.description ?? '',
-            color: first.color ?? '',
-            icon: first.icon ?? '',
-            sort_order: first.sort_order ?? null,
-            active: first.active ?? true,
-          })
-          setDirty(false)
+          applySelect(sorted[0])
+        } else {
+          resetFormToNew(true)
         }
       } catch (e) {
         console.error('GenericTypeTile – fetchItems failed', e)
@@ -157,7 +110,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
   }, [fetchItems])
 
   // ---------------------------------------------------------------------------
-  // Odvozený seznam podle filtru a archivace
+  // Odvozený seznam
   // ---------------------------------------------------------------------------
 
   const visibleItems = useMemo(() => {
@@ -166,14 +119,9 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     return items.filter((item) => {
       const isActive = item.active ?? true
       if (!showArchived && !isActive) return false
-
       if (!f) return true
 
-      const haystack = [
-        item.name ?? '',
-        item.code ?? '',
-        item.description ?? '',
-      ]
+      const haystack = [item.name ?? '', item.code ?? '', item.description ?? '']
         .join(' ')
         .toLowerCase()
 
@@ -181,27 +129,16 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     })
   }, [items, filter, showArchived])
 
+  const selectedIndex = useMemo(() => {
+    if (!selectedCode) return -1
+    return visibleItems.findIndex((x) => x.code === selectedCode)
+  }, [visibleItems, selectedCode])
+
   // ---------------------------------------------------------------------------
-  // Pomocné funkce
+  // Pomocné funkce – bez kontroly rozdělané práce
   // ---------------------------------------------------------------------------
 
-  function resetFormToNew() {
-    setSelectedCode(null)
-    setForm({
-      code: '',
-      name: '',
-      description: '',
-      color: '',
-      icon: '',
-      sort_order: null,
-      active: true,
-    })
-    setError(null)
-    setInfo(null)
-    setDirty(false)
-  }
-
-  function handleSelectRow(item: GenericTypeItem) {
+  function applySelect(item: GenericTypeItem) {
     setSelectedCode(item.code)
     setForm({
       code: item.code,
@@ -212,10 +149,160 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
       sort_order: item.sort_order ?? null,
       active: item.active ?? true,
     })
+    setDirty(false)
     setError(null)
     setInfo(null)
-    setDirty(false)
+    setPendingAction(null)
   }
+
+  function resetFormToNew(silent = false) {
+    setSelectedCode(null)
+    setForm({
+      code: '',
+      name: '',
+      description: '',
+      color: '',
+      icon: '',
+      sort_order: null,
+      active: true,
+    })
+    setDirty(false)
+    if (!silent) {
+      setError(null)
+      setInfo(null)
+    }
+    setPendingAction(null)
+  }
+
+  function performNavigatePrev() {
+    if (selectedIndex <= 0) return
+    const prevItem = visibleItems[selectedIndex - 1]
+    if (prevItem) applySelect(prevItem)
+  }
+
+  function performNavigateNext() {
+    if (selectedIndex < 0 || selectedIndex >= visibleItems.length - 1) return
+    const nextItem = visibleItems[selectedIndex + 1]
+    if (nextItem) applySelect(nextItem)
+  }
+
+  async function performArchiveCurrent() {
+    if (!selectedCode) return
+    const current = items.find((x) => x.code === selectedCode)
+    if (!current) return
+
+    setSaving(true)
+    try {
+      const updated = await updateItem(selectedCode, {
+        ...current,
+        active: false,
+      })
+
+      setItems((prev) => {
+        const withoutOld = prev.filter((x) => x.code !== selectedCode)
+        const merged = [...withoutOld, updated]
+
+        merged.sort((a, b) => {
+          const aOrder = typeof a.sort_order === 'number' ? a.sort_order : 9999
+          const bOrder = typeof b.sort_order === 'number' ? b.sort_order : 9999
+          if (aOrder !== bOrder) return aOrder - bOrder
+          return (a.name ?? '').localeCompare(b.name ?? '', 'cs')
+        })
+
+        return merged
+      })
+
+      applySelect(updated)
+      setInfo('Záznam byl archivován.')
+    } catch (e) {
+      console.error('GenericTypeTile – archive failed', e)
+      setError('Archivace se nezdařila. Zkus to prosím znovu.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rozdělaná práce – požadavek vs. provedení akce
+  // ---------------------------------------------------------------------------
+
+  function requestSelect(item: GenericTypeItem) {
+    if (!dirty) {
+      applySelect(item)
+    } else {
+      setPendingAction({ type: 'select', code: item.code })
+    }
+  }
+
+  function requestNew() {
+    if (!dirty) {
+      resetFormToNew()
+    } else {
+      setPendingAction({ type: 'new' })
+    }
+  }
+
+  function requestPrev() {
+    if (!dirty) {
+      performNavigatePrev()
+    } else {
+      setPendingAction({ type: 'prev' })
+    }
+  }
+
+  function requestNext() {
+    if (!dirty) {
+      performNavigateNext()
+    } else {
+      setPendingAction({ type: 'next' })
+    }
+  }
+
+  function requestArchive() {
+    if (!dirty) {
+      setPendingAction(null)
+      void performArchiveCurrent()
+    } else {
+      setPendingAction({ type: 'archive' })
+    }
+  }
+
+  function handleDiscardChanges() {
+    const action = pendingAction
+    setPendingAction(null)
+    setDirty(false)
+    setError(null)
+
+    if (!action) return
+
+    switch (action.type) {
+      case 'new':
+        resetFormToNew()
+        break
+      case 'select': {
+        const target = items.find((x) => x.code === action.code)
+        if (target) applySelect(target)
+        break
+      }
+      case 'prev':
+        performNavigatePrev()
+        break
+      case 'next':
+        performNavigateNext()
+        break
+      case 'archive':
+        void performArchiveCurrent()
+        break
+    }
+  }
+
+  function handleKeepEditing() {
+    setPendingAction(null)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Změny ve formuláři
+  // ---------------------------------------------------------------------------
 
   function handleChangeField<K extends keyof GenericTypeItem>(
     field: K,
@@ -227,6 +314,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     }))
     setDirty(true)
     setError(null)
+    setInfo(null)
   }
 
   function handleChangeSortOrder(raw: string) {
@@ -236,7 +324,6 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
     }
     const parsed = Number(raw)
     if (Number.isNaN(parsed)) {
-      // uživateli nebráníme psát, jen hodnotu neuložíme jako číslo
       handleChangeField('sort_order', null)
     } else {
       handleChangeField('sort_order', parsed)
@@ -265,14 +352,12 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
       let saved: GenericTypeItem
 
       if (!selectedCode) {
-        // nový záznam
         saved = await createItem({
           ...form,
           code,
           name,
         })
       } else {
-        // update existujícího
         saved = await updateItem(selectedCode, {
           ...form,
           code,
@@ -280,38 +365,25 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
         })
       }
 
-      // aktualizace lokálního seznamu
       setItems((prev) => {
         const withoutOld = prev.filter((x) => x.code !== selectedCode)
         const merged = [...withoutOld]
 
-        const existingIndex = merged.findIndex((x) => x.code === saved.code)
-        if (existingIndex >= 0) {
-          merged[existingIndex] = saved
-        } else {
-          merged.push(saved)
-        }
+        const idx = merged.findIndex((x) => x.code === saved.code)
+        if (idx >= 0) merged[idx] = saved
+        else merged.push(saved)
 
         merged.sort((a, b) => {
           const aOrder = typeof a.sort_order === 'number' ? a.sort_order : 9999
           const bOrder = typeof b.sort_order === 'number' ? b.sort_order : 9999
           if (aOrder !== bOrder) return aOrder - bOrder
-          return (a.name ?? '').localeCompare(b.name ?? '')
+          return (a.name ?? '').localeCompare(b.name ?? '', 'cs')
         })
 
         return merged
       })
 
-      setSelectedCode(saved.code)
-      setForm({
-        code: saved.code,
-        name: saved.name,
-        description: saved.description ?? '',
-        color: saved.color ?? '',
-        icon: saved.icon ?? '',
-        sort_order: saved.sort_order ?? null,
-        active: saved.active ?? true,
-      })
+      applySelect(saved)
       setDirty(false)
       setInfo('Změny byly úspěšně uloženy.')
     } catch (e) {
@@ -325,6 +397,8 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+
+  const hasUnsavedPrompt = !!pendingAction && dirty
 
   return (
     <section className="generic-type">
@@ -347,14 +421,28 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               onChange={(e) => setFilter(e.target.value)}
             />
 
-            <label className="generic-type__checkbox-label">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-              />
-              <span>Zobrazit archivované</span>
-            </label>
+            <div className="generic-type__list-toolbar-right">
+              <label className="generic-type__checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                />
+                <span>Zobrazit archivované</span>
+              </label>
+
+              {/* Velké červené tlačítko PŘIDAT */}
+              <button
+                type="button"
+                className="generic-type__button-add-top"
+                onClick={requestNew}
+                disabled={saving}
+                title="Přidat nový záznam"
+              >
+                <span className="generic-type__button-add-icon">➕</span>
+                <span>Přidat</span>
+              </button>
+            </div>
           </div>
 
           <div className="generic-type__table-wrapper">
@@ -370,15 +458,18 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                   <tr>
                     <th className="generic-type__th">Název</th>
                     <th className="generic-type__th generic-type__th--small">
+                      Kód
+                    </th>
+                    <th className="generic-type__th generic-type__th--small">
+                      Pořadí
+                    </th>
+                    <th className="generic-type__th generic-type__th--small">
                       Ikona
                     </th>
                     <th className="generic-type__th generic-type__th--small">
                       Barva
                     </th>
                     <th className="generic-type__th">Popis</th>
-                    <th className="generic-type__th generic-type__th--small">
-                      Pořadí
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -401,24 +492,39 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                       <tr
                         key={item.code}
                         className={rowClassNames}
-                        onClick={() => handleSelectRow(item)}
+                        onClick={() => requestSelect(item)}
                       >
+                        {/* Název */}
                         <td className="generic-type__cell generic-type__cell--name">
-                          <div className="generic-type__name-main">
-                            {item.color ? (
-                              <span
-                                className="generic-type__name-badge"
-                                style={{ backgroundColor: item.color || '' }}
-                              >
-                                {item.name}
-                              </span>
-                            ) : (
-                              <span>{item.name}</span>
-                            )}
-                          </div>
-                          <div className="generic-type__name-sub">{item.code}</div>
+                          {item.color ? (
+                            <span
+                              className="generic-type__name-badge"
+                              style={{ backgroundColor: item.color || '' }}
+                            >
+                              {item.name}
+                            </span>
+                          ) : (
+                            <span className="generic-type__name-main">
+                              {item.name}
+                            </span>
+                          )}
                         </td>
 
+                        {/* Kód */}
+                        <td className="generic-type__cell generic-type__cell--code">
+                          <span className="generic-type__name-sub">
+                            {item.code}
+                          </span>
+                        </td>
+
+                        {/* Pořadí */}
+                        <td className="generic-type__cell generic-type__cell--small generic-type__cell--center">
+                          {typeof item.sort_order === 'number'
+                            ? item.sort_order
+                            : ''}
+                        </td>
+
+                        {/* Ikona */}
                         <td className="generic-type__cell generic-type__cell--center">
                           {iconSymbol && (
                             <span className="generic-type__icon-preview">
@@ -427,6 +533,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                           )}
                         </td>
 
+                        {/* Barva */}
                         <td className="generic-type__cell generic-type__cell--center">
                           {item.color ? (
                             <span
@@ -438,14 +545,9 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                           )}
                         </td>
 
+                        {/* Popis */}
                         <td className="generic-type__cell generic-type__cell--description">
                           {item.description}
-                        </td>
-
-                        <td className="generic-type__cell generic-type__cell--small">
-                          {typeof item.sort_order === 'number'
-                            ? item.sort_order
-                            : ''}
                         </td>
                       </tr>
                     )
@@ -456,7 +558,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
           </div>
         </div>
 
-        {/* PROSTŘEDNÍ HLÁŠKA ------------------------------------------------- */}
+        {/* HLÁŠKY MEZI SEZNAMEM A FORMEM ------------------------------------- */}
         {(error || info) && (
           <div className="generic-type__alert-wrapper">
             {error && (
@@ -472,9 +574,81 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
           </div>
         )}
 
+        {hasUnsavedPrompt && (
+          <div className="generic-type__alert-wrapper">
+            <div className="generic-type__alert generic-type__alert--warning">
+              <div className="generic-type__alert-text">
+                Máš rozdělanou práci, která není uložená. Co chceš udělat?
+              </div>
+              <div className="generic-type__alert-actions">
+                <button
+                  type="button"
+                  className="generic-type__alert-btn"
+                  onClick={handleKeepEditing}
+                >
+                  Pokračovat v úpravách
+                </button>
+                <button
+                  type="button"
+                  className="generic-type__alert-btn generic-type__alert-btn--danger"
+                  onClick={handleDiscardChanges}
+                >
+                  Zahodit změny
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* DOLNÍ FORMULÁŘ ---------------------------------------------------- */}
         <div className="generic-type__form">
-          <h2 className="generic-type__form-title">Detail typu</h2>
+          <div className="generic-type__form-header-row">
+            <h2 className="generic-type__form-title">Detail typu</h2>
+            <div className="generic-type__form-nav">
+              {/* z prava má být: Archivovat | Uložit | → | ←
+                  → pořadí v DOMu: ←, →, Uložit, Archivovat */}
+              <button
+                type="button"
+                className="generic-type__button-nav"
+                onClick={requestPrev}
+                disabled={selectedIndex <= 0}
+                title="Předchozí"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="generic-type__button-nav"
+                onClick={requestNext}
+                disabled={
+                  selectedIndex < 0 || selectedIndex >= visibleItems.length - 1
+                }
+                title="Další"
+              >
+                ›
+              </button>
+
+              <button
+                type="button"
+                className="generic-type__button-save-main"
+                onClick={handleSave}
+                disabled={saving || !dirty}
+                title="Uložit změny"
+              >
+                {saving ? 'Ukládám…' : 'Uložit'}
+              </button>
+
+              <button
+                type="button"
+                className="generic-type__button-archive"
+                onClick={requestArchive}
+                disabled={!selectedCode || saving}
+                title="Archivovat záznam (nejde mazat)"
+              >
+                Archivovat
+              </button>
+            </div>
+          </div>
 
           <div className="generic-type__form-grid">
             {/* Kód + Název */}
@@ -502,7 +676,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               />
             </div>
 
-            {/* Barva + Ikona + Pořadí */}
+            {/* Barva */}
             <div className="generic-type__field">
               <label className="generic-type__label">Barva (HEX)</label>
               <input
@@ -513,9 +687,9 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 onChange={(e) => handleChangeField('color', e.target.value)}
               />
               <div className="generic-type__palette">
-                {COLOR_PALETTE.map((hex) => {
-                  const isSelected = (form.color ?? '').toLowerCase() ===
-                    hex.toLowerCase()
+                {APP_COLOR_PALETTE.map((hex) => {
+                  const isSelected =
+                    (form.color ?? '').toLowerCase() === hex.toLowerCase()
                   const swatchClassNames = [
                     'generic-type__swatch',
                     isSelected ? 'generic-type__swatch--selected' : '',
@@ -540,6 +714,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               </div>
             </div>
 
+            {/* Ikona */}
             <div className="generic-type__field">
               <label className="generic-type__label">
                 Ikona (klíč z&nbsp;icons.ts)
@@ -553,7 +728,9 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               />
               {form.icon && (
                 <div className="generic-type__icon-preview-row">
-                  <span className="generic-type__icon-preview-label">Náhled:</span>
+                  <span className="generic-type__icon-preview-label">
+                    Náhled:
+                  </span>
                   <span className="generic-type__icon-preview">
                     {getIcon(form.icon as IconKey)}
                   </span>
@@ -561,6 +738,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               )}
             </div>
 
+            {/* Pořadí */}
             <div className="generic-type__field generic-type__field--small">
               <label className="generic-type__label">Pořadí</label>
               <input
@@ -575,7 +753,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               />
             </div>
 
-            {/* Stav / aktivita */}
+            {/* Aktivní */}
             <div className="generic-type__field generic-type__field--inline">
               <label className="generic-type__checkbox-label">
                 <input
@@ -601,12 +779,12 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
             />
           </div>
 
-          {/* Akční tlačítka */}
+          {/* Spodní tlačítka – můžeš je klidně nechat */}
           <div className="generic-type__buttons">
             <button
               type="button"
               className="generic-type__button"
-              onClick={resetFormToNew}
+              onClick={requestNew}
               disabled={saving}
             >
               Nový
