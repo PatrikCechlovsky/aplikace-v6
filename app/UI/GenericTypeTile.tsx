@@ -432,15 +432,18 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               </label>
 
               {/* Velké červené tlačítko PŘIDAT */}
-              <button
+             <button
                 type="button"
-                className="generic-type__button-add-top"
+                className="generic-type__button-add-top generic-type__button--with-label"
                 onClick={requestNew}
                 disabled={saving}
                 title="Přidat nový záznam"
               >
-                <span className="generic-type__button-add-icon">➕</span>
-                <span>Přidat</span>
+                <span className="generic-type__button-icon">
+                  {/* tady klidně můžeš později dát getIcon('plus' as IconKey) */}
+                  ➕
+                </span>
+                <span className="generic-type__button-text">Přidat</span>
               </button>
             </div>
           </div>
@@ -630,22 +633,30 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
 
               <button
                 type="button"
-                className="generic-type__button-save-main"
+                className="generic-type__button-save-main generic-type__button--with-label"
                 onClick={handleSave}
                 disabled={saving || !dirty}
                 title="Uložit změny"
               >
-                {saving ? 'Ukládám…' : 'Uložit'}
+                <span className="generic-type__button-icon">
+                  💾{/* sem můžeš dát getIcon('save' as IconKey) */}
+                </span>
+                <span className="generic-type__button-text">
+                  {saving ? 'Ukládám…' : 'Uložit'}
+                </span>
               </button>
-
+              
               <button
                 type="button"
-                className="generic-type__button-archive"
+                className="generic-type__button-archive generic-type__button--with-label"
                 onClick={requestArchive}
                 disabled={!selectedCode || saving}
                 title="Archivovat záznam (nejde mazat)"
               >
-                Archivovat
+                <span className="generic-type__button-icon">
+                  🗄️{/* sem můžeš dát getIcon('archive' as IconKey) */}
+                </span>
+                <span className="generic-type__button-text">Archivovat</span>
               </button>
             </div>
           </div>
