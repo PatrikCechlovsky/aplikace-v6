@@ -210,8 +210,8 @@ export interface IconDefinition {
   nameCZ: string;
   nameEN: string;
   category: string;
-  aliasesCZ?: string[];
-  aliasesEN?: string[];
+  aliasesCZ?: readonly string[];
+  aliasesEN?: readonly string[];
 }
 
 const data = {
