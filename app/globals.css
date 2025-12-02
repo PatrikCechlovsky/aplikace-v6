@@ -1139,7 +1139,7 @@ body.theme-orange .home-button {
 /* 🔹 Navigační tlačítko: jen čisté emoji, bez podkladu */
 .generic-type__button-nav {
   background: transparent;
-  border: none;
+  border: none;https://github.com/PatrikCechlovsky/aplikace-v6/blob/main/app/globals.css
   box-shadow: none;
   padding: 0;
   cursor: pointer;
@@ -1159,4 +1159,10 @@ body.theme-orange .home-button {
   background: transparent;
   border: none;
   box-shadow: none;
+}
+/* Globální vzhled ikony – emoji bez podkladu */
+.app-icon {
+  font-size: 14px;
+  line-height: 1;
+  display: inline-block;
 }
