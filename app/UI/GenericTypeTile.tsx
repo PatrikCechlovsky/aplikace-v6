@@ -616,7 +616,7 @@ export default function GenericTypeTile({
                 title="Předchozí záznam"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('arrow-left' as IconKey)}
+                  {getIcon('prev' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Předchozí</span>
               </button>
@@ -632,7 +632,7 @@ export default function GenericTypeTile({
                 title="Další záznam"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('arrow-right' as IconKey)}
+                  {getIcon('next' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Další</span>
               </button>
