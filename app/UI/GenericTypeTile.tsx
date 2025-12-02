@@ -11,7 +11,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { getIcon, IconKey } from '@/app/UI/icons'
-import { APP_COLOR_PALETTE } from '@/lib/colorPalette'
+import { APP_COLOR_PALETTE } from '@/app/lib/colorPalette'
 
 export type GenericTypeItem = {
   code: string
