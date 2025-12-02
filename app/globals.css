@@ -1136,3 +1136,39 @@ body.theme-orange .home-button {
   border-color: #f59e0b;
   color: #92400e;
 }
+/* 🔹 Reset stylu tlačítek nav */
+.generic-type__button-nav {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* 🔹 Kolečko pro ikonové tlačítko */
+.generic-type__button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+
+  border: 1px solid #dcdcdc;
+  background-color: #fff;
+
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+
+/* 🔹 Tlačítko + text (např. Předchozí) */
+.generic-type__button--with-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
