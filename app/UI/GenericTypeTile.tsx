@@ -3,10 +3,6 @@
 /*
  * FILE: app/UI/GenericTypeTile.tsx
  * PURPOSE: Generický číselníkový formulář (typy subjektů, typy jednotek…)
- *
- * - Seznam nahoře (filtr, Zobrazit archivované, velké tlačítko Přidat)
- * - Uprostřed hlášky (chyba, info, rozdělaná práce)
- * - Dole detail + navigace: Předchozí, Další, Uložit, Archivovat
  */
 
 import React, { useEffect, useMemo, useState } from 'react'
@@ -40,9 +36,13 @@ type PendingAction =
   | { type: 'next' }
   | { type: 'archive' }
 
-export default function GenericTypeTile(props: GenericTypeTileProps) {
-  const { title, description, fetchItems, createItem, updateItem } = props
-
+export default function GenericTypeTile({
+  title,
+  description,
+  fetchItems,
+  createItem,
+  updateItem,
+}: GenericTypeTileProps) {
   const [items, setItems] = useState<GenericTypeItem[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -135,7 +135,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
   }, [visibleItems, selectedCode])
 
   // ---------------------------------------------------------------------------
-  // Pomocné funkce – bez kontroly rozdělané práce
+  // Pomocné funkce – aplikace výběru / reset formuláře
   // ---------------------------------------------------------------------------
 
   function applySelect(item: GenericTypeItem) {
@@ -616,7 +616,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 title="Předchozí záznam"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('arrow-left' as IconKey) /* uprav klíč podle icons.ts */}
+                  {getIcon('arrow-left' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Předchozí</span>
               </button>
@@ -632,7 +632,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 title="Další záznam"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('arrow-right' as IconKey) /* uprav klíč podle icons.ts */}
+                  {getIcon('arrow-right' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Další</span>
               </button>
@@ -646,7 +646,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 title="Uložit změny"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('save' as IconKey) /* uprav klíč podle icons.ts */}
+                  {getIcon('save' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">
                   {saving ? 'Ukládám…' : 'Uložit'}
@@ -658,11 +658,11 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
                 type="button"
                 className="generic-type__button-archive generic-type__button--with-label"
                 onClick={requestArchive}
-                disabled(!selectedCode || saving)
+                disabled={!selectedCode || saving}
                 title="Archivovat záznam (nejde mazat)"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('archive' as IconKey) /* uprav klíč podle icons.ts */}
+                  {getIcon('archive' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Archivovat</span>
               </button>
@@ -707,25 +707,28 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
               />
               <div className="generic-type__palette">
                 {APP_COLOR_PALETTE.map((c) => {
+                  const hex = c.hex
                   const isSelected =
-                    (form.color ?? '').toLowerCase() === c.hex.toLowerCase()
+                    (form.color ?? '').toLowerCase() === hex.toLowerCase()
+
                   const swatchClassNames = [
                     'generic-type__swatch',
                     isSelected ? 'generic-type__swatch--selected' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')
+
                   return (
                     <button
                       key={c.id}
                       type="button"
                       className={swatchClassNames}
-                      onClick={() => handleChangeField('color', c.hex)}
-                      title={c.label ?? c.hex}
+                      onClick={() => handleChangeField('color', hex)}
+                      title={c.label ?? hex}
                     >
                       <span
                         className="generic-type__swatch-inner"
-                        style={{ backgroundColor: c.hex }}
+                        style={{ backgroundColor: hex }}
                       />
                     </button>
                   )
