@@ -780,26 +780,7 @@ export default function GenericTypeTile(props: GenericTypeTileProps) {
             />
           </div>
 
-          {/* Spodní tlačítka */}
-          <div className="generic-type__buttons">
-            <button
-              type="button"
-              className="generic-type__button"
-              onClick={requestNew}
-              disabled={saving}
-            >
-              Nový
-            </button>
-
-            <button
-              type="button"
-              className="generic-type__button generic-type__button--primary"
-              onClick={handleSave}
-              disabled={saving || !dirty}
-            >
-              {saving ? 'Ukládám…' : 'Uložit'}
-            </button>
-          </div>
+         
         </div>
       </div>
     </section>
