@@ -14,7 +14,7 @@ const path = require("path");
  * - targetTsPath: kam se má vygenerovat icons.ts
  */
 const sourceMdPath = path.join(__dirname, "..", "ikons.md"); // nebo "../docs/ikons.md"
-const targetTsPath = path.join(__dirname, "..", "app", "icons.ts");
+const targetTsPath = path.join(__dirname, "..", "app", "UI", "icons.ts");
 
 /**
  * Pomocná funkce – rozseká řádek tabulky na jednotlivé sloupce
