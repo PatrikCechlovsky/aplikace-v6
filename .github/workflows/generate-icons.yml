@@ -1,6 +1,22 @@
 name: Generate icons.ts from ikons.md
 
 on:
+  push:
+    paths:
+      - 'ikons.md'
+      - 'scripts/generate-icons-from-md.js'
+      - '.github/workflows/generate-icons.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-icons:
+    runs-on: ubuntu-latest
+    ...
+
+on:
   # Spustí se při každém pushi, kde se změní ikony nebo tenhle workflow
   push:
     paths:
