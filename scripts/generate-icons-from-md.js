@@ -220,7 +220,13 @@ ${dataObjectLiteral}
 
 export type IconKey = keyof typeof data;
 export const ICONS: Record<IconKey, IconDefinition> = data;
+
+export function getIcon(key: IconKey | undefined, fallback = '❓'): string {
+  if (!key) return fallback;
+  return ICONS[key]?.emoji ?? fallback;
+}
 `;
+
 
   fs.mkdirSync(path.dirname(targetTsPath), { recursive: true });
   fs.writeFileSync(targetTsPath, ts, "utf8");
