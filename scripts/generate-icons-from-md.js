@@ -2,7 +2,7 @@
 // Použití: node scripts/generate-icons-from-md.js
 //
 // Předpoklady:
-// - soubor "ikons.md" je ve složce ./docs (nebo uprav cestu níže)
+// - soubor "ikons (1).md" je ve složce ./docs (nebo uprav cestu níže)
 // - vytvoří soubor ./app/icons.ts s kompletní mapou ikon
 
 const fs = require("fs");
@@ -10,10 +10,10 @@ const path = require("path");
 
 /**
  * Cesty si můžeš upravit podle projektu
- * - sourceMdPath: kde máš ten tvůj "ikons.md"
+ * - sourceMdPath: kde máš ten tvůj "ikons (1).md"
  * - targetTsPath: kam se má vygenerovat icons.ts
  */
-const sourceMdPath = path.join(__dirname, "..", "ikons.md"); // nebo "../docs/ikons.md"
+const sourceMdPath = path.join(__dirname, "..", "ikons (1).md"); // nebo "../docs/ikons.md"
 const targetTsPath = path.join(__dirname, "..", "app", "icons.ts");
 
 /**
