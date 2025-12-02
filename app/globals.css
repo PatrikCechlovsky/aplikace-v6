@@ -1103,6 +1103,29 @@ body.theme-orange .home-button {
   opacity: 0.4;
   cursor: default;
 }
+/* Obecný vzor: tlačítko s ikonou + textem, text jen na hover */
+.generic-type__button--with-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* ikona vždy viditelná */
+.generic-type__button-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* text je standardně schovaný */
+.generic-type__button-text {
+  display: none;
+}
+
+/* při hoveru se text ukáže */
+.generic-type__button--with-label:hover .generic-type__button-text {
+  display: inline;
+}
 
 .generic-type__button-save-main {
   border-radius: 999px;
