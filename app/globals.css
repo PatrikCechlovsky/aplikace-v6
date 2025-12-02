@@ -733,6 +733,14 @@ body.theme-orange .home-button {
   cursor: pointer;
 }
 
+/* Toolbar – pravá strana (archiv + přidat) */
+
+.generic-type__list-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .generic-type__table-wrapper {
   max-height: 240px;
   overflow: auto;
@@ -835,7 +843,12 @@ body.theme-orange .home-button {
 }
 
 .generic-type__color-dot--empty {
-  background: linear-gradient(45deg, transparent 0 45%, #d1d5db 45% 55%, transparent 55% 100%);
+  background: linear-gradient(
+    45deg,
+    transparent 0 45%,
+    #d1d5db 45% 55%,
+    transparent 55% 100%
+  );
 }
 
 /* Alert mezi seznamem a formulářem */
@@ -865,6 +878,39 @@ body.theme-orange .home-button {
   color: #166534;
 }
 
+/* Upozornění na rozdělanou práci */
+
+.generic-type__alert--warning {
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.generic-type__alert-text {
+  margin-bottom: 6px;
+}
+
+.generic-type__alert-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.generic-type__alert-btn {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 3px 10px;
+  font-size: 12px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.generic-type__alert-btn--danger {
+  border-color: #b91c1c;
+  background-color: #fee2e2;
+  color: #7f1d1d;
+}
+
 /* Formulář dole */
 
 .generic-type__form {
@@ -874,10 +920,23 @@ body.theme-orange .home-button {
   padding: 10px 12px 12px;
 }
 
+.generic-type__form-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
 .generic-type__form-title {
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 8px;
+}
+
+.generic-type__form-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .generic-type__form-grid {
@@ -984,110 +1043,68 @@ body.theme-orange .home-button {
   color: #6b7280;
 }
 
-/* Tlačítka */
+/* ZÁKLAD pro oválná tlačítka (pill) v GenericTypeTile */
 
-.generic-type__buttons {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.generic-type__button {
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  padding: 5px 12px;
-  font-size: 13px;
-  background-color: #ffffff;
-  cursor: pointer;
-}
-
-.generic-type__button--primary {
-  background-color: #4f46e5;
-  color: #ffffff;
-  border-color: #4f46e5;
-}
-
-.generic-type__button:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-/* Toolbar – pravá strana (archiv + přidat) */
-.generic-type__list-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Velké červené tlačítko PŘIDAT nahoře */
-.generic-type__button-add-top {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid #dc2626;
-  background-color: #fecaca;
-  color: #7f1d1d;
-  font-size: 13px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.generic-type__button-add-top:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.generic-type__button-add-icon {
-  font-size: 15px;
-}
-
-/* Upozornění na rozdělanou práci */
-.generic-type__alert--warning {
-  background-color: #fef3c7;
-  border: 1px solid #fde68a;
-  color: #92400e;
-}
-
-.generic-type__alert-text {
-  margin-bottom: 6px;
-}
-
-.generic-type__alert-actions {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-}
-
+.generic-type__button,
+.generic-type__button-add-top,
+.generic-type__button-save-main,
+.generic-type__button-archive,
 .generic-type__alert-btn {
   border-radius: 999px;
   border: 1px solid #d1d5db;
-  padding: 3px 10px;
+  padding: 4px 10px;
   font-size: 12px;
   background-color: #ffffff;
   cursor: pointer;
 }
 
-.generic-type__alert-btn--danger {
-  border-color: #b91c1c;
-  background-color: #fee2e2;
-  color: #7f1d1d;
+.generic-type__button:disabled,
+.generic-type__button-add-top:disabled,
+.generic-type__button-save-main:disabled,
+.generic-type__button-archive:disabled,
+.generic-type__alert-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
-/* Hlavička formuláře – název + tlačítka vpravo */
-.generic-type__form-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
+/* Obecný vzor: tlačítko s ikonou + textem, text jen na hover */
 
-.generic-type__form-nav {
+.generic-type__button--with-label {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
+
+/* ikona vždy viditelná */
+
+.generic-type__button-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* text je standardně schovaný */
+
+.generic-type__button-text {
+  display: none;
+}
+
+/* při hoveru se text ukáže */
+
+.generic-type__button--with-label:hover .generic-type__button-text {
+  display: inline;
+}
+
+/* Velké červené tlačítko PŘIDAT nahoře */
+
+.generic-type__button-add-top {
+  background-color: #fecaca;
+  border-color: #dc2626;
+  color: #7f1d1d;
+  font-weight: 600;
+}
+
+/* Navigační šipky (předchozí/další) */
 
 .generic-type__button-nav {
   width: 24px;
@@ -1103,56 +1120,19 @@ body.theme-orange .home-button {
   opacity: 0.4;
   cursor: default;
 }
-/* Obecný vzor: tlačítko s ikonou + textem, text jen na hover */
-.generic-type__button--with-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
 
-/* ikona vždy viditelná */
-.generic-type__button-icon {
-  font-size: 14px;
-  line-height: 1;
-}
-
-/* text je standardně schovaný */
-.generic-type__button-text {
-  display: none;
-}
-
-/* při hoveru se text ukáže */
-.generic-type__button--with-label:hover .generic-type__button-text {
-  display: inline;
-}
+/* Uložit */
 
 .generic-type__button-save-main {
-  border-radius: 999px;
-  border: 1px solid #4f46e5;
   background-color: #4f46e5;
-  padding: 4px 12px;
-  font-size: 12px;
-  cursor: pointer;
+  border-color: #4f46e5;
   color: #ffffff;
 }
 
-.generic-type__button-save-main:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
+/* Archivovat */
 
 .generic-type__button-archive {
-  border-radius: 999px;
-  border: 1px solid #f59e0b;
   background-color: #fef3c7;
-  padding: 4px 10px;
-  font-size: 12px;
-  cursor: pointer;
+  border-color: #f59e0b;
   color: #92400e;
-}
-
-.generic-type__button-archive:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
