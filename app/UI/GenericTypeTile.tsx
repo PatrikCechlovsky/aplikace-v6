@@ -636,11 +636,8 @@ export default function GenericTypeTile({
                 className="generic-type__button-save-main generic-type__button--with-label"
                 onClick={handleSave}
                 disabled={saving || !dirty}
-                title="Uložit změny"
               >
-                <span className="generic-type__button-icon">
-                  {getIcon('save' as IconKey)}
-                </span>
+                <span className="generic-type__button-icon">{getIcon('save')}</span>
                 <span className="generic-type__button-text">Uložit</span>
               </button>
 
