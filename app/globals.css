@@ -1109,12 +1109,14 @@ body.theme-orange .home-button {
 /* Navigační šipky (předchozí/další) */
 
 .generic-type__button-nav {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
+  background: #f9fafb;
   border: 1px solid #d1d5db;
-  background-color: #f9fafb;
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
@@ -1138,30 +1140,30 @@ body.theme-orange .home-button {
   border-color: #f59e0b;
   color: #92400e;
 }
+
 /* 🔹 Navigační tlačítko: jen čisté emoji, bez podkladu */
-.generic-type__button-nav {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-/* Ikona v tlačítku – jen velikost textu */
-.generic-type__button-icon {
-  font-size: 16px;
-  line-height: 1;
-}
-
-/* Tlačítko s textem vedle ikony – žádné pozadí navíc */
 .generic-type__button--with-label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  gap: 6px;
+  padding: 4px 8px;
+  white-space: nowrap;
 }
+
+.generic-type__button-text {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.15s ease;
+}
+
+.generic-type__button--with-label:hover .generic-type__button-text {
+  opacity: 1;
+  max-width: 200px;
+}
+
+
+
 /* Globální vzhled ikony – emoji bez podkladu */
 .app-icon {
   font-size: 14px;
