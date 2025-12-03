@@ -601,8 +601,8 @@ export default function GenericTypeTile({
             </div>
           </div>
         )}
-                {/* DOLNÍ FORMULÁŘ ---------------------------------------------------- */}
-        <div className="generic-type__form">
+       {/* DOLNÍ FORMULÁŘ ---------------------------------------------------- */}
+         <div className="generic-type__form">
           <div className="generic-type__form-header-row">
             <h2 className="generic-type__form-title">Detail typu</h2>
 
