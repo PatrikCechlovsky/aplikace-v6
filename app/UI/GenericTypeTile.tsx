@@ -656,31 +656,6 @@ export default function GenericTypeTile({
             </div>
           </div>
 
-          <div className="generic-type__form-grid">
-            {/* Kód + Název */}
-            <div className="generic-type__field">
-              <label className="generic-type__label">
-                Kód <span className="generic-type__required">*</span>
-              </label>
-              <input
-                type="text"
-                className="generic-type__input"
-                value={form.code}
-                onChange={(e) => handleChangeField('code', e.target.value)}
-              />
-            </div>
-
-            <div className="generic-type__field">
-              <label className="generic-type__label">
-                Název <span className="generic-type__required">*</span>
-              </label>
-              <input
-                type="text"
-                className="generic-type__input"
-                value={form.name}
-                onChange={(e) => handleChangeField('name', e.target.value)}
-              />
-            </div>
             {/* Pořadí */}
               <div className="generic-type__field generic-type__field--small">
                 <label className="generic-type__label">Pořadí</label>
@@ -708,6 +683,31 @@ export default function GenericTypeTile({
                 </label>
               </div>
             
+          <div className="generic-type__form-grid">
+            {/* Kód + Název */}
+            <div className="generic-type__field">
+              <label className="generic-type__label">
+                Kód <span className="generic-type__required">*</span>
+              </label>
+              <input
+                type="text"
+                className="generic-type__input"
+                value={form.code}
+                onChange={(e) => handleChangeField('code', e.target.value)}
+              />
+            </div>
+
+            <div className="generic-type__field">
+              <label className="generic-type__label">
+                Název <span className="generic-type__required">*</span>
+              </label>
+              <input
+                type="text"
+                className="generic-type__input"
+                value={form.name}
+                onChange={(e) => handleChangeField('name', e.target.value)}
+              />
+            </div>
             {/* Barva */}
             <div className="generic-type__field">
               <label className="generic-type__label">Barva (HEX)</label>
