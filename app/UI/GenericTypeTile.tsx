@@ -613,27 +613,22 @@ export default function GenericTypeTile({
                   className="generic-type__button-nav generic-type__button--with-label"
                   onClick={requestPrev}
                   disabled={selectedIndex <= 0}
-                  title="Předchozí záznam"
                 >
-                  <span className="generic-type__button-icon">
-                    {getIcon('prev')}
-                  </span>
+                  <span className="generic-type__button-icon">{getIcon('prev')}</span>
                   <span className="generic-type__button-text">Předchozí</span>
                 </button>
                 
                 {/* Další */}
-                <button
+                   <button
                   type="button"
                   className="generic-type__button-nav generic-type__button--with-label"
                   onClick={requestNext}
-                  disabled={selectedIndex >= items.length - 1}
-                  title="Další záznam"
+                  disabled={selectedIndex <= 0}
                 >
-                  <span className="generic-type__button-icon">
-                    {getIcon('next')}
-                  </span>
+                  <span className="generic-type__button-icon">{getIcon('next')}</span>
                   <span className="generic-type__button-text">Další</span>
                 </button>
+              
 
               {/* Uložit */}
               <button
