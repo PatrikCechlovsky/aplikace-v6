@@ -601,33 +601,37 @@ export default function GenericTypeTile({
             </div>
           </div>
         )}
-
-        {/* DOLNÍ FORMULÁŘ ---------------------------------------------------- */}
+                {/* DOLNÍ FORMULÁŘ ---------------------------------------------------- */}
         <div className="generic-type__form">
           <div className="generic-type__form-header-row">
             <h2 className="generic-type__form-title">Detail typu</h2>
+
             <div className="generic-type__form-nav">
               {/* Předchozí */}
-                <button
-                  type="button"
-                  className="generic-type__button-nav generic-type__button--with-label"
-                  onClick={requestPrev}
-                  disabled={selectedIndex <= 0}
-                >
-                  <span className="generic-type__button-icon">{getIcon('prev')}</span>
-                  <span className="generic-type__button-text">Předchozí</span>
-                </button>
-                
-                {/* Další */}
-                   <button
-                      type="button"
-                      className="generic-type__button-nav generic-type__button--with-label"
-                      onClick={requestNext}
-                      disabled={selectedIndex >= items.length - 1}
-                    >
-                      <span className="generic-type__button-icon">{getIcon('next')}</span>
-                      <span className="generic-type__button-text">Další</span>
-                    </button>
+              <button
+                type="button"
+                className="generic-type__button-nav generic-type__button--with-label"
+                onClick={requestPrev}
+                disabled={selectedIndex <= 0}
+              >
+                <span className="generic-type__button-icon">
+                  {getIcon('prev')}
+                </span>
+                <span className="generic-type__button-text">Předchozí</span>
+              </button>
+
+              {/* Další */}
+              <button
+                type="button"
+                className="generic-type__button-nav generic-type__button--with-label"
+                onClick={requestNext}
+                disabled={selectedIndex >= visibleItems.length - 1}
+              >
+                <span className="generic-type__button-icon">
+                  {getIcon('next')}
+                </span>
+                <span className="generic-type__button-text">Další</span>
+              </button>
 
               {/* Uložit */}
               <button
@@ -636,7 +640,9 @@ export default function GenericTypeTile({
                 onClick={handleSave}
                 disabled={saving || !dirty}
               >
-                <span className="generic-type__button-icon">{getIcon('save')}</span>
+                <span className="generic-type__button-icon">
+                  {getIcon('save')}
+                </span>
                 <span className="generic-type__button-text">Uložit</span>
               </button>
 
@@ -656,31 +662,38 @@ export default function GenericTypeTile({
             </div>
           </div>
 
-          {/* Pořadí */}
-           <div className="generic-type__field generic-type__field--small">
-             <label className="generic-type__label">Pořadí</label>
-             <input
-               type="number"
-               className="generic-type__input"
-               value={typeof form.sort_order === 'number' ? String(form.sort_order) : ''}
-               onChange={(e) => handleChangeSortOrder(e.target.value)}
-             />
-           </div>
-           
-           {/* Aktivní */}
-           <div className="generic-type__field generic-type__field--checkbox">
-             <label className="generic-type__checkbox-label">
-               <input
-                 type="checkbox"
-                 checked={form.active ?? true}
-                 onChange={(e) => handleChangeField('active', e.target.checked)}
-               />
-               <span>Aktivní záznam</span>
-             </label>
-           </div>
-            
-     
-            {/* Kód + Název */}
+          {/* Hlavní grid formuláře */}
+          <div className="generic-type__form-grid">
+            {/* Pořadí */}
+            <div className="generic-type__field generic-type__field--small">
+              <label className="generic-type__label">Pořadí</label>
+              <input
+                type="number"
+                className="generic-type__input"
+                value={
+                  typeof form.sort_order === 'number'
+                    ? String(form.sort_order)
+                    : ''
+                }
+                onChange={(e) => handleChangeSortOrder(e.target.value)}
+              />
+            </div>
+
+            {/* Aktivní */}
+            <div className="generic-type__field generic-type__field--checkbox">
+              <label className="generic-type__checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.active ?? true}
+                  onChange={(e) =>
+                    handleChangeField('active', e.target.checked)
+                  }
+                />
+                <span>Aktivní záznam</span>
+              </label>
+            </div>
+
+            {/* Kód */}
             <div className="generic-type__field">
               <label className="generic-type__label">
                 Kód <span className="generic-type__required">*</span>
@@ -693,6 +706,7 @@ export default function GenericTypeTile({
               />
             </div>
 
+            {/* Název */}
             <div className="generic-type__field">
               <label className="generic-type__label">
                 Název <span className="generic-type__required">*</span>
@@ -704,6 +718,7 @@ export default function GenericTypeTile({
                 onChange={(e) => handleChangeField('name', e.target.value)}
               />
             </div>
+
             {/* Barva */}
             <div className="generic-type__field">
               <label className="generic-type__label">Barva (HEX)</label>
@@ -783,7 +798,5 @@ export default function GenericTypeTile({
             />
           </div>
         </div>
-      </div>
-    </section>
-  )
-}
+
+     
