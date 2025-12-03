@@ -656,23 +656,19 @@ export default function GenericTypeTile({
             </div>
           </div>
 
-            {/* Pořadí */}
+             {/* Pořadí */}
               <div className="generic-type__field generic-type__field--small">
                 <label className="generic-type__label">Pořadí</label>
                 <input
                   type="number"
                   className="generic-type__input"
-                  value={
-                    typeof form.sort_order === 'number'
-                      ? String(form.sort_order)
-                      : ''
-                  }
+                  value={typeof form.sort_order === 'number' ? String(form.sort_order) : ''}
                   onChange={(e) => handleChangeSortOrder(e.target.value)}
                 />
               </div>
-  
+            
               {/* Aktivní */}
-              <div className="generic-type__field generic-type__field--inline">
+              <div className="generic-type__field generic-type__field--checkbox">
                 <label className="generic-type__checkbox-label">
                   <input
                     type="checkbox"
@@ -683,7 +679,7 @@ export default function GenericTypeTile({
                 </label>
               </div>
             
-          <div className="generic-type__form-grid">
+     
             {/* Kód + Název */}
             <div className="generic-type__field">
               <label className="generic-type__label">
