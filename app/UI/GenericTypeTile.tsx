@@ -623,7 +623,7 @@ export default function GenericTypeTile({
                       type="button"
                       className="generic-type__button-nav generic-type__button--with-label"
                       onClick={requestNext}
-                      disabled={selectedIndex >= items.length - 1}   // ← tohle změnit
+                      disabled={selectedIndex >= items.length - 1}
                     >
                       <span className="generic-type__button-icon">{getIcon('next')}</span>
                       <span className="generic-type__button-text">Další</span>
