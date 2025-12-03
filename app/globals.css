@@ -1084,16 +1084,15 @@ body.theme-orange .home-button {
   line-height: 1;
 }
 
-/* Text vedle ikony – skrytý */
+/* Text vedle ikony – skrytý (nezabírá místo) */
 .generic-type__button-text {
- .generic-type__button-text {
   display: none;
   margin-left: 4px;
   white-space: nowrap;
   font-size: 12px;
 }
 
-/* Při hoveru → ukázat text */
+/* Při hoveru → ukázat text a vložit do layoutu */
 .generic-type__button--with-label:hover .generic-type__button-text {
   display: inline-block;
 }
