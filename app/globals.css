@@ -1086,18 +1086,16 @@ body.theme-orange .home-button {
 
 /* Text vedle ikony – skrytý */
 .generic-type__button-text {
-  opacity: 0;
-  max-width: 0;
-  overflow: hidden;
+ .generic-type__button-text {
+  display: none;
+  margin-left: 4px;
   white-space: nowrap;
-  transition: opacity 0.15s ease, max-width 0.15s ease;
   font-size: 12px;
 }
 
 /* Při hoveru → ukázat text */
 .generic-type__button--with-label:hover .generic-type__button-text {
-  opacity: 1;
-  max-width: 140px;
+  display: inline-block;
 }
 
 /* NAV tlačítka (předchozí/další) – čisté emoji */
