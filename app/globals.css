@@ -1043,126 +1043,83 @@ body.theme-orange .home-button {
   color: #6b7280;
 }
 
-/* ZÁKLAD pro oválná tlačítka (pill) v GenericTypeTile */
+/* ============================================
+   GENERICTYPETILE – TLAČÍTKA BEZ OVÁLU (PILL)
+   Jen emoji ikona, text pouze při hoveru
+   ============================================ */
 
+/* VŠECHNA tlačítka – základ: bez pozadí, bez rámečku */
 .generic-type__button,
 .generic-type__button-add-top,
 .generic-type__button-save-main,
 .generic-type__button-archive,
 .generic-type__alert-btn {
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  padding: 4px 10px;
-  font-size: 12px;
-  background-color: #ffffff;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0;
+  font-size: 14px; /* velikost emoji */
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Disabled efekt */
 .generic-type__button:disabled,
 .generic-type__button-add-top:disabled,
 .generic-type__button-save-main:disabled,
 .generic-type__button-archive:disabled,
 .generic-type__alert-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* Obecný vzor: tlačítko s ikonou + textem, text jen na hover */
-
-.generic-type__button--with-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;              /* Mezera mezi ikonou a textem */
-  padding: 4px 8px;      /* Stejná výška + vnitřní okraj */
-  white-space: nowrap;   /* Zabrání roztažení prázdného místa */
-}
-
-/* ikona vždy viditelná */
-
-.generic-type__button-icon {
-  display: flex; 
-  align-items: center;
-  justify-content: center;
-}
-
-/* text je standardně schovaný */
-
-.generic-type__button-text {
-   display: inline-block;
-}
-
-/* při hoveru se text ukáže */
-
-.generic-type__button--with-label:hover .generic-type__button-text {
-  display: inline;
-}
-
-/* Velké červené tlačítko PŘIDAT nahoře */
-
-.generic-type__button-add-top {
-  background-color: #fecaca;
-  border-color: #dc2626;
-  color: #7f1d1d;
-  font-weight: 600;
-}
-
-/* Navigační šipky (předchozí/další) */
-
-.generic-type__button-nav {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-}
-
-
-.generic-type__button-nav:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-/* Uložit */
-
-.generic-type__button-save-main {
-  background-color: #4f46e5;
-  border-color: #4f46e5;
-  color: #ffffff;
-}
-
-/* Archivovat */
-
-.generic-type__button-archive {
-  background-color: #fef3c7;
-  border-color: #f59e0b;
-  color: #92400e;
-}
-
-/* 🔹 Navigační tlačítko: jen čisté emoji, bez podkladu */
-.generic-type__button--with-label {
+/* Ikona (emoji) – vždy viditelná */
+.generic-type__button-icon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  white-space: nowrap;
+  justify-content: center;
+  font-size: 18px;   /* větší a hezčí emoji */
+  line-height: 1;
 }
 
+/* Text vedle ikony – skrytý */
 .generic-type__button-text {
   opacity: 0;
   max-width: 0;
   overflow: hidden;
+  white-space: nowrap;
   transition: opacity 0.15s ease, max-width 0.15s ease;
+  font-size: 12px;
 }
 
+/* Při hoveru → ukázat text */
 .generic-type__button--with-label:hover .generic-type__button-text {
   opacity: 1;
-  max-width: 200px;
+  max-width: 140px;
 }
 
+/* NAV tlačítka (předchozí/další) – čisté emoji */
+.generic-type__button-nav {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
 
+/* Archivace / Uložení / Přidat – také jen emoji */
+.generic-type__button-add-top,
+.generic-type__button-save-main,
+.generic-type__button-archive {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: inherit !important;  /* emoji dědí barvu textu */
+}
 
-/* Globální vzhled ikony – emoji bez podkladu */
-.app-icon {
-  font-size: 14px;
-  line-height: 1;
-  display: inline-block;
+/* Globální styl pro emoji ikony */
+.app-icon,
+.generic-type__button-icon {
+  font-size: 18px !important;
 }
