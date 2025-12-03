@@ -681,7 +681,33 @@ export default function GenericTypeTile({
                 onChange={(e) => handleChangeField('name', e.target.value)}
               />
             </div>
-
+            {/* Pořadí */}
+              <div className="generic-type__field generic-type__field--small">
+                <label className="generic-type__label">Pořadí</label>
+                <input
+                  type="number"
+                  className="generic-type__input"
+                  value={
+                    typeof form.sort_order === 'number'
+                      ? String(form.sort_order)
+                      : ''
+                  }
+                  onChange={(e) => handleChangeSortOrder(e.target.value)}
+                />
+              </div>
+  
+              {/* Aktivní */}
+              <div className="generic-type__field generic-type__field--inline">
+                <label className="generic-type__checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={form.active ?? true}
+                    onChange={(e) => handleChangeField('active', e.target.checked)}
+                  />
+                  <span>Aktivní záznam</span>
+                </label>
+              </div>
+            
             {/* Barva */}
             <div className="generic-type__field">
               <label className="generic-type__label">Barva (HEX)</label>
@@ -745,33 +771,6 @@ export default function GenericTypeTile({
                   </span>
                 </div>
               )}
-            </div>
-
-            {/* Pořadí */}
-            <div className="generic-type__field generic-type__field--small">
-              <label className="generic-type__label">Pořadí</label>
-              <input
-                type="number"
-                className="generic-type__input"
-                value={
-                  typeof form.sort_order === 'number'
-                    ? String(form.sort_order)
-                    : ''
-                }
-                onChange={(e) => handleChangeSortOrder(e.target.value)}
-              />
-            </div>
-
-            {/* Aktivní */}
-            <div className="generic-type__field generic-type__field--inline">
-              <label className="generic-type__checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={form.active ?? true}
-                  onChange={(e) => handleChangeField('active', e.target.checked)}
-                />
-                <span>Aktivní záznam</span>
-              </label>
             </div>
           </div>
 
