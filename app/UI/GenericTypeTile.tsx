@@ -786,6 +786,7 @@ export default function GenericTypeTile({
           </div>
 
           {/* Popis */}
+          {/* Popis */}
           <div className="generic-type__field generic-type__field--full">
             <label className="generic-type__label">Popis</label>
             <textarea
@@ -797,6 +798,8 @@ export default function GenericTypeTile({
               }
             />
           </div>
-        </div>
-
-     
+        </div> {/* .generic-type__form */}
+      </div>   {/* .generic-type__body */}
+    </section>
+  )
+}
