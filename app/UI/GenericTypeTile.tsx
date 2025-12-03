@@ -608,38 +608,32 @@ export default function GenericTypeTile({
             <h2 className="generic-type__form-title">Detail typu</h2>
             <div className="generic-type__form-nav">
               {/* Předchozí */}
-<button
-  type="button"
-  className="generic-type__button-nav generic-type__button--with-label"
-  onClick={requestPrev}
-  disabled={selectedIndex <= 0}
-  title="Předchozí záznam"
->
-  <span className="generic-type__button-icon">
-    {getIcon('prev')}
-  </span>
-  <span className="generic-type__button-text">Předchozí</span>
-</button>
-
-{/* Další */}
-<button
-  type="button"
-  className="generic-type__button-nav generic-type__button--with-label"
-  onClick={requestNext}
-  disabled={selectedIndex >= items.length - 1}
-  title="Další záznam"
->
-  <span className="generic-type__button-icon">
-    {getIcon('next')}
-  </span>
-  <span className="generic-type__button-text">Další</span>
-</button>
-              >
-                <span className="generic-type__button-icon">
-                  {getIcon('next' as IconKey)}
-                </span>
-                <span className="generic-type__button-text">Další</span>
-              </button>
+                <button
+                  type="button"
+                  className="generic-type__button-nav generic-type__button--with-label"
+                  onClick={requestPrev}
+                  disabled={selectedIndex <= 0}
+                  title="Předchozí záznam"
+                >
+                  <span className="generic-type__button-icon">
+                    {getIcon('prev')}
+                  </span>
+                  <span className="generic-type__button-text">Předchozí</span>
+                </button>
+                
+                {/* Další */}
+                <button
+                  type="button"
+                  className="generic-type__button-nav generic-type__button--with-label"
+                  onClick={requestNext}
+                  disabled={selectedIndex >= items.length - 1}
+                  title="Další záznam"
+                >
+                  <span className="generic-type__button-icon">
+                    {getIcon('next')}
+                  </span>
+                  <span className="generic-type__button-text">Další</span>
+                </button>
 
               {/* Uložit */}
               <button
