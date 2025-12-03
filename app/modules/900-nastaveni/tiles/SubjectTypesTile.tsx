@@ -56,7 +56,7 @@ function mapGenericToPayload(input: GenericTypeItem): SubjectTypePayload {
 export default function SubjectTypesTile() {
   return (
     <GenericTypeTile
-      title="Typy subjektů"
+      title="Typy-subjektů"
       description="Číselník typů subjektů (osoba, firma, společenství, pronajímatel…)."
 
       // načtení seznamu – napojení na Supabase přes service
