@@ -1072,21 +1072,23 @@ body.theme-orange .home-button {
 .generic-type__button--with-label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
+  gap: 6px;              /* Mezera mezi ikonou a textem */
+  padding: 4px 8px;      /* Stejná výška + vnitřní okraj */
+  white-space: nowrap;   /* Zabrání roztažení prázdného místa */
 }
 
 /* ikona vždy viditelná */
 
 .generic-type__button-icon {
-  font-size: 14px;
-  line-height: 1;
+  display: flex; 
+  align-items: center;
+  justify-content: center;
 }
 
 /* text je standardně schovaný */
 
 .generic-type__button-text {
-  display: none;
+   display: inline-block;
 }
 
 /* při hoveru se text ukáže */
