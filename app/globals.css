@@ -1109,16 +1109,12 @@ body.theme-orange .home-button {
 /* Navigační šipky (předchozí/další) */
 
 .generic-type__button-nav {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: #f9fafb;
-  border: 1px solid #d1d5db;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
 }
+
 
 .generic-type__button-nav:disabled {
   opacity: 0.4;
