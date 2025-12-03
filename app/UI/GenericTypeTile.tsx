@@ -620,15 +620,14 @@ export default function GenericTypeTile({
                 
                 {/* Další */}
                    <button
-                  type="button"
-                  className="generic-type__button-nav generic-type__button--with-label"
-                  onClick={requestNext}
-                  disabled={selectedIndex <= 0}
-                >
-                  <span className="generic-type__button-icon">{getIcon('next')}</span>
-                  <span className="generic-type__button-text">Další</span>
-                </button>
-              
+                      type="button"
+                      className="generic-type__button-nav generic-type__button--with-label"
+                      onClick={requestNext}
+                      disabled={selectedIndex >= items.length - 1}   // ← tohle změnit
+                    >
+                      <span className="generic-type__button-icon">{getIcon('next')}</span>
+                      <span className="generic-type__button-text">Další</span>
+                    </button>
 
               {/* Uložit */}
               <button
@@ -650,7 +649,7 @@ export default function GenericTypeTile({
                 title="Archivovat záznam (nejde mazat)"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('archive' as IconKey)}
+                  {getIcon('archive')}
                 </span>
                 <span className="generic-type__button-text">Archivovat</span>
               </button>
