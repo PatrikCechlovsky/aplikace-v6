@@ -200,7 +200,9 @@ body {
   border: none;
   background: transparent;
   padding: 0;
-  font-size: 12px;
+  font-size: 16px;        /* ⇐ zvětšená šipka */
+  width: 18px;            /* trochu místa, ať „drží řádek“ */
+  text-align: center;
   transform: translateY(1px);
   transition: transform 0.15s ease;
 }
