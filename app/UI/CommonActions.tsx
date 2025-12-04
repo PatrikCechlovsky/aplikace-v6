@@ -112,4 +112,11 @@ export default function CommonActions({ disabled = false }: Props) {
           title={a.label}
         >
           <span className="common-actions__icon" aria-hidden="true">
-            {getI
+            {getIcon(a.icon as any)}
+          </span>
+          <span className="common-actions__label">{a.label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
