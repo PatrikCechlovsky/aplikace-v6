@@ -1,83 +1,139 @@
-// FILE: docs/stav-struktury.md
-
-# Stav struktury aplikace – Pronajímatel v6
-
-Tento dokument slouží jako přehled **všech komponent, modulů, formulářů, tiles a procesů**.
-
-Stavy:
-- `TODO` – zatím neexistuje
-- `WIP` – rozpracováno
-- `DONE` – hotovo, funkční
+# 🏗️ STAV STRUKTURY — Pronajímatel v6
+Kompletní přehled aktuální struktury projektu, včetně stavu implementace jednotlivých částí.
+Tento dokument slouží jako mapa projektu pro vývoj, kontrolu a další plánování.
 
 ---
 
-## 1. UI komponenty (TSX)
+# 1. STRUKTURA REPozITÁŘE
 
-| Název          | Soubor                    | Typ        | Stav | Poznámka               |
-|----------------|---------------------------|-----------|------|------------------------|
-| HomeButton     | src/app/UI/HomeButton.tsx | komponenta | TODO | tlačítko + název appky |
-| Sidebar        | src/app/UI/Sidebar.tsx    | komponenta | DONE | dynamicky načítá moduly z modules.index.js |
-| Breadcrumbs    | src/app/UI/Breadcrumbs.tsx| komponenta | TODO | drobečková navigace    |
-| HomeActions    | src/app/UI/HomeActions.tsx| komponenta | TODO | ikony vpravo nahoře    |
-| CommonActions  | src/app/UI/CommonActions.tsx | komponenta | TODO | akce dle modulu (Edit, Archivovat…) |
-| Tabs           | src/app/UI/Tabs.tsx       | komponenta | TODO | 10 fixních záložek     |
-| DetailView     | src/app/UI/DetailView.tsx | komponenta | TODO | hlavní karta detailu   |
-| ListView       | src/app/UI/ListView.tsx   | komponenta | TODO | přehled záznamů        |
+```
+app/
+  UI/
+    HomeButton.tsx
+    Sidebar.tsx
+    Breadcrumbs.tsx
+    HomeActions.tsx
+    CommonActions.tsx
+    icons.ts
+  modules/
+    010-sprava-uzivatelu/
+    020-muj-ucet/
+    030-pronajimatel/
+    ...
+    900-nastaveni/
+  lib/
+    services/
+      auth.ts
+    supabaseClient.ts
+    uiConfig.ts
+  page.tsx
+  globals.css
 
----
-
-## 2. Moduly (config = JS, každý ve své složce)
-
-Umístění: `src/app/modules/[KOD-NÁZEV]/module.config.js`  
-
-| Kód  | Název            | Cesta                                              | Stav | Poznámka                  |
-|------|------------------|----------------------------------------------------|------|---------------------------|
-| 010  | Správa uživatelů | src/app/modules/010-sprava-uzivatelu/module.config.js | DONE | základní config (id, order, label, icon) |
-| 020  | Můj účet         | src/app/modules/020-muj-ucet/module.config.js        | DONE |                           |
-| 030  | Pronajímatel     | src/app/modules/030-pronajimatel/module.config.js    | DONE |                           |
-| 040  | Nemovitost       | src/app/modules/040-nemovitost/module.config.js      | DONE |                           |
-| 050  | Nájemník         | src/app/modules/050-najemnik/module.config.js        | DONE |                           |
-| 060  | Smlouva          | src/app/modules/060-smlouva/module.config.js         | DONE |                           |
-| 070  | Služby           | src/app/modules/070-sluzby/module.config.js          | DONE |                           |
-| 080  | Platby           | src/app/modules/080-platby/module.config.js          | DONE |                           |
-| 090  | Finance          | src/app/modules/090-finance/module.config.js         | DONE |                           |
-| 100  | Energie          | src/app/modules/100-energie/module.config.js         | DONE |                           |
-| 120  | Dokumenty        | src/app/modules/120-dokumenty/module.config.js       | DONE |                           |
-| 130  | Komunikace       | src/app/modules/130-komunikace/module.config.js      | DONE |                           |
-| 900  | Nastavení        | src/app/modules/900-nastaveni/module.config.js           | DONE | základní nastavení systému 
-
----
-
-## 3. Konfigurace modulů (do budoucna)
-
-Do `module.config.js` budeme postupně doplňovat:
-
-- `overview` – seznam přehledů (list view), sloupce, filtry
-- `detail` – definice formulářových polí, sekcí, příloh, systémových informací
-- `tiles` – dlaždice na přehledu modulu
-- `actions` – přehled akcí (common actions) pro modul
-- `tabs` – vazby mezi moduly (10 fixních záložek, případné rozšíření)
+docs/
+  README.md
+  CODESTYLE.md
+  UI-SPECIFIKACE.md
+  PREHLED-APLIKACE.md
+  stav-struktury.md
+  todo_list.md
+```
 
 ---
 
-## 4. Formuláře
+# 2. STAV JEDNOTLIVÝCH SLOŽEK
 
-(Zatím skeleton – budeme doplňovat později.)
-
-| Entita       | Kód formuláře      | Modul | Stav | Soubor / poznámka |
-|--------------|--------------------|-------|------|-------------------|
-| Pronajímatel | form_pronajimatel  | 030   | TODO |                   |
-| Nemovitost   | form_nemovitost    | 040   | TODO |                   |
-| Jednotka     | form_jednotka      | 0XX   | TODO |                   |
+| Oblast | Stav | Poznámka |
+|--------|------|----------|
+| UI layout (6 sekcí) | ✔ Hotovo | Plně implementováno |
+| HomeButton | ✔ Hotovo | Funguje + disabled |
+| Sidebar | ✔ Hotovo | Dynamické moduly |
+| Breadcrumbs | ✔ Základ | Nutná dynamika (v2) |
+| HomeActions | ✔ Hotovo | DisplayName + ikony |
+| CommonActions v1 | ✔ Hotovo | Pevná verze |
+| CommonActions v2 | ⏳ Plán | Akce podle modulu/role |
+| Content engine | ✔ Hotovo | Přehled/detail/form |
+| Autentizace | ✔ Hotovo | Supabase + metadata |
+| Role & oprávnění | ⏳ Plán | Napojení na moduly |
+| Ikony | ✔ Hotovo | Centralizované |
+| Form engine | ✔ Základ | Dirty state + validace v2 |
+| Moduly | ⏳ Průběžně | Základní struktura |
 
 ---
 
-## 5. Tiles / dlaždice
+# 3. STAV MODULŮ
 
-(Zatím prázdné, budeme doplňovat, až bude základ UI hotový.)
+## 3.1 Implementované moduly (kostra)
+| Modul | Stav | Poznámka |
+|-------|------|----------|
+| 010 – Správa uživatelů | ✔ Kostra | Bude napojena na permissions |
+| 020 – Můj účet | ✔ Kostra | Metadata uživatele |
+| 030 – Pronajímatel | ✔ Kostra | Základní tile |
+| 040 – Nemovitost | ✔ Kostra | Bude rozšířeno o vybavení |
+| 050 – Nájemník | ✔ Kostra | Form + přehled |
+| 060 – Smlouva | ⏳ Kostra | Nutné pole + vztahy |
+| 070 – Služby | ⏳ Čeká | Budoucí modul |
+| 080 – Platby | ⏳ Čeká | Napojení na finance |
+| 090 – Finance | ⏳ Čeká | Rozšíření |
+| 100 – Měřidla | ⏳ Čeká | Automatické odečty v2 |
+| 110 – Dokumenty | ⏳ Kostra | Šablony + generování |
+| 120 – Komunikace | ⏳ Čeká | Historie zpráv |
+| 900 – Nastavení | ✔ Aktivní | Obsahuje číselníky |
 
 ---
 
-## 6. Procesy / průvodci
+# 4. UI REALIZOVANÉ KOMPONENTY
 
-(Zatím prázdné – později sem přibydou např. průvodce založením smlouvy, přidáním nájemníka, předávacím protokolem apod.)
+| Komponenta | Stav | Poznámka |
+|------------|------|----------|
+| HomeButton | ✔ | Dokončeno |
+| Sidebar | ✔ | Dynamické moduly |
+| Breadcrumbs | ✔ | Statická verze |
+| HomeActions | ✔ | DisplayName + ikony |
+| CommonActions | ✔ | Pevná verze |
+| Tabulkový přehled | ⏳ | Zatím základ v modulech |
+| Form komponenty | ⏳ | Jednotný systém v přípravě |
+| Ikonový systém | ✔ | Centralizovaný |
+
+---
+
+# 5. LOGIKA A SLUŽBY
+
+| Služba | Stav | Poznámka |
+|--------|------|----------|
+| Supabase Client | ✔ | Funkční |
+| Auth service | ✔ | Session + metadata |
+| Module Loader | ✔ | Dynamický sidebar |
+| Permission Engine | ⏳ | V přípravě |
+| Actions Engine | ⏳ | Vazba na moduly |
+
+---
+
+# 6. BUDOUCÍ STRUKTURA (PLÁN)
+
+## 6.1 Backend logika (services)
+- authService v2  
+- permissionsService  
+- commonActionsEngine  
+- dynamicBreadcrumbsBuilder  
+- formStateManager  
+
+## 6.2 UI
+- TableView komponenta  
+- FormField komponenty (text, select, boolean, multiselect)  
+- modal windows  
+- toaster notifikace  
+
+## 6.3 Moduly rozšíření
+- Dokumenty → generování PDF  
+- Komunikace → ukládání do historie  
+- Služby → šablony služeb  
+- Platby → QR kódy  
+
+---
+
+# 7. ZÁVĚR
+
+Tento dokument ukazuje **aktuální stav implementace i plán vývoje**.  
+Slouží jako kontrolní seznam i chronologický přehled celého systému.
+
+Všechny změny v projektu musí být následně zaznamenány zde, aby dokumentace odpovídala reálnému stavu aplikace.
