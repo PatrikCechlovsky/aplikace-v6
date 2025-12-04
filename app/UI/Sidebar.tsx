@@ -1,6 +1,6 @@
 /*
  * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Stromový sidebar modulů + tiles s ikonami a ochranou proti ztrátě dat
+ * PURPOSE: Stromový sidebar modulů + tiles s ikonami, ochranou proti ztrátě dat
  */
 
 'use client'
@@ -26,18 +26,35 @@ interface ModuleConfig {
   tiles?: SidebarTile[]
 }
 
+/**
+ * Výběr v sidebaru – používá se v page.tsx jako SidebarSelection.
+ */
+export type SidebarSelection = {
+  moduleId: string
+  tileId?: string | null
+}
+
 type SidebarProps = {
   disabled?: boolean
   /**
-   * Když je true, klik na jinou položku vyvolá confirm dialog.
-   * Zatím se nepropaguje z formulářů – to dopojíme později.
+   * true = uživatel má rozdělanou práci, klik může být zablokován
    */
   hasUnsavedChanges?: boolean
+  /**
+   * Volitelné – pokud se posílá, bere se jako aktivní modul (má prioritu před URL).
+   */
+  activeModuleId?: string | null
+  /**
+   * Callback při výběru modulu / tile.
+   */
+  onModuleSelect?: (selection: SidebarSelection) => void
 }
 
 export default function Sidebar({
   disabled = false,
   hasUnsavedChanges = false,
+  activeModuleId: activeModuleIdProp = null,
+  onModuleSelect,
 }: SidebarProps) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [expandedIds, setExpandedIds] = useState<string[]>([])
@@ -45,6 +62,24 @@ export default function Sidebar({
 
   const pathname = usePathname() ?? ''
   const searchParams = useSearchParams()
+
+  // Aktivní modul z URL (/modules/<id>)
+  const activeModuleIdFromUrl = useMemo(() => {
+    if (!pathname) return null
+    const parts = pathname.split('/')
+    const idx = parts.indexOf('modules')
+    if (idx !== -1 && parts.length > idx + 1) {
+      return parts[idx + 1]
+    }
+    return null
+  }, [pathname])
+
+  // Konečný aktivní modul – pokud přichází z props, má přednost
+  const effectiveActiveModuleId =
+    activeModuleIdProp ?? activeModuleIdFromUrl
+
+  // Aktivní tile z query (?tile=<id>) – do budoucna i pro breadcrumbs
+  const activeTileId = searchParams?.get('tile') ?? null
 
   // Načtení modulů z module.config.js
   useEffect(() => {
@@ -85,27 +120,15 @@ export default function Sidebar({
     loadModules()
   }, [])
 
-  // Aktivní modul z URL (/modules/<id>)
-  const activeModuleId = useMemo(() => {
-    if (!pathname) return null
-    const parts = pathname.split('/')
-    const idx = parts.indexOf('modules')
-    if (idx !== -1 && parts.length > idx + 1) {
-      return parts[idx + 1]
-    }
-    return null
-  }, [pathname])
-
-  // Aktivní tile z query (?tile=<id>) – používáme do budoucna
-  const activeTileId = searchParams?.get('tile') ?? null
-
   // Rozbalit aktivní modul při změně
   useEffect(() => {
-    if (!activeModuleId) return
+    if (!effectiveActiveModuleId) return
     setExpandedIds((prev) =>
-      prev.includes(activeModuleId) ? prev : [...prev, activeModuleId],
+      prev.includes(effectiveActiveModuleId)
+        ? prev
+        : [...prev, effectiveActiveModuleId],
     )
-  }, [activeModuleId])
+  }, [effectiveActiveModuleId])
 
   const showIcons = uiConfig.showSidebarIcons
 
@@ -117,12 +140,14 @@ export default function Sidebar({
     )
   }
 
-  function handleNavigationClick(
-    e: MouseEvent<HTMLAnchorElement>,
-  ) {
+  /**
+   * Společná kontrola pro kliknutí – řeší disabled + hasUnsavedChanges.
+   * Vrací true = můžeš pokračovat, false = zruš navigaci.
+   */
+  function confirmNavigation(e: MouseEvent, selection?: SidebarSelection) {
     if (disabled) {
       e.preventDefault()
-      return
+      return false
     }
 
     if (hasUnsavedChanges) {
@@ -131,12 +156,20 @@ export default function Sidebar({
       )
       if (!ok) {
         e.preventDefault()
+        return false
       }
     }
+
+    // Informujeme parent o výběru
+    if (selection && onModuleSelect) {
+      onModuleSelect(selection)
+    }
+
+    return true
   }
 
   function isModuleActive(m: ModuleConfig): boolean {
-    return activeModuleId === m.id
+    return effectiveActiveModuleId === m.id
   }
 
   return (
@@ -179,7 +212,9 @@ export default function Sidebar({
                     <Link
                       href={moduleHref}
                       className="sidebar__link"
-                      onClick={handleNavigationClick}
+                      onClick={(e) =>
+                        confirmNavigation(e, { moduleId: m.id })
+                      }
                     >
                       {showIcons && (
                         <span className="sidebar__icon">
@@ -208,11 +243,16 @@ export default function Sidebar({
                             <Link
                               href={tileHref}
                               className="sidebar__sublink"
-                              onClick={handleNavigationClick}
+                              onClick={(e) =>
+                                confirmNavigation(e, {
+                                  moduleId: m.id,
+                                  tileId: t.id,
+                                })
+                              }
                             >
                               {showIcons && (
                                 <span className="sidebar__subicon">
-                                  {/* tady klidně můžeš dát specifickou ikonu pro tile */}
+                                  {/* tady můžeš v budoucnu dát vlastní ikonu pro tile */}
                                   {getIcon('dot' as any)}
                                 </span>
                               )}
