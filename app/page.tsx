@@ -304,11 +304,11 @@ export default function HomePage() {
           </div>
         </div>
       </header>
-        // Klik na HomeButton → návrat na dashboard
-        function handleHomeClick() {
-          if (!isAuthenticated) return
-          setActiveModuleId(null)
-        }
+      // Klik na HomeButton → návrat na dashboard
+       function handleHomeClick() {
+        if (!isAuthenticated) return
+        setActiveModuleId(null)
+      }
       {/* 2. Sidebar – levý sloupec */}
       <aside className="layout__sidebar">
         <Sidebar
