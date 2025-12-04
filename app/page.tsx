@@ -292,10 +292,23 @@ export default function HomePage() {
   // 🧱 Hlavní layout – 6 bloků podle dokumentace
   return (
     <div className={`layout theme-${uiConfig.theme}`}>
-      {/* 1. HomeButton – vlevo nahoře */}
+      {/* 1 + 2. Levý sloupec – HomeButton + Sidebar */}
+      <aside className="layout__sidebar">
+        <HomeButton
+          disabled={!isAuthenticated}
+          onClick={handleHomeClick}
+        />
+
+        <Sidebar
+          disabled={!isAuthenticated}
+          activeModuleId={activeModuleId ?? undefined}
+          onModuleSelect={handleModuleSelect}
+        />
+      </aside>
+
+      {/* 3. Horní lišta vpravo – jen HomeActions */}
       <header className="layout__topbar">
         <div className="layout__topbar-inner">
-          <HomeButton disabled={!isAuthenticated} />
           <div className="layout__topbar-right">
             <HomeActions
               disabled={!isAuthenticated}
@@ -304,26 +317,11 @@ export default function HomePage() {
           </div>
         </div>
       </header>
-      // Klik na HomeButton → návrat na dashboard
-       function handleHomeClick() {
-        if (!isAuthenticated) return
-        setActiveModuleId(null)
-      }
-      {/* 2. Sidebar – levý sloupec */}
-      <aside className="layout__sidebar">
-        <Sidebar
-          disabled={!isAuthenticated}
-          activeModuleId={activeModuleId ?? undefined}
-          onModuleSelect={handleModuleSelect}
-        />
-      </aside>
 
-      {/* 3. Breadcrumbs – nad obsahem */}
+      {/* 4. Breadcrumbs – nad obsahem */}
       <div className="layout__breadcrumbs">
         <Breadcrumbs disabled={!isAuthenticated} />
       </div>
-
-      {/* 4. HomeActions – už je uvnitř topbaru (viz výše) */}
 
       {/* 5. CommonActions – pod breadcrumbs */}
       <div className="layout__actions">
@@ -331,9 +329,7 @@ export default function HomePage() {
       </div>
 
       {/* 6. Content – hlavní plocha */}
-      <main className="layout__content">
-        {renderContent()}
-      </main>
+      <main className="layout__content">{renderContent()}</main>
     </div>
   )
 }
