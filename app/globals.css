@@ -32,16 +32,37 @@ body {
   gap: 12px;
 }
 
-/* 3+4 – horní lišta vpravo (Breadcrumbs + HomeActions) */
+/* 3+4 – horní lišta */
 .layout__topbar {
   grid-column: 2;
   grid-row: 1;
+
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
+
+  /* odstraníme justify-content: space-between, protože ruší vnitřní layout */
+}
+
+.layout__topbar-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.layout__topbar-left {
+  display: flex;
+  align-items: center;
+  flex: 1;   /* Breadcrumbs vlevo */
+}
+
+.layout__topbar-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto; /* HomeActions úplně doprava */
 }
 
 /* 5 – lišta obecných akcí */
