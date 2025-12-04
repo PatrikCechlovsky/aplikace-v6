@@ -105,21 +105,33 @@ body {
   background: #f3f4f6;
 }
 
-/* 1 – HomeButton */
+/* 1 – HomeButton (logo vlevo nahoře) */
 .home-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 8px;
-  background: #f97316;
-  color: #ffffff;
+  background: #ffffff;
+  color: #111827;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  text-align: left;
 }
 
 .home-button__icon {
   font-size: 18px;
+}
+
+.home-button.is-disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.home-button:not(.is-disabled) {
+  cursor: pointer;
 }
 
 /* 2 – Sidebar */
