@@ -167,11 +167,15 @@ Aplikace využívá jednotný 6-blokový layout postavený na CSS Grid:
 #### 2. Sidebar (`app/UI/Sidebar.tsx`)
 - **Účel:** Dynamické menu modulů
 - **Umístění:** Levý sloupec
-- **Funkce:** 
-  - Načítá moduly z `modules.index.js`
-  - Zobrazuje ikony a názvy modulů
-  - Zvýrazňuje aktivní modul
-- **Props:** `disabled?: boolean`
+- **Funkce:**
+  - načítá moduly z `modules.index.js`
+  - zobrazuje ikony a názvy modulů
+  - zvýrazňuje aktivní modul
+  - (TODO) bude fungovat jako „osnova“:
+    - podporuje vnořené úrovně (modul → podsekce → tile/form) s odsazením
+    - u rozbalovacích položek je šipka `▶/▼`, která se otáčí podle stavu
+    - při pokusu odejít z rozpracovaného formuláře se zobrazí varování a nabídne se volba „Zahodit / Pokračovat v úpravách“
+
 
 ```tsx
 // Dynamické načítání modulů
@@ -191,8 +195,12 @@ useEffect(() => {
 #### 3. Breadcrumbs (`app/UI/Breadcrumbs.tsx`)
 - **Účel:** Drobečková navigace
 - **Umístění:** Horní část nad obsahem
-- **Funkce:** Zobrazuje aktuální cestu (Domů > Modul > Detail)
-- **Props:** `disabled?: boolean`
+- **Funkce:**
+  - zobrazuje aktuální cestu (např. `Domů > Nastavení > Typy subjektů > Detail typu`)
+  - v budoucnu sjednotit nadpisy tak, aby:
+    - modulový nadpis byl v breadcrumbs a v hlavním H1,
+    - jednotlivé tiles (např. `GenericTypeTile`) používaly pouze podnadpis typu „Detail typu“ (bez duplicity názvu modulu).
+
 
 #### 4. HomeActions (`app/UI/HomeActions.tsx`)
 - **Účel:** Uživatelské akce
@@ -214,6 +222,7 @@ useEffect(() => {
   - Přílohy (📎)
   - Archivovat (🗄️)
   - Smazat (🗑️)
+  - **Výjimka:** typové číselníky (`GenericTypeTile`) CommonActions nepoužívají – mají vlastní akční tlačítka přímo ve formuláři a nemají přílohy.
 - **Props:** `disabled?: boolean`, `actions?: CommonAction[]`
 
 ```tsx
@@ -704,16 +713,17 @@ Vzor pro nastavení typů (role, oprávnění, typ subjektu...).
 
 ### GenericTypeTile (`app/UI/GenericTypeTile.tsx`)
 
-Jednotný typový pohled pro číselníky s následujícími poli:
-- `code` – kód
-- `name` – název
-- `description` – popis
-- `color` – barva
-- `icon` – ikona
-- `sort_order` – pořadí
-- `active` – aktivní/archivovaný
+Jednotný typový pohled pro číselníky s poli:
+- `code`, `name`, `description`, `color`, `icon`, `sort_order`, `active`
 
----
+Specifické chování:
+
+- horní část: filtr + seznam typů,
+- spodní část: detail typu s vlastní akční lištou (Předchozí, Další, Uložit, Archivovat, Nový),
+- komponenta sama hlídá „dirty state“ a při pokusu o změnu výběru zobrazí varování,
+- formy postavené na `GenericTypeTile` **nemají přílohy a CommonActions** – jsou to čisté konfigurační číselníky.
+
+
 
 ## 📋 Konfigurace projektu
 
