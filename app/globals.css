@@ -157,38 +157,108 @@ body {
 }
 
 /* 2 – Sidebar */
+/* Základní wrapper */
+.sidebar {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.sidebar__inner {
+  padding: 12px 8px;
+}
+
+/* Hlavní seznam */
 .sidebar__list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.sidebar__item {
+/* Řádek modulu */
+.sidebar__row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
 }
 
-.sidebar__item:hover {
+.sidebar__row--active {
   background: #eef2ff;
 }
 
+.sidebar__row--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Šipka pro rozbalení */
+.sidebar__toggle {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+  transform: translateY(1px);
+  transition: transform 0.15s ease;
+}
+
+.sidebar__toggle--open {
+  transform: rotate(90deg) translateY(1px);
+}
+
+/* Link modulu */
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+}
+
 .sidebar__icon {
-  width: 20px;
-  text-align: center;
+  font-size: 16px;
 }
 
 .sidebar__label {
+  font-size: 14px;
   white-space: nowrap;
 }
 
-.sidebar__empty {
+/* Submenu */
+.sidebar__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 4px 24px; /* odsazení pro podúroveň */
+}
+
+.sidebar__subitem {
+  margin: 0;
+}
+
+.sidebar__subitem--active .sidebar__sublink {
+  background: #eef2ff;
+}
+
+.sidebar__sublink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.sidebar__subicon {
+  font-size: 12px;
+}
+
+.sidebar__sublabel {
   font-size: 13px;
-  color: #6b7280;
 }
 
 /* 3 – Breadcrumbs */
