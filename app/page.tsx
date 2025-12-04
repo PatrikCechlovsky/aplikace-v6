@@ -79,16 +79,23 @@ export default function HomePage() {
         }
 
         const session = data?.session ?? null
-
-          if (session?.user) {
-            setIsAuthenticated(true)
-            setUser({
-              email: session.user.email,
-              displayName: session.user.user_metadata?.display_name ?? null,
-            })
-          } else {
-            setIsAuthenticated(false)
-            setUser(null)
+        
+        if (session?.user) {
+          const meta = session.user.user_metadata || {}
+        
+          setIsAuthenticated(true)
+          setUser({
+            email: session.user.email,
+            displayName:
+              meta.display_name ??
+              meta.full_name ??
+              meta.name ??
+              null,
+          })
+        } else {
+          setIsAuthenticated(false)
+          setUser(null)
+          setActiveModuleId(null)
         }
 
         // Supabase: callback(event, session)
