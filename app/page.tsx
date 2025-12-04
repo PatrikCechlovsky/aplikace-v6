@@ -13,6 +13,9 @@ import Breadcrumbs from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import CommonActions from '@/app/UI/CommonActions'
 import LoginPanel from '@/app/UI/LoginPanel'
+import type { SidebarSelection } from '@/app/UI/Sidebar'
+import type { BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
+
 
 import { uiConfig } from '@/app/lib/uiConfig'
 import {
@@ -55,6 +58,11 @@ export default function HomePage() {
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
+  const [activeSelection, setActiveSelection] = useState<SidebarSelection | null>(null)
+
+  // TODO: globální informace o neuložených změnách – zatím false
+  const [hasUnsavedChanges] = useState(false)
+
 
   // 1) Načtení session + listener na změny (login/logout)
   useEffect(() => {
