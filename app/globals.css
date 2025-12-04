@@ -78,6 +78,7 @@ body {
 .common-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center; /* přidej */
   gap: 6px;
 }
 
