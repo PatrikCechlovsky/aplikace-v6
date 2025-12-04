@@ -1076,6 +1076,58 @@ body.theme-orange .home-button {
   font-size: 11px;
   color: #6b7280;
 }
+.home-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.home-actions.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.home-actions__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.home-actions__icon {
+  font-size: 16px;
+}
+
+.home-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.home-actions__btn:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.home-actions__logout {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.home-actions__logout:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
 
 /* ============================================
    GENERICTYPETILE – TLAČÍTKA BEZ OVÁLU (PILL)
