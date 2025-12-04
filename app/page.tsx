@@ -29,6 +29,7 @@ import type { IconKey } from '@/app/UI/icons'
 
 type SessionUser = {
   email?: string | null
+  displayName?: string | null
 }
 
 // Minimalistická podoba konfigurace modulu pro potřeby page.tsx
@@ -52,7 +53,8 @@ export default function HomePage() {
   // 🔐 Stav autentizace
   const [authLoading, setAuthLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState<SessionUser | null>(null)
+  const [user, setUser] = useState<SessionUser | null>(null
+  const displayName = user?.displayName || user?.email || 'Uživatel'
 
   // 📦 Moduly a aktivní modul
   const [modules, setModules] = useState<ModuleConfig[]>([])
@@ -77,22 +79,27 @@ export default function HomePage() {
 
         const session = data?.session ?? null
 
-        if (session?.user) {
-          setIsAuthenticated(true)
-          setUser({ email: session.user.email })
-        } else {
-          setIsAuthenticated(false)
-          setUser(null)
+          if (session?.user) {
+            setIsAuthenticated(true)
+            setUser({
+              email: session.user.email,
+              displayName: session.user.user_metadata?.display_name ?? null,
+            })
+          } else {
+            setIsAuthenticated(false)
+            setUser(null)
         }
 
         // Supabase: callback(event, session)
-        const { data: sub } = onAuthStateChange(
-          (event: string, session: any) => {
+          const { data: sub } = onAuthStateChange((event: string, session: any) => {
             console.log('[auth] event', event, session)
-
+          
             if (session?.user) {
               setIsAuthenticated(true)
-              setUser({ email: session.user.email })
+              setUser({
+                email: session.user.email,
+                displayName: session.user.user_metadata?.display_name ?? null,
+              })
             } else {
               setIsAuthenticated(false)
               setUser(null)
