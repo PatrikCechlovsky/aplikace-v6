@@ -16,7 +16,6 @@ import LoginPanel from '@/app/UI/LoginPanel'
 import type { SidebarSelection } from '@/app/UI/Sidebar'
 // import type { BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 
-
 import { uiConfig } from '@/app/lib/uiConfig'
 import {
   getCurrentSession,
@@ -56,16 +55,17 @@ export default function HomePage() {
   const [user, setUser] = useState<SessionUser | null>(null)
   const displayName = user?.displayName || user?.email || 'Uživatel'
 
-
   // 📦 Moduly a aktivní modul
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
-  const [activeSelection, setActiveSelection] = useState<SidebarSelection | null>(null)
+
+  // Výběr v sidebaru (modul + tile) – připravené pro breadcrumbs, atd.
+  const [activeSelection, setActiveSelection] =
+    useState<SidebarSelection | null>(null)
 
   // TODO: globální informace o neuložených změnách – zatím false
   const [hasUnsavedChanges] = useState(false)
-
 
   // 1) Načtení session + listener na změny (login/logout)
   useEffect(() => {
@@ -79,10 +79,10 @@ export default function HomePage() {
         }
 
         const session = data?.session ?? null
-        
+
         if (session?.user) {
           const meta = session.user.user_metadata || {}
-        
+
           setIsAuthenticated(true)
           setUser({
             email: session.user.email,
@@ -96,22 +96,30 @@ export default function HomePage() {
           setIsAuthenticated(false)
           setUser(null)
           setActiveModuleId(null)
+          setActiveSelection(null)
         }
 
         // Supabase: callback(event, session)
-          const { data: sub } = onAuthStateChange((event: string, session: any) => {
+        const { data: sub } = onAuthStateChange(
+          (event: string, session: any) => {
             console.log('[auth] event', event, session)
-          
+
             if (session?.user) {
+              const meta = session.user.user_metadata || {}
               setIsAuthenticated(true)
               setUser({
                 email: session.user.email,
-                displayName: session.user.user_metadata?.display_name ?? null,
+                displayName:
+                  meta.display_name ??
+                  meta.full_name ??
+                  meta.name ??
+                  null,
               })
             } else {
               setIsAuthenticated(false)
               setUser(null)
               setActiveModuleId(null)
+              setActiveSelection(null)
             }
           },
         )
@@ -121,6 +129,8 @@ export default function HomePage() {
         console.error('Chyba při načítání session:', err)
         setIsAuthenticated(false)
         setUser(null)
+        setActiveModuleId(null)
+        setActiveSelection(null)
       } finally {
         setAuthLoading(false)
       }
@@ -190,6 +200,7 @@ export default function HomePage() {
     const firstEnabled = modules[0]
     if (firstEnabled) {
       setActiveModuleId(firstEnabled.id)
+      setActiveSelection({ moduleId: firstEnabled.id })
     }
   }, [isAuthenticated, modules, activeModuleId])
 
@@ -199,20 +210,22 @@ export default function HomePage() {
     setIsAuthenticated(false)
     setUser(null)
     setActiveModuleId(null)
+    setActiveSelection(null)
   }
 
-  // Klik v Sidebaru → změna aktivního modulu
-  function handleModuleSelect(moduleId: string) {
-    setActiveModuleId(moduleId)
+  // Klik v Sidebaru → změna aktivního modulu / tile
+  function handleModuleSelect(selection: SidebarSelection) {
+    // vždy nastavíme aktivní modul podle výběru
+    setActiveModuleId(selection.moduleId)
+    setActiveSelection(selection)
   }
-
 
   // Klik na HomeButton → návrat na dashboard
   function handleHomeClick() {
     if (!isAuthenticated) return
     setActiveModuleId(null)
+    setActiveSelection(null)
   }
-
 
   // 🧩 Hlavní obsah (blok 6 – Content)
   function renderContent() {
@@ -247,7 +260,10 @@ export default function HomePage() {
     if (!modules.length) {
       return (
         <div className="content content--center">
-          <p>Nebyly nalezeny žádné moduly. Zkontroluj prosím soubor <code>modules.index.js</code>.</p>
+          <p>
+            Nebyly nalezeny žádné moduly. Zkontroluj prosím soubor{' '}
+            <code>modules.index.js</code>.
+          </p>
         </div>
       )
     }
@@ -257,7 +273,10 @@ export default function HomePage() {
       return (
         <div className="content">
           <h2>Dashboard</h2>
-          <p>Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho obsah.</p>
+          <p>
+            Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho
+            obsah.
+          </p>
         </div>
       )
     }
@@ -269,8 +288,8 @@ export default function HomePage() {
         <div className="content">
           <h2>Neznámý modul</h2>
           <p>
-            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen
-            v konfiguraci. Zkontroluj <code>module.config.js</code>.
+            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen v
+            konfiguraci. Zkontroluj <code>module.config.js</code>.
           </p>
         </div>
       )
@@ -306,7 +325,8 @@ export default function HomePage() {
         <h2>{activeModule.label}</h2>
         <p>
           Tento modul zatím nemá nakonfigurované žádné dlaždice ani formuláře.
-          Přidej je do <code>{activeModule.id}/module.config.js</code> (pole <code>tiles</code>, <code>overview</code>, <code>detail</code>).
+          Přidej je do <code>{activeModule.id}/module.config.js</code> (pole{' '}
+          <code>tiles</code>, <code>overview</code>, <code>detail</code>).
         </p>
       </div>
     )
@@ -325,6 +345,7 @@ export default function HomePage() {
         <Sidebar
           disabled={!isAuthenticated}
           activeModuleId={activeModuleId ?? undefined}
+          hasUnsavedChanges={hasUnsavedChanges}
           onModuleSelect={handleModuleSelect}
         />
       </aside>
