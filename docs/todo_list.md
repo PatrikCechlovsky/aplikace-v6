@@ -27,6 +27,16 @@ Kompletní plán vývoje aplikace, sjednocený podle aktuální struktury, stavu
 - [ ] Dokončení základního stylování (hover, spacing, barvy)
 - [ ] Dolaďit vzhled ListView, DetailView, Tabs
 
+**Nové úkoly – layout a nadpisy:**
+
+- [ ] Breadcrumbs zobrazit podle specifikace: `Domů > Nastavení > Typy subjektů > Detail typu`
+- [ ] Vrátit a správně zarovnat HomeButton v horním layoutu (aby nezmizel v modulech)
+- [ ] V Content odstranit duplicitní nadpisy:
+  - modul má „Nastavení / Typy subjektů“
+  - GenericTypeTile má jen podnadpis „Detail typu“
+- [ ] Zajistit, aby Breadcrumbs byly vždy viditelné nad Content (nesmí „mizet“ u některých modulů)
+
+
 ---
 
 # ⏳ FÁZE 2 – AUTENTIZACE (Supabase Auth)
@@ -58,6 +68,19 @@ Bezpečnost:
   - Tabs
   - ListView (vedení podle typu entity)
   - DetailView (typ subjektu, stav atd.)
+
+**Nové úkoly – Sidebar jako osnova:**
+
+- [ ] Předělat `Sidebar.tsx` na „osnovu“:
+  - úrovně (modul → podsekce → tile/form) s jemným odsazením (indent)
+- [ ] Přidat malou šipku před položku:
+  - zavřený stav `▶`
+  - otevřený stav `▼` (rotace pomocí CSS)
+- [ ] Vždy zvýraznit pouze jednu aktivní položku (aktuální modul/tile)
+- [ ] Navigační guard:
+  - při rozdělaných změnách (`dirty` formulář) zobrazit varování
+  - nepustit uživatele do jiného modulu/tilu bez potvrzení („Zahodit / Pokračovat“ – podobně jako v GenericTypeTile)
+
 
 ---
 
@@ -151,9 +174,19 @@ Každý modul musí mít:
 - [ ] Automatická archivace odeslaných dokumentů
 
 ## 900 – Nastavení
+
 - [ ] Správa číselníků
 - [ ] Aplikační nastavení
 - [ ] Uživatelský profil
+
+**Speciální typové číselníky – GenericTypeTile:**
+
+- [ ] Pro číselníky typu `subject_types`, `role_types`, `permission_types` používat komponentu `GenericTypeTile`
+- [ ] V těchto view:
+  - neschovávat/nenechávat CommonActions (horní akční lišta je vypnutá)
+  - nezobrazovat sekci „Přílohy“ (tyto typy nemají přílohy)
+  - akční tlačítka jsou součástí samotného formuláře (šipky, Uložit, Archivovat, Nový)
+
 
 ---
 
