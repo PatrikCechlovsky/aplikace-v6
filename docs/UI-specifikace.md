@@ -1,354 +1,1021 @@
-# UI-specifikace.md
+# 📘 Kompletní přehled aplikace — Pronajímatel v6 (KONSOLIDOVANÁ VERZE)
+Toto je konsolidovaná verze původní dokumentace. Zachovává veškerý obsah, nic nebylo odstraněno.
+Navíc je doplněna o úvodní strukturu a sjednocené formátování.
 
-> Konečná verze standardů pro agenty, layout a logiku modulů v aplikaci "Pronajímatel".
+# Podrobné shrnutí aplikace Pronajímatel v6
 
----
-
-## 📘 GLOBÁLNÍ STRUKTURA UI
-
-
-### 🧱 9-blokový layout aplikace (vždy aktivní rozvržení)
-
-Rozhraní aplikace je jednotné napříč celým systémem. Všechna zobrazení pracují s touto pevnou strukturou:
-
-1. **Home Button** – logo aplikace v levém horním rohu (slouží jako návrat na hlavní přehled)
-2. **Sidebar** – vertikální menu modulů (např. Uživatelé, Pronajímatel, Nemovitosti…)
-3. **Breadcrumbs** – zobrazení aktuální cesty (např. Domů > Nemovitosti > Detail)
-4. **Home Actions** – uživatel, notifikace, vyhledávání, odhlášení (vpravo nahoře)
-5. **Common Actions** – akce vztahující se k entitě (např. editace, archivace, export)
-6. **Content** – hlavní pracovní plocha, ve které se zobrazuje buď přehled, nebo detail entity
+> Tento dokument obsahuje kompletní přehled aplikace včetně struktury souborů, komponent, modulů, nastavení a všech procesů.
 
 ---
 
-### 🔁 Pracovní obsah `Content` (část 6)
-
-V rámci hlavního pracovního prostoru se zobrazují vždy tyto typy obsahu:
-
-#### 7. **List View**
-
-* Přehled záznamů v modulu (tabulka)
-* Funkce: filtrování, řazení, hledání, kliknutí na řádek otevře detail entity
-
-#### 8. **Detail Entity**
-
-* Hlavní formulář entity (např. Nemovitost, Smlouva)
-* Obsahuje vlastní sekce (formulář, přílohy, systémové info…)
-
-#### 9. **Vazby (Relations)**
-
-* Záložky zobrazující související entity (např. jednotky, nájemníci, smlouvy…)
-* **Každá záložka má dvě části**:
-
-  * **Tabs (seznam)** – horní část se seznamem max. 10 záznamů + scroll
-  * **Detail** – spodní část s detailem právě vybraného záznamu
-  * Lze přepínat mezi záznamy (např. šipkami)
-
-
-📐 Základní rozložení (desktop)
-
-Podle obrázku máme 6 hlavních bloků:
-
-Blok 1 – Logo / Home button („Pronajímatel“)
-
-Vlevo nahoře.
-
-Kliknutí vždy přejde na „Domů“ (výchozí přehled podle role).
-
-Stejný na všech stránkách.
-
-Blok 2 – Sidebar (seznam modulů)
-
-Levý sloupec aplikace.
-
-Obsahuje seznam modulů (Uživatelé, Můj účet, Pronajímatel, Nemovitosti, Nájemník, Smlouvy, Služby, Platby, Finance, Energie, Dokumenty, Komunikace).
-
-Sidebar je dynamický – moduly se načítají z modules.index.js a jednotlivých module.config.js.
-
-Aktivní modul je zvýrazněný.
-
-Blok 3 – Breadcrumbs (drobečková navigace)
-
-V horní části nad contentem, pod logem.
-
-Zobrazuje cestu:
-Domů › [Modul] › [Přehled / Formulář] › [Konkrétní entita].
-
-Vždy je vidět, kde se uživatel právě nachází.
-
-Blok 4 – Home actions (uživatel, hledání, notifikace, odhlášení)
-
-Vpravo nahoře.
-
-Obsahuje:
-
-jméno uživatele,
-
-ikonku lupy (globální hledání),
-
-upozornění (notifikace),
-
-uživatelský profil,
-
-tlačítko Odhlásit.
-
-Stejné chování na všech stránkách.
-
-Blok 5 – Common actions (akční lišta aktuální entity)
-
-Lišta pod breadcrumbs, nad hlavním obsahem.
-
-Obsahuje kontextové akce pro aktuální modul/detail (Nový, Uložit, Upravit, Archivovat, Přílohy, Tisk…).
-
-Je dynamická – akce se budou načítat z konfigurace modulu (do budoucna z module.config.js).
-
-Blok 6 – Content (hlavní obsah obrazovky)
-
-Největší část vpravo dole.
-
-Podle stavu aplikace se zde zobrazuje:
-
-přihlašovací obrazovka,
-
-přehled (tabulka),
-
-detail entity s 10 záložkami a vazbami,
-
-průvodci, formuláře, dashboardy.
-
-V tuto chvíli sem chceme vložit přihlašovací formulář.
-
-Tento nový popis navazuje na předchozí v5/v6 specifikaci UI (10 záložek, hlavní karta, vazby) , ale je zjednodušený na 6 bloků layoutu pro první verzi.
-
-📱 Chování na mobilu
-
-Stejné bloky, ale jinak poskládané:
-
-Horní lišta (blok 1 + 4 dohromady)
-
-Vlevo: ☰ (otevření sidebaru), logo / název aktuálního modulu.
-
-Vpravo: uživatelské akce (hledání, notifikace, profil, odhlášení v menu).
-
-Sidebar (blok 2)
-
-Skrytý jako „hamburger menu“.
-
-Po kliknutí na ☰ se otevře přes celou obrazovku.
-
-Po výběru modulu se sidebar zavře.
-
-Breadcrumbs (blok 3)
-
-Jeden řádek pod horní lištou.
-
-Horizontální scroll, zkrácený tvar (např. … › Nemovitosti › A-101).
-
-Common actions (blok 5)
-
-Krátká lišta pod breadcrumbs.
-
-Akce v podobě ikon + krátký text.
-
-Když je málo místa, může se schovat pod tlačítko „⋯“.
-
-Content (blok 6)
-
-Zobrazuje buď:
-
-přihlašovací formulář,
-
-přehled (list) – přes celou obrazovku,
-
-nebo detail (formulář) – přes celou obrazovku.
-
-U vazeb (list + detail) se na mobilu používá režim nejdřív list → pak detail, ne dva panely vedle sebe.
----
-
-### 🎨 Ikony (standardizace UI)
-
-Aplikace používá **jediný centrální zdroj ikon**, který je uveden v souboru:
-📁 [`icon.md`]
-
-Tento soubor definuje:
-
-* seznam dostupných ikon (emoji) pro všechny moduly,
-* použití ikon v tlačítkách, přehledech i formulářích,
-* jednotný styl – každá akce nebo entita má přiřazenou svou ikonu.
-
-Ikony jsou součástí návrhu UI a nejsou nahrazovány SVG knihovnami.
-
-Pro přidávání ikon do modulů a komponent používejte pouze ikony z tohoto seznamu.
-
+## 📌 O aplikaci
+
+**Pronajímatel v6** je modulární SaaS aplikace pro správu nájemních vztahů. Jedná se o 6. generaci aplikace, kompletně přepsanou do moderní modulární architektury.
+
+### Klíčové vlastnosti:
+- Správa pronajímatelů, nemovitostí, jednotek a nájemníků
+- Správa smluv, služeb a plateb
+- Finanční přehled a vyúčtování
+- Správa dokumentů a komunikace
+- Modulární architektura s možností rozšíření
+- Bezpečnost pomocí Row Level Security (RLS)
+
+### Produkční URL:
+**https://aplikace-v6.vercel.app**
 
 ---
 
-## 🔍 STRUKTURA DETAILU ENTITY
+## 🛠️ Technologie
 
-### část 8: Hlavní karta s detailem entity kterou jsem vybral ve view
-
-* Formulář hlavních údajů (více sloupců podle šíře obrazovky)
-* Volitelně: kontakty, metadata, štítky 
-* Přílohy (foto, skeny, dokumenty)
-* Systémové údaje (vytvořil, datum, čas)
-
-### ostatní záložky 2+ : Vazby (blok 9)
-
-Každá záložka obsahuje:
-
-* **nahoře seznam** (max. 10 položek + scroll)
-* **dole detail** vybrané položky (formulář nebo komponenta)
-* žádná záložka nikdy neobsahuje pouze seznam nebo pouze detail
+| Technologie | Verze | Účel |
+|-------------|-------|------|
+| Next.js | 14.2.3 | React framework s App Router |
+| React | 18.2.0 | UI knihovna |
+| TypeScript | 5.6.0 | Typová bezpečnost |
+| Supabase | 2.48.0 | Backend (Auth + DB) |
+| Vercel | - | CI/CD + produkční hosting |
+| CSS | - | Ručně tvořený UI systém |
 
 ---
 
-## ⚖️ FIXNÍ POŘADÍ ZÁLOŽEK
-
-Záložky mají ve všech modulech stejné, fixní pořadí. Příklad:
-
-| Pozice | Obsah               |
-| ------ | ------------------- |
-| 1      | Vazba: Pronajímatel |
-| 2      | Vazba: Nemovitosti  |
-| 3      | Vazba: Jednotky     |
-| 4      | Vazba: Nájemníci    |
-| 5      | Vazba: Smlouvy      |
-| 6      | Vazba: Platby       |
-| 7      | Vazba: Finance      |
-později možná další...
-
-
-
----
-
-## 👥 VAZBY MEZI ENTITAMI
-
-| Entita       | Vazby (1:N)                         | Pravidla                                    |
-| ------------ | ----------------------------------- | ------------------------------------------- |
-| Pronajímatel | Nemovitosti                         | Každý pronajímatel má 1+ nemovitostí        |
-| Nemovitost   | Jednotky, Měřidla, Finance, Přílohy | Každá nemovitost má 0+ jednotek, 0+ měřidel |
-| Jednotka     | Nájemník                            | Každá jednotka má 0 nebo 1 nájemníka        |
-| Nájemník     | Smlouvy                             | Každý nájemník má 1+ smluv                  |
-| Smlouva      | Služby, Platby, Dokument, Přílohy   | Vždy navázána na jednotku i nájemníka       |
-| Služba       | Měřidlo nebo jiný výpočet ceny      | Možno propojit s měřidlem                   |
-| Platba       | Smlouva                             | Každá platba přísluší ke smlouvě            |
-| Dokument     | Generován ze smlouvy (do budoucna)  | Aktuálně ruční příloha                      |
-| Přílohy      | U každé entity                      | Nelze mazat, lze archivovat                 |
-
----
-
-## 📂 CHOVÁNÍ PŘÍLOH
-
-* Každá entita může mít 0+ příloh
-* Podporované typy: JPG, PNG, PDF, Word, Excel...
-* Nelze mazat, pouze archivace
-* Budoucí podpora verzování
-* Zobrazováno v sekci "Přílohy" v hlavní kartě
-
----
-
-## 🌐 DALŠÍ GLOBÁLNÍ PRAVIDLA
-
-* Sidebar se nikdy nemění, jen zvýrazní aktivní modul
-* CommonActions se vždy vztahují k aktuální entitě
-* Breadcrumbs ukazuje vždy celou cestu a aktivní podzáložku
-* Formulář je dvousloupcový, rozdělený do sekcí (profil, systém, ...)
-* Vždy kombinace seznam + detail (nikdy jen jedno)
-
----
-
-## 📊 ZÁVĚR
-
-Tato specifikace je jednotný základ pro tvorbu modulů, UI komponent i logiky vazeb. Může být importována jako `UI-specifikace.md` do root složky Git repozitáře nebo nástroje jako Codex.
-
-Další verze bude rozšířena o komponenty, styly a vazby na API (Supabase).
-## 🧱 Rozložení aplikace – UI layout (verze 2025)
-
-Tato aplikace používá jednotné 9-blokové rozhraní. Všechny obrazovky mají fixní strukturu, která se nemění mezi moduly.
-
-### 🔢 Rozdělení do 9 částí:
+## 📂 Kompletní struktura projektu
 
 ```
-1. Home button       (logo aplikace, návrat na přehled)
-2. Sidebar           (menu modulů)
-3. Breadcrumbs       (navigace Domů > Entita > Detail)
-4. Home actions      (uživatel, notifikace, hledání, odhlášení)
-5. Common actions    (akce pro danou entitu – export, mazání, archivace…)
-6. Content           (hlavní pracovní plocha)
-7. Přehled           (seznam záznamů – tabulka)
-8. Detail entity     (formulář s více částmi – vždy po kliknutí na řádek)
-9. Vazby             (záložky s přehledy jiných modulů)
+aplikace-v6/
+├── .env.local                      # Proměnné prostředí (Supabase klíče)
+├── .git/                           # Git repozitář
+├── LICENSE                         # Licence projektu
+├── README.md                       # Hlavní dokumentace
+├── ikons.md                        # Katalog všech ikon (242 ikon)
+├── next-env.d.ts                   # Next.js TypeScript deklarace
+├── next.config.mjs                 # Konfigurace Next.js
+├── package.json                    # NPM závislosti a skripty
+├── tsconfig.json                   # TypeScript konfigurace
+│
+├── app/                            # Hlavní složka Next.js App Router
+│   ├── globals.css                 # Globální CSS styly (668 řádků)
+│   ├── layout.tsx                  # Kořenový layout aplikace
+│   ├── page.tsx                    # Hlavní stránka (dashboard/login)
+│   ├── modules.index.js            # Index všech modulů pro lazy loading
+│   │
+│   ├── UI/                         # UI komponenty
+│   │   ├── Breadcrumbs.tsx         # Drobečková navigace
+│   │   ├── CommonActions.tsx       # Akční lišta entity
+│   │   ├── ConfigListWithForm.tsx  # Konfigurace typů (číselníky)
+│   │   ├── DetailView.tsx          # Detail entity (základní)
+│   │   ├── EntityDetailFrame.tsx   # Rámec detailu entity
+│   │   ├── EntityList.tsx          # Seznam entit (přehled)
+│   │   ├── GenericTypeTile.tsx     # Generický typový pohled
+│   │   ├── HomeActions.tsx         # Akce uživatele (vpravo nahoře)
+│   │   ├── HomeButton.tsx          # Logo/Home tlačítko
+│   │   ├── ListView.tsx            # Jednoduchý přehled
+│   │   ├── LoginPanel.tsx          # Přihlašovací panel
+│   │   ├── MfaSetupPanel.tsx       # Nastavení 2FA (TOTP)
+│   │   ├── RelationListWithDetail.tsx # Vazby (seznam + detail)
+│   │   ├── Sidebar.tsx             # Boční menu modulů
+│   │   ├── Tabs.tsx                # Záložky modulů
+│   │   ├── icons.ts                # Centrální mapa ikon
+│   │   └── supabase.js             # Alternativní Supabase klient
+│   │
+│   ├── lib/                        # Knihovny a služby
+│   │   ├── supabaseClient.ts       # Hlavní Supabase klient
+│   │   ├── uiConfig.ts             # Konfigurace UI (téma, ikony)
+│   │   └── services/               # Aplikační služby
+│   │       └── auth.ts             # Autentizační funkce
+│   │
+│   ├── modules/                    # Aplikační moduly
+│   │   ├── 010-sprava-uzivatelu/   # Správa uživatelů
+│   │   │   ├── module.config.js
+│   │   │   └── RolesConfigPanel.tsx
+│   │   ├── 020-muj-ucet/           # Můj účet
+│   │   │   └── module.config.js
+│   │   ├── 030-pronajimatel/       # Pronajímatelé
+│   │   │   └── module.config.js
+│   │   ├── 040-nemovitost/         # Nemovitosti
+│   │   │   └── module.config.js
+│   │   ├── 050-najemnik/           # Nájemníci
+│   │   │   └── module.config.js
+│   │   ├── 060-smlouva/            # Smlouvy
+│   │   │   └── module.config.js
+│   │   ├── 070-sluzby/             # Služby
+│   │   │   └── module.config.js
+│   │   ├── 080-platby/             # Platby
+│   │   │   └── module.config.js
+│   │   ├── 090-finance/            # Finance
+│   │   │   └── module.config.js
+│   │   ├── 100-energie/            # Energie/Měřidla
+│   │   │   └── module.config.js
+│   │   ├── 120-dokumenty/          # Dokumenty
+│   │   │   └── module.config.js
+│   │   ├── 130-komunikace/         # Komunikace
+│   │   │   └── module.config.js
+│   │   └── 900-nastaveni/          # Nastavení
+│   │       ├── module.config.js
+│   │       ├── services/
+│   │       │   └── subjectTypes.ts
+│   │       └── tiles/
+│   │           └── SubjectTypesTile.tsx
+│   │
+│   └── nastaveni/                  # Route pro nastavení
+│       └── page.tsx
+│
+└── docs/                           # Dokumentace
+    ├── CODESTYLE.md                # Kódové standardy
+    ├── UI-specifikace.md           # Specifikace UI
+    ├── layout_auth_ui.md           # Layout a autentizace
+    ├── stav-struktury.md           # Stav vývoje
+    ├── todo_list.md                # Seznam úkolů
+    └── PREHLED-APLIKACE.md         # Tento dokument
 ```
 
 ---
 
-## 🔍 Detailní chování částí
+## 🎨 UI Layout – 6 hlavních částí
 
-### 7. Přehled (list)
+Aplikace využívá jednotný 6-blokový layout postavený na CSS Grid:
 
-* Zobrazuje výpis záznamů jako tabulku
-* Vždy umožňuje:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  ┌──────────┐  ┌─────────────────────────────────────────┐ │
+│  │    1     │  │  3. Breadcrumbs    │    4. HomeActions   │ │
+│  │  Home    │  ├─────────────────────────────────────────┤ │
+│  │  Button  │  │           5. CommonActions              │ │
+│  ├──────────┤  ├─────────────────────────────────────────┤ │
+│  │          │  │                                         │ │
+│  │    2     │  │                                         │ │
+│  │ Sidebar  │  │            6. Content                   │ │
+│  │ (menu)   │  │         (hlavní obsah)                  │ │
+│  │          │  │                                         │ │
+│  │          │  │                                         │ │
+│  └──────────┘  └─────────────────────────────────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
-  * Fulltextové hledání
-  * Filtrování podle sloupců
-  * Seřazení každého sloupce
-* První sloupec je **typový** – má barvu podle typu
-* Dvojklik na řádek → přechod do detailu (část 8)
+### Detailní popis jednotlivých částí:
+
+#### 1. HomeButton (`app/UI/HomeButton.tsx`)
+- **Účel:** Logo aplikace a název "Pronajímatel v6"
+- **Umístění:** Levý horní roh
+- **Funkce:** Kliknutím návrat na hlavní přehled
+- **Props:** `disabled?: boolean`
+
+```tsx
+<div className="home-button">
+  <span className="home-button__icon">🏠</span>
+  <span className="home-button__text">Pronajímatel v6</span>
+</div>
+```
+
+#### 2. Sidebar (`app/UI/Sidebar.tsx`)
+- **Účel:** Dynamické menu modulů
+- **Umístění:** Levý sloupec
+- **Funkce:**
+  - načítá moduly z `modules.index.js`
+  - zobrazuje ikony a názvy modulů
+  - zvýrazňuje aktivní modul
+  - (TODO) bude fungovat jako „osnova“:
+    - podporuje vnořené úrovně (modul → podsekce → tile/form) s odsazením
+    - u rozbalovacích položek je šipka `▶/▼`, která se otáčí podle stavu
+    - při pokusu odejít z rozpracovaného formuláře se zobrazí varování a nabídne se volba „Zahodit / Pokračovat v úpravách“
+
+
+```tsx
+// Dynamické načítání modulů
+useEffect(() => {
+  async function loadModules() {
+    for (const loader of MODULE_SOURCES) {
+      const mod = await loader()
+      // ...zpracování konfigurace
+    }
+    loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    setModules(loaded)
+  }
+  loadModules()
+}, [])
+```
+
+#### 3. Breadcrumbs (`app/UI/Breadcrumbs.tsx`)
+- **Účel:** Drobečková navigace
+- **Umístění:** Horní část nad obsahem
+- **Funkce:**
+  - zobrazuje aktuální cestu (např. `Domů > Nastavení > Typy subjektů > Detail typu`)
+  - v budoucnu sjednotit nadpisy tak, aby:
+    - modulový nadpis byl v breadcrumbs a v hlavním H1,
+    - jednotlivé tiles (např. `GenericTypeTile`) používaly pouze podnadpis typu „Detail typu“ (bez duplicity názvu modulu).
+
+
+#### 4. HomeActions (`app/UI/HomeActions.tsx`)
+- **Účel:** Uživatelské akce
+- **Umístění:** Vpravo nahoře
+- **Komponenty:**
+  - Jméno přihlášeného uživatele
+  - Tlačítko hledání (🔍)
+  - Tlačítko notifikací (🔔)
+  - Tlačítko profilu (👤)
+  - Tlačítko odhlášení
+- **Props:** `disabled?: boolean`, `onLogout?: () => void`
+
+#### 5. CommonActions (`app/UI/CommonActions.tsx`)
+- **Účel:** Akční lišta entity
+- **Umístění:** Pod breadcrumbs, nad obsahem
+- **Výchozí akce:**
+  - Detail (👁️)
+  - Upravit (✏️)
+  - Přílohy (📎)
+  - Archivovat (🗄️)
+  - Smazat (🗑️)
+  - **Výjimka:** typové číselníky (`GenericTypeTile`) CommonActions nepoužívají – mají vlastní akční tlačítka přímo ve formuláři a nemají přílohy.
+- **Props:** `disabled?: boolean`, `actions?: CommonAction[]`
+
+```tsx
+type CommonAction = {
+  key: 'detail' | 'edit' | 'attach' | 'archive' | 'delete'
+  label: string
+  iconKey: IconKey
+  onClick?: () => void
+  disabled?: boolean
+}
+```
+
+#### 6. Content (`layout__content`)
+- **Účel:** Hlavní pracovní plocha
+- **Umístění:** Největší část vpravo dole
+- **Obsah podle stavu:**
+  - Přihlašovací obrazovka (nepřihlášený)
+  - Dashboard/přehled (přihlášený)
+  - Detail entity
+  - Formuláře a průvodci
 
 ---
 
-### 8. Detail entity
+## 🧩 Modulový systém
 
-* Zobrazí se po výběru z přehledu
-* Skládá se z více záložek (viz část 9)
-* První záložka = **hlavní karta** (vlastnosti entity)
-* Každá část má:
+### Princip fungování
 
-  * Hlavní formulář (dvousloupcový)
-  * Přílohy (upload souborů)
-  * Systémové údaje (vytvořil, datum atd.)
+Moduly jsou dynamicky načítány pomocí lazy loading. Každý modul má:
+
+1. **module.config.js** – konfigurace modulu
+2. **tiles/** – dlaždice/přehledy
+3. **forms/** – formuláře
+4. **services/** – datové služby
+
+### Seznam všech modulů
+
+| Kód | Název | Ikona | Pořadí | Stav |
+|-----|-------|-------|--------|------|
+| 010 | Správa uživatelů | 👤 | 10 | DONE |
+| 020 | Můj účet | 👤 | 20 | DONE |
+| 030 | Pronajímatelé | 🏠 | 30 | DONE |
+| 040 | Nemovitosti | 🏢 | 40 | DONE |
+| 050 | Nájemníci | 👥 | 50 | DONE |
+| 060 | Smlouvy | 📜 | 60 | DONE |
+| 070 | Služby | ⚙️ | 70 | DONE |
+| 080 | Platby | 💳 | 80 | DONE |
+| 090 | Finance | 💰 | 90 | DONE |
+| 100 | Energie | ⚡ | 100 | DONE |
+| 120 | Dokumenty | 📁 | 120 | DONE |
+| 130 | Komunikace | 💬 | 130 | DONE |
+| 900 | Nastavení | ⚙️ | 900 | DONE |
+
+### Konfigurace modulu (příklad)
+
+```javascript
+// FILE: app/modules/040-nemovitost/module.config.js
+
+export default {
+  id: '040-nemovitost',
+  label: 'Nemovitosti',
+  icon: 'building',      // klíč z icons.ts
+  order: 40,             // pořadí v menu
+  enabled: true,         // zobrazení v sidebaru
+  
+  // Budoucí rozšíření:
+  overview: [],          // přehledy (list view)
+  detail: [],            // formuláře detailu
+  tiles: [],             // dlaždice
+  actions: [],           // akce modulu
+}
+```
+
+### Index modulů (`modules.index.js`)
+
+```javascript
+export const MODULE_SOURCES = [
+  () => import('./modules/010-sprava-uzivatelu/module.config.js'),
+  () => import('./modules/020-muj-ucet/module.config.js'),
+  () => import('./modules/030-pronajimatel/module.config.js'),
+  () => import('./modules/040-nemovitost/module.config.js'),
+  () => import('./modules/050-najemnik/module.config.js'),
+  () => import('./modules/060-smlouva/module.config.js'),
+  () => import('./modules/070-sluzby/module.config.js'),
+  () => import('./modules/080-platby/module.config.js'),
+  () => import('./modules/090-finance/module.config.js'),
+  () => import('./modules/100-energie/module.config.js'),
+  () => import('./modules/120-dokumenty/module.config.js'),
+  () => import('./modules/130-komunikace/module.config.js'),
+  () => import('./modules/900-nastaveni/module.config.js'),
+]
+```
 
 ---
 
-### 9. Vazby (Connections)
+## 🔐 Autentizace
 
-* Vazby jsou ZÁLOŽKY v detailu entity
+### Přehled
 
-* Každá záložka má:
+Aplikace využívá Supabase Auth pro kompletní správu uživatelů.
 
-  * Nahoře **seznam** (max. 10 položek + posuvník)
-  * Dole **detail první položky** (formulář nebo komponenta)
-  * Možnost přepínat šipkami (předchozí / další)
+### Podporované funkce:
 
-* Typické vazby:
+| Funkce | Stav | Popis |
+|--------|------|-------|
+| Přihlášení | ✅ | Email + heslo |
+| Registrace | ✅ | Email + heslo + jméno |
+| Reset hesla | ✅ | Email s odkazem |
+| Session listener | ✅ | Automatická detekce stavu |
+| Odhlášení | ✅ | Vymazání session |
+| MFA (TOTP) | 🔧 | V přípravě |
 
-  * Pronajímatel → Nemovitosti
-  * Nemovitost → Jednotky
-  * Jednotka → Nájemník
-  * Nájemník → Smlouvy
-  * Smlouva → Platby
-  * Smlouva → Dokumenty
+### Autentizační služba (`app/lib/services/auth.ts`)
+
+```typescript
+// Přihlášení
+export async function login(email: string, password: string) {
+  return supabase.auth.signInWithPassword({ email, password })
+}
+
+// Odhlášení
+export async function logout() {
+  return supabase.auth.signOut()
+}
+
+// Registrace
+export async function register(email: string, password: string, fullName: string) {
+  return supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName }
+    }
+  })
+}
+
+// Reset hesla
+export async function resetPassword(email: string, redirectTo: string) {
+  return supabase.auth.resetPasswordForEmail(email, { redirectTo })
+}
+
+// Získání session
+export async function getCurrentSession() {
+  return supabase.auth.getSession()
+}
+
+// Listener změn stavu
+export function onAuthStateChange(callback) {
+  return supabase.auth.onAuthStateChange(callback)
+}
+```
+
+### MFA (2FA) podpora
+
+```typescript
+// Vytvoření TOTP faktoru
+export async function enrollTotpFactor() {
+  return supabase.auth.mfa.enroll({ factorType: 'totp' })
+}
+
+// Challenge pro ověření
+export async function challengeTotpFactor(factorId: string) {
+  return supabase.auth.mfa.challenge({ factorId })
+}
+
+// Ověření kódu
+export async function verifyTotpChallenge(params) {
+  return supabase.auth.mfa.verify(params)
+}
+```
+
+### Proces přihlášení (flow)
+
+```
+1. Uživatel otevře aplikaci
+   ↓
+2. Kontrola session (getCurrentSession)
+   ↓
+3. Session neexistuje → zobrazí se LoginPanel
+   ↓
+4. Uživatel zadá email + heslo
+   ↓
+5. Volání login() → Supabase Auth
+   ↓
+6. onAuthStateChange detekuje změnu
+   ↓
+7. Nastavení session do state
+   ↓
+8. UI se přepne na hlavní obsah
+```
 
 ---
 
-## 🔄 Přílohy
+## 🎨 Stylování
 
-* Každý formulář má možnost nahrávat přílohy (sekce)
-* Formáty: PDF, DOCX, obrázky, XLS, atd.
-* Přílohy:
+### Globální CSS (`globals.css`)
 
-  * **nejdou mazat** – jen **archivovat**
-  * V budoucnu: možnost verzování
+Aplikace používá vlastní CSS systém bez externích knihoven (Tailwind, Bootstrap apod.).
+
+### CSS Layout (Grid)
+
+```css
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100vh;
+}
+
+.layout__sidebar { grid-row: 1 / span 3; grid-column: 1; }
+.layout__topbar { grid-column: 2; grid-row: 1; }
+.layout__actions { grid-column: 2; grid-row: 2; }
+.layout__content { grid-column: 2; grid-row: 3; }
+```
+
+### BEM konvence názvů
+
+```css
+/* Blok */
+.sidebar { }
+
+/* Element */
+.sidebar__item { }
+.sidebar__icon { }
+.sidebar__label { }
+
+/* Modifikátor */
+.sidebar__item--active { }
+```
+
+### Témata (Themes)
+
+Aplikace podporuje 5 barevných motivů:
+
+| Téma | Třída | Popis |
+|------|-------|-------|
+| Light | `theme-light` | Výchozí světlé téma |
+| Dark | `theme-dark` | Tmavý režim |
+| Blue | `theme-blue` | Modrý accent |
+| Green | `theme-green` | Zelený accent |
+| Orange | `theme-orange` | Oranžový accent |
+
+```css
+/* Dark téma */
+body.theme-dark {
+  background-color: #020617;
+  color: #e5e7eb;
+}
+
+body.theme-dark .layout__sidebar {
+  background: #020617;
+  border-right-color: #1f2937;
+}
+```
+
+### Konfigurace tématu (`app/lib/uiConfig.ts`)
+
+```typescript
+export type ThemeName = 'light' | 'dark' | 'blue' | 'green' | 'orange'
+
+export const uiConfig: UiConfig = {
+  showSidebarIcons: true,      // Ikony v sidebaru
+  showBreadcrumbIcons: true,   // Ikony v breadcrumbs
+  theme: 'light',              // Aktivní téma
+}
+```
+
+### Responsive design
+
+```css
+@media (max-width: 768px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .layout__sidebar,
+  .layout__topbar,
+  .layout__actions,
+  .layout__content {
+    width: 100%;
+  }
+}
+```
 
 ---
 
-## 🧾 Fixní pozice záložek
+## 🎭 Systém ikon
 
-Pořadí záložek (část 9) se **nikdy nemění** – např.:
+### Centrální mapa ikon (`app/UI/icons.ts`)
 
-1. Hlavní karta (detail aktuální entity)
-2. Vazba 1 (např. Jednotky)
-3. Vazba 2 (např. Nájemníci)
-4. Vazba 3 (např. Smlouvy)
-5. Vazba 4 (např. Platby)
-6. Vazba 5 (např. Dokumenty)
+```typescript
+export type IconKey =
+  | 'home' | 'users' | 'user' | 'landlord' | 'building'
+  | 'apartment' | 'unit' | 'tenant' | 'contract' | 'services'
+  | 'payments' | 'finance' | 'energy' | 'documents' | 'communication'
+  | 'settings' | 'dashboard' | 'help' | 'list' | 'detail'
+  | 'edit' | 'delete' | 'archive' | 'attach' | 'refresh'
+  | 'search' | 'warning' | 'notification' | 'logout' | 'login'
+  | 'add' | 'send' | 'history' | 'folder' | 'file'
+  | 'chat' | 'mail' | 'print' | 'form' | 'grid' | 'tile'
 
+export const ICONS: Record<IconKey, string> = {
+  home: '🏠',
+  users: '👥',
+  user: '👤',
+  landlord: '🏠',
+  building: '🏢',
+  // ... další ikony
+}
+
+export function getIcon(key: IconKey | undefined, fallback = '❓') {
+  if (!key) return fallback
+  return ICONS[key] ?? fallback
+}
+```
+
+### Použití v komponentách
+
+```tsx
+import { getIcon } from '@/app/UI/icons'
+
+// Správné použití
+<span>{getIcon('building')}</span>
+
+// NIKDY nepsat emoji přímo!
+// ❌ <span>🏢</span>
+```
+
+### Kompletní katalog ikon
+
+Aplikace obsahuje **242 ikon** rozdělených do kategorií:
+- ZÁKLAD / NAV (26 ikon)
+- CRUD / ACTIONS (27 ikon)
+- BUILDINGS / PROPERTY (13 ikon)
+- COMMUNICATION (10 ikon)
+- E-COMMERCE / FINANCE (11 ikon)
+- CALENDAR / TIME (10 ikon)
+- A další...
+
+---
+
+## 🗄️ Databáze (Supabase)
+
+### Připojení (`app/lib/supabaseClient.ts`)
+
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+```
+
+### Proměnné prostředí (`.env.local`)
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://viwxxerhmounbymcbroi.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
+```
+
+### Hlavní tabulky
+
+| Tabulka | Účel |
+|---------|------|
+| `subjects` | Centrální tabulka osob/firem |
+| `subject_types` | Typy subjektů (číselník) |
+| `subject_roles` | Role subjektů |
+| `subject_permissions` | Oprávnění subjektů |
+| `role_types` | Typy rolí (číselník) |
+| `permission_types` | Typy oprávnění (číselník) |
+
+### Row Level Security (RLS)
+
+Každý uživatel vidí **pouze své vlastní záznamy**.
+
+```sql
+-- Zapnutí RLS
+ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
+
+-- SELECT – jen vlastní záznamy
+CREATE POLICY "Subjects: select own"
+ON public.subjects
+FOR SELECT
+TO authenticated
+USING (auth_user_id = auth.uid());
+
+-- INSERT – vkládat pouze své subjekty
+CREATE POLICY "Subjects: insert own"
+ON public.subjects
+FOR INSERT
+TO authenticated
+WITH CHECK (auth_user_id = auth.uid());
+
+-- UPDATE – měnit pouze vlastní řádky
+CREATE POLICY "Subjects: update own"
+ON public.subjects
+FOR UPDATE
+TO authenticated
+USING (auth_user_id = auth.uid())
+WITH CHECK (auth_user_id = auth.uid());
+
+-- DELETE
+CREATE POLICY "Subjects: delete own"
+ON public.subjects
+FOR DELETE
+TO authenticated
+USING (auth_user_id = auth.uid());
+```
+
+### Číselníky (read-only)
+
+```sql
+-- Všichni přihlášení mohou číst číselníky
+CREATE POLICY "Role types: read all"
+ON public.role_types
+FOR SELECT
+TO authenticated
+USING (true);
+```
+
+---
+
+## 📦 UI Komponenty – Detailní popis
+
+### LoginPanel (`app/UI/LoginPanel.tsx`)
+
+Panel pro přihlášení/registraci/reset hesla.
+
+**Módy:**
+- `login` – přihlášení
+- `register` – registrace
+- `reset` – reset hesla
+
+**State:**
+```typescript
+const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login')
+const [email, setEmail] = useState('')
+const [password, setPassword] = useState('')
+const [password2, setPassword2] = useState('')
+const [fullName, setFullName] = useState('')
+const [message, setMessage] = useState<string | null>(null)
+const [error, setError] = useState<string | null>(null)
+const [loading, setLoading] = useState(false)
+```
+
+### MfaSetupPanel (`app/UI/MfaSetupPanel.tsx`)
+
+Panel pro nastavení dvoufázového ověření (TOTP).
+
+**Kroky:**
+1. Vytvoření MFA faktoru a QR kódu
+2. Naskenování v Authenticator aplikaci
+3. Zadání a ověření 6místného kódu
+
+### EntityList (`app/UI/EntityList.tsx`)
+
+Přehled entit v modulu (tabulka).
+
+**Props:**
+```typescript
+type Props = {
+  columns: EntityListColumn[]
+  rows: EntityListRow[]
+  loading?: boolean
+  onRowDoubleClick?: (row: EntityListRow) => void
+  onRowClick?: (row: EntityListRow) => void
+  emptyText?: string
+}
+```
+
+### EntityDetailFrame (`app/UI/EntityDetailFrame.tsx`)
+
+Rámec hlavní karty detailu entity.
+
+**Sekce:**
+- Hlavní formulář
+- Přílohy
+- Systémové informace
+
+### RelationListWithDetail (`app/UI/RelationListWithDetail.tsx`)
+
+Vzor záložky "vazby" – nahoře seznam (max 10 položek), dole detail.
+
+### ConfigListWithForm (`app/UI/ConfigListWithForm.tsx`)
+
+Vzor pro nastavení typů (role, oprávnění, typ subjektu...).
+
+### GenericTypeTile (`app/UI/GenericTypeTile.tsx`)
+
+Jednotný typový pohled pro číselníky s poli:
+- `code`, `name`, `description`, `color`, `icon`, `sort_order`, `active`
+
+Specifické chování:
+
+- horní část: filtr + seznam typů,
+- spodní část: detail typu s vlastní akční lištou (Předchozí, Další, Uložit, Archivovat, Nový),
+- komponenta sama hlídá „dirty state“ a při pokusu o změnu výběru zobrazí varování,
+- formy postavené na `GenericTypeTile` **nemají přílohy a CommonActions** – jsou to čisté konfigurační číselníky.
+
+
+
+## 📋 Konfigurace projektu
+
+### package.json
+
+```json
+{
+  "name": "aplikace-v6",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.0",
+    "next": "^14.2.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/react": "^18.2.0",
+    "@types/node": "^20.14.0"
+  }
+}
+```
+
+### tsconfig.json
+
+```json
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
+```
+
+### next.config.mjs
+
+```javascript
+const nextConfig = {
+  reactStrictMode: true,
+}
+
+export default nextConfig
+```
+
+---
+
+## 🔄 Procesy a toky dat
+
+### Hlavní stránka – životní cyklus
+
+```
+1. RootLayout (layout.tsx)
+   - Načtení globals.css
+   - Nastavení tématu na <body>
+   
+2. HomePage (page.tsx)
+   - useEffect: Kontrola session
+   - Nastavení listeneru onAuthStateChange
+   
+3. Render podle stavu:
+   - loading → "Načítání..."
+   - !isAuthenticated → LoginPanel
+   - isAuthenticated → Dashboard
+   
+4. Sidebar načte moduly
+   - MODULE_SOURCES.forEach(loader)
+   - Seřazení podle order
+   - Render položek menu
+```
+
+### Přidání nového modulu
+
+```
+1. Vytvořit složku: app/modules/XXX-nazev/
+2. Vytvořit module.config.js:
+   export default {
+     id: 'XXX-nazev',
+     label: 'Název modulu',
+     icon: 'icon_key',
+     order: XXX,
+     enabled: true
+   }
+3. Přidat import do modules.index.js
+4. (Volitelně) Přidat route do app/
+```
+
+### CRUD operace s Supabase
+
+```typescript
+// CREATE
+const { data, error } = await supabase
+  .from('table_name')
+  .insert(payload)
+  .select()
+  .single()
+
+// READ
+const { data, error } = await supabase
+  .from('table_name')
+  .select('*')
+  .eq('id', id)
+
+// UPDATE
+const { data, error } = await supabase
+  .from('table_name')
+  .update(payload)
+  .eq('id', id)
+  .select()
+  .single()
+
+// DELETE
+const { error } = await supabase
+  .from('table_name')
+  .delete()
+  .eq('id', id)
+```
+
+---
+
+## 📏 Kódové standardy (CODESTYLE)
+
+### Povinná hlavička souboru
+
+```typescript
+/*
+ * FILE: app/UI/ComponentName.tsx
+ * PURPOSE: Popis účelu komponenty
+ */
+```
+
+### Pojmenování
+
+| Typ | Formát | Příklad |
+|-----|--------|---------|
+| Komponenty | PascalCase | `HomeButton.tsx` |
+| Funkce | camelCase | `loadModules()` |
+| CSS třídy | BEM-like | `sidebar__item` |
+| Moduly | kebab-case + číslo | `040-nemovitost` |
+
+### Pravidla
+
+1. **UI oddělené od logiky** – žádné přímé volání Supabase z UI
+2. **Logika v `app/lib`** – databáze, auth, helpers
+3. **Žádné inline CSS** – vše v `globals.css`
+4. **Emoji přes `getIcon()`** – nikdy přímo v kódu
+5. **Moduly přes `modules.index.js`** – nikdy přímý import
+
+---
+
+## 📊 Vazby mezi entitami
+
+```
+Pronajímatel
+    ↓ 1:N
+Nemovitost
+    ↓ 1:N
+Jednotka ──────────────→ Měřidla
+    ↓ 0:1                  ↓
+Nájemník                 Energie
+    ↓ 1:N
+Smlouva ──→ Služby
+    ↓         ↓
+Platby    Vyúčtování
+    ↓
+Finance
+```
+
+| Entita | Vazby (1:N) |
+|--------|-------------|
+| Pronajímatel | → Nemovitosti |
+| Nemovitost | → Jednotky, Měřidla, Finance, Přílohy |
+| Jednotka | → Nájemník (0:1) |
+| Nájemník | → Smlouvy |
+| Smlouva | → Služby, Platby, Dokumenty, Přílohy |
+| Služba | → Měřidlo (volitelně) |
+| Platba | → Smlouva |
+
+---
+
+## 🚀 Nasazování (Deployment)
+
+### Automatické nasazení
+
+Každý push do větve `main` automaticky vytváří nový deployment na Vercel.
+
+### Proces:
+
+```
+1. Push do main
+   ↓
+2. Vercel detekuje změnu
+   ↓
+3. Spuštění buildu (next build)
+   ↓
+4. Deployment na produkci
+   ↓
+5. URL: https://aplikace-v6.vercel.app
+```
+
+### Příkazy pro vývoj
+
+```bash
+# Instalace závislostí
+npm install
+
+# Vývojový server
+npm run dev
+
+# Produkční build
+npm run build
+
+# Spuštění produkčního buildu
+npm start
+
+# Lint
+npm run lint
+```
+
+---
+
+## 📈 Stav vývoje
+
+### Hotové části (DONE)
+
+- [x] Základní struktura projektu
+- [x] Layout aplikace (6 částí)
+- [x] Modulový systém
+- [x] Dynamický Sidebar
+- [x] Autentizace (login, register, reset)
+- [x] Session management
+- [x] Globální styly
+- [x] Témata (light, dark, blue, green, orange)
+- [x] Systém ikon
+- [x] RLS bezpečnost v databázi
+
+### V procesu (WIP)
+
+- [ ] MFA (2FA) integrace
+- [ ] Mobilní responsive layout
+- [ ] Detailní formuláře modulů
+- [ ] CRUD operace pro všechny entity
+
+### Plánované (TODO)
+
+- [ ] Vazby mezi entitami
+- [ ] Reporty a exporty
+- [ ] Automatická komunikace
+- [ ] Verzování dokumentů
+- [ ] Role-based UI
+
+---
+
+## 📚 Další dokumentace
+
+| Dokument | Popis |
+|----------|-------|
+| `docs/CODESTYLE.md` | Pravidla psaní kódu |
+| `docs/UI-specifikace.md` | Specifikace UI layoutu |
+| `docs/layout_auth_ui.md` | Layout a autentizace |
+| `docs/stav-struktury.md` | Přehled stavu komponent |
+| `docs/todo_list.md` | Seznam úkolů |
+| `ikons.md` | Kompletní katalog ikon |
+
+---
+
+*Dokument vytvořen: 2025-12-01*
+*Verze aplikace: 1.0.0*
