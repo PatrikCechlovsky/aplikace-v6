@@ -53,8 +53,9 @@ export default function HomePage() {
   // 🔐 Stav autentizace
   const [authLoading, setAuthLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState<SessionUser | null>(null
+  const [user, setUser] = useState<SessionUser | null>(null)
   const displayName = user?.displayName || user?.email || 'Uživatel'
+
 
   // 📦 Moduly a aktivní modul
   const [modules, setModules] = useState<ModuleConfig[]>([])
