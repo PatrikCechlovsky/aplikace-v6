@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState, type MouseEvent } from 'react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { MODULE_SOURCES } from '@/app/modules.index.js'
 import { getIcon } from './icons'
 import { uiConfig } from '../lib/uiConfig'
@@ -59,9 +59,9 @@ export default function Sidebar({
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [expandedIds, setExpandedIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTileId, setActiveTileId] = useState<string | null>(null)
 
   const pathname = usePathname() ?? ''
-  const searchParams = useSearchParams()
 
   // Aktivní modul z URL (/modules/<id>)
   const activeModuleIdFromUrl = useMemo(() => {
@@ -77,9 +77,6 @@ export default function Sidebar({
   // Konečný aktivní modul – pokud přichází z props, má přednost
   const effectiveActiveModuleId =
     activeModuleIdProp ?? activeModuleIdFromUrl
-
-  // Aktivní tile z query (?tile=<id>) – do budoucna i pro breadcrumbs
-  const activeTileId = searchParams?.get('tile') ?? null
 
   // Načtení modulů z module.config.js
   useEffect(() => {
@@ -212,9 +209,12 @@ export default function Sidebar({
                     <Link
                       href={moduleHref}
                       className="sidebar__link"
-                      onClick={(e) =>
-                        confirmNavigation(e, { moduleId: m.id })
-                      }
+                      onClick={(e) => {
+                        const ok = confirmNavigation(e, { moduleId: m.id })
+                        if (ok) {
+                          setActiveTileId(null)
+                        }
+                      }}
                     >
                       {showIcons && (
                         <span className="sidebar__icon">
@@ -228,7 +228,7 @@ export default function Sidebar({
                   {hasChildren && isExpanded && (
                     <ul className="sidebar__sublist">
                       {m.tiles!.map((t) => {
-                        const tileHref = `/modules/${m.id}?tile=${t.id}`
+                        const tileHref = `/modules/${m.id}` // zatím bez ?tile, ať to Next nezlobí
                         const isActiveSub =
                           isModuleActive(m) && activeTileId === t.id
 
@@ -243,16 +243,18 @@ export default function Sidebar({
                             <Link
                               href={tileHref}
                               className="sidebar__sublink"
-                              onClick={(e) =>
-                                confirmNavigation(e, {
+                              onClick={(e) => {
+                                const ok = confirmNavigation(e, {
                                   moduleId: m.id,
                                   tileId: t.id,
                                 })
-                              }
+                                if (ok) {
+                                  setActiveTileId(t.id)
+                                }
+                              }}
                             >
                               {showIcons && (
                                 <span className="sidebar__subicon">
-                                  {/* tady můžeš v budoucnu dát vlastní ikonu pro tile */}
                                   {getIcon('dot' as any)}
                                 </span>
                               )}
