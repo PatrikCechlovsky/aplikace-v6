@@ -28,8 +28,14 @@ export type ModuleConfig = {
 }
 
 export type SidebarSelection =
-  | { type: 'module'; moduleId: string }
-  | { type: ModuleChildKind; moduleId: string; itemId: string }
+  | { type: 'module'; moduleId: string; label?: string }
+  | {
+      type: ModuleChildKind
+      moduleId: string
+      itemId: string
+      label?: string
+    }
+
 
 type SidebarProps = {
   /** externě řízené aktivní id modulu (volitelné) */
@@ -168,7 +174,11 @@ export default function Sidebar(props: SidebarProps) {
     setActiveChild(null)
 
     onModuleSelect?.(moduleId)
-    onSelectItem?.({ type: 'module', moduleId })
+    onSelectItem?.({
+      type: 'module',
+      moduleId,
+      label: modules.find((m) => m.id === moduleId)?.label,
+    })
   }
 
   function handleClickChild(
