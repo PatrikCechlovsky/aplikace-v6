@@ -1,3 +1,7 @@
+# 📘 Kompletní přehled aplikace — Pronajímatel v6 (KONSOLIDOVANÁ VERZE)
+Toto je konsolidovaná verze původní dokumentace. Zachovává veškerý obsah, nic nebylo odstraněno.
+Navíc je doplněna o úvodní strukturu a sjednocené formátování.
+
 # Podrobné shrnutí aplikace Pronajímatel v6
 
 > Tento dokument obsahuje kompletní přehled aplikace včetně struktury souborů, komponent, modulů, nastavení a všech procesů.
