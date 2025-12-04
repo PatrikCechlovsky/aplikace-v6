@@ -1,280 +1,236 @@
-'use client'
-
 /*
  * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Boční stromová navigace modulů – načítá module.config.js a zobrazuje 2 úrovně
- *          (1. modul, 2. overview + tiles). Žádná URL navigace, vše řeší parent (page.tsx).
+ * PURPOSE: Stromový sidebar modulů + tiles s ikonami a ochranou proti ztrátě dat
  */
 
-import React, { useEffect, useState } from 'react'
-import { MODULE_SOURCES } from '@/app/modules.index'
-import { getIcon, IconKey } from '@/app/UI/icons'
+'use client'
 
-export type ModuleChildKind = 'overview' | 'tile'
+import { useEffect, useMemo, useState, type MouseEvent } from 'react'
+import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { MODULE_SOURCES } from '@/app/modules.index.js'
+import { getIcon } from './icons'
+import { uiConfig } from '../lib/uiConfig'
 
-export type ModuleChildConfig = {
+interface SidebarTile {
   id: string
   label: string
-  kind: ModuleChildKind
 }
 
-export type ModuleConfig = {
+interface ModuleConfig {
   id: string
   label: string
-  icon?: IconKey
+  icon?: string
   order?: number
   enabled?: boolean
-  children?: ModuleChildConfig[]
+  tiles?: SidebarTile[]
 }
-
-export type SidebarSelection =
-  | { type: 'module'; moduleId: string; label?: string }
-  | {
-      type: ModuleChildKind
-      moduleId: string
-      itemId: string
-      label?: string
-    }
-
 
 type SidebarProps = {
-  /** externě řízené aktivní id modulu (volitelné) */
-  activeModuleId?: string | null
-  /** callback – starší API: informuje parent, že se změnil aktivní modul */
-  onModuleSelect?: (moduleId: string) => void
-  /** nové API: detailnější výběr (modul / overview / tile) */
-  onSelectItem?: (selection: SidebarSelection) => void
-  /** když je true, tlačítka se neklikají */
   disabled?: boolean
-  /** má uživatel neuložené změny v aktuálním formuláři? */
+  /**
+   * Když je true, klik na jinou položku vyvolá confirm dialog.
+   * Zatím se nepropaguje z formulářů – to dopojíme později.
+   */
   hasUnsavedChanges?: boolean
-  /** volitelné – parent může vyčistit stav při potvrzeném odchodu */
-  onDiscardChanges?: () => void
 }
 
-export default function Sidebar(props: SidebarProps) {
-  const {
-    activeModuleId,
-    onModuleSelect,
-    onSelectItem,
-    disabled,
-    hasUnsavedChanges = false,
-    onDiscardChanges,
-  } = props
-
+export default function Sidebar({
+  disabled = false,
+  hasUnsavedChanges = false,
+}: SidebarProps) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
-  const [internalActiveId, setInternalActiveId] = useState<string | null>(
-    activeModuleId ?? null,
-  )
-  const [activeChild, setActiveChild] = useState<{
-    moduleId: string
-    kind: ModuleChildKind
-    itemId: string
-  } | null>(null)
+  const [expandedIds, setExpandedIds] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // když se zvenku změní activeModuleId, zarovnáme interní stav
+  const pathname = usePathname() ?? ''
+  const searchParams = useSearchParams()
+
+  // Načtení modulů z module.config.js
   useEffect(() => {
-    if (activeModuleId !== undefined) {
-      setInternalActiveId(activeModuleId)
-    }
-  }, [activeModuleId])
-
-  // načtení modulů z MODULE_SOURCES + overview/tiles
-  useEffect(() => {
-    let isMounted = true
-
     async function loadModules() {
       const loaded: ModuleConfig[] = []
 
       for (const loader of MODULE_SOURCES) {
         try {
-          const mod = await loader()
-          const cfg = mod.default as any
+          const mod: any = await loader()
+          const conf = (mod.default ?? mod) as any
 
-          if (!cfg) continue
-          if (cfg.enabled === false) continue
+          if (conf.enabled === false) continue
 
-          const children: ModuleChildConfig[] = []
-
-          // overview → typicky hlavní přehledy
-          if (Array.isArray(cfg.overview)) {
-            cfg.overview.forEach((item: any) => {
-              if (!item?.id || !item?.label) return
-              children.push({
-                id: item.id,
-                label: item.label,
-                kind: 'overview',
-              })
-            })
+          const normalized: ModuleConfig = {
+            id: conf.id,
+            label: conf.label,
+            icon: conf.icon,
+            order: conf.order ?? 999,
+            tiles: Array.isArray(conf.tiles)
+              ? conf.tiles.map((t: any) => ({
+                  id: t.id,
+                  label: t.label ?? t.id,
+                }))
+              : [],
           }
 
-          // tiles → třeba číselníky, dashboardy...
-          if (Array.isArray(cfg.tiles)) {
-            cfg.tiles.forEach((item: any) => {
-              if (!item?.id || !item?.label) return
-              children.push({
-                id: item.id,
-                label: item.label,
-                kind: 'tile',
-              })
-            })
-          }
-
-          loaded.push({
-            id: cfg.id,
-            label: cfg.label,
-            icon: (cfg.icon ?? undefined) as IconKey | undefined,
-            order: cfg.order ?? 0,
-            enabled: cfg.enabled ?? true,
-            children,
-          })
-        } catch (error) {
-          console.error('Sidebar – chyba při načítání modulu', error)
+          loaded.push(normalized)
+        } catch (err) {
+          console.error('Sidebar: Nelze načíst modul', err)
         }
       }
 
-      if (!isMounted) return
-
-      loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      loaded.sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
       setModules(loaded)
-
-      // pokud není nastavený aktivní modul, vezmeme první
-      if (!internalActiveId && loaded.length > 0) {
-        const firstId = loaded[0].id
-        setInternalActiveId(firstId)
-        onModuleSelect?.(firstId)
-        onSelectItem?.({
-          type: 'module',
-          moduleId: firstId,
-          label: loaded[0].label,
-        })
-
-      }
+      setLoading(false)
     }
 
     loadModules()
-
-    return () => {
-      isMounted = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function confirmNavigation(): boolean {
-    if (!hasUnsavedChanges) return true
-    const ok = window.confirm(
-      'Máš neuložené změny. Opravdu chceš pokračovat bez uložení?',
-    )
-    if (ok) {
-      onDiscardChanges?.()
+  // Aktivní modul z URL (/modules/<id>)
+  const activeModuleId = useMemo(() => {
+    if (!pathname) return null
+    const parts = pathname.split('/')
+    const idx = parts.indexOf('modules')
+    if (idx !== -1 && parts.length > idx + 1) {
+      return parts[idx + 1]
     }
-    return ok
-  }
+    return null
+  }, [pathname])
 
-  function handleClickModule(moduleId: string) {
-    if (disabled) return
-    if (!confirmNavigation()) return
+  // Aktivní tile z query (?tile=<id>) – používáme do budoucna
+  const activeTileId = searchParams?.get('tile') ?? null
 
-    setInternalActiveId(moduleId)
-    setActiveChild(null)
-
-    onModuleSelect?.(moduleId)
-    onSelectItem?.({
-      type: 'module',
-      moduleId,
-      label: modules.find((m) => m.id === moduleId)?.label,
-    })
-  }
-
-  function handleClickChild(
-    moduleId: string,
-    kind: ModuleChildKind,
-    itemId: string,
-  ) {
-    if (disabled) return
-    if (!confirmNavigation()) return
-
-    setInternalActiveId(moduleId)
-    setActiveChild({ moduleId, kind, itemId })
-
-    onModuleSelect?.(moduleId) // kvůli zpětné kompatibilitě
-    const mod = modules.find((m) => m.id === moduleId)
-    const childCfg = mod?.children?.find(
-      (c) => c.id === itemId && c.kind === kind,
+  // Rozbalit aktivní modul při změně
+  useEffect(() => {
+    if (!activeModuleId) return
+    setExpandedIds((prev) =>
+      prev.includes(activeModuleId) ? prev : [...prev, activeModuleId],
     )
-    onSelectItem?.({
-      type: kind,
-      moduleId,
-      itemId,
-      label: childCfg?.label,
-    })
+  }, [activeModuleId])
 
+  const showIcons = uiConfig.showSidebarIcons
+
+  function toggleExpand(moduleId: string) {
+    setExpandedIds((prev) =>
+      prev.includes(moduleId)
+        ? prev.filter((id) => id !== moduleId)
+        : [...prev, moduleId],
+    )
+  }
+
+  function handleNavigationClick(
+    e: MouseEvent<HTMLAnchorElement>,
+  ) {
+    if (disabled) {
+      e.preventDefault()
+      return
+    }
+
+    if (hasUnsavedChanges) {
+      const ok = window.confirm(
+        'Máte neuložené změny. Opravdu chcete odejít a zahodit je?',
+      )
+      if (!ok) {
+        e.preventDefault()
+      }
+    }
+  }
+
+  function isModuleActive(m: ModuleConfig): boolean {
+    return activeModuleId === m.id
   }
 
   return (
-    <aside className="layout__sidebar sidebar">
-      {modules.map((mod) => {
-        const isActiveModule = mod.id === internalActiveId
+    <nav className="sidebar">
+      <div className="sidebar__inner">
+        {loading ? (
+          <div className="sidebar__loading">Načítám moduly…</div>
+        ) : (
+          <ul className="sidebar__list">
+            {modules.map((m) => {
+              const hasChildren = !!m.tiles && m.tiles.length > 0
+              const isExpanded = expandedIds.includes(m.id)
+              const moduleHref = `/modules/${m.id}`
 
-        return (
-          <div key={mod.id} className="sidebar__module">
-            {/* 1. úroveň – modul */}
-            <button
-              type="button"
-              className={[
-                'sidebar__item',
-                'sidebar__item--module',
-                isActiveModule ? 'sidebar__item--active' : '',
-                disabled ? 'sidebar__item--disabled' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => handleClickModule(mod.id)}
-            >
-              <span className="sidebar__icon">
-                {getIcon(mod.icon)}
-              </span>
-              <span className="sidebar__label">{mod.label}</span>
-            </button>
+              return (
+                <li key={m.id} className="sidebar__item">
+                  <div
+                    className={
+                      'sidebar__row' +
+                      (isModuleActive(m) ? ' sidebar__row--active' : '') +
+                      (disabled ? ' sidebar__row--disabled' : '')
+                    }
+                  >
+                    {hasChildren && (
+                      <button
+                        type="button"
+                        className={
+                          'sidebar__toggle' +
+                          (isExpanded ? ' sidebar__toggle--open' : '')
+                        }
+                        onClick={() => toggleExpand(m.id)}
+                        aria-label={
+                          isExpanded ? 'Skrýt podmenu' : 'Zobrazit podmenu'
+                        }
+                      >
+                        ▸
+                      </button>
+                    )}
 
-            {/* 2. úroveň – overview + tiles vybraného modulu */}
-            {isActiveModule && mod.children && mod.children.length > 0 && (
-              <div className="sidebar__children">
-                {mod.children.map((child) => {
-                  const isActiveChild =
-                    activeChild &&
-                    activeChild.moduleId === mod.id &&
-                    activeChild.itemId === child.id &&
-                    activeChild.kind === child.kind
-
-                  return (
-                    <button
-                      key={`${mod.id}__${child.kind}__${child.id}`}
-                      type="button"
-                      className={[
-                        'sidebar__item',
-                        'sidebar__item--child',
-                        `sidebar__item--child-${child.kind}`,
-                        isActiveChild ? 'sidebar__item--child-active' : '',
-                        disabled ? 'sidebar__item--disabled' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      onClick={() =>
-                        handleClickChild(mod.id, child.kind, child.id)
-                      }
+                    <Link
+                      href={moduleHref}
+                      className="sidebar__link"
+                      onClick={handleNavigationClick}
                     >
-                      <span className="sidebar__label sidebar__label--child">
-                        {child.label}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )
-      })}
-    </aside>
+                      {showIcons && (
+                        <span className="sidebar__icon">
+                          {getIcon(m.icon as any)}
+                        </span>
+                      )}
+                      <span className="sidebar__label">{m.label}</span>
+                    </Link>
+                  </div>
+
+                  {hasChildren && isExpanded && (
+                    <ul className="sidebar__sublist">
+                      {m.tiles!.map((t) => {
+                        const tileHref = `/modules/${m.id}?tile=${t.id}`
+                        const isActiveSub =
+                          isModuleActive(m) && activeTileId === t.id
+
+                        return (
+                          <li
+                            key={t.id}
+                            className={
+                              'sidebar__subitem' +
+                              (isActiveSub ? ' sidebar__subitem--active' : '')
+                            }
+                          >
+                            <Link
+                              href={tileHref}
+                              className="sidebar__sublink"
+                              onClick={handleNavigationClick}
+                            >
+                              {showIcons && (
+                                <span className="sidebar__subicon">
+                                  {/* tady klidně můžeš dát specifickou ikonu pro tile */}
+                                  {getIcon('dot' as any)}
+                                </span>
+                              )}
+                              <span className="sidebar__sublabel">
+                                {t.label}
+                              </span>
+                            </Link>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+    </nav>
   )
 }
