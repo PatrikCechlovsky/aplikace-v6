@@ -314,9 +314,13 @@ export default function HomePage() {
         />
       </aside>
 
-      {/* 3. Horní lišta vpravo – jen HomeActions */}
+      {/* 3 + 4. Horní lišta – vlevo Breadcrumbs, vpravo HomeActions */}
       <header className="layout__topbar">
         <div className="layout__topbar-inner">
+          <div className="layout__topbar-left">
+            <Breadcrumbs disabled={!isAuthenticated} />
+          </div>
+
           <div className="layout__topbar-right">
             <HomeActions
               disabled={!isAuthenticated}
@@ -325,11 +329,6 @@ export default function HomePage() {
           </div>
         </div>
       </header>
-
-      {/* 4. Breadcrumbs – nad obsahem */}
-      <div className="layout__breadcrumbs">
-        <Breadcrumbs disabled={!isAuthenticated} />
-      </div>
 
       {/* 5. CommonActions – pod breadcrumbs */}
       <div className="layout__actions">
