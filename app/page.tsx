@@ -14,7 +14,7 @@ import HomeActions from '@/app/UI/HomeActions'
 import CommonActions from '@/app/UI/CommonActions'
 import LoginPanel from '@/app/UI/LoginPanel'
 import type { SidebarSelection } from '@/app/UI/Sidebar'
-import type { BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
+// import type { BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 
 
 import { uiConfig } from '@/app/lib/uiConfig'
