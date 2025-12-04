@@ -114,6 +114,8 @@ Celý layout aplikace je rozdělen na:
 6. **Content** – hlavní plocha (dashboard, přehled, formuláře)
 
 Layout je postaven přes CSS grid a nachází se v `globals.css`.
+> Poznámka: Některé konfigurační číselníky (např. typy subjektů) používají speciální komponentu `GenericTypeTile`.  
+> V těchto obrazovkách se nezobrazuje horní lišta `CommonActions` ani sekce příloh – všechny akce (Předchozí/Další/Uložit/Archivovat) jsou součástí samotného formuláře.
 
 ---
 
