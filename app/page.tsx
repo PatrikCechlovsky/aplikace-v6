@@ -325,6 +325,7 @@ export default function HomePage() {
             <HomeActions
               disabled={!isAuthenticated}
               onLogout={handleLogout}
+              displayName={session?.user?.user_metadata?.display_name}
             />
           </div>
         </div>
