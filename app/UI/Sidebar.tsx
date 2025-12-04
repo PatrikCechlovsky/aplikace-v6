@@ -143,7 +143,12 @@ export default function Sidebar(props: SidebarProps) {
         const firstId = loaded[0].id
         setInternalActiveId(firstId)
         onModuleSelect?.(firstId)
-        onSelectItem?.({ type: 'module', moduleId: firstId })
+        onSelectItem?.({
+          type: 'module',
+          moduleId: firstId,
+          label: loaded[0].label,
+        })
+
       }
     }
 
@@ -193,7 +198,17 @@ export default function Sidebar(props: SidebarProps) {
     setActiveChild({ moduleId, kind, itemId })
 
     onModuleSelect?.(moduleId) // kvůli zpětné kompatibilitě
-    onSelectItem?.({ type: kind, moduleId, itemId })
+    const mod = modules.find((m) => m.id === moduleId)
+    const childCfg = mod?.children?.find(
+      (c) => c.id === itemId && c.kind === kind,
+    )
+    onSelectItem?.({
+      type: kind,
+      moduleId,
+      itemId,
+      label: childCfg?.label,
+    })
+
   }
 
   return (
