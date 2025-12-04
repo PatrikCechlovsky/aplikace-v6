@@ -115,6 +115,18 @@ type Props = {
   disabled?: boolean
 }
 ```
+---
+
+## 7.1 Speciální formuláře typů (GenericTypeTile)
+
+Některé číselníky (např. `subject_types`, `role_types`, `permission_types`) používají jednotnou komponentu `GenericTypeTile`.
+
+Pro tyto obrazovky platí:
+
+- nevyužívají standardní `CommonActions` (horní akční lišta je skrytá),
+- nemají sekci „Přílohy“ – typy jsou čistá konfigurace bez dokumentů,
+- akce (Předchozí, Další, Uložit, Archivovat, Nový) jsou řešeny přímo v rámci `GenericTypeTile`,
+- ochrana proti ztrátě rozpracovaných změn (dirty state + potvrzovací dialog) je implementována uvnitř komponenty a později bude znovupoužitelná i pro Sidebar / přepínání modulů.
 
 ---
 
