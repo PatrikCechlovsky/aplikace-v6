@@ -89,23 +89,27 @@ export const COMMON_ACTION_DEFS: Record<
 
 type Props = {
   disabled?: boolean
-  // zatím jen jednoduchá verze – později doplníme moduleId, viewScope, role atd.
 }
 
-function getDefaultActions(): CommonActionDefinition[] {
-  // dočasně: zobrazíme jen pár základních tlačítek
-  return [
+// dočasná jednoduchá varianta – fixní sada tlačítek
+export default function CommonActions({ disabled = false }: Props) {
+  const actions: CommonActionDefinition[] = [
     COMMON_ACTION_DEFS.view,
     COMMON_ACTION_DEFS.add,
     COMMON_ACTION_DEFS.edit,
     COMMON_ACTION_DEFS.archive,
     COMMON_ACTION_DEFS.delete,
   ]
-}
-
-export default function CommonActions({ disabled = false }: Props) {
-  const actions = getDefaultActions()
 
   return (
     <div className="common-actions">
       {actions.map((a) => (
+        <button
+          key={a.id}
+          type="button"
+          className="common-actions__btn"
+          disabled={disabled}
+          title={a.label}
+        >
+          <span className="common-actions__icon" aria-hidden="true">
+            {getI
