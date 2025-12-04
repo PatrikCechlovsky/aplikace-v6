@@ -191,6 +191,14 @@ export default function HomePage() {
     setActiveModuleId(moduleId)
   }
 
+
+  // Klik na HomeButton → návrat na dashboard
+  function handleHomeClick() {
+    if (!isAuthenticated) return
+    setActiveModuleId(null)
+  }
+
+
   // 🧩 Hlavní obsah (blok 6 – Content)
   function renderContent() {
     // 1) Načítám autentizaci
