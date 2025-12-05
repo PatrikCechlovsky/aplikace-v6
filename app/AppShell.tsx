@@ -65,7 +65,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
 
-  // Výběr v sidebaru (modul + tile) – připravené pro breadcrumbs, atd.
+  // 📌 Globální výběr v sidebaru (modul / sekce / tile)
   const [activeSelection, setActiveSelection] =
     useState<SidebarSelection | null>(null)
 
@@ -225,7 +225,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setActiveSelection(null)
   }
 
-  // Klik v Sidebaru → změna aktivního modulu / tile
+  // Klik v Sidebaru → změna aktivního modulu / sekce / tile
   function handleModuleSelect(selection: SidebarSelection) {
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
@@ -306,7 +306,84 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )
     }
 
-    // 6) Pokud má modul definované tiles, vykreslíme je
+    const selection = activeSelection
+
+    // 🎯 Speciální chování pro modul 900-nastaveni – text podle úrovně výběru
+    if (activeModule.id === '900-nastaveni') {
+      // 1) Kliknuto jen na modul „Nastavení“
+      if (
+        !selection ||
+        selection.moduleId !== '900-nastaveni' ||
+        (!selection.sectionId && !selection.tileId)
+      ) {
+        return (
+          <div className="content">
+            <h2>{activeModule.label}</h2>
+            <p>
+              Tento modul slouží k nastavení číselníků, vzhledu a ikon celé
+              aplikace. Vlevo vyber konkrétní oblast, kterou chceš upravit.
+            </p>
+          </div>
+        )
+      }
+
+      // 2) Vybraná sekce (Nastavení typů / vzhledu / ikon), ale ještě žádný tile
+      if (selection.sectionId && !selection.tileId) {
+        let title = 'Nastavení'
+        let text =
+          'Vyber konkrétní položku v levém menu, kterou chceš upravit.'
+
+        if (selection.sectionId === 'types-settings') {
+          title = 'Nastavení typů'
+          text =
+            'Zde najdeš všechny číselníky a předvolby pro výběrová pole (např. typy subjektů, typy smluv, typy majetku…).'
+        } else if (selection.sectionId === 'theme-settings') {
+          title = 'Nastavení vzhledu'
+          text =
+            'Tady bude konfigurace vzhledu aplikace – barevná schémata, motivy a layout.'
+        } else if (selection.sectionId === 'icon-settings') {
+          title = 'Nastavení ikon'
+          text =
+            'Zde bude mapování ikon a emoji k jednotlivým modulům a akcím.'
+        }
+
+        return (
+          <div className="content">
+            <h2>{activeModule.label}</h2>
+            <section className="content__section">
+              <h3 className="content__section-title">{title}</h3>
+              <p>{text}</p>
+            </section>
+          </div>
+        )
+      }
+
+      // 3) Vybraný konkrétní tile (např. Typy subjektů)
+      if (selection.tileId && activeModule.tiles?.length) {
+        const tile = activeModule.tiles.find(
+          (t) => t.id === selection.tileId,
+        )
+
+        if (tile) {
+          const TileComponent = tile.component
+
+          return (
+            <div className="content">
+              <h2>{activeModule.label}</h2>
+              <section
+                className="content__section"
+                aria-label={tile.label}
+              >
+                <h3 className="content__section-title">{tile.label}</h3>
+                <TileComponent />
+              </section>
+            </div>
+          )
+        }
+      }
+    }
+
+    // 🧩 Výchozí chování pro ostatní moduly – zobrazíme všechny tiles
     if (activeModule.tiles && activeModule.tiles.length > 0) {
       return (
         <div className="content">
@@ -356,6 +433,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <Sidebar
           disabled={!isAuthenticated}
           activeModuleId={activeModuleId ?? undefined}
+          activeSelection={activeSelection ?? undefined}
           hasUnsavedChanges={hasUnsavedChanges}
           onModuleSelect={handleModuleSelect}
         />
