@@ -32,12 +32,21 @@ type SessionUser = {
   displayName?: string | null
 }
 
-// Konfigurace tile – přidal jsem icon?: IconKey
 type ModuleTileConfig = {
   id: string
   label: string
   component: React.ComponentType<any>
   icon?: IconKey
+  // volitelně: do jaké sekce tile patří (použije Sidebar)
+  sectionId?: string
+}
+
+type ModuleSectionConfig = {
+  id: string
+  label: string
+  icon?: IconKey
+  introTitle?: string
+  introText?: string
 }
 
 type ModuleConfig = {
@@ -47,13 +56,12 @@ type ModuleConfig = {
   order?: number
   enabled?: boolean
   tiles?: ModuleTileConfig[]
+  sections?: ModuleSectionConfig[]
+  introTitle?: string
+  introText?: string
 }
 
 type AppShellProps = {
-  /**
-   * Počáteční modul, pokud přichází z URL (/modules/[moduleId]).
-   * Pokud je neplatný nebo není zadaný, zůstaneš na dashboardu (Domov).
-   */
   initialModuleId?: string | null
 }
 
@@ -71,23 +79,20 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
 
-  // 📌 Globální výběr v sidebaru (modul / sekce / tile)
+  // 📌 Výběr v sidebaru
   const [activeSelection, setActiveSelection] =
     useState<SidebarSelection | null>(null)
 
-  // TODO: globální informace o neuložených změnách – zatím false
   const [hasUnsavedChanges] = useState(false)
 
-  // 1) Načtení session + listener na změny (login/logout)
+  // 🔐 Načtení session
   useEffect(() => {
     let unsubscribe: (() => void) | undefined
 
     async function initAuth() {
       try {
         const { data, error } = await getCurrentSession()
-        if (error) {
-          console.error('getCurrentSession error:', error)
-        }
+        if (error) console.error('getCurrentSession error:', error)
 
         const session = data?.session ?? null
 
@@ -149,13 +154,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     initAuth()
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe()
-      }
+      if (unsubscribe) unsubscribe()
     }
   }, [])
 
-  // 2) Načtení modulů přes MODULE_SOURCES
+  // 📦 Načtení modulů
   useEffect(() => {
     let cancelled = false
 
@@ -165,7 +168,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
         for (const loader of MODULE_SOURCES) {
           const modModule: any = await loader()
-          const cfg: ModuleConfig = modModule.default
+          const cfg: any = modModule.default
 
           if (!cfg?.id) continue
           if (cfg.enabled === false) continue
@@ -177,32 +180,29 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             order: cfg.order ?? 9999,
             enabled: cfg.enabled ?? true,
             tiles: cfg.tiles ?? [],
+            sections: cfg.sections ?? [],
+            introTitle: cfg.introTitle,
+            introText: cfg.introText,
           })
         }
 
         loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-        if (!cancelled) {
-          setModules(loaded)
-        }
+        if (!cancelled) setModules(loaded)
       } catch (err) {
         console.error('Chyba při načítání modulů:', err)
       } finally {
-        if (!cancelled) {
-          setModulesLoading(false)
-        }
+        if (!cancelled) setModulesLoading(false)
       }
     }
 
     loadModules()
-
     return () => {
       cancelled = true
     }
   }, [])
 
-  // 3) Po načtení modulů + přihlášení nastavíme výchozí modul
-  //    ✅ Nově: vybereme modul jen pokud máme initialModuleId
+  // 🧭 Nastavení počátečního modulu (pouze pokud je v URL)
   useEffect(() => {
     if (!isAuthenticated) return
     if (!modules.length) return
@@ -212,10 +212,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       setActiveModuleId(initialModuleId)
       setActiveSelection({ moduleId: initialModuleId })
     }
-    // jinak – zůstaneme na Dashboard / Domov bez vybraného modulu
+    // jinak Dashboard / Domov
   }, [isAuthenticated, modules, activeModuleId, initialModuleId])
 
-  // 🚪 Odhlášení
+  // 🚪 Logout
   async function handleLogout() {
     await logout()
     setIsAuthenticated(false)
@@ -225,13 +225,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     router.push('/')
   }
 
-  // Klik v Sidebaru → změna aktivního modulu / sekce / tile
+  // Sidebar klik
   function handleModuleSelect(selection: SidebarSelection) {
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
   }
 
-  // 🏠 Klik na HomeButton → kontrola rozdělané práce + návrat na dashboard (/)
+  // 🏠 Home button
   function handleHomeClick() {
     if (!isAuthenticated) return
 
@@ -242,19 +242,17 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       if (!confirmLeave) return
     }
 
-    // vyčistit výběr → Dashboard / Domov, nic v sidebaru označené
     setActiveModuleId(null)
     setActiveSelection(null)
-    router.push('/') // hlavní stránka apky (app/page.tsx)
+    router.push('/')
   }
 
-  // 🧭 Výpočet drobečkové navigace podle stavu AppShellu
+  // 🧭 Breadcrumbs – generické podle module.sections + tiles
   function getBreadcrumbSegments(): BreadcrumbSegment[] {
     const segments: BreadcrumbSegment[] = [
       { label: 'Dashboard', icon: 'home' },
     ]
 
-    // Nepřihlášený nebo žádný modul → Dashboard / Domov
     if (!isAuthenticated || !activeModuleId) {
       segments.push({ label: 'Domov' })
       return segments
@@ -274,47 +272,37 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     const selection = activeSelection
 
-    // Speciální logika pro 900-nastaveni – sekce + tile
-    if (activeModule.id === '900-nastaveni' && selection) {
-      if (selection.sectionId) {
-        if (selection.sectionId === 'types-settings') {
-          segments.push({
-            label: 'Nastavení typů',
-            icon: 'settings', // stejná ikonka, ať tam něco je
-          })
-        } else if (selection.sectionId === 'theme-settings') {
-          segments.push({
-            label: 'Nastavení vzhledu',
-            icon: 'settings',
-          })
-        } else if (selection.sectionId === 'icon-settings') {
-          segments.push({
-            label: 'Nastavení ikon',
-            icon: 'settings',
-          })
-        }
-      }
-
-      if (selection.tileId && activeModule.tiles?.length) {
-        const tile = activeModule.tiles.find(
-          (t) => t.id === selection.tileId,
-        )
-        if (tile) {
-          segments.push({
-            label: tile.label,
-            icon: tile.icon, // ← vezme ikonu z tile, pokud je nastavená
-          })
-        }
+    // Sekce (pokud modul nějaké má)
+    if (selection?.sectionId && activeModule.sections?.length) {
+      const section = activeModule.sections.find(
+        (s) => s.id === selection.sectionId,
+      )
+      if (section) {
+        segments.push({
+          label: section.label,
+          icon: section.icon,
+        })
       }
     }
 
-    // Pro ostatní moduly můžeme později doplnit detail / záznam atd.
+    // Tile (konkrétní obrazovka)
+    if (selection?.tileId && activeModule.tiles?.length) {
+      const tile = activeModule.tiles.find(
+        (t) => t.id === selection.tileId,
+      )
+      if (tile) {
+        segments.push({
+          label: tile.label,
+          icon: tile.icon,
+        })
+      }
+    }
+
     return segments
   }
 
-  // 🧩 Hlavní obsah (blok 6 – Content)
+  // 🧩 Hlavní obsah
   function renderContent() {
-    // 1) Načítám autentizaci
     if (authLoading) {
       return (
         <div className="content content--center">
@@ -323,7 +311,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )
     }
 
-    // 2) Nepřihlášený uživatel → LoginPanel
     if (!isAuthenticated) {
       return (
         <div className="content content--center">
@@ -332,7 +319,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )
     }
 
-    // 3) Přihlášený, ale ještě se načítají moduly
     if (modulesLoading) {
       return (
         <div className="content content--center">
@@ -341,7 +327,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )
     }
 
-    // 4) Nemám žádný modul – chyba konfigurace
     if (!modules.length) {
       return (
         <div className="content content--center">
@@ -353,7 +338,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )
     }
 
-    // 5) Není vybraný modul → zobrazíme dashboard
+    // Dashboard (bez vybraného modulu)
     if (!activeModuleId) {
       return (
         <div className="content">
@@ -382,80 +367,65 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     const selection = activeSelection
 
-    // 🎯 Speciální chování pro modul 900-nastaveni – text podle úrovně výběru
-    if (activeModule.id === '900-nastaveni') {
-      // 1) Kliknuto jen na modul „Nastavení“
-      if (
-        !selection ||
-        selection.moduleId !== '900-nastaveni' ||
-        (!selection.sectionId && !selection.tileId)
-      ) {
+    // 1) Vybraný jen modul – zobrazíme úvod modulu (introTitle/introText)
+    if (!selection || (!selection.sectionId && !selection.tileId)) {
+      return (
+        <div className="content">
+          <h2>{activeModule.introTitle ?? activeModule.label}</h2>
+          <p>
+            {activeModule.introText ??
+              'Vlevo vyber konkrétní oblast, kterou chceš v tomto modulu zobrazit nebo upravit.'}
+          </p>
+        </div>
+      )
+    }
+
+    // 2) Vybraná sekce, ale žádný tile → úvod sekce
+    if (selection.sectionId && !selection.tileId) {
+      const section = activeModule.sections?.find(
+        (s) => s.id === selection.sectionId,
+      )
+
+      const title =
+        section?.introTitle ?? section?.label ?? activeModule.label
+      const text =
+        section?.introText ??
+        'Vyber konkrétní položku v levém menu, kterou chceš upravit.'
+
+      return (
+        <div className="content">
+          <h2>{activeModule.label}</h2>
+          <section className="content__section">
+            <h3 className="content__section-title">{title}</h3>
+            <p>{text}</p>
+          </section>
+        </div>
+      )
+    }
+
+    // 3) Vybraný konkrétní tile
+    if (selection.tileId && activeModule.tiles?.length) {
+      const tile = activeModule.tiles.find(
+        (t) => t.id === selection.tileId,
+      )
+
+      if (tile) {
+        const TileComponent = tile.component
+
         return (
           <div className="content">
-            <h2>{activeModule.label}</h2>
-            <p>
-              Tento modul slouží k nastavení číselníků, vzhledu a ikon celé
-              aplikace. Vlevo vyber konkrétní oblast, kterou chceš upravit.
-            </p>
-          </div>
-        )
-      }
-
-      // 2) Vybraná sekce (Nastavení typů / vzhledu / ikon), ale ještě žádný tile
-      if (selection.sectionId && !selection.tileId) {
-        let title = 'Nastavení'
-        let text =
-          'Vyber konkrétní položku v levém menu, kterou chceš upravit.'
-
-        if (selection.sectionId === 'types-settings') {
-          title = 'Nastavení typů'
-          text =
-            'Zde najdeš všechny číselníky a předvolby pro výběrová pole (např. typy subjektů, typy smluv, typy majetku…).'
-        } else if (selection.sectionId === 'theme-settings') {
-          title = 'Nastavení vzhledu'
-          text =
-            'Tady bude konfigurace vzhledu aplikace – barevná schémata, motivy a layout.'
-        } else if (selection.sectionId === 'icon-settings') {
-          title = 'Nastavení ikon'
-          text =
-            'Zde bude mapování ikon a emoji k jednotlivým modulům a akcím.'
-        }
-
-        return (
-          <div className="content">
-            <h2>{activeModule.label}</h2>
-            <section className="content__section">
-              <h3 className="content__section-title">{title}</h3>
-              <p>{text}</p>
+            <section
+              className="content__section"
+              aria-label={tile.label}
+            >
+              <TileComponent />
             </section>
           </div>
         )
       }
-
-      // 3) Vybraný konkrétní tile (např. Typy subjektů)
-      if (selection.tileId && activeModule.tiles?.length) {
-        const tile = activeModule.tiles.find(
-          (t) => t.id === selection.tileId,
-        )
-
-        if (tile) {
-          const TileComponent = tile.component
-
-          return (
-            <div className="content">
-              <section
-                className="content__section"
-                aria-label={tile.label}
-              >
-                <TileComponent />
-              </section>
-            </div>
-          )
-        }
-      }
     }
 
-    // 🧩 Výchozí chování pro ostatní moduly – zobrazíme všechny tiles
+    // 4) Výchozí chování – zobrazit všechny tiles modulu
     if (activeModule.tiles && activeModule.tiles.length > 0) {
       return (
         <div className="content">
@@ -469,7 +439,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   className="content__section"
                   aria-label={tile.label}
                 >
-                  <h3 className="content__section-title">{tile.label}</h3>
+                  <h3 className="content__section-title">
+                    {tile.label}
+                  </h3>
                   <TileComponent />
                 </section>
               )
@@ -479,7 +451,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )
     }
 
-    // 7) Modul nemá tiles – zatím jen placeholder
+    // 5) Modul bez tiles
     return (
       <div className="content">
         <h2>{activeModule.label}</h2>
@@ -492,10 +464,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     )
   }
 
-  // 🧱 Hlavní layout – 6 bloků podle dokumentace
+  // 🧱 Layout
   return (
     <div className={`layout theme-${uiConfig.theme}`}>
-      {/* 1 + 2. Levý sloupec – HomeButton + Sidebar */}
       <aside className="layout__sidebar">
         <HomeButton
           disabled={!isAuthenticated}
@@ -511,7 +482,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         />
       </aside>
 
-      {/* 3 + 4. Horní lišta – vlevo Breadcrumbs, vpravo HomeActions */}
       <header className="layout__topbar">
         <div className="layout__topbar-inner">
           <div className="layout__topbar-left">
@@ -531,12 +501,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         </div>
       </header>
 
-      {/* 5. CommonActions – pod breadcrumbs */}
       <div className="layout__actions">
         <CommonActions disabled={!isAuthenticated} />
       </div>
 
-      {/* 6. Content – hlavní plocha */}
       <main className="layout__content">{renderContent()}</main>
     </div>
   )
