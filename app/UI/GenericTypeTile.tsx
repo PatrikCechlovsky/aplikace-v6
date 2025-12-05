@@ -662,21 +662,37 @@ export default function GenericTypeTile({
         </div>
 
         {/* HLÁŠKY MEZI SEZNAMEM A FORMEM ------------------------------------- */}
-        {(error || info) && (
+        {(error || info || duplicateSortOrderMessage || orderEditInfo) && (
           <div className="generic-type__alert-wrapper">
             {error && (
               <div className="generic-type__alert generic-type__alert--error">
                 {error}
               </div>
             )}
-            {info && !error && (
-              <div className="generic-type__alert generic-type__alert--info">
-                {info}
+        
+            {!error && duplicateSortOrderMessage && (
+              <div className="generic-type__alert generic-type__alert--warning">
+                {duplicateSortOrderMessage}
               </div>
             )}
+        
+            {!error && !duplicateSortOrderMessage && orderEditInfo && (
+              <div className="generic-type__alert generic-type__alert--warning">
+                {orderEditInfo}
+              </div>
+            )}
+        
+            {!error &&
+              !duplicateSortOrderMessage &&
+              !orderEditInfo &&
+              info && (
+                <div className="generic-type__alert generic-type__alert--info">
+                  {info}
+                </div>
+              )}
           </div>
         )}
-
+        
         {hasUnsavedPrompt && (
           <div className="generic-type__alert-wrapper">
             <div className="generic-type__alert generic-type__alert--warning">
