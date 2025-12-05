@@ -26,7 +26,7 @@ export default {
     {
       id: 'theme-settings',
       label: 'Nastavení vzhledu',
-      icon: 'Paint',         // 🎨
+      icon: 'paint',         // 🎨
       component: ThemeSettingsSection,
       introTitle: 'Nastavení vzhledu',
       introText: 'Barevná schémata, motivy a layout aplikace.'
