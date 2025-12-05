@@ -422,6 +422,26 @@ body {
 .generic-type__row--duplicate-order {
   background-color: rgba(239, 68, 68, 0.08); /* jemná červená */
 }
+.generic-type__order-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.generic-type__order-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.generic-type__order-btn {
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  padding: 2px 4px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
 /* -------------------------------------------------
    UI motivy (theme)
    Přepínají se přes className na <body>: theme-light, theme-dark, ...
