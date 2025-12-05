@@ -307,7 +307,10 @@ export default function Sidebar({
                                       ▸
                                     </button>
                                   )}
-                                
+                                  {/* 📘 Ikona sekce */}
+                                  <span className="sidebar__section-icon">
+                                    {getIcon('book')}
+                                  </span>
                                   <span className="sidebar__section-label">
                                     {section.label}
                                   </span>
