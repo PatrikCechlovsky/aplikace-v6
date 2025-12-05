@@ -10,7 +10,9 @@ import { useRouter } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
 import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
-import Breadcrumbs from '@/app/UI/Breadcrumbs'
+import Breadcrumbs, {
+  type BreadcrumbSegment,
+} from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import CommonActions from '@/app/UI/CommonActions'
 import LoginPanel from '@/app/UI/LoginPanel'
@@ -251,6 +253,64 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     router.push('/') // hlavní stránka apky (app/page.tsx)
   }
 
+  // 🧭 Výpočet drobečkové navigace podle stavu AppShellu
+  function getBreadcrumbSegments(): BreadcrumbSegment[] {
+    const segments: BreadcrumbSegment[] = [
+      { label: 'Dashboard', icon: 'home' },
+    ]
+
+    // Nepřihlášený / žádná aplikace → jen Dashboard / Domov
+    if (!isAuthenticated) {
+      segments.push({ label: 'Domov' })
+      return segments
+    }
+
+    // Na dashboardu (bez zvoleného modulu)
+    if (!activeModuleId) {
+      segments.push({ label: 'Domov' })
+      return segments
+    }
+
+    const activeModule = modules.find((m) => m.id === activeModuleId)
+    if (!activeModule) {
+      segments.push({ label: 'Domov' })
+      return segments
+    }
+
+    // Modul
+    segments.push({
+      label: activeModule.label,
+      icon: activeModule.icon,
+    })
+
+    const selection = activeSelection
+
+    // Speciální logika pro 900-nastaveni – sekce + tile
+    if (activeModule.id === '900-nastaveni' && selection) {
+      if (selection.sectionId) {
+        if (selection.sectionId === 'types-settings') {
+          segments.push({ label: 'Nastavení typů' })
+        } else if (selection.sectionId === 'theme-settings') {
+          segments.push({ label: 'Nastavení vzhledu' })
+        } else if (selection.sectionId === 'icon-settings') {
+          segments.push({ label: 'Nastavení ikon' })
+        }
+      }
+
+      if (selection.tileId && activeModule.tiles?.length) {
+        const tile = activeModule.tiles.find(
+          (t) => t.id === selection.tileId,
+        )
+        if (tile) {
+          segments.push({ label: tile.label })
+        }
+      }
+    }
+
+    // Pro ostatní moduly můžeme později doplnit detail / záznam atd.
+    return segments
+  }
+
   // 🧩 Hlavní obsah (blok 6 – Content)
   function renderContent() {
     // 1) Načítám autentizaci
@@ -380,8 +440,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         if (tile) {
           const TileComponent = tile.component
 
-          // Nadpis + popis si řeší samotná tile (SubjectTypesTile),
-          // tady už nic dalšího nevykreslujeme, aby se to neduplikovalo.
           return (
             <div className="content">
               <section
@@ -456,7 +514,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       <header className="layout__topbar">
         <div className="layout__topbar-inner">
           <div className="layout__topbar-left">
-            <Breadcrumbs disabled={!isAuthenticated} />
+            <Breadcrumbs
+              disabled={!isAuthenticated}
+              segments={getBreadcrumbSegments()}
+            />
           </div>
 
           <div className="layout__topbar-right">
