@@ -219,6 +219,16 @@ body {
   cursor: pointer;
   border-radius: 8px;
 }
+/* seznam sekcí – bez defaultních bulletů */
+.sidebar__sectionlist {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.sidebar__section-item {
+  list-style: none;
+}
 
 /* Šipka – STEJNÁ jako první úroveň */
 .sidebar__section-toggle {
