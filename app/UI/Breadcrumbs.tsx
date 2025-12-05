@@ -1,34 +1,56 @@
 /*
  * FILE: app/UI/Breadcrumbs.tsx
- * PURPOSE: Drobečková navigace s optional ikonkami – jednoduchá verze
+ * PURPOSE: Drobečková navigace – ukazuje cestu podle segmentů z AppShellu
  */
 
 'use client'
 
 import { uiConfig } from '../lib/uiConfig'
 import { getIcon } from './icons'
+import type { IconKey } from './icons'
+
+export type BreadcrumbSegment = {
+  label: string
+  icon?: IconKey
+}
 
 type Props = {
   disabled?: boolean
+  segments?: BreadcrumbSegment[]
 }
 
 /**
- * Zatím jednoduchá verze:
- * - vždy zobrazuje "🏠 Dashboard / Domov"
- * - později ji rozšíříme na skutečnou cestu (modul / detail / atd.)
- * - žádný prop `segments` – jen `disabled`
+ * Pokud nejsou segmenty předané, zobrazí fallback
+ * "🏠 Dashboard / Domov" (původní chování).
  */
-export default function Breadcrumbs({ disabled = false }: Props) {
+export default function Breadcrumbs({ disabled = false, segments }: Props) {
   const showIcons = uiConfig.showBreadcrumbIcons
+
+  const effectiveSegments: BreadcrumbSegment[] =
+    segments && segments.length > 0
+      ? segments
+      : [
+          { label: 'Dashboard', icon: 'home' },
+          { label: 'Domov' },
+        ]
 
   return (
     <nav className={`breadcrumbs ${disabled ? 'is-disabled' : ''}`}>
-      {showIcons && (
-        <span style={{ marginRight: 6 }}>{getIcon('home')}</span>
-      )}
-      <span>Dashboard</span>
-      <span style={{ margin: '0 4px' }}>/</span>
-      <span>Domov</span>
+      {effectiveSegments.map((seg, index) => (
+        <span key={index} className="breadcrumbs__segment">
+          {index > 0 && (
+            <span className="breadcrumbs__separator"> / </span>
+          )}
+
+          {showIcons && seg.icon && (
+            <span className="breadcrumbs__icon">
+              {getIcon(seg.icon)}
+            </span>
+          )}
+
+          <span className="breadcrumbs__label">{seg.label}</span>
+        </span>
+      ))}
     </nav>
   )
 }
