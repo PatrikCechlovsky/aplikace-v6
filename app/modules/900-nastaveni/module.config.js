@@ -26,7 +26,7 @@ export default {
     {
       id: 'theme-settings',
       label: 'Nastavení vzhledu',
-      icon: 'theme',         // 🎨
+      icon: 'Paint',         // 🎨
       component: ThemeSettingsSection,
       introTitle: 'Nastavení vzhledu',
       introText: 'Barevná schémata, motivy a layout aplikace.'
@@ -34,7 +34,7 @@ export default {
     {
       id: 'icon-settings',
       label: 'Nastavení ikon',
-      icon: 'icon-settings', // 🔣
+      icon: 'smile', // 🙂
       component: IconSettingsSection,
       introTitle: 'Nastavení ikon',
       introText: 'Mapování ikon modulů, akcí a číselníků.'
