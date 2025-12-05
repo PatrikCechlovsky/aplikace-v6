@@ -210,6 +210,43 @@ body {
 .sidebar__toggle--open {
   transform: rotate(90deg) translateY(1px);
 }
+/* 2. úroveň – řádek sekce */
+.sidebar__section-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 32px; /* odsazení více než tile, méně než modul */
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+/* Šipka – STEJNÁ jako první úroveň */
+.sidebar__section-toggle {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 16px;      /* stejná velikost */
+  width: 18px;          /* stejný box */
+  text-align: center;
+  transform: translateY(1px);
+  transition: transform 0.15s ease;
+  cursor: pointer;
+}
+
+.sidebar__section-toggle--open {
+  transform: rotate(90deg) translateY(1px); /* stejná rotace */
+}
+
+/* Label sekce */
+.sidebar__section-label {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Aktivní sekce – stejné zvýraznění jako modul */
+.sidebar__section-row--active {
+  background: #eef2ff;
+}
 
 /* Link modulu */
 .sidebar__link {
