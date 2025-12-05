@@ -3,6 +3,8 @@
 
 import SubjectTypesTile from './tiles/SubjectTypesTile'
 import TypesSettingsSection from './sections/TypesSettingsSection'
+import ThemeSettingsSection from './sections/ThemeSettingsSection'
+import IconSettingsSection from './sections/IconSettingsSection'
 
 export default {
   id: '900-nastaveni',
@@ -11,35 +13,37 @@ export default {
   icon: 'settings',
   enabled: true,
 
-  /*
-   * Přehledové obrazovky (zatím prázdné)
-   */
-   overview: [
+  // 2. ÚROVEŇ – SECTIONS (Nastavení typů / vzhledu / ikon)
+  sections: [
     {
       id: 'types-settings',
       label: 'Nastavení typů',
       component: TypesSettingsSection,
     },
+    {
+      id: 'theme-settings',
+      label: 'Nastavení vzhledu',
+      component: ThemeSettingsSection,
+    },
+    {
+      id: 'icon-settings',
+      label: 'Nastavení ikon',
+      component: IconSettingsSection,
+    },
   ],
 
-  /*
-   * Detailní formuláře (zatím prázdné)
-   */
-  detail: [],
-
-  /*
-   * Tiles – zde registrujeme dlaždice pro modul Nastavení
-   */
+  // 3. ÚROVEŇ – TILES (konkrétní číselníky) přiřazené do sekcí
   tiles: [
     {
       id: 'subject-types',
       label: 'Typy subjektů',
+      sectionId: 'types-settings',   // ⇐ patří do sekce „Nastavení typů“
       component: SubjectTypesTile,
     },
+    // později třeba:
+    // { id: 'contract-types', label: 'Typy smluv', sectionId: 'types-settings', ... }
+    // { id: 'theme-presets', label: 'Barevná schémata', sectionId: 'theme-settings', ... }
   ],
 
-  /*
-   * Akce modulu (zatím prázdné)
-   */
   actions: [],
 }
