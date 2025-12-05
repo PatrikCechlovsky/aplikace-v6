@@ -20,6 +20,14 @@ const data = {
     aliasesCZ: ["schválit","souhlasit"],
     aliasesEN: ["approve","agree"]
   },
+  "smile": {
+    emoji: "🙂",
+    nameCZ: "Lehký úsměv",
+    nameEN: "Slight Smile",
+    category: "EMOTIONS",
+    aliasesCZ: ["jemný úsměv","zdvořilý úsměv"],
+    aliasesEN: ["slightly smiling","polite smile"]
+  },
   "account": {
     emoji: "👤",
     nameCZ: "Účet",
