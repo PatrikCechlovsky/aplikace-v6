@@ -381,7 +381,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           )
         }
       }
-
+    }
 
     // 🧩 Výchozí chování pro ostatní moduly – zobrazíme všechny tiles
     if (activeModule.tiles && activeModule.tiles.length > 0) {
