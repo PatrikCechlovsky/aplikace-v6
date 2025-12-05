@@ -284,37 +284,29 @@ body {
 /* třetí úroveň – seznam tiles */
 .sidebar__sublist {
   list-style: none;
-  margin: 0;
-  padding-left: 2.75rem;
+  margin: 2px 0 4px;
+  padding-left: 0;
 }
+
 /* řádek třetí úrovně */
 .sidebar__subitem {
   list-style: none;
+  margin: 0;
 }
+
 /* odkaz třetí úrovně – VĚTŠÍ odsazení než sekce */
 .sidebar__sublink {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px 4px 48px; /* ← tady je ten rozdíl */
+  padding: 4px 8px 4px 48px;  /* ← ODSAZENÍ 3. ÚROVNĚ */
   border-radius: 8px;
-}
-.sidebar__subitem {
-  margin: 0;
+  text-decoration: none;
+  color: inherit;
 }
 
 .sidebar__subitem--active .sidebar__sublink {
   background: #eef2ff;
-}
-
-.sidebar__sublink {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
 }
 
 .sidebar__subicon {
