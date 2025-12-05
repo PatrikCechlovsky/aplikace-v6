@@ -65,6 +65,11 @@ export default function GenericTypeTile({
   const [info, setInfo] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
+	// všechny barvy použité jinými položkami (mimo aktuální form)
+  const usedColors = items
+    .filter((it) => it.id !== form.id && it.color)
+    .map((it) => (it.color as string).toLowerCase())
+
 
   // ---------------------------------------------------------------------------
   // Načtení dat
@@ -732,23 +737,41 @@ export default function GenericTypeTile({
               <div className="generic-type__palette">
                 {APP_COLOR_PALETTE.map((c) => {
                   const hex = c.hex
-                  const isSelected =
-                    (form.color ?? '').toLowerCase() === hex.toLowerCase()
-
+                  const lowerHex = hex.toLowerCase()
+                  const currentColor = (form.color ?? '').toLowerCase()
+              
+                  const isSelected = currentColor === lowerHex
+                  const isUsedByOther = usedColors.includes(lowerHex) && !isSelected
+              
                   const swatchClassNames = [
                     'generic-type__swatch',
                     isSelected ? 'generic-type__swatch--selected' : '',
+                    isUsedByOther ? 'generic-type__swatch--disabled' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')
-
+              
+                  const usedByName = items.find(
+                    (it) =>
+                      it.id !== form.id &&
+                      (it.color ?? '').toString().toLowerCase() === lowerHex,
+                  )?.name
+              
                   return (
                     <button
                       key={c.id}
                       type="button"
                       className={swatchClassNames}
-                      onClick={() => handleChangeField('color', hex)}
-                      title={c.label ?? hex}
+                      disabled={isUsedByOther}
+                      onClick={() => {
+                        if (isUsedByOther) return
+                        handleChangeField('color', hex)
+                      }}
+                      title={
+                        isUsedByOther && usedByName
+                          ? `Barva je již použita u: ${usedByName}`
+                          : c.label ?? hex
+                      }
                     >
                       <span
                         className="generic-type__swatch-inner"
