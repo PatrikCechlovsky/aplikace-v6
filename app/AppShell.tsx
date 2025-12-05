@@ -32,11 +32,12 @@ type SessionUser = {
   displayName?: string | null
 }
 
-// Minimalistická podoba konfigurace modulu pro potřeby shellu
+// Konfigurace tile – přidal jsem icon?: IconKey
 type ModuleTileConfig = {
   id: string
   label: string
   component: React.ComponentType<any>
+  icon?: IconKey
 }
 
 type ModuleConfig = {
@@ -51,7 +52,7 @@ type ModuleConfig = {
 type AppShellProps = {
   /**
    * Počáteční modul, pokud přichází z URL (/modules/[moduleId]).
-   * Pokud je neplatný, použije se první modul.
+   * Pokud je neplatný nebo není zadaný, zůstaneš na dashboardu (Domov).
    */
   initialModuleId?: string | null
 }
@@ -201,24 +202,17 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }, [])
 
   // 3) Po načtení modulů + přihlášení nastavíme výchozí modul
+  //    ✅ Nově: vybereme modul jen pokud máme initialModuleId
   useEffect(() => {
     if (!isAuthenticated) return
     if (!modules.length) return
     if (activeModuleId) return
 
-    // preferuj initialModuleId, pokud existuje
-    let targetId: string | null = null
-
     if (initialModuleId && modules.some((m) => m.id === initialModuleId)) {
-      targetId = initialModuleId
-    } else {
-      targetId = modules[0].id
+      setActiveModuleId(initialModuleId)
+      setActiveSelection({ moduleId: initialModuleId })
     }
-
-    if (targetId) {
-      setActiveModuleId(targetId)
-      setActiveSelection({ moduleId: targetId })
-    }
+    // jinak – zůstaneme na Dashboard / Domov bez vybraného modulu
   }, [isAuthenticated, modules, activeModuleId, initialModuleId])
 
   // 🚪 Odhlášení
@@ -248,6 +242,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       if (!confirmLeave) return
     }
 
+    // vyčistit výběr → Dashboard / Domov, nic v sidebaru označené
     setActiveModuleId(null)
     setActiveSelection(null)
     router.push('/') // hlavní stránka apky (app/page.tsx)
@@ -259,14 +254,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       { label: 'Dashboard', icon: 'home' },
     ]
 
-    // Nepřihlášený / žádná aplikace → jen Dashboard / Domov
-    if (!isAuthenticated) {
-      segments.push({ label: 'Domov' })
-      return segments
-    }
-
-    // Na dashboardu (bez zvoleného modulu)
-    if (!activeModuleId) {
+    // Nepřihlášený nebo žádný modul → Dashboard / Domov
+    if (!isAuthenticated || !activeModuleId) {
       segments.push({ label: 'Domov' })
       return segments
     }
@@ -289,11 +278,20 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (activeModule.id === '900-nastaveni' && selection) {
       if (selection.sectionId) {
         if (selection.sectionId === 'types-settings') {
-          segments.push({ label: 'Nastavení typů' })
+          segments.push({
+            label: 'Nastavení typů',
+            icon: 'settings', // stejná ikonka, ať tam něco je
+          })
         } else if (selection.sectionId === 'theme-settings') {
-          segments.push({ label: 'Nastavení vzhledu' })
+          segments.push({
+            label: 'Nastavení vzhledu',
+            icon: 'settings',
+          })
         } else if (selection.sectionId === 'icon-settings') {
-          segments.push({ label: 'Nastavení ikon' })
+          segments.push({
+            label: 'Nastavení ikon',
+            icon: 'settings',
+          })
         }
       }
 
@@ -302,7 +300,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           (t) => t.id === selection.tileId,
         )
         if (tile) {
-          segments.push({ label: tile.label })
+          segments.push({
+            label: tile.label,
+            icon: tile.icon, // ← vezme ikonu z tile, pokud je nastavená
+          })
         }
       }
     }
