@@ -282,10 +282,14 @@ body {
 }
 
 /* třetí úroveň – seznam tiles */
-.sidebar__sublist {
-  list-style: none;
-  margin: 2px 0 4px;
-  padding-left: 0;
+position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 32px; /* základní odsazení textu */
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
 }
 
 /* řádek třetí úrovně */
@@ -304,7 +308,14 @@ body {
   text-decoration: none;
   color: inherit;
 }
-
+/* falešná (neviditelná) šipka pro zarovnání se 2. úrovní */
+.sidebar__sublink::before {
+  content: '▸';       /* stejný znak jako u šipek */
+  opacity: 0;         /* neviditelná */
+  width: 16px;        /* šířka šipky */
+  display: inline-block;
+  margin-right: 8px;  /* mezera mezi „šipkou“ a ikonou/texte m */
+}
 .sidebar__subitem--active .sidebar__sublink {
   background: #eef2ff;
 }
