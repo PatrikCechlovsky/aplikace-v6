@@ -65,10 +65,10 @@ export default function GenericTypeTile({
   const [info, setInfo] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
-	// všechny barvy použité jinými položkami (mimo aktuální form)
+  // všechny barvy použité v seznamu (HEX v lowercase)
   const usedColors = items
-    .filter((it) => it.id !== form.id && it.color)
-    .map((it) => (it.color as string).toLowerCase())
+	.filter((it) => it.color)
+	.map((it) => (it.color as string).toLowerCase())
 
 
   // ---------------------------------------------------------------------------
@@ -753,8 +753,7 @@ export default function GenericTypeTile({
               
                   const usedByName = items.find(
                     (it) =>
-                      it.id !== form.id &&
-                      (it.color ?? '').toString().toLowerCase() === lowerHex,
+                      (it.color ?? '').toString().toLowerCase() === lowerHex
                   )?.name
               
                   return (
