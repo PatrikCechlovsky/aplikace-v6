@@ -18,18 +18,27 @@ export default {
     {
       id: 'types-settings',
       label: 'Nastavení typů',
+      icon: 'book',          // ← tvoje ikona 📚
       component: TypesSettingsSection,
+      introTitle: 'Nastavení typů',
+      introText: 'Zde najdeš číselníky typů subjektů, smluv, majetku…'
     },
     {
       id: 'theme-settings',
       label: 'Nastavení vzhledu',
+      icon: 'theme',         // 🎨
       component: ThemeSettingsSection,
+      introTitle: 'Nastavení vzhledu',
+      introText: 'Barevná schémata, motivy a layout aplikace.'
     },
     {
       id: 'icon-settings',
       label: 'Nastavení ikon',
+      icon: 'icon-settings', // 🔣
       component: IconSettingsSection,
-    },
+      introTitle: 'Nastavení ikon',
+      introText: 'Mapování ikon modulů, akcí a číselníků.'
+    }
   ],
 
   // 3. ÚROVEŇ – TILES (konkrétní číselníky) přiřazené do sekcí
@@ -37,8 +46,9 @@ export default {
     {
       id: 'subject-types',
       label: 'Typy subjektů',
-      sectionId: 'types-settings',   // ⇐ patří do sekce „Nastavení typů“
-      component: SubjectTypesTile,
+      icon: 'question',  // nebo vytvoř novou ikonu např. "subject-type"
+      sectionId: 'types-settings',
+      component: SubjectTypesTile
     },
     // později třeba:
     // { id: 'contract-types', label: 'Typy smluv', sectionId: 'types-settings', ... }
