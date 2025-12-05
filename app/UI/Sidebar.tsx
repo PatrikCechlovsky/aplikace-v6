@@ -292,6 +292,25 @@ export default function Sidebar({
                                     toggleSection(section.id)
                                   }}
                                 >
+                                  {sectionTiles.length > 0 && (
+                                    <button
+                                      type="button"
+                                      className={
+                                        'sidebar__section-toggle' +
+                                        (isSectionOpen ? ' sidebar__section-toggle--open' : '')
+                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation() // ať klik na šipku jen rozbaluje, nevybírá znovu
+                                        toggleSection(section.id)
+                                      }}
+                                      aria-label={
+                                        isSectionOpen ? 'Skrýt položky' : 'Zobrazit položky'
+                                      }
+                                    >
+                                      ▸
+                                    </button>
+                                  )}
+                                
                                   <span className="sidebar__section-label">
                                     {section.label}
                                   </span>
