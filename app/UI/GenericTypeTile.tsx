@@ -65,40 +65,52 @@ export default function GenericTypeTile({
   const [info, setInfo] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
+
+  // ---------------------------------------------------------------------------
+  // Odvozené hodnoty – barvy a pořadí
+  // ---------------------------------------------------------------------------
+
   // všechny barvy použité v seznamu (HEX v lowercase)
   const usedColors = items
-	.filter((it) => it.color)
-	.map((it) => (it.color as string).toLowerCase())
-	// Pořadí může být string/number, sjednotíme na číslo
-	const currentOrder = form.order ? Number(form.order) : undefined
-	
-	// Map pořadí → počet výskytů
-	const orderCounts = useMemo(() => {
-	  const counts = new Map<number, number>()
-	
-	  items.forEach((it) => {
-	    if (it.order == null) return
-	    const n = Number(it.order)
-	    if (!Number.isFinite(n)) return
-	    counts.set(n, (counts.get(n) ?? 0) + 1)
-	  })
-	
-	  return counts
-	}, [items])
-	
-	// Set všech "problémových" pořadí (kde count > 1)
-	const duplicateOrders = useMemo(() => {
-	  const dups = new Set<number>()
-	  orderCounts.forEach((count, order) => {
-	    if (count > 1) dups.add(order)
-	  })
-	  return dups
-	}, [orderCounts])
-	
-	// Aktuální formulář má duplicitní pořadí?
-	const hasDuplicateOrder =
-	  currentOrder !== undefined && duplicateOrders.has(currentOrder)
-	
+    .filter((it) => it.color)
+    .map((it) => (it.color as string).toLowerCase())
+
+  // pomocná funkce pro bezpečné čtení sort_order
+  const getItemSortOrder = (item: GenericTypeItem): number | undefined => {
+    if (typeof item.sort_order !== 'number') return undefined
+    return Number.isFinite(item.sort_order) ? item.sort_order : undefined
+  }
+
+  const currentSortOrder =
+    typeof form.sort_order === 'number' && Number.isFinite(form.sort_order)
+      ? form.sort_order
+      : undefined
+
+  // Map sort_order → počet výskytů
+  const sortOrderCounts = useMemo(() => {
+    const counts = new Map<number, number>()
+
+    items.forEach((it) => {
+      const n = getItemSortOrder(it)
+      if (n == null) return
+      counts.set(n, (counts.get(n) ?? 0) + 1)
+    })
+
+    return counts
+  }, [items])
+
+  // Set všech "problémových" pořadí (kde count > 1)
+  const duplicateSortOrders = useMemo(() => {
+    const dups = new Set<number>()
+    sortOrderCounts.forEach((count, order) => {
+      if (count > 1) dups.add(order)
+    })
+    return dups
+  }, [sortOrderCounts])
+
+  // Aktuální formulář má duplicitní pořadí?
+  const hasDuplicateSortOrder =
+    currentSortOrder !== undefined && duplicateSortOrders.has(currentSortOrder)
 
   // ---------------------------------------------------------------------------
   // Načtení dat
@@ -474,7 +486,7 @@ export default function GenericTypeTile({
                 title="Přidat nový záznam"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('plus' as IconKey) /* uprav klíč podle icons.ts */}
+                  {getIcon('plus' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Přidat</span>
               </button>
@@ -524,6 +536,10 @@ export default function GenericTypeTile({
                       ? getIcon(item.icon as IconKey)
                       : ''
 
+                    const rowHasDuplicateOrder =
+                      typeof item.sort_order === 'number' &&
+                      duplicateSortOrders.has(item.sort_order)
+
                     return (
                       <tr
                         key={item.code}
@@ -553,26 +569,26 @@ export default function GenericTypeTile({
                           </span>
                         </td>
 
-						{/* Pořadí */}
-						<div className="generic-type__field">
-						  <label className="generic-type__label">Pořadí</label>
-						  <input
-						    type="number"
-						    className={
-						      'generic-type__input' +
-						      (hasDuplicateOrder ? ' generic-type__input--error' : '')
-						    }
-						    value={form.order ?? ''}
-						    onChange={(e) => handleChangeField('order', e.target.value)}
-						  />
-						  {hasDuplicateOrder && (
-						    <p className="generic-type__hint generic-type__hint--error">
-						      Toto pořadí už používá jiná položka. Upravte ho, nebo později použijeme
-						      automatické přečíslování.
-						    </p>
-						  )}
-						</div>
+                        {/* Pořadí */}
+                        <td
+                          className={
+                            'generic-type__cell generic-type__cell--small' +
+                            (rowHasDuplicateOrder
+                              ? ' generic-type__cell--duplicate-order'
+                              : '')
+                          }
+                        >
+                          {item.sort_order ?? ''}
+                        </td>
 
+                        {/* Ikona */}
+                        <td className="generic-type__cell generic-type__cell--center">
+                          {iconSymbol && (
+                            <span className="generic-type__icon-in-list">
+                              {iconSymbol}
+                            </span>
+                          )}
+                        </td>
 
                         {/* Barva */}
                         <td className="generic-type__cell generic-type__cell--center">
@@ -640,8 +656,9 @@ export default function GenericTypeTile({
             </div>
           </div>
         )}
-       {/* DOLNÍ FORMULÁŘ ---------------------------------------------------- */}
-         <div className="generic-type__form">
+
+        {/* DOLNÍ FORMULÁŘ ---------------------------------------------------- */}
+        <div className="generic-type__form">
           <div className="generic-type__form-header-row">
             <h2 className="generic-type__form-title">Detail typu</h2>
 
@@ -654,7 +671,7 @@ export default function GenericTypeTile({
                 disabled={selectedIndex <= 0}
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('prev')}
+                  {getIcon('prev' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Předchozí</span>
               </button>
@@ -667,7 +684,7 @@ export default function GenericTypeTile({
                 disabled={selectedIndex >= visibleItems.length - 1}
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('next')}
+                  {getIcon('next' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Další</span>
               </button>
@@ -680,7 +697,7 @@ export default function GenericTypeTile({
                 disabled={saving || !dirty}
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('save')}
+                  {getIcon('save' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Uložit</span>
               </button>
@@ -694,7 +711,7 @@ export default function GenericTypeTile({
                 title="Archivovat záznam (nejde mazat)"
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('archive')}
+                  {getIcon('archive' as IconKey)}
                 </span>
                 <span className="generic-type__button-text">Archivovat</span>
               </button>
@@ -708,7 +725,12 @@ export default function GenericTypeTile({
               <label className="generic-type__label">Pořadí</label>
               <input
                 type="number"
-                className="generic-type__input"
+                className={
+                  'generic-type__input' +
+                  (hasDuplicateSortOrder
+                    ? ' generic-type__input--error'
+                    : '')
+                }
                 value={
                   typeof form.sort_order === 'number'
                     ? String(form.sort_order)
@@ -716,6 +738,12 @@ export default function GenericTypeTile({
                 }
                 onChange={(e) => handleChangeSortOrder(e.target.value)}
               />
+              {hasDuplicateSortOrder && (
+                <p className="generic-type__hint generic-type__hint--error">
+                  Toto pořadí už používá jiná položka. Upravte ho, nebo později
+                  použijeme automatické přečíslování.
+                </p>
+              )}
             </div>
 
             {/* Aktivní */}
@@ -773,10 +801,11 @@ export default function GenericTypeTile({
                   const hex = c.hex
                   const lowerHex = hex.toLowerCase()
                   const currentColor = (form.color ?? '').toLowerCase()
-              
+
                   const isSelected = currentColor === lowerHex
-                  const isUsedByOther = usedColors.includes(lowerHex) && !isSelected
-              
+                  const isUsedByOther =
+                    usedColors.includes(lowerHex) && !isSelected
+
                   const swatchClassNames = [
                     'generic-type__swatch',
                     isSelected ? 'generic-type__swatch--selected' : '',
@@ -784,12 +813,12 @@ export default function GenericTypeTile({
                   ]
                     .filter(Boolean)
                     .join(' ')
-              
+
                   const usedByName = items.find(
                     (it) =>
-                      (it.color ?? '').toString().toLowerCase() === lowerHex
+                      (it.color ?? '').toString().toLowerCase() === lowerHex,
                   )?.name
-              
+
                   return (
                     <button
                       key={c.id}
@@ -842,7 +871,6 @@ export default function GenericTypeTile({
           </div>
 
           {/* Popis */}
-          {/* Popis */}
           <div className="generic-type__field generic-type__field--full">
             <label className="generic-type__label">Popis</label>
             <textarea
@@ -854,8 +882,8 @@ export default function GenericTypeTile({
               }
             />
           </div>
-        </div> {/* .generic-type__form */}
-      </div>   {/* .generic-type__body */}
+        </div>
+      </div>
     </section>
   )
 }
