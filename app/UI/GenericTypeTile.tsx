@@ -100,13 +100,7 @@ export default function GenericTypeTile({
       counts.set(n, (counts.get(n) ?? 0) + 1)
     })
 
-    // aktuální hodnota ve formuláři se započítá navíc
-    if (currentSortOrder !== undefined) {
-      counts.set(
-        currentSortOrder,
-        (counts.get(currentSortOrder) ?? 0) + 1,
-      )
-    }
+ 
 
     return counts
   }, [items, currentSortOrder])
