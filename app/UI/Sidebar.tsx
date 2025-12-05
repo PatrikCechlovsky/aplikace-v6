@@ -1,14 +1,15 @@
 /*
  * FILE: app/UI/Sidebar.tsx
- * PURPOSE: Stromový sidebar modulů + SECTIONS + tiles s ikonami,
- *          ochranou proti ztrátě dat a 3 úrovněmi (modul → sekce → tile).
+ * PURPOSE: Stromový sidebar (3 úrovně):
+ * 1) modul
+ * 2) sekce
+ * 3) tile
  */
 
 'use client'
 
-import { useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { MODULE_SOURCES } from '@/app/modules.index.js'
 import { getIcon } from './icons'
 import { uiConfig } from '../lib/uiConfig'
@@ -46,7 +47,6 @@ interface ModuleConfig {
 
 /**
  * Výběr v sidebaru – používá se v AppShellu.
- * Přidali jsme sectionId pro 2. úroveň.
  */
 export type SidebarSelection = {
   moduleId: string
@@ -56,50 +56,26 @@ export type SidebarSelection = {
 
 type SidebarProps = {
   disabled?: boolean
-  /**
-   * true = uživatel má rozdělanou práci, klik může být zablokován
-   */
   hasUnsavedChanges?: boolean
-  /**
-   * Volitelné – pokud se posílá, bere se jako aktivní modul (má prioritu před URL).
-   */
   activeModuleId?: string | null
-  /**
-   * Callback při výběru modulu / sekce / tile.
-   */
+  activeSelection?: SidebarSelection | null
   onModuleSelect?: (selection: SidebarSelection) => void
 }
 
 export default function Sidebar({
   disabled = false,
   hasUnsavedChanges = false,
-  activeModuleId: activeModuleIdProp = null,
+  activeModuleId = null,
+  activeSelection = null,
   onModuleSelect,
 }: SidebarProps) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
-  const [expandedIds, setExpandedIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeSectionId, setActiveSectionId] = useState<string | null>(
-    null,
-  )
-  const [activeTileId, setActiveTileId] = useState<string | null>(null)
 
-  const pathname = usePathname() ?? ''
-
-  // Aktivní modul z URL (/modules/<id>)
-  const activeModuleIdFromUrl = useMemo(() => {
-    if (!pathname) return null
-    const parts = pathname.split('/')
-    const idx = parts.indexOf('modules')
-    if (idx !== -1 && parts.length > idx + 1) {
-      return parts[idx + 1]
-    }
-    return null
-  }, [pathname])
-
-  // Konečný aktivní modul – pokud přichází z props, má přednost
-  const effectiveActiveModuleId =
-    activeModuleIdProp ?? activeModuleIdFromUrl
+  // rozbalené moduly (1. úroveň)
+  const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([])
+  // rozbalené sekce (2. úroveň)
+  const [expandedSectionIds, setExpandedSectionIds] = useState<string[]>([])
 
   // Načtení modulů z module.config.js
   useEffect(() => {
@@ -147,37 +123,41 @@ export default function Sidebar({
     loadModules()
   }, [])
 
-  // Rozbalit aktivní modul při změně
+  // Když se změní aktivní modul (např. po kliknutí v sidebaru),
+  // zajistíme, že jeho menu bude rozbalené.
   useEffect(() => {
-    if (!effectiveActiveModuleId) return
-    setExpandedIds((prev) =>
-      prev.includes(effectiveActiveModuleId)
-        ? prev
-        : [...prev, effectiveActiveModuleId],
+    if (!activeModuleId) return
+
+    setExpandedModuleIds((prev) =>
+      prev.includes(activeModuleId) ? prev : [...prev, activeModuleId],
     )
-  }, [effectiveActiveModuleId])
+  }, [activeModuleId])
 
   const showIcons = uiConfig.showSidebarIcons
 
-  function toggleExpand(moduleId: string) {
-    setExpandedIds((prev) =>
+  function toggleModule(moduleId: string) {
+    setExpandedModuleIds((prev) =>
       prev.includes(moduleId)
         ? prev.filter((id) => id !== moduleId)
         : [...prev, moduleId],
     )
   }
 
+  function toggleSection(sectionId: string) {
+    setExpandedSectionIds((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId],
+    )
+  }
+
   /**
-   * Společná kontrola pro kliknutí – řeší disabled + hasUnsavedChanges.
-   * Vrací true = můžeš pokračovat, false = zruš navigaci.
+   * Společné zpracování kliknutí – hlídá disabled + hasUnsavedChanges.
    */
-  function confirmNavigation(
-    e: MouseEvent,
-    selection?: SidebarSelection,
-  ) {
+  function handleSelect(selection: SidebarSelection, e?: MouseEvent) {
     if (disabled) {
-      e.preventDefault()
-      return false
+      e?.preventDefault()
+      return
     }
 
     if (hasUnsavedChanges) {
@@ -185,20 +165,36 @@ export default function Sidebar({
         'Máte neuložené změny. Opravdu chcete odejít a zahodit je?',
       )
       if (!ok) {
-        e.preventDefault()
-        return false
+        e?.preventDefault()
+        return
       }
     }
 
-    if (selection && onModuleSelect) {
-      onModuleSelect(selection)
-    }
-
-    return true
+    onModuleSelect?.(selection)
   }
 
+  // 🔦 Aktivní stav – jen jedna „nejhlubší“ položka
   function isModuleActive(m: ModuleConfig): boolean {
-    return effectiveActiveModuleId === m.id
+    return (
+      activeSelection?.moduleId === m.id &&
+      !activeSelection.sectionId &&
+      !activeSelection.tileId
+    )
+  }
+
+  function isSectionActive(m: ModuleConfig, s: ModuleSection): boolean {
+    return (
+      activeSelection?.moduleId === m.id &&
+      activeSelection.sectionId === s.id &&
+      !activeSelection.tileId
+    )
+  }
+
+  function isTileActive(m: ModuleConfig, t: SidebarTile): boolean {
+    return (
+      activeSelection?.moduleId === m.id &&
+      activeSelection.tileId === t.id
+    )
   }
 
   return (
@@ -211,7 +207,7 @@ export default function Sidebar({
             {modules.map((m) => {
               const hasSections = !!m.sections && m.sections.length > 0
               const hasTiles = !!m.tiles && m.tiles.length > 0
-              const isExpanded = expandedIds.includes(m.id)
+              const isExpanded = expandedModuleIds.includes(m.id)
               const moduleHref = `/modules/${m.id}`
 
               return (
@@ -231,7 +227,7 @@ export default function Sidebar({
                           'sidebar__toggle' +
                           (isExpanded ? ' sidebar__toggle--open' : '')
                         }
-                        onClick={() => toggleExpand(m.id)}
+                        onClick={() => toggleModule(m.id)}
                         aria-label={
                           isExpanded ? 'Skrýt podmenu' : 'Zobrazit podmenu'
                         }
@@ -244,12 +240,10 @@ export default function Sidebar({
                       href={moduleHref}
                       className="sidebar__link"
                       onClick={(e) => {
-                        const ok = confirmNavigation(e, {
-                          moduleId: m.id,
-                        })
-                        if (ok) {
-                          setActiveSectionId(null)
-                          setActiveTileId(null)
+                        handleSelect({ moduleId: m.id }, e)
+                        // po kliknutí na modul ho i rozbalíme
+                        if (!isExpanded) {
+                          toggleModule(m.id)
                         }
                       }}
                     >
@@ -274,16 +268,15 @@ export default function Sidebar({
                                 (t) => t.sectionId === section.id,
                               ) ?? []
 
-                            const isSectionActive =
-                              isModuleActive(m) &&
-                              section.id === activeSectionId
+                            const isSectionOpen =
+                              expandedSectionIds.includes(section.id)
 
                             return (
                               <li
                                 key={section.id}
                                 className={
                                   'sidebar__section-item' +
-                                  (isSectionActive
+                                  (isSectionActive(m, section)
                                     ? ' sidebar__section-item--active'
                                     : '')
                                 }
@@ -292,7 +285,11 @@ export default function Sidebar({
                                 <div
                                   className="sidebar__section-row"
                                   onClick={() => {
-                                    setActiveSectionId(section.id)
+                                    handleSelect({
+                                      moduleId: m.id,
+                                      sectionId: section.id,
+                                    })
+                                    toggleSection(section.id)
                                   }}
                                 >
                                   <span className="sidebar__section-label">
@@ -300,21 +297,19 @@ export default function Sidebar({
                                   </span>
                                 </div>
 
-                                {/* 3. úroveň – tiles v sekci */}
-                                {sectionTiles.length > 0 && (
+                                {/* 3. úroveň – tiles v sekci (jen když je sekce rozbalená) */}
+                                {isSectionOpen && sectionTiles.length > 0 && (
                                   <ul className="sidebar__sublist">
                                     {sectionTiles.map((t) => {
-                                      const tileHref = `/modules/${m.id}` // zatím bez ?tile
-                                      const isActiveSub =
-                                        isModuleActive(m) &&
-                                        activeTileId === t.id
+                                      const tileHref = `/modules/${m.id}`
+                                      const isActiveTile = isTileActive(m, t)
 
                                       return (
                                         <li
                                           key={t.id}
                                           className={
                                             'sidebar__subitem' +
-                                            (isActiveSub
+                                            (isActiveTile
                                               ? ' sidebar__subitem--active'
                                               : '')
                                           }
@@ -323,20 +318,14 @@ export default function Sidebar({
                                             href={tileHref}
                                             className="sidebar__sublink"
                                             onClick={(e) => {
-                                              const ok = confirmNavigation(
-                                                e,
+                                              handleSelect(
                                                 {
                                                   moduleId: m.id,
                                                   sectionId: section.id,
                                                   tileId: t.id,
                                                 },
+                                                e,
                                               )
-                                              if (ok) {
-                                                setActiveSectionId(
-                                                  section.id,
-                                                )
-                                                setActiveTileId(t.id)
-                                              }
                                             }}
                                           >
                                             {showIcons && (
@@ -362,15 +351,14 @@ export default function Sidebar({
                         <ul className="sidebar__sublist">
                           {m.tiles!.map((t) => {
                             const tileHref = `/modules/${m.id}`
-                            const isActiveSub =
-                              isModuleActive(m) && activeTileId === t.id
+                            const isActiveTile = isTileActive(m, t)
 
                             return (
                               <li
                                 key={t.id}
                                 className={
                                   'sidebar__subitem' +
-                                  (isActiveSub
+                                  (isActiveTile
                                     ? ' sidebar__subitem--active'
                                     : '')
                                 }
@@ -379,14 +367,10 @@ export default function Sidebar({
                                   href={tileHref}
                                   className="sidebar__sublink"
                                   onClick={(e) => {
-                                    const ok = confirmNavigation(e, {
-                                      moduleId: m.id,
-                                      tileId: t.id,
-                                    })
-                                    if (ok) {
-                                      setActiveSectionId(null)
-                                      setActiveTileId(t.id)
-                                    }
+                                    handleSelect(
+                                      { moduleId: m.id, tileId: t.id },
+                                      e,
+                                    )
                                   }}
                                 >
                                   {showIcons && (
