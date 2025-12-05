@@ -69,7 +69,36 @@ export default function GenericTypeTile({
   const usedColors = items
 	.filter((it) => it.color)
 	.map((it) => (it.color as string).toLowerCase())
-
+	// Pořadí může být string/number, sjednotíme na číslo
+	const currentOrder = form.order ? Number(form.order) : undefined
+	
+	// Map pořadí → počet výskytů
+	const orderCounts = useMemo(() => {
+	  const counts = new Map<number, number>()
+	
+	  items.forEach((it) => {
+	    if (it.order == null) return
+	    const n = Number(it.order)
+	    if (!Number.isFinite(n)) return
+	    counts.set(n, (counts.get(n) ?? 0) + 1)
+	  })
+	
+	  return counts
+	}, [items])
+	
+	// Set všech "problémových" pořadí (kde count > 1)
+	const duplicateOrders = useMemo(() => {
+	  const dups = new Set<number>()
+	  orderCounts.forEach((count, order) => {
+	    if (count > 1) dups.add(order)
+	  })
+	  return dups
+	}, [orderCounts])
+	
+	// Aktuální formulář má duplicitní pořadí?
+	const hasDuplicateOrder =
+	  currentOrder !== undefined && duplicateOrders.has(currentOrder)
+	
 
   // ---------------------------------------------------------------------------
   // Načtení dat
@@ -524,21 +553,26 @@ export default function GenericTypeTile({
                           </span>
                         </td>
 
-                        {/* Pořadí */}
-                        <td className="generic-type__cell generic-type__cell--small generic-type__cell--center">
-                          {typeof item.sort_order === 'number'
-                            ? item.sort_order
-                            : ''}
-                        </td>
+						{/* Pořadí */}
+						<div className="generic-type__field">
+						  <label className="generic-type__label">Pořadí</label>
+						  <input
+						    type="number"
+						    className={
+						      'generic-type__input' +
+						      (hasDuplicateOrder ? ' generic-type__input--error' : '')
+						    }
+						    value={form.order ?? ''}
+						    onChange={(e) => handleChangeField('order', e.target.value)}
+						  />
+						  {hasDuplicateOrder && (
+						    <p className="generic-type__hint generic-type__hint--error">
+						      Toto pořadí už používá jiná položka. Upravte ho, nebo později použijeme
+						      automatické přečíslování.
+						    </p>
+						  )}
+						</div>
 
-                        {/* Ikona */}
-                        <td className="generic-type__cell generic-type__cell--center">
-                          {iconSymbol && (
-                            <span className="generic-type__icon-preview">
-                              {iconSymbol}
-                            </span>
-                          )}
-                        </td>
 
                         {/* Barva */}
                         <td className="generic-type__cell generic-type__cell--center">
