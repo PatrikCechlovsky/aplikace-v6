@@ -50,7 +50,9 @@ export default function GenericTypeTile({
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [filter, setFilter] = useState('')
   const [showArchived, setShowArchived] = useState(false)
+  const [orderEditInfo, setOrderEditInfo] = useState<string | null>(null)
 
+  
   const [form, setForm] = useState<GenericTypeItem>({
     code: '',
     name: '',
@@ -354,6 +356,42 @@ export default function GenericTypeTile({
 
   function handleKeepEditing() {
     setPendingAction(null)
+  }
+    // Posun aktuální položky v pořadí o +1 / -1 (jen lokálně v seznamu)
+  function moveCurrentItem(delta: 1 | -1) {
+    if (!selectedCode) return
+
+    // seřadíme si kopii items podle sort_order
+    const sorted = [...items].sort((a, b) => {
+      const ao = typeof a.sort_order === 'number' ? a.sort_order : 9999
+      const bo = typeof b.sort_order === 'number' ? b.sort_order : 9999
+      return ao - bo
+    })
+
+    const index = sorted.findIndex((it) => it.code === selectedCode)
+    if (index === -1) return
+
+    const newIndex = index + delta
+    if (newIndex < 0 || newIndex >= sorted.length) return
+
+    // prohodíme sort_order mezi těmito dvěma položkami
+    const a = sorted[index]
+    const b = sorted[newIndex]
+
+    const aOrder = typeof a.sort_order === 'number' ? a.sort_order : newIndex + 1
+    const bOrder = typeof b.sort_order === 'number' ? b.sort_order : index + 1
+
+    a.sort_order = bOrder
+    b.sort_order = aOrder
+
+    // uložíme zpět do items a do formu
+    setItems(sorted)
+    setForm((prev) => ({
+      ...prev,
+      sort_order:
+        prev.code === a.code ? a.sort_order : prev.code === b.code ? b.sort_order : prev.sort_order,
+    }))
+    setDirty(true)
   }
 
   // ---------------------------------------------------------------------------
@@ -728,31 +766,55 @@ export default function GenericTypeTile({
 
           {/* Hlavní grid formuláře */}
           <div className="generic-type__form-grid">
-            {/* Pořadí */}
+                        {/* Pořadí */}
             <div className="generic-type__field generic-type__field--small">
               <label className="generic-type__label">Pořadí</label>
-              <input
-                type="number"
-                className={
-                  'generic-type__input' +
-                  (hasDuplicateSortOrder
-                    ? ' generic-type__input--error'
-                    : '')
-                }
-                value={
-                  typeof form.sort_order === 'number'
-                    ? String(form.sort_order)
-                    : ''
-                }
-                onChange={(e) => handleChangeSortOrder(e.target.value)}
-              />
-              {hasDuplicateSortOrder && (
-                <p className="generic-type__hint generic-type__hint--error">
-                  Toto pořadí už používá jiná položka. Upravte ho, nebo později
-                  použijeme automatické přečíslování.
-                </p>
-              )}
+
+              <div className="generic-type__order-wrapper">
+                <input
+                  type="number"
+                  readOnly
+                  className="generic-type__input"
+                  value={
+                    typeof form.sort_order === 'number'
+                      ? String(form.sort_order)
+                      : ''
+                  }
+                  onKeyDown={(e) => {
+                    // uživatel se snaží psát → ukážeme hlášku
+                    e.preventDefault()
+                    setOrderEditInfo(
+                      'Pořadí se mění pomocí šipek. Posouvejte záznam nahoru nebo dolů v seznamu.',
+                    )
+                  }}
+                  onFocus={() =>
+                    setOrderEditInfo(
+                      'Pořadí se mění pomocí šipek. Posouvejte záznam nahoru nebo dolů v seznamu.',
+                    )
+                  }
+                />
+
+                <div className="generic-type__order-buttons">
+                  <button
+                    type="button"
+                    className="generic-type__order-btn"
+                    onClick={() => moveCurrentItem(-1)}
+                    title="Posunout nahoru"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    className="generic-type__order-btn"
+                    onClick={() => moveCurrentItem(1)}
+                    title="Posunout dolů"
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
             </div>
+
 
             {/* Aktivní */}
             <div className="generic-type__field generic-type__field--checkbox">
