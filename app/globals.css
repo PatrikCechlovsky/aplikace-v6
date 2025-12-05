@@ -281,13 +281,24 @@ body {
   white-space: nowrap;
 }
 
-/* Submenu */
+/* třetí úroveň – seznam tiles */
 .sidebar__sublist {
   list-style: none;
-  margin: 0;
-  padding: 4px 0 4px 24px; /* odsazení pro podúroveň */
+  margin: 2px 0 4px;
+  padding-left: 0;
 }
-
+/* řádek třetí úrovně */
+.sidebar__subitem {
+  list-style: none;
+}
+/* odkaz třetí úrovně – VĚTŠÍ odsazení než sekce */
+.sidebar__sublink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 48px; /* ← tady je ten rozdíl */
+  border-radius: 8px;
+}
 .sidebar__subitem {
   margin: 0;
 }
