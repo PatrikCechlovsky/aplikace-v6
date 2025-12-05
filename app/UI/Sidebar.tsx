@@ -127,7 +127,8 @@ export default function Sidebar({
     loadModules()
   }, [])
 
-  // Když se změní aktivní modul, rozbalíme ho
+  // Když se změní aktivní modul (např. po kliknutí v sidebaru),
+  // zajistíme, že jeho menu bude rozbalené.
   useEffect(() => {
     if (!activeModuleId) return
 
@@ -244,6 +245,7 @@ export default function Sidebar({
                       className="sidebar__link"
                       onClick={(e) => {
                         handleSelect({ moduleId: m.id }, e)
+                        // po kliknutí na modul ho i rozbalíme
                         if (!isExpanded) {
                           toggleModule(m.id)
                         }
@@ -323,7 +325,7 @@ export default function Sidebar({
                                   </span>
                                 </div>
 
-                                {/* 3. úroveň – tiles v sekci */}
+                                {/* 3. úroveň – tiles v sekci (jen když je sekce rozbalená) */}
                                 {isSectionOpen && sectionTiles.length > 0 && (
                                   <ul className="sidebar__sublist">
                                     {sectionTiles.map((t) => {
@@ -360,8 +362,7 @@ export default function Sidebar({
                                               </span>
                                             )}
                                             <span className="sidebar__sublabel">
-                                              {t.label}
-                                            </span>
+                                              {t.label}</span>
                                           </Link>
                                         </li>
                                       )
@@ -373,7 +374,7 @@ export default function Sidebar({
                           })}
                         </ul>
                       ) : (
-                        // Modul NEMÁ sections → 2-level (modul → tiles)
+                        // Modul NEMÁ sections → fallback na 2-level (modul → tiles)
                         <ul className="sidebar__sublist">
                           {m.tiles!.map((t) => {
                             const tileHref = `/modules/${m.id}`
@@ -405,8 +406,7 @@ export default function Sidebar({
                                     </span>
                                   )}
                                   <span className="sidebar__sublabel">
-                                    {t.label}
-                                  </span>
+                                    {t.label}</span>
                                 </Link>
                               </li>
                             )
