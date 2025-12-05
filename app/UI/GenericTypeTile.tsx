@@ -92,10 +92,7 @@ export default function GenericTypeTile({
   // Map sort_order → počet výskytů (počítáme z položek + ZROVNA EDITOVANÉHO formuláře)
   const sortOrderCounts = useMemo(() => {
     const counts = new Map<number, number>()
-  const duplicateSortOrderMessage = hasDuplicateSortOrder
-    ? 'Toto pořadí už používá jiná položka. Upravte ho, nebo později použijeme automatické přečíslování.'
-    : null
-
+  
     // existující položky
     items.forEach((it) => {
       const n = getItemSortOrder(it)
@@ -126,7 +123,10 @@ export default function GenericTypeTile({
   // Aktuální formulář má duplicitní pořadí?
   const hasDuplicateSortOrder =
     currentSortOrder !== undefined && duplicateSortOrders.has(currentSortOrder)
-
+  const duplicateSortOrderMessage = hasDuplicateSortOrder
+    ? 'Toto pořadí už používá jiná položka. Upravte ho, nebo později použijeme automatické přečíslování.'
+    : null
+  
   // ---------------------------------------------------------------------------
   // Načtení dat
   // ---------------------------------------------------------------------------
