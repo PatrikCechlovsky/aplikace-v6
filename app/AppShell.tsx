@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
 import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
@@ -54,6 +55,8 @@ type AppShellProps = {
 }
 
 export default function AppShell({ initialModuleId = null }: AppShellProps) {
+  const router = useRouter()
+
   // 🔐 Stav autentizace
   const [authLoading, setAuthLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -223,6 +226,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setUser(null)
     setActiveModuleId(null)
     setActiveSelection(null)
+    router.push('/')
   }
 
   // Klik v Sidebaru → změna aktivního modulu / sekce / tile
@@ -231,11 +235,20 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setActiveSelection(selection)
   }
 
-  // Klik na HomeButton → návrat na dashboard
+  // 🏠 Klik na HomeButton → kontrola rozdělané práce + návrat na dashboard (/)
   function handleHomeClick() {
     if (!isAuthenticated) return
+
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        'Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?',
+      )
+      if (!confirmLeave) return
+    }
+
     setActiveModuleId(null)
     setActiveSelection(null)
+    router.push('/') // hlavní stránka apky (app/page.tsx)
   }
 
   // 🧩 Hlavní obsah (blok 6 – Content)
@@ -363,10 +376,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         const tile = activeModule.tiles.find(
           (t) => t.id === selection.tileId,
         )
-      
+
         if (tile) {
           const TileComponent = tile.component
-      
+
           // Nadpis + popis si řeší samotná tile (SubjectTypesTile),
           // tady už nic dalšího nevykreslujeme, aby se to neduplikovalo.
           return (
