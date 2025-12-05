@@ -419,7 +419,9 @@ body {
 .generic-type__swatch--disabled .generic-type__swatch-inner {
   box-shadow: none;
 }
-
+.generic-type__row--duplicate-order {
+  background-color: rgba(239, 68, 68, 0.08); /* jemná červená */
+}
 /* -------------------------------------------------
    UI motivy (theme)
    Přepínají se přes className na <body>: theme-light, theme-dark, ...
