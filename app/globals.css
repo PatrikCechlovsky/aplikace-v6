@@ -411,6 +411,15 @@ body {
     padding: 12px;
   }
 }
+.generic-type__swatch--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.generic-type__swatch--disabled .generic-type__swatch-inner {
+  box-shadow: none;
+}
+
 /* -------------------------------------------------
    UI motivy (theme)
    Přepínají se přes className na <body>: theme-light, theme-dark, ...
