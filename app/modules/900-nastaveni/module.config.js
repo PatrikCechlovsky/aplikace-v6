@@ -46,7 +46,7 @@ export default {
     {
       id: 'subject-types',
       label: 'Typy subjektů',
-      icon: 'question',  // nebo vytvoř novou ikonu např. "subject-type"
+      icon: 'list',  // nebo vytvoř novou ikonu např. "subject-type"
       sectionId: 'types-settings',
       component: SubjectTypesTile
     },
