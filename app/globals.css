@@ -281,15 +281,11 @@ body {
   white-space: nowrap;
 }
 
-/* třetí úroveň – seznam tiles */
-position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 32px; /* základní odsazení textu */
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
+/* třetí úroveň – seznam tiles (např. „Typy subjektů“) */
+.sidebar__sublist {
+  list-style: none;
+  margin: 2px 0 4px;
+  padding-left: 0;
 }
 
 /* řádek třetí úrovně */
@@ -298,24 +294,27 @@ position: relative;
   margin: 0;
 }
 
-/* odkaz třetí úrovně – VĚTŠÍ odsazení než sekce */
+/* odkaz třetí úrovně – text + ikona */
 .sidebar__sublink {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px 4px 48px;  /* ← ODSAZENÍ 3. ÚROVNĚ */
+  padding: 4px 8px 4px 32px;  /* odsazení třetí úrovně */
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
 }
-/* falešná (neviditelná) šipka pro zarovnání se 2. úrovní */
+
+/* falešná neviditelná šipka kvůli zarovnání se 2. úrovní */
 .sidebar__sublink::before {
-  content: '▸';       /* stejný znak jako u šipek */
-  opacity: 0;         /* neviditelná */
-  width: 16px;        /* šířka šipky */
+  content: '▸';      /* stejná šipka jako u vyšších úrovní */
+  opacity: 0;        /* neviditelná */
+  width: 18px;       /* stejná šířka jako .sidebar__toggle */
   display: inline-block;
-  margin-right: 8px;  /* mezera mezi „šipkou“ a ikonou/texte m */
+  margin-right: 2px;
 }
+
 .sidebar__subitem--active .sidebar__sublink {
   background: #eef2ff;
 }
@@ -327,6 +326,7 @@ position: relative;
 .sidebar__sublabel {
   font-size: 13px;
 }
+
 
 /* 3 – Breadcrumbs */
 .breadcrumbs {
