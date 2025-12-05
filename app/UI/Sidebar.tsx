@@ -58,15 +58,15 @@ type SidebarProps = {
   disabled?: boolean
   hasUnsavedChanges?: boolean
   activeModuleId?: string | null
-  activeSelection?: SidebarSelection | null
+  activeSelection?: SidebarSelection | null   // ✅ přidané
   onModuleSelect?: (selection: SidebarSelection) => void
 }
 
 export default function Sidebar({
-  disabled = false,
+    disabled = false,
   hasUnsavedChanges = false,
   activeModuleId = null,
-  activeSelection = null,
+  activeSelection = null,          // ✅ přidané
   onModuleSelect,
 }: SidebarProps) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
