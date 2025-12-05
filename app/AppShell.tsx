@@ -363,25 +363,25 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         const tile = activeModule.tiles.find(
           (t) => t.id === selection.tileId,
         )
-
+      
         if (tile) {
           const TileComponent = tile.component
-
+      
+          // Nadpis + popis si řeší samotná tile (SubjectTypesTile),
+          // tady už nic dalšího nevykreslujeme, aby se to neduplikovalo.
           return (
             <div className="content">
-              <h2>{activeModule.label}</h2>
               <section
                 className="content__section"
                 aria-label={tile.label}
               >
-                <h3 className="content__section-title">{tile.label}</h3>
                 <TileComponent />
               </section>
             </div>
           )
         }
       }
-    }
+
 
     // 🧩 Výchozí chování pro ostatní moduly – zobrazíme všechny tiles
     if (activeModule.tiles && activeModule.tiles.length > 0) {
