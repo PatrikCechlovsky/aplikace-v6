@@ -81,23 +81,33 @@ export default function GenericTypeTile({
     return Number.isFinite(item.sort_order) ? item.sort_order : undefined
   }
 
+  // pořadí z formuláře (i když ještě není uložené)
   const currentSortOrder =
     typeof form.sort_order === 'number' && Number.isFinite(form.sort_order)
       ? form.sort_order
       : undefined
 
-  // Map sort_order → počet výskytů
+  // Map sort_order → počet výskytů (počítáme z položek + ZROVNA EDITOVANÉHO formuláře)
   const sortOrderCounts = useMemo(() => {
     const counts = new Map<number, number>()
 
+    // existující položky
     items.forEach((it) => {
       const n = getItemSortOrder(it)
       if (n == null) return
       counts.set(n, (counts.get(n) ?? 0) + 1)
     })
 
+    // aktuální hodnota ve formuláři se započítá navíc
+    if (currentSortOrder !== undefined) {
+      counts.set(
+        currentSortOrder,
+        (counts.get(currentSortOrder) ?? 0) + 1,
+      )
+    }
+
     return counts
-  }, [items])
+  }, [items, currentSortOrder])
 
   // Set všech "problémových" pořadí (kde count > 1)
   const duplicateSortOrders = useMemo(() => {
@@ -524,10 +534,19 @@ export default function GenericTypeTile({
                   {visibleItems.map((item) => {
                     const isSelected = item.code === selectedCode
                     const isActive = item.active ?? true
+
+                    const itemSort = getItemSortOrder(item)
+                    const rowHasDuplicateOrder =
+                      itemSort !== undefined &&
+                      duplicateSortOrders.has(itemSort)
+
                     const rowClassNames = [
                       'generic-type__row',
                       isSelected ? 'generic-type__row--selected' : '',
                       !isActive ? 'generic-type__row--archived' : '',
+                      rowHasDuplicateOrder
+                        ? 'generic-type__row--duplicate-order'
+                        : '',
                     ]
                       .filter(Boolean)
                       .join(' ')
@@ -535,10 +554,6 @@ export default function GenericTypeTile({
                     const iconSymbol = item.icon
                       ? getIcon(item.icon as IconKey)
                       : ''
-
-                    const rowHasDuplicateOrder =
-                      typeof item.sort_order === 'number' &&
-                      duplicateSortOrders.has(item.sort_order)
 
                     return (
                       <tr
@@ -570,14 +585,7 @@ export default function GenericTypeTile({
                         </td>
 
                         {/* Pořadí */}
-                        <td
-                          className={
-                            'generic-type__cell generic-type__cell--small' +
-                            (rowHasDuplicateOrder
-                              ? ' generic-type__cell--duplicate-order'
-                              : '')
-                          }
-                        >
+                        <td className="generic-type__cell generic-type__cell--small">
                           {item.sort_order ?? ''}
                         </td>
 
