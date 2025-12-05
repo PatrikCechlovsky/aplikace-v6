@@ -22,6 +22,7 @@ interface SidebarTile {
   id: string
   label: string
   sectionId?: string | null
+  icon?: string | null
 }
 
 /**
@@ -30,6 +31,7 @@ interface SidebarTile {
 interface ModuleSection {
   id: string
   label: string
+  icon?: string | null
 }
 
 /**
@@ -58,15 +60,15 @@ type SidebarProps = {
   disabled?: boolean
   hasUnsavedChanges?: boolean
   activeModuleId?: string | null
-  activeSelection?: SidebarSelection | null   // ✅ přidané
+  activeSelection?: SidebarSelection | null
   onModuleSelect?: (selection: SidebarSelection) => void
 }
 
 export default function Sidebar({
-    disabled = false,
+  disabled = false,
   hasUnsavedChanges = false,
   activeModuleId = null,
-  activeSelection = null,          // ✅ přidané
+  activeSelection = null,
   onModuleSelect,
 }: SidebarProps) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
@@ -98,6 +100,7 @@ export default function Sidebar({
               ? conf.sections.map((s: any) => ({
                   id: s.id,
                   label: s.label ?? s.id,
+                  icon: s.icon ?? null,
                 }))
               : undefined,
             tiles: Array.isArray(conf.tiles)
@@ -105,6 +108,7 @@ export default function Sidebar({
                   id: t.id,
                   label: t.label ?? t.id,
                   sectionId: t.sectionId ?? null,
+                  icon: t.icon ?? null,
                 }))
               : [],
           }
@@ -123,8 +127,7 @@ export default function Sidebar({
     loadModules()
   }, [])
 
-  // Když se změní aktivní modul (např. po kliknutí v sidebaru),
-  // zajistíme, že jeho menu bude rozbalené.
+  // Když se změní aktivní modul, rozbalíme ho
   useEffect(() => {
     if (!activeModuleId) return
 
@@ -241,13 +244,12 @@ export default function Sidebar({
                       className="sidebar__link"
                       onClick={(e) => {
                         handleSelect({ moduleId: m.id }, e)
-                        // po kliknutí na modul ho i rozbalíme
                         if (!isExpanded) {
                           toggleModule(m.id)
                         }
                       }}
                     >
-                      {showIcons && (
+                      {showIcons && m.icon && (
                         <span className="sidebar__icon">
                           {getIcon(m.icon as any)}
                         </span>
@@ -293,30 +295,35 @@ export default function Sidebar({
                                   }}
                                 >
                                   {sectionTiles.length > 0 && (
-                                      <button
-                                        type="button"
-                                        className={
-                                          'sidebar__section-toggle' +
-                                          (isSectionOpen ? ' sidebar__section-toggle--open' : '')
-                                        }
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          toggleSection(section.id)
-                                       }}
+                                    <button
+                                      type="button"
+                                      className={
+                                        'sidebar__section-toggle' +
+                                        (isSectionOpen
+                                          ? ' sidebar__section-toggle--open'
+                                          : '')
+                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        toggleSection(section.id)
+                                      }}
                                     >
                                       ▸
                                     </button>
                                   )}
-                                  {/* 📘 Ikona sekce */}
-                                  <span className="sidebar__section-icon">
-                                    {getIcon('book')}
-                                  </span>
+
+                                  {showIcons && section.icon && (
+                                    <span className="sidebar__section-icon">
+                                      {getIcon(section.icon as any)}
+                                    </span>
+                                  )}
+
                                   <span className="sidebar__section-label">
                                     {section.label}
                                   </span>
                                 </div>
 
-                                {/* 3. úroveň – tiles v sekci (jen když je sekce rozbalená) */}
+                                {/* 3. úroveň – tiles v sekci */}
                                 {isSectionOpen && sectionTiles.length > 0 && (
                                   <ul className="sidebar__sublist">
                                     {sectionTiles.map((t) => {
@@ -347,9 +354,9 @@ export default function Sidebar({
                                               )
                                             }}
                                           >
-                                            {showIcons && (
+                                            {showIcons && t.icon && (
                                               <span className="sidebar__subicon">
-                                                {getIcon('dot' as any)}
+                                                {getIcon(t.icon as any)}
                                               </span>
                                             )}
                                             <span className="sidebar__sublabel">
@@ -366,7 +373,7 @@ export default function Sidebar({
                           })}
                         </ul>
                       ) : (
-                        // Modul NEMÁ sections → fallback na 2-level (modul → tiles)
+                        // Modul NEMÁ sections → 2-level (modul → tiles)
                         <ul className="sidebar__sublist">
                           {m.tiles!.map((t) => {
                             const tileHref = `/modules/${m.id}`
@@ -392,9 +399,9 @@ export default function Sidebar({
                                     )
                                   }}
                                 >
-                                  {showIcons && (
+                                  {showIcons && t.icon && (
                                     <span className="sidebar__subicon">
-                                      {getIcon('dot' as any)}
+                                      {getIcon(t.icon as any)}
                                     </span>
                                   )}
                                   <span className="sidebar__sublabel">
