@@ -246,7 +246,11 @@ body {
 .sidebar__section-toggle--open {
   transform: rotate(90deg) translateY(1px); /* stejná rotace */
 }
-
+.sidebar__section-icon {
+  font-size: 16px;       /* stejná velikost jako modulové ikony */
+  display: flex;
+  align-items: center;
+}
 /* Label sekce */
 .sidebar__section-label {
   font-size: 14px;
