@@ -1,55 +1,63 @@
 # /docs/04-modules.md
-## Popis: Tento dokument popisuje modulární systém aplikace, strukturu modulů, jejich účel, konfiguraci a stav implementace.
+## Popis: Kompletní specifikace modulového systému, struktury modulů, konfigurace, načítání, dynamiky a pravidel.
 ---
 
-# 04 – Modulový systém
-
-## 1. Úvod: Proč moduly?
-
-Aplikace Pronajímatel v6 je navržena jako modulární systém, kde každá funkční oblast (Subjekty, Nemovitosti, Smlouvy, Platby…) existuje jako samostatný modul.
-
-Díky tomu:
-- UI je přehledné
-- vývoj může probíhat nezávisle
-- oprávnění se dají řídit na úrovni modulů
-- modul lze zapnout/vypnout
-- systém je připravený na budoucí rozšíření
+# 04 – MODULES  
+*(Finální konsolidovaná verze)*
 
 ---
 
-## 2. Struktura modulu (filesystem)
+# 1. ÚVOD
 
-Každý modul se nachází v cestě:
+Modulový systém je jedním z nejdůležitějších pilířů aplikace **Pronajímatel v6**.  
+Každá funkční oblast aplikace existuje jako *samostatný modul*, který:
+
+- má vlastní adresář,  
+- vlastní konfiguraci,  
+- vlastní formuláře a přehledy,  
+- vlastní dlaždice,  
+- a může mít i vlastní logiku.
+
+Cílem této architektury je:
+
+- snadné přidávání nových funkcí,  
+- přehlednost,  
+- oddělení jednotlivých částí aplikace,  
+- možnost budoucího rozšíření,  
+- a jasná kontrola nad CommonActions a oprávněními.
+
+---
+
+# 2. STRUKTURA MODULŮ
+
+Každý modul má vlastní složku ve formátu:
 
 ```
-app/modules/<id>-<nazev>/
+app/modules/<id>-<nazev-modulu>/
 ```
 
-Obsahuje minimálně:
+Příklad:
+
+```
+app/modules/040-nemovitosti/
+```
+
+Uvnitř modulu najdeme:
 
 ```
 module.config.js
-overview/
-forms/
 tiles/
+forms/
+overview/
 ```
-
-### Význam složek
-
-- **module.config.js** – hlavní konfigurační soubor
-- **overview/** – seznamy, přehledy
-- **forms/** – formuláře
-- **tiles/** – detailní pohledy, typy, nastavení
-
-Modul může obsahovat jen to, co potřebuje. Flexibilní architektura.
 
 ---
 
-## 3. module.config.js – povinný základ modulu
+## 2.1 module.config.js
 
-Každý modul musí obsahovat konfigurační objekt:
+Každý modul má vlastní konfiguraci ve formě:
 
-```
+```js
 export default {
   id: '040-nemovitosti',
   label: 'Nemovitosti',
@@ -57,164 +65,222 @@ export default {
   order: 40,
   enabled: true,
 
-  // připravené rozšíření:
+  // Budoucí rozšíření:
   // commonActions: { overview: [...], detail: [...], form: [...] }
+  // permissions: { roleA: [...], roleB: [...] }
 }
 ```
 
-### Účel vlastností
+### Povinné prvky:
 
-| Vlastnost | Význam |
-|----------|--------|
-| `id` | Unikátní identifikátor modulu |
-| `label` | Zobrazený název |
-| `icon` | Ikona v sidebaru |
-| `order` | Určuje pořadí v navigaci |
-| `enabled` | Aktivace/deaktivace modulu |
-| `commonActions` | (V2) akce pro seznamy, detaily a formuláře |
+- **id** – unikátní identifikátor modulu  
+- **label** – název modulu  
+- **icon** – ikona použitá v Sidebaru  
+- **order** – pořadí v Sidebaru  
+- **enabled** – zda je modul aktivní  
 
----
+### Nepovinné / plánované prvky:
 
-## 4. Dynamické načítání modulů
-
-Moduly se nenačítají staticky.
-
-Sidebar načítá:
-1. registry modulů,
-2. filtruje `enabled === true`,
-3. třídí podle `order`,
-4. zobrazuje ikonu a název.
-
-Klik → změní `activeModuleId` → Content Engine načte přehled/detaily/formuláře modulu.
-
-Díky tomu UI neví nic o konkrétních modulech — funguje jako framework.
+- `commonActions` – dynamická konfigurace akcí  
+- `permissions` – restrikce podle role  
+- `sections` – vnitřní části modulu  
 
 ---
 
-## 5. Seznam modulů 010–900
+## 2.2 tiles/
 
-### 010 – Správa uživatelů
-- identity, metadata
-- role uživatele
-- do budoucna: nastavení profilu, audit log
+Složka obsahuje:
 
-### 020 – Můj účet
-- základní informace o uživateli
-- změna hesla, 2FA (budoucí)
+- definice dlaždic modulu  
+- seznamy typů  
+- přehledy typů  
+- vizuální vstupní bod pro modul  
 
-### 030 – Pronajímatelé (Subjekty)
-- fyzické a právnické osoby
-- kontaktní údaje
-- role subjektu
-- napojení na další moduly
-
-### 040 – Nemovitosti
-- budovy, domy, objekty
-- základní údaje
-- propojení na jednotky, měřidla
-
-### 050 – Jednotky
-- byty, kanceláře, komerční prostory
-- kapacita, dispozice
-- propojení na nájemníky
-
-### 060 – Nájemníci
-- osoby nebo firmy
-- kontakt, vztah k jednotce
-- možnost více nájemníků na jednotku
-
-### 070 – Smlouvy
-- nájemní smlouvy
-- dodatky, ukončení
-- plán: automatická PDF generace
-
-### 080 – Platby
-- nájemné, zálohy, úhrady
-- QR platba (v přípravě)
-- účetní exporty
-
-### 090 – Finance
-- předpisy plateb
-- vyúčtování
-- agregace dat z měřidel a služeb
-
-### 100 – Měřidla
-- typy měřidel
-- odečty
-- návaznost na jednotky a služby
-
-### 110 – Dokumenty
-- ukládání PDF, obrázků
-- emailové šablony
-- auditní stopa komunikace
-
-### 120 – Komunikace
-- historie emailů
-- připravované automatické notifikace
-
-### 900 – Nastavení
-Nejrozsáhlejší modul, aktuálně ve vývoji:
-
-- typy a číselníky
-- pořadí položek
-- barevné schéma
-- ikony
-- konfigurace UI
-- GenericTypeTile komponenta
-
-Modul 900 je centrální místo pro nastavení celé aplikace.
+Dlaždice představují hlavní „výchozí akce“.
 
 ---
 
-## 6. Napojení modulů na UI
+## 2.3 forms/
 
-Moduly se automaticky napojují na:
+Obsahuje:
 
-- Sidebar — navigace
-- Breadcrumbs — kontext
-- CommonActions — akce podle typu obrazovky
-- Content Engine — přehled/detaily/formuláře
-
-Modul dodává pouze logiku a obrazovky.  
-UI framework zajistí zbytek.
+- detailní formuláře  
+- editovací formuláře  
+- logiku validace  
+- konektory pro formStateManager  
 
 ---
 
-## 7. Budoucí rozšíření modulů
+## 2.4 overview/
 
-### 7.1 CommonActions v2
-Moduly si budou moci definovat:
-- akce v přehledu,
-- akce v detailu,
-- akce ve formuláři,
-- podmínky viditelnosti (role, výběr záznamu, dirty state).
+Obsahuje:
 
-### 7.2 Nové moduly v plánu
-- **Helpdesk / Servisní požadavky**
-- **Integrace (banky, energie)**
-- **Reporty (PDF generátor)**
-- **Workflow (automatické procesy)**
+- tabulkové přehledy  
+- seznamy  
+- filtry  
+- napojení na CommonActions (requiresSelection)  
 
 ---
 
-## 8. Poznámky k zařazení (uchováváme vše)
+# 3. SEZNAM VŠECH MODULŮ (AKTUÁLNÍ STAV)
 
-- modul Dokumenty bude sdílet UI pro emaily
-- některé moduly jsou závislé na datovém modelu (unit_types, subject_types…)
-- GenericTypeTile bude používán v modulech jako standardní formulář typů
-- modulární systém je navržen pro multi-tenant provoz
+Z aplikace:
+
+```
+010 – Správa uživatelů
+020 – Můj účet
+030 – Pronajímatelé
+040 – Nemovitosti
+050 – Nájemníci
+060 – Smlouvy
+070 – Služby
+080 – Platby
+090 – Finance
+100 – Měřidla
+110 – Dokumenty
+900 – Nastavení
+```
+
+Každý z těchto modulů bude mít vlastní dokumentaci (ve /docs/modules/), až dokončíme hlavní systém dokumentace.
 
 ---
 
-## 9. Závěr
+# 4. MODULOVÝ ENGINE
 
-Modulový systém je klíčový stavební prvek aplikace.
+Modulový engine:
 
-Umožňuje:
-- rychlý vývoj,
-- jasnou strukturu,
-- lepší bezpečnost (oprávnění),
-- postupné rozšiřování,
-- oddělení UI od logiky.
+- načítá všechny moduly  
+- filtruje podle `enabled === true`  
+- seřadí podle `order`  
+- vrací seznam pro Sidebar  
+- předává aktivní modul Content engine  
+- bude řídit dynamické CommonActions  
+- bude poskytovat data pro Breadcrumbs  
 
-Tento dokument slouží jako přehled a referenční příručka pro všechny moduly v systému.
+Zcela zásadní prvek celého UI.
+
+---
+
+# 5. DYNAMICKÉ NAČÍTÁNÍ MODULŮ
+
+Moduly nejsou hardcodované.  
+Jsou dynamicky zjišťovány:
+
+```
+import MODULE_SOURCES from '@/module-config'
+```
+
+Modulový engine nahrává:
+
+- ID  
+- popisky  
+- icon  
+- definice dlaždic  
+- definice formulářů  
+
+---
+
+# 6. COMMON ACTIONS A MODULY
+
+Budoucí rozšíření umožní, aby modul definoval svoje akce:
+
+## Příklad:
+
+```js
+commonActions: {
+  overview: ['add', 'delete'],
+  detail: ['edit', 'archive'],
+  form: ['save', 'cancel'],
+}
+```
+
+Aplikace pak:
+
+- vykreslí pouze akce povolené modulem  
+- zkontroluje, zda uživatel má oprávnění  
+- deaktivuje akce při chybějící roli nebo stavu  
+
+---
+
+# 7. PERMISSIONS & MODULES (PLÁN)
+
+Každý modul může obsahovat:
+
+```
+permissions: {
+  role_superadmin: ['view', 'edit', 'delete'],
+  role_owner: ['view'],
+}
+```
+
+Budoucí vrstvy services:
+
+- permissionsService  
+- sessionRoleProvider  
+
+umožní:
+
+- kontrolu oprávnění v UI  
+- dynamické přizpůsobení Sidebaru  
+- možnost skrýt celé moduly  
+
+---
+
+# 8. STAVY MODULŮ
+
+Každý modul může být ve stavech:
+
+### Aktivní  
+zobrazuje se v Sidebaru, lze otevřít.
+
+### Neaktivní  
+`enabled: false` — skrývá se v Sidebaru.
+
+### Podmíněný  
+modul může být skryt:
+
+- podle role  
+- podle licence (budoucnost)  
+- podle konfigurace tenancy (budoucnost)  
+
+---
+
+# 9. STRUKTURA MODULŮ DO BUDOUCNA
+
+Plánujeme:
+
+```
+app/modules/
+  040-nemovitosti/
+    config/
+    forms/
+    views/
+    tiles/
+    services/
+    components/
+```
+
+Tato struktura podporuje:
+
+- oddělení UI od logiky  
+- lepší přehlednost  
+- možnost generování modulů z šablon  
+
+---
+
+# 10. ZÁVĚR
+
+Modulový systém je základním stavebním kamenem aplikace.  
+Zajišťuje:
+
+- rozšiřitelnost  
+- strukturu  
+- pořádek  
+- logickou izolaci  
+- napojení na UI systém  
+
+Je navržen tak, aby mohl růst s aplikací po mnoho let.
+
+---
+
+*Konec BLOKU A – finální verze dokumentu 04.*
