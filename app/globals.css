@@ -312,7 +312,7 @@ body {
   opacity: 0;        /* neviditelná */
   width: 18px;       /* stejná šířka jako .sidebar__toggle */
   display: inline-block;
-  margin-right: 2px;
+  margin-right: 4px;
 }
 
 .sidebar__subitem--active .sidebar__sublink {
