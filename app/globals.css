@@ -955,6 +955,60 @@ body.theme-orange .home-button {
 .palette-preview--landlord.primary { background: #a855f7; }
 .palette-preview--landlord.soft { background: #f3e8ff; }
 .palette-preview--landlord.accent { background: #7c3aed; }
+/* Základní proměnné – můžeš upravit podle sebe */
+:root {
+  --color-bg: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-border: #e5e7eb;
+  --color-primary: #2563eb;
+}
+
+/* Light / dark mód – podle classy na .layout */
+.layout.theme-light {
+  --color-bg: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-border: #e5e7eb;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.layout.theme-dark {
+  --color-bg: #020617;
+  --color-surface: #020617;
+  --color-text: #f9fafb;
+  --color-border: #1f2937;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Akcenty – jen nastaví primary barvu */
+.layout.accent-blue {
+  --color-primary: #2563eb;
+}
+
+.layout.accent-green {
+  --color-primary: #16a34a;
+}
+
+.layout.accent-landlord {
+  --color-primary: #a855f7;
+}
+
+/* A teď použij proměnné na klíčových místech (tlačítka, panely, atd.) */
+.generic-type,
+.settings-tile {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+button,
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
 
 /* ===========================
    GenericTypeTile – číselníky
