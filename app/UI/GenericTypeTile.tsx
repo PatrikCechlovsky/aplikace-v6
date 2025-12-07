@@ -644,17 +644,6 @@ export default function GenericTypeTile({
                 />
                 Zobrazit archivované
               </label>
-
-              <button
-                type="button"
-                className="generic-type__button generic-type__button-add-top"
-                onClick={requestNew}
-              >
-                <span className="generic-type__button-icon">
-                  {getIcon('add' as IconKey)}
-                </span>
-                <span className="generic-type__button-text">Nový typ</span>
-              </button>
             </div>
           </div>
 
