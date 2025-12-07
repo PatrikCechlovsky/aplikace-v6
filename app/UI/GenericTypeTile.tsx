@@ -916,7 +916,7 @@ export default function GenericTypeTile({
                 <input
                   type="number"
                   readOnly
-                  className="generic-type__input"
+                  className="generic-type__input generic-type__input--order"
                   value={
                     typeof form.sort_order === 'number'
                       ? String(form.sort_order)
