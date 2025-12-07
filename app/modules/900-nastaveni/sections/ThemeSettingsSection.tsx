@@ -6,8 +6,11 @@
 'use client'
 
 import ThemeSettingsTile from '../tiles/ThemeSettingsTile'
+import { useAuth } from '@/app/auth/useAuth' // PŘÍKLAD – nahraď vlastním hookem
 
 export default function ThemeSettingsSection() {
+  const { user } = useAuth() // nebo odkud bereš přihlášeného uživatele
+
   return (
     <section className="space-y-4">
       <header>
@@ -17,9 +20,8 @@ export default function ThemeSettingsSection() {
         </p>
       </header>
 
-      {/* Tady prostě přímo vykreslíme náš tile */}
       <div className="border rounded-lg p-4 bg-white">
-        <ThemeSettingsTile />
+        <ThemeSettingsTile userId={user?.id} />
       </div>
     </section>
   )
