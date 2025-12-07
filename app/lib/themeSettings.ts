@@ -4,6 +4,10 @@ import { supabase } from './supabaseClient' // cesta podle tebe
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 
+export function applyThemeToLayout(settings: ThemeSettings) { ... }
+
+export function loadThemeFromLocalStorage(): ThemeSettings { ... }
+
 // 🎨 NOVÝ seznam akcentů
 export type ThemeAccent = 'neutral' | 'grey' | 'blue' | 'green' | 'purple'
 
