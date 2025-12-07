@@ -722,6 +722,15 @@ body {
 .generic-type__row--duplicate-order {
   background-color: rgba(239, 68, 68, 0.08);
 }
+/* Vybraný řádek v horním seznamu číselníku */
+.generic-type__row--selected {
+  background-color: var(--color-primary-soft);
+}
+
+.generic-type__row--selected:hover {
+  background-color: var(--color-primary-soft);
+}
+
 
 /* Formulář dole */
 .generic-type__form {
