@@ -1,5 +1,5 @@
 // FILE: app/lib/themeSettings.ts
-import { supabase } from '/supabaseClient' // 👈 uprav podle své cesty
+import { supabase } from './supabaseClient' // 👈 uprav podle své cesty
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 export type ThemeAccent = 'blue' | 'green' | 'landlord'
