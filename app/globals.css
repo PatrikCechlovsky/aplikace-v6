@@ -751,6 +751,16 @@ body {
   font-size: 12px;
 }
 
+/* výchozí zarovnání vlevo */
+.generic-type__cell {
+  text-align: left;
+}
+
+/* jen označené sloupce se zarovnají na střed */
+.generic-type__cell--center {
+  text-align: center !important;
+}
+
 /* Jen řádky (tbody) mají barevný badge přes celou šířku */
 .generic-type__table tbody .generic-type__cell--name {
   padding: 0 !important; /* kolem badge žádná mezera */
