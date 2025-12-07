@@ -5,6 +5,7 @@ import SubjectTypesTile from './tiles/SubjectTypesTile'
 import TypesSettingsSection from './sections/TypesSettingsSection'
 import ThemeSettingsSection from './sections/ThemeSettingsSection'
 import IconSettingsSection from './sections/IconSettingsSection'
+import ThemeSettingsTile from './tiles/ThemeSettingsTile'
 
 export default {
   id: '900-nastaveni',
@@ -49,6 +50,14 @@ export default {
       icon: 'list',  // nebo vytvoř novou ikonu např. "subject-type"
       sectionId: 'types-settings',
       component: SubjectTypesTile
+    },
+    tiles: [
+    {
+      id: 'theme-settings',
+      label: 'Barevné zobrazení',
+      icon: 'palette', // můžeš změnit na nějaký vlastní
+      component: ThemeSettingsTile,
+      order: 20, // libovolné pořadí mezi ostatními
     },
     // později třeba:
     // { id: 'contract-types', label: 'Typy smluv', sectionId: 'types-settings', ... }
