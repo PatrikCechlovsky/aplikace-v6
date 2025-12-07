@@ -1,0 +1,399 @@
+/* app/styles/components/generic-type.css */
+/* =========================================
+   GENERIC TYPE TILE – SPOLEČNÝ FORMULÁŘ PRO TYPY
+   ========================================= */
+
+.generic-type {
+  margin-top: 16px;
+  padding: 0 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.generic-type__header {
+  margin-bottom: 8px;
+}
+
+.generic-type__title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.generic-type__description {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.generic-type__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Horní seznam */
+
+.generic-type__list {
+  background-color: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  padding: 8px 10px 10px;
+}
+
+.generic-type__list-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.generic-type__filter-input {
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  width: 240px;
+  max-width: 100%;
+}
+
+.generic-type__checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.generic-type__list-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.generic-type__table-wrapper {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.generic-type__loading,
+.generic-type__empty {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Tabulka */
+
+.generic-type__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.generic-type__cell {
+  text-align: left;
+  padding: 6px 8px;
+}
+
+.generic-type__cell--center {
+  text-align: center !important;
+}
+
+.generic-type__cell--name {
+  padding: 4px 6px;
+}
+
+.generic-type__table tbody .generic-type__cell--name {
+  padding: 0 !important;
+}
+
+/* Řádek vybraný / duplicita */
+
+.generic-type__row--selected {
+  background-color: var(--color-primary-soft);
+}
+
+.generic-type__row--selected:hover {
+  background-color: var(--color-primary-soft);
+}
+
+.generic-type__row--selected td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.generic-type__row--selected td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.generic-type__row--duplicate-order {
+  background-color: rgba(239, 68, 68, 0.08);
+}
+
+/* Název – barevný badge podle barvy ze Supabase */
+
+.generic-type__name-badge {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.generic-type__name-main {
+  padding: 4px 8px;
+  display: block;
+}
+
+/* Barva v seznamu (HEX) */
+
+.generic-type__cell--color {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+/* Formulář dole */
+
+.generic-type__form {
+  background-color: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  padding: 10px 12px 12px;
+}
+
+/* Hlavička formuláře: název vlevo, tlačítka vpravo */
+
+.generic-type__form-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.generic-type__form-title {
+  margin: 0;
+}
+
+.generic-type__form-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.generic-type__form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+@media (max-width: 900px) {
+  .generic-type__form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .generic-type__form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Obecné fieldy */
+
+.generic-type__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.generic-type__label {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.generic-type__required {
+  color: #dc2626;
+}
+
+.generic-type__input,
+.generic-type__textarea {
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+
+.generic-type__textarea {
+  resize: vertical;
+}
+
+/* Pořadí – krátké pole + šipky vedle */
+
+.generic-type__order-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.generic-type__input--order {
+  max-width: 60px;
+}
+
+/* schovat vestavěné šipky number inputu */
+.generic-type__input--order::-webkit-inner-spin-button,
+.generic-type__input--order::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.generic-type__input--order {
+  -moz-appearance: textfield;
+}
+
+.generic-type__order-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.generic-type__order-btn {
+  width: 22px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Paleta barev */
+
+.generic-type__palette {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.generic-type__swatch {
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+}
+
+.generic-type__swatch-inner {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.generic-type__swatch--selected {
+  border-color: #4f46e5;
+}
+
+.generic-type__swatch--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Alerty */
+
+.generic-type__alert-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.generic-type__alert {
+  min-width: 320px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.generic-type__alert--error {
+  background-color: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  color: var(--color-danger-text);
+}
+
+.generic-type__alert--info {
+  background-color: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  color: var(--color-success-text);
+}
+
+.generic-type__alert--warning {
+  background-color: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning-text);
+}
+
+.generic-type__alert-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.generic-type__alert-btn {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 3px 10px;
+  font-size: 12px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+/* Tlačítka (emoji) – bez pill */
+
+.generic-type__button,
+.generic-type__button-add-top,
+.generic-type__button-save-main,
+.generic-type__button-archive,
+.generic-type__alert-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.generic-type__button-icon {
+  font-size: 18px !important;
+  line-height: 1;
+}
+
+.generic-type__button-text {
+  display: none;
+  margin-left: 4px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.generic-type__button--with-label:hover .generic-type__button-text {
+  display: inline-block;
+}
