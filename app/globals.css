@@ -677,6 +677,8 @@ body {
   padding: 5px 8px;
   border-radius: 6px;
   border: 1px solid #d1d5db;
+  width: 240px;   /* zvol jak chceš – 200–300px ideál */
+  max-width: 100%;
   font-size: 13px;
 }
 
