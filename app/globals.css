@@ -800,6 +800,43 @@ body {
   padding: 5px 7px;
   font-size: 13px;
 }
+/* Pořadí – krátké pole + šipky hned vedle */
+.generic-type__order-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.generic-type__input--order {
+  max-width: 60px; /* cca 3 čísla */
+}
+
+/* schovat vestavěné šipky u number inputu */
+.generic-type__input--order::-webkit-inner-spin-button,
+.generic-type__input--order::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.generic-type__input--order {
+  -moz-appearance: textfield;
+}
+
+.generic-type__order-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.generic-type__order-btn {
+  width: 22px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
 
 .generic-type__textarea {
   resize: vertical;
