@@ -746,6 +746,10 @@ body {
 .generic-type__cell--name {
   padding: 4px 6px;
 }
+.generic-type__cell--color {
+  font-family: monospace;
+  font-size: 12px;
+}
 
 /* Jen řádky (tbody) mají barevný badge přes celou šířku */
 .generic-type__table tbody .generic-type__cell--name {
