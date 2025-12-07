@@ -1,3 +1,6 @@
+# /docs/02-architecture.md
+## Popis: Tento dokument obsahuje architekturu aplikace a strukturu systému.
+---
 # 03 – UI systém a komponenty
 
 ## 1. Přehled UI architektury
