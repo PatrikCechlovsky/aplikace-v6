@@ -93,7 +93,7 @@
 }
 
 .relation-pane__item--active {
-  background: var(--color-primary-soft);
+  background: var(--color-selected-row-bg);
 }
 
 .relation-pane__item-secondary {
