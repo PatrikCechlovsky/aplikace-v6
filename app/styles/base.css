@@ -87,25 +87,43 @@ body {
   --color-text-muted: #9ca3af;
 }
 
-/* ACCENT VARIANTY */
+/* 🎨 ACCENTY – 5 barevných rodin */
 
+/* 1) NEUTRAL – „čisté“ bílé UI */
+.layout.accent-neutral {
+  --color-primary: #4f46e5;
+  --color-primary-soft: #e0e7ff;
+  --color-primary-strong: #4338ca;
+}
+
+/* 2) GREY – šedý enterprise vzhled */
+.layout.accent-grey {
+  --color-primary: #6b7280;
+  --color-primary-soft: #e5e7eb;
+  --color-primary-strong: #374151;
+}
+
+/* 3) BLUE – produktová modrá */
 .layout.accent-blue {
   --color-primary: #2563eb;
   --color-primary-soft: #dbeafe;
   --color-primary-strong: #1d4ed8;
 }
 
+/* 4) GREEN – klidná zelená */
 .layout.accent-green {
   --color-primary: #16a34a;
   --color-primary-soft: #dcfce7;
   --color-primary-strong: #15803d;
 }
 
-.layout.accent-landlord {
+/* 5) PURPLE – firemní / značková */
+.layout.accent-purple {
   --color-primary: #a855f7;
   --color-primary-soft: #f3e8ff;
   --color-primary-strong: #7c3aed;
 }
+
 
 /* ZÁKLAD PRO CELÉ ROZHRANÍ */
 
@@ -136,6 +154,180 @@ body {
   --color-selected-row-bg: #f3e8ff;
 }
 .layout.theme-dark.accent-landlord {
+  --color-selected-row-bg: #5b21b6;
+}
+/* =========================================
+   TÉMATA – kombinace (mode + accent)
+   tady barvíme CELÉ UI (pozadí, panely, vybraný řádek)
+   ========================================= */
+
+/* 1) NEUTRAL – výchozí bílé */
+
+.layout.theme-light.accent-neutral {
+  --color-app-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f9fafb;
+  --color-sidebar-bg: #ffffff;
+  --color-actions-bg: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-border-soft: #f3f4f6;
+
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+
+  --color-selected-row-bg: #e5e7ff;
+}
+
+.layout.theme-dark.accent-neutral {
+  --color-app-bg: #020617;
+  --color-surface: #020617;
+  --color-surface-subtle: #0b1120;
+  --color-sidebar-bg: #020617;
+  --color-actions-bg: #0b1120;
+
+  --color-border: #1f2937;
+  --color-border-soft: #111827;
+
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+
+  --color-selected-row-bg: #1e3a8a;
+}
+
+/* 2) GREY – šedé UI */
+
+.layout.theme-light.accent-grey {
+  --color-app-bg: #e5e7eb;
+  --color-surface: #f3f4f6;
+  --color-surface-subtle: #e5e7eb;
+  --color-sidebar-bg: #d1d5db;
+  --color-actions-bg: #e5e7eb;
+
+  --color-border: #cbd5e1;
+  --color-border-soft: #d1d5db;
+
+  --color-text: #111827;
+  --color-text-muted: #4b5563;
+
+  --color-selected-row-bg: #e5e7eb;
+}
+
+.layout.theme-dark.accent-grey {
+  --color-app-bg: #111827;
+  --color-surface: #020617;
+  --color-surface-subtle: #020617;
+  --color-sidebar-bg: #020617;
+  --color-actions-bg: #020617;
+
+  --color-border: #1f2937;
+  --color-border-soft: #020617;
+
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+
+  --color-selected-row-bg: #374151;
+}
+
+/* 3) BLUE – modré UI */
+
+.layout.theme-light.accent-blue {
+  --color-app-bg: #eff6ff;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #e0f2fe;
+  --color-sidebar-bg: #dbeafe;
+  --color-actions-bg: #e0f2fe;
+
+  --color-border: #bfdbfe;
+  --color-border-soft: #dbeafe;
+
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+
+  --color-selected-row-bg: #dbeafe;
+}
+
+.layout.theme-dark.accent-blue {
+  /* dark necháme spíš neutrální, jen selected je modrý */
+  --color-app-bg: #020617;
+  --color-surface: #020617;
+  --color-surface-subtle: #0b1120;
+  --color-sidebar-bg: #020617;
+  --color-actions-bg: #020617;
+
+  --color-border: #1f2937;
+  --color-border-soft: #020617;
+
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+
+  --color-selected-row-bg: #1e3a8a;
+}
+
+/* 4) GREEN – zelené UI */
+
+.layout.theme-light.accent-green {
+  --color-app-bg: #ecfdf5;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #dcfce7;
+  --color-sidebar-bg: #bbf7d0;
+  --color-actions-bg: #dcfce7;
+
+  --color-border: #a7f3d0;
+  --color-border-soft: #bbf7d0;
+
+  --color-text: #064e3b;
+  --color-text-muted: #16a34a;
+
+  --color-selected-row-bg: #dcfce7;
+}
+
+.layout.theme-dark.accent-green {
+  --color-app-bg: #022c22;
+  --color-surface: #020617;
+  --color-surface-subtle: #022c22;
+  --color-sidebar-bg: #022c22;
+  --color-actions-bg: #022c22;
+
+  --color-border: #064e3b;
+  --color-border-soft: #022c22;
+
+  --color-text: #d1fae5;
+  --color-text-muted: #6ee7b7;
+
+  --color-selected-row-bg: #065f46;
+}
+
+/* 5) PURPLE – firemní */
+
+.layout.theme-light.accent-purple {
+  --color-app-bg: #faf5ff;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f3e8ff;
+  --color-sidebar-bg: #e9d5ff;
+  --color-actions-bg: #f3e8ff;
+
+  --color-border: #e9d5ff;
+  --color-border-soft: #f3e8ff;
+
+  --color-text: #4c1d95;
+  --color-text-muted: #7e22ce;
+
+  --color-selected-row-bg: #f3e8ff;
+}
+
+.layout.theme-dark.accent-purple {
+  --color-app-bg: #0b0217;
+  --color-surface: #020617;
+  --color-surface-subtle: #0b0217;
+  --color-sidebar-bg: #0b0217;
+  --color-actions-bg: #0b0217;
+
+  --color-border: #4c1d95;
+  --color-border-soft: #0b0217;
+
+  --color-text: #ede9fe;
+  --color-text-muted: #c4b5fd;
+
   --color-selected-row-bg: #5b21b6;
 }
 
