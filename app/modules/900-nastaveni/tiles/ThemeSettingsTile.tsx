@@ -1,12 +1,17 @@
 'use client'
 // ThemeSettingsTile.tsx
 
+
 import { useEffect, useState } from 'react'
-import type { ThemeMode, ThemeAccent, ThemeSettings } from '@/app/lib/themeSettings'
+import type {
+  ThemeMode,
+  ThemeAccent,
+  ThemeSettings,
+} from '../../../lib/themeSettings'
 import {
   loadThemeSettingsFromSupabase,
   saveThemeSettingsToSupabase,
-} from '@/app/lib/themeSettings'
+} from '../../../lib/themeSettings'
 
 const THEME_STORAGE_KEY = 'pronajimatel_theme'
 
@@ -28,26 +33,31 @@ const PALETTES: { id: ThemeAccent; name: string; description: string }[] = [
   },
 ]
 
-// Aplikace class na root (nebo .layout) – uprav si selector podle projektu
-function applyThemeToDocument(settings: ThemeSettings) {
+// 🔧 Aplikujeme class na hlavní layout (.layout)
+function applyThemeToLayout(settings: ThemeSettings) {
   if (typeof document === 'undefined') return
 
-  const root = document.documentElement // nebo document.querySelector('.layout')
-  root.classList.remove('theme-light', 'theme-dark')
-  root.classList.remove('accent-blue', 'accent-green', 'accent-landlord')
+  const layout = document.querySelector('.layout')
+  if (!layout) return
 
-  const resolvedMode =
+  // smažeme staré class
+  layout.classList.remove('theme-light', 'theme-dark')
+  layout.classList.remove('accent-blue', 'accent-green', 'accent-landlord')
+
+  // vyhodnotíme "auto"
+  const resolvedMode: ThemeMode =
     settings.mode === 'auto'
-      ? (window.matchMedia &&
-          window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light')
+      ? window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
       : settings.mode
 
-  root.classList.add(`theme-${resolvedMode}`)
-  root.classList.add(`accent-${settings.accent}`)
+  layout.classList.add(`theme-${resolvedMode}`)
+  layout.classList.add(`accent-${settings.accent}`)
 }
 
+// čtení z localStorage
 function loadInitialFromLocalStorage(): ThemeSettings {
   if (typeof window === 'undefined') {
     return { mode: 'auto', accent: 'blue' }
@@ -66,35 +76,55 @@ function loadInitialFromLocalStorage(): ThemeSettings {
   }
 }
 
-export default function ThemeSettingsTile({ userId }: { userId?: string }) {
+type Props = {
+  // až doplníme auth, můžeš sem poslat userId a bude se ukládat i do Supabase
+  userId?: string
+}
+
+export default function ThemeSettingsTile({ userId }: Props) {
   const [mode, setMode] = useState<ThemeMode>('auto')
   const [accent, setAccent] = useState<ThemeAccent>('blue')
   const [isSaving, setIsSaving] = useState(false)
 
-  // 1) při prvním načtení – nejdřív lokál, pak Supabase (pokud user)
+  // 1) při načtení komponenty – nejdřív localStorage, pak případně Supabase
   useEffect(() => {
     const local = loadInitialFromLocalStorage()
     setMode(local.mode)
     setAccent(local.accent)
-    applyThemeToDocument(local)
+    applyThemeToLayout(local)
 
-    const fetchFromSupabase = async () => {
-      if (!userId) return
+    if (!userId) return
+
+    let cancelled = false
+
+    ;(async () => {
       const fromDb = await loadThemeSettingsFromSupabase(userId)
+      if (cancelled) return
       setMode(fromDb.mode)
       setAccent(fromDb.accent)
-      applyThemeToDocument(fromDb)
-      window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(fromDb))
-    }
+      applyThemeToLayout(fromDb)
+      try {
+        window.localStorage.setItem(
+          THEME_STORAGE_KEY,
+          JSON.stringify(fromDb),
+        )
+      } catch {
+        /* ignore */
+      }
+    })()
 
-    fetchFromSupabase()
+    return () => {
+      cancelled = true
+    }
   }, [userId])
 
-  // společná funkce – změní state, uloží, přepne theme
+  // společná funkce – okamžitě přepne vzhled + uloží
   const updateSettings = async (next: ThemeSettings) => {
     setMode(next.mode)
     setAccent(next.accent)
-    applyThemeToDocument(next)
+
+    // hned přepnout vzhled
+    applyThemeToLayout(next)
 
     // localStorage
     try {
@@ -103,7 +133,7 @@ export default function ThemeSettingsTile({ userId }: { userId?: string }) {
       /* ignore */
     }
 
-    // Supabase
+    // Supabase – jen když máme userId, jinak se přeskočí
     if (userId) {
       try {
         setIsSaving(true)
@@ -131,6 +161,7 @@ export default function ThemeSettingsTile({ userId }: { userId?: string }) {
         </p>
       </header>
 
+      {/* Režim vzhledu */}
       <div className="settings-tile__section">
         <h2 className="settings-tile__section-title">Režim vzhledu</h2>
         <div className="settings-tile__radio-group">
@@ -167,6 +198,7 @@ export default function ThemeSettingsTile({ userId }: { userId?: string }) {
         </div>
       </div>
 
+      {/* Palety */}
       <div className="settings-tile__section">
         <h2 className="settings-tile__section-title">Barevná paleta</h2>
         <div className="settings-tile__palette-grid">
@@ -191,7 +223,6 @@ export default function ThemeSettingsTile({ userId }: { userId?: string }) {
                 <p className="palette-card__description">
                   {palette.description}
                 </p>
-
                 <div className="palette-card__preview">
                   <span
                     className={`palette-preview palette-preview--${palette.id} primary`}
