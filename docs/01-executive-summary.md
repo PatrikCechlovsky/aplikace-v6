@@ -1,203 +1,230 @@
 # /docs/01-executive-summary.md
-## Popis: Tento dokument stručně shrnuje účel aplikace, klíčové funkce a aktuální stav projektu.
+## Popis: Komplexní shrnutí projektu Pronajímatel v6 – účel aplikace, hodnoty, moduly, technologie, architektura, UI a stav vývoje.
 ---
 
-# 01 – Executive Summary
-*(původní obsah zachován; doplněné bloky jsou přidány níže)*
-
-## 1. O aplikaci
-
-**Pronajímatel v6** je webová aplikace pro správu nájemních vztahů a menšího až středního portfolia nemovitostí.  
-Je to 6. generace systému, přepsaná z původního no-code řešení do moderní modulární architektury (Next.js + Supabase).
-
-Aplikace je navržena tak, aby dlouhodobě zvládla:
-- růst počtu nemovitostí a jednotek,
-- více uživatelů/rolí (pronajímatel, správce, účetní…),
-- přehlednou práci s dokumenty, platbami a vyúčtováním.
-
-Produkční URL:
-- `https://aplikace-v6.vercel.app`  *(pracovní / testovací prostředí)*
+# 01 – EXECUTIVE SUMMARY  
+*(Finální, sjednocená a moderní verze)*
 
 ---
 
-## 2. Co aplikace řeší (hlavní funkcionalita)
+# 1. ÚČEL APLIKACE
 
-Aplikace je modulární – jednotlivé oblasti jsou oddělené do modulů:
+Aplikace **Pronajímatel v6** je profesionální nástroj pro:
 
-- **Pronajímatelé / Subjekty** – evidence právnických i fyzických osob.
-- **Nemovitosti a jednotky** – domy, byty, místnosti, kanceláře…
-- **Nájemníci** – osoby / firmy, které v jednotkách bydlí či používají prostory.
-- **Smlouvy** – nájemní smlouvy, dodatky, ukončení.
-- **Služby a energie** – typy služeb, sazby, měřidla, odečty.
-- **Platby a finance** – nájemné, zálohy, úhrady, párování plateb.
-- **Dokumenty** – smlouvy, přílohy, vyúčtování v PDF.
-- **Komunikace** – e-maily, upozornění, připomínky.
-- **Nastavení (modul 900)** – typy, číselníky, motivy, ikonky, konfigurace.
+- správu nemovitostí  
+- evidenci jednotek  
+- práci s nájemníky  
+- správu smluv  
+- sledování plateb  
+- správu služeb a vyúčtování  
+- evidenci dokumentů  
+- systémovou komunikaci  
 
-Cíl:  
-Umožnit majiteli nebo správci **mít celý životní cyklus nájemního vztahu na jednom místě**, od založení smlouvy, přes sledování plateb, až po vyúčtování a archiv.
+Cílem je poskytnout **centralizovaný, moderní a bezpečný systém**, který zjednoduší práci majitelům, správcům i nájemníkům.
 
----
+Aplikace je navržená jako:
 
-## 3. Pro koho je systém určen
-
-- majitelé menšího a středního portfolia (řádově desítky až stovky jednotek),
-- menší správcovské firmy,
-- techničtí správci a „facility“ role,
-- případně účetní, kteří potřebují přehledné podklady.
-
-Důraz je na:
-- jednoduché ovládání,
-- přehlednost,
-- možnost postupného rozšiřování (moduly, role, typy, číselníky),
-- bezpečnost dat (Supabase, RLS).
+- **modulární**  
+- **škálovatelná**  
+- **uživatelsky konzistentní (6-sekční layout)**  
+- **bezpečná (Supabase Auth + RLS)**  
+- **dlouhodobě rozšiřitelná**  
 
 ---
 
-## 4. Technologie (vysoká úroveň)
+# 2. TECHNOLOGICKÝ ZÁKLAD
 
-- **Next.js 14 (App Router)** – moderní React framework, server components.
-- **React 18** – UI knihovna.
-- **TypeScript** – typová bezpečnost a čitelný kód.
-- **Supabase** – autentizace, databáze, Row Level Security.
-- **Vercel** – build, CI/CD a hosting.
-- **Vlastní UI systém** – 6-sekční layout (Sidebar, HomeButton, Breadcrumbs, HomeActions, CommonActions, Content).
+Aplikace je postavená na:
 
-Detailní technický rozpis je v:
-- `docs/02-architecture.md`
-- `docs/03-ui-system.md`
-- `docs/CODESTYLE.md` (nebo `09-project-rules.md`, až vznikne)
-
----
-
-## 5. Aktuální stav projektu
-
-K dnešnímu stavu je:
-
-- ✅ Hotový základní layout (6 sekcí).
-- ✅ Funkční autentizace přes Supabase (login, logout, session).
-- ✅ UI komponenty: HomeButton, Sidebar, Breadcrumbs, HomeActions, CommonActions v1.
-- ✅ Dynamické načítání modulů (010–900).
-- ✅ Základ formulářového a seznamového UI (ListView, DetailView, GenericTypeTile).
-- ✅ Aktivní modul **900 – Nastavení** (typy, témata, ikony).
-
-Rozpracováno / plánováno:
-
-- ⏳ Role & oprávnění (permission systém nad moduly).
-- ⏳ CommonActions v2 (akce podle modulu, typu, role a stavu formuláře).
-- ⏳ Dynamické breadcrumbs.
-- ⏳ Datový model pro služby, měřidla, vyúčtování.
-- ⏳ Moduly Dokumenty, Komunikace, Platby v plném rozsahu.
-
-Podrobnější rozpis stavu je v:
-- `docs/stav-struktury.md`
-- `docs/todo_list.md`
+- **Next.js 14 (App Router)** – moderní, rychlá architektura
+- **Supabase**:
+  - autentizace
+  - databáze
+  - role-based security (RLS)
+- **TypeScript** – přísná typová kontrola
+- **Modulový systém** – každý funkční celek je samostatná část
+- **UI architektura v 6 sekcích** – konzistentní uživatelské prostředí
 
 ---
 
-## 6. Další kroky (high-level plán)
+# 3. HLAVNÍ MODULY SYSTÉMU
 
-Krátkodobě:
-- dokončit modul 900 – typy, číselníky, konfiguraci UI,
-- doplnit CommonActions v2 a dynamické breadcrumbs,
-- připravit základ modulů Dokumenty, Komunikace a Platby.
+Aplikace obsahuje modulární architekturu, kde každý modul má svou konfiguraci:
 
-Střednědobě:
-- nasadit role a oprávnění (RLS + UI),
-- sjednotit Form Engine (konfigurace polí z jednoho místa),
-- rozšířit datový model (energie, měřidla, vyúčtování).
+- **010 – Správa uživatelů**  
+- **020 – Můj účet**  
+- **030 – Pronajímatelé**  
+- **040 – Nemovitosti**  
+- **050 – Nájemníci**  
+- **060 – Smlouvy**  
+- **070 – Služby**  
+- **080 – Platby**  
+- **090 – Finance**  
+- **100 – Měřidla**  
+- **110 – Dokumenty**  
+- **900 – Nastavení**
 
-Dlouhodobě:
-- automatizovat generování dokumentů (PDF),
-- rozšířit notifikační centrum,
-- připravit multi-tenant režim (více pronajímatelů v jednom systému).
-
----
-
-## 7. Další dokumentace  
-*(doplněno z PREHLED-APLIKACE.md – tabulka je převzatá a zachována)*
-
-| Dokument | Popis |
-|----------|--------|
-| `docs/CODESTYLE.md` | Pravidla psaní kódu |
-| `docs/UI-specifikace.md` | Specifikace UI layoutu |
-| `docs/layout_auth_ui.md` | Layout + autentizace |
-| `docs/stav-struktury.md` | Technický přehled komponent |
-| `docs/todo_list.md` | Úkoly a plán |
-| `ikons.md` | Katalog ikon |
+Další moduly lze přidat jednoduchým vytvořením složky a konfigurace.
 
 ---
 
-# 🔥 DOPLNĚNO Z PREHLED-APLIKACE.md (nové části níže)
+# 4. UŽIVATELSKÉ ROZHRANÍ – 6 SEKČNÍ LAYOUT
 
----
-
-## 8. Přehled hlavních vlastností aplikace  
-*(zcela doplněno z PREHLED-APLIKACE.md)*
-
-- kompletní správa nemovitostí, jednotek a nájemníků  
-- komplexní systém smluv (nájemní smlouvy, dodatky, ukončení)  
-- modul plateb (úhrady, předpisy, variabilní symboly)  
-- modul služeb a měřidel  
-- dokumentový systém (upload, generování PDF – plánováno)  
-- komunikace a notifikace (e-maily – plánováno)  
-- modulární systém 010–900  
-- 6-sekční layout pro jednotné UI  
-- Supabase autentizace + RLS  
-- multi-tenant-ready architektura  
-
----
-
-## 9. Vizualizace UI layoutu  
-*(přeneseno přesně tak, jak bylo v PREHLED-APLIKACE.md)*
+Aplikace používá jednotný UI layout:
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│ 1–2: Sidebar (HomeButton + moduly)                            │
-├──────────────┬───────────────────────────────────────────────┤
-│ Sidebar      │ 3: Horní lišta                                 │
-│ (left)       │    – Breadcrumbs vlevo                         │
-│              │    – HomeActions vpravo                        │
-│              ├───────────────────────────────────────────────┤
-│              │ 4: CommonActions (akce modulu)                 │
-│              ├───────────────────────────────────────────────┤
-│              │ 5: Content (přehled, detail, formulář)         │
-└──────────────┴───────────────────────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│ 1–2: Sidebar + HomeButton                     │
+├───────────────────────────────────────────────┤
+│ 3: Horní lišta (Breadcrumbs + HomeActions)    │
+├───────────────────────────────────────────────┤
+│ 4: CommonActions (akce modulu/formuláře)      │
+├───────────────────────────────────────────────┤
+│ 5: Obsah (přehledy, detaily, formuláře)       │
+└───────────────────────────────────────────────┘
 ```
 
----
+Tento systém zajišťuje:
 
-## 10. Moduly aplikace (rozšířený seznam)  
-*(také přesunuto z PREHLED-APLIKACE.md)*
+- konzistenci celé aplikace  
+- stejné chování v každém modulu  
+- rychlou orientaci pro uživatele  
 
-| ID | Název | Popis |
-|----|--------|--------|
-| 010 | Správa uživatelů | uživatelé, role |
-| 020 | Můj účet | osobní nastavení |
-| 030 | Pronajímatelé | subjekty – vlastníci |
-| 040 | Nemovitosti | budovy a objekty |
-| 050 | Jednotky | byty, kanceláře |
-| 060 | Nájemníci | osoby a firmy |
-| 070 | Smlouvy | nájemní smlouvy |
-| 080 | Platby | úhrady, předpisy |
-| 090 | Finance | vyúčtování, účetní logika |
-| 100 | Měřidla | energie, odečty |
-| 110 | Dokumenty | soubory a přílohy |
-| 120 | Komunikace | e-maily a upozornění |
-| 900 | Nastavení | typy, číselníky |
+Do budoucna UI počítá se:
+
+- modal windows  
+- toaster notifikacemi  
+- rozšířeným breadcrumb systémem  
+- responzivním layoutem pro mobilní zařízení  
 
 ---
 
-## 11. Archivační informace z PREHLED-APLIKACE.md
+# 5. AUTENTIZACE A ROLE
 
-- Dokument vytvořen: **2025-12-01**  
-- Původní verze: 1.0.0  
-- Tyto řádky jsou zachovány i pro auditní stopu.
+Aplikace využívá:
+
+- **Supabase Auth**
+- email + heslo  
+- metadata uživatele:
+  - displayName
+  - role
+  - případná další oprávnění
+
+Plánované rozšíření:
+
+- přidání role-based access  
+- granular permissions  
+- omezení modulů podle typu uživatele  
 
 ---
 
-# Závěr
+# 6. ARCHITEKTURA SYSTÉMU – PŘEHLED
 
-Tento dokument nyní obsahuje **původní text + vše důležité z PREHLED-APLIKACE.md**, aniž by se něco ztratilo.  
-Slouží jako *hlavní přehledový soubor projektu*.
+Architektura je rozdělena na:
 
+### **UI vrstvu**
+- layout
+- komponenty
+- formuláře
+- přehledy
+
+### **Modulovou vrstvu**
+- každý modul má vlastní:
+  - konfiguraci
+  - dlaždice
+  - formuláře
+  - přehledy
+
+### **Datovou vrstvu**
+- Supabase databáze + RLS
+- centralizované typy
+- sdílené entity
+
+### **Backend logiku (plán)**
+- services:
+  - auth service
+  - permissions service
+  - form state manager
+  - breadcrumbs builder
+  - common actions engine
+
+Cílem je:
+
+> Kód bude čistý, logicky oddělený a snadno rozšiřitelný.
+
+---
+
+# 7. AKTUÁLNÍ STAV APLIKACE
+
+### 🔹 Hotové části:
+- Sidebar  
+- HomeButton  
+- Breadcrumbs (základní verze)  
+- HomeActions  
+- CommonActions (verze 1)  
+- Základní rendering obsahu  
+- Modulový engine  
+
+### 🔸 Rozpracované:
+- dynamické CommonActions  
+- dynamické Breadcrumbs  
+- rozšíření modulů  
+- role & permissions  
+- komplexní form engine  
+
+---
+
+# 8. ROADMAPA (SHRNUTÍ)
+
+### Krátkodobé:
+- vázání akcí na moduly  
+- dynamické breadcrumb cesty  
+- RLS pravidla  
+- stav formulářů (dirty, clean)  
+
+### Střednědobé:
+- modul Dokumenty  
+- modul Komunikace  
+- modul Služby  
+- table view engine  
+- modal windows  
+
+### Dlouhodobé:
+- notifikační centrum  
+- automatická generace dokumentů  
+- plná uživatelská komunikace  
+- mobilní optimalizace  
+
+---
+
+# 9. ODKAZY NA OSTATNÍ DOKUMENTY
+
+- **02 – Architecture:** hluboký technický popis  
+- **03 – UI System:** detailní UI specifikace  
+- **04 – Modules:** konfigurace a struktury modulů  
+- **05 – Auth & RLS:** bezpečnost a přihlášení  
+- **06 – Data Model:** entity a tabulky  
+- **07 – Deployment:** hosting a build pipeline  
+- **08 – Plán vývoje:** roadmapa  
+- **09 – Pravidla projektu:** sjednocení kódu a dokumentace  
+- **10 – Slovník pojmů:** vysvětlení termínů  
+
+---
+
+# 10. ZÁVĚR
+
+Tento dokument poskytuje **kompletní přehled celého projektu**.  
+Slouží:
+
+- vývojářům  
+- designérům  
+- architektům  
+- a tobě jako vlastníkovi projektu  
+
+k rychlé orientaci v systému.
+
+Aplikace Pronajímatel v6 je již nyní pevným základem profesionálního řešení, které lze dále rozšiřovat a škálovat.
+
+---
+
+_Konec BLOKU A – hlavní verze Executive Summary._
