@@ -52,7 +52,7 @@
 }
 
 .sidebar__row--active {
-  background: var(--color-primary-soft);
+  background: var(--color-selected-row-bg);
 }
 
 .sidebar__row--disabled {
@@ -114,7 +114,7 @@
 }
 
 .sidebar__section-item--active .sidebar__section-row {
-  background: var(--color-primary-soft);
+  background: var(--color-selected-row-bg);
 }
 
 /* 3. úroveň – tiles */
@@ -143,7 +143,7 @@
 }
 
 .sidebar__subitem--active .sidebar__sublink {
-  background: var(--color-primary-soft);
+   background: var(--color-selected-row-bg);
 }
 
 .sidebar__sublabel {
