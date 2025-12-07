@@ -258,7 +258,7 @@ body {
 }
 
 /* Aktivní sekce – stejné zvýraznění jako modul */
-.sidebar__section-row--active {
+.sidebar__section-item--active .sidebar__section-row {
   background: #eef2ff;
 }
 
