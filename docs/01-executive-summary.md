@@ -228,3 +228,71 @@ Aplikace Pronajímatel v6 je již nyní pevným základem profesionálního ře�
 ---
 
 _Konec BLOKU A – hlavní verze Executive Summary._
+---
+
+# 📜 Historické části dokumentu (původní text, již zastaralý)
+*(zachováno podle požadavku – NESMAZAT)*
+
+Níže uvedené části pocházejí z původních ručně psaných dokumentů a slouží jako referenční historické poznámky.  
+Jsou důležité pro pochopení vývoje, ale dnes již nejsou aktuální.  
+Proto jsou označeny jako přeškrtnuté, ale NEMAJÍ být odstraněny.
+
+---
+
+### ~~Původní nekompletní shrnutí (starší verze)~~
+
+~~Aplikace Pronajímatel v6 slouží ke správě nemovitostí, jednotek, nájemníků, smluv, plateb, služeb, dokumentů a komunikace.  
+Obsahuje základní UI layout a modulární systém. Tento dokument měl původně shrnovat celý projekt, ale obsahoval duplicity.~~
+
+---
+
+### ~~Starý popis UI z původního PREHLED-APLIKACE~~
+
+~~UI je rozděleno na několik sekcí a Sidebar obsahuje HomeButton a dynamické moduly.  
+Horní lišta obsahuje Breadcrumb a HomeActions.  
+Tento popis byl později rozšířen a přepracován do dokumentu 03 – UI System.~~
+
+---
+
+### ~~Původní částečný výčet modulů~~
+
+~~Moduly systému zahrnují nastavení, dokumenty, komunikaci, nemovitosti a další.  
+Seznam modulů byl později přepracován do přesné struktury 01–10.~~
+
+---
+
+### ~~Staré poznámky o přihlášení~~
+
+~~Přihlášení probíhá přes Supabase Auth pomocí emailu a hesla.  
+DisplayName se načítá z user_metadata.  
+Tento popis je nyní kompletně přesunut do dokumentu 05 – Auth & RLS.~~
+
+---
+
+### ~~Částečný starý popis architektury~~
+
+~~Aplikace je rozdělena na UI vrstvu, modulovou vrstvu a datovou vrstvu.  
+Původní popis byl neúplný a chyběly detaily services a backend logiky.  
+Dnes je kompletní verze v dokumentu 02 – Architecture.~~
+
+---
+
+### ~~Historická roadmapa (starší než hlavní roadmapa)~~
+
+~~- přidat dynamické akce  
+- implementovat RLS  
+- doplnit dokumenty  
+- rozšířit UI~~
+
+~~Tento seznam byl později přesunut do oficiální kapitoly 08 – Plan vývoje.~~
+
+---
+
+### ~~Alternativní původní pokus o shrnutí~~
+
+~~Celkem stručná verze Executive Summary z prvních dnů vývoje.  
+Ponecháno pro historický kontext.~~
+
+---
+
+# 📌 Konec archivně ponechaných částí pro dokument 01.
