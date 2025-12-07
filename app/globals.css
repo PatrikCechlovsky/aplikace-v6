@@ -742,6 +742,26 @@ body {
   border-bottom-right-radius: 8px;
 }
 
+/* Název – barevný badge podle barvy ze Supabase */
+.generic-type__cell--name {
+  padding: 0 !important; /* aby kolem nebyla bílá mezera */
+}
+
+.generic-type__name-badge {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;            /* prostor před/za textem + výška */
+  border-radius: 8px;          /* stejné zakulacení jako vybraný řádek */
+  color: #ffffff;              /* bílý text */
+  font-weight: 500;
+  background-color: var(--color-primary-soft);
+}
+
+/* Pokud název nemá barvu → normální vzhled */
+.generic-type__name-main {
+  padding: 4px 8px;
+  display: block;
+}
 
 /* Formulář dole */
 .generic-type__form {
