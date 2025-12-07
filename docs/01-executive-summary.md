@@ -3,6 +3,7 @@
 ---
 
 # 01 – Executive Summary
+*(původní obsah zachován; doplněné bloky jsou přidány níže)*
 
 ## 1. O aplikaci
 
@@ -113,12 +114,90 @@ Dlouhodobě:
 
 ---
 
-## 7. Jak tento dokument používat
+## 7. Další dokumentace  
+*(doplněno z PREHLED-APLIKACE.md – tabulka je převzatá a zachována)*
 
-Tento **Executive Summary** slouží jako rychlý přehled:
+| Dokument | Popis |
+|----------|--------|
+| `docs/CODESTYLE.md` | Pravidla psaní kódu |
+| `docs/UI-specifikace.md` | Specifikace UI layoutu |
+| `docs/layout_auth_ui.md` | Layout + autentizace |
+| `docs/stav-struktury.md` | Technický přehled komponent |
+| `docs/todo_list.md` | Úkoly a plán |
+| `ikons.md` | Katalog ikon |
 
-- pro nové vývojáře,
-- pro budoucí dokumentaci,
-- pro prezentaci projektu (co umí, kam směřuje).
+---
 
-Detailní informace hledej v dalších souborech v adresáři `/docs` (02–10).
+# 🔥 DOPLNĚNO Z PREHLED-APLIKACE.md (nové části níže)
+
+---
+
+## 8. Přehled hlavních vlastností aplikace  
+*(zcela doplněno z PREHLED-APLIKACE.md)*
+
+- kompletní správa nemovitostí, jednotek a nájemníků  
+- komplexní systém smluv (nájemní smlouvy, dodatky, ukončení)  
+- modul plateb (úhrady, předpisy, variabilní symboly)  
+- modul služeb a měřidel  
+- dokumentový systém (upload, generování PDF – plánováno)  
+- komunikace a notifikace (e-maily – plánováno)  
+- modulární systém 010–900  
+- 6-sekční layout pro jednotné UI  
+- Supabase autentizace + RLS  
+- multi-tenant-ready architektura  
+
+---
+
+## 9. Vizualizace UI layoutu  
+*(přeneseno přesně tak, jak bylo v PREHLED-APLIKACE.md)*
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│ 1–2: Sidebar (HomeButton + moduly)                            │
+├──────────────┬───────────────────────────────────────────────┤
+│ Sidebar      │ 3: Horní lišta                                 │
+│ (left)       │    – Breadcrumbs vlevo                         │
+│              │    – HomeActions vpravo                        │
+│              ├───────────────────────────────────────────────┤
+│              │ 4: CommonActions (akce modulu)                 │
+│              ├───────────────────────────────────────────────┤
+│              │ 5: Content (přehled, detail, formulář)         │
+└──────────────┴───────────────────────────────────────────────┘
+```
+
+---
+
+## 10. Moduly aplikace (rozšířený seznam)  
+*(také přesunuto z PREHLED-APLIKACE.md)*
+
+| ID | Název | Popis |
+|----|--------|--------|
+| 010 | Správa uživatelů | uživatelé, role |
+| 020 | Můj účet | osobní nastavení |
+| 030 | Pronajímatelé | subjekty – vlastníci |
+| 040 | Nemovitosti | budovy a objekty |
+| 050 | Jednotky | byty, kanceláře |
+| 060 | Nájemníci | osoby a firmy |
+| 070 | Smlouvy | nájemní smlouvy |
+| 080 | Platby | úhrady, předpisy |
+| 090 | Finance | vyúčtování, účetní logika |
+| 100 | Měřidla | energie, odečty |
+| 110 | Dokumenty | soubory a přílohy |
+| 120 | Komunikace | e-maily a upozornění |
+| 900 | Nastavení | typy, číselníky |
+
+---
+
+## 11. Archivační informace z PREHLED-APLIKACE.md
+
+- Dokument vytvořen: **2025-12-01**  
+- Původní verze: 1.0.0  
+- Tyto řádky jsou zachovány i pro auditní stopu.
+
+---
+
+# Závěr
+
+Tento dokument nyní obsahuje **původní text + vše důležité z PREHLED-APLIKACE.md**, aniž by se něco ztratilo.  
+Slouží jako *hlavní přehledový soubor projektu*.
+
