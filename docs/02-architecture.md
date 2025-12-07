@@ -1,3 +1,6 @@
+# /docs/02-architecture.md
+## Popis: Tento dokument obsahuje architekturu aplikace a strukturu systému.
+---
 # 02 – Architektura aplikace
 
 ## 0. Cíl aplikace
