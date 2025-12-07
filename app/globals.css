@@ -867,6 +867,89 @@ body.theme-orange .home-button {
   color: #b91c1c;
   border-color: #fecaca;
 }
+.settings-tile {
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.settings-tile__header {
+  margin-bottom: 1rem;
+}
+
+.settings-tile__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.settings-tile__description {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.settings-tile__section {
+  margin-top: 1.5rem;
+}
+
+.settings-tile__section-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.settings-tile__radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.palette-card {
+  width: 100%;
+  text-align: left;
+  padding: 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.palette-card--active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+}
+
+.settings-tile__palette-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Jednoduché barvičky pro náhled – zatím natvrdo */
+.palette-preview {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  margin-right: 4px;
+}
+
+/* Modrá */
+.palette-preview--blue.primary { background: #2563eb; }
+.palette-preview--blue.soft { background: #dbeafe; }
+.palette-preview--blue.accent { background: #1d4ed8; }
+
+/* Zelená */
+.palette-preview--green.primary { background: #16a34a; }
+.palette-preview--green.soft { background: #dcfce7; }
+.palette-preview--green.accent { background: #15803d; }
+
+/* Pastel Pronajímatel */
+.palette-preview--landlord.primary { background: #a855f7; }
+.palette-preview--landlord.soft { background: #f3e8ff; }
+.palette-preview--landlord.accent { background: #7c3aed; }
+
 /* ===========================
    GenericTypeTile – číselníky
    =========================== */
