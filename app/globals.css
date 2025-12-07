@@ -805,6 +805,25 @@ body {
   resize: vertical;
 }
 
+/* Hlavička spodního formuláře – název vlevo, tlačítka vpravo */
+.generic-type__form-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.generic-type__form-title {
+  margin: 0;
+}
+
+.generic-type__form-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Paleta barev */
 .generic-type__palette {
   margin-top: 4px;
