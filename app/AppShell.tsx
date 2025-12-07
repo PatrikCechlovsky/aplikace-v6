@@ -4,6 +4,25 @@
  * FILE: app/AppShell.tsx
  * PURPOSE: Hlavní shell aplikace – layout (6 bloků), autentizace, moduly
  */
+'use client'
+
+import { useEffect } from 'react'
+import { applyThemeToLayout, loadThemeFromLocalStorage } from '@/app/lib/themeSettings'
+
+export default function AppShell(/* props */) {
+  useEffect(() => {
+    // při mountu aplikace nastavit theme z localStorage
+    const settings = loadThemeFromLocalStorage()
+    applyThemeToLayout(settings)
+  }, [])
+
+  return (
+    <div className="layout">
+      {/* sidebar, topbar, obsah… */}
+    </div>
+  )
+}
+
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
