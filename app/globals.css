@@ -742,9 +742,14 @@ body {
   border-bottom-right-radius: 8px;
 }
 
-/* Název – barevný badge podle barvy ze Supabase */
+/* Hlavička i buňky "Název" – defaultně normální padding */
 .generic-type__cell--name {
-  padding: 0 !important; /* aby kolem nebyla bílá mezera */
+  padding: 4px 6px;
+}
+
+/* Jen řádky (tbody) mají barevný badge přes celou šířku */
+.generic-type__table tbody .generic-type__cell--name {
+  padding: 0 !important; /* kolem badge žádná mezera */
 }
 
 .generic-type__name-badge {
