@@ -1,156 +1,340 @@
-# /docs/02-architecture.md
-## Popis: Tento dokument obsahuje architekturu aplikace a strukturu systému.
+# /docs/03-ui-system.md
+## Popis: Detailní specifikace UI systému, layoutu, komponent a pravidel vizuálního chování aplikace Pronajímatel v6.
 ---
-# 03 – UI systém a komponenty
 
-## 1. Přehled UI architektury
-
-Aplikace využívá pevně daný 6-sekční layout:
-
-    ┌───────────────────────────────────────────────────────────────┐
-    │ 1–2: Sidebar (HomeButton + dynamické moduly)                  │
-    ├──────────────┬───────────────────────────────────────────────┤
-    │              │ 3: Horní lišta                                 │
-    │ Sidebar      │    • Breadcrumbs vlevo                         │
-    │ (left)       │    • HomeActions vpravo                        │
-    │              ├───────────────────────────────────────────────┤
-    │              │ 4: CommonActions — lišta obecných akcí         │
-    │              ├───────────────────────────────────────────────┤
-    │              │ 5: Content — přehled / detail / formulář       │
-    └──────────────┴───────────────────────────────────────────────┘
-
-### Stav implementace layoutu
-
-| Sekce          | Stav      |
-|----------------|-----------|
-| Sidebar        | ✔ Hotovo  |
-| HomeButton     | ✔ Hotovo  |
-| Breadcrumbs    | ✔ Základní verze |
-| HomeActions    | ✔ DisplayName, ikonky, logout |
-| CommonActions  | ✔ Verze v1 (pevná), připravená na dynamiku |
-| Content Engine | ✔ Základní rendering |
+# 03 – UI SYSTEM  
+*(Finální konsolidovaná verze)*
 
 ---
 
-## 2. UI prvky – detailní popis
+# 1. ÚVOD
 
-### 2.1 HomeButton
-- obsahuje název aplikace + ikonu domů
-- reaguje na kliknutí (onClick)
-- má stav `disabled`
-- při kliknutí navrací uživatele na dashboard
+UI systém aplikace Pronajímatel v6 je založen na:
 
-### 2.2 Sidebar
-- dynamicky načítá moduly
-- zobrazuje ikony i popisy
-- podporuje aktivní modul (`activeModuleId`)
-- volá `onModuleSelect`
+- **jednotném 6-sekčním layoutu**,  
+- **modulárních UI komponentách**,  
+- **dynamickém načítání modulů**,  
+- **konsistentních vzorech interakce**,  
+- **minimální duplikaci UI logiky**.
 
-### 2.3 Breadcrumbs
+Cílem UI systému je zajistit:
 
-Aktuální stav:
-- statická verze: „Dashboard / Domov“
-- zobrazuje ikonku domů (přes getIcon)
-
-Budoucí stav:
-- dynamický builder podle aktivního modulu / dlaždice / detailu
-- vícestupňová cesta (např. Modul > Přehled > Detail)
-
-### 2.4 HomeActions
-
-V pravé části horní lišty.
-
-Obsah:
-- displayName uživatele  
-- ikona profilu 👤 (placeholder)  
-- lupa 🔍 (globální search – placeholder)
-- zvonek 🔔 (notifikace – placeholder)
-- tlačítko **Odhlásit**
-
-Podpora:
-- `disabled` stav (před přihlášením)
-
-### 2.5 CommonActions (verze 1)
-
-Aktuálně pevný výpis tlačítek pro demonstraci UI.
-
-Centrální definice akcí:
-
-- add, edit, view, duplicate, attach  
-- archive, delete  
-- save, saveAndClose, cancel  
-
-Budoucí systém (verze 2):
-- konfigurace akcí v `module.config.js`
-- kombinace s oprávněními podle role
-- kombinace se stavem formuláře (dirty / clean)
-- filtr podle výběru položky (requiresSelection)
-
-### 2.6 Content
-
-- zobrazuje přehled, detail, formulář
-- renderuje se podle aktivního modulu a stavu aplikace
-- login panel se zobrazuje mimo modulový systém (před přihlášením)
+- konzistenci v celé aplikaci  
+- předvídatelné chování pro uživatele  
+- snadné rozšiřování o nové moduly a formuláře  
+- jasně definované odpovědnosti UI prvků  
 
 ---
 
-## 3. Základní pravidla UI (CODESTYLE)
+# 2. 6-SEKČNÍ LAYOUT
 
-Obecně:
-- komponenty v `app/UI/` jsou malé, znovupoužitelné
-- vizuální logika (layout, barvy, stavy) patří do UI
-- business logika patří do modulů nebo services
-- žádné přímé volání Supabase z UI komponent
-- žádné hooky nebo funkce uvnitř JSX — vždy nad `return`
-- ikony pouze přes `getIcon(name)`
+Aplikace je vystavěná na přísném, neměnném layoutu:
 
-Detailnější UI pravidla jsou v dokumentu `CODESTYLE.md` / `09-project-rules.md`.
+```
+┌───────────────────────────────────────────────────────────────┐
+│ 1–2: Sidebar (HomeButton + dynamické moduly)                  │
+├──────────────┬───────────────────────────────────────────────┤
+│              │ 3: Horní lišta                                 │
+│ Sidebar      │    • Breadcrumbs vlevo                         │
+│ (left)       │    • HomeActions vpravo                        │
+│              ├───────────────────────────────────────────────┤
+│              │ 4: CommonActions — lišta obecných akcí         │
+│              ├───────────────────────────────────────────────┤
+│              │ 5: Content — přehled / detail / formulář       │
+└──────────────┴───────────────────────────────────────────────┘
+```
 
----
+Každá sekce má pevně definované chování.
 
-## 4. Stav implementace UI
+## 2.1 Sekce 1–2: Sidebar
 
-| Oblast                     | Stav                            |
-|----------------------------|---------------------------------|
-| Základní layout            | ✔ Hotovo                        |
-| Sidebar engine             | ✔ Hotovo                        |
-| HomeButton                 | ✔ Hotovo                        |
-| Breadcrumbs                | ✔ Hotovo (zatím statické)      |
-| HomeActions                | ✔ DisplayName + ikony + logout |
-| CommonActions              | ✔ Verze 1 (pevné), ⏳ Verze 2   |
-| Form engine – UI část      | ✔ Základ                        |
-| UI pro Dokumenty/Komunikaci/Služby | ⏳ V přípravě           |
+Sidebar zajišťuje:
 
----
+- výběr modulu  
+- zobrazení hierarchie modul / sekce / typ / položka  
+- aktivní stav (zvýraznění vybraného modulu nebo sekce)  
+- podporu pro ikony modulů  
+- dynamické načítání obsahu ze `module.config.js`
 
-## 5. TODO – UI systém
+Sidebar obsahuje tyto prvky:
 
-### Nejbližší úkoly
-- dynamické breadcrumbs  
-- globální search v HomeActions  
-- notifikační panel  
-- CommonActions v2 (podle modulu, role, stavu)  
-- jednotný Form Engine (FormFieldText, Select, MultiSelect, Boolean)  
+- **HomeButton** (sekce 1)  
+- **Seznam modulů** (sekce 2)  
 
-### Střednědobé úkoly
-- Table komponenta pro přehledy
-- Modální okna
-- Toast notifikace
-
-### Dlouhodobé úkoly
-- pokročilé UI pro komunikaci a dokumenty
-- dashboard s widgety
-- responzivní layout pro mobil
+Sidebar je responzivní — na mobilních zařízeních může být skrytý.
 
 ---
 
-## 6. Závěr
+## 2.2 Sekce 3: Horní lišta
 
-Tento dokument se zaměřuje výhradně na UI:
+Horní lišta obsahuje:
 
-- jak je rozvržen layout  
-- jak fungují klíčové komponenty  
-- jaká jsou základní pravidla pro jejich použití  
-- jaký je stav implementace a plán dalšího rozvoje  
+- **Breadcrumbs** vlevo  
+- **HomeActions** vpravo  
 
-Slouží jako referenční dokument pro návrh a implementaci uživatelského rozhraní.
+Horní lišta je statická podle layoutu, ale obsah dynamicky reaguje na:
+
+- vybraný modul  
+- otevřenou dlaždici  
+- otevřený detail  
+- otevřený formulář  
+
+---
+
+## 2.3 Sekce 4: CommonActions
+
+Cílem CommonActions je:
+
+- nabídnout relevantní akce podle stavu UI  
+- být jednotné pro všechny moduly  
+- eliminovat duplikaci tlačítek v každém formuláři
+
+Aktuální verze:
+
+- statický seznam akcí  
+- základní UI
+
+Budoucí verze:
+
+- **dynamicky generované akce podle modulu**  
+- **filtrace podle role a oprávnění uživatele**  
+- **stavové podmínky (requiresDirty, requiresSelection, requiresDetailOpen)**
+
+---
+
+## 2.4 Sekce 5: Content
+
+Content zobrazuje:
+
+- přehled (overview)  
+- detail položky  
+- formulář  
+- systémové obrazovky (login, 404…)  
+
+Content engine bude řídit:
+
+- refresh modulů  
+- přepínání vnitřních částí modulů  
+- předávání dat Breadcrumbs a CommonActions  
+
+---
+
+# 3. KLÍČOVÉ UI KOMPONENTY
+
+## 3.1 HomeButton
+
+Funkce:
+
+- přesměrování na “Dashboard”  
+- deaktivace, pokud není uživatel přihlášen  
+- obsahuje ikonu domů a název aplikace  
+
+## 3.2 Sidebar
+
+Sidebar je plně dynamický:
+
+- načítá moduly z `MODULE_SOURCES`  
+- moduly třídí podle `order`  
+- zobrazuje ikonu + název  
+- rozlišuje aktivní modul  
+
+Budoucí rozšíření:
+
+- více úrovní (sekce → typ → záznam)  
+- rozbalovací skupiny  
+- animace  
+- ikony kategorií  
+
+---
+
+## 3.3 Breadcrumbs
+
+Aktuální verze:
+
+- “Domů / Dashboard”
+
+Budoucí inteligentní breadcrumb builder:
+
+- úroveň 1 = modul  
+- úroveň 2 = dlaždice / sekce  
+- úroveň 3 = detail entity  
+- úroveň 4 = formulář / editace  
+
+Breadcrumbs budou generovány na základě:
+
+- aktivního modulu  
+- otevřené dlaždice  
+- kontextového stavu  
+
+---
+
+## 3.4 HomeActions
+
+Obsahuje:
+
+- jméno uživatele  
+- ikonu profilu  
+- vyhledávání  
+- notifikace  
+- odhlášení  
+
+Zobrazuje z `session.user_metadata.display_name`.
+
+---
+
+## 3.5 CommonActions
+
+Aktuální seznam dostupných akcí:
+
+```
+add
+edit
+view
+duplicate
+attach
+archive
+delete
+save
+saveAndClose
+cancel
+```
+
+Budoucí definice akcí bude v:
+
+```
+module.config.js
+```
+
+Např.:
+
+```js
+commonActions: {
+  overview: ['add', 'delete'],
+  detail: ['edit', 'archive'],
+  form: ['save', 'cancel'],
+}
+```
+
+---
+
+## 3.6 UI – typy polí formulářů
+
+Aplikace používá standardizované komponenty:
+
+- text input  
+- number input  
+- select  
+- multiselect  
+- checkbox / boolean  
+- date picker  
+- email / phone  
+- JSON editor (v budoucnu)  
+
+Každé pole má definované:
+
+- komponentu  
+- validaci  
+- chování v UI  
+- integraci s formStateManagerem  
+
+---
+
+# 4. IKONOGRAFIE
+
+Všechny ikony jsou řešeny funkcí:
+
+```
+getIcon(name)
+```
+
+Ikony byly standardizované a odstraněny “oválné pozadí” z dřívějších verzí.
+
+Výhody:
+
+- jednotný vzhled  
+- snadná výměna knihovny ikon  
+- snadné přidání vlastních ikon  
+
+---
+
+# 5. BARVY A TÉMATA
+
+Používáme systém:
+
+- světle šedý základ  
+- pastelové barvy pro typy  
+- jednotné barvy pro akce (add, edit, delete, archive…)  
+
+Plán:
+
+- světle / tmavé téma (dark mode)  
+- možné rozšíření na témata podle nájemníků, objektů atd.  
+
+---
+
+# 6. STAVY UI A INTERAKCE
+
+## 6.1 Active state
+Každý kliknutelný prvek musí mít:
+
+- hover  
+- active  
+- focus  
+
+## 6.2 Disabled state
+UI nesmí dovolit:
+
+- klik na tlačítko pro uživatele bez oprávnění  
+- odeslat prázdný formulář  
+- otevřít modul při chybějící roli  
+
+## 6.3 Dirty state
+Formuláře musí:
+
+- označit “neuložené změny”  
+- deaktivovat určité akce  
+- umožnit `saveAndClose`  
+- umožnit validaci před uložením  
+
+---
+
+# 7. TOASTERY & MODAL WINDOWS (PLÁN)
+
+### Toastery:
+- potvrzení akce  
+- upozornění na chyby  
+- informační hlášky  
+
+### Modaly:
+- potvrzení mazání  
+- výběr položky  
+- detailní podformuláře  
+
+---
+
+# 8. RESPONSIVE DESIGN
+
+Aplikace bude responzivní:
+
+- Sidebar se skryje  
+- Breadcrumbs se zjednoduší  
+- CommonActions se mohou přesunout do dropdownu  
+- Content se přizpůsobí výšce  
+- Formuláře se skládaní jinak  
+
+---
+
+# 9. ZÁVĚR
+
+UI systém v této verzi definuje:
+
+- striktní layout  
+- komponenty  
+- chování  
+- budoucí rozšiřování  
+
+Slouží jako základ pro celé UX aplikace Pronajímatel v6.
+
+---
+
+*Konec BLOKU A – finální čistá verze dokumentu 03*
