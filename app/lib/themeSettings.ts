@@ -1,53 +1,57 @@
 // FILE: app/lib/themeSettings.ts
-import { supabase } from './supabaseClient' // 👈 uprav podle své cesty
+
+import { supabase } from './supabaseClient' // cesta podle tebe
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
-export type ThemeAccent = 'blue' | 'green' | 'landlord'
 
-export interface ThemeSettings {
+// 🎨 NOVÝ seznam akcentů
+export type ThemeAccent = 'neutral' | 'grey' | 'blue' | 'green' | 'purple'
+
+export type ThemeSettings = {
   mode: ThemeMode
   accent: ThemeAccent
 }
 
 const DEFAULT_SETTINGS: ThemeSettings = {
   mode: 'auto',
-  accent: 'blue',
+  accent: 'neutral', // klidně změň na 'blue' nebo 'purple', jak chceš
 }
 
+// Načtení z DB
 export async function loadThemeSettingsFromSupabase(
-  userId: string | null | undefined,
+  userId: string,
 ): Promise<ThemeSettings> {
-  if (!userId) return DEFAULT_SETTINGS
-
   const { data, error } = await supabase
     .from('user_theme_settings')
-    .select('theme_mode, theme_accent')
+    .select('mode, accent')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (error || !data) {
     return DEFAULT_SETTINGS
   }
 
   return {
-    mode: (data.theme_mode as ThemeMode) ?? 'auto',
-    accent: (data.theme_accent as ThemeAccent) ?? 'blue',
+    mode: (data.mode as ThemeMode) ?? DEFAULT_SETTINGS.mode,
+    accent: (data.accent as ThemeAccent) ?? DEFAULT_SETTINGS.accent,
   }
 }
 
+// Uložení do DB
 export async function saveThemeSettingsToSupabase(
-  userId: string | null | undefined,
+  userId: string,
   settings: ThemeSettings,
 ): Promise<void> {
-  if (!userId) return
-
-  await supabase.from('user_theme_settings').upsert(
+  const { error } = await supabase.from('user_theme_settings').upsert(
     {
       user_id: userId,
-      theme_mode: settings.mode,
-      theme_accent: settings.accent,
-      updated_at: new Date().toISOString(),
+      mode: settings.mode,
+      accent: settings.accent,
     },
     { onConflict: 'user_id' },
   )
+
+  if (error) {
+    console.error('Failed to save theme settings', error)
+  }
 }
