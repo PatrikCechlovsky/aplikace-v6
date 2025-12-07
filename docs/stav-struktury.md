@@ -1,110 +1,206 @@
 # 🏗️ STAV STRUKTURY — Pronajímatel v6
-Kompletní přehled aktuální struktury projektu, včetně stavu implementace jednotlivých částí.
-Tento dokument slouží jako mapa projektu pro vývoj, kontrolu a další plánování.
+Verze dokumentu: 2025-12-07  
+Tento dokument popisuje reálný stav složek, komponent a modulů projektu „aplikace-v6“.
 
 ---
 
-# 1. STRUKTURA REPozITÁŘE
+# 1. STRUKTURA REPOZITÁŘE
 
-```
+aplikace-v6/
+    app/
+    docs/
+    scripts/
+    .env.local
+    .gitignore
+    next.config.mjs
+    package.json
+    tsconfig.json
+    README.md
+
+---
+
+# 1.1 Struktura `app/`
+
 app/
-  UI/
-    HomeButton.tsx
-    Sidebar.tsx
-    Breadcrumbs.tsx
-    HomeActions.tsx
-    CommonActions.tsx
-    icons.ts
-  modules/
-    010-sprava-uzivatelu/
-    020-muj-ucet/
-    030-pronajimatel/
-    ...
-    900-nastaveni/
-  lib/
-    services/
-      auth.ts
-    supabaseClient.ts
-    uiConfig.ts
-  page.tsx
-  globals.css
+    AppShell.tsx
+    layout.tsx
+    page.tsx
+    globals.css
+
+    UI/
+        AppIcon.tsx
+        Breadcrumbs.tsx
+        CommonActions.tsx
+        ConfigListWithForm.tsx
+        DetailView.tsx
+        EntityDetailFrame.tsx
+        EntityList.tsx
+        GenericTypeTile.tsx
+        HomeActions.tsx
+        HomeButton.tsx
+        ListView.tsx
+        LoginPanel.tsx
+        MfaSetupPanel.tsx
+        RelationListWithDetail.tsx
+        Sidebar.tsx
+        Tabs.tsx
+        icons.ts
+        supabase.js
+
+    lib/
+        colorPalette.ts
+        supabaseClient.ts
+        themeSettings.ts
+        uiConfig.ts
+
+        services/
+            auth.ts
+
+    modules.index.js
+
+    modules/
+        010-sprava-uzivatelu/
+            module.config.js
+            RolesConfigPanel.tsx
+
+        020-muj-ucet/
+            module.config.js
+
+        030-pronajimatel/
+            module.config.js
+
+        040-nemovitost/
+            module.config.js
+
+        050-najemnik/
+            module.config.js
+
+        060-smlouva/
+            module.config.js
+
+        070-sluzby/
+            module.config.js
+
+        080-platby/
+            module.config.js
+
+        090-finance/
+            module.config.js
+
+        100-energie/
+            module.config.js
+
+        120-dokumenty/
+            module.config.js
+
+        130-komunikace/
+            module.config.js
+
+        900-nastaveni/
+            module.config.js
+
+            sections/
+                IconSettingsSection.tsx
+                ThemeSettingsSection.tsx
+                TypesSettingsSection.tsx
+
+            tiles/
+                SubjectTypesTile.tsx
+                ThemeSettingsTile.tsx
+
+            services/
+                subjectTypes.ts
+
+---
+
+# 1.2 Struktura `docs/`
 
 docs/
-  README.md
-  CODESTYLE.md
-  UI-SPECIFIKACE.md
-  PREHLED-APLIKACE.md
-  stav-struktury.md
-  todo_list.md
-```
+    CODESTYLE.md
+    PREHLED-APLIKACE.md
+    UI-specifikace.md
+    layout_auth_ui.md
+    stav-struktury.md
+    todo_list.md
 
 ---
 
-# 2. STAV JEDNOTLIVÝCH SLOŽEK
+# 2. STAV HLAVNÍCH OBLASTÍ
 
 | Oblast | Stav | Poznámka |
 |--------|------|----------|
-| UI layout (6 sekcí) | ✔ Hotovo | Plně implementováno |
-| HomeButton | ✔ Hotovo | Funguje + disabled |
-| Sidebar | ✔ Hotovo | Dynamické moduly |
-| Breadcrumbs | ✔ Základ | Nutná dynamika (v2) |
-| HomeActions | ✔ Hotovo | DisplayName + ikony |
-| CommonActions v1 | ✔ Hotovo | Pevná verze |
-| CommonActions v2 | ⏳ Plán | Akce podle modulu/role |
-| Content engine | ✔ Hotovo | Přehled/detail/form |
-| Autentizace | ✔ Hotovo | Supabase + metadata |
-| Role & oprávnění | ⏳ Plán | Napojení na moduly |
-| Ikony | ✔ Hotovo | Centralizované |
-| Form engine | ✔ Základ | Dirty state + validace v2 |
-| Moduly | ⏳ Průběžně | Základní struktura |
+| AppShell layout | ✔ Hotovo | 6-blokový layout |
+| Autentizace | ✔ Hotovo | login, logout, session |
+| MFA UI | ✔ UI | logika MFA později |
+| Sidebar | ✔ Hotovo | dynamické moduly |
+| Breadcrumbs | ⏳ Základ | v2 bude dynamická |
+| HomeActions | ✔ | uživatel + logout |
+| CommonActions | ✔ v1 | v2 podle rolí čeká |
+| List/Detail/Tabs | ✔ Základ | připraveno pro moduly |
+| GenericTypeTile | ✔ Aktivní | modul 900 |
+| ConfigListWithForm | ✔ | konfigurace číselníků |
+| Moduly 010–130 | ✔ Kostra | UI bude doplňováno |
+| Modul 900 | ✔ Aktivní | typy, motivy, ikony |
 
 ---
 
-# 3. STAV MODULŮ
+# 3. UI KOMPONENTY
 
-## 3.1 Implementované moduly (kostra)
+## 3.1 Navigace a layout
+- AppShell.tsx  
+- Sidebar.tsx  
+- Breadcrumbs.tsx  
+- HomeButton.tsx  
+- HomeActions.tsx  
+- CommonActions.tsx  
+- Tabs.tsx  
+- AppIcon.tsx  
+
+## 3.2 Seznamy a detaily
+- ListView.tsx  
+- EntityList.tsx  
+- DetailView.tsx  
+- EntityDetailFrame.tsx  
+- RelationListWithDetail.tsx  
+
+## 3.3 Konfigurační a typové formuláře
+- ConfigListWithForm.tsx  
+- GenericTypeTile.tsx  
+
+## 3.4 Autentizace UI
+- LoginPanel.tsx  
+- MfaSetupPanel.tsx  
+- supabase.js  
+
+---
+
+# 4. MODULY — PŘEHLED
+
 | Modul | Stav | Poznámka |
-|-------|------|----------|
-| 010 – Správa uživatelů | ✔ Kostra | Bude napojena na permissions |
-| 020 – Můj účet | ✔ Kostra | Metadata uživatele |
-| 030 – Pronajímatel | ✔ Kostra | Základní tile |
-| 040 – Nemovitost | ✔ Kostra | Bude rozšířeno o vybavení |
-| 050 – Nájemník | ✔ Kostra | Form + přehled |
-| 060 – Smlouva | ⏳ Kostra | Nutné pole + vztahy |
-| 070 – Služby | ⏳ Čeká | Budoucí modul |
-| 080 – Platby | ⏳ Čeká | Napojení na finance |
-| 090 – Finance | ⏳ Čeká | Rozšíření |
-| 100 – Měřidla | ⏳ Čeká | Automatické odečty v2 |
-| 110 – Dokumenty | ⏳ Kostra | Šablony + generování |
-| 120 – Komunikace | ⏳ Čeká | Historie zpráv |
-| 900 – Nastavení | ✔ Aktivní | Obsahuje číselníky |
+|-------|-------|----------|
+| 010 Správa uživatelů | ✔ Kostra | RolesConfigPanel |
+| 020 Můj účet | ✔ Kostra | metadata |
+| 030 Pronajímatel | ✔ Kostra | základ |
+| 040 Nemovitost | ✔ Kostra | budoucí rozšíření |
+| 050 Nájemník | ✔ Kostra | formuláře čekají |
+| 060 Smlouva | ✔ Kostra | vztahy později |
+| 070 Služby | ✔ Kostra | vyúčtování |
+| 080 Platby | ✔ Kostra | QR kódy později |
+| 090 Finance | ✔ Kostra | cashflow |
+| 100 Energie | ✔ Kostra | měřidla |
+| 120 Dokumenty | ✔ Kostra | šablony |
+| 130 Komunikace | ✔ Kostra | email/SMS historie |
+| 900 Nastavení | ✔ Aktivní | typy, motivy, ikony |
 
 ---
 
-# 4. UI REALIZOVANÉ KOMPONENTY
+# 5. SLUŽBY A KONFIGURACE
 
-| Komponenta | Stav | Poznámka |
-|------------|------|----------|
-| HomeButton | ✔ | Dokončeno |
-| Sidebar | ✔ | Dynamické moduly |
-| Breadcrumbs | ✔ | Statická verze |
-| HomeActions | ✔ | DisplayName + ikony |
-| CommonActions | ✔ | Pevná verze |
-| Tabulkový přehled | ⏳ | Zatím základ v modulech |
-| Form komponenty | ⏳ | Jednotný systém v přípravě |
-| Ikonový systém | ✔ | Centralizovaný |
-
----
-
-# 5. LOGIKA A SLUŽBY
-
-| Služba | Stav | Poznámka |
-|--------|------|----------|
-| Supabase Client | ✔ | Funkční |
-| Auth service | ✔ | Session + metadata |
-| Module Loader | ✔ | Dynamický sidebar |
-| Permission Engine | ⏳ | V přípravě |
-| Actions Engine | ⏳ | Vazba na moduly |
+- supabaseClient.ts — centrální klient  
+- auth.ts — login, logout, session  
+- uiConfig.ts — globální UI nastavení  
+- colorPalette.ts — barevná paleta aplikace  
+- themeSettings.ts — správa témat  
 
 ---
 
@@ -120,20 +216,26 @@ docs/
 ## 6.2 UI
 - TableView komponenta  
 - FormField komponenty (text, select, boolean, multiselect)  
-- modal windows  
-- toaster notifikace  
+- Modal okna  
+- Toaster notifikace  
 
-## 6.3 Moduly rozšíření
-- Dokumenty → generování PDF  
-- Komunikace → ukládání do historie  
-- Služby → šablony služeb  
-- Platby → QR kódy  
+## 6.3 Moduly a funkce (rozšíření)
+- Modul Dokumenty → generování PDF  
+- Modul Komunikace → ukládání e-mailů a zpráv  
+- Modul Služby → katalog + výpočty služeb  
+- Modul Platby → generování QR kódů, párování plateb  
+- Modul Energie → automatizované odečty  
 
 ---
 
 # 7. ZÁVĚR
 
-Tento dokument ukazuje **aktuální stav implementace i plán vývoje**.  
-Slouží jako kontrolní seznam i chronologický přehled celého systému.
+Tento dokument ukazuje:
+- aktuální stav projektu  
+- přehled struktur  
+- přehled komponent  
+- plán budoucího vývoje  
 
-Všechny změny v projektu musí být následně zaznamenány zde, aby dokumentace odpovídala reálnému stavu aplikace.
+Slouží jako kontrolní seznam i chronologická mapa projektu.
+
+Všechny změny v aplikaci musí být následně aktualizovány zde, aby dokumentace odpovídala skutečnému stavu systému.
