@@ -1,324 +1,288 @@
 # /docs/02-architecture.md
-## Popis: Tento dokument obsahuje architekturu aplikace, strukturu systému, používané technologie a technické principy.
+## Popis: Kompletní technická architektura aplikace Pronajímatel v6 – struktura projektu, vrstvy systému, modulový engine, služby a technologické principy.
 ---
 
-# 02 – Architektura aplikace
-*(původní obsah zachován; nové bloky jsou přidány níže)*
-
----
-
-# 0. Cíl aplikace
-
-Aplikace Pronajímatel v6 slouží ke správě:
-- nemovitostí  
-- jednotek  
-- nájemníků  
-- smluv  
-- plateb  
-- služeb  
-- dokumentů  
-- komunikace  
-
-Postaveno na:
-- Next.js 14 (App Router)
-- Supabase Auth + DB + RLS
-- Modulárním UI frameworku
-- Striktně definovaném 6-sekčním layoutu
+# 02 – ARCHITECTURE  
+*(Finální čistá konsolidovaná verze)*
 
 ---
 
-# 1. Architektura UI – 6 sekční layout
+# 1. ÚVOD
 
-Celá aplikace pracuje s jednotným rozložením:
+Tento dokument popisuje **architekturu aplikace Pronajímatel v6**:
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│ 1–2: Sidebar (HomeButton + dynamické moduly)                  │
-├──────────────┬───────────────────────────────────────────────┤
-│              │ 3: Horní lišta                                 │
-│ Sidebar      │    • Breadcrumbs vlevo                         │
-│ (left)       │    • HomeActions vpravo                        │
-│              ├───────────────────────────────────────────────┤
-│              │ 4: CommonActions — lišta obecných akcí         │
-│              ├───────────────────────────────────────────────┤
-│              │ 5: Content — přehled / detail / formulář       │
-└──────────────┴───────────────────────────────────────────────┘
-```
+- strukturu adresářů  
+- vrstvy systému  
+- modulový engine  
+- způsob renderování UI  
+- propojení se Supabase  
+- plánované backend služby  
 
-### Stav implementace layoutu
+Cílem architektury je zajistit:
 
-| Sekce          | Stav      |
-|----------------|-----------|
-| Sidebar        | ✔ Hotovo  |
-| HomeButton     | ✔ Hotovo  |
-| Breadcrumbs    | ✔ Základní verze |
-| HomeActions    | ✔ DisplayName, ikonky, logout |
-| CommonActions  | ✔ Verze v1 (pevná), připravená na dynamiku |
-| Content Engine | ✔ Základní rendering |
+- čistý kód  
+- snadné rozšiřování  
+- konzistentní chování  
+- jasnou logiku mezi UI, daty a moduly  
+- bezpečné oddělení odpovědností  
 
 ---
 
-# 2. Technologie aplikace
-*(doplněno z PREHLED-APLIKACE.md)*
+# 2. TECH STACK
 
-Aplikace je postavena na moderním technologickém stacku:
+Aplikace je postavená na těchto technologiích:
 
-| Technologie | Použití |
-|-------------|---------|
-| **Next.js 14** | serverové komponenty, routing, optimální rendering |
-| **React 18** | UI systém, komponenty |
-| **TypeScript** | statická kontrola typů |
-| **Supabase Auth** | přihlášení, registrace, session |
-| **Supabase Database (PostgreSQL + RLS)** | persistentní data |
-| **Supabase Storage** | dokumenty, přílohy |
-| **Vercel** | deployment, CI/CD |
-| **CSS / Tailwind / vlastní styl** | vzhled UI |
-
-Všechny technologie jsou plně kompatibilní s modulárním systémem aplikace.
+- **Next.js 14 (App Router)**  
+- **React + TypeScript**  
+- **Supabase (Auth, Database, RLS)**  
+- **TailwindCSS (UI stylování)**  
+- **Vercel** pro nasazení  
+- **Modulární architektura** (každý modul je izolovaný balík)
 
 ---
 
-# 3. Struktura projektu (ROOT, APP, DOCS)
-*(zcela doplněno z PREHLED-APLIKACE.md)*
+# 3. STRUKTURA PROJEKTU
+
+Hlavní adresářová struktura:
 
 ```
-/
-├── .env.local
-├── .git/
-├── LICENSE
-├── README.md
-├── ikons.md
-├── next.config.mjs
-├── package.json
-├── tsconfig.json
-│
-├── app/
-│   ├── globals.css
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── modules.index.js
-│   ├── modules/
-│   │   ├── 040-nemovitosti/
-│   │   ├── 050-jednotky/
-│   │   ├── 090-finance/
-│   │   ├── 900-nastaveni/
-│   │   └── ...
-│   └── UI/
-│       ├── HomeButton.tsx
-│       ├── Sidebar.tsx
-│       ├── Breadcrumbs.tsx
-│       ├── HomeActions.tsx
-│       ├── CommonActions.tsx
-│       └── ...
-│
-└── docs/
-    ├── 01-executive-summary.md
-    ├── 02-architecture.md
-    ├── 03-ui-system.md
-    ├── 04-modules.md
-    ├── 05-auth-rls.md
-    ├── 06-data-model.md
-    ├── 07-deployment.md
-    ├── 08-plan-vyvoje.md
-    ├── 09-project-rules.md
-    ├── 10-glossary.md
-    └── stav-struktury.md
+app/
+  UI/
+    components...
+  modules/
+    010-uzivatele/
+    020-muj-ucet/
+    030-pronajimatele/
+    ...
+    900-nastaveni/
+  services/
+  layout.tsx
+  providers.tsx
+
+public/
+supabase/
+docs/
 ```
 
-Tato struktura se bude dále rozšiřovat o:
-
-- `/services/` – (plánováno) service layer pro logiku mimo UI  
-- `/supabase/` – generované migrace a SQL (po budoucí standardizaci)  
-
----
-
-# 4. Autentizace – architektura
-
-*(původní text zachován, doplněny detaily)*
-
-Aplikace pracuje se stavem uživatele:
-
-```ts
-type SessionUser = {
-  email: string | null
-  displayName?: string | null
-}
-```
-
-DisplayName se načítá z:
-
-1. `session.user.user_metadata.display_name`  
-2. `full_name`  
-3. `name`  
-4. `email`  
-5. fallback „Uživatel“
-
-### Architektura Auth toku
-
-- klientská komponenta volá **Supabase Auth**  
-- serverová komponenta čte **cookies a session**  
-- při změně stavu běží `onAuthStateChange`  
-- AppShell reaguje a přesměruje na login nebo dashboard  
-
-> Detailní RLS a datové bezpečnostní zásady jsou v `05-auth-rls.md`.
-
----
-
-# 5. Modulární systém a moduly
-*(rozšířeno a systematizováno)*
-
-Každý modul se nachází v:
-
-```
-app/modules/<id>-<název>/
-```
-
-Složení modulu:
+## 3.1 `app/modules/*`
+Každý modul obsahuje:
 
 ```
 module.config.js
-overview/
-forms/
 tiles/
+forms/
+overview/
 ```
 
-### module.config.js obsahuje:
+`module.config.js` definuje:
 
-```js
-{
-  id: "040-nemovitosti",
-  label: "Nemovitosti",
-  icon: "building",
-  order: 40,
-  enabled: true,
-  // v2:
-  // commonActions: { overview: [...], detail: [...], form: [...] }
-}
-```
+- ID modulu  
+- název  
+- ikonu  
+- pořadí  
+- aktivaci/deaktivaci  
+- budoucí podporu commonActions + permissions  
 
-### Modul Loader
-- moduly se nenačítají staticky  
-- Sidebar využívá registr modulů `MODULE_SOURCES`  
-- moduly se setřídí podle `order`
+## 3.2 `app/UI`
+Obsahuje globální UI komponenty:
 
-Více v `docs/04-modules.md`.
+- layout v 6 sekcích  
+- HomeButton  
+- Sidebar  
+- Breadcrumbs  
+- HomeActions  
+- CommonActions  
+- Content wrapper  
 
----
+## 3.3 `app/services`
+Sem budou přidány backend/service-like vrstvy:
 
-# 6. Pravidla architektury a kódu (CODESTYLE pohledem systému)
+- `authService`  
+- `permissionsService`  
+- `commonActionsEngine`  
+- `dynamicBreadcrumbsBuilder`  
+- `formStateManager`  
 
-*(původní text zachován a doplněn)*
+Tyto služby umožní:
 
-- komponenty v `app/UI/` jsou **čisté UI**  
-- komponenty v `app/modules/` obsahují **business logiku** modulu  
-- názvy komponent → **PascalCase**  
-- props a proměnné → **camelCase**  
-- event handlery → `handleXxx` a `onXxx`  
-- **Žádné funkce uvnitř JSX**  
-- Ikony se získávají přes:
-
-```
-getIcon('name')
-```
-
-Podrobná pravidla → `docs/CODESTYLE.md` a `docs/09-project-rules.md`.
+- čištění logiky v UI  
+- vysokou opětovnou použitelnost  
+- jasné oddělení zodpovědnosti  
 
 ---
 
-# 7. Další architektonické části (doplněno z PREHLED-APLIKACE.md)
+# 4. VRSTVY APLIKACE
 
-## 7.1 Systém CommonActions
-
-Aplikace používá **centrální sadu tlačítek akcí**:
-
-```
-add, edit, view, duplicate, attach,
-archive, delete,
-save, saveAndClose, cancel
-```
-
-Verze 2 (plán):
-- akce definované v `module.config.js`
-- limitace podle role
-- limitace podle výběru položky
-- limitace podle stavu formuláře (dirty/clean)
+Aplikace je rozdělena do tří logických vrstev:
 
 ---
 
-## 7.2 Systém Breadcrumbs
+## 4.1 UI Layer
+Vrstva obsahující:
 
-- verze 1: statické  
-- verze 2: dynamické  
-- breadcrumb builder se bude odvozovat z:  
-  - aktivního modulu  
-  - aktivní dlaždice / detailu  
-  - aktivního formuláře  
-
----
-
-## 7.3 Systém Form Engine
-
-Plánované vlastnosti:
-
-- centrální konfigurace polí  
-- validace na jednom místě  
-- jednotný layout formulářů  
-- definice sekcí / tabs  
-
----
-
-# 8. Stav implementace – architektonické oblasti
-
-| Oblast                                   | Stav                            |
-|------------------------------------------|---------------------------------|
-| Základní layout                          | ✔ Hotovo                        |
-| Sidebar engine                           | ✔ Hotovo                        |
-| HomeButton                               | ✔ Hotovo                        |
-| Breadcrumbs                              | ✔ Základ (dynamický builder čeká) |
-| HomeActions                              | ✔ Hotovo                        |
-| CommonActions                            | ✔ Verze 1 / ⏳ Verze 2           |
-| FormEngine                               | ⏳ Příprava                      |
-| Role & Permissions                       | ⏳ Architektura navržena         |
-| Modul Dokumenty                          | ⏳ Rozpracováno                  |
-| Modul Komunikace                         | ⏳ Rozpracováno                  |
-| Modul Platby                             | ⏳ Rozpracováno                  |
-
----
-
-# 9. TODO – architektura a systém
-
-*(zachován původní text + doplněno)*
-
-### Nejbližší úkoly
-- propojit CommonActions s module.config.js  
-- definovat akce podle typu pohledu  
-- zavést role & permission systém  
-- vytvořit dynamické breadcrumbs  
-- přidat stav `requiresSelection` a `requiresDirty`  
-
-### Střednědobé úkoly
-- rozšíření modulů (Služby, Komunikace, Dokumenty)  
-- sjednocení formulářových komponent  
-- agregace dat v modulech  
-
-### Dlouhodobé úkoly
-- plná automatizace dokumentů  
-- notifikační centrum  
-- multi-tenant režim  
-- workflow engine  
-
----
-
-# 10. Závěr
-
-Tento dokument poskytuje přehled architektury v6:
-
+- vizuální komponenty  
 - layout  
-- moduly  
-- technologie  
-- autentizační tok  
-- systémové principy  
-- TODO pro budoucí verze  
+- přehledy, formuláře, tiles  
+- validaci vstupů  
+- interakci uživatele  
 
-Je jedním z klíčových dokumentů pro vývoj celého systému.
+UI je **stateless** tam, kde je to možné; stav drží vyšší vrstvy.
 
+---
+
+## 4.2 Domain / Logic Layer
+Sem patří:
+
+- služby  
+- modularita  
+- role a permissions  
+- common actions engine  
+- breadcrumbs engine  
+
+Tato vrstva:
+
+- dostává okolnosti z UI  
+- provádí logiku  
+- vrací rozhodnutí UI  
+
+---
+
+## 4.3 Data Layer (Supabase)
+Obsahuje:
+
+- tabulky  
+- RLS politiky  
+- schémata  
+- entity  
+- vztahy (1:N, M:N)  
+
+Komunikace probíhá přes:
+
+- Supabase klient  
+- RLS pravidla  
+- privileges  
+- future “server actions”  
+
+---
+
+# 5. MODULÁRNÍ ARCHITEKTURA
+
+Moduly jsou nezávislé bloky, které obsahují vše potřebné:
+
+- konfiguraci modulu  
+- tiles  
+- formuláře  
+- přehledy  
+
+## 5.1 Načítání modulů
+
+Aplikace:
+
+1. Načte všechny soubory `module.config.js`  
+2. Sestaví globální `MODULE_DEFINITION`  
+3. Seřadí moduly podle `order`  
+4. V renderu UI moduly dynamicky promapuje do Sidebaru  
+
+---
+
+## 5.2 Výhody architektury
+
+- přidání nového modulu = přidání nové složky  
+- každý modul může mít vlastní logiku  
+- snadná údržba  
+- čisté oddělení UI a dat  
+- jednoduché rozšiřování  
+
+---
+
+# 6. ARCHITEKTURA RENDEROVÁNÍ (CONTENT ENGINE)
+
+Obsahová část (sekce 5 UI layoutu) pracuje takto:
+
+1. Uživatel klikne v Sidebaru na modul  
+2. Aplikace nastaví `activeModuleId`  
+3. Content engine najde odpovídající tile/overview/form  
+4. Renderuje obsah podle kontextu  
+5. CommonActions + Breadcrumbs dostanou informace o stavu obsahu  
+
+Toto je základ budoucího:
+
+- dynamického přepínání stavů  
+- inteligentních CommonActions  
+- automatických Breadcrumbs  
+
+---
+
+# 7. ARCHITEKTURA BACKEND SLUŽEB (PLÁN)
+
+Plánované služby:
+
+### authService
+- práce s přihlášením  
+- metadata uživatele  
+- refresh session  
+
+### permissionsService
+- kontrola oprávnění  
+- role-based logika  
+- vazby na moduly a akce  
+
+### commonActionsEngine
+- rozhoduje, která akce má být aktivní  
+- podle:
+  - modulu  
+  - view (overview/detail/form)  
+  - stavu záznamu (dirty / clean)  
+  - oprávnění  
+
+### breadcrumbsBuilder
+- dynamické generování cesty  
+- modul / tile / detail  
+
+### formStateManager
+- sledování validace  
+- ukládání  
+- dirty/clean status  
+
+---
+
+# 8. BEZPEČNOST A RLS
+
+RLS je klíčová, protože:
+
+- každý uživatel vidí jen *své* záznamy  
+- role zajišťují granularitu přístupů  
+- RLS brání přímým SQL dotazům mimo oprávnění  
+
+Architektura RLS je plně rozpracovaná v dokumentu **05 – Auth & RLS**.
+
+---
+
+# 9. ARCHITEKTURA DEPLOYMENTU (ZKRÁCENÝ POPIS)
+
+- Vercel build  
+- automatické deployments  
+- environment variables  
+- prod/staging prostředí  
+- plán CI/CD  
+- CLI nástroje Supabase  
+
+Detailní popis je v **07 – Deployment**.
+
+---
+
+# 10. ZÁVĚR
+
+Tato architektura poskytuje:
+
+- čisté rozdělení vrstev  
+- jasná pravidla mezi UI a logikou  
+- bezpečný přístup k datům  
+- škálovatelný modulární systém  
+- budoucí možnosti rozšíření  
+
+Modulární architektura Pronajímatel v6 je navržena tak, aby dlouhodobě podporovala růst a profesionální rozvoj aplikace.
+
+---
+
+*Konec BLOKU A – finální čistá verze dokumentu 02*
