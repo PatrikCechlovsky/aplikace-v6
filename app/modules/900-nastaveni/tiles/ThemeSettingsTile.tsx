@@ -1,7 +1,6 @@
 'use client'
 // ThemeSettingsTile.tsx
 
-
 import { useEffect, useState } from 'react'
 import type {
   ThemeMode,
@@ -14,28 +13,76 @@ import {
 } from '../../../lib/themeSettings'
 import { getCurrentSession } from '../../../lib/services/auth'
 
-
 const THEME_STORAGE_KEY = 'pronajimatel_theme'
 
-const PALETTES: { id: ThemeAccent; name: string; description: string }[] = [
+// ---------------------------------------------------------
+// 1) PŘEDVOLBY – KAŽDÁ DLAŽDICE = 1 KOMBINACE (MODE + ACCENT)
+// ---------------------------------------------------------
+
+type ThemePreset = {
+  id: string
+  label: string
+  description: string
+  mode: ThemeMode
+  accent: ThemeAccent
+}
+
+const PRESETS: ThemePreset[] = [
   {
-    id: 'blue',
-    name: 'Výchozí modrá',
-    description: 'Moderní modrá paleta vhodná pro většinu uživatelů.',
+    id: 'auto-blue',
+    label: 'Automaticky – modrá',
+    description: 'Řídí se nastavením systému (světlý/tmavý), akcent modrou.',
+    mode: 'auto',
+    accent: 'blue',
   },
   {
-    id: 'green',
-    name: 'Zelená',
-    description: 'Klidnější vzhled s důrazem na zelené akcenty.',
+    id: 'light-blue',
+    label: 'Světlé – modrá',
+    description: 'Klasické světlé prostředí s modrými prvky.',
+    mode: 'light',
+    accent: 'blue',
   },
   {
-    id: 'landlord',
-    name: 'Pastelová Pronajímatel',
-    description: 'Pastelová paleta ladící s vizuálem aplikace Pronajímatel.',
+    id: 'dark-blue',
+    label: 'Tmavé – modrá',
+    description: 'Tmavý režim s modrým akcentem, šetrný pro oči večer.',
+    mode: 'dark',
+    accent: 'blue',
+  },
+  {
+    id: 'light-green',
+    label: 'Světlé – zelená',
+    description: 'Světlé prostředí s jemným zeleným zvýrazněním.',
+    mode: 'light',
+    accent: 'green',
+  },
+  {
+    id: 'dark-green',
+    label: 'Tmavé – zelená',
+    description: 'Tmavý režim s klidným zeleným akcentem.',
+    mode: 'dark',
+    accent: 'green',
+  },
+  {
+    id: 'light-landlord',
+    label: 'Světlé – Pronajímatel',
+    description: 'Světlé prostředí v pastelových barvách aplikace Pronajímatel.',
+    mode: 'light',
+    accent: 'landlord',
+  },
+  {
+    id: 'dark-landlord',
+    label: 'Tmavé – Pronajímatel',
+    description: 'Tmavé prostředí s fialovým akcentem Pronajímatel.',
+    mode: 'dark',
+    accent: 'landlord',
   },
 ]
 
-// 🔧 Aplikujeme class na hlavní layout (.layout)
+// ---------------------------------------------------------
+// 2) APLIKACE TÉMAT NA .layout
+// ---------------------------------------------------------
+
 function applyThemeToLayout(settings: ThemeSettings) {
   if (typeof document === 'undefined') return
 
@@ -76,11 +123,6 @@ function loadInitialFromLocalStorage(): ThemeSettings {
   } catch {
     return { mode: 'auto', accent: 'blue' }
   }
-}
-
-type Props = {
-  // až doplníme auth, můžeš sem poslat userId a bude se ukládat i do Supabase
-  userId?: string
 }
 
 export default function ThemeSettingsTile() {
@@ -164,12 +206,8 @@ export default function ThemeSettingsTile() {
     }
   }
 
-  const handleModeChange = (newMode: ThemeMode) => {
-    updateSettings({ mode: newMode, accent })
-  }
-
-  const handleAccentChange = (newAccent: ThemeAccent) => {
-    updateSettings({ mode, accent: newAccent })
+  const handlePresetClick = (preset: ThemePreset) => {
+    updateSettings({ mode: preset.mode, accent: preset.accent })
   }
 
   return (
@@ -177,81 +215,51 @@ export default function ThemeSettingsTile() {
       <header className="settings-tile__header">
         <h1 className="settings-tile__title">Barevné zobrazení</h1>
         <p className="settings-tile__description">
-          Zvolte režim zobrazení a barevnou paletu aplikace.
+          Vyber si jedno z předvolených témat. Nastavení se okamžitě použije a
+          uloží k tvému účtu.
         </p>
       </header>
 
-      {/* Režim vzhledu */}
       <div className="settings-tile__section">
-        <h2 className="settings-tile__section-title">Režim vzhledu</h2>
-        <div className="settings-tile__radio-group">
-          <label className="settings-tile__radio">
-            <input
-              type="radio"
-              name="theme-mode"
-              value="auto"
-              checked={mode === 'auto'}
-              onChange={() => handleModeChange('auto')}
-            />
-            <span>Automaticky (podle systému)</span>
-          </label>
-          <label className="settings-tile__radio">
-            <input
-              type="radio"
-              name="theme-mode"
-              value="light"
-              checked={mode === 'light'}
-              onChange={() => handleModeChange('light')}
-            />
-            <span>Světlý režim</span>
-          </label>
-          <label className="settings-tile__radio">
-            <input
-              type="radio"
-              name="theme-mode"
-              value="dark"
-              checked={mode === 'dark'}
-              onChange={() => handleModeChange('dark')}
-            />
-            <span>Tmavý režim</span>
-          </label>
-        </div>
-      </div>
+        <h2 className="settings-tile__section-title">Předvolená témata</h2>
 
-      {/* Palety */}
-      <div className="settings-tile__section">
-        <h2 className="settings-tile__section-title">Barevná paleta</h2>
         <div className="settings-tile__palette-grid">
-          {PALETTES.map((palette) => {
-            const isActive = palette.id === accent
+          {PRESETS.map((preset) => {
+            const isActive =
+              preset.mode === mode && preset.accent === accent
+
             return (
               <button
-                key={palette.id}
+                key={preset.id}
                 type="button"
                 className={`palette-card ${
                   isActive ? 'palette-card--active' : ''
                 }`}
-                onClick={() => handleAccentChange(palette.id)}
+                onClick={() => handlePresetClick(preset)}
                 disabled={isSaving}
               >
                 <div className="palette-card__header">
-                  <span className="palette-card__title">{palette.name}</span>
+                  <span className="palette-card__title">
+                    {preset.label}
+                  </span>
                   {isActive && (
                     <span className="palette-card__badge">Aktivní</span>
                   )}
                 </div>
+
                 <p className="palette-card__description">
-                  {palette.description}
+                  {preset.description}
                 </p>
+
                 <div className="palette-card__preview">
                   <span
-                    className={`palette-preview palette-preview--${palette.id} primary`}
+                    className={`palette-preview palette-preview--${preset.accent} primary`}
                   />
                   <span
-                    className={`palette-preview palette-preview--${palette.id} soft`}
+                    className={`palette-preview palette-preview--${preset.accent} soft`}
                   />
                   <span
-                    className={`palette-preview palette-preview--${palette.id} accent`}
+                    className={`palette-preview palette-preview--${preset.accent} accent`}
                   />
                 </div>
               </button>
