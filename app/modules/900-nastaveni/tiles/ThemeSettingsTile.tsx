@@ -2,18 +2,14 @@
 // ThemeSettingsTile.tsx
 
 import { useEffect, useState } from 'react'
-
-type ThemeMode = 'auto' | 'light' | 'dark'
-type ThemeAccent = 'blue' | 'green' | 'landlord'
+import type { ThemeMode, ThemeAccent, ThemeSettings } from '@/app/lib/themeSettings'
+import {
+  loadThemeSettingsFromSupabase,
+  saveThemeSettingsToSupabase,
+} from '@/app/lib/themeSettings'
 
 const THEME_STORAGE_KEY = 'pronajimatel_theme'
 
-interface ThemeSettings {
-  mode: ThemeMode
-  accent: ThemeAccent
-}
-
-// Přednastavené palety, které zobrazíme jako „dlaždice“
 const PALETTES: { id: ThemeAccent; name: string; description: string }[] = [
   {
     id: 'blue',
@@ -32,7 +28,27 @@ const PALETTES: { id: ThemeAccent; name: string; description: string }[] = [
   },
 ]
 
-function loadInitialTheme(): ThemeSettings {
+// Aplikace class na root (nebo .layout) – uprav si selector podle projektu
+function applyThemeToDocument(settings: ThemeSettings) {
+  if (typeof document === 'undefined') return
+
+  const root = document.documentElement // nebo document.querySelector('.layout')
+  root.classList.remove('theme-light', 'theme-dark')
+  root.classList.remove('accent-blue', 'accent-green', 'accent-landlord')
+
+  const resolvedMode =
+    settings.mode === 'auto'
+      ? (window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light')
+      : settings.mode
+
+  root.classList.add(`theme-${resolvedMode}`)
+  root.classList.add(`accent-${settings.accent}`)
+}
+
+function loadInitialFromLocalStorage(): ThemeSettings {
   if (typeof window === 'undefined') {
     return { mode: 'auto', accent: 'blue' }
   }
@@ -50,26 +66,61 @@ function loadInitialTheme(): ThemeSettings {
   }
 }
 
-export default function BarevneZobrazeniTile() {
+export default function ThemeSettingsTile({ userId }: { userId?: string }) {
   const [mode, setMode] = useState<ThemeMode>('auto')
   const [accent, setAccent] = useState<ThemeAccent>('blue')
+  const [isSaving, setIsSaving] = useState(false)
 
-  // při prvním načtení stáhneme hodnoty z localStorage
+  // 1) při prvním načtení – nejdřív lokál, pak Supabase (pokud user)
   useEffect(() => {
-    const initial = loadInitialTheme()
-    setMode(initial.mode)
-    setAccent(initial.accent)
-  }, [])
+    const local = loadInitialFromLocalStorage()
+    setMode(local.mode)
+    setAccent(local.accent)
+    applyThemeToDocument(local)
 
-  // vždy když se něco změní, uložíme to do localStorage
-  useEffect(() => {
-    const settings: ThemeSettings = { mode, accent }
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(settings))
-    } catch {
-      // ignorujeme chybu – jen fallback
+    const fetchFromSupabase = async () => {
+      if (!userId) return
+      const fromDb = await loadThemeSettingsFromSupabase(userId)
+      setMode(fromDb.mode)
+      setAccent(fromDb.accent)
+      applyThemeToDocument(fromDb)
+      window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(fromDb))
     }
-  }, [mode, accent])
+
+    fetchFromSupabase()
+  }, [userId])
+
+  // společná funkce – změní state, uloží, přepne theme
+  const updateSettings = async (next: ThemeSettings) => {
+    setMode(next.mode)
+    setAccent(next.accent)
+    applyThemeToDocument(next)
+
+    // localStorage
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(next))
+    } catch {
+      /* ignore */
+    }
+
+    // Supabase
+    if (userId) {
+      try {
+        setIsSaving(true)
+        await saveThemeSettingsToSupabase(userId, next)
+      } finally {
+        setIsSaving(false)
+      }
+    }
+  }
+
+  const handleModeChange = (newMode: ThemeMode) => {
+    updateSettings({ mode: newMode, accent })
+  }
+
+  const handleAccentChange = (newAccent: ThemeAccent) => {
+    updateSettings({ mode, accent: newAccent })
+  }
 
   return (
     <section className="settings-tile">
@@ -80,7 +131,6 @@ export default function BarevneZobrazeniTile() {
         </p>
       </header>
 
-      {/* Režim vzhledu */}
       <div className="settings-tile__section">
         <h2 className="settings-tile__section-title">Režim vzhledu</h2>
         <div className="settings-tile__radio-group">
@@ -90,7 +140,7 @@ export default function BarevneZobrazeniTile() {
               name="theme-mode"
               value="auto"
               checked={mode === 'auto'}
-              onChange={() => setMode('auto')}
+              onChange={() => handleModeChange('auto')}
             />
             <span>Automaticky (podle systému)</span>
           </label>
@@ -100,7 +150,7 @@ export default function BarevneZobrazeniTile() {
               name="theme-mode"
               value="light"
               checked={mode === 'light'}
-              onChange={() => setMode('light')}
+              onChange={() => handleModeChange('light')}
             />
             <span>Světlý režim</span>
           </label>
@@ -110,14 +160,13 @@ export default function BarevneZobrazeniTile() {
               name="theme-mode"
               value="dark"
               checked={mode === 'dark'}
-              onChange={() => setMode('dark')}
+              onChange={() => handleModeChange('dark')}
             />
             <span>Tmavý režim</span>
           </label>
         </div>
       </div>
 
-      {/* Palety / akcenty */}
       <div className="settings-tile__section">
         <h2 className="settings-tile__section-title">Barevná paleta</h2>
         <div className="settings-tile__palette-grid">
@@ -130,7 +179,8 @@ export default function BarevneZobrazeniTile() {
                 className={`palette-card ${
                   isActive ? 'palette-card--active' : ''
                 }`}
-                onClick={() => setAccent(palette.id)}
+                onClick={() => handleAccentChange(palette.id)}
+                disabled={isSaving}
               >
                 <div className="palette-card__header">
                   <span className="palette-card__title">{palette.name}</span>
@@ -142,16 +192,27 @@ export default function BarevneZobrazeniTile() {
                   {palette.description}
                 </p>
 
-                {/* Jednoduchý barevný náhled – zatím jen symbolicky */}
                 <div className="palette-card__preview">
-                  <span className={`palette-preview palette-preview--${palette.id} primary`} />
-                  <span className={`palette-preview palette-preview--${palette.id} soft`} />
-                  <span className={`palette-preview palette-preview--${palette.id} accent`} />
+                  <span
+                    className={`palette-preview palette-preview--${palette.id} primary`}
+                  />
+                  <span
+                    className={`palette-preview palette-preview--${palette.id} soft`}
+                  />
+                  <span
+                    className={`palette-preview palette-preview--${palette.id} accent`}
+                  />
                 </div>
               </button>
             )
           })}
         </div>
+
+        {isSaving && (
+          <p className="text-xs text-gray-400 mt-1">
+            Ukládám nastavení vzhledu…
+          </p>
+        )}
       </div>
     </section>
   )
