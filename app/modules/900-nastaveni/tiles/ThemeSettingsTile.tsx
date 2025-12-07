@@ -1,5 +1,4 @@
 'use client'
-// ThemeSettingsTile.tsx
 
 import { useEffect, useState } from 'react'
 import type {
@@ -15,10 +14,6 @@ import { getCurrentSession } from '../../../lib/services/auth'
 
 const THEME_STORAGE_KEY = 'pronajimatel_theme'
 
-// ---------------------------------------------------------
-// 1) PŘEDVOLBY – KAŽDÁ DLAŽDICE = 1 KOMBINACE (MODE + ACCENT)
-// ---------------------------------------------------------
-
 type ThemePreset = {
   id: string
   label: string
@@ -27,73 +22,120 @@ type ThemePreset = {
   accent: ThemeAccent
 }
 
+/**
+ * 5 barevných rodin × (light + dark) + 1 auto
+ * = 11 předvoleb
+ */
 const PRESETS: ThemePreset[] = [
   {
-    id: 'auto-blue',
-    label: 'Automaticky – modrá',
-    description: 'Řídí se nastavením systému (světlý/tmavý), akcent modrou.',
+    id: 'auto-neutral',
+    label: 'Automaticky – neutrální',
+    description:
+      'Řídí se nastavením systému (světlý / tmavý), neutrální barevné schéma.',
     mode: 'auto',
-    accent: 'blue',
+    accent: 'neutral',
+  },
+
+  // 1) Neutral
+  {
+    id: 'neutral-light',
+    label: 'Neutral – světlé',
+    description: 'Čisté světlé prostředí s jemným modrofialovým akcentem.',
+    mode: 'light',
+    accent: 'neutral',
   },
   {
-    id: 'light-blue',
-    label: 'Světlé – modrá',
+    id: 'neutral-dark',
+    label: 'Neutral – tmavé',
+    description: 'Tmavý režim se standardním akcentem, vhodný pro večerní práci.',
+    mode: 'dark',
+    accent: 'neutral',
+  },
+
+  // 2) Grey
+  {
+    id: 'grey-light',
+    label: 'Grey – světlé',
+    description: 'Světlé šedé prostředí vhodné pro profesionální a úřední práci.',
+    mode: 'light',
+    accent: 'grey',
+  },
+  {
+    id: 'grey-dark',
+    label: 'Grey – tmavé',
+    description: 'Tmavé grafitové prostředí s decentním šedým zvýrazněním.',
+    mode: 'dark',
+    accent: 'grey',
+  },
+
+  // 3) Blue
+  {
+    id: 'blue-light',
+    label: 'Blue – světlé',
     description: 'Klasické světlé prostředí s modrými prvky.',
     mode: 'light',
     accent: 'blue',
   },
   {
-    id: 'dark-blue',
-    label: 'Tmavé – modrá',
-    description: 'Tmavý režim s modrým akcentem, šetrný pro oči večer.',
+    id: 'blue-dark',
+    label: 'Blue – tmavé',
+    description:
+      'Tmavý režim s modrým akcentem, šetrný pro oči při práci večer.',
     mode: 'dark',
     accent: 'blue',
   },
+
+  // 4) Green
   {
-    id: 'light-green',
-    label: 'Světlé – zelená',
+    id: 'green-light',
+    label: 'Green – světlé',
     description: 'Světlé prostředí s jemným zeleným zvýrazněním.',
     mode: 'light',
     accent: 'green',
   },
   {
-    id: 'dark-green',
-    label: 'Tmavé – zelená',
+    id: 'green-dark',
+    label: 'Green – tmavé',
     description: 'Tmavý režim s klidným zeleným akcentem.',
     mode: 'dark',
     accent: 'green',
   },
+
+  // 5) Purple
   {
-    id: 'light-landlord',
-    label: 'Světlé – Pronajímatel',
-    description: 'Světlé prostředí v pastelových barvách aplikace Pronajímatel.',
+    id: 'purple-light',
+    label: 'Purple – světlé',
+    description: 'Světlé prostředí v pastelových barvách aplikace.',
     mode: 'light',
-    accent: 'landlord',
+    accent: 'purple',
   },
   {
-    id: 'dark-landlord',
-    label: 'Tmavé – Pronajímatel',
-    description: 'Tmavé prostředí s fialovým akcentem Pronajímatel.',
+    id: 'purple-dark',
+    label: 'Purple – tmavé',
+    description: 'Tmavé prostředí s fialovým akcentem.',
     mode: 'dark',
-    accent: 'landlord',
+    accent: 'purple',
   },
 ]
 
 // ---------------------------------------------------------
-// 2) APLIKACE TÉMAT NA .layout
+// Aplikace tema na .layout
 // ---------------------------------------------------------
 
 function applyThemeToLayout(settings: ThemeSettings) {
   if (typeof document === 'undefined') return
-
   const layout = document.querySelector('.layout')
   if (!layout) return
 
-  // smažeme staré class
   layout.classList.remove('theme-light', 'theme-dark')
-  layout.classList.remove('accent-blue', 'accent-green', 'accent-landlord')
+  layout.classList.remove(
+    'accent-neutral',
+    'accent-grey',
+    'accent-blue',
+    'accent-green',
+    'accent-purple',
+  )
 
-  // vyhodnotíme "auto"
   const resolvedMode: ThemeMode =
     settings.mode === 'auto'
       ? window.matchMedia &&
@@ -106,32 +148,29 @@ function applyThemeToLayout(settings: ThemeSettings) {
   layout.classList.add(`accent-${settings.accent}`)
 }
 
-// čtení z localStorage
 function loadInitialFromLocalStorage(): ThemeSettings {
   if (typeof window === 'undefined') {
-    return { mode: 'auto', accent: 'blue' }
+    return { mode: 'auto', accent: 'neutral' }
   }
-
   try {
     const raw = window.localStorage.getItem(THEME_STORAGE_KEY)
-    if (!raw) return { mode: 'auto', accent: 'blue' }
+    if (!raw) return { mode: 'auto', accent: 'neutral' }
     const parsed = JSON.parse(raw)
     return {
-      mode: parsed.mode ?? 'auto',
-      accent: parsed.accent ?? 'blue',
+      mode: (parsed.mode as ThemeMode) ?? 'auto',
+      accent: (parsed.accent as ThemeAccent) ?? 'neutral',
     }
   } catch {
-    return { mode: 'auto', accent: 'blue' }
+    return { mode: 'auto', accent: 'neutral' }
   }
 }
 
 export default function ThemeSettingsTile() {
   const [mode, setMode] = useState<ThemeMode>('auto')
-  const [accent, setAccent] = useState<ThemeAccent>('blue')
+  const [accent, setAccent] = useState<ThemeAccent>('neutral')
   const [isSaving, setIsSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
 
-  // 0) zjistíme aktuálního uživatele (jen na clientu)
   useEffect(() => {
     let cancelled = false
 
@@ -148,7 +187,6 @@ export default function ThemeSettingsTile() {
     }
   }, [])
 
-  // 1) při načtení komponenty – nejdřív localStorage, pak případně Supabase
   useEffect(() => {
     const local = loadInitialFromLocalStorage()
     setMode(local.mode)
@@ -180,22 +218,17 @@ export default function ThemeSettingsTile() {
     }
   }, [userId])
 
-  // společná funkce – okamžitě přepne vzhled + uloží
   const updateSettings = async (next: ThemeSettings) => {
     setMode(next.mode)
     setAccent(next.accent)
-
-    // hned přepnout vzhled
     applyThemeToLayout(next)
 
-    // localStorage
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(next))
     } catch {
       /* ignore */
     }
 
-    // Supabase – jen když máme userId, jinak se přeskočí
     if (userId) {
       try {
         setIsSaving(true)
