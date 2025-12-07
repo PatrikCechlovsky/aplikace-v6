@@ -1,0 +1,156 @@
+/* app/styles/components/entity.css */
+/* =========================================
+   ENTITY LIST, RELATION PANE, DETAIL
+   ========================================= */
+
+/* Přehled entit */
+
+.entity-list {
+  border-radius: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.entity-list__header-row,
+.entity-list__row {
+  display: grid;
+  grid-template-columns: 6px repeat(auto-fit, minmax(80px, 1fr));
+  align-items: stretch;
+}
+
+.entity-list__header-row {
+  background: var(--color-surface-subtle);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+}
+
+.entity-list__row {
+  border-bottom: 1px solid var(--color-border-soft);
+  cursor: pointer;
+}
+
+.entity-list__row:hover {
+  background: #f1f5f9;
+}
+
+.entity-list__cell {
+  padding: 6px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entity-list__cell--header {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Relation pane */
+
+.relation-pane {
+  display: grid;
+  grid-template-rows: 200px minmax(220px, 1fr);
+  gap: 8px;
+}
+
+.relation-pane__list {
+  background: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.relation-pane__header {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-surface-subtle);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.relation-pane__list-inner {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.relation-pane__item {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--color-border-soft);
+  cursor: pointer;
+}
+
+.relation-pane__item:hover {
+  background: #f1f5f9;
+}
+
+.relation-pane__item--active {
+  background: var(--color-primary-soft);
+}
+
+.relation-pane__item-secondary {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.relation-pane__item-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e5f0ff;
+  color: #1d4ed8;
+}
+
+.relation-pane__detail {
+  background: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  padding: 10px;
+  font-size: 13px;
+}
+
+/* Detail entity */
+
+.entity-detail {
+  background: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  padding: 12px;
+}
+
+.entity-detail__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.entity-detail__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.entity-detail__subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.entity-detail__body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 12px;
+}
+
+.entity-detail__side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
