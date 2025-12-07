@@ -737,16 +737,9 @@ export default function GenericTypeTile({
                           )}
                         </td>
 
-                        {/* Barva */}
-                        <td className="generic-type__cell generic-type__cell--center">
-                          {item.color ? (
-                            <span
-                              className="generic-type__color-dot"
-                              style={{ backgroundColor: item.color || '' }}
-                            />
-                          ) : (
-                            <span className="generic-type__color-dot generic-type__color-dot--empty" />
-                          )}
+                        {/* Barva (HEX) */}
+                        <td className="generic-type__cell generic-type__cell--color">
+                          {item.color || ''}
                         </td>
 
                         {/* Popis */}
