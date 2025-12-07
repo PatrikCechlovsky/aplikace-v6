@@ -51,7 +51,6 @@ export default {
       sectionId: 'types-settings',
       component: SubjectTypesTile
     },
-    tiles: [
     {
       id: 'theme-settings',
       label: 'Barevné zobrazení',
