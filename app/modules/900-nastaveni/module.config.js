@@ -55,6 +55,7 @@ export default {
       id: 'theme-settings',
       label: 'Barevné zobrazení',
       icon: 'palette', // můžeš změnit na nějaký vlastní
+      sectionId: 'theme-settings',
       component: ThemeSettingsTile,
       order: 20, // libovolné pořadí mezi ostatními
     },
