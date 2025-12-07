@@ -906,7 +906,7 @@ body.theme-orange .home-button {
 .palette-card {
   width: 100%;
   text-align: left;
-  padding: 0.9rem;
+  padding: 0.75rem;
   border-radius: 0.75rem;
   border: 1px solid #e5e7eb;
   background: #f9fafb;
@@ -924,8 +924,14 @@ body.theme-orange .home-button {
 .settings-tile__palette-grid {
   display: grid;
   gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
-
+/* Na větších obrazovkách můžou být dvě vedle sebe */
+@media (min-width: 1024px) {
+  .settings-tile__palette-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* třeba 3 vedle sebe */
+  }
+}
 /* Jednoduché barvičky pro náhled – zatím natvrdo */
 .palette-preview {
   display: inline-block;
