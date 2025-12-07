@@ -668,7 +668,7 @@ export default function GenericTypeTile({
                     <th className="generic-type__cell generic-type__cell--center">
                       Ikona
                     </th>
-                    <th className="generic-type__cell generic-type__cell--center">
+                    <th className="generic-type__cell">
                       Barva
                     </th>
                     <th className="generic-type__cell">Popis</th>
