@@ -96,7 +96,15 @@
   margin-right: 4px;
 }
 
-/* ukázkové barvy */
+/* ukázkové barvy pro dlaždice */
+
+.palette-preview--neutral.primary { background: #4f46e5; }
+.palette-preview--neutral.soft { background: #e0e7ff; }
+.palette-preview--neutral.accent { background: #111827; }
+
+.palette-preview--grey.primary { background: #6b7280; }
+.palette-preview--grey.soft { background: #e5e7eb; }
+.palette-preview--grey.accent { background: #374151; }
 
 .palette-preview--blue.primary { background: #2563eb; }
 .palette-preview--blue.soft { background: #dbeafe; }
@@ -106,6 +114,7 @@
 .palette-preview--green.soft { background: #dcfce7; }
 .palette-preview--green.accent { background: #15803d; }
 
-.palette-preview--landlord.primary { background: #a855f7; }
-.palette-preview--landlord.soft { background: #f3e8ff; }
-.palette-preview--landlord.accent { background: #7c3aed; }
+.palette-preview--purple.primary { background: #a855f7; }
+.palette-preview--purple.soft { background: #f3e8ff; }
+.palette-preview--purple.accent { background: #7c3aed; }
+
