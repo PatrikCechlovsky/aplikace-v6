@@ -338,3 +338,124 @@ Slouží jako základ pro celé UX aplikace Pronajímatel v6.
 ---
 
 *Konec BLOKU A – finální čistá verze dokumentu 03*
+---
+
+# 📜 Historické části dokumentu (UI systém – zachováno, ale zastaralé)
+
+Níže jsou uvedeny původní texty a nedokončené koncepty týkající se UI, které byly během vývoje vytvořeny, ale již nejsou aktuální.  
+Jsou označeny jako ~~zastaralé~~, ale NESMÍ BÝT SMAZÁNY.
+
+---
+
+### ~~Původní hrubý popis 6-sekčního layoutu~~
+
+~~Sidebar bude obsahovat HomeButton a nějaké akce.  
+Horní lišta bude mít texty nebo možná ikony.  
+CommonActions jsme zatím nevyřešili.~~  
+
+~~Tento popis byl nahrazen plnohodnotnou specifikací v sekci „6-sekční layout“.~~
+
+---
+
+### ~~Staré rozdělení UI dle PREHLED-APLIKACE~~
+
+~~“V aplikaci budou nějaké přehledy a nějaké formuláře a možná bude potřeba přidat stavové ikony.”~~
+
+~~Toto bylo příliš vágní, proto bylo přepracováno do sekcí UI Components a Content Engine.~~
+
+---
+
+### ~~Původní popis Sidebaru (z doby před dynamickými moduly)~~
+
+~~Sidebar bude statický:  
+- Domů  
+- Nemovitosti  
+- Jednotky  
+- Smlouvy~~
+
+~~Tento koncept byl opuštěn. Dnes Sidebar načítá vše dynamicky z module.config.js.~~
+
+---
+
+### ~~Alternativní koncept víceúrovňového Sidebaru~~
+
+~~Sidebar Level 1: Moduly  
+Sidebar Level 2: Typy  
+Sidebar Level 3: Položky~~
+
+~~Byl nahrazen moderním konceptem modul → sekce → detail.~~
+
+---
+
+### ~~Původní detailní popis HomeActions~~
+
+~~HomeActions budou mít tlačítko “Profil”, “Vyhledávání”, “Notifikace” a možná tam přidáme i nějaké nastavení nebo ikonku zvonečku.~~
+
+~~Toto bylo nahrazeno finální verzí se strukturou sessionName + logout + placeholdery (search, notifications).~~
+
+---
+
+### ~~Testovací prototyp Breadcrumbs~~
+
+~~Breadcrumbs budou možná jednoduché:  
+Dashboard / Modul~~
+
+~~Nebyl v nich plán na více úrovní.  
+Dnes máme koncept až 4 úrovní – viz sekce “Breadcrumbs”.~~
+
+---
+
+### ~~Starý popis CommonActions (před zavedením dynamiky)~~
+
+~~Akce budou v každém formuláři ručně přidané.  
+Příklad: [Uložit] [Zavřít] [Smazat]~~
+
+~~Tento přístup byl zcela opuštěn. CommonActions jsou nyní centrální UI prvek.~~
+
+---
+
+### ~~Historická poznámka o barvách~~
+
+~~Zkusíme použít modrou, zelenou a nějakou žlutou. Nebo pastelové barvy.~~
+
+~~Tento náhodný výběr byl nahrazen definovaným barevným systémem.~~
+
+---
+
+### ~~Nedokončený seznam typů polí~~
+
+~~Text, číslo, select, multiselect, boolean, date, nějaké další…~~  
+~~Později byl seznam upřesněn a doplněn o specifikaci validace a chování v UI.~~
+
+---
+
+### ~~Původní návrh responzivního UI~~
+
+~~V mobilu možná vypneme Sidebar úplně. Nebo ho dáme nahoru. Nebo do modalu.~~
+
+~~Dnes máme přesné pravidlo: Sidebar se skrývá a nahrazuje hamburger menu.~~
+
+---
+
+### ~~Návrh “teoretického” layoutu pro tablet, který nebyl použit~~
+
+```
+Sidebar (left)
+Topbar (top)
+Actions (right)
+Content (center)
+```
+
+~~Nebyl použit kvůli složitému zarovnání a nekonzistentnímu UX.~~
+
+---
+
+### ~~Staré návrhy ikon~~
+
+~~Používali jsme různé sady ikon, některé měly barevné pozadí nebo oválné tvary.~~
+
+~~Dnes máme jednotný systém getIcon(name) bez pozadí.~~
+
+---
+
+# 📌 Konec archivních historických částí pro dokument 03 UI.
