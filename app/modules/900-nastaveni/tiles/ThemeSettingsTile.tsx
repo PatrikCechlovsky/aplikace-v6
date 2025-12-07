@@ -12,6 +12,8 @@ import {
   loadThemeSettingsFromSupabase,
   saveThemeSettingsToSupabase,
 } from '../../../lib/themeSettings'
+import { getCurrentSession } from '../../../lib/services/auth'
+
 
 const THEME_STORAGE_KEY = 'pronajimatel_theme'
 
@@ -81,10 +83,28 @@ type Props = {
   userId?: string
 }
 
-export default function ThemeSettingsTile({ userId }: Props) {
+export default function ThemeSettingsTile() {
   const [mode, setMode] = useState<ThemeMode>('auto')
   const [accent, setAccent] = useState<ThemeAccent>('blue')
   const [isSaving, setIsSaving] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // 0) zjistíme aktuálního uživatele (jen na clientu)
+  useEffect(() => {
+    let cancelled = false
+
+    ;(async () => {
+      const { data, error } = await getCurrentSession()
+      if (cancelled) return
+      if (!error && data.session?.user?.id) {
+        setUserId(data.session.user.id)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // 1) při načtení komponenty – nejdřív localStorage, pak případně Supabase
   useEffect(() => {
