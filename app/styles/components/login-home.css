@@ -1,0 +1,128 @@
+/* app/styles/components/login-home.css */
+/* =========================================
+   HOME BUTTON, HOME ACTIONS, LOGIN PANEL
+   ========================================= */
+
+/* Home button vlevo nahoře */
+
+.home-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  width: 100%;
+  text-align: left;
+}
+
+.home-button__icon {
+  font-size: 18px;
+}
+
+.home-button.is-disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.home-button:not(.is-disabled) {
+  cursor: pointer;
+}
+
+/* HomeActions vpravo nahoře */
+
+.home-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.home-actions.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.home-actions__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.home-actions__btn,
+.home-actions__logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.home-actions__btn {
+  width: 28px;
+  height: 28px;
+}
+
+.home-actions__logout {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* Login panel */
+
+.login-panel {
+  max-width: 420px;
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  font-size: 14px;
+}
+
+.login-panel__tabs {
+  display: flex;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.login-panel__tab {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.login-panel__tab--active {
+  border-bottom: 2px solid var(--color-primary);
+  font-weight: 600;
+}
+
+.login-panel__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-panel__field label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.login-panel__field input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
