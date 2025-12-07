@@ -1,120 +1,126 @@
-/* app/styles/components/theme-settings.css */
-/* =========================================
-   THEME SETTINGS TILE – BAREVNÉ ZOBRAZENÍ
-   ========================================= */
+// FILE: app/lib/themeSettings.ts
 
-.settings-tile {
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+import { supabase } from './supabaseClient'
+
+export type ThemeMode = 'auto' | 'light' | 'dark'
+export type ThemeAccent = 'neutral' | 'grey' | 'blue' | 'green' | 'purple'
+
+export type ThemeSettings = {
+  mode: ThemeMode
+  accent: ThemeAccent
 }
 
-.settings-tile__header {
-  margin-bottom: 1rem;
+const STORAGE_KEY = 'pronajimatel_theme'
+
+const DEFAULT_SETTINGS: ThemeSettings = {
+  mode: 'auto',
+  accent: 'neutral',
 }
 
-.settings-tile__title {
-  font-size: 1.25rem;
-  font-weight: 600;
+/**
+ * Aplikuje theme (mode + accent) na .layout
+ */
+export function applyThemeToLayout(settings: ThemeSettings) {
+  if (typeof document === 'undefined') return
+
+  const layout = document.querySelector('.layout')
+  if (!layout) return
+
+  // smažeme staré třídy
+  layout.classList.remove('theme-light', 'theme-dark')
+  layout.classList.remove(
+    'accent-neutral',
+    'accent-grey',
+    'accent-blue',
+    'accent-green',
+    'accent-purple',
+  )
+
+  // vyhodnotíme auto → light / dark podle systému
+  const resolvedMode: ThemeMode =
+    settings.mode === 'auto'
+      ? window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : settings.mode
+
+  layout.classList.add(`theme-${resolvedMode}`)
+  layout.classList.add(`accent-${settings.accent}`)
 }
 
-.settings-tile__description {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-}
+/**
+ * Načtení theme z localStorage (pro AppShell i ThemeSettingsTile)
+ */
+export function loadThemeFromLocalStorage(): ThemeSettings {
+  if (typeof window === 'undefined') {
+    return DEFAULT_SETTINGS
+  }
 
-.settings-tile__section {
-  margin-top: 1.5rem;
-}
-
-.settings-tile__section-title {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.settings-tile__palette-grid {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-
-@media (min-width: 1024px) {
-  .settings-tile__palette-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return DEFAULT_SETTINGS
+    const parsed = JSON.parse(raw)
+    return {
+      mode: (parsed.mode as ThemeMode) ?? DEFAULT_SETTINGS.mode,
+      accent: (parsed.accent as ThemeAccent) ?? DEFAULT_SETTINGS.accent,
+    }
+  } catch {
+    return DEFAULT_SETTINGS
   }
 }
 
-/* Karty theme */
-
-.palette-card {
-  width: 100%;
-  text-align: left;
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-subtle);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+/**
+ * Uložení theme do localStorage
+ */
+export function saveThemeToLocalStorage(settings: ThemeSettings) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+  } catch {
+    // ignoruj
+  }
 }
 
-.palette-card--active {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+/**
+ * Načtení theme z Supabase
+ */
+export async function loadThemeSettingsFromSupabase(
+  userId: string,
+): Promise<ThemeSettings> {
+  const { data, error } = await supabase
+    .from('user_theme_settings')
+    .select('mode, accent')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error || !data) {
+    return DEFAULT_SETTINGS
+  }
+
+  return {
+    mode: (data.mode as ThemeMode) ?? DEFAULT_SETTINGS.mode,
+    accent: (data.accent as ThemeAccent) ?? DEFAULT_SETTINGS.accent,
+  }
 }
 
-.palette-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/**
+ * Uložení theme do Supabase
+ */
+export async function saveThemeSettingsToSupabase(
+  userId: string,
+  settings: ThemeSettings,
+): Promise<void> {
+  const { error } = await supabase.from('user_theme_settings').upsert(
+    {
+      user_id: userId,
+      mode: settings.mode,
+      accent: settings.accent,
+    },
+    { onConflict: 'user_id' },
+  )
+
+  if (error) {
+    console.error('Failed to save theme settings', error)
+  }
 }
-
-.palette-card__title {
-  font-weight: 500;
-}
-
-.palette-card__badge {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: var(--color-primary-soft);
-  color: var(--color-primary-strong);
-}
-
-.palette-card__description {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-.palette-preview {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  margin-right: 4px;
-}
-
-/* ukázkové barvy pro dlaždice */
-
-.palette-preview--neutral.primary { background: #4f46e5; }
-.palette-preview--neutral.soft { background: #e0e7ff; }
-.palette-preview--neutral.accent { background: #111827; }
-
-.palette-preview--grey.primary { background: #6b7280; }
-.palette-preview--grey.soft { background: #e5e7eb; }
-.palette-preview--grey.accent { background: #374151; }
-
-.palette-preview--blue.primary { background: #2563eb; }
-.palette-preview--blue.soft { background: #dbeafe; }
-.palette-preview--blue.accent { background: #1d4ed8; }
-
-.palette-preview--green.primary { background: #16a34a; }
-.palette-preview--green.soft { background: #dcfce7; }
-.palette-preview--green.accent { background: #15803d; }
-
-.palette-preview--purple.primary { background: #a855f7; }
-.palette-preview--purple.soft { background: #f3e8ff; }
-.palette-preview--purple.accent { background: #7c3aed; }
-
