@@ -286,3 +286,103 @@ Modulární architektura Pronajímatel v6 je navržena tak, aby dlouhodobě podp
 ---
 
 *Konec BLOKU A – finální čistá verze dokumentu 02*
+---
+
+# 📜 Historické části dokumentu (archivní poznámky – NESMAZAT)
+
+Níže uložené části textu pocházejí ze starších verzí dokumentace.  
+Pro aktuální strukturu architektury již nejsou relevantní, ale zachováváme je pro zpětné dohledání.
+
+---
+
+### ~~Původní pracovní popis architektury~~
+
+~~Aplikace je rozdělena na UI, moduly a data.  
+Sidebar řídí aktivní modul a Breadcrumbs budou možná dynamické.~~
+
+~~Tento popis byl neúplný a nahrazen plnou sekcí “Architecture”.~~
+
+---
+
+### ~~Starý návrh struktury projektových souborů~~
+
+Původně jsme měli uvažovanou strukturu:
+
+```
+app/
+  components/
+  containers/
+  pages/
+```
+
+~~Tato struktura byla opuštěna s příchodem Next.js App Routeru.~~
+
+---
+
+### ~~Alternativní historická struktura modulů~~
+
+```
+modules/
+  nemovitosti/
+  jednotky/
+  smlouvy/
+```
+
+~~Tento návrh byl později nahrazen formátem:  
+`/app/modules/040-nemovitosti/`  
+který je modulární, tříděný a stabilnější.~~
+
+---
+
+### ~~Starý návrh vrstev logiky~~
+
+```
+UI
+↓
+Forms
+↓
+Database
+```
+
+~~Později byl nahrazen čistou architekturou:  
+UI → Domain/Logic → Data.~~
+
+---
+
+### ~~Historické poznámky o renderování~~
+
+- ~~Sidebar by mohl měnit layout celého UI~~  
+- ~~Breadcrumbs budou generované pouze staticky~~  
+- ~~CommonActions budou pevně napojené, bez dynamiky~~
+
+~~Všechny tyto části byly přepracované do finální architektonické koncepce.~~
+
+---
+
+### ~~Nepoužívané koncepty Supabase integrace~~
+
+- ~~u každého dotazu jsme chtěli explicitně kontrolovat email uživatele~~  
+- ~~plán RLS byl původně ruční přes filtry~~
+
+~~Dnes máme jednotný systém RLS a centralizované Supabase klienty.~~
+
+---
+
+### ~~Původní myšlenka ukládat všechna metadata do jedné tabulky~~
+
+~~Tento koncept se ukázal jako příliš omezený a neudržitelný.  
+Nová architektura odděluje metadata, role, permissions a entity.~~
+
+---
+
+### ~~Velmi starý návrh „Backendless“ přístupu~~
+
+- ~~bez services~~  
+- ~~bez centralizované logiky~~  
+- ~~bez role-permission vrstvy~~
+
+~~Tento návrh byl nahrazen moderním návrhem služeb (authService, permissionsService…).~~
+
+---
+
+# 📌 Konec archivních historických částí pro dokument 02.
