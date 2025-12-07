@@ -51,6 +51,8 @@ body {
   --color-warning-bg: #fef3c7;
   --color-warning-border: #fde68a;
   --color-warning-text: #92400e;
+
+  --color-selected-row-bg: #e5e7ff; /* výchozí zvýraznění řádku */ 
 }
 
 /* LIGHT / DARK */
@@ -110,6 +112,31 @@ body {
 .layout {
   background-color: var(--color-app-bg);
   color: var(--color-text);
+}
+/* Vybraný řádek podle theme + accent */
+
+/* 🔵 Modrá */
+.layout.theme-light.accent-blue {
+  --color-selected-row-bg: #dbeafe; /* světle modrá pro světlý theme */
+}
+.layout.theme-dark.accent-blue {
+  --color-selected-row-bg: #1e3a8a; /* tmavě modrá pro dark theme */
+}
+
+/* 🟢 Zelená */
+.layout.theme-light.accent-green {
+  --color-selected-row-bg: #dcfce7;
+}
+.layout.theme-dark.accent-green {
+  --color-selected-row-bg: #065f46;
+}
+
+/* 🟣 Landlord (fialová) */
+.layout.theme-light.accent-landlord {
+  --color-selected-row-bg: #f3e8ff;
+}
+.layout.theme-dark.accent-landlord {
+  --color-selected-row-bg: #5b21b6;
 }
 
 /* =========================================
