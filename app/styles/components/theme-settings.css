@@ -1,0 +1,111 @@
+/* app/styles/components/theme-settings.css */
+/* =========================================
+   THEME SETTINGS TILE – BAREVNÉ ZOBRAZENÍ
+   ========================================= */
+
+.settings-tile {
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.settings-tile__header {
+  margin-bottom: 1rem;
+}
+
+.settings-tile__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.settings-tile__description {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.settings-tile__section {
+  margin-top: 1.5rem;
+}
+
+.settings-tile__section-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.settings-tile__palette-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+@media (min-width: 1024px) {
+  .settings-tile__palette-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Karty theme */
+
+.palette-card {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.palette-card--active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+}
+
+.palette-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.palette-card__title {
+  font-weight: 500;
+}
+
+.palette-card__badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.palette-card__description {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.palette-preview {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  margin-right: 4px;
+}
+
+/* ukázkové barvy */
+
+.palette-preview--blue.primary { background: #2563eb; }
+.palette-preview--blue.soft { background: #dbeafe; }
+.palette-preview--blue.accent { background: #1d4ed8; }
+
+.palette-preview--green.primary { background: #16a34a; }
+.palette-preview--green.soft { background: #dcfce7; }
+.palette-preview--green.accent { background: #15803d; }
+
+.palette-preview--landlord.primary { background: #a855f7; }
+.palette-preview--landlord.soft { background: #f3e8ff; }
+.palette-preview--landlord.accent { background: #7c3aed; }
