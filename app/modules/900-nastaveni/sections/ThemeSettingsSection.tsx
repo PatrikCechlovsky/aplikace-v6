@@ -5,14 +5,9 @@
 
 'use client'
 
-import { useModuleContext } from '@/app/modules/ModuleContext'
+import ThemeSettingsTile from '../tiles/ThemeSettingsTile'
 
 export default function ThemeSettingsSection() {
-  const { tiles } = useModuleContext()
-
-  // vybereme jen dlaždice, které patří do této sekce
-  const sectionTiles = tiles.filter((tile) => tile.sectionId === 'theme-settings')
-
   return (
     <section className="space-y-4">
       <header>
@@ -22,22 +17,9 @@ export default function ThemeSettingsSection() {
         </p>
       </header>
 
-      <div className="space-y-4">
-        {sectionTiles.length === 0 && (
-          <p className="text-sm text-gray-500">
-            Zatím zde nejsou žádné položky k nastavení.
-          </p>
-        )}
-
-        {/* vykreslíme všechny tiles, které patří do této sekce */}
-        {sectionTiles.map((tile) => {
-          const Component = tile.component
-          return (
-            <div key={tile.id} className="border rounded-lg p-4 bg-white">
-              <Component />
-            </div>
-          )
-        })}
+      {/* Tady prostě přímo vykreslíme náš tile */}
+      <div className="border rounded-lg p-4 bg-white">
+        <ThemeSettingsTile />
       </div>
     </section>
   )
