@@ -738,7 +738,7 @@ export default function GenericTypeTile({
                         </td>
 
                         {/* Barva (HEX) */}
-                        <td className="generic-type__cell generic-type__cell--color">
+                        <td className="generic-type__cell">
                           {item.color || ''}
                         </td>
 
