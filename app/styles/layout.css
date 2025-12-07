@@ -1,0 +1,281 @@
+/* app/styles/layout.css */
+/* =========================================
+   LAYOUT – GRID, SIDEBAR, TOPBAR, ACTIONS
+   ========================================= */
+
+/* Grid rozložení */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+
+.layout__sidebar,
+.sidebar {
+  grid-row: 1 / span 3;
+  grid-column: 1;
+  background: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-border);
+}
+
+.layout__sidebar {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar__inner {
+  padding: 12px 8px;
+}
+
+.sidebar__list,
+.sidebar__sectionlist,
+.sidebar__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 1. úroveň – moduly */
+
+.sidebar__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.sidebar__row--active {
+  background: var(--color-primary-soft);
+}
+
+.sidebar__row--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+}
+
+.sidebar__icon {
+  font-size: 16px;
+}
+
+.sidebar__label {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Šipky pro rozbalení */
+
+.sidebar__toggle,
+.sidebar__section-toggle {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 16px;
+  width: 18px;
+  text-align: center;
+  transform: translateY(1px);
+  transition: transform 0.15s ease;
+  cursor: pointer;
+}
+
+.sidebar__toggle--open,
+.sidebar__section-toggle--open {
+  transform: rotate(90deg) translateY(1px);
+}
+
+/* 2. úroveň – sekce */
+
+.sidebar__section-item {
+  list-style: none;
+}
+
+.sidebar__section-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 32px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.sidebar__section-item--active .sidebar__section-row {
+  background: var(--color-primary-soft);
+}
+
+/* 3. úroveň – tiles */
+
+.sidebar__subitem {
+  list-style: none;
+}
+
+.sidebar__sublink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 32px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.sidebar__sublink::before {
+  content: '▸';
+  opacity: 0;
+  width: 18px;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.sidebar__subitem--active .sidebar__sublink {
+  background: var(--color-primary-soft);
+}
+
+.sidebar__sublabel {
+  font-size: 13px;
+}
+
+/* TOPBAR */
+
+.layout__topbar {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--color-topbar-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.layout__topbar-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.layout__topbar-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* BREADCRUMBS */
+
+.layout__breadcrumbs {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 36px 16px 4px;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.breadcrumbs__separator {
+  margin: 0 4px;
+  color: #9ca3af;
+}
+
+/* COMMON ACTIONS */
+
+.layout__actions {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 8px 16px;
+  background: var(--color-actions-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.common-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.common-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.common-actions__btn:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-soft);
+}
+
+.common-actions__label {
+  white-space: nowrap;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.15s ease;
+}
+
+.common-actions__btn:hover .common-actions__label {
+  opacity: 1;
+  max-width: 80px;
+}
+
+/* HLAVNÍ OBSAH */
+
+.layout__content {
+  grid-column: 2;
+  grid-row: 3;
+  padding: 16px;
+  background: var(--color-app-bg);
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .layout__sidebar,
+  .layout__topbar,
+  .layout__actions,
+  .layout__content {
+    width: 100%;
+  }
+
+  .layout__content {
+    padding: 12px;
+  }
+}
