@@ -1,0 +1,150 @@
+/* app/styles/base.css */
+/* =========================================
+   0) ZÁKLAD – RESET, TYPOGRAFIE
+   ========================================= */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background-color: #f3f4f6; /* fallback */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* =========================================
+   1) DESIGN TOKENS – PROMĚNNÉ + TÉMA
+   ========================================= */
+
+:root {
+  --color-app-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f9fafb;
+  --color-sidebar-bg: #ffffff;
+  --color-topbar-bg: #ffffff;
+  --color-actions-bg: #f9fafb;
+
+  --color-border: #e5e7eb;
+  --color-border-soft: #f3f4f6;
+
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+
+  --color-primary: #4f46e5;
+  --color-primary-soft: #e0e7ff;
+  --color-primary-strong: #4338ca;
+
+  --color-danger-bg: #fee2e2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #b91c1c;
+
+  --color-success-bg: #dcfce7;
+  --color-success-border: #bbf7d0;
+  --color-success-text: #166534;
+
+  --color-warning-bg: #fef3c7;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+}
+
+/* LIGHT / DARK */
+
+.layout.theme-light {
+  --color-app-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f9fafb;
+  --color-sidebar-bg: #ffffff;
+  --color-topbar-bg: #ffffff;
+  --color-actions-bg: #f9fafb;
+
+  --color-border: #e5e7eb;
+  --color-border-soft: #f3f4f6;
+
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+}
+
+.layout.theme-dark {
+  --color-app-bg: #020617;
+  --color-surface: #020617;
+  --color-surface-subtle: #0b1120;
+  --color-sidebar-bg: #020617;
+  --color-topbar-bg: #020617;
+  --color-actions-bg: #0b1120;
+
+  --color-border: #1f2937;
+  --color-border-soft: #111827;
+
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+}
+
+/* ACCENT VARIANTY */
+
+.layout.accent-blue {
+  --color-primary: #2563eb;
+  --color-primary-soft: #dbeafe;
+  --color-primary-strong: #1d4ed8;
+}
+
+.layout.accent-green {
+  --color-primary: #16a34a;
+  --color-primary-soft: #dcfce7;
+  --color-primary-strong: #15803d;
+}
+
+.layout.accent-landlord {
+  --color-primary: #a855f7;
+  --color-primary-soft: #f3e8ff;
+  --color-primary-strong: #7c3aed;
+}
+
+/* ZÁKLAD PRO CELÉ ROZHRANÍ */
+
+.layout {
+  background-color: var(--color-app-bg);
+  color: var(--color-text);
+}
+
+/* =========================================
+   2) OBECNÁ TLAČÍTKA
+   ========================================= */
+
+.btn {
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary-strong);
+}
+
+.btn--secondary {
+  background: #e5e7eb;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.btn--danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border-color: var(--color-danger-border);
+}
+
+/* Obecný disabled stav */
+
+.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
