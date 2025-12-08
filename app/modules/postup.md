@@ -1,7 +1,7 @@
 # Modul – TODO šablona (pracovní návod pro každý modul)
 
 > Tento soubor si zkopíruj do složky každého modulu jako  
-> `MODULE-TODO.md` (např. `app/modules/020-nemovitosti/MODULE-TODO.md`)  
+> `MODULE-TODO.md` (např. `app/modules/010/poatup.md`)  
 > a postupně si v něm odškrtávej, co je hotové.
 
 ---
