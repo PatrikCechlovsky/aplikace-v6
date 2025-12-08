@@ -563,3 +563,14 @@
 .generic-type__field-checkbox input[type="checkbox"] {
   vertical-align: middle;
 }
+/* Text u checkboxů v GenericType – barva podle theme (accent) */
+
+/* nahoře: "Zobrazit archivované" */
+.generic-type__table input[type="checkbox"] + label,
+/* dole: "Aktivní záznam" */
+.generic-type__detail input[type="checkbox"] + label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary-strong); /* modrá / zelená / fialová podle theme */
+  cursor: pointer;
+}
