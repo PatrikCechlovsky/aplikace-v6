@@ -142,31 +142,39 @@ export default function ThemeSettingsTile() {
     }
   }, [])
 
-  // 1) Při mountu načteme theme z localStorage, případně následně z DB
+  // 1) Při mountu načteme theme pro FORMULÁŘ (UI) – ale NEMĚNÍME vzhled aplikace
   useEffect(() => {
-    // localStorage – aby se theme aplikovalo ihned
     const local = loadThemeFromLocalStorage()
-    setMode(local.mode)
-    setAccent(local.accent)
-    applyThemeToLayout(local)
-
+  
+    // Pokud něco v localStorage je, jen tím předvyplníme stav ve formuláři
+    if (local) {
+      setMode(local.mode)
+      setAccent(local.accent)
+      // ⚠️ NEVOLÁME applyThemeToLayout(local)
+    }
+  
     if (!userId) return
-
+  
     let cancelled = false
-
+  
     ;(async () => {
       const fromDb = await loadThemeSettingsFromSupabase(userId)
-      if (cancelled) return
+      if (cancelled || !fromDb) return
+  
+      // Tohle už jsou „oficiální“ nastavení z DB – zase jen předvyplníme formulář
       setMode(fromDb.mode)
       setAccent(fromDb.accent)
-      applyThemeToLayout(fromDb)
+      // ⚠️ NEVOLÁME applyThemeToLayout(fromDb)
+  
+      // Ale můžeme je uložit lokálně, aby je příště tile viděl
       saveThemeToLocalStorage(fromDb)
     })()
-
+  
     return () => {
       cancelled = true
     }
   }, [userId])
+
 
   const updateSettings = async (next: ThemeSettings) => {
     setMode(next.mode)
