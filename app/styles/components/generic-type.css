@@ -397,3 +397,12 @@
 .generic-type__button--with-label:hover .generic-type__button-text {
   display: inline-block;
 }
+/* Popisek pole ve formuláři */
+
+.generic-type__field-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
