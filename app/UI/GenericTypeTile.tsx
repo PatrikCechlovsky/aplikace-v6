@@ -54,6 +54,23 @@ function getItemSortOrder(item: GenericTypeItem): number | undefined {
   return raw
 }
 
+/**
+ * Vrátí další pořadí (max + 1) přes všechny položky včetně archivních.
+ * Pokud žádné položky nejsou, vrátí 1.
+ */
+function getNextSortOrder(allItems: GenericTypeItem[]): number {
+  if (!allItems || allItems.length === 0) return 1
+
+  let max = 0
+  for (const it of allItems) {
+    const n = getItemSortOrder(it)
+    if (n != null && n > max) {
+      max = n
+    }
+  }
+  return max + 1
+}
+
 export default function GenericTypeTile({
   title,
   description,
@@ -240,23 +257,27 @@ export default function GenericTypeTile({
   }
 
   function resetFormToNew(silent = false) {
-    setSelectedCode(null)
-    setForm({
-      code: '',
-      name: '',
-      description: '',
-      color: '',
-      icon: '',
-      sort_order: null,
-      active: true,
-    })
-    setDirty(false)
-    if (!silent) {
-      setError(null)
-      setInfo(null)
-    }
-    setPendingAction(null)
+  // spočítáme další pořadí podle všech položek (včetně archivních)
+  const nextSortOrder = getNextSortOrder(items)
+
+  setSelectedCode(null)
+  setForm({
+    code: '',
+    name: '',
+    description: '',
+    color: '',
+    icon: '',
+    sort_order: nextSortOrder, // dříve tam bylo null
+    active: true,
+  })
+  setDirty(false)
+  if (!silent) {
+    setError(null)
+    setInfo(null)
   }
+  setPendingAction(null)
+}
+
 
   function performNavigatePrev() {
     if (selectedIndex <= 0) return
