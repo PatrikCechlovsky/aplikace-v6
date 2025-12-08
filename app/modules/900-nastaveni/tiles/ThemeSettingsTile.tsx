@@ -1,5 +1,15 @@
 'use client'
 
+/*
+ * FILE: app/modules/900-nastaveni/tiles/ThemeSettingsTile.tsx
+ * PURPOSE: Nastavení barevného vzhledu – výběr předvoleného tématu.
+ *
+ * Poznámka:
+ *  - Při načtení NEvybírá žádný preset.
+ *  - Výchozí vzhled aplikace se řídí DEFAULT_SETTINGS v app/lib/themeSettings.ts.
+ *  - Preset se zvýrazní až po kliknutí uživatele.
+ */
+
 import { useEffect, useState } from 'react'
 import type {
   ThemeMode,
@@ -8,9 +18,7 @@ import type {
 } from '../../../lib/themeSettings'
 import {
   applyThemeToLayout,
-  loadThemeFromLocalStorage,
   saveThemeToLocalStorage,
-  loadThemeSettingsFromSupabase,
   saveThemeSettingsToSupabase,
 } from '../../../lib/themeSettings'
 import { getCurrentSession } from '../../../lib/services/auth'
@@ -58,7 +66,8 @@ const PRESETS: ThemePreset[] = [
   {
     id: 'grey-light',
     label: 'Grey – světlé',
-    description: 'Světlé šedé prostředí vhodné pro profesionální a úřední práci.',
+    description:
+      'Světlé šedé prostředí vhodné pro profesionální a úřední práci.',
     mode: 'light',
     accent: 'grey',
   },
@@ -121,11 +130,10 @@ const PRESETS: ThemePreset[] = [
 ]
 
 export default function ThemeSettingsTile() {
-  // null = ještě nic není načteno → žádný preset není aktivní
-  const [mode, setMode] = useState<ThemeMode | null>(null)
-  const [accent, setAccent] = useState<ThemeAccent | null>(null)
+  // ❗ Tady už NEdobíráme hodnoty z localStorage / DB
+  // – začínáme bez vybraného presetu.
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
 
   // 0) zjistíme aktuálního uživatele (jen na clientu)
@@ -137,8 +145,6 @@ export default function ThemeSettingsTile() {
       if (cancelled) return
       if (!error && data.session?.user?.id) {
         setUserId(data.session.user.id)
-      } else {
-        setUserId(null)
       }
     })()
 
@@ -147,78 +153,32 @@ export default function ThemeSettingsTile() {
     }
   }, [])
 
-  /**
-   * 1) Při mountu načteme theme pro FORMULÁŘ (UI),
-   *    ale NEMĚNÍME vzhled aplikace.
-   *    Pro přihlášeného uživatele je zdroj pravdy Supabase,
-   *    pro nepřihlášeného localStorage.
-   */
-  useEffect(() => {
-    let cancelled = false
-
-    const init = async () => {
-      try {
-        // Přihlášený uživatel → primárně DB
-        if (userId) {
-          const fromDb = await loadThemeSettingsFromSupabase(userId)
-          if (cancelled) return
-
-          if (fromDb) {
-            setMode(fromDb.mode)
-            setAccent(fromDb.accent)
-            // uložíme do localStorage jen jako cache
-            saveThemeToLocalStorage(fromDb)
-            setIsLoading(false)
-            return
-          }
-        }
-
-        // Nepřihlášený nebo v DB nic není → zkus localStorage
-        const local = loadThemeFromLocalStorage()
-        if (!cancelled && local) {
-          setMode(local.mode)
-          setAccent(local.accent)
-        }
-
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      } catch (_) {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    init()
-
-    return () => {
-      cancelled = true
-    }
-  }, [userId])
-
-  /**
-   * 2) Uložení a aplikace nového nastavení při kliknutí na preset.
-   *    TADY se mění vzhled (applyThemeToLayout), nikde jinde.
-   */
+  // 1) Uložení nového nastavení
   const updateSettings = async (next: ThemeSettings) => {
-    setMode(next.mode)
-    setAccent(next.accent)
+    // Okamžitě aplikujeme vzhled
     applyThemeToLayout(next)
     saveThemeToLocalStorage(next)
 
-    if (userId) {
-      try {
-        setIsSaving(true)
-        await saveThemeSettingsToSupabase(userId, next)
-      } finally {
-        setIsSaving(false)
-      }
+    // A pokud známe userId, uložíme ho i do Supabase
+    if (!userId) return
+
+    try {
+      setIsSaving(true)
+      await saveThemeSettingsToSupabase(userId, next)
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const handlePresetClick = (preset: ThemePreset) => {
-    updateSettings({ mode: preset.mode, accent: preset.accent })
+    // Označíme kartu jako aktivní (jen lokálně v UI)
+    setSelectedPresetId(preset.id)
+
+    // A uložíme nové nastavení
+    void updateSettings({
+      mode: preset.mode,
+      accent: preset.accent,
+    })
   }
 
   return (
@@ -236,11 +196,7 @@ export default function ThemeSettingsTile() {
 
         <div className="settings-tile__palette-grid">
           {PRESETS.map((preset) => {
-            const isActive =
-              mode !== null &&
-              accent !== null &&
-              preset.mode === mode &&
-              preset.accent === accent
+            const isActive = preset.id === selectedPresetId
 
             return (
               <button
@@ -250,7 +206,7 @@ export default function ThemeSettingsTile() {
                   isActive ? 'palette-card--active' : ''
                 }`}
                 onClick={() => handlePresetClick(preset)}
-                disabled={isSaving || isLoading}
+                disabled={isSaving}
               >
                 <div className="palette-card__header">
                   <span className="palette-card__title">
@@ -284,11 +240,6 @@ export default function ThemeSettingsTile() {
         {isSaving && (
           <p className="text-xs text-gray-400 mt-1">
             Ukládám nastavení vzhledu…
-          </p>
-        )}
-        {isLoading && (
-          <p className="text-xs text-gray-400 mt-1">
-            Načítám aktuální nastavení vzhledu…
           </p>
         )}
       </div>
