@@ -307,3 +307,16 @@
   border-color: var(--color-primary);
   transform: translateY(-1px);
 }
+/* === Sidebar – šipky viditelné ve všech theme =================== */
+
+/* Šipka pro rozbalení modulu / sekce */
+.sidebar__toggle,
+.sidebar__section-toggle {
+  color: var(--color-text);             /* světlá v dark, tmavá v light */
+}
+
+/* Hover – mírně zvýraznit accent barvou */
+.sidebar__toggle:hover,
+.sidebar__section-toggle:hover {
+  color: var(--color-primary-strong);
+}
