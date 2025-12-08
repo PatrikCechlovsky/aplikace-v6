@@ -693,16 +693,537 @@ Rozdíly oproti hlavnímu detailu:
 
 ---
 
+# 3.10 DetailView – obsahová vrstva detailu entity
+
+**DetailView** je obsahová komponenta, která zobrazuje konkrétní sekci (tab) detailu
+jedné entity. Slouží jako vykreslovací vrstva formuláře nebo jiného obsahu sekce
+a pracuje na základě definice dodané modulem (form schema).
+
+DetailView vykresluje:
+- formulářová pole (inputy, selecty, multiselecty…)
+- read-only hodnoty
+- validační hlášky
+- stav dirty (neuložené změny)
+- povinné modulové sekce (Přílohy, Historie, Systém)
+
+DetailView samotný **neobsahuje hlavičku** ani **tlačítka CommonActions** – to je součást EntityDetailFrame.
+
+---
+
+## 3.10.1 Účel DetailView
+
+DetailView zajišťuje:
+
+- vykreslení správného obsahu aktivní sekce
+- správu hodnot polí
+- validace
+- komunikaci dirty stavu s EntityDetailFrame
+- skrývání/uzamykání polí podle role
+- dynamickou logiku podle stavu entity
+
+Neřeší přepínání tabs, neobsahuje seznamy (RelationList), neřídí akce jako „uložit“ – jen vykresluje obsah.
+
+---
+
+## 3.10.2 Co DetailView není
+
+DetailView **není**:
+
+- hlavička detailu entity  
+- navigace mezi sekcemi  
+- CommonActions  
+- seznam vazeb (RelationListWithDetail)  
+- kontrola oprávnění na úrovni celé entity  
+
+DetailView řeší pouze obsah jedné sekce.
+
+---
+
+## 3.10.3 Definice formuláře (Form Schema)
+
+Každý modul definuje svůj vlastní formulář (schema), kde určuje:
+
+- seznam sekcí
+- název sekce
+- pole v sekci
+- typy polí (text, select, checkbox…)
+- validace
+- viditelnost a role
+- read-only logiku
+
+Příklad (bez syntaxi zvýraznění, aby se dokument nerozpadal):
+{
+id: "property-detail",
+sections: [
+{
+id: "basic",
+label: "Základní údaje",
+fields: [
+{ id: "name", type: "text", label: "Název nemovitosti", required: true },
+{ id: "type", type: "select", label: "Typ", source: "property_types" },
+{ id: "description", type: "textarea", label: "Popis" }
+]
+},
+{
+id: "address",
+label: "Adresa",
+fields: [
+{ id: "street", type: "text", label: "Ulice" },
+{ id: "city", type: "text", label: "Město" }
+]
+}
+]
+}
+
+
+DetailView si z aktivní sekce načte její pole a vykreslí je.
+
+---
+
+## 3.10.4 Práce se sekcemi (tabs)
+
+DetailView zobrazuje **pouze jednu aktivní sekci**.
+
+EntityDetailFrame:
+- přepíná sekce
+- předává aktivní sekci do DetailView
+- řídí role a viditelnost sekcí
+
+V jedné sekci může být:
+- formulář
+- read-only informace
+- tabulka
+- komponenta Příloh
+- komponenta Historie
+- komponenta Systém
+
+Sekce mohou být dynamické a mohou obsahovat vlastní logiku.
+
+---
+
+## 3.10.5 Renderování polí
+
+DetailView vykresluje pole podle typu:
+
+- text
+- textarea
+- číslo
+- email, telefon
+- select
+- multiselect
+- checkbox (boolean)
+- lookup (FK)
+- měnové pole
+- jednotkové pole (m², Kč…)
+- vlastní komponenty z modulu
+
+Každé pole má:
+- label
+- hodnotu
+- povinné / nepovinné
+- chyby validace
+- viditelnost
+- readonly / disabled stav
+
+---
+
+## 3.10.6 Dirty state (neuložené změny)
+
+DetailView sleduje změny hodnot a:
+
+- označuje sekci jako dirty
+- upozorňuje EntityDetailFrame
+- aktivuje tlačítka CommonActions (např. Uložit)
+- hlídá, aby uživatel neztratil data při přepnutí sekce
+
+Dirty state může být:
+- pole → sekce → celá entita
+
+---
+
+## 3.10.7 Read-only režim
+
+DetailView má dva režimy:
+
+### ✔ Edit mode  
+Používá se v hlavním detailu entity.
+- pole jsou editovatelná
+- dirty state aktivní
+- validace aktivní
+
+### ✔ Read-only mode  
+Používá se v RelationListWithDetail (dolní část).
+- pole nelze měnit
+- slouží jako přehled
+- CommonActions se nezobrazuje
+
+---
+
+## 3.10.8 Sekce „Přílohy“ (povinná součást každého modulu)
+
+Každý modul musí mít sekci **Přílohy**.
+
+Funkce:
+- přidat přílohu
+- drag & drop
+- automatické přejmenování
+- popis přílohy
+- archivovat / obnovit
+- zobrazit archivované
+- stav nahrávání
+- možnost více souborů
+
+Přílohy patří **jen k této entitě**.  
+Nejde o globální modul dokumentů.
+
+---
+
+## 3.10.9 Sekce „Historie“
+
+Zobrazí auditní a systémové informace:
+
+- datum vytvoření
+- datum poslední změny
+- kdo změnu provedl
+- změnové logy (pokud budou aktivní)
+
+Sekce je vždy readonly.
+
+---
+
+## 3.10.10 Sekce „Systém“
+
+Poslední sekce každého detailu.
+
+Obsahuje:
+
+- ID záznamu
+- UUID
+- stav archivace
+- datum vytvoření
+- datum poslední změny
+- interní metadata
+
+Vždy readonly.
+
+---
+
+## 3.10.11 Role a oprávnění
+
+DetailView umí:
+
+- skrýt celou sekci podle role
+- zamknout pole
+- zobrazit pole jen pro čtení
+- povolit / zakázat nahrávání příloh
+- zobrazit pouze relevantní sekce (např. Finance jen pro roli “finance”)
+
+Role se aplikují na:
+- sekce  
+- pole  
+- akce (přílohy, archivace, úpravy…)
+
+---
+
+## 3.10.12 Chování v různých kontextech
+
+### A) Hlavní detail entity
+- plná editace
+- CommonActions viditelné
+- dirty state aktivní
+- validace aktivní
+
+### B) RelationListWithDetail (dolní část)
+- read-only
+- žádné CommonActions
+- sekce mohou být přepínány
+
+### C) Nový záznam
+- prázdný formulář
+- validace při ukládání
+- logika výchozích hodnot
+
+---
+
+## 3.10.13 Shrnutí
+
+DetailView je univerzální obsahová vrstva pro jeden tab detailu entity.
+
+| Funkce | Ano/Ne |
+|--------|--------|
+| Přepínání sekcí | Ne |
+| Vykreslení obsahu sekce | Ano |
+| Dirty state | Ano |
+| Read-only režim | Ano |
+| Edit režim | Ano |
+| Přílohy | Ano (povinné) |
+| Historie | Ano |
+| Systém | Ano |
+| Role a oprávnění | Ano |
+| CommonActions | Ne (řeší EntityDetailFrame) |
+
+DetailView poskytuje jednotné zobrazení obsahu sekce pro všechny entity a moduly v systému.
+
 
 
 ---
 
-# 3.10 DetailView – (bude doplněno později)
+# 3.11 EntityList – základní tabulková komponenta
+
+**EntityList** je nízkoúrovňová tabulková komponenta, která zobrazuje řádky a sloupce
+bez jakékoli „nadstavby“ (filtry, akce, archivace, oprávnění…).  
+Je to čistý vizuální a interakční prvek používaný:
+
+- v horní části **RelationListWithDetail**
+- uvnitř **ListView**, kde je obalen filtrem, řazením, CommonActions atd.
+- v některých případech i samostatně (malé seznamy, výběry, lookup okna)
+
+EntityList řeší pouze **zobrazení tabulky a práci s výběrem řádku**.
+
+Veškerá logika okolo něj (filtrace, řazení, oprávnění, akce) je řízena vyššími komponentami.
 
 ---
 
-# 3.11 EntityList – specifikace tabulkové komponenty (bude doplněno)
-*Placeholder – EntityList je jednoduchá tabulka bez filtrů a bez logiky akcí.*
+## 3.11.1 Účel EntityList
+
+EntityList zajišťuje:
+
+- vykreslení řádků a sloupců
+- zvýraznění aktivního řádku
+- klik pro výběr řádku
+- dvojklik pro otevření detailu (pokud je povoleno)
+- jednoduchou vizuální prezentaci dat
+- podporu dynamického generování sloupců podle modulu
+- responzivní layout pro tabulku
+
+Není zodpovědný za filtrování, řazení ani oprávnění — to zajišťují nadřazené komponenty (ListView, RelationListWithDetail).
+
+---
+
+## 3.11.2 Co EntityList není
+
+EntityList **neobsahuje**:
+
+- filtr  
+- Checkbox „Zobrazit archivované“  
+- CommonActions  
+- řazení sloupců  
+- role a oprávnění  
+- API logiku  
+- žádné CRUD akce  
+- žádné modální okna  
+- stránkování (paging)  
+
+EntityList vše pouze **vykreslí**.
+
+---
+
+## 3.11.3 Struktura EntityList
+
+EntityList má tři základní části:
+
+### (1) Hlavička tabulky (columns)
+Definována modulem.
+
+Obsahuje:
+
+- label sloupce
+- šířku (min/max)
+- zarovnání
+- formátování (měna, číslo, datum…)
+- ikonu (např. stav, typ)
+- volitelné tooltipy
+
+### (2) Tělo tabulky (rows)
+Každý řádek:
+
+- obsahuje hodnoty relevantní pro sloupce
+- může mít specifický vizuální styl (archivované, aktivní, zvýrazněné)
+
+### (3) Interakce
+EntityList podporuje:
+
+- **klik** pro výběr řádku
+- **dvojklik** pro otevření detailu
+- **keyboard navigation** (↑ ↓)
+- zvýraznění vybraného řádku
+- hover efekty
+
+---
+
+## 3.11.4 Výběr řádku
+
+EntityList je **single-selection** komponenta:
+
+- vždy je vybraný 0 nebo 1 řádek
+- po kliknutí se řádek zvýrazní
+- výběr se předává rodiči:
+  - ListView  
+  - RelationListWithDetail  
+
+Vybraný řádek určuje:
+
+- který detail se zobrazí dole (v RelationListWithDetail)
+- které akce v CommonActions se povolí nebo zakážou (v ListView)
+
+---
+
+## 3.11.5 Definice sloupců (Column Definition)
+
+Sloupce definuje modul.
+
+Příklad struktury:
+[
+{ id: "name", label: "Název", type: "text" },
+{ id: "type_label", label: "Typ", type: "badge" },
+{ id: "city", label: "Město", type: "text" },
+{ id: "rent", label: "Nájem", type: "currency" }
+]
+
+Možné typy vykreslení:
+
+- text  
+- číslo  
+- měna  
+- datum  
+- badge (typ entity, stav, role…)  
+- ikonka  
+- boolean (✓ / —)  
+- formátovaná hodnota (např. `35 m²`, `9000 Kč`)  
+
+Sloupce mohou být:
+
+- skryté (ListView má ColumnPicker, EntityList ne)  
+- dynamicky generované podle modulu nebo definice  
+
+---
+
+## 3.11.6 Chování při velkém množství dat
+
+EntityList je optimalizovaný pro:
+
+- scrollovací režim (virtuální scroll možnost v budoucnu)
+- automatické přizpůsobení šířky sloupců
+- sticky header (hlavička viditelná při scrollu)
+- lazy rendering
+
+Paging (stránkování) řeší vyšší vrstva, ne EntityList.
+
+---
+
+## 3.11.7 Použití v různých kontextech
+
+### Kontext A: ListView (hlavní seznam)
+EntityList je obalen:
+
+- filtrem
+- archivovanými
+- řazením (ListView řídí pořadí)
+- CommonActions
+- ColumnPicker
+
+EntityList zde vykresluje pouze tabulku.
+
+---
+
+### Kontext B: RelationListWithDetail (horní část)
+EntityList zde slouží jako:
+
+- seznam vazeb k entitě
+- navigátor mezi záznamy
+- zdroj pro výběr, který určuje, který detail se zobrazí dole
+
+Například:
+
+- Nemovitost → Jednotky  
+  nahoře EntityList (jednotky), dole detail jednotky  
+- Smlouva → Platby  
+  nahoře EntityList (platby), dole detail platby  
+
+---
+
+### Kontext C: Mini-seznamy, lookup okna
+EntityList lze použít jako:
+
+- jednoduchý seznam k výběru položky
+- malý seznam uvnitř jiných komponent
+- seznam bez interakcí jako read-only výpis
+
+---
+
+## 3.11.8 Styly a vizuální chování
+
+EntityList má jednotný styl napříč systémem:
+
+- zvýraznění aktivního řádku
+- hover efekt
+- světlejší styl u archivovaných záznamů
+- stejné fonty a spacing jako celý UI systém
+- stejná výška řádku (row height)
+- jednotné barvy badge / stavů dle design systému
+
+---
+
+## 3.11.9 Výkresová logika (rendering)
+
+EntityList řeší:
+
+- vykreslení buněk  
+- formátování hodnot (měna, jednotky, datum)  
+- badge komponenty (stav, typ…)  
+- optimalizované překreslování  
+- klávesové ovládání  
+- přizpůsobení layoutu na menších monitorech  
+
+Nevykresluje:
+
+- akce  
+- inputy  
+- formuláře  
+- filtry  
+
+---
+
+## 3.11.10 Architektura odpovědností
+
+| Funkce | EntityList | ListView | RelationListWithDetail | EntityDetailFrame |
+|--------|------------|----------|--------------------------|--------------------|
+| Tabulka řádků | ✔ | ✔ | ✔ | ✖ |
+| Filtry | ✖ | ✔ | ✖ | ✖ |
+| Řazení | ✖ (jen UI) | ✔ | ✖ | ✖ |
+| Výběr řádku | ✔ | ✔ | ✔ | ✖ |
+| Dvojklik pro detail | ✔ | ✔ | ✖ | ✖ |
+| Oprávnění | ✖ | ✔ | ✔ | ✔ |
+| Dirty state | ✖ | ✖ | ✖ | ✔ |
+| Detail entity | ✖ | ✖ | ✔ (Dolní část) | ✔ |
+
+---
+
+## 3.11.11 Shrnutí
+
+**EntityList = čistá tabulka.**
+
+Dělá:
+
+- vykreslení řádků a sloupců  
+- výběr řádku  
+- dvojklik pro otevření detailu  
+- formátování hodnot  
+
+Nedělá:
+
+- filtry  
+- řazení  
+- oprávnění  
+- akce  
+- přílohy  
+- historii  
+- přepínání sekcí  
+
+EntityList je základní stavební prvek všech seznamů v aplikaci.  
+Většina pokročilé logiky je v ListView nebo RelationListWithDetail.
+
+
 
 ---
 
