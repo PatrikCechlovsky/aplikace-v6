@@ -1,193 +1,381 @@
 # /docs/07-deployment.md
-## Popis: Tento dokument popisuje způsob nasazení aplikace, práci s prostředími, .env proměnnými a CI/CD procesem.
+## Popis: Detailní návrh deploymentu aplikace Pronajímatel v6 – prostředí, build, Vercel, Supabase, CI/CD, secrets a release checklist.
 ---
 
 # 07 – Deployment
 
-## 1. Přehled prostředí
+---
 
-Aplikace Pronajímatel v6 je nasazena na:
+## 1. Cíl a kontext
 
-- **Vercel** – produkční i testovací prostředí
-- **Supabase** – backend (auth + PostgreSQL + storage)
+Tento dokument popisuje, jak nasazovat aplikaci Pronajímatel v6:
 
-### Typy prostředí:
-
-| Prostředí | Popis |
-|-----------|--------|
-| **development** | lokální vývoj na PC |
-| **preview** | automatické buildy pro pull requesty (Vercel) |
-| **production** | hlavní produkční verze |
-
-Aplikace je připravena pro multi-tenant provoz (v budoucnu).
+- jaká prostředí používáme (DEV / STAGE / PROD),
+- jak probíhá build a nasazení Next.js aplikace,
+- jak nasazujeme změny v Supabase (DB, RLS),
+- jaké používáme secrets a env proměnné,
+- jak by měla vypadat CI/CD pipeline,
+- jak kontrolovat release před nasazením na produkci.
 
 ---
 
-## 2. .env proměnné
+## 2. Prostředí
 
-Projekt vyžaduje následující proměnné:
+Doporučený model prostředí:
 
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+| Prostředí | Popis | URL (příklad) |
+|-----------|--------|----------------|
+| **DEV**   | Lokální vývoj | http://localhost:3000 |
+| **STAGE** | Preview prostředí (Vercel preview) | https://aplikace-v6-git-feature.vercel.app |
+| **PROD**  | Produkční provoz | https://app.pronajimatel.cz |
 
-SUPABASE_SERVICE_ROLE_KEY=   # nepoužívat v browseru!
-SUPABASE_JWT_SECRET=
-```
+### DEV (lokální)
+- `npm run dev`
+- používá jen vývojové env proměnné
+- databáze DEV
 
-### Doporučení:
-- `.env.local` není verzován (v .gitignore)
-- `.env.production` je spravováno přímo ve Vercel dashboardu
+### STAGE (preview)
+- automaticky pro každou branch
+- testování před merge
+- může mít vlastní Supabase STAGE projekt
+
+### PROD
+- hlavní produkční deployment
+- přísná pravidla pro RLS, migrace i secrets
 
 ---
 
-## 3. Build a start aplikace
+## 3. Workflow nasazení
 
-### Lokální vývoj
+1. Vývoj → commit → push.
+2. Vercel vytvoří **preview**.
+3. Po schválení merge do `main`.
+4. Vercel vytvoří **production build**.
+5. Supabase migrace se aplikují ručně nebo CI skriptem.
+6. Release se ověří podle checklistu.
 
-```
+---
+
+## 4. Build Next.js 14
+
+### Build příkazy
+
+Lokálně:
+```bash
 npm install
-npm run dev
+npm run build
+npm run start
 ```
 
-Aplikace běží na:
+Na Vercelu:
+- Build command: `npm run build`
+- Output: `.next`
 
-```
-http://localhost:3000
-```
+### Nutné env proměnné:
 
----
+- NEXT_PUBLIC_SUPABASE_URL  
+- NEXT_PUBLIC_SUPABASE_ANON_KEY  
+- SUPABASE_SERVICE_ROLE_KEY *(jen server)*  
+- APP_BASE_URL  
+- SENTRY_DSN *(pokud používáme monitoring)*
 
-### Produkční build
+### Typické chyby:
+
+- chybějící env → build error  
+- TS error → build neproběhne  
+- špatný import cesty  
+
+Řešení:  
+před commitem spustit:
 
 ```
 npm run build
-npm start
 ```
 
-Vercel při deploy provede automaticky:
-
-- `npm install`
-- `npm run build`
-- optimalizaci serverových komponent
-- generování bundlů
-
 ---
 
-## 4. Deployment na Vercel
+## 5. Vercel Deployment
 
-### 4.1 Automatické buildy
+### Preview deploymenty (*pro každou branch*)
 
-Každý push do hlavní větve (`main`) → okamžitý deploy.
-
-PR do „main“ → preview deployment (Vercel URL).
-
-### 4.2 Nastavení ve Vercelu
-
-Sekce **Environment Variables** obsahuje:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- a další proměnné pro budoucí funkce
-
-### 4.3 Vercel logs
-
-Vercel poskytuje:
-- serverové logy
-- build logy
-- edge logy
-
-Slouží k ladění chyb produkční verze.
-
----
-
-## 5. Napojení na Supabase
-
-### 5.1 Klient
-
-Aplikace používá klienta:
+Vercel vytvoří URL:
 
 ```
-import { createClient } from '@supabase/supabase-js'
+https://aplikace-v6-git-feature-xyz.vercel.app
 ```
 
-Ve verzi vhodné pro:
+Slouží pro testování UI, zátěže i bezpečnosti.
 
-- RLS politiku  
-- autentizaci v browseru  
-- práci s databází  
+### Production deployment
 
-### 5.2 Databázové migrace
+- trigger: push do `main`
+- nasazení na hlavní doménu
+- používá PROD env proměnné
 
-Aktuálně se provádí v Supabase přes webové UI.  
-Do budoucna se plánuje přechod na:
+### Doporučení
 
-- `supabase migration push`
-- verzované SQL soubory v /supabase/migrations
-
-### 5.3 Storage
-
-Pro dokumenty a přílohy:
-- bucket `documents`
-- budoucí šifrování/složky podle tenantů
+- nikdy necommitovat `.env.local`
+- vždy mít zvlášť DEV / STAGE / PROD proměnné
 
 ---
 
-## 6. CI/CD (budoucí stav)
+## 6. Supabase Deployment
 
-CI část (GitHub Actions) bude zahrnovat:
+### Schéma a migrace
 
-- kontrolu TypeScript chyby (`tsc --noEmit`)
-- kontrolu eslint pravidel (budoucí `npm run lint`)
-- ověření migrací (pokud přejdeme na CLI)
-- běh unit testů (vitest/jest)
+Supabase spravuje:
 
-CD část (Vercel):
-- vytvoření preview buildu
-- spuštění produkčního buildu
+- tabulky  
+- RLS politiky  
+- funkce  
+- views  
 
----
+### Doporučený postup:
 
-## 7. Deployment checklist
+1. Úprava DB v DEV projektu.
+2. Export SQL skriptu změny.
+3. Uložit do repa → `/supabase/migrations/`.
+4. Otestovat na DEV.
+5. Spustit ručně na PROD.
 
-Před nasazením:
+### Struktura:
 
-- [ ] ověřit, že build proběhne lokálně  
-- [ ] zkontrolovat .env proměnné  
-- [ ] mít sjednocené typy a číselníky v modulu 900  
-- [ ] otestovat login/logout  
-- [ ] zkontrolovat změny v RLS  
-- [ ] otestovat přehledy a formuláře aktivních modulů  
+```
+/supabase/
+  migrations/
+    001-init.sql
+    002-add-roles.sql
+    003-add-meters.sql
+  seeds/
+    dev_seed.sql
+```
 
----
+### RLS zásady:
 
-## 8. Plán rozšíření deploymentu
-
-- dockerizace aplikace  
-- možnost vlastního hostingu mimo Vercel  
-- S3 compatible storage místo Supabase Storage  
-- multi-environment CI pipelines  
-- automatické generování PDF v Edge Functions  
-- testy proti mockovanému Supabase  
-
----
-
-## 9. Poznámky (uchováváme všechno)
-
-- původní verze aplikace běžela bez CI/CD, nyní standardizujeme proces  
-- plánuje se generátor dokumentů (PDF) — vyžaduje edge funkce  
-- budoucí integrace s cron úlohami (např. připomenutí splatnosti nájmů)  
+- nikdy nenasazovat na PROD bez otestování  
+- testovat SELECT/INSERT/UPDATE/DELETE pro různé role  
+- ověřit, že owner_id / created_by jsou správně nastavené  
 
 ---
 
-## 10. Závěr
+## 7. CI/CD pipeline (GitHub Actions)
 
-Tento dokument definuje způsob deploymentu v současné podobě:
+Základní workflow pro kontrolu:
 
-- Vercel jako hosting,
-- Supabase jako backend a databáze,
-- `.env` řízení konfigurace,
-- build procesy a budoucí CI/CD.
+```
+.github/workflows/ci.yml
+```
 
-Slouží jako referenční příručka pro provoz aplikace v různých prostředích.
+### Příklad:
 
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm install
+
+      - name: Lint & typecheck
+        run: |
+          npm run lint --if-present
+          npm run typecheck --if-present
+
+      - name: Build
+        run: npm run build
+```
+
+---
+
+## 8. Environment & Secrets Management
+
+### Kde mají být secrets?
+
+| Platforma | Typ secrets | K čemu slouží |
+|-----------|-------------|----------------|
+| **Vercel** | runtime env proměnné | přístup k Supabase, Sentry, API |
+| **GitHub Secrets** | CI pipeline | build/test/migrace |
+| **Lokální `.env.local`** | vývoj | nikdy necommitovat |
+
+### Pravidla:
+
+- žádné hesla v repozitáři  
+- `.env.local` ignorovat pomocí `.gitignore`  
+- SERVICE_ROLE_KEY nikdy nesmí jít na frontend  
+
+---
+
+## 9. Monitoring a logování
+
+### Logging
+- Vercel Logs – chyby buildu a runtime
+- Supabase Logs – DB dotazy, RLS chyby
+
+### Error monitoring (doporučeno)
+Použití:
+
+- **Sentry**  
+  - JS chyby na frontendu  
+  - serverové chyby  
+  - výkon (slow transactions)  
+
+---
+
+## 10. Release checklist
+
+Před nasazením nové verze:
+
+### Kód
+- [ ] Build lokálně proběhl (`npm run build`)
+- [ ] CI prošlo (lint, typecheck, build)
+- [ ] Kód v `main` je čistý
+
+### UI
+- [ ] Otestováno na preview
+- [ ] Přihlášení funguje
+- [ ] Sidebar se načítá
+- [ ] Žádné error hlášky v konzoli
+
+### Supabase
+- [ ] Migrace otestována na DEV
+- [ ] SQL připravené a schválené
+- [ ] RLS chování ověřeno
+
+### Vercel
+- [ ] ENV proměnné jsou nastavené
+- [ ] Doména správně směřuje na production deployment
+
+---
+
+## 11. Budoucí rozšíření deploymentu
+
+- automatické migrace (CI → Supabase)
+- Docker verze aplikace
+- Kubernetes orchestrace
+- canary deployment pro postupné nasazení
+- automatizovaný rollback
+- audit log nasazení
+
+---
+
+## 12. Závěr
+
+Deployment architektura Pronajímatel v6 je postavena na:
+
+- Next.js + Vercel  
+- Supabase (DB + Auth + RLS)  
+- GitHub Actions  
+
+Tento dokument definuje **stabilní, bezpečný a opakovatelný** proces nasazení.
+
+
+---
+
+## 🟧 07B – historické části (teď skoro prázdné, ale připravené)
+
+Dokument 07 byl doteď prázdný, takže nemáme reálné staré texty, ale chci dodržet tvůj systém: mít v každém dokumentu místo pro staré verze.
+
+Vlož tohle **na konec `/docs/07-deployment.md`**:
+
+```markdown
+---
+
+# 📜 Historické části dokumentu – DEPLOYMENT  
+*(zatím prázdné, připravené pro budoucí staré verze – NESMAZAT)*
+
+_Pro tento dokument zatím neexistují starší použitelné texty.  
+Až budeš mít první verzi, kterou nahradíme novější, starou sem přesuneme a označíme jako ~~zastaralou~~._
+
+```
+
+---
+
+## 🟨 07C – archivní soubor `/docs/archive/07-deployment-notes.md`
+
+```markdown
+# /docs/archive/07-deployment-notes.md
+## Popis: Archiv poznámek, nápadů a alternativních návrhů k deploymentu a infrastruktuře.
+---
+
+# ARCHIV – Deployment (poznámky a koncepty)
+
+Tento archiv slouží k ukládání všech volných poznámek, úvah a konceptů, které se týkají nasazení, ale nepatří přímo do hlavního dokumentu 07 – Deployment.
+
+NIC se nesmí mazat, pouze přidávat.
+
+---
+
+## 🔸 1. Možné budoucí varianty infrastruktury
+
+- Nasadit aplikaci místo na Vercel na vlastní VPS (Docker + nginx).
+- Použít Railway / Fly.io / render.com.
+- Použít Kubernetes cluster, pokud bude aplikace velmi růst.
+- Rozdělit frontend a backend (Next.js + samostatné API).
+
+---
+
+## 🔸 2. Alternativní CI/CD nástroje
+
+- GitLab CI místo GitHub Actions.
+- CircleCI, Travis CI, Jenkins.
+- “No-CI” varianta: ruční build a deploy Artefaktu na server.
+
+---
+
+## 🔸 3. Poznámky k vývoji
+
+Zde mohou být ukládány třeba tyto typy poznámek:
+
+- “Na Vercelu mi to padalo kvůli chybějící env proměnné…”
+- “Supabase měla jiné URL mezi DEV a PROD, musel jsem to přepsat.”
+- “Build selhal kvůli chybějícímu exportu komponenty v AppShell.tsx.”
+
+---
+
+## 🔸 4. Úvahy o rollbacku
+
+- Možnost ručně přepnout Vercel na předchozí deployment.
+- Možnost mít skripty pro rollback Supabase migrací.
+- Možnost držet “backup” databáze před velkým nasazením.
+
+---
+
+## 🔸 5. Budoucí integrace s monitoringem
+
+- Sentry / LogRocket / Datadog.
+- Vlastní audit logování do Supabase tabulek.
+
+---
+
+# 📌 Závěr
+
+Tento archiv se používá jako “odkladiště” všech technických poznámek k deploymentu, které by jinak skončily v chatu, v hlavě nebo v náhodném TODO.
+
+```
+
+---
+
+Tím pádem máš:
+
+- **07A** – hotový, profi, detailní dokument,
+- **07B** – připravenou sekci pro budoucí staré verze,
+- **07C** – archivní soubor pro poznámky.
+
+Pokud chceš pokračovat stejným stylem:
+
+- napiš třeba **08 A+B+C** (Plán vývoje),
+- nebo **09 A+B+C** (Pravidla projektu),
+- nebo **10 A+B+C** (Slovník pojmů).
