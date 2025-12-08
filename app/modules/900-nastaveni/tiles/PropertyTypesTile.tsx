@@ -22,9 +22,7 @@ import {
 /**
  * Mapování z DB řádku (PropertyType) na generický typový záznam
  * používaný GenericTypeTile.
- *
- * ⚠️ Tohle je 1:1 kopie logiky jako u SubjectTypesTile,
- * jen přejmenovaná na PropertyType.
+ * Stejná logika jako u SubjectTypesTile.
  */
 function mapRowToGeneric(row: PropertyType): GenericTypeItem {
   return {
