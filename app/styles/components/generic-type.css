@@ -372,7 +372,9 @@
   background-color: #ffffff;
   cursor: pointer;
 }
-/* Spodní akční tlačítka ve formuláři (GenericTypeTile) */
+
+/* Spodní akční tlačítka ve formuláři (GenericTypeTile)
+   – výchozí stav jen ikona, na hover se zobrazí i text */
 
 .generic-type__button,
 .generic-type__button-nav,
@@ -380,12 +382,12 @@
 .generic-type__button-save-main,
 .generic-type__button-archive,
 .generic-type__alert-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
 
-  padding: 0.35rem 0.75rem;
+  padding: 0.35rem 0.55rem; /* jen na ikonu */
   min-height: 30px;
 
   border-radius: 999px;
@@ -402,36 +404,71 @@
     background-color 0.15s ease,
     border-color 0.15s ease,
     box-shadow 0.15s ease,
-    transform 0.1s ease;
+    transform 0.1s ease,
+    padding-right 0.15s ease;
 }
 
-/* Navigační šipky (Předchozí / Další) mohou být trochu užší */
+/* Navigační šipky (Předchozí / Další) – klidně trochu užší */
 .generic-type__button-nav {
-  padding-inline: 0.5rem;
+  padding-inline: 0.35rem;
 }
 
+/* Ikona uvnitř tlačítka */
 .generic-type__button-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
+/* Text – výchozí stav "schovaný" (šířka 0, průhledný) */
 .generic-type__button-text {
   white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+  overflow: hidden;
+  transition:
+    max-width 0.15s ease,
+    opacity 0.15s ease,
+    margin-left 0.15s ease;
 }
 
-/* Hover efekt – stejné chování jako CommonActions nahoře */
+/* Hover / focus – tlačítko se roztáhne a ukáže text */
 .generic-type__button:hover,
+.generic-type__button:focus-visible,
 .generic-type__button-nav:hover,
+.generic-type__button-nav:focus-visible,
 .generic-type__button-add-top:hover,
+.generic-type__button-add-top:focus-visible,
 .generic-type__button-save-main:hover,
+.generic-type__button-save-main:focus-visible,
 .generic-type__button-archive:hover,
-.generic-type__alert-btn:hover {
+.generic-type__button-archive:focus-visible,
+.generic-type__alert-btn:hover,
+.generic-type__alert-btn:focus-visible {
   background: var(--color-primary-soft);
   border-color: var(--color-primary);
   transform: translateY(-1px);
+  padding-right: 0.75rem; /* přidáme místo pro text */
 }
 
+/* při hover/focus zobraz text */
+.generic-type__button:hover .generic-type__button-text,
+.generic-type__button:focus-visible .generic-type__button-text,
+.generic-type__button-nav:hover .generic-type__button-text,
+.generic-type__button-nav:focus-visible .generic-type__button-text,
+.generic-type__button-add-top:hover .generic-type__button-text,
+.generic-type__button-add-top:focus-visible .generic-type__button-text,
+.generic-type__button-save-main:hover .generic-type__button-text,
+.generic-type__button-save-main:focus-visible .generic-type__button-text,
+.generic-type__button-archive:hover .generic-type__button-text,
+.generic-type__button-archive:focus-visible .generic-type__button-text,
+.generic-type__alert-btn:hover .generic-type__button-text,
+.generic-type__alert-btn:focus-visible .generic-type__button-text {
+  max-width: 120px;   /* dost prostoru na text typu "Uložit" */
+  opacity: 1;
+  margin-left: 0.35rem;
+}
 
 
 /* Popisek pole ve formuláři */
