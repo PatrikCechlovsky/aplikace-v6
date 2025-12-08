@@ -1,0 +1,204 @@
+# Subject – seznam polí (jádro systému)
+
+Společná tabulka **subject** slouží pro všechny typy subjektů:
+
+- osoba
+- osvc
+- firma
+- spolek
+- statni
+- zastupce
+- (později konkrétní role: nájemník, pronajímatel, servis atd. přes „role“)
+
+Každý subjekt má v UI typicky záložky:
+
+- **Detail subjektu**
+- **Účty** (bankovní účty)
+- **Přílohy**
+- **Historie**
+- **Systém**
+
+Speciálně subjekt typu **nájemník** bude mít navíc záložku:
+
+- **Uživatelé** (další osoby v jednotce / spolubydlící)
+
+Níže je přehled polí tabulky `subject`.  
+Technické detaily (SQL, RLS, vztahy na další tabulky) budou popsány zvlášť.
+
+---
+
+## 1. Identifikace subjektu
+
+| Název pole            | Kód pole        | Typ                  | Platí pro typy                      | Povinné pro typy                         | Poznámka |
+|-----------------------|-----------------|----------------------|-------------------------------------|------------------------------------------|---------|
+| ID                    | `id`            | text (read-only/UUID)| všechny                             | všechny                                  | Primární klíč subjektu. |
+| Typ subjektu          | `subject_type`  | select               | všechny                             | všechny                                  | Hodnoty z číselníku „Typ subjektu“ (osoba, osvc, firma, spolek, statni, zastupce…). |
+| Role                  | `role`          | multi-select         | všechny                             | dle použití                              | Např. pronajimatel, najemnik, udrzba, user… zdroj z modulu 900 – typy rolí. |
+| Oprávnění             | `permissions`   | multi-select         | zatím hlavně uživatelské účty       | podle konfigurace                        | Přidělená oprávnění / scopes uživateli. Hodnoty z číselníku „Typ oprávnění“. (Detailní model bude v permissions dokumentu.) |
+| Archivní              | `is_archived`   | boolean (checkbox)   | všechny                             | žádný                                    | Označení, že subjekt je archivní (není aktivní v běžné práci). |
+
+---
+
+## 2. Osobní a firemní identita
+
+| Název pole            | Kód pole        | Typ          | Platí pro typy                      | Povinné pro typy                         | Poznámka |
+|-----------------------|-----------------|-------------|-------------------------------------|------------------------------------------|---------|
+| Titul před jménem     | `title_before`  | text        | osoba, osvc, zastupce               | –                                        | Např. Ing., Mgr., Bc. |
+| Jméno                 | `first_name`    | text        | osoba, osvc, zastupce               | osoba, osvc, zastupce                    | Křestní jméno. |
+| Příjmení              | `last_name`     | text        | osoba, osvc, zastupce               | osoba, osvc, zastupce                    | Příjmení osoby. |
+| Název společnosti     | `company_name`  | text        | firma, spolek, statni               | firma, spolek, statni                    | Oficiální název subjektu. |
+| Název / Jméno (display)| `display_name` | text (read-only) | všechny                        | –                                        | Vypočtený sloupec: pro firmu/spolek/statni = `company_name`, pro osobu/osvc/zastupce = „Příjmení Jméno“. |
+| Datum narození        | `birth_date`    | date        | osoba, osvc, zastupce               | osoba, osvc (dle oprávnění)              | Datum narození (pro identifikaci nájemníka, uživatele…). |
+| Typ dokladu totožnosti| `id_doc_type`   | select      | osoba, osvc, zastupce               | dle potřeby                              | Enum: OP, PAS, ŘP (české typy dokladů). |
+| Číslo dokladu         | `id_doc_number` | text        | osoba, osvc, zastupce               | dle potřeby                              | Číslo občanky, pasu apod. |
+
+---
+
+## 3. IČ, DIČ a ARES
+
+| Název pole                   | Kód pole         | Typ          | Platí pro typy                 | Povinné pro typy                      | Poznámka |
+|------------------------------|------------------|-------------|--------------------------------|---------------------------------------|---------|
+| IČ                           | `ic`             | text        | firma, osvc, spolek, statni    | firma, osvc, spolek, statni           | Možnost ověření přes ARES (tlačítko „Načíst z ARES“). |
+| DIČ                          | `dic`            | text        | firma, osvc, spolek, statni    | dle daňové situace                    | Daňové identifikační číslo. |
+| IČ ověřeno                   | `ic_valid`       | boolean     | firma, osvc, spolek, statni    | –                                     | `true` = IČ prošlo validací (např. přes ARES / interní kontrolu). |
+| DIČ ověřeno                  | `dic_valid`      | boolean     | firma, osvc                    | –                                     | `true` = DIČ prošlo validací. |
+| ARES – data (snapshot)       | `ares_json`      | json        | firma, osvc, spolek, statni    | –                                     | Uložený návrat JSON z ARES pro audit / debug. |
+
+---
+
+## 4. Adresa a geografické údaje
+
+| Název pole              | Kód pole           | Typ      | Platí pro typy | Povinné pro typy | Poznámka |
+|-------------------------|--------------------|---------|----------------|------------------|---------|
+| Stát                    | `country`          | select  | všechny        | všechny          | Číselník Countries. |
+| PSČ                     | `zip`              | text    | všechny        | všechny          | Pattern: `^\d{5}$` (české PSČ), možné rozšíření pro jiné země. |
+| Město                   | `city`             | text    | všechny        | všechny          | Název obce / města. |
+| Ulice                   | `street`           | text    | všechny        | dle potřeby      | Ulice. |
+| Číslo popisné           | `house_number`     | text    | všechny        | dle potřeby      | Číslo popisné / orientační. |
+| RÚIAN – ID adresy       | `ruian_address_id` | text    | všechny        | –                | ID adresního místa z RÚIAN (ČÚZK). |
+| Adresa ověřena (RÚIAN)  | `ruian_validated`  | boolean | všechny        | –                | `true` = adresa validovaná vůči RÚIAN. |
+| Zdroj adresy            | `address_source`   | select  | všechny        | –                | Enum: `manual`, `ruian`, `ares`, `google` – odkud se adresa vzala. |
+
+---
+
+## 5. Kontaktní údaje
+
+| Název pole             | Kód pole   | Typ    | Platí pro typy | Povinné pro typy | Poznámka |
+|------------------------|-----------|--------|----------------|------------------|---------|
+| Telefon                | `phone`   | tel    | všechny        | dle potřeby      | Mezinárodní formát, kontrola duplicit – telefon by neměl být duplicitní u aktivních uživatelů. |
+| Email                  | `email`   | email  | všechny        | pro uživatelské účty | Unikátní v kombinaci s uživatelským účtem. Kontrola duplicit emailu pro přihlášení. |
+
+---
+
+## 6. Bankovní účty subjektu (samostatná entita 1:N)
+
+Subjekt může mít jeden nebo více bankovních účtů.  
+Bankovní účty **nejsou uloženy přímo v tabulce `subject`**, ale v samostatné tabulce `bank_accounts`, protože:
+
+- je nutné podporovat více účtů pro jeden subjekt (1:N)
+- účty mají vlastní audit, měnu, IBAN, vztah na číselník bank
+- existuje možnost označit jeden účet jako „hlavní“
+
+V uživatelském rozhraní se účty zobrazují v záložce **Účty** v detailu subjektu:
+
+- vlevo seznam všech účtů subjektu
+- vpravo formulář pro přidání / úpravu účtu
+
+### 6.1 Struktura bankovního účtu
+
+Každý účet obsahuje následující pole:
+
+| Název pole            | Kód pole        | Typ                   | Poznámka |
+|-----------------------|-----------------|-----------------------|---------|
+| Popisek               | `label`         | text                  | Uživatelský název účtu (např. „Osobní účet KB“). |
+| Banka                 | `bank_id`       | select (lookup:bank_list) | Výběr banky z číselníku bank v ČR (modul 900). |
+| Číslo účtu            | `account_number`| text                  | Domácí číslo účtu ve formátu před lomítkem (bez kódu banky). |
+| Měna                  | `currency`      | select                | Např. CZK / EUR / USD; výchozí hodnota CZK. |
+| IBAN (nepovinné)      | `iban`          | text                  | Volitelný údaj, validace dle standardu IBAN. |
+| Hlavní účet           | `is_primary`    | boolean               | Subjekt může mít **maximálně jeden** hlavní účet. |
+| Audit                 | `created_at`, `updated_at` | meta (read-only) | Automaticky generovaná systémová pole. |
+
+### 6.2 Číselník bank (bank_list)
+
+Položka „Banka“ se vybírá z číselníku, který bude uložen v modulu 900:
+
+- **bank_list** obsahuje seznam bank působících v ČR (dle registru ČNB)
+- každý záznam obsahuje minimálně:
+  - `id` – interní ID
+  - `bank_code` – čtyřmístný kód banky (např. 0100, 0300, 2010…)
+  - `bank_name` – název banky
+  - `swift` – volitelné, SWIFT/BIC
+  - `country` – obvykle „CZ“
+
+### 6.3 Zobrazení v Detailu subjektu
+
+Sekce „Účty“ v detailu subjektu obsahuje:
+
+- levý panel: seznam účtů nebo text „Žádné účty.“ 
+- pravý panel: formulář s poli Popisek, Banka, Číslo účtu, Měna, IBAN a přepínačem Hlavní
+    // ale oba jako samostatný kus abychom v mobilu mohli dát pod sebe levý s pravým panelem
+- tlačítka: **Uložit** a **Nový**
+
+Formulář umožňuje:
+
+- přidání nového účtu  
+- úpravu vybraného účtu  
+- označení účtu jako hlavního  
+- validaci čísla účtu / IBAN  
+
+
+---
+
+## 7. Přihlášení a uživatelský účet
+
+Tato část je primárně pro subjekty, které se přihlašují do systému (uživatelé).
+
+| Název pole              | Kód pole            | Typ       | Platí pro typy                | Povinné pro typy            | Poznámka |
+|-------------------------|---------------------|----------|-------------------------------|-----------------------------|---------|
+| Přihlašovací jméno      | `login`             | text     | osoba, osvc, zastupce (uživatel) | dle politiky systému     | Uživatelské jméno pro přihlášení (pokud se nepoužívá přímo email). |
+| Heslo                   | `password`          | password | osoba, osvc, zastupce (uživatel) | – (řešeno v auth systému) | Zobrazovat pouze při změně; v praxi spravováno přes přihlašovací/bezpečnostní modul (nemělo by se ukládat v čitelné podobě). |
+| Typ ověření 2FA         | `two_factor_method` | select   | osoba (uživatel)             | osoba (uživatel)            | Např. žádné / SMS / aplikace / email. Konkrétní hodnoty v číselníku. |
+
+> Poznámka: Reálné heslo a bezpečnost budou řešeny v auth systému (Supabase / jiný provider). Zde slouží spíše jako logické propojení na účet a nastavení 2FA.
+
+---
+
+## 8. Vazby na jiné subjekty
+
+| Název pole       | Kód pole      | Typ    | Platí pro typy           | Povinné pro typy | Poznámka |
+|------------------|---------------|--------|--------------------------|------------------|---------|
+| Zástupce (FK)    | `delegate_id` | lookup | firma, spolek, statni…   | dle potřeby      | Odkaz na jiný `subject.id` s typem `zastupce`. Použije se pro právní / smluvní zástupce. |
+
+---
+
+## 9. Nájemník a uživatelé jednotky (pohled, ne přímo sloupce)
+
+Následující informace se týkají nájemnických subjektů a vztahu na jednotky.  
+V základní tabulce `subject` je budeme spíše zobrazovat jako **odvozená / relační data**, ne jako fyzické sloupce.
+
+| Název (logický)          | Doporučený kód    | Typ              | Poznámka |
+|--------------------------|-------------------|------------------|---------|
+| Jednotka                 | – (relační pohled)| read-only text / seznam | Zobrazení seznamu přiřazených jednotek (1 subjekt může mít více jednotek). Realizováno přes vazební tabulku (např. `unit_tenants`). |
+| Další uživatel – Příjmení | –                | viz child tabulka| Patří do samostatné tabulky (např. `subject_additional_users`), ne jako jediný sloupec. |
+| Další uživatel – Jméno   | –                 | viz child tabulka| Stejně jako výše. |
+| Další uživatel – Datum narození | –         | viz child tabulka| Stejně jako výše. |
+| Počet uživatelů          | `users_count`     | number (read-only) | Výpočtové pole: počet hlavního nájemníka + počet dalších uživatelů (spolubydlících). Zobrazeno na detailu subjektu a na záložce „Seznam uživatelů“. |
+
+> Důležité: „Další uživatelé“ budou řešeni samostatnou tabulkou (child entita) a v UI jako seznam „Uživatelé jednotky“.  
+> V tomto dokumentu je jen zaneseno, jak se to bude zobrazovat na subjektu.
+
+---
+
+## 10. Audit a systémová metadata
+
+| Název pole          | Kód pole       | Typ           | Platí pro typy | Povinné pro typy | Poznámka |
+|---------------------|----------------|--------------|----------------|------------------|---------|
+| Audit               | `audit`        | meta (read-only) | všechny    | –                | Souhrnné zobrazení: kdo vytvořil, kdo změnil, kdy. V UI může být formou boxu „Audit“. |
+| Vytvořeno kdy       | `created_at`   | timestamp     | všechny        | všechny          | Datum a čas vzniku záznamu. |
+| Vytvořil kdo        | `created_by`   | lookup (user) | všechny        | –                | Odkaz na uživatele, který záznam vytvořil. |
+| Změněno kdy         | `updated_at`   | timestamp     | všechny        | všechny          | Datum a čas poslední změny. |
+| Změnil kdo          | `updated_by`   | lookup (user) | všechny        | –                | Odkaz na uživatele, který záznam naposledy změnil. |
+
+> Poznámka: některá systémová pole mohou být technicky pouze v databázi a v UI zobrazena přes `audit` blok.
+
+---
