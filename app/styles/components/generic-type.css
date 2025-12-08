@@ -90,7 +90,7 @@
   font-size: 12px;
   cursor: pointer;
   /* barva podle theme – modrá / zelená / fialová */
-  color: var(--color-primary-strong);
+  color: var(--color-text-muted);
 }
 
 .generic-type__list-toolbar-right {
