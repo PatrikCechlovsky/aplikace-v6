@@ -1,6 +1,6 @@
 // FILE: app/lib/themeSettings.ts
 
-import { supabase } from '../supabaseClient'
+import { supabase } from './supabaseClient'
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 export type ThemeAccent = 'neutral' | 'grey' | 'blue' | 'green' | 'purple'
