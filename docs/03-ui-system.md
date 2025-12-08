@@ -490,10 +490,210 @@ RelationListWithDetail respektuje:
 Uživatel vidí vždy jen to, k čemu má roli a oprávnění.
 
 
+---
+
+# 3.9 EntityDetailFrame – hlavní rám detailu entity
+
+**EntityDetailFrame** je hlavní kontejner pro zobrazení a úpravu detailu libovolné entity  
+(Pronajímatel, Nemovitost, Jednotka, Nájemník, Smlouva, Platba, …).
+
+Je to „velká detailová karta“, která:
+
+- definuje strukturu detailu (header, akce, záložky, obsah)
+- obsahuje logiku pro editaci, zobrazení, přílohy a systémové informace
+- je použitá jak v hlavním detailu entity, tak jako readonly náhled v RelationListWithDetail
 
 ---
 
-# 3.9 EntityDetailFrame – (bude doplněno později)
+## 3.9.1 Účel EntityDetailFrame
+
+EntityDetailFrame zajišťuje:
+
+- jednotný vzhled všech detailových obrazovek v aplikaci
+- správu interakcí s detailem entity
+- podporu editace (hlavní detail) nebo jen zobrazení (readonly náhled)
+- předávání stavu do CommonActions (uložit, zrušit…)
+- zobrazení jednotlivých sekcí entity pomocí záložek (tabs)
+- podporu systémových informací a příloh
+
+---
+
+## 3.9.2 Struktura EntityDetailFrame
+
+EntityDetailFrame se skládá z těchto částí:
+
+### (1) Header (Hlavička)
+Obsahuje:
+
+- ikonu entity (např. dům, osoba, smlouva…)
+- název entity (např. „Nemovitost K1“)
+- volitelný barevný badge typu entity
+- hlavní stav entity (aktivní, archivovaná…)
+- metadata (např. ID, kód, datum vytvoření)
+
+Chrome hlavičky může být přizpůsobené podle typu entity.
+
+---
+
+### (2) CommonActions (Horní tlačítka)
+Zobrazují se **pouze v hlavním detailu entity** (ne při zobrazení v RelationListWithDetail).
+
+Typické akce:
+
+- **Uložit**
+- **Uložit a zavřít**
+- **Zrušit**
+- **Archivovat**
+- **Smazat**
+- **Duplikovat**
+- **Otevřít v samostatném okně**
+
+CommonActions reagují na:
+
+- dirty state (neuložené změny)
+- oprávnění uživatele (některé akce mohou být skryté nebo zašedlé)
+- stav entity (např. archivované entity nelze editovat)
+
+---
+
+### (3) Tabs (Záložky)
+Každá entita má definované své sekce:
+
+Příklad Nemovitosti:
+
+- Základní údaje  
+- Adresa  
+- Jednotky (vazba → RelationListWithDetail)  
+- Dokumenty / Přílohy  
+- Systém  
+
+Příklad Pronajímatele:
+
+- Základní údaje  
+- Kontakty  
+- Bankovní účty  
+- Dokumenty / Přílohy  
+- Systém  
+
+Příklad Smlouvy:
+
+- Parametry smlouvy  
+- Platby (vazba → RelationListWithDetail)  
+- Dokumenty / Přílohy  
+- Systém  
+
+V první záložce se typicky zobrazuje hlavní **DetailView** entity.
+
+---
+
+### (4) Obsah záložek – DetailView
+Každá záložka obsahuje vlastní **DetailView**:
+
+- formuláře  
+- read-only sekce  
+- tabulky  
+- výběry  
+- specifická logika pro danou entitu  
+
+DetailView zajišťuje:
+
+- validaci polí
+- řízení dirty stavu
+- propojení s databází / API
+- napojení na CommonActions
+
+---
+
+### (5) Sekce Přílohy (povinná součást každého detailu)
+Každý EntityDetailFrame obsahuje záložku **Přílohy**, i když entita není dokument.
+
+Sekce Přílohy umožňuje:
+
+- nahrát libovolný soubor (PDF, CSV, JPG, XLSX…)
+- automaticky přejmenovat soubory (pokud je aktivní volba)
+- zobrazit archivované přílohy
+- přidat popis přílohy
+- archivovat / obnovit přílohu
+- uložit stav přílohy
+
+Komponenta je jednoduchá a jednotná pro všechny entity.
+
+Přílohy jsou **vázané na ID entity** a nejsou sdílené mezi entitami.
+
+*(Pozn.: Modul „Dokumenty“ slouží k jinému účelu – k agregaci a vyhledávání.)*
+
+---
+
+### (6) Sekce Systém (technické metadata)
+Každá entita má záložku „Systém“, obsahující:
+
+- ID záznamu  
+- datum vytvoření  
+- datum poslední změny  
+- kdo změnu provedl  
+- systémové flagy (archivováno, publikováno…)  
+- auditní informace (pokud budou implementované)  
+
+---
+
+### (7) Dirty state (neuložené změny)
+EntityDetailFrame sleduje změny ve všech DetailView uvnitř.
+
+Funkce:
+
+- upozorní CommonActions, že je třeba uložit  
+- zabraňuje opuštění stránky bez upozornění  
+- zvýrazní neuložené sekce  
+- ukládá stav po tabách (tab-level dirty state)
+
+---
+
+### (8) Role a oprávnění
+EntityDetailFrame je řízen oprávněními:
+
+- kdo může vidět detail
+- kdo může editovat
+- kdo může archivovat
+- kdo může nahrávat přílohy
+- kdo vidí finanční taby, systémové taby, servisní taby…
+
+Dle role se mohou:
+
+- záložky skrýt  
+- sekce zobrazit jako read-only  
+- akce deaktivovat  
+
+---
+
+### (9) Použití EntityDetailFrame v RelationListWithDetail
+
+V případě RelationListWithDetail se EntityDetailFrame zobrazuje **v jeho dolní části**.
+
+Rozdíly oproti hlavnímu detailu:
+
+- typicky **readonly**  
+- CommonActions se nezobrazují  
+- stále obsahuje záložky a DetailView  
+- používá se k rychlému náhledu související entity  
+- plná editace probíhá v její vlastní hlavní záložce
+
+---
+
+## 3.9.3 Souhrn funkcí EntityDetailFrame
+
+| Funkce | Hlavní detail | RelationList (dolní část) |
+|--------|----------------|----------------------------|
+| Editace | Ano | Obvykle ne (readonly) |
+| CommonActions | Ano | Ne |
+| Záložky | Ano | Ano |
+| Přílohy | Ano | Ano |
+| Systém | Ano | Ano |
+| Dirty state | Ano | Ne |
+| Oprávnění | Ano | Ano (jen read-only) |
+
+---
+
+
 
 ---
 
