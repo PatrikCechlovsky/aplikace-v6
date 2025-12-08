@@ -208,6 +208,15 @@
   }
 }
 
+/* Panel detailu (spodní karta) */
+
+.generic-type__detail {
+  background: var(--color-surface);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  padding: 1rem;
+}
+
 /* Obecné fieldy */
 
 .generic-type__field {
