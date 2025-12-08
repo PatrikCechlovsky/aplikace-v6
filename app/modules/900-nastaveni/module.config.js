@@ -68,17 +68,6 @@ export default {
     {
       id: 'subject-types',
       label: 'Typy subjektů',
-      icon: 'list',
-      sectionId: 'types-settings',
-      component: SubjectTypesTile,
-      order: 15,
-    },
-    // ...
-  ],
-
-    {
-      id: 'subject-types',
-      label: 'Typy subjektů',
       icon: 'list',  // nebo vytvoř novou ikonu např. "subject-type"
       sectionId: 'types-settings',
       component: SubjectTypesTile,
