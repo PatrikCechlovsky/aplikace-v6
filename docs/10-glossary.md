@@ -1,188 +1,253 @@
 # /docs/10-glossary.md
-## Popis: Tento dokument obsahuje slovník pojmů používaných v aplikaci Pronajímatel v6 – moduly, entity, UI elementy, datové struktury a technické termíny.
+## Popis: Slovník všech důležitých pojmů používaných v aplikaci Pronajímatel v6 – technické, doménové, UI/UX, databázové a projektové termíny.
 ---
- 
-# 10 – Slovník pojmů (Glossary)
 
-Tento dokument shromažďuje všechny názvy, pojmy a termíny používané v projektu.  
-Je určen jako referenční příručka pro vývojáře, dokumentaristy i budoucí spolupracovníky.
+# 10 – Slovník pojmů
 
 ---
 
-# 1. Pojmy z aplikace (business)
+# 1. Úvod
 
-### **Pronajímatel**
-Uživatel nebo subjekt, který vlastní nemovitosti a jednotky.
+Tento dokument obsahuje **kompletní přehled všech pojmů**, které se používají:
 
-### **Nájemník (Tenant)**
-Osoba nebo firma, která využívá jednotku na základě nájemní smlouvy.
+- v kódu,
+- v dokumentaci,
+- v UI,
+- v databázi,
+- v modulech,
+- v architektuře Pronajímatel v6.
 
-### **Subjekt (Subject)**
-Obecná entita reprezentující osobu nebo organizaci.  
-Může být pronajímatel, nájemník, kontaktní osoba nebo jiná role.
+Slouží hlavně:
+
+- pro tebe,
+- pro nové vývojáře,
+- pro konzistenci celého systému.
+
+---
+
+# 2. Hlavní doménové pojmy
 
 ### **Nemovitost (Property)**
-Budova nebo objekt (dům, kancelářská budova…).
+Budova, dům nebo objekt, který je ve správě pronajímatele.
 
 ### **Jednotka (Unit)**
-Byt, kancelář, sklad nebo jiný pronajímatelný prostor v nemovitosti.
+Byt nebo nebytový prostor v nemovitosti.
+
+### **Pronajímatel (Landlord)**
+Osoba nebo firma, která vlastní nemovitosti.
+
+### **Nájemník (Tenant)**
+Osoba, která obývá jednotku a má nájemní vztah.
 
 ### **Smlouva (Contract)**
-Nájemní smlouva definující vztah mezi nájemníkem a pronajímatelem.
+Právní dokument mezi pronajímatelem a nájemníkem.
 
-### **Platba (Payment)**
-Nájemné nebo záloha, která má datum splatnosti a výši částky.
-
-### **Předpis (Prediction / Charge)**
-Plánovaná opakovaná částka (nájemné, služby).
-
-### **Vyúčtování (Settlement)**
-Roční zúčtování služeb a spotřeb.
+### **Služba (Service)**
+Náklad, který je vyúčtovaný nájemníkovi (voda, plyn, odpad…).
 
 ### **Měřidlo (Meter)**
-Zařízení sledující spotřebu (elektřina, voda, plyn).
+Zařízení měřící spotřebu (elektřina, plyn, voda).
 
-### **Odečet (Meter Reading)**
-Konkrétní zaznamenaný stav měřidla.
+### **Platební předpis (Payment Schedule)**
+Předepsaná kombinace nájemného a služeb.
+
+### **Platba (Payment)**
+Reálně přijatá úhrada od nájemníka.
+
+### **Vyúčtování (Settlement)**
+Finální vyrovnání služeb na základě skutečné spotřeby.
 
 ### **Dokument (Document)**
-PDF nebo příloha uložená k subjektu, nemovitosti, jednotce nebo smlouvě.
+Soubory jako smlouvy, dodatky, vyúčtování atd.
 
 ### **Komunikace (Communication)**
-Odeslané e-maily, zprávy, upozornění nebo interní log.
+E-mail, zpráva nebo interní zápis spojený s nájemníkem.
 
 ---
 
-# 2. Pojmy z UI
+# 3. Technické pojmy (frontend)
 
-### **AppShell**
-Hlavní rozvržení aplikace – 6-sekční layout.
+### **Layout**
+Hlavní rámec stránky obsahující 6 sekcí UI.
+
+### **HomeButton**
+Levá část horní lišty, navigace zpět na dashboard.
 
 ### **Sidebar**
-Levá navigace obsahující seznam modulů.
+Navigace modulů aplikace.
 
 ### **Breadcrumbs**
-Navigační cesta zobrazující aktuální umístění uživatele.
+Drobečková navigace podle modulu / detailu.
 
 ### **CommonActions**
-Sada tlačítek vykreslená nad contentem – akce jako „Uložit“, „Přidat“, „Archivovat“.
+Řádek tlačítek (Add, Edit, Save…) specifický podle stavu.
 
-### **Content**
-Hlavní oblast zobrazující přehled, detail nebo formulář.
+### **Content Engine**
+Část, která zobrazuje přehled, detail nebo formulář.
 
-### **ListView**
-Standardizovaný přehled záznamů modulu.
+### **Tile**
+Vstupní “dlaždice” modulu (typy, seznamy, podsekce).
 
-### **DetailView**
-Zobrazení detailu jedné položky (tile).
+### **Form State**
+Interní stav formuláře s podporou:
+- dirty state,
+- validace,
+- napojení na CommonActions.
 
-### **FormView / FormLayout**
-Rozhraní pro editaci nebo vytváření záznamů.
-
-### **GenericTypeTile**
-Standardizovaná komponenta pro číselníky v modulu 900.
+### **Overview**
+Tabulkový přehled dat (list view).
 
 ---
 
-# 3. Pojmy z architektury
+# 4. Backend & databázové pojmy
 
-### **Modul**
-Samostatná část aplikace reprezentující funkční oblast (např. Nemovitosti, Smlouvy, Platby…).
+### **Supabase**
+Platforma poskytující databázi, autentizaci, API a RLS.
 
-### **module.config.js**
-Konfigurační soubor každého modulu obsahující:
-- id  
-- label  
-- icon  
-- order  
-- enabled  
-- konfigurace akcí (v2)
-
-### **RLS (Row Level Security)**
-Bezpečnostní mechanismus Supabase, který určuje, jaká data může konkrétní uživatel vidět.
-
-### **Role**
-Označuje oprávnění uživatele (admin, owner, manager, accountant).
-
-### **Permission**
-Konkrétní schopnost uživatele — např. přidat záznam, upravit záznam, zobrazit modul.
+### **Auth**
+Systém přihlášení (e-mail + heslo).
 
 ### **Session**
-Informace o přihlášení uživatele, získaná ze Supabase Auth.
+Aktuálně přihlášený uživatel.
 
-### **Supabase Client**
-Knihovna pro komunikaci s databází a autentizací.
+### **User Metadata**
+Doplňující informace o uživateli (display_name…).
 
----
+### **RLS – Row Level Security**
+Omezení přístupu k řádkům podle `auth.uid()`.
 
-# 4. Technické pojmy
-
-### **Next.js**
-Framework nad Reactem využívající App Router architekturu.
-
-### **React Component**
-Znovupoužitelná UI jednotka.
-
-### **Server Component**
-Next.js komponenta renderovaná na serveru.
-
-### **Client Component**
-React komponenta vykreslovaná v prohlížeči.
-
-### **Vercel**
-Platforma pro deploy a hosting aplikace.
-
-### **Storage**
-Supabase úložiště pro dokumenty.
+### **Policy**
+Pravidlo určující, kdo může číst nebo měnit data.
 
 ### **Migration**
-SQL soubor popisující změnu v databázi.
+SQL skript obsahující změny v databázi.
 
-### **TypeScript**
-Typovaný jazyk nad JavaScriptem, zvyšující bezpečnost kódu.
-
----
-
-# 5. Datové pojmy
-
-### **UUID**
-Unikátní identifikátor používaný jako primární klíč.
-
-### **Foreign Key (FK)**
-Vazba mezi tabulkami.
-
-### **Entity**
-Logická jednotka dat, např. „jednotka“, „nemovitost“.
-
-### **Relationship**
-Propojení mezi entitami (1:1, 1:N, M:N).
-
-### **Číselník (Type / Lookup)**
-Seznam předdefinovaných hodnot (typ jednotky, typ služby…).
+### **Seed data**
+Startovní data pro testovací prostředí.
 
 ---
 
-# 6. Budoucí pojmy (rezervováno)
+# 5. Moduly – pojmy
 
-- Workflow Event  
-- Automation Rule  
-- Payment Matching  
-- Document Generator  
-- AI Assistant (doporučení nájmů)  
-- Service Bundle (balíčky služeb)
+### **Modul (Module)**
+Samostatná funkční část aplikace s vlastní složkou.
+
+### **module.config.js**
+Konfigurační soubor obsahující:
+- id,
+- název,
+- ikonu,
+- pořadí,
+- commonActions,
+- permissions.
+
+### **Module ID**
+Číselný prefix modulu, např. `040-nemovitosti`.
+
+### **Enabled Module**
+Modul, který se načítá v Sidebaru.
+
+### **Disabled Module**
+Skrytý modul (např. WIP).
 
 ---
 
-# 7. Poznámky (uchováváme vše)
+# 6. Pravidla projektu – pojmy
 
-- Pokud vznikne nový modul, musí být pojmy doplněny sem.  
-- Tento dokument je živý a bude se postupně rozšiřovat.  
-- Nikdy se nesmí mazat termíny — maximálně se **přeškrtávají**.
+### **A/B/C dokumentace**
+Standard zápisu dokumentů:
+- A = finální verze,
+- B = historické části,
+- C = archiv.
+
+### **Naming Convention**
+Pravidla pro pojmenování souborů, složek, komponent.
+
+### **Commit Message Format**
+Povolené prefixy `feat`, `fix`, `docs`, `refactor`, …
+
+### **Branch Model**
+`main`, `develop`, `feature/`, `fix/`.
 
 ---
 
-# 8. Závěr
+# 7. Deployment & CI/CD pojmy
 
-Slovník sjednocuje pojmosloví aplikace a zabraňuje nejasnostem při komunikaci.  
-Je povinnou součástí celkové dokumentace projektu.
+### **Preview Deployment**
+Dočasná verze na Vercelu vytvořená z branče.
 
+### **Production Deployment**
+Hlavní produkční verze aplikace.
+
+### **Environment Variables**
+Proměnné prostředí (`NEXT_PUBLIC_...`).
+
+### **GitHub Actions**
+Automatizace buildů a testů.
+
+### **Rollback**
+Vrácení aplikace na předchozí stabilní verzi.
+
+---
+
+# 8. Verzování & release pojmy
+
+### **Semantic Versioning**
+Verze mají tvar `major.minor.patch`.
+
+### **Changelog**
+Souhrn změn mezi verzemi.
+
+### **DB Version**
+Interní číslo verze databáze.
+
+### **Breaking Change**
+Změna vyžadující zásah do modulů / DB.
+
+---
+
+# 9. UI a design – pojmy
+
+### **Theme (světlý / tmavý režim)**
+Barevná varianta aplikace.
+
+### **Component**
+Znovupoužitelná UI část (např. tlačítko).
+
+### **Icon Set**
+Seznam ikon používaných v Sidebaru a UI.
+
+---
+
+# 10. Ostatní důležité pojmy
+
+### **Owner ID**
+ID pronajímatele – klíč k multi-tenant logice.
+
+### **Dirty State**
+Informace, že formulář obsahuje neuložené změny.
+
+### **Selected Row**
+Vybraný řádek v přehledu.
+
+### **Search & Filter**
+Systém filtrování dat v tabulce.
+
+---
+
+# 11. Závěr
+
+Tento slovník sjednocuje jazyk používaný v celém projektu.  
+Pokud někdo používá jiný termín než zde uvedený → musí být doplněn nebo opraven.
+
+Každý nový modul nebo funkce musí přidat nové pojmy do tohoto dokumentu.
+---
+
+# 📜 Historické části dokumentu – SLOVNÍK POJMŮ
+
+~~Původní pokus o slovník byl krátký a neúplný.~~  
+~~Byl založen pouze na názvech modulů a několika pojmech z UI.~~  
+
+Později byl slovník rozšířen na kompletní doménový, technický a architektonický popis.
+
+Tato sekce bude sloužit k ukládání starých verzí slovníku.
