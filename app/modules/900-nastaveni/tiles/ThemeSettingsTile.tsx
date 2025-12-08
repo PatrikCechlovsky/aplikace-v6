@@ -48,7 +48,8 @@ const PRESETS: ThemePreset[] = [
   {
     id: 'neutral-dark',
     label: 'Neutral – tmavé',
-    description: 'Tmavý režim se standardním akcentem, vhodný pro večerní práci.',
+    description:
+      'Tmavý režim se standardním akcentem, vhodný pro večerní práci.',
     mode: 'dark',
     accent: 'neutral',
   },
@@ -120,9 +121,11 @@ const PRESETS: ThemePreset[] = [
 ]
 
 export default function ThemeSettingsTile() {
+  // null = ještě nic není načteno → žádný preset není aktivní
   const [mode, setMode] = useState<ThemeMode | null>(null)
   const [accent, setAccent] = useState<ThemeAccent | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
 
   // 0) zjistíme aktuálního uživatele (jen na clientu)
@@ -134,6 +137,8 @@ export default function ThemeSettingsTile() {
       if (cancelled) return
       if (!error && data.session?.user?.id) {
         setUserId(data.session.user.id)
+      } else {
+        setUserId(null)
       }
     })()
 
@@ -142,43 +147,60 @@ export default function ThemeSettingsTile() {
     }
   }, [])
 
-  // 1) Při mountu načteme theme pro FORMULÁŘ (UI) – ale NEMĚNÍME vzhled aplikace
+  /**
+   * 1) Při mountu načteme theme pro FORMULÁŘ (UI),
+   *    ale NEMĚNÍME vzhled aplikace.
+   *    Pro přihlášeného uživatele je zdroj pravdy Supabase,
+   *    pro nepřihlášeného localStorage.
+   */
   useEffect(() => {
-    const local = loadThemeFromLocalStorage()
-  
-    // Pokud něco v localStorage je, jen tím předvyplníme stav ve formuláři
-    if (local) {
-      setMode(local.mode)
-      setAccent(local.accent)
-      } else {
-      // když localStorage ještě nic nemá, ale theme v aplikaci už je nastavené,
-      // načti theme z <body> atributů nebo z uiConfig (doporučuji)
-      // ⚠️ NEVOLÁME applyThemeToLayout(local)
-    }
-  
-    if (!userId) return
-  
     let cancelled = false
-  
-    ;(async () => {
-      const fromDb = await loadThemeSettingsFromSupabase(userId)
-      if (cancelled || !fromDb) return
-  
-      // Tohle už jsou „oficiální“ nastavení z DB – zase jen předvyplníme formulář
-      setMode(fromDb.mode)
-      setAccent(fromDb.accent)
-      // ⚠️ NEVOLÁME applyThemeToLayout(fromDb)
-  
-      // Ale můžeme je uložit lokálně, aby je příště tile viděl
-      saveThemeToLocalStorage(fromDb)
-    })()
-  
+
+    const init = async () => {
+      try {
+        // Přihlášený uživatel → primárně DB
+        if (userId) {
+          const fromDb = await loadThemeSettingsFromSupabase(userId)
+          if (cancelled) return
+
+          if (fromDb) {
+            setMode(fromDb.mode)
+            setAccent(fromDb.accent)
+            // uložíme do localStorage jen jako cache
+            saveThemeToLocalStorage(fromDb)
+            setIsLoading(false)
+            return
+          }
+        }
+
+        // Nepřihlášený nebo v DB nic není → zkus localStorage
+        const local = loadThemeFromLocalStorage()
+        if (!cancelled && local) {
+          setMode(local.mode)
+          setAccent(local.accent)
+        }
+
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      } catch (_) {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    init()
+
     return () => {
       cancelled = true
     }
   }, [userId])
 
-
+  /**
+   * 2) Uložení a aplikace nového nastavení při kliknutí na preset.
+   *    TADY se mění vzhled (applyThemeToLayout), nikde jinde.
+   */
   const updateSettings = async (next: ThemeSettings) => {
     setMode(next.mode)
     setAccent(next.accent)
@@ -228,7 +250,7 @@ export default function ThemeSettingsTile() {
                   isActive ? 'palette-card--active' : ''
                 }`}
                 onClick={() => handlePresetClick(preset)}
-                disabled={isSaving}
+                disabled={isSaving || isLoading}
               >
                 <div className="palette-card__header">
                   <span className="palette-card__title">
@@ -262,6 +284,11 @@ export default function ThemeSettingsTile() {
         {isSaving && (
           <p className="text-xs text-gray-400 mt-1">
             Ukládám nastavení vzhledu…
+          </p>
+        )}
+        {isLoading && (
+          <p className="text-xs text-gray-400 mt-1">
+            Načítám aktuální nastavení vzhledu…
           </p>
         )}
       </div>
