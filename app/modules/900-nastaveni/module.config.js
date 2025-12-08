@@ -10,6 +10,7 @@ import ThemeSettingsTile from './tiles/ThemeSettingsTile'
 // ⬇⬇⬇ NOVÝ IMPORT
 import PropertyTypesTile from './tiles/PropertyTypesTile'
 import UnitTypesTile from './tiles/UnitTypesTile'
+import RoleTypesTile from './tiles/RoleTypesTile'
 
 export default {
   id: '900-nastaveni',
@@ -48,7 +49,14 @@ export default {
 
   // 3. ÚROVEŇ – TILES (konkrétní číselníky) přiřazené do sekcí
   tiles: [
-    // ⬇⬇⬇ NOVÁ DLAŽDICE – typy nemovitostí
+    {
+      id: 'role-types',
+      label: 'Typy rolí',
+      icon: 'shield', // nebo jiná tvoje ikona
+      sectionId: 'types-settings',
+      component: RoleTypesTile,
+      order: 14,
+    },
     {
       id: 'property-types',
       label: 'Typy nemovitostí',
