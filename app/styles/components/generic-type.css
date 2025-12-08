@@ -533,3 +533,33 @@
 .generic-type__form-title {
   color: var(--color-text-muted);
 }
+/* Vyhledávací pole – stejný vzhled jako formulářové inputy */
+
+.generic-type__filter-input {
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  padding: 5px 7px;
+  font-size: 13px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.generic-type__filter-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary-soft);
+}
+/* Checkbox labely – sjednocený styl */
+
+.generic-type__filter label,
+.generic-type__field-checkbox label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+/* samotné checkboxy necháme malé, jen jemný border */
+.generic-type__filter input[type="checkbox"],
+.generic-type__field-checkbox input[type="checkbox"] {
+  vertical-align: middle;
+}
