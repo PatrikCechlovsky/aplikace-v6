@@ -2,96 +2,121 @@
 # Modul 020 – Můj účet
 
 ## Účel modulu
-Modul 020 umožňuje přihlášenému uživateli spravovat jeho vlastní účet.
-Jedná se o „self-service“ uživatelský profil, který vychází z entity
-`subject` a sdílí logiku s modulem 010 – Správa uživatelů.
+Modul 020 umožňuje přihlášenému uživateli spravovat svůj vlastní účet,
+bez zásahu administrátora.
 
-Zatímco modul 010 je administrátorský, modul 020 je striktně omezen na:
+Uživatel může:
 
-    subjekt = aktuálně přihlášený uživatel
+- upravit své základní kontaktní údaje
+- změnit email nebo telefon
+- nastavit nebo upravit dvoufaktorové ověření (2FA)
+- změnit heslo (pomocí bezpečnostního flow)
+- zobrazit historii změn svého profilu
 
-Uživatel smí:
+Uživatel nesmí:
 
-- zobrazit své osobní informace
-- upravit základní kontaktní údaje
-- spravovat přihlášení (heslo, 2FA)
-- zobrazit historii změn
-- nastavit jazyk a preferovaný způsob komunikace (pokud bude přidáno)
-
-Uživatel **nesmí**:
-
-- měnit své role
-- měnit svá oprávnění
-- měnit systémové údaje
-- měnit auditní informace
-- vidět jiné uživatele
+- vidět nebo měnit role
+- vidět nebo měnit oprávnění
+- vidět jiné subjekty
+- archivovat svůj účet
 
 ---
 
-# 1. Definice entity
+# 1. Definice entity a datový model
 
-Modul pracuje s entitou:
+Modul používá entitu:
 
-    subject (typ = osoba / osvc / zastupce / uživatel)
+    subject
 
-Rozsah polí je zúžený oproti modulu 010.
+a zobrazuje výhradně:
 
-Využívané skupiny polí:
+    subject = aktuálně přihlášený uživatel
 
-    identifikace: id, display_name
-    osobní údaje: first_name, last_name, title_before
-    kontakty: phone, email
-    přihlášení: login, two_factor_method
-    preference: (volitelně language)
-    audit: created_at, updated_at
+Nepoužívá:
 
-Nevyužívají se:
+- subject_roles
+- subject_permissions
+- subjektové vazby
+- firemní údaje
+- adresu
+- účetní nebo systémové funkce jiné než vlastní
+
+Datový model → viz `01-core/subject-model.md`.
+
+---
+
+# 2. Pole používaná v modulu
+
+Používají se jen pole relevantní pro uživatele:
+
+    Identifikace:
+        id
+        display_name
+
+    Osobní údaje:
+        first_name
+        last_name
+        title_before
+
+    Kontakty:
+        phone
+        email
+
+    Účet:
+        login
+        two_factor_method
+        poslední přihlášení (pokud auth poskytuje)
+        poslední změna hesla
+
+    Audit:
+        created_at
+        updated_at
+
+Nepoužívají se:
 
     role
     oprávnění
-    firemní údaje (ic, dic…)
-    adresa
-    bankovní účty
-    domácnost
-    vztahy mezi subjekty
+    systémová a technická data
+    vazby (units, documents, relationships)
 
 ---
 
-# 2. Role a oprávnění – kdo smí co
+# 3. Role a oprávnění modulu
 
-Přístup do modulu 020 má:
+Přístup:
 
-    každý subjekt, který je přihlášen
+    kdokoliv, kdo je přihlášen a má subjekt typu osoba
 
-Logika:
+Uživatel vidí pouze sebe.
 
-    uživatel vidí výhradně sám sebe
-    uživatel nesmí zobrazit jiný subjekt
-    uživatel smí měnit pouze povolená pole
-    administrátor 010 nemůže přes 020 upravovat jiné osoby
+Omezení:
+
+- nesmí vidět role ani oprávnění
+- nesmí vidět systémové atributy jiných uživatelů
+- nesmí měnit stav účtu (archivovat se)
+- nesmí přistupovat k modulu 010
 
 ---
 
-# 3. UI struktura modulu
+# 4. UI struktura modulu
 
-Modul obsahuje **DetailView**, nikoli ListView.
-Neexistuje seznam uživatelů.
+Modul 020 obsahuje pouze:
+
+    UserSelfDetail – detail přihlášeného uživatele
 
 Záložky:
 
     1. Profil
-    2. Účet (přihlášení)
-    3. Bezpečnost (2FA, reset hesla)
+    2. Účet
+    3. Bezpečnost (2FA, heslo)
     4. Historie
     5. Systém (read-only)
 
-Rozhraní odpovídá struktuře detailu v modulu 010, pouze je omezené.
-
 ---
 
-## 3.1 Záložka PROFIL
+## 4.1 Záložka PROFIL
 
-Uživatel může upravit:
+Pole (editovatelné):
 
     first_name
     last_name
@@ -99,181 +124,87 @@ Uživatel může upravit:
     phone
     email
 
-Email může být také login (dle nastavení systému).
-
-Pole read-only:
+Pole (read-only):
 
     display_name
-    id
 
 ---
 
-## 3.2 Záložka ÚČET
+## 4.2 Záložka ÚČET
 
-Zobrazené informace:
+Zobrazuje:
 
     login
-    email (pokud slouží jako login)
+    email (pokud je zároveň login)
     stav účtu (aktivní)
     poslední přihlášení
     poslední změna hesla
 
-Akce:
+Uživatel může:
 
-    změna emailu (pokud systém umožňuje)
-    změna telefonního čísla
-
-Uživatel NEMŮŽE:
-
-    měnit role
-    měnit oprávnění
-    nastavovat systémové atributy
+    změnit email
+    změnit telefon
 
 ---
 
-## 3.3 Záložka BEZPEČNOST
+## 4.3 Záložka BEZPEČNOST
 
-Obsahuje nastavení 2FA a nástroje správy bezpečnosti účtu.
+Pole:
 
-Zobrazuje:
+    two_factor_method (select)
+    stav ověřovací metody
 
-    two_factor_method (žádné / SMS / email / app)
-    status ověření
-
-Umožňuje:
+Akce:
 
     aktivovat 2FA
     deaktivovat 2FA
     změnit metodu 2FA
-    resetovat heslo (přesměrování na bezpečnostní flow)
+    změnit heslo (přesměrování do auth systému)
 
-Upozornění:
+Poznámka:
 
-    hesla se NEUKLÁDAJÍ v subject tabulce
-    2FA je navázáno na autentizační systém (Supabase auth)
+    heslo se nikdy neukládá do subject tabulky
 
 ---
 
-## 3.4 Záložka HISTORIE
+## 4.4 Záložka HISTORIE
 
-Uživatel vidí:
+Zobrazuje:
 
     created_at
     updated_at
-    souhrnné informace o úpravách svého profilu (pokud bude auditní log)
+    stručné informace o změnách
 
-Uživatel nevidí:
-
-    správce, který změnil jeho data
-    interní systémová data
+Uživatel nevidí interní auditní záznamy z jiných modulů.
 
 ---
 
-## 3.5 Záložka SYSTÉM
+## 4.5 Záložka SYSTÉM
 
-Zobrazuje pouze pro informaci:
+Read-only sekce:
 
     subject_id
-    is_archived (read-only)
-    technické údaje profilu
+    is_archived
+    technická metadata
 
-Uživatel zde nemá žádné akce.
-
----
-
-# 4. Akce modulu
-
-Modul umožňuje tyto akce:
-
-## 4.1 Upravit profil
-Bezpečně omezeno na:
-
-    jméno
-    příjmení
-    telefon
-    email
-    titul před jménem
+Žádné akce.
 
 ---
 
-## 4.2 Nastavit nebo změnit 2FA
+# 5. Vazby modulu
 
-Uživatel smí:
-
-    aktivovat / deaktivovat 2FA
-    zvolit metodu
-    nastavit si ověřovací zařízení
+Modul 020 nepoužívá žádné vazby (RelationListWithDetail).
 
 ---
 
-## 4.3 Reset hesla
+# 6. Shrnutí
 
-Flow:
+Modul 020 je omezená, bezpečná a jednoduchá verze detailu uživatele:
 
-    uživatel požádá o reset
-    systém odešle email nebo SMS podle nastavení 2FA
-    reset probíhá v autentizačním modulu
+- zobrazuje pouze vlastní subjekt
+- nesmí zasahovat do systémových částí
+- nesmí zobrazovat citlivé informace jiných uživatelů
+- respektuje pravidla definovaná ve `01-core`
 
----
-
-## 4.4 Archivovat účet (SPECIFIKUM)
-
-Archivace účtu se neprovádí v modulu 020.
-Tuto akci smí provést pouze administrátor v modulu 010.
-
-Uživatel však může vidět, že jeho účet je:
-
-    aktivní / deaktivovaný
-
----
-
-# 5. Rozdíly mezi modulem 010 a 020
-
-Shrnutí:
-
-    010 → admin, plná správa všech uživatelů
-    020 → self-service, správa pouze vlastního účtu
-
-Rozdíly v povolených polích:
-
-    010: role, oprávnění, systém, archivace, reset hesla jiným osobám
-    020: pouze vlastní profil, účet, bezpečnost
-
-Rozdíly v přístupu:
-
-    010: ListView + DetailView
-    020: pouze DetailView (jediný subjekt = já)
-
----
-
-# 6. Vazby na jiné moduly
-
-Modul 020 používá:
-
-    subject (centrální entita)
-    autentizační systém (Supabase Auth)
-    tabulky:
-        subject_roles
-        subject_permissions
-        subject_additional_users (zobrazuje se pouze u nájemníka v modulu 050)
-
-Nepoužívá:
-
-    seznam uživatelů (ListView)
-    řízení rolí
-    správu účtů jiných osob
-
----
-
-# 7. Shrnutí
-
-Modul 020 slouží k jednoduché, bezpečné a samostatné správě vlastního uživatelského účtu.
-
-Je to omezený pohled na subjekt, který dodržuje:
-
-- jasná bezpečnostní pravidla
-- oddělení od administrátorských funkcí
-- shodu s modulem 010
-- logiku z dokumentů v `01-core`
-
-Dokument slouží jako závazný podklad pro UI, backend i autentizaci.
+Tento modul používá stejnou UI strukturu jako 010,
+jen s omezenými možnostmi podle role a pravidel.
