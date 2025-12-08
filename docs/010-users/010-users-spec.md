@@ -1,270 +1,280 @@
 # aplikace-v6/docs/010-users/010-users-spec.md
-# Modul 010 – Správa uživatelů
+# Modul 010 – Správa uživatelů (Users)
 
 ## Účel modulu
-Modul 010 slouží pro správu uživatelů systému.  
-Uživatel = subjekt, který má roli `user` a případně další oprávnění.
+Modul 010 poskytuje administrátorům a správcům možnost spravovat
+uživatele systému.  
+Uživatel = subjekt, který má roli `user` a je připojen k autentizačnímu systému.
+
 Modul umožňuje:
 
-- zobrazit seznam uživatelů
-- spravovat jejich role a oprávnění
-- upravovat jejich profilové údaje (část subjektu)
-- pozvat nového uživatele do systému (emailová pozvánka)
-- deaktivovat / archivovat účet
+- zobrazit seznam všech uživatelů systému
+- filtrovat, prohlížet a upravovat detaily uživatelů
+- spravovat role a oprávnění uživatelů
+- pozvat nové uživatele do systému
+- archivovat nebo deaktivovat uživatele
 
-Modul slouží administrátorům a správcům platformy.
-
----
-
-# 1. Definice entity
-
-V modulu se nepracuje s vlastní tabulkou „users“ —  
-používá se **centrální entita `subject`**, rozšířená o:
-
-- roli `user` v tabulce `subject_roles`
-- oprávnění v tabulce `subject_permissions`
-- přihlašovací údaje (login, 2FA)
-- návaznost na autentizační systém (Supabase auth nebo jiný provider)
-
-Z pohledu UI a logiky vždy reprezentujeme:
-
-    „uživatel = subjekt, který má roli USER“
+Modul pracuje výhradně nad entitou `subject`.
 
 ---
 
-# 2. Pole používaná v modulu
+# 1. Definice entity a datový model
 
-Modul 010 využívá podmnožinu polí entity `subject`.
+Modul nepoužívá vlastní tabulku — uživatel je reprezentován entitou:
 
-Používají se tato pole:
+    subject
 
-    identifikace: id, subject_type, display_name
-    osobní údaje: first_name, last_name, title_before
-    kontakty: email, phone
-    přihlášení: login, two_factor_method
-    role: subject_roles
-    oprávnění: subject_permissions
-    audit: created_at, updated_at, is_archived
+s následujícími doplňujícími vazbami:
 
-Nepoužívají se:
+    subject_roles (N:N)
+    subject_permissions (N:N)
+
+Autentizační údaje (heslo, 2FA) nepatří do tabulky `subject` —  
+spravuje je externí auth provider (např. Supabase Auth).
+
+Modul 010 využívá pole z:
+
+- subject
+- subject_roles
+- subject_permissions
+
+Detail datového modelu → viz `01-core/subject-model.md`.
+
+---
+
+# 2. Pole používaná v modulu (výběr z subject-fields)
+
+Používané skupiny:
+
+    Identifikace:
+        id
+        display_name
+        subject_type (read-only v tomto modulu)
+        is_archived
+
+    Osobní údaje:
+        first_name
+        last_name
+        title_before
+
+    Kontakty:
+        phone
+        email
+
+    Účet:
+        login
+        two_factor_method
+
+    Role:
+        subject_roles (N:N)
+
+    Oprávnění:
+        subject_permissions (N:N)
+
+    Audit:
+        created_at
+        updated_at
+        created_by
+        updated_by
+
+Pole, která se v tomto modulu nepoužívají:
 
     firemní identita (ic, dic…)
-    adresa (street, city…)
-    ARES / RÚIAN pole
+    adresy
+    ARES / RÚIAN data
+    domácnost
     bankovní účty
-    další uživatelé domácnosti
+    vztahy mezi subjekty
 
 ---
 
-# 3. Role a oprávnění – kdo smí co
+# 3. Role a oprávnění modulu
 
-Modul využívá pravidla z `subject-permissions.md`.
+Matice přístupu:
 
-### Oprávnění vstupu do modulu 010
+| Role        | Seznam (ListView) | Detail | Edit | Role/Oprávnění | Archivace |
+|-------------|-------------------|--------|------|----------------|-----------|
+| admin       | ano               | ano    | ano  | ano            | ano       |
+| spravce     | ano               | ano    | ano  | ano            | omezeně   |
+| finance     | ano (read-only)   | ano (RO) | ne | ne             | ne        |
+| user        | ne                | ne     | ne   | ne             | ne        |
+| najemnik    | ne                | ne     | ne   | ne             | ne        |
 
-    admin: plný přístup
-    spravce: plný přístup
-    user: nesmí vstoupit
-    najemnik: nesmí vstoupit
-    pronajimatel: nesmí vstoupit
-    finance: vidí pouze seznam, ale nesmí měnit
-
-### Kdo smí co:
-
-- admin: vše
-- spravce: správa uživatelů kromě mazání adminů
-- finance: jen čtení
-- ostatní role: žádný přístup
+Uživatel nikdy neupravuje jiný subjekt než sebe — to řeší modul 020.
 
 ---
 
-# 4. UI struktura modulu 010
+# 4. UI struktura modulu
 
-Modul má dvě hlavní části:
+Modul obsahuje:
 
-    1. ListView – seznam uživatelů
-    2. DetailView – detail uživatele (velký formulář + záložky)
-
-Struktura vychází z POSTUPu a UI systému.
+    1. UsersListTile – hlavní seznam uživatelů
+    2. UserDetail – detail jednoho uživatele
+    3. InviteUserForm – pozvání nového uživatele
 
 ---
 
-## 4.1 ListView – seznam uživatelů
+## 4.1 ListView – seznam uživatelů (UsersListTile)
 
-Použité komponenty:
+Sloupce:
 
-    EntityList
-    Filtry
-    ColumnPicker
-    CommonActions
-    RowActions (na každém řádku)
-
-### Zobrazované sloupce:
-
-    display_name
-    email
+    display_name (povinný)
+    email (povinný)
     phone
     role (výpis rolí)
     created_at
+    two_factor_method
     is_archived
 
-### Filtry:
+Filtry:
 
-    text: hledání (jméno, email)
-    role: uživatelská role
-    status: aktivní / archivní
-    2FA: ano / ne
-    datum vytvoření: od–do
+    fulltext (jméno, email, telefon)
+    role
+    status (aktivní / archivní)
+    2FA (aktivní / neaktivní)
+    datum vytvoření
 
-### Akce na seznamu:
+Výchozí řazení:
 
-    + Přidat / Pozvat uživatele
-    Export seznamu (volitelné)
+    display_name ASC
+
+Akce:
+
+    + Pozvat uživatele
     Zobrazit archivované
+    Export seznamu (volitelně)
 
 ---
 
-## 4.2 Detail uživatele (EntityDetailFrame)
+## 4.2 DetailView – detail uživatele
 
-Detail je rozdělen na záložky:
+Záložky:
 
     1. Profil
-    2. Účet (login, email, telefon, 2FA)
-    3. Role a oprávnění
+    2. Účet
+    3. Role & Oprávnění
     4. Historie
     5. Systém
 
----
+### PROFIL
 
-### Záložka 1: PROFIL
-
-Obsahuje:
+Pole:
 
     first_name
     last_name
     title_before
-    display_name (read-only)
     phone
     email
+    display_name (read-only)
 
-Jedná se o podmnožinu polí `subject`.
-
----
-
-### Záložka 2: ÚČET
-
-Účet obsahuje:
-
-    login
-    email (používá se i jako login, pokud je tak nastaveno)
-    two_factor_method
-    možnost reset hesla (akce)
-    možnost deaktivace účtu
-
-Zobrazuje také stav:
-
-    poslední přihlášení
-    poslední změna hesla
-
----
-
-### Záložka 3: ROLE A OPRÁVNĚNÍ
-
-Umožňuje:
-
-    přiřadit roli subjektu (subject_roles)
-    odebrat roli
-    zobrazit všechna oprávnění
-    přiřadit oprávnění (subject_permissions)
-
-Role a oprávnění jsou převzaty z modul 900 → číselníky.
-
----
-
-### Záložka 4: HISTORIE
+### ÚČET
 
 Zobrazuje:
 
-    vytvořil / datum
-    poslední úprava / datum
-    přehled změn (pokud modul auditu existuje)
+    login
+    two_factor_method
+    poslední přihlášení (pokud poskytuje auth)
+    poslední změna hesla (pokud poskytuje auth)
 
----
+Akce:
 
-### Záložka 5: SYSTÉM
+    vynutit reset hesla  
+    deaktivovat uživatele
 
-Interní data:
+### ROLE & OPRÁVNĚNÍ
+
+Obsahuje:
+
+    seznam rolí (subject_roles)
+    seznam oprávnění (subject_permissions)
+
+Akce:
+
+    přidat roli
+    odebrat roli
+    přiřadit oprávnění
+    odebrat oprávnění
+
+### HISTORIE
+
+Zobrazuje:
+
+    created_at
+    updated_at
+    informace o změnách (pokud existuje audit log)
+
+### SYSTÉM
+
+Zobrazuje:
 
     subject_id
-    stav účtu (aktivní / archivní)
-    tlačítko „Archivovat uživatele“
-    tlačítko „Obnovit uživatele“ (pokud archivní)
+    is_archived
+    technické hodnoty
+
+Akce:
+
+    archivovat uživatele  
+    obnovit uživatele  
 
 ---
 
-# 5. Akce modulu
+## 4.3 InviteUserForm – pozvání nového uživatele
 
-Modul 010 podporuje tyto akce:
-
-### 5.1 Pozvat uživatele
-Vyžaduje vyplnit:
+Pole:
 
     email
+    first_name (volitelné)
+    last_name (volitelné)
+    role (default: user)
+
+Výsledek:
+
+    - založí nový subject
+    - nastaví roli user
+    - vytvoří účet v auth systému
+    - odešle email s pozvánkou
+
+---
+
+# 5. Vazby modulu
+
+Modul 010 pracuje pouze se subjektem a jeho rolemi/oprávněními.
+
+Nepoužívá žádné RelationListWithDetail.
+
+---
+
+# 6. ColumnPicker
+
+ColumnPicker je povolen pro:
+
+    UsersListTile
+
+Povinné sloupce:
+
+    display_name
+    email
+
+Volitelné:
+
+    phone
     role
-    volitelně telefon
-
-Po odeslání:
-
-    → vytvoří se subjekt typu osoba
-    → nastaví se role user
-    → odešle se pozvánka přes autentizační systém
-
----
-
-### 5.2 Resetovat heslo
-Akce dostupná v záložce Účet.
-
----
-
-### 5.3 Archivovat / deaktivovat uživatele
-Nesmaže data — pouze nastaví:
-
-    is_archived = true
-
----
-
-### 5.4 Obnovit uživatele
-Nastaví:
-
-    is_archived = false
-
----
-
-# 6. Vazby na jiné moduly
-
-Modul 010 úzce spolupracuje s:
-
-    020 – Můj účet
-    900 – číselníky rolí a oprávnění
-    autentizační systém (Supabase auth nebo jiný provider)
-
-Nesmí zasahovat:
-
-    do nájemníků (050)
-    do nemovitostí
-    do smluv
+    created_at
+    two_factor_method
+    is_archived
 
 ---
 
 # 7. Shrnutí
 
-- Modul 010 pracuje s entitou `subject` typu „uživatel“
-- Oddělená prezentace a logika pro:
-      profil, účet, role, oprávnění, historie, systém
-- Plně navázáno na dokumenty:
-      subject-fields.md
-      subject-permissions.md
-      subject-model.md
-- Modul je čistě administrátorský
-- Obsahuje funkci „pozvat uživatele“
+Modul 010 je plnohodnotná administrátorská správa uživatelů postavená nad entitou `subject`.
 
+Plně se drží struktury POSTUP:
+
+- definice entity
+- specifikace polí
+- role a oprávnění
+- ListView
+- DetailView
+- akce (invite, archivace)
+- žádné duplicitní datové modely
