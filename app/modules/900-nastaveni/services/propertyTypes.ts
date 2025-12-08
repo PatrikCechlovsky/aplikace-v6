@@ -3,13 +3,12 @@
  * PURPOSE: CRUD funkce pro číselník public.property_types (napojení na Supabase)
  *
  * V DB:
- *  - code        (text, PK)
+ *  - code        (text, PK / UNIQUE)
  *  - name        (text)
  *  - description (text, nullable)
  *  - color       (text, nullable)
  *  - icon        (text, nullable)
- *  - sort_order  (integer, nullable)
- *  - active      (boolean)
+ *  - order_index (integer, nullable / default 0)
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
@@ -17,14 +16,13 @@ import { supabase } from '@/app/lib/supabaseClient'
 /**
  * Datový typ přesně podle tabulky v Supabase.
  */
-export type PropertyType = {
+export type PropertyTypeRow = {
   code: string
   name: string
   description: string | null
   color: string | null
   icon: string | null
-  sort_order: number | null
-  active: boolean | null
+  order_index: number | null
 }
 
 /**
@@ -35,18 +33,17 @@ export type PropertyTypePayload = {
   description?: string | null
   color?: string | null
   icon?: string | null
-  sort_order?: number | null
-  active?: boolean | null
+  order_index?: number | null
 }
 
 /**
  * Načte všechny typy nemovitostí.
  */
-export async function fetchPropertyTypes(): Promise<PropertyType[]> {
+export async function fetchPropertyTypes(): Promise<PropertyTypeRow[]> {
   const { data, error } = await supabase
     .from('property_types')
-    .select('code, name, description, color, icon, sort_order, active')
-    .order('sort_order', { ascending: true, nullsFirst: true })
+    .select('code, name, description, color, icon, order_index')
+    .order('order_index', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
 
   if (error) {
@@ -54,7 +51,7 @@ export async function fetchPropertyTypes(): Promise<PropertyType[]> {
     throw error
   }
 
-  return (data ?? []) as PropertyType[]
+  return (data ?? []) as PropertyTypeRow[]
 }
 
 /**
@@ -66,7 +63,7 @@ export async function fetchPropertyTypes(): Promise<PropertyType[]> {
 export async function createPropertyType(
   code: string,
   payload: PropertyTypePayload,
-): Promise<PropertyType> {
+): Promise<PropertyTypeRow> {
   const trimmedCode = code.trim()
 
   if (!trimmedCode) {
@@ -79,17 +76,16 @@ export async function createPropertyType(
     description: payload.description?.trim() || null,
     color: payload.color?.trim() || null,
     icon: payload.icon?.trim() || null,
-    sort_order:
-      typeof payload.sort_order === 'number' && !Number.isNaN(payload.sort_order)
-        ? payload.sort_order
+    order_index:
+      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
+        ? payload.order_index
         : null,
-    active: payload.active ?? true,
   }
 
   const { data, error } = await supabase
     .from('property_types')
     .insert(insertPayload)
-    .select('code, name, description, color, icon, sort_order, active')
+    .select('code, name, description, color, icon, order_index')
     .single()
 
   if (error) {
@@ -97,7 +93,7 @@ export async function createPropertyType(
     throw error
   }
 
-  return data as PropertyType
+  return data as PropertyTypeRow
 }
 
 /**
@@ -106,7 +102,7 @@ export async function createPropertyType(
 export async function updatePropertyType(
   codeKey: string,
   payload: PropertyTypePayload,
-): Promise<PropertyType> {
+): Promise<PropertyTypeRow> {
   const trimmedKey = codeKey.trim()
 
   if (!trimmedKey) {
@@ -118,18 +114,17 @@ export async function updatePropertyType(
     description: payload.description?.trim() || null,
     color: payload.color?.trim() || null,
     icon: payload.icon?.trim() || null,
-    sort_order:
-      typeof payload.sort_order === 'number' && !Number.isNaN(payload.sort_order)
-        ? payload.sort_order
+    order_index:
+      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
+        ? payload.order_index
         : null,
-    active: payload.active ?? true,
   }
 
   const { data, error } = await supabase
     .from('property_types')
     .update(updatePayload)
     .eq('code', trimmedKey)
-    .select('code, name, description, color, icon, sort_order, active')
+    .select('code, name, description, color, icon, order_index')
     .single()
 
   if (error) {
@@ -137,12 +132,11 @@ export async function updatePropertyType(
     throw error
   }
 
-  return data as PropertyType
+  return data as PropertyTypeRow
 }
 
 /**
  * Smaže typ nemovitosti podle "code".
- * (Použiješ později – GenericTypeTile zatím delete nepotřebuje.)
  */
 export async function deletePropertyType(codeKey: string): Promise<void> {
   const trimmedKey = codeKey.trim()
