@@ -9,6 +9,7 @@ import ThemeSettingsTile from './tiles/ThemeSettingsTile'
 
 // ⬇⬇⬇ NOVÝ IMPORT
 import PropertyTypesTile from './tiles/PropertyTypesTile'
+import UnitTypesTile from './tiles/UnitTypesTile'
 
 export default {
   id: '900-nastaveni',
@@ -56,6 +57,24 @@ export default {
       component: PropertyTypesTile,
       order: 10,
     },
+    {
+      id: 'unit-types',
+      label: 'Typy jednotek',
+      icon: 'square', // nebo jiná tvoje ikona
+      sectionId: 'types-settings',
+      component: UnitTypesTile,
+      order: 12,
+    },
+    {
+      id: 'subject-types',
+      label: 'Typy subjektů',
+      icon: 'list',
+      sectionId: 'types-settings',
+      component: SubjectTypesTile,
+      order: 15,
+    },
+    // ...
+  ],
 
     {
       id: 'subject-types',
