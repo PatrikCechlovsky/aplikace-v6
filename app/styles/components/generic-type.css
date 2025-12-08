@@ -525,3 +525,11 @@
   border-color: var(--color-primary);
   transform: translateY(-1px);
 }
+/* Hlavičky sloupců i popisky polí – stejná barva */
+
+.generic-type__table th,
+.generic-type__label,
+.generic-type__title,
+.generic-type__form-title {
+  color: var(--color-text-muted);
+}
