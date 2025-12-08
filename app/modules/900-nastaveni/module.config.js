@@ -52,7 +52,7 @@ export default {
     {
       id: 'role-types',
       label: 'Typy rolí',
-      icon: 'shield', // nebo jiná tvoje ikona
+      icon: 'settings', 
       sectionId: 'types-settings',
       component: RoleTypesTile,
       order: 14,
@@ -60,7 +60,7 @@ export default {
     {
       id: 'property-types',
       label: 'Typy nemovitostí',
-      icon: 'building-2',
+      icon: 'settings',
       sectionId: 'types-settings',
       component: PropertyTypesTile,
       order: 10,
@@ -68,7 +68,7 @@ export default {
     {
       id: 'unit-types',
       label: 'Typy jednotek',
-      icon: 'square', // nebo jiná tvoje ikona
+      icon: 'settings', 
       sectionId: 'types-settings',
       component: UnitTypesTile,
       order: 12,
@@ -76,7 +76,7 @@ export default {
     {
       id: 'subject-types',
       label: 'Typy subjektů',
-      icon: 'list',  // nebo vytvoř novou ikonu např. "subject-type"
+      icon: 'settings', 
       sectionId: 'types-settings',
       component: SubjectTypesTile,
       order: 15,
