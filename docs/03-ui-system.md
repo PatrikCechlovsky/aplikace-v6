@@ -237,6 +237,111 @@ Každé pole má definované:
 - chování v UI  
 - integraci s formStateManagerem  
 
+# 3.7 EntityList – specifikace chování seznamu entit
+
+**EntityList** je základní komponenta pro zobrazování přehledů (např. seznam subjektů, seznam nemovitostí, seznam nájemníků atd.).  
+Slouží jako univerzální tabulkový výpis libovolné entity a tvoří jádro přehledové části aplikace.
+
+---
+
+## 3.7.1 Filtrace
+- Obsahuje globální fulltextový filtr („Filtrovat…“).
+- Fulltext hledá:
+  - ve všech **viditelných sloupcích**
+  - i v **neviditelných sloupcích**, pokud jsou označeny jako *searchable*
+- Filtrace se aplikuje okamžitě a kombinuje se s dalšími filtry (např. „Zobrazit archivované“).
+
+---
+
+## 3.7.2 Zobrazit archivované
+- Uživatel může přepnout checkbox „Zobrazit archivované“.
+- Může fungovat dvěma způsoby (dle konfigurace modulu):
+  - zobrazit aktivní + archivované záznamy dohromady  
+  - nebo zobrazit jen archivované záznamy  
+- Archivované řádky mohou být vizuálně odlišeny (např. světlejší barva).
+
+---
+
+## 3.7.3 Typ entity (barevný badge v prvním sloupci)
+- První sloupec zobrazuje typ entity jako **barevný štítek** (např. PO, FO, nájemník, pronajímatel…).
+- Barva, název i pořadí badge jsou dynamicky načítány z číselníku **„Typy subjektů“**.
+- Jakákoliv změna v číselníku se automaticky projeví v seznamu.
+
+---
+
+## 3.7.4 Výchozí řazení podle typu
+- Seznam je standardně řazen podle hodnoty `order` z číselníku typu.
+- Toto je **výchozí stav řazení**, než uživatel klikne na některý sloupec.
+- Uživatelské řazení přepíše výchozí.
+
+---
+
+## 3.7.5 Řazení všech viditelných sloupců
+- Každý sloupec může být seřazen:
+  - A → Z  
+  - Z → A  
+- Ikona (▲/▼) označuje aktivní směr řazení.
+- Třetí kliknutí může (pokud konfigurace dovolí) vrátit výchozí řazení.
+
+---
+
+## 3.7.6 Vazba na CommonActions
+- EntityList sdílí s CommonActions stav o:
+  - aktivním řádku
+  - prázdném výběru
+- Díky tomu může CommonActions:
+  - aktivovat / deaktivovat akce (upravit, smazat, archivovat…)
+  - skrývat akce podle role uživatele
+
+---
+
+## 3.7.7 Role a oprávnění
+- Tlačítka akcí mohou být:
+  - **aktivní** – uživatel má oprávnění
+  - **zašedlé** – uživatel nemá právo akci vykonat
+  - **skryté** – akce se vůbec nezobrazí pro roli, které nepřísluší
+- Oprávnění se odvozují z rolí a konfigurace modulu.
+
+---
+
+## 3.7.8 Volitelné: výběr viditelných sloupců (ColumnPicker)
+- Umožňuje uživateli vybrat, které sloupce chce vidět.
+- Povinné sloupce mohou být uzamčené.
+- Nastavení viditelnosti se ukládá:
+  - do localStorage  
+  - nebo budoucí verze do uživatelského profilu  
+- Vhodné pro moduly s velkým počtem atributů.
+
+---
+
+# 3.8 ListView – (bude doplněno později)
+*Placeholder – připravené místo pro budoucí detailní specifikaci ListView.*
+
+---
+
+# 3.9 DetailView – (bude doplněno později)
+*Placeholder – připravené místo pro DetailView.*
+
+---
+
+# 3.10 EntityDetailFrame – (bude doplněno později)
+*Placeholder – připravené místo pro EntityDetailFrame.*
+
+---
+
+# 3.11 RelationListWithDetail – (bude doplněno později)
+*Placeholder – připravené místo pro RelationListWithDetail.*
+
+---
+
+# 3.12 ConfigListWithForm – (bude doplněno později)
+*Placeholder – připravené místo pro ConfigListWithForm.*
+
+---
+
+# 3.13 ColumnPicker – (bude doplněno později)
+*Placeholder – připravené místo pro ColumnPicker.*
+
 ---
 
 # 4. IKONOGRAFIE
