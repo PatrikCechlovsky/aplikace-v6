@@ -324,22 +324,185 @@ Tlačítka akcí mohou být:
 
 ColumnPicker je součástí ListView, nikoli EntityList.
 
+---# 3.8 RelationListWithDetail – seznam vazeb + detail vybrané položky
+
+**RelationListWithDetail** je dvoučástová komponenta používaná v záložkách, které zobrazují
+vztahy (vazby) mezi entitami. Umožňuje zároveň:
+
+- nahoře zobrazit **seznam všech souvisejících záznamů**
+- dole zobrazit **detail právě vybraného záznamu**
+
+Slouží pro případy, kdy uživatel otevřel jednu entitu (např. Nemovitost) a v dalších záložkách se chce dívat na záznamy, které k ní patří (Pronajímatel, Jednotky, Nájemníci, Smlouvy, Platby…).
+
+Pořadí záložek (Pronajímatel → Nemovitost → Jednotka → …) je pevné a nejenže se nemění, ale také neurčuje „hlavní detail“. Hlavní detail je pouze ta záložka, která odpovídá typu právě otevřené entity.
+
 ---
 
-# 3.8 EntityList – specifikace tabulkové komponenty (bude doplněno)
+## 3.8.1 Kdy se RelationListWithDetail používá
+
+RelationListWithDetail se používá ve **všech záložkách kromě té, která odpovídá typu aktuálně otevřené entity**.
+
+Příklad – otevřená Nemovitost K1:
+
+- **Záložka 2 – Nemovitost**  
+  → jen **detail nemovitosti K1** (EntityDetailFrame + DetailView)  
+  → *bez RelationListWithDetail*
+
+- **Záložka 1 – Pronajímatel**  
+  → RelationListWithDetail  
+  → nahoře seznam pronajímatelů (u nemovitosti vždy 1 řádek)  
+  → dole detail vybraného pronajímatele
+
+- **Záložka 3 – Jednotka**  
+  → RelationListWithDetail  
+  → nahoře seznam jednotek v nemovitosti  
+  → dole detail vybrané jednotky
+
+Tento vzor pokračuje i pro další záložky.
+
+---
+
+## 3.8.2 Struktura komponenty
+
+RelationListWithDetail se skládá ze dvou hlavních částí:
+
+### Horní část – seznam souvisejících záznamů  
+Používá se `EntityList` nebo `ListView`.
+
+Funkce:
+
+- zobrazení všech vazeb k aktuální entitě
+- výběr jednoho záznamu
+- scroll při velkém počtu položek
+- možnost pohybu „Předchozí / Další“
+- volitelné filtrování, řazení, zobrazování archivovaných položek
+
+### Dolní část – detail vybrané položky  
+Používá se `EntityDetailFrame + DetailView`.
+
+Funkce:
+
+- zobrazí detail právě vybraného řádku z horní části
+- obsahuje všechny sekce dané entity (např. Základní údaje, Kontakty, Nájem, Systém…)
+- obvykle je **readonly**, protože plná editace probíhá v hlavní záložce dané entity  
+  (např. plná editace pronajímatele se dělá jen ve „záložce Pronajímatel“, ne v záložce Nemovitost)
+
+---
+
+## 3.8.3 Příklad: otevřená Nemovitost K1
+
+### Záložka 2 – Nemovitost (hlavní detail)
+- Zobrazuje **jen detail nemovitosti K1**  
+- Komponenta: `EntityDetailFrame + DetailView`  
+- Plně editovatelný formulář  
+- RelationListWithDetail se zde **nepoužívá**
+
+---
+
+### Záložka 1 – Pronajímatel (Nemovitost → Pronajímatel)
+Horní část:
+- `EntityList` se seznamem pronajímatelů této nemovitosti  
+- běžně 1 řádek (jedna nemovitost = jeden pronajímatel)
+
+Dolní část:
+- detail vybraného pronajímatele  
+- komponenta: `EntityDetailFrame + DetailView` pronajímatele  
+- sekce např.:
+  - Základní údaje  
+  - Kontakty  
+  - Bankovní účty  
+
+*(Sekce Finance sem nepatří – je samostatná záložka č. 8.)*
+
+---
+
+### Záložka 3 – Jednotka (Nemovitost → Jednotky)
+Horní část:
+- `EntityList` se všemi jednotkami v této nemovitosti  
+- může být 0, 1 nebo mnoho jednotek  
+- scroll při větším počtu položek  
+- možnost přepínání mezi jednotkami
+
+Dolní část:
+- `EntityDetailFrame + DetailView` dané jednotky  
+- sekce např.:
+  - Základní údaje  
+  - Nájem  
+  - Systém  
+
+Kliknutí na jiný řádek v seznamu přepne detail na jinou jednotku.
+
+---
+
+## 3.8.4 Obecný vzor chování
+
+Pro každou entitu otevřenou z přehledu platí:
+
+- **její vlastní záložka** (např. Nemovitost u nemovitosti)  
+  → zobrazí čistý detail s možností editace
+
+- **ostatní záložky**  
+  → zobrazují vazby pomocí RelationListWithDetail  
+  → nahoře seznam těchto vazeb  
+  → dole detail vybrané položky
+
+Tím je zajištěno:
+
+- jednotné chování aplikace  
+- přehlednost  
+- minimalizace zbytečného přepínání mezi obrazovkami  
+- možnost postupného procházení vazeb (Pronajímatel → Nemovitost → Jednotka → Nájemník → Smlouva → Platby…)
+
+---
+
+## 3.8.5 Chování v horní části seznamu
+
+Horní `EntityList` slouží jako navigátor mezi souvisejícími položkami.
+
+Podporuje:
+- výběr řádku
+- filtrování (pokud je aktivováno ListView)
+- řazení
+- zobrazení archivovaných
+- přepínání „Předchozí / Další“ (uživatelsky pohodlné při velkém množství položek)
+
+---
+
+## 3.8.6 Chování detailu v dolní části
+
+Dolní `EntityDetailFrame + DetailView`:
+
+- reaguje na výběr řádku v horní části
+- ukazuje kompletní detail položky včetně všech jejích sekcí
+- obvykle je **readonly**, protože plná editace se provádí v její „hlavní“ záložce  
+  (např. jednotka se plně edituje v záložce Jednotka, ne v záložce Nemovitost)
+
+---
+
+## 3.8.7 Oprávnění
+
+RelationListWithDetail respektuje:
+
+- oprávnění uživatele pro zobrazení vazeb
+- oprávnění k editaci nebo jen čtení detailu položek
+- dostupnost akcí v CommonActions (např. přidání, odebrání vazby)
+
+Uživatel vidí vždy jen to, k čemu má roli a oprávnění.
+
+
+
+---
+
+# 3.9 EntityDetailFrame – (bude doplněno později)
+
+---
+
+# 3.10 DetailView – (bude doplněno později)
+
+---
+
+# 3.11 EntityList – specifikace tabulkové komponenty (bude doplněno)
 *Placeholder – EntityList je jednoduchá tabulka bez filtrů a bez logiky akcí.*
-
----
-
-# 3.9 DetailView – (bude doplněno později)
-
----
-
-# 3.10 EntityDetailFrame – (bude doplněno později)
-
----
-
-# 3.11 RelationListWithDetail – (bude doplněno později)
 
 ---
 
