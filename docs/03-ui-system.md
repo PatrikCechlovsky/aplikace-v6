@@ -1227,11 +1227,194 @@ Většina pokročilé logiky je v ListView nebo RelationListWithDetail.
 
 ---
 
-# 3.12 ConfigListWithForm – (bude doplněno později)
+# 3.12 ConfigListWithForm – (nahrazeno generictypetile)
 
 ---
 
-# 3.13 ColumnPicker – (bude doplněno později)
+# 3.13 ColumnPicker – výběr viditelných sloupců v seznamech
+
+**ColumnPicker** je uživatelská funkce, která umožňuje každému uživateli nastavit,
+které sloupce chce v daném seznamu vidět.  
+Řeší se tím problém „každý potřebuje vidět něco jiného“ a zároveň chceme zachovat
+jeden společný technický seznam.
+
+ColumnPicker se používá nad **ListView** (hlavní přehledy a seznamy ve vazbách),
+nikoliv uvnitř nízkoúrovňové komponenty EntityList.
+
+---
+
+## 3.13.1 Kde se ColumnPicker používá
+
+ColumnPicker se používá:
+
+- v hlavních přehledech (ListView) v modulech a tiles:
+  - např. Seznam subjektů, Seznam nemovitostí, Seznam jednotek, Seznam smluv, Seznam plateb
+- v horních seznamech RelationListWithDetail, kde dává smysl, aby si uživatel
+  mohl přizpůsobit sloupce (např. seznam jednotek u nemovitosti, seznam smluv u nájemníka)
+
+Používá se tedy **per seznam**, což v praxi znamená:
+
+- per modul
+- per tile (konkrétní seznam v modulu)
+- per typ vazby (u RelationListWithDetail)
+- per uživatel
+
+EntityList o existenci ColumnPickeru „neví“ – jen vykresluje sloupce, které mu ListView předá.
+
+---
+
+## 3.13.2 Účel ColumnPickeru
+
+ColumnPicker umožňuje:
+
+- skrýt nepodstatné sloupce
+- přidat další sloupce, které jsou dostupné, ale defaultně skryté
+- zmenšit šířku tabulky na menších monitorech
+- přizpůsobit si seznam podle typu práce (např. jiný pohled pro finance, jiný pro servis)
+
+Cílem je:
+
+- nezahltit začátečníka
+- umožnit pokročilému uživateli vidět víc informací
+- ušetřit horizontální scroll
+
+---
+
+## 3.13.3 Vazba na ListView a EntityList
+
+Architektura:
+
+- **ListView**:
+  - zná všechny „dostupné“ sloupce daného seznamu
+  - podle konfigurace (modul, tile, vazba, uživatel) rozhodne, které z nich jsou:
+    - viditelné
+    - skryté
+    - povinné (nejdou skrýt)
+  - při vykreslení předává výsledný seznam sloupců do EntityList
+
+- **EntityList**:
+  - vůbec neřeší, které sloupce jsou viditelné
+  - vykreslí přesně to, co dostane v konfiguraci od ListView
+
+ColumnPicker tedy patří do ListView (a do „mini-ListView“ v horní části RelationListWithDetail),
+nikoli do EntityList.
+
+---
+
+## 3.13.4 Konfigurace ColumnPickeru
+
+Logika ukládání:
+
+- pro každého uživatele se ukládá jeho nastavení zvlášť
+- klíč konfigurace je kombinace:
+  - user_id
+  - module_id
+  - tile_id (nebo identifikátor seznamu ve vazbě)
+
+Každý sloupec má:
+
+- interní ID
+- název (label)
+- info, zda je:
+  - povinný (musí být vždy vidět)
+  - volitelný (uživatel jej může zapnout/vypnout)
+- defaultní stav (zda je u nového uživatele zapnutý)
+
+Typická pravidla:
+
+- povinné sloupce (např. „Název“, „Typ“, „Stav“) nejdou skrýt
+- volitelné sloupce (např. „Poznámka“, „Kód“, „Vytvořil“) může uživatel vypnout
+- pro některé role mohou být určité sloupce **zakázané** (např. finanční údaje)
+
+---
+
+## 3.13.5 Uživatelské chování
+
+Uživatel:
+
+1. otevře seznam (ListView)
+2. klikne na ovládací prvek ColumnPickeru (např. ikona „sloupečky“)
+3. zobrazí se panel s:
+   - seznamem všech dostupných sloupců
+   - checkboxy (Zobrazit / Skrýt)
+   - případně upozorněním, které sloupce jsou povinné
+
+Při potvrzení:
+
+- ListView uloží konfiguraci pro daného uživatele
+- obnoví vykreslení EntityList jen s vybranými sloupci
+- nastavení se použije při příštím otevření seznamu
+
+---
+
+## 3.13.6 Rozdíl mezi ColumnPickerem pro hlavní seznam a pro vazby
+
+**Hlavní seznam (ListView v modulu):**
+
+- typicky obsahuje více sloupců (např. 8–20)
+- ColumnPicker má větší smysl – pro různé role, pracovní postupy
+- konfigurace:
+  - modul = např. 020-nemovitosti
+  - tile = „property-list“
+
+**Seznam ve vazbě (RelationListWithDetail – horní část):**
+
+- obvykle obsahuje méně sloupců (3–8)
+- ColumnPicker lze použít, pokud dává smysl (např. jednotky, smlouvy, platby)
+- konfigurace:
+  - modul = např. 020-nemovitosti
+  - tile = „property-units-relation-list“
+
+Z pohledu architektury jde pořád o ListView s vlastní identitou, jen zobrazený v horní části RelationListWithDetail.
+
+---
+
+## 3.13.7 Role a oprávnění
+
+ColumnPicker respektuje oprávnění:
+
+- některé sloupce může systém úplně skrýt (uživatel o nich neví)
+- některé sloupce vidí jen určité role (např. finance)
+- některé sloupce jsou vždy povinné a nelze je odškrtnout
+- pro některé role může být ColumnPicker úplně vypnutý
+  (uživatel má pevně daný pohled bez možnosti přizpůsobení)
+
+Oprávnění se definují:
+
+- na úrovni modulu
+- případně jemněji na úrovni sloupců
+
+---
+
+## 3.13.8 UI chování a UX
+
+Zásady:
+
+- ColumnPicker by měl být snadno dostupný, ale ne rušivý
+- změna viditelnosti sloupců by měla být okamžitě vidět
+- uživatel musí mít možnost:
+  - rychle resetovat na výchozí nastavení
+  - pochopit, proč některé sloupce nejdou vypnout (povinné)
+- na menších displejích pomáhá ColumnPicker schovat málo používané sloupce a snížit scroll
+
+---
+
+## 3.13.9 Shrnutí
+
+- ColumnPicker je funkce pro **ListView** (hlavní seznamy + seznamy ve vazbách).
+- EntityList je jen tabulka – neobsahuje logiku ColumnPickeru.
+- Nastavení ColumnPickeru je:
+  - per uživatel
+  - per modul
+  - per tile/seznam
+- Sloupce mohou být:
+  - povinné
+  - volitelné
+  - skryté podle role
+- Cílem je umožnit uživateli přizpůsobit si přehledy bez měnění backendu a bez zásahu do kódu.
+
+ColumnPicker je tak důležitým prvkem komfortu a použitelnosti všech seznamů v aplikaci.
+
 
 ---
 
