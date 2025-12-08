@@ -4,34 +4,13 @@
  * FILE: app/AppShell.tsx
  * PURPOSE: Hlavní shell aplikace – layout (6 bloků), autentizace, moduly
  */
-'use client'
-
-import { useEffect } from 'react'
-import { applyThemeToLayout, loadThemeFromLocalStorage } from '@/app/lib/themeSettings'
-
-export default function AppShell(/* props */) {
-  useEffect(() => {
-    // při mountu aplikace nastavit theme z localStorage
-    const settings = loadThemeFromLocalStorage()
-    applyThemeToLayout(settings)
-  }, [])
-
-  return (
-    <div className="layout">
-      {/* sidebar, topbar, obsah… */}
-    </div>
-  )
-}
-
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
 import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
-import Breadcrumbs, {
-  type BreadcrumbSegment,
-} from '@/app/UI/Breadcrumbs'
+import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import CommonActions from '@/app/UI/CommonActions'
 import LoginPanel from '@/app/UI/LoginPanel'
@@ -42,9 +21,13 @@ import {
   onAuthStateChange,
   logout,
 } from '@/app/lib/services/auth'
-
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
+
+import {
+  applyThemeToLayout,
+  loadThemeFromLocalStorage,
+} from '@/app/lib/themeSettings'
 
 type SessionUser = {
   email?: string | null
@@ -103,6 +86,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     useState<SidebarSelection | null>(null)
 
   const [hasUnsavedChanges] = useState(false)
+
+  // 🎨 Při mountu aplikace nastavíme theme z localStorage
+  useEffect(() => {
+    const settings = loadThemeFromLocalStorage()
+    applyThemeToLayout(settings)
+  }, [])
 
   // 🔐 Načtení session
   useEffect(() => {
@@ -363,8 +352,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="content">
           <h2>Dashboard</h2>
           <p>
-            Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho
-            obsah.
+            Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho obsah.
           </p>
         </div>
       )
@@ -386,7 +374,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     const selection = activeSelection
 
-    // 1) Vybraný jen modul – zobrazíme úvod modulu (introTitle/introText)
+    // 1) Vybraný jen modul – úvod modulu
     if (!selection || (!selection.sectionId && !selection.tileId)) {
       return (
         <div className="content">
@@ -444,7 +432,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       }
     }
 
-    // 4) Výchozí chování – zobrazit všechny tiles modulu
+    // 4) Výchozí – všechny tiles modulu
     if (activeModule.tiles && activeModule.tiles.length > 0) {
       return (
         <div className="content">
@@ -483,9 +471,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     )
   }
 
-  // 🧱 Layout
+  // 🧱 Layout – POZOR: už jen "layout", žádné theme-XYZ v JSX
   return (
-    <div className={`layout theme-${uiConfig.theme}`}>
+    <div className="layout">
       <aside className="layout__sidebar">
         <HomeButton
           disabled={!isAuthenticated}
