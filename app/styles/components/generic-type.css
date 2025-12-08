@@ -14,6 +14,10 @@
   border: 1px solid var(--color-border);
 }
 
+/* -------------------------------------------------
+   HLAVIČKA TILE
+   ------------------------------------------------- */
+
 .generic-type__header {
   margin-bottom: 8px;
 }
@@ -22,6 +26,7 @@
   font-size: 20px;
   font-weight: 600;
   margin: 0 0 4px;
+  color: var(--color-text);
 }
 
 .generic-type__description {
@@ -36,7 +41,9 @@
   gap: 10px;
 }
 
-/* Horní seznam */
+/* -------------------------------------------------
+   HORNÍ SEZNAM (TABULKA)
+   ------------------------------------------------- */
 
 .generic-type__list {
   background-color: var(--color-surface);
@@ -44,6 +51,8 @@
   border: 1px solid var(--color-border);
   padding: 8px 10px 10px;
 }
+
+/* toolbar nad tabulkou – filtr + checkbox */
 
 .generic-type__list-toolbar {
   display: flex;
@@ -53,22 +62,35 @@
   align-items: center;
 }
 
+/* vyhledávací pole – stejné jako inputy ve formuláři */
+
 .generic-type__filter-input {
-  padding: 5px 8px;
   border-radius: 6px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
+  padding: 5px 7px;
   font-size: 13px;
   width: 240px;
   max-width: 100%;
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
+
+.generic-type__filter-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary-soft);
+}
+
+/* labely checkboxů (Zobrazit archivované / Aktivní záznam) */
 
 .generic-type__checkbox-label {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #4b5563;
   cursor: pointer;
+  /* barva podle theme – modrá / zelená / fialová */
+  color: var(--color-primary-strong);
 }
 
 .generic-type__list-toolbar-right {
@@ -76,6 +98,8 @@
   align-items: center;
   gap: 8px;
 }
+
+/* wrapper kolem tabulky – scroll při přeplnění */
 
 .generic-type__table-wrapper {
   max-height: 240px;
@@ -89,12 +113,20 @@
   color: var(--color-text-muted);
 }
 
-/* Tabulka */
+/* samotná tabulka */
 
 .generic-type__table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+}
+
+/* hlavičky sloupců – jemný, sjednocený text */
+
+.generic-type__table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--color-text-muted);
 }
 
 .generic-type__cell {
@@ -114,7 +146,7 @@
   padding: 0 !important;
 }
 
-/* Řádek vybraný / duplicita */
+/* vybraný řádek */
 
 .generic-type__row--selected {
   background-color: var(--color-selected-row-bg);
@@ -134,11 +166,13 @@
   border-bottom-right-radius: 8px;
 }
 
+/* duplicitní pořadí */
+
 .generic-type__row--duplicate-order {
   background-color: rgba(239, 68, 68, 0.08);
 }
 
-/* Název – barevný badge podle barvy ze Supabase */
+/* název – barevný badge podle barvy ze Supabase */
 
 .generic-type__name-badge {
   display: block;
@@ -154,14 +188,16 @@
   display: block;
 }
 
-/* Barva v seznamu (HEX) */
+/* sloupec Barva – zobrazujeme HEX kód */
 
 .generic-type__cell--color {
   font-family: monospace;
   font-size: 12px;
 }
 
-/* Formulář dole */
+/* -------------------------------------------------
+   FORMULÁŘ DOLE (DETAIL ZÁZNAMU)
+   ------------------------------------------------- */
 
 .generic-type__form {
   background-color: var(--color-surface);
@@ -170,7 +206,7 @@
   padding: 10px 12px 12px;
 }
 
-/* Hlavička formuláře: název vlevo, tlačítka vpravo */
+/* hlavička formuláře: název vlevo, navigace vpravo */
 
 .generic-type__form-header-row {
   display: flex;
@@ -182,6 +218,7 @@
 
 .generic-type__form-title {
   margin: 0;
+  color: var(--color-text);
 }
 
 .generic-type__form-nav {
@@ -189,6 +226,8 @@
   align-items: center;
   gap: 4px;
 }
+
+/* grid polí ve formuláři */
 
 .generic-type__form-grid {
   display: grid;
@@ -208,7 +247,7 @@
   }
 }
 
-/* Panel detailu (spodní karta) */
+/* spodní karta detailu */
 
 .generic-type__detail {
   background: var(--color-surface);
@@ -217,7 +256,7 @@
   padding: 1rem;
 }
 
-/* Obecné fieldy */
+/* obecné fieldy */
 
 .generic-type__field {
   display: flex;
@@ -226,7 +265,8 @@
   font-size: 13px;
 }
 
-.generic-type__label {
+.generic-type__label,
+.generic-type__field-label {
   font-size: 12px;
   color: var(--color-text-muted);
 }
@@ -235,30 +275,35 @@
   color: #dc2626;
 }
 
+/* inputy + textarea navázané na theme */
+
 .generic-type__input,
 .generic-type__textarea {
-   border-radius: 6px;
-   border: 1px solid var(--color-border);
-   padding: 5px 7px;
-   font-size: 13px;
-   background-color: var(--color-surface);
-   color: var(--color-text);
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  padding: 5px 7px;
+  font-size: 13px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 .generic-type__textarea {
   resize: vertical;
 }
 
-/* Focus stav – jemný rámeček v barvě accentu */
+/* focus stav – zvýraznit accent barvou */
 
 .generic-type__input:focus,
-.generic-type__textarea:focus {
+.generic-type__textarea:focus,
+.generic-type__filter-input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-primary-soft);
 }
 
-/* Pořadí – krátké pole + šipky vedle */
+/* -------------------------------------------------
+   POLE POŘADÍ + ŠIPKY
+   ------------------------------------------------- */
 
 .generic-type__order-wrapper {
   display: flex;
@@ -281,6 +326,8 @@
   -moz-appearance: textfield;
 }
 
+/* naše šipky nahoru/dolů – aby byly vidět i v dark theme */
+
 .generic-type__order-buttons {
   display: flex;
   flex-direction: column;
@@ -292,13 +339,22 @@
   height: 16px;
   border-radius: 4px;
   border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--color-surface-subtle);
   font-size: 10px;
   line-height: 1;
   cursor: pointer;
+  color: var(--color-text);
 }
 
-/* Paleta barev */
+.generic-type__order-btn:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+/* -------------------------------------------------
+   PALETA BAREV
+   ------------------------------------------------- */
 
 .generic-type__palette {
   margin-top: 4px;
@@ -336,7 +392,9 @@
   cursor: not-allowed;
 }
 
-/* Alerty */
+/* -------------------------------------------------
+   ALERTY
+   ------------------------------------------------- */
 
 .generic-type__alert-wrapper {
   display: flex;
@@ -375,17 +433,11 @@
   gap: 6px;
 }
 
-.generic-type__alert-btn {
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  padding: 3px 10px;
-  font-size: 12px;
-  background-color: #ffffff;
-  cursor: pointer;
-}
+/* -------------------------------------------------
+   SPOLEČNÁ AKČNÍ TLAČÍTKA (spodní i v alertech)
+   ------------------------------------------------- */
 
-/* Spodní akční tlačítka ve formuláři (GenericTypeTile)
-   – výchozí stav jen ikona, na hover se zobrazí i text */
+/* stav: jen ikona, text schovaný – na hover se zobrazí */
 
 .generic-type__button,
 .generic-type__button-nav,
@@ -419,19 +471,20 @@
     padding-right 0.15s ease;
 }
 
-/* Navigační šipky (Předchozí / Další) – klidně trochu užší */
+/* navigační tlačítka (předchozí/další) trochu užší */
+
 .generic-type__button-nav {
   padding-inline: 0.35rem;
 }
 
-/* Ikona uvnitř tlačítka */
 .generic-type__button-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Text – výchozí stav "schovaný" (šířka 0, průhledný) */
+/* text – výchozí stav schovaný */
+
 .generic-type__button-text {
   white-space: nowrap;
   max-width: 0;
@@ -443,13 +496,9 @@
     opacity 0.15s ease,
     margin-left 0.15s ease;
 }
-/* Nadpisy v GenericType – jednotná barva */
 
-.generic-type__title,
-.generic-type__form-title {
-  color: var(--color-text);
-}
-/* Hover / focus – tlačítko se roztáhne a ukáže text */
+/* hover/focus – rozšířit, změnit barvu, ukázat text */
+
 .generic-type__button:hover,
 .generic-type__button:focus-visible,
 .generic-type__button-nav:hover,
@@ -464,12 +513,11 @@
 .generic-type__alert-btn:focus-visible {
   background: var(--color-primary-soft);
   border-color: var(--color-primary);
-  color: var(--color-primary-strong);  /* <<< tmavý text, dobře viditelný i v dark theme */
+  color: var(--color-primary-strong);
   transform: translateY(-1px);
-  padding-right: 0.75rem; /* přidáme místo pro text */
+  padding-right: 0.75rem;
 }
 
-/* při hover/focus zobraz text */
 .generic-type__button:hover .generic-type__button-text,
 .generic-type__button:focus-visible .generic-type__button-text,
 .generic-type__button-nav:hover .generic-type__button-text,
@@ -482,95 +530,16 @@
 .generic-type__button-archive:focus-visible .generic-type__button-text,
 .generic-type__alert-btn:hover .generic-type__button-text,
 .generic-type__alert-btn:focus-visible .generic-type__button-text {
-  max-width: 120px;   /* dost prostoru na text typu "Uložit" */
+  max-width: 120px;
   opacity: 1;
   margin-left: 0.35rem;
 }
 
-
-/* Popisek pole ve formuláři */
-
-.generic-type__field-label {
-  display: block;
-  margin-bottom: 0.25rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-}
-/* Akce ve spodní části formuláře (Uložit, Nový, Archivovat…) */
+/* spodní řádek akcí ve formuláři */
 
 .generic-type__form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.75rem;
-}
-
-.generic-type__form-actions button {
-  border-radius: 999px;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--color-border-soft);
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.1s ease;
-}
-
-.generic-type__form-actions button:hover {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-}
-/* Hlavičky sloupců i popisky polí – stejná barva */
-
-.generic-type__table th,
-.generic-type__label,
-.generic-type__title,
-.generic-type__form-title {
-  color: var(--color-text-muted);
-}
-/* Vyhledávací pole – stejný vzhled jako formulářové inputy */
-
-.generic-type__filter-input {
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  padding: 5px 7px;
-  font-size: 13px;
-  background-color: var(--color-surface);
-  color: var(--color-text);
-}
-
-.generic-type__filter-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary-soft);
-}
-/* Checkbox labely – sjednocený styl */
-
-.generic-type__filter label,
-.generic-type__field-checkbox label {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-/* samotné checkboxy necháme malé, jen jemný border */
-.generic-type__filter input[type="checkbox"],
-.generic-type__field-checkbox input[type="checkbox"] {
-  vertical-align: middle;
-}
-/* Text u checkboxů v GenericType – barva podle theme (accent) */
-
-/* nahoře: "Zobrazit archivované" */
-.generic-type__table input[type="checkbox"] + label,
-/* dole: "Aktivní záznam" */
-.generic-type__detail input[type="checkbox"] + label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-primary-strong); /* modrá / zelená / fialová podle theme */
-  cursor: pointer;
 }
