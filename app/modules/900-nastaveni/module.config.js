@@ -61,7 +61,7 @@ export default {
     {
       id: 'permission-types',
       label: 'Typy oprávnění',
-      icon: 'shield-check',
+      icon: 'settings',
       sectionId: 'types-settings',
       component: PermissionTypesTile,
       order: 20,
@@ -93,7 +93,7 @@ export default {
     {
       id: 'payment-types',
       label: 'Typy plateb',
-      icon: 'banknote', // nebo 'wallet', 'credit-card'...
+      icon: 'settings', 
       sectionId: 'types-settings',
       component: PaymentTypesTile,
       order: 18,
