@@ -216,4 +216,73 @@ Musí být definováno pro každý ListView:
 # 7. HLAVIČKY, CESTY A NÁZVY SOUBORŮ (PRAVIDLO 01–10)
 
 Každý MD soubor **musí začínat**:
+    aplikace-v6/docs/.../soubor.md
+    Název dokumentu
+    Účel dokumentu
+    (stručný popis)
+
+Každý modul má strukturu:
+    app/modules/XXX-nazev-modulu/
+    module.config.ts
+    tiles/
+    forms/
+    components/
+    services/
+    MODULE-TODO.md
+
+
+---
+
+# 8. IMPLEMENTACE (až po dokončení POSTUPU)
+
+Teprve když:
+
+- je hotová specifikace polí
+- jsou určeny role
+- je určená UI struktura
+- jsou určeny vazby
+
+→ teprve potom se začne programovat.
+
+Pořadí implementace:
+
+1. module.config  
+2. entity list (ListView)  
+3. detail (DetailView + formuláře)  
+4. vazby (RelationListWithDetail)  
+5. selecty a číselníky  
+6. validace  
+7. testovací data  
+
+Výstup:
+
+    funkční modul v aplikaci
+
+---
+
+# 9. CHECKLIST PRO KAŽDÝ MODUL
+    [ ] Definován účel modulu
+    [ ] Vytvořena tabulka všech polí (Excel + MD)
+    [ ] Určeny selecty (fixed/generic_type/lookup)
+    [ ] Určeny role a oprávnění
+    [ ] Navržena UI struktura (ListView + DetailView)
+    [ ] Popsány vazby (RelationListWithDetail)
+    [ ] Definován ColumnPicker
+    [ ] Doplněny systémové sekce (Přílohy, Historie, Systém)
+    [ ] Hotový MODULE-TODO
+    [ ] Může začít implementace
+
+    
+---
+
+# 10. Shrnutí POSTUPU
+
+POSTUP definuje jednotný životní cyklus modulu:
+
+    1) Analýza → 2) Specifikace polí → 3) Selecty → 4) Role →  
+    5) UI struktura → 6) Vazby → 7) ColumnPicker →  
+    8) Implementace → 9) Kontrola → 10) Hotovo.
+
+Tento dokument musí být použit pro **každý nový modul** v systému.
+
 
