@@ -7,7 +7,7 @@ import ThemeSettingsSection from './sections/ThemeSettingsSection'
 import IconSettingsSection from './sections/IconSettingsSection'
 import ThemeSettingsTile from './tiles/ThemeSettingsTile'
 
-// ⬇⬇⬇ NOVÝ IMPORT
+import PermissionTypesTile from './tiles/PermissionTypesTile'
 import PropertyTypesTile from './tiles/PropertyTypesTile'
 import UnitTypesTile from './tiles/UnitTypesTile'
 import RoleTypesTile from './tiles/RoleTypesTile'
@@ -57,6 +57,14 @@ export default {
       component: RoleTypesTile,
       order: 14,
     },
+    {
+      id: 'permission-types',
+      label: 'Typy oprávnění',
+      icon: 'shield-check',
+      sectionId: 'types-settings',
+      component: PermissionTypesTile,
+      order: 16,
+    }
     {
       id: 'property-types',
       label: 'Typy nemovitostí',
