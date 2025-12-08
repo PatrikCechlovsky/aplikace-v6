@@ -14,320 +14,366 @@ Datový model aplikace Pronajímatel v6 je navržen tak, aby:
 
 Klíčové entity systému:
 - **Subjekty (fyzické/právnické osoby)**
-- **Nemovitosti**
-- **Jednotky**
-- **Nájemníci**
+- **Role subjektů (pronajímatel, nájemník, dodavatel, uživatel systému)**
+- **Nemovitosti a jednotky**
 - **Smlouvy**
-- **Platby**
-- **Služby a měřidla**
-- **Dokumenty**
-- **Komunikace**
-- **Typy a číselníky (modul 900)**
+- **Platby a předpisy**
+- **Služby**
+- **Měřidla a odečty**
+- **Dokumenty a komunikace (budoucnost)**
 
 ---
 
-# 2. Jádro systému (core entity)
+## 2. Subjekty a role
 
-Toto jsou základní tabulky, které se týkají celé aplikace.
+### 2.1 Tabulka `subjects`
 
----
+Základní entita pro všechny osoby a firmy.
 
-## 2.1 subjects (subjekty)
+**Příklady:**
+- pronajímatel (majitel nemovitosti),
+- nájemník,
+- dodavatel (služby, energie),
+- interní uživatel (správce).
 
-Reprezentují:
-- pronajímatele
-- nájemníky
-- firmy
-- kontaktní osoby
+**Základní pole (příklad):**
+- `id` (uuid, PK)
+- `subject_type` (enum / text – fyzická/právnická osoba)
+- `first_name`
+- `last_name`
+- `company_name`
+- `ic`, `dic`
+- `email`, `phone`
+- `address_id` (FK na tabulku adres, pokud bude oddělená)
+- `created_at`, `created_by`
+- `updated_at`, `updated_by`
+- `is_active`
 
-Základní sloupce:
+### 2.2 Tabulka `subject_roles`
 
-| Sloupec | Popis |
-|---------|-------|
-| id | UUID primární klíč |
-| type | typ subjektu (osoba, firma, pronajímatel, nájemník…) |
-| name | název subjektu (firma) |
-| first_name | jméno |
-| last_name | příjmení |
-| email | kontaktní e-mail |
-| phone | telefon |
-| address_id | vazba na adresu (do budoucna) |
-| created_by | uživatel, který subjekt založil |
+Vazební tabulka mezi `subjects` a rolemi v systému.
 
-RLS pravidlo:
-- Uživatel vidí pouze subjekty, které vlastní / vytvořil.
+**Příklady rolí:**
+- **pronajímatel**
+- **nájemník**
+- **dodavatel**
+- **uživatel systému**
 
----
+Schéma (orientačně):
+- `id` (uuid, PK)
+- `subject_id` (FK → subjects.id)
+- `role_type` (FK → `role_types.code` nebo enum)
+- `valid_from`
+- `valid_to`
+- `is_active`
 
-## 2.2 subject_roles
+Umožňuje:
+- jednomu subjektu přiřadit více rolí,
+- sledovat historické změny.
 
-Tabulka propojuje uživatele se subjekty a definuje role:
+### 2.3 Tabulka `role_types`
 
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| subject_id | odkaz na subjekt |
-| user_id | odkaz na uživatele |
-| role | role (admin, owner, manager, accountant…) |
+Číselník typů rolí.
 
-Role určují, co bude UI a backend povolovat.
+Příklady:
+- `landlord` – pronajímatel,
+- `tenant` – nájemník,
+- `supplier` – dodavatel,
+- `system_user` – uživatel systému.
 
----
+Pole:
+- `code`
+- `name`
+- `description`
+- `order`
+- `is_active`
 
-## 2.3 subject_permissions
+### 2.4 Tabulka `subject_permissions` (budoucnost)
 
-Podrobnější granularita:
-
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| subject_id | ke kterému subjektu se vztahuje |
-| permission | název oprávnění (view, edit, delete, approve…) |
-
-Tyto permissions propojí:
-- **moduly**
-- **commonActions**
-- **RLS**
-
----
-
-# 3. Nemovitosti a jednotky
-
-Klíčové tabulky, na které navazuje většina ostatních modulů.
-
----
-
-## 3.1 properties (nemovitosti)
-
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| owner_subject_id | vlastník (napojen na subjects) |
-| name | název budovy |
-| address | adresa |
-| description | poznámka |
-| created_by | ID uživatele |
-
-Každá nemovitost patří jednomu subjektu.
+Vazba na detailnější oprávnění pro konkrétního uživatele/subjekt.
 
 ---
 
-## 3.2 units (jednotky)
+## 3. Nemovitosti a jednotky
 
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| property_id | vazba na nemovitost |
-| unit_type | byt, kancelář, sklad… |
-| label | číslo bytu / jednotky |
-| floor | podlaží |
-| area | plocha |
-| created_by | zakládající uživatel |
+### 3.1 Tabulka `properties` (nemovitosti)
 
-Vazba:  
-**1 nemovitost → N jednotek**
+Reprezentuje budovy, domy, objekty.
 
----
+**Pole – příklad:**
+- `id`
+- `owner_id` (FK → subjects.id)
+- `name`
+- `code`
+- `address_id` / `street`, `city`, `zip`
+- `property_type` (dům, bytový dům, areál…)
+- `note`
+- `created_at`, `created_by`
+- `updated_at`, `updated_by`
+- `is_active`
 
-# 4. Nájemní vztahy
+### 3.2 Tabulka `units` (jednotky)
 
----
+Reprezentuje bytové a nebytové jednotky v rámci nemovitosti.
 
-## 4.1 tenants (nájemníci)
+**Pole – příklad:**
+- `id`
+- `property_id` (FK → properties.id)
+- `unit_number` / `unit_code`
+- `floor`
+- `area` (m²)
+- `unit_type` (byt, nebyt, kancelář, garáž…)
+- `note`
+- `is_active`
+- `created_at`, `created_by`
 
-Jde jen o propojení subjektu s jednotkou:
+### 3.3 Vazby
 
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| unit_id | jednotka |
-| subject_id | nájemník (odkaz na subjects) |
-| active | je nyní aktivní nájemce? |
-
----
-
-## 4.2 contracts (smlouvy)
-
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| tenant_id | vazba na nájemníka |
-| unit_id | jednotka |
-| start_date | začátek nájmu |
-| end_date | konec nájmu (nullable) |
-| price_rent | nájemné |
-| price_services | zálohy na služby |
-| deposit | kauce |
-| created_by | založil uživatel |
-
-Každá smlouva je navázaná:
-- na jednotku,
-- na nájemníka,
-- na subjekt pronajímatele (přes vlastnictví jednotky).
+- 1 `property` : N `units`
+- `units` → může mít více smluv (v čase)
 
 ---
 
-# 5. Platby a finance
+## 4. Smlouvy
+
+### 4.1 Tabulka `contracts`
+
+Reprezentuje nájemní/podnájemní smlouvy.
+
+**Pole – příklad:**
+- `id`
+- `property_id` (FK)
+- `unit_id` (FK)
+- `landlord_id` (FK → subjects.id – pronajímatel)
+- `tenant_id` (FK → subjects.id – nájemník)
+- `contract_number`
+- `contract_type` (nájem, podnájem, krátkodobý pronájem…)
+- `valid_from`
+- `valid_to`
+- `rent_amount`
+- `rent_currency`
+- `deposit_amount`
+- `deposit_currency`
+- `payment_day` (den v měsíci)
+- `state` (aktivní, ukončená, připravovaná, v prodlení…)
+- `note`
+- `created_at`, `created_by`
+- `updated_at`, `updated_by`
+
+### 4.2 Vazby smluv
+
+- Smlouva se váže na:
+  - konkrétní **nemovitost**,
+  - konkrétní **jednotku**,
+  - konkrétního **pronajímatele** (subjekt),
+  - konkrétního **nájemníka** (subjekt).
 
 ---
 
-## 5.1 payments (platby)
+## 5. Platby, předpisy a vyúčtování
 
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| contract_id | nájemní smlouva |
-| amount | částka |
-| due_date | datum splatnosti |
-| paid_date | datum úhrady |
-| variable_symbol | variabilní symbol |
-| note | poznámka |
+### 5.1 Tabulka `payment_schedules` (předpisy plateb)
 
-Do budoucna:
-- automatické generování QR kódů,
-- párování podle VS.
+Definuje, **co má nájemník platit** a v jakém intervalu.
+
+**Pole – příklad:**
+- `id`
+- `contract_id` (FK)
+- `type` (nájem, služba, jiné)
+- `amount`
+- `currency`
+- `periodicity` (měsíčně, čtvrtletně…)
+- `due_day`
+- `valid_from`, `valid_to`
+- `is_active`
+
+### 5.2 Tabulka `payments` (skutečné platby)
+
+Reprezentuje **reálně přijaté platby**.
+
+Pole:
+- `id`
+- `contract_id` (FK)
+- `payment_schedule_id` (FK, volitelně)
+- `paid_amount`
+- `paid_currency`
+- `paid_date`
+- `variable_symbol`
+- `specific_symbol`
+- `constant_symbol`
+- `bank_account_id`
+- `note`
+- `import_source` (ručně, bankovní výpis, QR platba…)
+
+### 5.3 Tabulka `payment_adjustments` / `payment_corrections` (budoucnost)
+
+Pro řešení:
+- oprav chybných plateb,
+- přesunů,
+- částečných úhrad.
 
 ---
 
-## 5.2 finance_predictions (předpisy plateb)
+## 6. Služby
 
-Umožní generovat:
-- předpis nájemného,
-- předpis záloh.
+### 6.1 Tabulka `services` (číselník služeb)
 
----
+Definuje typy služeb:
 
-## 5.3 settlements (vyúčtování)
-
-Obsahuje:
-- roční vyúčtování služeb,
-- přehled spotřeb,
-- přeplatky / nedoplatky.
-
----
-
-# 6. Služby a měřidla
-
----
-
-## 6.1 service_types (typy služeb)
-
-Slouží jako číselník:
 - voda,
-- elektřina,
+- teplo,
 - plyn,
+- elektřina,
+- odpad,
+- společné prostory,
 - internet…
 
-Definováno v modulu **900 – Nastavení**.
+Příklad pole:
+- `id`
+- `code`
+- `name`
+- `description`
+- `unit` (m3, kWh, paušál…)
+- `is_meter_based` (ano/ne)
+- `is_active`
+- `order`
+
+### 6.2 Tabulka `contract_services` (služby přiřazené ke smlouvě)
+
+Vazba, jaké služby jsou účtovány v rámci konkrétní smlouvy.
+
+Pole:
+- `id`
+- `contract_id` (FK)
+- `service_id` (FK → services.id)
+- `billing_type` (záloha / skutečnost / paušál)
+- `allocation_key` (m², osoby, jednotka, měřidlo…)
+- `note`
 
 ---
 
-## 6.2 meters (měřidla)
+## 7. Měřidla a odečty
 
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| unit_id | jednotka |
-| service_type | typ služby |
-| serial_number | výrobní číslo |
+### 7.1 Tabulka `meters`
 
----
+Reprezentuje měřidla:
 
-## 6.3 meter_readings (odečty)
+- vodoměr,
+- elektroměr,
+- plynoměr,
+- teploměr,
+- podružné měřidlo apod.
 
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| meter_id | měřidlo |
-| date | datum odečtu |
-| value | stav |
+Pole – příklad:
+- `id`
+- `property_id` (FK)
+- `unit_id` (FK, pokud je měřidlo na jednotku)
+- `service_id` (FK → services.id)
+- `meter_code`
+- `location` (popis místa)
+- `installation_date`
+- `last_check_date`
+- `is_active`
 
----
+### 7.2 Tabulka `meter_readings`
 
-# 7. Dokumenty a komunikace
+Odečty měřidel.
 
----
-
-## 7.1 documents
-
-Obsah:
-
-| Sloupec | Popis |
-|---------|--------|
-| id | UUID |
-| subject_id | komu dokument patří |
-| type | např. smlouva, příloha, vyúčtování |
-| file_url | cesta v Supabase storage |
-| created_by | kdo dokument nahrál |
+Pole:
+- `id`
+- `meter_id` (FK)
+- `reading_date`
+- `reading_value`
+- `estimated` (true/false)
+- `note`
 
 ---
 
-## 7.2 email_templates
+## 8. Dokumenty a komunikace (návrh)
 
-- šablony e-mailů
-- editor šablon bude v modulu Dokumenty
-- automatické vyplňování hodnot
+### 8.1 Tabulka `documents`
+
+Reprezentuje:
+
+- nájemní smlouvy (PDF),
+- dodatky,
+- předávací protokoly,
+- faktury,
+- vyúčtování.
+
+Pole – příklad:
+- `id`
+- `subject_id` (FK) – primárně vůči komu se dokument váže
+- `contract_id` (FK, volitelně)
+- `property_id` / `unit_id` (volitelně)
+- `document_type` (smlouva, vyúčtování…)
+- `file_path` / storage klíč
+- `created_at`, `created_by`
+
+### 8.2 Tabulka `communications` (budoucnost)
+
+Zaznamená:
+
+- e-mailové komunikace,
+- SMS,
+- interní poznámky,
+- generované dokumenty.
 
 ---
 
-## 7.3 email_sent
+## 9. Multi-tenant architektura
 
-- záznamy o odeslaných zprávách
-- ukládá se obsah, příjemce, datum
+Aplikace má podporu pro více pronajímatelů.
+
+Možné přístupy:
+
+1. **Tenant podle owner_id**  
+   - Každý záznam (property, unit, contract…) má `owner_id`, který je FK na `subjects.id` pronajímatele.
+   - RLS filtruje záznamy podle `owner_id`.
+
+2. **Tenant v samostatné tabulce (např. `tenants` / `landlords`)**  
+   - Tabulka, která váže pronajímatele a uživatele systému.
+   - Vhodné pro složitější scénáře (správce více portfolií).
+
+3. **Tenant na úrovni schématu**  
+   - Do budoucna je možné mít oddělené schéma pro různé pronajímatele (není aktuálně v plánu).
+
+Aktuální plán:
+- používat model 1 (owner_id + RLS).
 
 ---
 
-# 8. Číselníky a typy (modul 900)
+## 10. RLS a datový model
 
-Modul nastavení obsahuje tabulky jako:
+Každá tabulka, kde je potřeba oddělit data jednotlivých pronajímatelů, musí obsahovat:
 
-- subject_types  
-- property_types  
-- unit_types  
-- service_types  
-- payment_types  
-- document_types  
+- `owner_id` (FK na pronajímatele / tenant subjekt),
+- `created_by` (FK na uživatele, který záznam vytvořil).
 
-Vše sjednocujeme přes komponentu **GenericTypeTile**.
+### Příklad RLS:
 
----
-
-# 9. Vazby mezi entitami (verbální ER diagram)
-
+```sql
+USING (owner_id = auth.uid())
 ```
-SUBJECT (Pronajímatel)
-   │ 1:N
-   └── PROPERTIES (Nemovitosti)
-          │ 1:N
-          └── UNITS (Jednotky)
-                 │ 1:N
-                 └── TENANTS (Nájemníci)
-                        │ 1:N
-                        └── CONTRACTS (Smlouvy)
-                               │ 1:N
-                               └── PAYMENTS (Platby)
 
-UNITS 1:N METERS 1:N METER_READINGS
+nebo:
 
-SUBJECTS 1:N DOCUMENTS
-SUBJECTS 1:N SUBJECT_ROLES
-SUBJECTS 1:N SUBJECT_PERMISSIONS
+```sql
+USING (owner_id IN (
+  SELECT landlord_id
+  FROM user_landlords
+  WHERE user_id = auth.uid()
+))
 ```
 
----
+Tím je zajištěno, že:
 
-# 10. Plánované rozšíření datového modelu
-
-- workflow tabulky (události, automatické akce)
-- audit log
-- bankovní výpisy
-- helpdesk / úkoly
-- integrace plateb (GoPay / Stripe)
-- automatická archivace dokumentů
+- uživatel vidí pouze data “svého” pronajímatele,
+- správce může vidět více pronajímatelů, pokud je to povolené.
 
 ---
 
-# 11. Poznámky a nezatříděné informace (zachováno)
+## 11. Poznámky a nezatříděné informace (zachováno)
 
 - možné více typů nájemních vztahů (podnájem, pronájem části jednotky),
 - budoucí definice ceníků služeb,
@@ -336,8 +382,75 @@ SUBJECTS 1:N SUBJECT_PERMISSIONS
 
 ---
 
-# 12. Závěr
+## 12. Závěr
 
 Tento dokument poskytuje sjednocený a rozšiřitelný datový model pro aplikaci Pronajímatel v6.  
 Všechny budoucí moduly a funkce budou na tento model navazovat.
 
+---
+
+# 📜 Historické části dokumentu – DATOVÝ MODEL  
+*(zachováno, ale označeno jako zastaralé — NESMÍ SE MAZAT)*
+
+Níže jsou původní texty, myšlenky a koncepty, které byly během vývoje datového modelu vytvořeny, ale nepatří do finální verze dokumentace.  
+Jsou ponechány kvůli historii projektu.
+
+---
+
+## ~~Původní úvahy o struktuře subjektů~~
+
+~~Subjekt měl původně obsahovat jen: jméno, e-mail, telefon a typ.~~
+
+~~Později bylo doplněno: IČ, DIČ, adresa, více typů, role, metadata a auditní pole.~~
+
+---
+
+## ~~Staré návrhy tabulek pro nemovitosti~~
+
+~~Nemovitosti měly být původně bez vazby na vlastníka (owner_id).~~
+
+~~Po rozhodnutí o multi-tenant architektuře byl owner_id doplněn do všech klíčových tabulek.~~
+
+---
+
+## ~~Neuskutečněný plán na jednotnou tabulku "assets"~~
+
+~~Původní nápad: Nemovitosti i jednotky budou v jedné tabulce “assets”.~~
+
+~~Tento koncept byl odmítnut — struktura by byla nepřehledná a komplikovala by RLS.~~
+
+---
+
+## ~~Pokus o jinou strukturu smluv~~
+
+~~Smlouvy měly mít samostatnou tabulku účtování služeb a plateb přímo v sobě.~~
+
+~~To bylo později odděleno do payment_schedules, services, meters a dalších entit.~~
+
+---
+
+## ~~Staré návrhy na uchovávání adres~~
+
+~~Adresy mohly být ve vlastní tabulce s FK na subjekty a nemovitosti.~~
+
+~~Momentálně používáme adresu přímo v tabulkách; oddělení do samostatné tabulky je plán do budoucna.~~
+
+---
+
+## ~~Nerealizovaná varianta datového modelu pro platby~~
+
+~~Původní návrh: payments budou obsahovat i předpisy.~~
+
+~~Aktuálně je systém rozdělen na payment_schedules (předpisy) a payments (skutečné platby).~~
+
+---
+
+## ~~Historické fragmenty z plánování RLS~~
+
+~~“RLS budeme řešit později, nejdřív uděláme UI.”~~
+
+~~Nakonec jsme zjistili, že databázová bezpečnost musí být navržena hned.~~
+
+---
+
+# 📌 Konec historických částí 06B
