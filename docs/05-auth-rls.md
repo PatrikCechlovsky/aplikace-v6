@@ -1,5 +1,5 @@
 # /docs/05-auth-rls.md
-## Popis: Tento dokument popisuje autentizační tok, práci se session, metadata uživatele a základy Supabase RLS v aplikaci Pronajímatel v6.
+## Popis: Tento dokument popisuje autentizační tok, práci se session, uživatelská metadata a základy Supabase RLS v aplikaci Pronajímatel v6.
 ---
 
 # 05 – Autentizace & RLS
@@ -15,197 +15,215 @@ Aplikace Pronajímatel v6 používá:
 
 Přihlášení je nutné pro vstup do hlavní části aplikace. Nepřihlášený uživatel vidí pouze přihlašovací panel.
 
-### Použitý typ uživatele
+---
 
-    type SessionUser = {
-      email: string | null
-      displayName?: string | null
-    }
+## 2. Přihlášení
 
-Tento typ aplikace používá všude — v HomeActions, AppShell, UI i modulech.
+Přihlášení probíhá standardním způsobem:
+
+- uživatel zadá email a heslo
+- Supabase ověří údaje
+- vrátí session token
+- session se uloží do prohlížeče
+
+```ts
+const { data, error } = await supabase.auth.signInWithPassword({
+  email,
+  password,
+})
+```
 
 ---
 
-## 2. Logika zpracování přihlášení
+## 3. Session & User Metadata
 
-### 2.1 Načtení session při načtení aplikace
+Po přihlášení získáme objekt:
 
-- `getCurrentSession()` se volá v AppShell při startu.
-- výsledek uložen do **sessionUser** (globální stav UI).
+```ts
+session.user.user_metadata
+```
 
-### 2.2 Reakce na změny stavu
+Metadata mohou obsahovat:
 
-- `onAuthStateChange()` detekuje login nebo logout.
-- UI se okamžitě přepne mezi:
-  - **guest mode** → přihlašovací panel
-  - **authenticated mode** → AppShell + Sidebar + moduly
+- `display_name`
+- `full_name`
+- `name`
+- další hodnoty dle potřeby
 
-### 2.3 Odhlášení
+### Výběr zobrazovaného jména uživatele
 
-- volá se `supabase.auth.signOut()`
-- UI vymaže session uživatele
-- zobrazí se přihlašovací UI
+Aplikace používá tento algoritmus:
 
----
+1. `display_name`
+2. `full_name`
+3. `name`
+4. `email`
+5. `"Uživatel"`
 
-## 3. Získání displayName (logika z layout_auth_ui)
-
-Aplikace preferuje jméno uživatele v tomto pořadí:
-
-1. `session.user.user_metadata.display_name`
-2. `session.user.user_metadata.full_name`
-3. `session.user.user_metadata.name`
-4. `session.user.email`
-5. fallback: `"Uživatel"`
-
-Výhodou je, že pokud někdo nemá jméno, UI stále funguje.
-
-### Logika použití
-
-DisplayName se používá v:
-
-- HomeActions (pravý horní roh)
-- budoucím UserMenu (nastavení profilu)
-- logování aktivit
-- notifikacích
+Tím je zajištěno, že se uživateli **vždy** zobrazí nějaké jméno.
 
 ---
 
-## 4. Práva a přístupy (High-level)
+## 4. Odhlašování
 
-Aplikace už nyní připravuje:
+Uživatel se odhlásí pomocí:
 
-### Role systému (zatím koncept)
+```ts
+await supabase.auth.signOut()
+```
 
-- **admin** – vidí vše, spravuje moduly, může nastavovat typy
-- **owner / pronajímatel** – vidí jen své subjekty a své nemovitosti
-- **manager / správce** – může spravovat portfolio dle přidělených práv
-- **accountant** – přístup do faktur, plateb, vyúčtování
+Po odhlášení:
 
-Role budou implementovány přes:
-
-- **Supabase Table: `subject_roles`**
-- **Supabase Table: `subject_permissions`**
-- UI logiku, která podle role povolí/zakáže akce
+- session je zrušena
+- UI se přepne do režimu přihlášení
+- Sidebar, CommonActions a obsah aplikace jsou deaktivované
 
 ---
 
-## 5. Row Level Security (RLS)
+## 5. Přihlášený / nepřihlášený stav v UI
 
-Supabase RLS zajistí, aby uživatel viděl **pouze své vlastní záznamy**.
+UI aplikace reaguje na session:
 
-Základní struktura RLS bude:
+### Nepřihlášený uživatel
+- vidí **jen login panel**
+- Sidebar je prázdný
+- CommonActions jsou deaktivované
+- Breadcrumbs zobrazuje pouze "Přihlášení"
 
-1. Tabulka obsahuje `owner_subject_id` nebo `created_by`
-2. Politika RLS omezuje SELECT / UPDATE / DELETE na:
-   
-       owner_subject_id = auth.uid()
-
-3. Pro administrátora bude speciální RLS pravidlo:
-
-       role = 'admin'
-
-### Příklady chystaných politik
-
-#### 5.1 SELECT politika
-
-    create policy "Uživatel vidí pouze své záznamy"
-    on subjects
-    for select
-    using ( owner_id = auth.uid() );
-
-#### 5.2 Insert politika
-
-    create policy "Uživatel může přidávat pouze své vlastní záznamy"
-    on subjects
-    for insert
-    with check( owner_id = auth.uid() );
-
-#### 5.3 Admin politika
-
-    create policy "Admin vidí vše"
-    on subjects
-    for select
-    using ( auth.role() = 'admin' );
-
-*(Pozn.: přesný tvar bude upraven podle finální struktury tabulek.)*
+### Přihlášený uživatel
+- vidí Sidebar s moduly
+- nahoře se zobrazí **displayName**
+- má přístup do celého systému (dle oprávnění)
 
 ---
 
-## 6. Napojení RLS na UI
+## 6. Role uživatele (plán)
 
-UI bude brát oprávnění z:
+Aplikace bude používat následující základní role:
 
-- `session.user.id`
-- `session.user.user_metadata.role`
-- případně tabulek v Supabase (`subject_permissions`)
+- **superadmin** – plný přístup
+- **pronajímatel** – přístup ke svým objektům
+- **správce** – správa operativy
+- **technik / údržba** – přístup k servisním modulům
+- **nájemník (budoucnost)** – omezený přístup
 
-Díky tomu budou části UI:
+Role budou uložené v Supabase v tabulce:
 
-- **skryté** (není povoleno)
-- **disabled** (povoleno, ale nesplněná podmínka)
-- **viditelné a aktivní** (povoleno)
+```
+user_roles
+```
 
-### Nejdůležitější navázané části UI:
-
-- Sidebar (moduly podle role)
-- CommonActions (akce podle oprávnění)
-- Tabulkové přehledy (SELECT filtrován podle RLS)
-- Formuláře (Update/Delete omezeny podle RLS)
+Každý uživatel může mít 1–N rolí.
 
 ---
 
-## 7. UI pro autentizaci (z layout_auth_ui.md)
+## 7. Permission systém (plán)
 
-Aplikace používá vlastní login formulář:
+Každý modul může definovat:
 
-- pole Email  
-- pole Heslo  
-- tlačítko **Přihlásit se**  
-- stav „Načítání“  
-- zobrazování chybového hlášení  
+```
+permissions: {
+  view: [...roleIds],
+  edit: [...roleIds],
+  delete: [...roleIds],
+}
+```
 
-Dále:
+Permission engine v UI:
 
-- User menu bude rozšířeno v dalších fázích  
-- 2FA bude možné zapnout později (Supabase již podporuje)  
+- deaktivuje tlačítka
+- skrývá moduly
+- určuje chování CommonActions
+- omezí určité druhy akcí
 
----
+Permission engine v RLS:
 
-## 8. Budoucí směry vývoje
-
-### 8.1 Implementace role-based access (RBAC)
-- přidání tabulky `roles`  
-- definice rozhraní na úrovni modulů  
-- mapování rolí na CommonActions  
-
-### 8.2 Permission systém 2.0
-- UI engine bude rozhodovat o viditelnosti akcí  
-- podmínky: vybraná položka, čistota formuláře, role, modulový stav  
-
-### 8.3 Logování akcí uživatele
-- auditní log změn v datech  
-- historie přístupů  
-- logování odeslaných e-mailů  
+- zajistí, že uživatel nemůže mazat nebo měnit, co mu nepatří
 
 ---
 
-## 9. Poznámky a další obsah k zařazení
+## 8. RLS – Row Level Security
 
-Zde budeme přesouvat vše, co se nehodí do hlavní struktury, ale patří k tématu:
+### RLS (Row-Level Security)
 
-- možnost přidat OAuth2 (Google, Microsoft)  
-- přepnutí na Magic Link (bez hesla)  
-- ukládání profilu uživatele do vlastní tabulky  
-- budoucí přehled aktivních session  
+Supabase umožňuje omezit, **které řádky v databázi může uživatel vidět nebo měnit**.
 
-*(zatím nebylo rozpracováno, ale ponecháno pro pozdější použití)*
+Každá tabulka má pravidla typu:
+
+```sql
+CREATE POLICY "Uživatel vidí jen své záznamy"
+ON nemovitosti
+FOR SELECT
+USING (created_by = auth.uid());
+```
+
+### Základní principy:
+
+- Uživatel **nikdy** nesmí vidět data jiných uživatelů / pronajímatelů
+- Každý záznam má:
+
+```
+created_by uuid DEFAULT auth.uid()
+```
+
+To umožňuje filtrovat přes RLS.
 
 ---
 
-## 10. Závěr
+## 9. Doporučené RLS politiky
+
+### SELECT – může číst jen vlastní záznamy
+
+```sql
+USING (created_by = auth.uid())
+```
+
+### INSERT – může vytvářet jen vlastní záznamy
+
+```sql
+WITH CHECK (created_by = auth.uid())
+```
+
+### UPDATE – může upravit jen svoje záznamy
+
+```sql
+USING (created_by = auth.uid())
+```
+
+### DELETE – pouze role superadmin
+
+```sql
+USING (auth.role() = 'superadmin')
+```
+
+---
+
+## 10. Chyby a varování Supabase (řešené během vývoje)
+
+### Varování: *RLS Disabled*
+Toto varování znamenalo, že některé tabulky neměly aktivované RLS.  
+Bylo opraveno zapnutím RLS a doplněním politik.
+
+### Varování: *Search Path Mutable*
+Bezpečnostní doporučení Supabase –  
+není problém pro vývoj, ale pro produkci budeme používat stabilní schéma.
+
+---
+
+## 11. Budoucí rozšíření
+
+- přidání MFA (dvoufázové ověření)  
+- přihlášení pomocí magic linku  
+- přidání audit logů  
+- definice granular permissions pro každé pole ve formuláři  
+- dynamické skrývání modulů podle licence / role  
+
+---
+
+## 12. Závěr
 
 Tento dokument slouží jako:
+
 - referenční popis autentizace,
 - plán RLS logiky,
 - přehled rolí a oprávnění,
