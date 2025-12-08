@@ -120,8 +120,8 @@ const PRESETS: ThemePreset[] = [
 ]
 
 export default function ThemeSettingsTile() {
-  const [mode, setMode] = useState<ThemeMode>('auto')
-  const [accent, setAccent] = useState<ThemeAccent>('neutral')
+  const [mode, setMode] = useState<ThemeMode | null>(null)
+  const [accent, setAccent] = useState<ThemeAccent | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -150,6 +150,9 @@ export default function ThemeSettingsTile() {
     if (local) {
       setMode(local.mode)
       setAccent(local.accent)
+      } else {
+      // když localStorage ještě nic nemá, ale theme v aplikaci už je nastavené,
+      // načti theme z <body> atributů nebo z uiConfig (doporučuji)
       // ⚠️ NEVOLÁME applyThemeToLayout(local)
     }
   
@@ -212,7 +215,10 @@ export default function ThemeSettingsTile() {
         <div className="settings-tile__palette-grid">
           {PRESETS.map((preset) => {
             const isActive =
-              preset.mode === mode && preset.accent === accent
+              mode !== null &&
+              accent !== null &&
+              preset.mode === mode &&
+              preset.accent === accent
 
             return (
               <button
