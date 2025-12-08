@@ -1,126 +1,161 @@
-// FILE: app/lib/themeSettings.ts
+/* app/styles/components/theme-settings.css */
+/* =========================================
+   THEME SETTINGS TILE – BAREVNÉ ZOBRAZENÍ
+   ========================================= */
 
-import { supabase } from './supabaseClient'
-
-export type ThemeMode = 'auto' | 'light' | 'dark'
-export type ThemeAccent = 'neutral' | 'grey' | 'blue' | 'green' | 'purple'
-
-export type ThemeSettings = {
-  mode: ThemeMode
-  accent: ThemeAccent
+.settings-tile {
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 
-const STORAGE_KEY = 'pronajimatel_theme'
-
-const DEFAULT_SETTINGS: ThemeSettings = {
-  mode: 'auto',
-  accent: 'neutral',
+.settings-tile__header {
+  margin-bottom: 1rem;
 }
 
-/**
- * Aplikuje theme (mode + accent) na .layout
- */
-export function applyThemeToLayout(settings: ThemeSettings) {
-  if (typeof document === 'undefined') return
-
-  const layout = document.querySelector('.layout')
-  if (!layout) return
-
-  // smažeme staré třídy
-  layout.classList.remove('theme-light', 'theme-dark')
-  layout.classList.remove(
-    'accent-neutral',
-    'accent-grey',
-    'accent-blue',
-    'accent-green',
-    'accent-purple',
-  )
-
-  // vyhodnotíme auto → light / dark podle systému
-  const resolvedMode: ThemeMode =
-    settings.mode === 'auto'
-      ? window.matchMedia &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
-      : settings.mode
-
-  layout.classList.add(`theme-${resolvedMode}`)
-  layout.classList.add(`accent-${settings.accent}`)
+.settings-tile__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
 }
 
-/**
- * Načtení theme z localStorage (pro AppShell i ThemeSettingsTile)
- */
-export function loadThemeFromLocalStorage(): ThemeSettings {
-  if (typeof window === 'undefined') {
-    return DEFAULT_SETTINGS
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_SETTINGS
-    const parsed = JSON.parse(raw)
-    return {
-      mode: (parsed.mode as ThemeMode) ?? DEFAULT_SETTINGS.mode,
-      accent: (parsed.accent as ThemeAccent) ?? DEFAULT_SETTINGS.accent,
-    }
-  } catch {
-    return DEFAULT_SETTINGS
-  }
+.settings-tile__description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
 }
 
-/**
- * Uložení theme do localStorage
- */
-export function saveThemeToLocalStorage(settings: ThemeSettings) {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
-  } catch {
-    // ignoruj
-  }
+.settings-tile__section {
+  margin-top: 1.25rem;
 }
 
-/**
- * Načtení theme z Supabase
- */
-export async function loadThemeSettingsFromSupabase(
-  userId: string,
-): Promise<ThemeSettings> {
-  const { data, error } = await supabase
-    .from('user_theme_settings')
-    .select('mode, accent')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (error || !data) {
-    return DEFAULT_SETTINGS
-  }
-
-  return {
-    mode: (data.mode as ThemeMode) ?? DEFAULT_SETTINGS.mode,
-    accent: (data.accent as ThemeAccent) ?? DEFAULT_SETTINGS.accent,
-  }
+.settings-tile__section-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin: 0 0 0.75rem 0;
 }
 
-/**
- * Uložení theme do Supabase
- */
-export async function saveThemeSettingsToSupabase(
-  userId: string,
-  settings: ThemeSettings,
-): Promise<void> {
-  const { error } = await supabase.from('user_theme_settings').upsert(
-    {
-      user_id: userId,
-      mode: settings.mode,
-      accent: settings.accent,
-    },
-    { onConflict: 'user_id' },
-  )
+/* Grid dlaždic */
 
-  if (error) {
-    console.error('Failed to save theme settings', error)
-  }
+.settings-tile__palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
 }
+
+/* Dlaždice/preset */
+
+.palette-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.palette-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary-soft);
+  transform: translateY(-1px);
+}
+
+.palette-card:disabled,
+.palette-card[disabled] {
+  cursor: default;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
+}
+
+.palette-card--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+/* Hlavička v dlaždici */
+
+.palette-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.palette-card__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.palette-card__badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+/* Popisek */
+
+.palette-card__description {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* Barevný náhled (3 puntíky) */
+
+.palette-card__preview {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.palette-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+/* ukázkové barvy pro jednotlivé accenty */
+
+/* NEUTRAL */
+.palette-preview--neutral.primary { background: #4f46e5; }
+.palette-preview--neutral.soft { background: #e0e7ff; }
+.palette-preview--neutral.accent { background: #111827; }
+
+/* GREY */
+.palette-preview--grey.primary { background: #6b7280; }
+.palette-preview--grey.soft { background: #e5e7eb; }
+.palette-preview--grey.accent { background: #374151; }
+
+/* BLUE */
+.palette-preview--blue.primary { background: #2563eb; }
+.palette-preview--blue.soft { background: #dbeafe; }
+.palette-preview--blue.accent { background: #1d4ed8; }
+
+/* GREEN */
+.palette-preview--green.primary { background: #16a34a; }
+.palette-preview--green.soft { background: #dcfce7; }
+.palette-preview--green.accent { background: #15803d; }
+
+/* PURPLE */
+.palette-preview--purple.primary { background: #a855f7; }
+.palette-preview--purple.soft { background: #f3e8ff; }
+.palette-preview--purple.accent { background: #7c3aed; }
