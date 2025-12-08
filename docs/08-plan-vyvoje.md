@@ -1,174 +1,152 @@
 # /docs/08-plan-vyvoje.md
-## Popis: Tento dokument obsahuje plán vývoje aplikace Pronajímatel v6 – krátkodobé, střednědobé a dlouhodobé cíle.
+## Popis: Strategický plán vývoje aplikace Pronajímatel v6 – krátkodobé, střednědobé a dlouhodobé cíle, milníky a roadmap.
 ---
 
-# 08 – Plán vývoje (Roadmapa)
-
-Cílem tohoto dokumentu je definovat jasnou, realistickou a kontinuální roadmapu vývoje aplikace Pronajímatel v6.
-
-Plán je rozdělen do tří úrovní:
-
-- **Krátkodobé** (týdny)
-- **Střednědobé** (měsíce)
-- **Dlouhodobé** (strategický směr)
+# 08 – Plán vývoje
 
 ---
 
-# 1. Krátkodobé cíle (nejbližší týdny)
+## 1. Úvod
 
-## 1.1 UI systém a jádro aplikace
-- dokončit **CommonActions v2**  
-  - akce podle modulu  
-  - akce podle role  
-  - akce podle stavu formuláře (dirty / clean)  
-  - akce podle výběru položky (requiresSelection)
-- implementovat **dynamické breadcrumbs**
-- sjednotit vzhled všech formulářů (GenericForm layout)
-- dopracovat jednotný **FormField systém**:
-  - text
-  - select
-  - multiselect
-  - number
-  - boolean
+Tento dokument popisuje plánovanou evoluci aplikace Pronajímatel v6.  
+Slouží jako strategická roadmapa pro:
 
-## 1.2 Modul 900 – Nastavení
-- dopracovat SubjectTypesTile, UnitTypesTile, ServiceTypesTile
-- dokončit šipky pro řazení a jejich logiku
-- sjednotit barevné palety a UI pro výběr ikon
-- oddělit systém číselníků pro budoucí moduly
-
-## 1.3 Datový model – první stabilní verze
-- vytvořit SQL migrace pro jádro (subjects, properties, units, tenants, contracts)
-- připravit migrace pro typy a číselníky
-- zavést první RLS politiky
-
-## 1.4 Autentizace
-- stabilizace session managementu
-- příprava na profil uživatele (zobrazení, úprava)
+- technický rozvoj,
+- doplňování funkcí,
+- úpravy UI,
+- integraci modulů,
+- bezpečnostní a provozní aspekty.
 
 ---
 
-# 2. Střednědobé cíle (1–3 měsíce)
+## 2. Hlavní milníky
 
-## 2.1 Moduly aplikace (hlavní funkce)
-- **Smlouvy (070)** – detailní implementace
-- **Platby (080)** – evidence úhrad, variabilní symboly
-- **Finance (090)** – předpisy, spoje se službami
-- **Měřidla (100)** – typy, odečty, vazby na jednotky
+### Milník M1: Stabilní jádro aplikace
+- plně funkční 6-sekční layout,
+- přihlášení a odhlášení,
+- dynamický Sidebar,
+- Content engine,
+- statické/částečně dynamické CommonActions.
 
-## 2.2 Dokumenty a komunikace
-- modul **Dokumenty (110)**:
-  - upload dokumentů
-  - generování PDF (náhled + uložit)
-  - metadata dokumentů
-- modul **Komunikace (120)**:
-  - ukládání odeslaných e-mailů
-  - propojení s dokumenty
-  - šablony e-mailů (email_templates)
+### Milník M2: Modulární systém (v2)
+- každý modul má vlastní přehled + formulář,
+- module.config.js obsahuje:
+  - commonActions,
+  - permissions,
+  - dynamické názvy,
+  - typy tiles.
 
-## 2.3 Role & Permission systém
-- UI kontrola podle rolí
-- backend RLS v Supabase pro:
-  - SELECT
-  - UPDATE
-  - INSERT
-  - DELETE
-- mapování rolí na moduly
-- mapování permissions na CommonActions
+### Milník M3: Datový model + RLS
+- hotový základ subjektů, nemovitostí, jednotek, smluv a plateb,
+- definované RLS politiky,
+- migrace ve verzích,
+- příprava na import/export dat.
 
-## 2.4 Tabulkové komponenty
-- univerzální tabulka pro všechny přehledy:
-  - řazení
-  - filtrování
-  - pagination
-  - výběr řádku
-  - akce po najetí myši → ikonky
+### Milník M4: Dokumenty + Komunikace
+- generování PDF,
+- možnost přikládat soubory,
+- systém e-mailových šablon,
+- ukládání odeslané komunikace do historie.
 
----
+### Milník M5: Finanční modul (v1)
+- předpisy plateb,
+- skutečné platby,
+- generování QR,
+- přehled salda.
 
-# 3. Dlouhodobé cíle (3 měsíce – 1 rok)
-
-## 3.1 Automatizace a workflow
-- automatické generování nájemních smluv
-- workflow „blíží se konec nájmu“
-- workflow „nezaplaceno po X dnech“
-- automatické e-maily a připomínky
-
-## 3.2 Multi-tenant režim
-- více pronajímatelů v jedné aplikaci
-- izolace dat pomocí RLS
-- oddělení dokumentů ve storage
-
-## 3.3 Integrace
-- napojení na platební brány (GoPay / Stripe)
-- import bankovních výpisů (API nebo CSV)
-- integrace s energetickými firmami (odečty stavu měřidel)
-
-## 3.4 Pokročilé moduly
-- **Helpdesk / Servisní požadavky**
-  - závady, úkoly, workflow oprav
-- **Reporty**
-  - finanční reporty
-  - roční přehledy
-  - exporty do PDF a Excelu
-
-## 3.5 Mobilní optimalizace
-- přehledné karty
-- rychlé akce pro mobilní rozhraní
-- offline režim (velmi dlouhodobý cíl)
+### Milník M6: Měřidla + Odečty
+- evidence měřidel,
+- odečty,
+- přepočty služeb,
+- příprava pro budoucí vyúčtování.
 
 ---
 
-# 4. Milníky projektu
+## 3. Krátkodobé cíle (0–3 měsíce)
 
-### Milník M1 – „Stabilní základ“
-- jádro UI (HomeButton, Sidebar, Breadcrumbs, CommonActions)
-- stabilní login
-- modul 900 funkční pro typy
+### UI / UX
+- dokončení breadcrumbs builderu,
+- dynamická konfigurace CommonActions,
+- jednotné UI všech modulů,
+- základní validace formulářů.
 
-### Milník M2 – „Smlouvy a Finance“
-- smlouvy
-- předpisy
-- platby
-- jednotky a nemovitosti plně propojeny
+### Backend / Supabase
+- sjednocení datového modelu,
+- doplnění auditních polí,
+- RLS pokrytí všech tabulek.
 
-### Milník M3 – „Dokumenty & Komunikace“
-- odesílání e-mailů
-- ukládání dokumentů
-- PDF generátor
-
-### Milník M4 – „Automatizace“
-- workflow systém
-- cron úlohy
-- automatické upomínky
+### Moduly
+- dokončení modulů: Nemovitosti, Jednotky, Nájemníci, Smlouvy,
+- příprava modulů: Dokumenty, Komunikace.
 
 ---
 
-# 5. Co bude každý modul potřebovat, než půjde do produkce
+## 4. Střednědobé cíle (3–12 měsíců)
 
-Každý modul musí splnit:
+### Aplikace
+- interaktivní dashboard,
+- reporting (výnosy, náklady, obsazenost),
+- automatické notifikace.
 
-- [ ] jednotný přehled (list)
-- [ ] jednotný detail (detail view)
-- [ ] jednotný formulář (form layout)
-- [ ] definici CommonActions
-- [ ] napojení na RLS
-- [ ] audit-log akcí
-- [ ] validace dat
-- [ ] dokumentaci v `/docs`
+### Integrace
+- propojení s bankou (import plateb),
+- nástroje pro integraci s energiemi (import odečtů).
 
----
-
-# 6. Poznámky (uchováváme vše)
-
-- AI agent bude možné integrovat později pro doporučení cen nájmů  
-- přání: generovat kompletní PDF balíček smluv jedním kliknutím  
-- možnost: přidat modul „Kalendář událostí“ (prohlídky, výměny měřidel)  
+### Mobilní UI
+- lepší kompatibilita,
+- responsive layout,
+- rychlé akce.
 
 ---
 
-# 7. Závěr
+## 5. Dlouhodobé cíle (12–36 měsíců)
 
-Tento dokument slouží jako strategický plán vývoje projektu.  
-Každý splněný milník postupně posouvá aplikaci od základní verze ke komplexní profesionální platformě pro správu nájemních vztahů.
+- vyúčtování služeb,
+- stavební/servisní modul,
+- údržba a plán oprav,
+- IoT integrace měřidel,
+- API pro externí aplikace,
+- komerční monetizace (SaaS model).
+
+---
+
+## 6. Prioritizační systém
+
+### Priority:
+- **P1** = nutné pro fungování systému,
+- **P2** = výrazně zlepší hodnotu,
+- **P3** = nice-to-have,
+- **P4** = výhled > 1 rok.
+
+Každá úloha v TODO listu má mít přiřazenou prioritu.
+
+---
+
+## 7. Verzovací systém
+
+- major verze = velké změny (v6 → v7),
+- minor verze = nové moduly/funkce (v6.1),
+- patch verze = opravy chyb (v6.0.x),
+- DB migrace musí být verzované.
+
+---
+
+## 8. Závěr
+
+Tento plán vývoje popisuje směřování celé aplikace.  
+Slouží jako přehled, orientační mapa i kontrolní mechanismus.  
+Každý další krok vývoje musí odpovídat této roadmapě.
+
+---
+
+# 📜 Historické části dokumentu – PLÁN VÝVOJE  
+*(zachováno pro historii, zatím minimální obsah)*
+
+~~Původní nápad: roadmap nebudeme dělat, budeme improvizovat.~~  
+Později bylo rozhodnuto, že roadmapa je nezbytná kvůli modulárnímu návrhu.
+
+~~Zvažovalo se nemít milníky a psát vývoj „na přeskáčku“.~~  
+Tento přístup byl zavržen.  
+
+Tato sekce bude postupně růst, jakmile se budou měnit plány a vzniknou nové verze roadmapy.
 
