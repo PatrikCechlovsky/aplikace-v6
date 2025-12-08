@@ -55,7 +55,7 @@ export default {
       icon: 'settings', 
       sectionId: 'types-settings',
       component: RoleTypesTile,
-      order: 14,
+      order: 10,
     },
     {
       id: 'permission-types',
@@ -63,15 +63,23 @@ export default {
       icon: 'shield-check',
       sectionId: 'types-settings',
       component: PermissionTypesTile,
-      order: 16,
+      order: 20,
     }
+    {
+      id: 'subject-types',
+      label: 'Typy subjektů',
+      icon: 'settings', 
+      sectionId: 'types-settings',
+      component: SubjectTypesTile,
+      order: 30,
+    },
     {
       id: 'property-types',
       label: 'Typy nemovitostí',
       icon: 'settings',
       sectionId: 'types-settings',
       component: PropertyTypesTile,
-      order: 10,
+      order: 40,
     },
     {
       id: 'unit-types',
@@ -79,15 +87,7 @@ export default {
       icon: 'settings', 
       sectionId: 'types-settings',
       component: UnitTypesTile,
-      order: 12,
-    },
-    {
-      id: 'subject-types',
-      label: 'Typy subjektů',
-      icon: 'settings', 
-      sectionId: 'types-settings',
-      component: SubjectTypesTile,
-      order: 15,
+      order: 50,
     },
     {
       id: 'theme-settings',
