@@ -1,300 +1,351 @@
 # /docs/09-project-rules.md
-## Popis: Tento dokument definuje pravidla projektu, styl psaní kódu, strukturu dokumentace, názvosloví a sjednocené workflow aplikace Pronajímatel v6.
+## Popis: Hlavní pravidla projektu Pronajímatel v6 – vývojové standardy, dokumentace, UI/UX, naming conventions, workflow, moduly, bezpečnost a architektura.
 ---
 
-# 09 – Pravidla projektu (Project Rules)
-
-Tento dokument stanovuje jednotný způsob práce na projektu Pronajímatel v6.  
-Všichni vývojáři i spolupracující osoby musí tato pravidla dodržovat.
-
-Cíle pravidel:
-- sjednotit kód,
-- zajistit přehlednou dokumentaci,
-- udržet stabilitu architektury,
-- umožnit škálování projektu do budoucna.
+# 09 – Pravidla projektu
 
 ---
 
-# 1. Pravidla dokumentace
+# 1. Účel dokumentu
 
-## 1.1 Povinné tři řádky na začátku každého souboru
+Tento dokument definuje **závazná pravidla**, která musí následovat:
 
-Každý dokument v `/docs` MUSÍ začínat tímto formátem:
+- vývojáři,
+- design,
+- dokumentace,
+- architektura,
+- datový model,
+- testování,
+- deployment.
 
-```
-# /docs/<název-souboru>.md
-## Popis: Tento dokument obsahuje <stručný popis>.
----
-```
-
-### Význam:
-
-- **řádek 1** – přesná cesta a název souboru → přehlednost  
-- **řádek 2** – jednovětý popis obsahu  
-- **řádek 3** – oddělení metadat od obsahu dokumentu
-
-Toto pravidlo je závazné a neměnné.
+Je to **ústřední “konstituce projektu”**, která určuje, **jak** se vše dělá, aby aplikace byla udržitelná, škálovatelná a konzistentní.
 
 ---
 
-## 1.2 Struktura dokumentace
+# 2. Obecné principy projektu
 
-Dokumentace se skládá z následujících souborů:
+## 2.1 Konzistence je priorita
+Každý modul, formulář nebo část UI musí vypadat a chovat se stejně.
 
-```
-01-executive-summary.md
-02-architecture.md
-03-ui-system.md
-04-modules.md
-05-auth-rls.md
-06-data-model.md
-07-deployment.md
-08-plan-vyvoje.md
-09-project-rules.md
-10-glossary.md (bude vytvořen)
-```
+## 2.2 Jednoduchost před složitostí
+Preferujeme jedno jasné řešení, než 3 obtížně udržitelné.
 
-Každý dokument má předem definované téma a obsahuje jen věci, které tam patří.
+## 2.3 Nesmí vznikat duplicity
+Každá logika, funkce, komponenta nebo typ existuje jen na jednom místě.
 
----
+## 2.4 Dokumentace je součástí vývoje
+Každá změna se zapisuje do dokumentace.  
+(od tohoto okamžiku: **NEEXISTUJE změna bez aktualizace dokumentace**)
 
-## 1.3 Pravidla pro aktualizaci dokumentace
-
-- nic se NESMÍ mazat → vše se **přeškrtává** a nechává se v dokumentu  
-- vše nové se vkládá **pod správné sekce**  
-- co není kam dát → přesouvá se do `todo_list.md → sekce "k zařazení"`
-
-Dokumentace je stejně důležitá jako samotný kód.
+## 2.5 Vše musí být verzované
+- kód,
+- databázové změny,
+- dokumenty,
+- definice modulů,
+- UI standardy.
 
 ---
 
-# 2. Pravidla pro strukturu projektu
+# 3. Struktura repozitáře – závazná pravidla
 
-Základní struktura aplikace:
+Repo obsahuje tyto povinné části:
 
 ```
-app/
-  UI/
-  modules/
-  layout/
-  (budoucí) services/
-docs/
-scripts/
-public/
+/app/               – Next.js aplikace
+  /UI/              – globální UI komponenty
+  /modules/         – moduly aplikace
+  /auth/            – přihlášení
+/docs/              – dokumentace 01–10
+/docs/archive/      – archivní poznámky
+/supabase/          – migrace DB a seed data
 ```
 
-## 2.1 Složka `app/UI/`
+## Pravidla:
 
-Obsahuje pouze:
-- znovupoužitelné UI komponenty  
-- žádná business logika  
-- žádný přístup k databázi ani Supabase  
+1. **NIC** se neukládá mimo výše uvedené struktury.  
+2. Každý modul má svoji složku s přesnou strukturou.  
+3. Každý dokument (01–10) musí existovat.  
+4. Kód se nesmí ukládat do `/public/` (kromě assetů).  
+5. V `/app/UI/` smějí být jen **globální** komponenty.
 
-## 2.2 Složka `app/modules/`
+---
 
-Každý modul má strukturu:
+# 4. Naming conventions
+
+## 4.1 Složky a soubory
+
+| Typ | Formát |
+|-----|--------|
+| modul | `040-nemovitosti` |
+| komponenta | `HomeButton.tsx` |
+| config soubor | `module.config.js` |
+| tile | `NemovitostiTile.tsx` |
+| formulář | `NemovitostiForm.tsx` |
+| přehled | `NemovitostiOverview.tsx` |
+
+## 4.2 Značení modulů
+
+Pevný formát:
+
+```
+<ordernumber>-<nazev-modulu>
+```
+
+Například:
+
+- `010-uzivatele`
+- `040-nemovitosti`
+- `060-smlouvy`
+- `900-nastaveni`
+
+## 4.3 Proměnné
+
+- camelCase  
+- React komponenty: PascalCase  
+- konstanty: UPPER_SNAKE_CASE  
+
+---
+
+# 5. Pravidla UI / UX
+
+## 5.1 6-sekční layout je závazný
+
+Každá stránka používá:
+
+1. HomeButton  
+2. Sidebar  
+3. Horní lištu  
+4. CommonActions  
+5. Breadcrumbs  
+6. Content  
+
+*Odchylka není povolena.*
+
+## 5.2 Sidebar – pravidla
+
+- jen dynamické načítání modulů  
+- každý modul musí mít ikonu  
+- aktivní modul je zvýrazněn  
+- 2. a 3. úroveň mají odsazení podle UI specifikace  
+
+## 5.3 CommonActions
+
+- centrální seznam akcí  
+- moduly si definují jen *konfigurace použití*  
+- UI engine rozhoduje:
+  - disabled,
+  - hidden,
+  - requiresSelection,
+  - requiresDirty.
+
+## 5.4 Formuláře
+
+Musí obsahovat:
+
+- validaci (minimální)
+- konzistentní vzhled
+- pole dle datového modelu
+- stejné chování pro “dirty state”
+
+## 5.5 Přehledy
+
+- tabulka musí být jednotná  
+- výběr řádku aktivuje příslušné akce  
+- filtry jsou vždy nahoře  
+
+---
+
+# 6. Pravidla modulů
+
+## 6.1 Struktura modulu
+
+Povinná struktura:
 
 ```
 module.config.js
-overview/
-forms/
 tiles/
+forms/
+overview/
 ```
 
-Moduly obsahují:
-- business logiku,
-- přehledy,
-- formuláře,
-- detailní komponenty,
-- konfiguraci akcí (v2).
+## 6.2 module.config.js – pravidla
 
-## 2.3 Složka `services/` (budoucí)
+Musí obsahovat:
 
-Sem bude přesouvána:
-- logika načítání dat,
-- transformace dat,
-- práce s Supabase dotazy,
-- validace,
-- centralizované operace.
+```js
+id: '040-nemovitosti',
+label: 'Nemovitosti',
+icon: 'building',
+order: 40,
+enabled: true,
+```
+
+Volitelné, ale doporučené:
+
+```js
+commonActions: {...}
+permissions: {...}
+sections: [...]
+```
+
+## 6.3 Každý modul musí mít:
+
+- min. 1 tile  
+- min. 1 overview  
+- min. 1 formulář (detail/edit)  
+- vazby na data  
 
 ---
 
-# 3. Pravidla psaní kódu (CodeStyle)
+# 7. Pravidla dokumentace
 
-## 3.1 Základní principy
+## 7.1 Dokumenty 01–10 jsou POVINNÉ
 
-- komponenty pojmenováváme **PascalCase**
-- proměnné, props a funkce: **camelCase**
-- události:  
-  - handler uvnitř komponenty → `handleXxx`  
-  - prop události → `onXxx`
-- žádné funkce nebo hooky uvnitř JSX  
-- vše potřebné je definováno **nad `return`**
+- každý dokument má jasně definované téma,
+- nic nesmí být mimo ně.
 
-## 3.2 Ikony
+## 7.2 Každý dokument má 3 části:
 
-Ikony se povinně získávají přes:
+- A = finální obsah  
+- B = historické části (přeškrtnuté)  
+- C = archiv (samostatný soubor)
 
-```
-getIcon('name')
-```
+## 7.3 Pravidla psaní dokumentace
 
-Zakazuje se:
-- importovat ikonové komponenty přímo,
-- používat náhodné emoji mimo definovaný systém.
-
-## 3.3 Formuláře
-
-- každý formulář musí používat jednotnou strukturu:
-  - název
-  - popis
-  - sekce polí
-  - spodní CommonActions
-- validaci řešit v services vrstvách (po vytvoření)
-- žádné inline validace v UI bez sjednocení
-
-## 3.4 CommonActions – standardy
-
-Sada akcí je jednotná:
-
-```
-add, edit, view, duplicate, attach,
-archive, delete,
-save, saveAndClose, cancel
-```
-
-### Pravidla:
-
-- ikonky musí odpovídat definicím projektu  
-- akce se zobrazují na sekci 4 (layout)  
-- modul si definuje, které akce chce používat (v2)  
-- systém kontroluje:
-  - roli uživatele,
-  - výběr položky,
-  - stav formuláře (dirty/clean),
-  - stav modulu.
+- vždy v Markdownu  
+- každý dokument začíná:
+  - cestou souboru  
+  - jednovětým popisem  
+- bloky kódu vždy pomocí ```  
+- nikdy ne HTML ani .docx  
 
 ---
 
-# 4. Pravidla pro UI design
+# 8. Pravidla pro databázi a RLS
 
-## 4.1 Layout
+## 8.1 Každá tabulka musí obsahovat:
 
-Aplikace používá **přesně definovaný 6-sekční layout**:
+- `id (uuid)`  
+- `created_at`  
+- `created_by`  
+- `updated_at`  
+- `updated_by`  
+- `owner_id` (pro multi-tenant logiku)  
 
-1. Sidebar – část 1 a 2  
-2. Horní lišta (Breadcrumbs + HomeActions)  
-3. CommonActions  
-4. Content oblast  
+## 8.2 Každá tabulka musí mít RLS
 
-Nic nesmí měnit význam těchto sekcí.
+Příklad SELECT:
 
----
+```sql
+USING (owner_id = auth.uid())
+```
 
-## 4.2 Sidebar
+## 8.3 Migrace musí být verzované
 
-Musí být dynamický:  
-- načítá moduly z registry  
-- zobrazuje ikony + názvy  
-- má aktivní stav modulu  
-- podporuje více úrovní (modul → sekce → položky)
-
----
-
-## 4.3 Formuláře
-
-Formuláře mají jednotný styl:
-
-- titulek  
-- popis  
-- pole  
-- záložky (pokud je více částí)  
-- CommonActions dole  
-
----
-
-# 5. Workflow pravidla
-
-## 5.1 Git workflow
-
-- hlavní větev: `main`  
-- feature větve: `feature/<název>`  
-- žádné změny přímo do `main`  
-- každá změna musí mít:
-  - commit message,
-  - popis změny v dokumentaci (pokud se týká dokumentace).
-
-## 5.2 Každá úprava musí být zdokumentována
-
-Pokud upravíme:
-- modul,
-- UI komponentu,
-- datový model,
-- akce,
-- ikonky,
-- logiku,
-
-→ musí se to propsat do příslušného `/docs/*.md`.
-
----
-
-# 6. Naming konvence (názvosloví)
-
-## 6.1 Soubory
-
-- React komponenty: `NázevKomponenty.tsx`
-- Formy: `SomethingForm.tsx`
-- Tiles: `SomethingTile.tsx`
-- Přehledy: `SomethingList.tsx`
-
-## 6.2 Proměnné
-
-- boolean → `isX`, `hasX`, `canX`
-- čísla → `countX`, `totalX`
-- string → `textX`, `labelX`
-
-## 6.3 Moduly
-
-Názvy modulů začínají číselným prefixem:
+Používáme strukturu:
 
 ```
-010-user
-020-account
-030-subjects
-040-properties
-050-units
-060-tenants
-070-contracts
-080-payments
-090-finance
-100-meters
-110-documents
-120-communication
-900-settings
+/supabase/migrations/XXX-description.sql
 ```
 
 ---
 
-# 7. Roadmap pravidel (budoucí verze 2)
+# 9. Pravidla pro vývoj a git workflow
 
-- přidat pravidla pro testování  
-- přidat pravidla pro datové migrace  
-- přidat pravidla pro Page/Tile/Form engine  
-- sjednotit styl komentářů  
-- pravidla pro generování PDF  
+## 9.1 Branch model
+
+- `main` = produkce  
+- `develop` (volitelné)  
+- `feature/<nazev>` = vývoj  
+- `fix/<nazev>` = bugfix  
+
+## 9.2 Commit message
+
+Formát:
+
+```
+[type] stručný popis
+
+detailní popis (volitelné)
+```
+
+Povolené type:
+
+- feat
+- fix
+- chore
+- refactor
+- docs
+- style
+
+## 9.3 PR (pull request)
+
+Musí obsahovat:
+
+- popis změny  
+- screenshoty (pokud UI)  
+- odkaz na změněný dokument 01–10  
 
 ---
 
-# 8. Poznámky (nic se nemaže)
+# 10. Pravidla bezpečnosti
 
-- některá pravidla bude třeba doplnit po dokončení CommonActions v2  
-- datový standard pro služby bude doplněn později  
-- budoucí modul „Integrace“ si vyžádá nové naming konvence  
+## 10.1 Secrets NIKDY necommitovat
+
+## 10.2 SERVICE_ROLE_KEY nikdy na frontendu
+
+## 10.3 RLS aktivní vždy a všude
+
+## 10.4 Hesla musí být přes Supabase Auth
+
+## 10.5 Logging jen bezpečný (bez citlivých dat)
 
 ---
 
-# 9. Závěr
+# 11. Pravidla kvality kódu
 
-Tento dokument definuje základní i pokročilá pravidla projektu.  
-Musí být dodržován, aby byla zajištěna kvalita, konzistence a dlouhodobá udržitelnost aplikace.
+- žádné funkce uvnitř JSX,  
+- žádné console.log v produkci,  
+- komponenty musí být malé a přehledné,  
+- každý soubor max. ~300–400 řádků (když je víc → rozdělit),  
+- žádná duplicita kódu,  
+- typy v TypeScriptu povinné, žádné `any`.
 
+---
+
+# 12. Pravidla pro spolupráci s ChatGPT
+
+Tato pravidla zavedl **Páťa**:
+
+- ChatGPT nesmí mazat žádná data → vše se archivuje.  
+- Dokumentace se píše v blocích A/B/C.  
+- Odpověď musí být v jednom bloku, aby šla zkopírovat.  
+- Pokud ChatGPT udělá chybu, musí vrátit celý blok znovu správně.  
+- Nic se nesmí rozhodovat bez explicitního potvrzení.  
+
+---
+
+# 13. Závěr
+
+Tento dokument definuje jednotný styl celého projektu.  
+Pokud se pravidla dodržují → projekt je:
+
+- stabilní,  
+- udržitelný,  
+- přehledný,  
+- škálovatelný,  
+- profesionální.
+
+Jakákoliv práce mimo tato pravidla je **nepřípustná**.
+
+---
+
+# 📜 Historické části dokumentu – PRAVIDLA PROJEKTU
+
+~~Původní úvaha: možná nebudeme potřebovat detailní pravidla.~~  
+Tento názor byl později odmítnut.
+
+~~Pravidla měla být jen v krátkém README.~~  
+Ukázalo se však, že je nutné je mít jako samostatný dokument.
+
+Tato sekce se bude plnit starými verzemi pravidel při každé aktualizaci.
