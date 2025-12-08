@@ -11,6 +11,7 @@ import PermissionTypesTile from './tiles/PermissionTypesTile'
 import PropertyTypesTile from './tiles/PropertyTypesTile'
 import UnitTypesTile from './tiles/UnitTypesTile'
 import RoleTypesTile from './tiles/RoleTypesTile'
+import PaymentTypesTile from './tiles/PaymentTypesTile'
 
 export default {
   id: '900-nastaveni',
@@ -64,7 +65,7 @@ export default {
       sectionId: 'types-settings',
       component: PermissionTypesTile,
       order: 20,
-    }
+    },
     {
       id: 'subject-types',
       label: 'Typy subjektů',
@@ -88,6 +89,14 @@ export default {
       sectionId: 'types-settings',
       component: UnitTypesTile,
       order: 50,
+    },
+    {
+      id: 'payment-types',
+      label: 'Typy plateb',
+      icon: 'banknote', // nebo 'wallet', 'credit-card'...
+      sectionId: 'types-settings',
+      component: PaymentTypesTile,
+      order: 18,
     },
     {
       id: 'theme-settings',
