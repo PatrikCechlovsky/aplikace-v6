@@ -10,9 +10,10 @@ import GenericTypeTile, {
 } from '@/app/UI/GenericTypeTile'
 
 import type {
-  PropertyType,
+  PropertyTypeRow,
   PropertyTypePayload,
 } from '../services/propertyTypes'
+
 import {
   fetchPropertyTypes,
   createPropertyType,
@@ -20,19 +21,20 @@ import {
 } from '../services/propertyTypes'
 
 /**
- * Mapování z DB řádku (PropertyType) na generický typový záznam
+ * Mapování z DB řádku (PropertyTypeRow) na generický typový záznam
  * používaný GenericTypeTile.
- * Stejná logika jako u SubjectTypesTile.
  */
-function mapRowToGeneric(row: PropertyType): GenericTypeItem {
+function mapRowToGeneric(row: PropertyTypeRow): GenericTypeItem {
   return {
     code: row.code,
     name: row.name,
-    description: row.description,
-    color: row.color,
-    icon: row.icon,
-    sort_order: row.sort_order ?? null,
-    active: row.active ?? true,
+    description: row.description ?? null,
+    color: row.color ?? null,
+    icon: row.icon ?? null,
+    // v DB máš order_index → v UI používáme sort_order
+    sort_order: row.order_index ?? null,
+    // sloupec active v property_types zatím nemáš → v UI vždy true
+    active: true,
   }
 }
 
@@ -46,11 +48,11 @@ function mapGenericToPayload(input: GenericTypeItem): PropertyTypePayload {
     description: input.description ?? null,
     color: input.color ?? null,
     icon: input.icon ?? null,
-    sort_order:
+    // zpátky do DB ukládáme order_index
+    order_index:
       typeof input.sort_order === 'number' && !Number.isNaN(input.sort_order)
         ? input.sort_order
         : null,
-    active: input.active ?? true,
   }
 }
 
@@ -60,7 +62,7 @@ export default function PropertyTypesTile() {
       title="Typy nemovitostí"
       description="Číselník typů nemovitostí (rodinný dům, bytový dům, pozemek, průmyslový objekt…)."
 
-      // načtení seznamu – napojení na Supabase přes service
+      // načtení seznamu – Supabase service
       fetchItems={async () => {
         const rows = await fetchPropertyTypes()
         return rows.map(mapRowToGeneric)
@@ -70,14 +72,14 @@ export default function PropertyTypesTile() {
       createItem={async (input) => {
         const payload = mapGenericToPayload(input)
         const created = await createPropertyType(input.code, payload)
-        return mapRowToGeneric(created as PropertyType)
+        return mapRowToGeneric(created)
       }}
 
       // update existujícího záznamu
       updateItem={async (codeKey, input) => {
         const payload = mapGenericToPayload(input)
         const updated = await updatePropertyType(codeKey, payload)
-        return mapRowToGeneric(updated as PropertyType)
+        return mapRowToGeneric(updated)
       }}
     />
   )
