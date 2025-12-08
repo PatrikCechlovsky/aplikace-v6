@@ -7,12 +7,13 @@ import type {
   ThemeSettings,
 } from '../../../lib/themeSettings'
 import {
+  applyThemeToLayout,
+  loadThemeFromLocalStorage,
+  saveThemeToLocalStorage,
   loadThemeSettingsFromSupabase,
   saveThemeSettingsToSupabase,
 } from '../../../lib/themeSettings'
 import { getCurrentSession } from '../../../lib/services/auth'
-
-const THEME_STORAGE_KEY = 'pronajimatel_theme'
 
 type ThemePreset = {
   id: string
@@ -118,59 +119,13 @@ const PRESETS: ThemePreset[] = [
   },
 ]
 
-// ---------------------------------------------------------
-// Aplikace tema na .layout
-// ---------------------------------------------------------
-
-function applyThemeToLayout(settings: ThemeSettings) {
-  if (typeof document === 'undefined') return
-  const layout = document.querySelector('.layout')
-  if (!layout) return
-
-  layout.classList.remove('theme-light', 'theme-dark')
-  layout.classList.remove(
-    'accent-neutral',
-    'accent-grey',
-    'accent-blue',
-    'accent-green',
-    'accent-purple',
-  )
-
-  const resolvedMode: ThemeMode =
-    settings.mode === 'auto'
-      ? window.matchMedia &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
-      : settings.mode
-
-  layout.classList.add(`theme-${resolvedMode}`)
-  layout.classList.add(`accent-${settings.accent}`)
-}
-
-function loadInitialFromLocalStorage(): ThemeSettings {
-  if (typeof window === 'undefined') {
-    return { mode: 'auto', accent: 'neutral' }
-  }
-  try {
-    const raw = window.localStorage.getItem(THEME_STORAGE_KEY)
-    if (!raw) return { mode: 'auto', accent: 'neutral' }
-    const parsed = JSON.parse(raw)
-    return {
-      mode: (parsed.mode as ThemeMode) ?? 'auto',
-      accent: (parsed.accent as ThemeAccent) ?? 'neutral',
-    }
-  } catch {
-    return { mode: 'auto', accent: 'neutral' }
-  }
-}
-
 export default function ThemeSettingsTile() {
   const [mode, setMode] = useState<ThemeMode>('auto')
   const [accent, setAccent] = useState<ThemeAccent>('neutral')
   const [isSaving, setIsSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
 
+  // 0) zjistíme aktuálního uživatele (jen na clientu)
   useEffect(() => {
     let cancelled = false
 
@@ -187,8 +142,10 @@ export default function ThemeSettingsTile() {
     }
   }, [])
 
+  // 1) Při mountu načteme theme z localStorage, případně následně z DB
   useEffect(() => {
-    const local = loadInitialFromLocalStorage()
+    // localStorage – aby se theme aplikovalo ihned
+    const local = loadThemeFromLocalStorage()
     setMode(local.mode)
     setAccent(local.accent)
     applyThemeToLayout(local)
@@ -203,14 +160,7 @@ export default function ThemeSettingsTile() {
       setMode(fromDb.mode)
       setAccent(fromDb.accent)
       applyThemeToLayout(fromDb)
-      try {
-        window.localStorage.setItem(
-          THEME_STORAGE_KEY,
-          JSON.stringify(fromDb),
-        )
-      } catch {
-        /* ignore */
-      }
+      saveThemeToLocalStorage(fromDb)
     })()
 
     return () => {
@@ -222,12 +172,7 @@ export default function ThemeSettingsTile() {
     setMode(next.mode)
     setAccent(next.accent)
     applyThemeToLayout(next)
-
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(next))
-    } catch {
-      /* ignore */
-    }
+    saveThemeToLocalStorage(next)
 
     if (userId) {
       try {
