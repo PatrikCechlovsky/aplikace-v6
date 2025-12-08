@@ -7,6 +7,9 @@ import ThemeSettingsSection from './sections/ThemeSettingsSection'
 import IconSettingsSection from './sections/IconSettingsSection'
 import ThemeSettingsTile from './tiles/ThemeSettingsTile'
 
+// ⬇⬇⬇ NOVÝ IMPORT
+import PropertyTypesTile from './tiles/PropertyTypesTile'
+
 export default {
   id: '900-nastaveni',
   order: 900,
@@ -44,12 +47,23 @@ export default {
 
   // 3. ÚROVEŇ – TILES (konkrétní číselníky) přiřazené do sekcí
   tiles: [
+    // ⬇⬇⬇ NOVÁ DLAŽDICE – typy nemovitostí
+    {
+      id: 'property-types',
+      label: 'Typy nemovitostí',
+      icon: 'building-2',
+      sectionId: 'types-settings',
+      component: PropertyTypesTile,
+      order: 10,
+    },
+
     {
       id: 'subject-types',
       label: 'Typy subjektů',
       icon: 'list',  // nebo vytvoř novou ikonu např. "subject-type"
       sectionId: 'types-settings',
-      component: SubjectTypesTile
+      component: SubjectTypesTile,
+      order: 15,
     },
     {
       id: 'theme-settings',
