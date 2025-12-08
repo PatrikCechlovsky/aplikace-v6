@@ -237,10 +237,14 @@ Každé pole má definované:
 - chování v UI  
 - integraci s formStateManagerem  
 
-# 3.7 EntityList – specifikace chování seznamu entit
+# 3.7 ListView – specifikace přehledové obrazovky
 
-**EntityList** je základní komponenta pro zobrazování přehledů (např. seznam subjektů, seznam nemovitostí, seznam nájemníků atd.).  
-Slouží jako univerzální tabulkový výpis libovolné entity a tvoří jádro přehledové části aplikace.
+**ListView** je hlavní komponenta používaná pro zobrazování přehledů entit  
+(např. seznam subjektů, seznam nemovitostí, seznam nájemníků).  
+Obsahuje uživatelské ovládací prvky (filtr, řazení, archivace, akce)  
+a uvnitř používá komponentu **EntityList** jako tabulku.
+
+ListView tvoří kompletní přehledovou obrazovku.
 
 ---
 
@@ -248,99 +252,102 @@ Slouží jako univerzální tabulkový výpis libovolné entity a tvoří jádro
 - Obsahuje globální fulltextový filtr („Filtrovat…“).
 - Fulltext hledá:
   - ve všech **viditelných sloupcích**
-  - i v **neviditelných sloupcích**, pokud jsou označeny jako *searchable*
-- Filtrace se aplikuje okamžitě a kombinuje se s dalšími filtry (např. „Zobrazit archivované“).
+  - i v **neviditelných sloupcích** označených jako *searchable*
+- Filtrace se aplikuje okamžitě a kombinuje se s dalšími filtry.
 
 ---
 
 ## 3.7.2 Zobrazit archivované
 - Uživatel může přepnout checkbox „Zobrazit archivované“.
-- Může fungovat dvěma způsoby (dle konfigurace modulu):
-  - zobrazit aktivní + archivované záznamy dohromady  
-  - nebo zobrazit jen archivované záznamy  
-- Archivované řádky mohou být vizuálně odlišeny (např. světlejší barva).
+- Modul si určuje chování:
+  - zobrazit aktivní + archivované
+  - nebo zobrazit pouze archivované
+- Archivované záznamy mohou být vizuálně odlišeny.
 
 ---
 
-## 3.7.3 Typ entity (barevný badge v prvním sloupci)
-- První sloupec zobrazuje typ entity jako **barevný štítek** (např. PO, FO, nájemník, pronajímatel…).
-- Barva, název i pořadí badge jsou dynamicky načítány z číselníku **„Typy subjektů“**.
-- Jakákoliv změna v číselníku se automaticky projeví v seznamu.
+## 3.7.3 Typ entity v prvním sloupci (barevný badge)
+- První sloupec může zobrazovat typ entity jako **barevný štítek** (PO, FO, nájemník…).
+- Barva, název i pořadí badge se načítají z číselníku (např. „Typy subjektů“).
+- Každá změna v číselníku se automaticky projeví v ListView.
 
 ---
 
-## 3.7.4 Výchozí řazení podle typu
-- Seznam je standardně řazen podle hodnoty `order` z číselníku typu.
-- Toto je **výchozí stav řazení**, než uživatel klikne na některý sloupec.
-- Uživatelské řazení přepíše výchozí.
+## 3.7.4 Výchozí řazení
+- Při prvním načtení je seznam seřazen podle logiky modulu  
+  (např. podle `subject_type.order`).
+- Toto výchozí řazení se aplikuje, dokud uživatel neklikne na jiný sloupec.
 
 ---
 
-## 3.7.5 Řazení všech viditelných sloupců
-- Každý sloupec může být seřazen:
+## 3.7.5 Řazení sloupců
+- Každý viditelný sloupec lze seřadit:
   - A → Z  
   - Z → A  
-- Ikona (▲/▼) označuje aktivní směr řazení.
-- Třetí kliknutí může (pokud konfigurace dovolí) vrátit výchozí řazení.
+- Ikona šipky označuje aktivní stav řazení.
+- Konfigurace může podporovat i „reset“ na výchozí řazení.
+
+ListView deleguje vykreslení tabulky na **EntityList**, ale logiku řazení řídí samo.
 
 ---
 
 ## 3.7.6 Vazba na CommonActions
-- EntityList sdílí s CommonActions stav o:
-  - aktivním řádku
-  - prázdném výběru
-- Díky tomu může CommonActions:
-  - aktivovat / deaktivovat akce (upravit, smazat, archivovat…)
-  - skrývat akce podle role uživatele
+ListView sdílí s CommonActions informace o:
+
+- aktivním řádku (vybraná entita)
+- prázdném výběru
+
+Díky tomu CommonActions může:
+
+- aktivovat / deaktivovat akce (editace, mazání, archivace…)
+- skrývat akce podle role uživatele
+- reagovat na dirty state (u detailů)
 
 ---
 
 ## 3.7.7 Role a oprávnění
-- Tlačítka akcí mohou být:
-  - **aktivní** – uživatel má oprávnění
-  - **zašedlé** – uživatel nemá právo akci vykonat
-  - **skryté** – akce se vůbec nezobrazí pro roli, které nepřísluší
-- Oprávnění se odvozují z rolí a konfigurace modulu.
+ListView respektuje oprávnění uživatele:
+
+Tlačítka akcí mohou být:
+- **aktivní**, pokud má uživatel permission
+- **zašedlé**, pokud permission nemá
+- **skrytá**, pokud akce pro danou roli neexistuje
 
 ---
 
-## 3.7.8 Volitelné: výběr viditelných sloupců (ColumnPicker)
-- Umožňuje uživateli vybrat, které sloupce chce vidět.
-- Povinné sloupce mohou být uzamčené.
-- Nastavení viditelnosti se ukládá:
-  - do localStorage  
-  - nebo budoucí verze do uživatelského profilu  
-- Vhodné pro moduly s velkým počtem atributů.
+## 3.7.8 ColumnPicker – volitelné nastavení viditelnosti sloupců
+- Uživatel může zapnout/vypnout viditelnost sloupců.
+- Povinné sloupce lze trvale uzamknout.
+- Nastavení lze ukládat:
+  - lokálně (localStorage)
+  - nebo později do profilu uživatele
+
+ColumnPicker je součástí ListView, nikoli EntityList.
 
 ---
 
-# 3.8 ListView – (bude doplněno později)
-*Placeholder – připravené místo pro budoucí detailní specifikaci ListView.*
+# 3.8 EntityList – specifikace tabulkové komponenty (bude doplněno)
+*Placeholder – EntityList je jednoduchá tabulka bez filtrů a bez logiky akcí.*
 
 ---
 
 # 3.9 DetailView – (bude doplněno později)
-*Placeholder – připravené místo pro DetailView.*
 
 ---
 
 # 3.10 EntityDetailFrame – (bude doplněno později)
-*Placeholder – připravené místo pro EntityDetailFrame.*
 
 ---
 
 # 3.11 RelationListWithDetail – (bude doplněno později)
-*Placeholder – připravené místo pro RelationListWithDetail.*
 
 ---
 
 # 3.12 ConfigListWithForm – (bude doplněno později)
-*Placeholder – připravené místo pro ConfigListWithForm.*
 
 ---
 
 # 3.13 ColumnPicker – (bude doplněno později)
-*Placeholder – připravené místo pro ColumnPicker.*
 
 ---
 
