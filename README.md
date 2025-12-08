@@ -1,237 +1,158 @@
-# 🏠 Pronajímatel v6 — Kompletní dokumentace (aktuální stav)
-
-Tento dokument shrnuje **celý současný stav projektu**, vše co jsme spolu vytvořili, a zároveň definuje **pravidla pro další práci**.  
-Je plně konsolidovaný, profesionálně uspořádaný a připravený pro vývojáře i budoucí rozšiřování.
-
----
-
-# 0. CÍL APLIKACE
-
-Aplikace Pronajímatel v6 slouží ke správě:
-- nemovitostí  
-- jednotek  
-- nájemníků  
-- smluv  
-- plateb  
-- služeb  
-- dokumentů  
-- komunikace  
-
-Postaveno na:
-- **Next.js 14 (App Router)**
-- **Supabase Auth + DB + RLS**
-- **Modulárním UI frameworku**
-- **Striktně definovaném 6‑sekčním layoutu**
+# 🏠 Pronajímatel v6
+Moderní modulární aplikace pro správu nemovitostí, jednotek, nájemníků, smluv, plateb, dokumentů a komunikace.  
+Postaveno na **Next.js 14**, **Supabase**, a vlastním **6-sekčním UI frameworku**.
 
 ---
 
-# 1. ARCHITEKTURA UI — 6 SEKČNÍ LAYOUT
+## 🚀 Funkce
 
-Celá aplikace pracuje s jednotným rozložením:
+- Správa nemovitostí a jednotek  
+- Správa nájemníků a smluv  
+- Přehled plateb (plánované vs. skutečné)  
+- Evidence služeb a měřidel  
+- Modul dokumentů (PDF, přílohy)  
+- Modul komunikace (e-maily, historie)  
+- Plně modulární architektura  
+- Autentizace přes Supabase + RLS  
+- Dynamický Sidebar a CommonActions  
+- Podpora světlého/tmavého režimu  
+
+---
+
+## 📁 Struktura projektu
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│ 1–2: Sidebar (HomeButton + dynamické moduly)                  │
-├──────────────┬───────────────────────────────────────────────┤
-│              │ 3: Horní lišta                                 │
-│ Sidebar      │    • Breadcrumbs vlevo                         │
-│ (left)       │    • HomeActions vpravo                        │
-│              ├───────────────────────────────────────────────┤
-│              │ 4: CommonActions — lišta obecných akcí         │
-│              ├───────────────────────────────────────────────┤
-│              │ 5: Content — přehled / detail / formulář       │
-└──────────────┴───────────────────────────────────────────────┘
-```
+/app/
+  /UI/              – globální UI komponenty
+  /modules/         – modulární systém (dlaždice, formuláře, přehledy)
+  /auth/            – přihlášení a session
 
-### Stav implementace
-| Sekce | Stav |
-|-------|------|
-| Sidebar | ✔ Hotovo |
-| HomeButton | ✔ Hotovo |
-| Breadcrumbs | ✔ Základní verze |
-| HomeActions | ✔ DisplayName, ikonky, logout |
-| CommonActions | ✔ Verze v1 (pevná), připravená na dynamiku |
-| Content Engine | ✔ Základní rendering |
+/docs/              – hlavní dokumentace 01–10
+/docs/archive/      – archiv historických poznámek
+
+/supabase/
+  migrations/       – SQL migrace (DB verze)
+  seeds/            – startovní data
+
+public/             – statické soubory
+```
 
 ---
 
-# 2. AUTENTIZACE – Supabase Auth
+## 📚 Dokumentace
 
-Aplikace pracuje se stavem:
+Kompletní systém dokumentace se nachází ve složce **/docs/**  
+a je rozdělen do 10 základních kapitol:
 
-```ts
-type SessionUser = {
-  email: string | null
-  displayName?: string | null
-}
-```
+| Číslo | Soubor | Popis |
+|-------|--------|--------|
+| 01 | Executive Summary | Shrnutí projektu |
+| 02 | Architecture | Architektura aplikace |
+| 03 | UI System | 6-sekční UI, komponenty, workflow |
+| 04 | Modules | Modulární systém aplikace |
+| 05 | Auth & RLS | Supabase autentizace + zabezpečení |
+| 06 | Data Model | Datový model + RLS schéma |
+| 07 | Deployment | Nasazení Vercel + Supabase |
+| 08 | Plan vývoje | Roadmapa projektu |
+| 09 | Project Rules | Pravidla projektu |
+| 10 | Glossary | Slovník pojmů |
 
-### DisplayName se načítá z:
-- `session.user.user_metadata.display_name`
-- fallback `full_name`
-- fallback `name`
-- fallback `email`
-- fallback `"Uživatel"`
-
-### Funkční logika:
-- `getCurrentSession()` načte session při otevření aplikace
-- `onAuthStateChange()` detekuje login/logout
-- `HomeActions` zobrazují displayName + ikony + odhlášení
-- nepřihlášený uživatel může vidět pouze login panel
+Každý dokument obsahuje:  
+**A = finální obsah**, **B = historické části**, **C = archiv (samostatný soubor)**.
 
 ---
 
-# 3. MODULÁRNÍ SYSTÉM A STRUKTURA MODULŮ
+## 🛠 Instalace a spuštění
 
-Každý modul má strukturu:
-
-```
-app/modules/<id>-<nazev>/
-  module.config.js
-  tiles/
-  forms/
-  overview/
+### 1. Klonování repa
+```bash
+git clone https://github.com/...
+cd aplikace-v6
 ```
 
-### module.config.js musí obsahovat:
-```js
-{
-  id: '040-nemovitosti',
-  label: 'Nemovitosti',
-  icon: 'building',
-  order: 40,
-  enabled: true,
-  // budoucí rozšíření:
-  // commonActions: { overview: [...], detail: [...], form: [...] }
-}
+### 2. Instalace závislostí
+```bash
+npm install
 ```
 
-### Dynamické načítání modulů
-Sidebar automaticky:
-- načte vše z `MODULE_SOURCES`
-- odfiltruje `enabled === false`
-- seřadí podle `order`
+### 3. Přidání `.env.local`
+Nutné proměnné (minimální):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+APP_BASE_URL=http://localhost:3000
+```
+
+### 4. Lokální spuštění
+```bash
+npm run dev
+```
+
+Aplikace poběží na:  
+http://localhost:3000
 
 ---
 
-# 4. UI PRVKY — DETAILNÍ POPIS
+## 🔐 Bezpečnost
 
-## 4.1 HomeButton
-- obsahuje název aplikace + ikonu domů
-- reaguje na kliknutí (`onClick`)
-- má stav `disabled`
-- při kliknutí navrací uživatele na dashboard
-
-## 4.2 Sidebar
-- dynamicky načítá moduly
-- zobrazuje ikony i popisy
-- podporuje aktivní modul (`activeModuleId`)
-- volá `onModuleSelect`
-
-## 4.3 Breadcrumbs
-Aktuální stav:
-- statická verze: „Dashboard / Domov“
-- zobrazuje ikonku domů (přes getIcon)
-
-Budoucí stav:
-- dynamický builder podle aktivního modulu / dlaždice / detailu
-- vícestupňová cesta
-
-## 4.4 HomeActions
-V pravé části horní lišty.
-
-Obsah:
-- displayName uživatele  
-- ikona profilu 👤 (placeholder)  
-- lupa 🔍 (globální search – placeholder)
-- zvonek 🔔 (notifikace – placeholder)
-- tlačítko **Odhlásit**
-
-Podpora:
-- `disabled` stav (před přihlášením)
-
-## 4.5 CommonActions (verze 1)
-Aktuálně pevný výpis tlačítek pro demonstraci UI.
-
-Centrální definice akcí:
-```
-add, edit, view, duplicate, attach,
-archive, delete,
-save, saveAndClose, cancel
-```
-
-Budoucí systém (verze 2):
-- konfigurace akcí v `module.config.js`
-- kombinace s oprávněními podle role
-- kombinace se stavem formuláře (dirty / clean)
-- filtr podle výběru položky (requiresSelection)
-
-## 4.6 Content
-- zobrazuje přehled, detail, formulář
-- renderuje se podle aktivního modulu a stavu aplikace
-- login panel se zobrazuje mimo modulový systém
+- RLS je aktivní na všech tabulkách  
+- SERVICE_ROLE_KEY nesmí nikdy na frontend  
+- žádné credentials v repozitáři  
+- všechny citlivé hodnoty pouze v `.env.local` nebo Vercel ENV  
 
 ---
 
-# 5. CODESTYLE (ZÁKLADNÍ PRAVIDLA)
+## 🌐 Deployment
 
-### Obecně:
-- komponenty v `app/UI/` jsou malé, znovupoužitelné
-- moduly v `app/modules/` obsahují business logiku
-- názvy komponent: **PascalCase**
-- názvy props/ proměnných: **camelCase**
-- event handlery: `onXxx`, interně `handleXxx`
-- žádné hooky nebo funkce uvnitř JSX — vždy nad `return`
-- všechny ikony přes `getIcon(name)`
+Produkční prostředí běží na:
+
+- **Vercel** (Next.js Application Hosting)  
+- **Supabase** (DB + Auth + Storage + RLS)  
+
+Podrobný návod → `/docs/07-deployment.md`
 
 ---
 
-# 6. STAV IMPLEMENTACE (PŘEHLED)
+## 🔄 Verzování
 
-| Oblast | Stav |
-|--------|------|
-| Základní layout | ✔ Hotovo |
-| Sidebar engine | ✔ Hotovo |
-| HomeButton | ✔ Hotovo |
-| Breadcrumbs | ✔ Hotovo (zatím statické) |
-| HomeActions | ✔ DisplayName + ikony + logout |
-| CommonActions | ✔ Verze 1 (pevné), ⏳ Verze 2 |
-| Dynamické akce podle modulů | ⏳ |
-| Role & oprávnění | ⏳ |
-| Form engine | ✔ Základ |
-| Moduly Dokumenty / Komunikace / Služby | ⏳ |
+Používáme:
+
+- **git flow** (`main`, `feature/*`)  
+- **semantic versioning** (`major.minor.patch`)  
+- verzované SQL migrace (`/supabase/migrations/`)  
 
 ---
 
-# 7. TODO — CO BUDEME DĚLAT DÁL
+## 🤝 Pravidla projektu
 
-### 🔜 Nejbližší úkoly
-- propojit CommonActions s module.config.js  
-- přidat definici akcí pro každý formulář / dlaždici  
-- zavést role & permission systém  
-- dynamické breadcrumbs  
-- stav výběru v přehledech (requiresSelection)  
-- dirty state formuláře (requiresDirty)  
+Vývoj se řídí závazným dokumentem:  
+`/docs/09-project-rules.md`
 
-### 🔜 Střednědobé úkoly
-- rozšíření modulů (Služby, Komunikace, Dokumenty)
-- vylepšení dashboardu
-- přidání univerzálního Form Engine
+Obsahuje:
 
-### 🔜 Dlouhodobé úkoly
-- notifikační centrum
-- automatické generování dokumentů
-- e-mailové šablony
+- Naming conventions  
+- Struktura repozitáře  
+- UI/UX standardy  
+- Modulární pravidla  
+- Git workflow  
+- Dokumentační pravidla  
 
 ---
 
-# 8. ZÁVĚR
+## 🗂 Archiv
 
-Tento dokument představuje konzolidovaný stav projektu Pronajímatel v6  
-a slouží jako závazný referenční dokument pro vývoj.
+Veškerý starší obsah přesunutý z README  
+je uložen v `/docs/archive/`  
+pod vlastním souborem.
 
-Jakékoliv nové UI nebo modul MUSÍ respektovat:
-1. 6‑sekční layout  
-2. CommonActions v definované podobě  
-3. Modulární architekturu  
-4. Supabase autentizaci a práci s metadaty  
+Nic se nemaže, vše se archivuje podle pravidel projektu.
+
+---
+
+## 📌 Závěr
+
+Tento projekt má jasnou strukturu, dokumentaci, pravidla i roadmapu.  
+README slouží jako přehledný vstupní bod, zatímco detailní informace jsou uloženy ve `/docs/01–10`.
+
