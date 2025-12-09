@@ -5,8 +5,9 @@ import SubjectTypesTile from './tiles/SubjectTypesTile'
 import TypesSettingsSection from './sections/TypesSettingsSection'
 import ThemeSettingsSection from './sections/ThemeSettingsSection'
 import IconSettingsSection from './sections/IconSettingsSection'
-import ThemeSettingsTile from './tiles/ThemeSettingsTile'
 
+import ThemeSettingsTile from './tiles/ThemeSettingsTile'
+import IconDisplaySettingsTile from './tiles/IconDisplaySettingsTile'
 import PermissionTypesTile from './tiles/PermissionTypesTile'
 import PropertyTypesTile from './tiles/PropertyTypesTile'
 import UnitTypesTile from './tiles/UnitTypesTile'
@@ -45,6 +46,7 @@ export default {
       component: IconSettingsSection,
       introTitle: 'Nastavení ikon',
       introText: 'Mapování ikon modulů, akcí a číselníků.'
+            'Vyber, jestli chceš v aplikaci používat ikonky nebo jen textové popisky.',
     }
   ],
 
@@ -105,6 +107,14 @@ export default {
       sectionId: 'theme-settings',
       component: ThemeSettingsTile,
       order: 20, // libovolné pořadí mezi ostatními
+    },
+     {
+      id: 'icon-display',
+      label: 'Zobrazení ikon',
+      icon: 'smile',
+      sectionId: 'icon-settings',
+      component: IconDisplaySettingsTile,
+      order: 10,
     },
     // později třeba:
     // { id: 'contract-types', label: 'Typy smluv', sectionId: 'types-settings', ... }
