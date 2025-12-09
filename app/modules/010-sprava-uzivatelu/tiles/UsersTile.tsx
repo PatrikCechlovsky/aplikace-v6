@@ -1,6 +1,6 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
- * PURPOSE: Tile modulu 010 – čistý ListView se seznamem uživatelů.
+ * PURPOSE: Tile modulu 010 – ListView se seznamem uživatelů.
  *          Žádný detail vpravo, jen přehled + akce v CommonActions.
  */
 
@@ -50,25 +50,44 @@ const MOCK_USERS: MockUser[] = [
   },
 ]
 
-// Sloupce pro EntityList – vzor: Role | Jméno | E-mail | Archivován
+// 💡 Dočasná mapovací tabulka barev rolí
+// Později nahradíme reálnými barvami z modulu 900 (typy rolí).
+const ROLE_COLORS: Record<string, string> = {
+  Administrátor: '#f4d35e',
+  Manager: '#e05570',
+  Nájemník: '#1e6fff',
+  Pronajímatel: '#1fb086',
+  Údržbář: '#d63ea5',
+  Uživatel: '#6b7280',
+}
+
+// Sloupce pro EntityList – Role | Jméno | E-mail | Archivován
 const COLUMNS: EntityListColumn[] = [
-  { key: 'roleLabel', label: 'Role', width: '18%' },
-  { key: 'displayName', label: 'Jméno', width: '32%' },
-  { key: 'email', label: 'E-mail', width: '40%' },
-  { key: 'isArchived', label: 'Archivován', width: '10%' },
+  { key: 'roleLabel', label: 'ROLE', width: '18%' },
+  { key: 'displayName', label: 'JMÉNO', width: '32%' },
+  { key: 'email', label: 'E-MAIL', width: '40%' },
+  { key: 'isArchived', label: 'A…', width: '10%', align: 'center' },
 ]
 
 // Mapování mock dat na EntityListRow
 function toRow(user: MockUser): EntityListRow {
-  // TODO: až napojíme modul 900, vezmeme barvu role z číselníku.
-  const isAdmin = user.roleLabel.toLowerCase().includes('admin')
-  const typeColor = isAdmin ? '#facc15' : '#6b7280' // žlutá vs. šedá jako dočasný placeholder
+  const color =
+    ROLE_COLORS[user.roleLabel] ??
+    '#6b7280' // fallback – šedá, když roli neznáme
 
   return {
     id: user.id,
-    typeColor,
+    // typeColor můžeme nechat pro levý proužek (stejné barvy jako badge)
+    typeColor: color,
     data: {
-      roleLabel: user.roleLabel,
+      roleLabel: (
+        <span
+          className="generic-type__name-badge"
+          style={{ backgroundColor: color }}
+        >
+          {user.roleLabel}
+        </span>
+      ),
       displayName: user.displayName,
       email: user.email,
       isArchived: user.isArchived ? '✓' : '',
@@ -107,7 +126,7 @@ export default function UsersTile() {
 
   const handleListActionClick = useCallback(
     (id: CommonActionId) => {
-      // TODO: tady později skutečná logika (nový uživatel, otevřít detail, archivovat…)
+      // TODO: později skutečná logika (Nový, Zobrazit, Upravit, Archivovat…)
       console.log('ListView akce:', id, 'vybraný ID:', selectedId)
     },
     [selectedId],
