@@ -1,11 +1,11 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailForm.tsx
- * PURPOSE: Základní detail uživatele pro modul 010 (admin pohled)
+ * PURPOSE: Základní detail uživatele pro modul 010 (admin pohled).
  */
 
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 type UserDetailFormProps = {
   user: {
@@ -18,11 +18,43 @@ type UserDetailFormProps = {
     createdAt: string
     isArchived?: boolean
   }
+  // callback zvenku (UsersTile) – potřebujeme pro CommonActions (isDirty)
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export default function UserDetailForm({ user }: UserDetailFormProps) {
-  // Zatím jen controlled „fake“ formulář – hodnoty jsou read-only / mock.
-  // Později napojíme na form state (React Hook Form, vlastní hook, atd.).
+export default function UserDetailForm({
+  user,
+  onDirtyChange,
+}: UserDetailFormProps) {
+  // jednoduchý lokální stav – zatím jen mock (později napojíme na reálná data)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState(user.phone ?? '')
+  const [email, setEmail] = useState(user.email)
+
+  // Načtení jména z displayName (jen pro demo, reálně půjde z polí subjectu)
+  useEffect(() => {
+    const parts = user.displayName.split(' ')
+    if (parts.length === 1) {
+      setFirstName(parts[0])
+      setLastName('')
+    } else {
+      setFirstName(parts.slice(0, -1).join(' '))
+      setLastName(parts.slice(-1).join(' '))
+    }
+  }, [user.displayName])
+
+  // Dirty flag – kdykoli se změní některé pole
+  useEffect(() => {
+    const isDirty =
+      firstName.trim() !== '' ||
+      lastName.trim() !== '' ||
+      phone !== (user.phone ?? '') ||
+      email !== user.email
+
+    onDirtyChange?.(isDirty)
+  }, [firstName, lastName, phone, email, user.phone, user.email, onDirtyChange])
+
   return (
     <div className="user-detail">
       {/* Sekce PROFIL */}
@@ -34,7 +66,8 @@ export default function UserDetailForm({ user }: UserDetailFormProps) {
             <label className="user-detail__label">Jméno</label>
             <input
               className="user-detail__input"
-              defaultValue={user.displayName.split(' ').slice(0, -1).join(' ')}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               placeholder="Jméno"
             />
           </div>
@@ -43,7 +76,8 @@ export default function UserDetailForm({ user }: UserDetailFormProps) {
             <label className="user-detail__label">Příjmení</label>
             <input
               className="user-detail__input"
-              defaultValue={user.displayName.split(' ').slice(-1).join(' ')}
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               placeholder="Příjmení"
             />
           </div>
@@ -52,7 +86,8 @@ export default function UserDetailForm({ user }: UserDetailFormProps) {
             <label className="user-detail__label">Telefon</label>
             <input
               className="user-detail__input"
-              defaultValue={user.phone ?? ''}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               placeholder="+420 777 000 000"
             />
           </div>
@@ -61,7 +96,8 @@ export default function UserDetailForm({ user }: UserDetailFormProps) {
             <label className="user-detail__label">E-mail</label>
             <input
               className="user-detail__input"
-              defaultValue={user.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="uživatel@example.com"
             />
           </div>
@@ -77,7 +113,7 @@ export default function UserDetailForm({ user }: UserDetailFormProps) {
             <label className="user-detail__label">Role</label>
             <input
               className="user-detail__input user-detail__input--readonly"
-              defaultValue={user.roleLabel}
+              value={user.roleLabel}
               readOnly
             />
           </div>
@@ -86,7 +122,7 @@ export default function UserDetailForm({ user }: UserDetailFormProps) {
             <label className="user-detail__label">2FA</label>
             <input
               className="user-detail__input user-detail__input--readonly"
-              defaultValue={
+              value={
                 user.twoFactorMethod
                   ? user.twoFactorMethod.toUpperCase()
                   : 'Nenastaveno'
@@ -99,14 +135,12 @@ export default function UserDetailForm({ user }: UserDetailFormProps) {
             <label className="user-detail__label">Stav účtu</label>
             <input
               className="user-detail__input user-detail__input--readonly"
-              defaultValue={user.isArchived ? 'Archivovaný' : 'Aktivní'}
+              value={user.isArchived ? 'Archivovaný' : 'Aktivní'}
               readOnly
             />
           </div>
         </div>
       </section>
-
-      {/* Můžeš sem později přidat záložku Role & Oprávnění jako samostatný komponent */}
 
       <style jsx>{`
         .user-detail {
