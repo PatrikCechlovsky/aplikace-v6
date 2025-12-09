@@ -1,21 +1,22 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
- * PURPOSE: Hlavní tile modulu 010 – seznam uživatelů + základní detail
+ * PURPOSE: Hlavní tile modulu 010 – seznam uživatelů + základní detail.
  */
 
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import EntityList, {
   type EntityListColumn,
   type EntityListRow,
 } from '@/app/UI/EntityList'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
-import CommonActions from '@/app/UI/CommonActions'
-import type { CommonActionId } from '@/app/UI/CommonActions'
+import CommonActions, {
+  type CommonActionId,
+} from '@/app/UI/CommonActions'
 import UserDetailForm from '../forms/UserDetailForm'
 
-// 🚧 Dočasná mock data – později napojíme na Supabase / subject tabulku
+// Dočasná mock data – později napojíme na tabulku subject
 type MockUser = {
   id: string
   displayName: string
@@ -50,7 +51,7 @@ const MOCK_USERS: MockUser[] = [
   },
   {
     id: 'u-003',
-    displayName: 'Test Archivovaný',
+    displayName: 'Archivovaný uživatel',
     email: 'archiv@example.com',
     phone: '',
     roleLabel: 'Uživatel',
@@ -86,20 +87,9 @@ function toRow(user: MockUser): EntityListRow {
   }
 }
 
-// Definice akcí v horní liště detailu
-type UserCommonAction = {
-  id: CommonActionId
-  label: string
-}
-
-const DETAIL_ACTIONS: UserCommonAction[] = [
-  { id: 'save', label: 'Uložit' },
-  { id: 'saveAndClose', label: 'Uložit a zavřít' },
-  { id: 'cancel', label: 'Zrušit' },
-]
-
 export default function UsersTile() {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
 
   const rows: EntityListRow[] = useMemo(
     () => MOCK_USERS.map(toRow),
@@ -110,21 +100,53 @@ export default function UsersTile() {
     (MOCK_USERS.find((u) => u.id === selectedId) as MockUser | undefined) ??
     null
 
+  const hasSelection = !!selectedUser
+
+  const handleListActionClick = useCallback((id: CommonActionId) => {
+    // TODO: tady později napojíme skutečnou logiku (nový uživatel, archivace, atd.)
+    console.log('Listační akce:', id)
+  }, [])
+
+  const handleDetailActionClick = useCallback(
+    (id: CommonActionId) => {
+      // TODO: tady později napojíme ukládání formuláře apod.
+      console.log('Detail akce:', id)
+
+      if (id === 'cancel') {
+        setIsDirty(false)
+      }
+
+      if (id === 'save' || id === 'saveAndClose') {
+        // tady bude save → po úspěchu:
+        setIsDirty(false)
+      }
+    },
+    [],
+  )
+
   return (
     <div className="users-tile">
       <div className="users-tile__layout">
-        {/* Levá část – seznam uživatelů */}
+        {/* Levý panel – seznam uživatelů */}
         <div className="users-tile__list-pane">
           <div className="users-tile__list-header">
-            <h2 className="users-tile__title">Uživatelé</h2>
-            <p className="users-tile__subtitle">
-              Seznam všech uživatelů systému (mock data – později napojíme na
-              Supabase).
-            </p>
+            <div>
+              <h2 className="users-tile__title">Uživatelé</h2>
+              <p className="users-tile__subtitle">
+                Seznam všech uživatelů systému. (Zatím mock data – později
+                napojíme na tabulku subjektů.)
+              </p>
+            </div>
+
+            <CommonActions
+              align="right"
+              actions={['add', 'edit', 'archive', 'delete']}
+              hasSelection={hasSelection}
+              onActionClick={handleListActionClick}
+            />
           </div>
 
-          {/* TODO: filtry + fulltext (zatím jen seznam) */}
-
+          {/* TODO: Filtry – fulltext, role, stav, 2FA */}
           <EntityList
             columns={COLUMNS}
             rows={rows}
@@ -134,43 +156,26 @@ export default function UsersTile() {
           />
         </div>
 
-        {/* Pravá část – detail vybraného uživatele */}
+        {/* Pravý panel – detail vybraného uživatele */}
         <div className="users-tile__detail-pane">
           {selectedUser ? (
             <EntityDetailFrame
               title={selectedUser.displayName}
               subtitle={selectedUser.email}
-              attachmentsSlot={
-                <div className="text-xs text-gray-500">
-                  Přílohy uživatele budou doplněny později.
-                </div>
-              }
-              systemInfoSlot={
-                <div className="text-xs text-gray-500 space-y-1">
-                  <div>ID: {selectedUser.id}</div>
-                  <div>Vytvořeno: {selectedUser.createdAt}</div>
-                  <div>
-                    Stav:{' '}
-                    {selectedUser.isArchived ? 'Archivovaný' : 'Aktivní'}
-                  </div>
-                </div>
-              }
             >
               <div className="users-tile__detail-header">
                 <CommonActions
-                  items={DETAIL_ACTIONS.map((a) => ({
-                    id: a.id,
-                    label: a.label,
-                    icon:
-                      a.id === 'save' || a.id === 'saveAndClose'
-                        ? 'save'
-                        : 'cancel',
-                  }))}
                   align="right"
+                  actions={['save', 'saveAndClose', 'cancel']}
+                  isDirty={isDirty}
+                  onActionClick={handleDetailActionClick}
                 />
               </div>
 
-              <UserDetailForm user={selectedUser} />
+              <UserDetailForm
+                user={selectedUser}
+                onDirtyChange={setIsDirty}
+              />
             </EntityDetailFrame>
           ) : (
             <div className="users-tile__detail-empty">
@@ -204,6 +209,15 @@ export default function UsersTile() {
           padding: 16px;
           box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
           min-height: 320px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .users-tile__list-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
         }
 
         .users-tile__title {
@@ -226,7 +240,7 @@ export default function UsersTile() {
           display: flex;
           align-items: center;
           justify-content: center;
-          height: 100%;
+          flex: 1;
           font-size: 0.9rem;
           color: #6b7280;
         }
