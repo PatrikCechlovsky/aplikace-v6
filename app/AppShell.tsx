@@ -24,11 +24,11 @@ import {
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
-import {
-  applyThemeToLayout,
-  loadThemeFromLocalStorage,
-} from '@/app/lib/themeSettings'
 
+import {
+  applyIconDisplayToLayout,
+  loadIconDisplayFromLocalStorage,
+} from '@/app/lib/iconDisplaySettings'
 type SessionUser = {
   email?: string | null
   displayName?: string | null
@@ -89,9 +89,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // 🎨 Při mountu aplikace nastavíme theme z localStorage
   useEffect(() => {
-    const settings = loadThemeFromLocalStorage()
-    applyThemeToLayout(settings)
-  }, [])
+    const themeSettings = loadThemeFromLocalStorage()
+    applyThemeToLayout(themeSettings)
+
+    const iconSettings = loadIconDisplayFromLocalStorage()
+    applyIconDisplayToLayout(iconSettings)
+   }, [])
 
   // 🔐 Načtení session
   useEffect(() => {
