@@ -34,10 +34,6 @@ import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
 
-import {
-  applyIconDisplayToLayout,
-  loadIconDisplayFromLocalStorage,
-} from '@/app/lib/iconDisplaySettings'
 type SessionUser = {
   email?: string | null
   displayName?: string | null
