@@ -1,4 +1,7 @@
-// FILE: src/app/modules/010-sprava-uzivatelu/module.config.js
+// FILE: app/modules/010-sprava-uzivatelu/module.config.js
+// PURPOSE: Konfigurace modulu 010 – Správa uživatelů (seznam + detail)
+
+import UsersTile from './tiles/UsersTile'
 
 export default {
   id: '010-sprava-uzivatelu',
@@ -7,5 +10,16 @@ export default {
   icon: 'user',
   enabled: true,
 
-  // později: přehledy, formuláře, tiles, actions...
+  // Tento modul zatím nepoužívá SECTIONS, rovnou jeden tile.
+  tiles: [
+    {
+      id: 'users-list',
+      label: 'Seznam uživatelů',
+      icon: 'user',
+      component: UsersTile,
+      order: 10,
+    },
+  ],
+
+  actions: [],
 }
