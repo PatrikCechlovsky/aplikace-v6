@@ -1,19 +1,17 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
  * PURPOSE: Tile modulu 010 – ListView se seznamem uživatelů.
- *          Žádný detail vpravo, jen přehled + akce v CommonActions.
+ *          Žádný detail vpravo, žádný vlastní CommonActions,
+ *          jen přehled + filtr a „Zobrazit archivované“.
  */
 
 'use client'
 
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState } from 'react'
 import EntityList, {
   type EntityListColumn,
   type EntityListRow,
 } from '@/app/UI/EntityList'
-import CommonActions, {
-  type CommonActionId,
-} from '@/app/UI/CommonActions'
 
 // Dočasná mock data – později napojíme na tabulku subject + role z modulu 900
 type MockUser = {
@@ -50,7 +48,7 @@ const MOCK_USERS: MockUser[] = [
   },
 ]
 
-// 💡 Dočasná mapovací tabulka barev rolí
+// 💡 Dočasná mapovací tabulka barev rolí.
 // Později nahradíme reálnými barvami z modulu 900 (typy rolí).
 const ROLE_COLORS: Record<string, string> = {
   Administrátor: '#f4d35e',
@@ -63,10 +61,10 @@ const ROLE_COLORS: Record<string, string> = {
 
 // Sloupce pro EntityList – Role | Jméno | E-mail | Archivován
 const COLUMNS: EntityListColumn[] = [
-  { key: 'roleLabel', label: 'ROLE', width: '18%' },
-  { key: 'displayName', label: 'JMÉNO', width: '32%' },
-  { key: 'email', label: 'E-MAIL', width: '40%' },
-  { key: 'isArchived', label: 'A…', width: '10%', align: 'center' },
+  { key: 'roleLabel', label: 'Role', width: '16%' },
+  { key: 'displayName', label: 'Jméno' }, // necháme automatickou šířku
+  { key: 'email', label: 'E-mail' },
+  { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
 // Mapování mock dat na EntityListRow
@@ -77,7 +75,7 @@ function toRow(user: MockUser): EntityListRow {
 
   return {
     id: user.id,
-    // typeColor můžeme nechat pro levý proužek (stejné barvy jako badge)
+    // levý proužek – stejně jako u subjektů / typů
     typeColor: color,
     data: {
       roleLabel: (
@@ -122,43 +120,26 @@ export default function UsersTile() {
       .map(toRow)
   }, [filterText, showArchived])
 
-  const hasSelection = !!selectedId
-
-  const handleListActionClick = useCallback(
-    (id: CommonActionId) => {
-      // TODO: později skutečná logika (Nový, Zobrazit, Upravit, Archivovat…)
-      console.log('ListView akce:', id, 'vybraný ID:', selectedId)
-    },
-    [selectedId],
-  )
-
   return (
     <div className="users-list">
+      {/* Filtr + zobrazit archivované – přes celý horní řádek,
+          žádný CommonActions uvnitř tohoto tile */}
       <div className="users-list__header">
-        <div className="users-list__filters">
-          <input
-            className="users-list__filter-input"
-            placeholder="Filtrovat…"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
-
-          <label className="users-list__checkbox">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
-            />
-            <span>Zobrazit archivované</span>
-          </label>
-        </div>
-
-        <CommonActions
-          align="right"
-          actions={['add', 'view', 'edit', 'archive', 'delete']}
-          hasSelection={hasSelection}
-          onActionClick={handleListActionClick}
+        <input
+          className="users-list__filter-input"
+          placeholder="Filtrovat…"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
         />
+
+        <label className="users-list__checkbox">
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={(e) => setShowArchived(e.target.checked)}
+          />
+          <span>Zobrazit archivované</span>
+        </label>
       </div>
 
       <div className="users-list__table-wrapper">
@@ -186,20 +167,12 @@ export default function UsersTile() {
         .users-list__header {
           display: flex;
           align-items: center;
-          justify-content: space-between;
           gap: 12px;
-        }
-
-        .users-list__filters {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex: 1;
         }
 
         .users-list__filter-input {
           flex: 1;
-          max-width: 260px;
+          min-width: 180px;
           font-size: 0.85rem;
           padding: 6px 8px;
           border-radius: 999px;
@@ -221,6 +194,7 @@ export default function UsersTile() {
           font-size: 0.8rem;
           color: #4b5563;
           user-select: none;
+          white-space: nowrap;
         }
 
         .users-list__checkbox input {
@@ -240,10 +214,6 @@ export default function UsersTile() {
           .users-list__header {
             flex-direction: column;
             align-items: stretch;
-          }
-
-          .users-list__filters {
-            width: 100%;
           }
         }
       `}</style>
