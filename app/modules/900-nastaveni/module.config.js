@@ -45,8 +45,7 @@ export default {
       icon: 'smile', // 🙂
       component: IconSettingsSection,
       introTitle: 'Nastavení ikon',
-      introText: 'Mapování ikon modulů, akcí a číselníků.'
-            'Vyber, jestli chceš v aplikaci používat ikonky nebo jen textové popisky.',
+      introText: 'Mapování ikon modulů, akcí a číselníků. Vyber, jestli chceš v aplikaci používat ikonky nebo jen textové popisky.'
     }
   ],
 
