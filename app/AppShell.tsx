@@ -14,6 +14,15 @@ import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import CommonActions from '@/app/UI/CommonActions'
 import LoginPanel from '@/app/UI/LoginPanel'
+import {
+  applyThemeToLayout,
+  loadThemeFromLocalStorage,
+} from '@/app/lib/themeSettings'
+
+import {
+  applyIconDisplayToLayout,
+  loadIconDisplayFromLocalStorage,
+} from '@/app/lib/iconDisplaySettings'
 
 import { uiConfig } from '@/app/lib/uiConfig'
 import {
