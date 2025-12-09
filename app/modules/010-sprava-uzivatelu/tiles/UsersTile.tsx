@@ -15,7 +15,7 @@ import CommonActions, {
   type CommonActionId,
 } from '@/app/UI/CommonActions'
 
-// Dočasná mock data – později napojíme na tabulku subject
+// Dočasná mock data – později napojíme na tabulku subject + role z modulu 900
 type MockUser = {
   id: string
   displayName: string
@@ -60,14 +60,13 @@ const COLUMNS: EntityListColumn[] = [
 
 // Mapování mock dat na EntityListRow
 function toRow(user: MockUser): EntityListRow {
-  // Barvy role – jen pro UI, později může jít z číselníku
+  // TODO: až napojíme modul 900, vezmeme barvu role z číselníku.
   const isAdmin = user.roleLabel.toLowerCase().includes('admin')
-  const typeColor = isAdmin ? '#facc15' : '#6b7280' // žlutá vs šedá
+  const typeColor = isAdmin ? '#facc15' : '#6b7280' // žlutá vs. šedá jako dočasný placeholder
 
   return {
     id: user.id,
     typeColor,
-    typeLabel: user.roleLabel,
     data: {
       roleLabel: user.roleLabel,
       displayName: user.displayName,
@@ -106,10 +105,13 @@ export default function UsersTile() {
 
   const hasSelection = !!selectedId
 
-  const handleListActionClick = useCallback((id: CommonActionId) => {
-    // TODO: tady později skutečná logika (nový uživatel, otevřít detail, archivovat…)
-    console.log('ListView akce:', id, 'vybraný ID:', selectedId)
-  }, [selectedId])
+  const handleListActionClick = useCallback(
+    (id: CommonActionId) => {
+      // TODO: tady později skutečná logika (nový uživatel, otevřít detail, archivovat…)
+      console.log('ListView akce:', id, 'vybraný ID:', selectedId)
+    },
+    [selectedId],
+  )
 
   return (
     <div className="users-list">
