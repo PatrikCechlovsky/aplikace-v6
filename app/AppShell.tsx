@@ -94,7 +94,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     const iconSettings = loadIconDisplayFromLocalStorage()
     applyIconDisplayToLayout(iconSettings)
-   }, [])
+  }, [])
 
   // 🔐 Načtení session
   useEffect(() => {
