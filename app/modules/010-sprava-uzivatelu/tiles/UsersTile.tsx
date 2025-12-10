@@ -112,6 +112,7 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
 
     const actions: CommonActionConfig[] = [
       { id: 'add' },
+      { id: 'detail' },
       { id: 'edit', requiresSelection: true },
       { id: 'invite' },
       { id: 'columnSettings', label: 'Nastavení sloupců' },
