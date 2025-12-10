@@ -13,6 +13,7 @@ import PropertyTypesTile from './tiles/PropertyTypesTile'
 import UnitTypesTile from './tiles/UnitTypesTile'
 import RoleTypesTile from './tiles/RoleTypesTile'
 import PaymentTypesTile from './tiles/PaymentTypesTile'
+import AppViewSettingsTile from './tiles/AppViewSettingsTile'
 
 export default {
   id: '900-nastaveni',
@@ -106,6 +107,14 @@ export default {
       sectionId: 'theme-settings',
       component: ThemeSettingsTile,
       order: 20, // libovolné pořadí mezi ostatními
+    },
+    {
+      id: 'app-view-settings',
+      label: 'Vzhled a zobrazení',
+      icon: 'layout',        // nebo jiná tvoje ikona
+      sectionId: 'theme-settings',
+      component: AppViewSettingsTile,
+      order: 40,
     },
      {
       id: 'icon-display',
