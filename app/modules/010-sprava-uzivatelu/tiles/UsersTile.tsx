@@ -1,8 +1,7 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
  * PURPOSE: Tile modulu 010 – přehled uživatelů v jednotném ListView vzoru.
- *          Žádný detail vpravo, CommonActions nahoře: add, edit, invite,
- *          columnSettings, import, export, reject (zatím bez logiky).
+ *          Žádný detail vpravo, vše jen seznam + common actions nahoře.
  */
 
 'use client'
@@ -12,7 +11,10 @@ import ListView, {
   type ListViewColumn,
   type ListViewRow,
 } from '@/app/UI/ListView'
-import type { CommonActionConfig } from '@/app/UI/CommonActions'
+import type {
+  CommonActionId,
+  CommonActionConfig,
+} from '@/app/UI/CommonActions'
 
 // Dočasná mock data – později napojíme na tabulku subject + role z modulu 900
 type MockUser = {
@@ -90,9 +92,10 @@ function toRow(user: MockUser): ListViewRow<MockUser> {
   }
 }
 
-// Props – AppShell sem může poslat registrátor CommonActions
 type UsersTileProps = {
-  onRegisterCommonActions?: (actions: CommonActionConfig[]) => void
+  onRegisterCommonActions?: (
+    actions: CommonActionId[] | CommonActionConfig[],
+  ) => void
 }
 
 export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
@@ -100,35 +103,28 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
 
-  // 🔘 Při mountu zaregistrujeme default sadu tlačítek do CommonActions
+  // 🔘 Registrace společných akcí pro tento tile (zatím bez logiky)
   useEffect(() => {
-  console.log(
-    '[UsersTile] onRegisterCommonActions je:',
-    typeof onRegisterCommonActions,
-  )
+    if (!onRegisterCommonActions) {
+      console.log('[UsersTile] onRegisterCommonActions není předán')
+      return
+    }
 
-  if (!onRegisterCommonActions) return
+    const actions: CommonActionConfig[] = [
+      { id: 'add' },
+      { id: 'edit', requiresSelection: true },
+      { id: 'invite' },
+      { id: 'columnSettings', label: 'Nastavení sloupců' },
+      { id: 'import' },
+      { id: 'export' },
+      { id: 'reject', requiresSelection: true },
+    ]
 
-  const actions: CommonActionConfig[] = [
-    { id: 'add' },
-    { id: 'edit' },
-    { id: 'invite' },
-    { id: 'columnSettings', label: 'Nastavení sloupců' },
-    { id: 'import' },
-    { id: 'export' },
-    { id: 'reject' },
-  ]
+    console.log('[UsersTile] registruju commonActions:', actions)
+    onRegisterCommonActions(actions)
 
-  console.log('[UsersTile] registruju commonActions:', actions)
-
-  onRegisterCommonActions(actions)
-
-  return () => {
-    console.log('[UsersTile] Čištění commonActions při unmountu')
-    onRegisterCommonActions([])
-  }
-}, [onRegisterCommonActions])
-
+    // žádný cleanup – AppShell si commonActions smaže sám
+  }, [onRegisterCommonActions])
 
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
     const normalizedFilter = filterText.trim().toLowerCase()
@@ -137,12 +133,7 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
       if (!showArchived && u.isArchived) return false
       if (!normalizedFilter) return true
 
-      const haystack = [
-        u.displayName,
-        u.email,
-        u.phone ?? '',
-        u.roleLabel,
-      ]
+      const haystack = [u.displayName, u.email, u.phone ?? '', u.roleLabel]
         .join(' ')
         .toLowerCase()
 
@@ -164,12 +155,6 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
         emptyText="Zatím žádní uživatelé."
         selectedId={selectedId}
         onRowClick={(row) => setSelectedId(row.id)}
-        onRowDoubleClick={(row) => {
-          // tady zatím jen vyzkoušíme, že to funguje:
-          console.log('Dvojklik na řádek, otevřu detail pro:', row.raw)
-          setSelectedId(row.id)
-          // později sem dáme otevření EntityDetailFrame + DetailForm (view)
-        }}
       />
 
       <style jsx>{`
