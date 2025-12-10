@@ -165,17 +165,32 @@ type Props = {
 function resolveActions(
   actions: Props['actions'],
 ): CommonActionDefinition[] {
-  // Pokud není nic předané, zachováme původní chování
-  const base: CommonActionDefinition[] = [
-    COMMON_ACTION_DEFS.view,
-    COMMON_ACTION_DEFS.add,
-    COMMON_ACTION_DEFS.edit,
-    COMMON_ACTION_DEFS.archive,
-    COMMON_ACTION_DEFS.delete,
-  ]
-
+  // 👉 Pokud nic nepřišlo, žádné akce – common lišta bude prázdná
   if (!actions || actions.length === 0) {
-    return base
+    return []
+  }
+
+  // Pokud je to prosté pole ID
+  if (typeof actions[0] === 'string') {
+    return (actions as CommonActionId[])
+      .map((id) => COMMON_ACTION_DEFS[id])
+      .filter(Boolean)
+  }
+
+  // Pokud je to pole konfigurací
+  return (actions as CommonActionConfig[])
+    .map((cfg) => {
+      const baseDef = COMMON_ACTION_DEFS[cfg.id]
+      if (!baseDef) return null
+
+      return {
+        ...baseDef,
+        label: cfg.label ?? baseDef.label,
+        icon: cfg.icon ?? baseDef.icon,
+        // requiresSelection / requiresDirty zůstávají z base
+      } as CommonActionDefinition
+    })
+    .filter((def): def is CommonActionDefinition => !!def)
   }
 
   // Pokud je to prosté pole ID
