@@ -7,6 +7,10 @@
  *          - filtr (input)
  *          - zaškrtávátko „Zobrazit archivované“
  *          - tabulka se záhlavím a řádky.
+ *
+ * Pattern:
+ *  - klik na řádek → onRowClick(row) → rodič si nastaví selectedId
+ *  - dvojklik na řádek → onRowDoubleClick(row) → rodič otevře EntityDetailFrame
  */
 
 import React from 'react'
@@ -19,30 +23,51 @@ export type ListViewColumn = {
 }
 
 export type ListViewRow<TData = any> = {
+  /** Unikátní identifikátor řádku (pro výběr, klíč v Reactu…) */
   id: string | number
+  /** Data pro jednotlivé buňky – klíče odpovídají columns[].key */
   data: Record<string, React.ReactNode>
+  /** Volitelná extra CSS class pro řádek */
   className?: string
+  /** Původní raw data – rodič si je může předat dál (např. do detailu) */
   raw?: TData
 }
 
 export type ListViewProps<TData = any> = {
   columns: ListViewColumn[]
   rows: ListViewRow<TData>[]
-  filterPlaceholder?: string
+
+  /** Text ve filtru */
   filterValue: string
+  /** Změna filtru */
   onFilterChange: (value: string) => void
+  /** Placeholder filtru */
+  filterPlaceholder?: string
+
+  /** Stav přepínače „Zobrazit archivované“ */
   showArchived?: boolean
+  /** Změna přepínače „Zobrazit archivované“ */
   onShowArchivedChange?: (value: boolean) => void
+  /** Popisek vedle checkboxu */
   showArchivedLabel?: string
+
+  /** Text, pokud nejsou žádné záznamy */
   emptyText?: string
+
+  /** ID aktuálně vybraného řádku – pro podbarvení */
   selectedId?: string | number | null
+
+  /** Klik na řádek – typicky pro nastavení selectedId v rodiči */
   onRowClick?: (row: ListViewRow<TData>) => void
+
+  /** Dvojklik na řádek – typicky pro otevření detailu (EntityDetailFrame) */
+  onRowDoubleClick?: (row: ListViewRow<TData>) => void
 }
 
 export default function ListView<TData = any>({
   columns,
   rows,
-  filterPlaceholder = 'Hledat podle názvu, kódu nebo popisu...…',
+  filterPlaceholder = 'Hledat podle názvu, kódu nebo popisu...',
   filterValue,
   onFilterChange,
   showArchived = false,
@@ -51,6 +76,7 @@ export default function ListView<TData = any>({
   emptyText = 'Žádné záznamy.',
   selectedId = null,
   onRowClick,
+  onRowDoubleClick,
 }: ListViewProps<TData>) {
   const hasCheckbox = typeof onShowArchivedChange === 'function'
 
@@ -110,10 +136,7 @@ export default function ListView<TData = any>({
           <tbody>
             {rows.length === 0 ? (
               <tr className="generic-type__row generic-type__row--empty">
-                <td
-                  className="generic-type__cell"
-                  colSpan={columns.length}
-                >
+                <td className="generic-type__cell" colSpan={columns.length}>
                   {emptyText}
                 </td>
               </tr>
@@ -135,6 +158,7 @@ export default function ListView<TData = any>({
                     key={row.id}
                     className={rowClassNames}
                     onClick={() => onRowClick?.(row)}
+                    onDoubleClick={() => onRowDoubleClick?.(row)}
                   >
                     {columns.map((col) => {
                       const alignClass =
