@@ -36,32 +36,16 @@ export type ListViewRow<TData = any> = {
 export type ListViewProps<TData = any> = {
   columns: ListViewColumn[]
   rows: ListViewRow<TData>[]
-
-  /** Text ve filtru */
-  filterValue: string
-  /** Změna filtru */
-  onFilterChange: (value: string) => void
-  /** Placeholder filtru */
   filterPlaceholder?: string
-
-  /** Stav přepínače „Zobrazit archivované“ */
+  filterValue: string
+  onFilterChange: (value: string) => void
   showArchived?: boolean
-  /** Změna přepínače „Zobrazit archivované“ */
   onShowArchivedChange?: (value: boolean) => void
-  /** Popisek vedle checkboxu */
   showArchivedLabel?: string
-
-  /** Text, pokud nejsou žádné záznamy */
   emptyText?: string
-
-  /** ID aktuálně vybraného řádku – pro podbarvení */
   selectedId?: string | number | null
-
-  /** Klik na řádek – typicky pro nastavení selectedId v rodiči */
   onRowClick?: (row: ListViewRow<TData>) => void
-
-  /** Dvojklik na řádek – typicky pro otevření detailu (EntityDetailFrame) */
-  onRowDoubleClick?: (row: ListViewRow<TData>) => void
+  onRowDoubleClick?: (row: ListViewRow<TData>) => void   // ➕ NOVÉ
 }
 
 export default function ListView<TData = any>({
@@ -76,7 +60,7 @@ export default function ListView<TData = any>({
   emptyText = 'Žádné záznamy.',
   selectedId = null,
   onRowClick,
-  onRowDoubleClick,
+  onRowDoubleClick,            // ➕ NOVÉ
 }: ListViewProps<TData>) {
   const hasCheckbox = typeof onShowArchivedChange === 'function'
 
