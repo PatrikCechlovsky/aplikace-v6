@@ -2,7 +2,7 @@
 // PURPOSE: Společná sada akcí (tlačítek) pro seznamy a formuláře.
 // - Každý tile / form si může nadefinovat, jaké akce chce zobrazit.
 // - CommonActions umí vyhodnotit requiresSelection / requiresDirty.
-// - Pokud není předáno "actions", lišta je prázdná (žádná default sada).
+// - Pokud není předáno "actions", použije se původní pevná sada (view/add/edit/archive/delete).
 
 'use client'
 
@@ -19,12 +19,12 @@ export type CommonActionId =
   | 'save'
   | 'saveAndClose'
   | 'cancel'
+  // nové pro listview:
   | 'invite'
-  | 'reject'
+  | 'columnSettings'
   | 'import'
   | 'export'
-  | 'columnSettings'
-
+  | 'reject'
 
 export type CommonActionDefinition = {
   id: CommonActionId
@@ -35,98 +35,97 @@ export type CommonActionDefinition = {
 }
 
 // Centrální definice všech typů akcí – slovník
-export const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> =
-  {
-    add: {
-      id: 'add',
-      icon: 'add',
-      label: 'Přidat',
-    },
-    edit: {
-      id: 'edit',
-      icon: 'edit',
-      label: 'Upravit',
-      // logiku requiresSelection zapojíme, až budeme řešit výběr řádku
-      // requiresSelection: true,
-    },
-    view: {
-      id: 'view',
-      icon: 'view',
-      label: 'Zobrazit',
-      // requiresSelection: true,
-    },
-    duplicate: {
-      id: 'duplicate',
-      icon: 'duplicate',
-      label: 'Duplikovat',
-      // requiresSelection: true,
-    },
-    attach: {
-      id: 'attach',
-      icon: 'attach',
-      label: 'Připojit',
-      // requiresSelection: true,
-    },
-    archive: {
-      id: 'archive',
-      icon: 'archive',
-      label: 'Archivovat',
-      // requiresSelection: true,
-    },
-    delete: {
-      id: 'delete',
-      icon: 'delete',
-      label: 'Smazat',
-      // requiresSelection: true,
-    },
-    save: {
-      id: 'save',
-      icon: 'save',
-      label: 'Uložit',
-      // requiresDirty: true,
-    },
-    saveAndClose: {
-      id: 'saveAndClose',
-      icon: 'save',
-      label: 'Uložit a zavřít',
-      // requiresDirty: true,
-    },
-    cancel: {
-      id: 'cancel',
-      icon: 'cancel',
-      label: 'Zrušit',
-    },
+export const COMMON_ACTION_DEFS: Record<
+  CommonActionId,
+  CommonActionDefinition
+> = {
+  add: {
+    id: 'add',
+    icon: 'add',
+    label: 'Přidat',
+  },
+  edit: {
+    id: 'edit',
+    icon: 'edit',
+    label: 'Upravit',
+    requiresSelection: true,
+  },
+  view: {
+    id: 'view',
+    icon: 'view',
+    label: 'Zobrazit',
+    requiresSelection: true,
+  },
+  duplicate: {
+    id: 'duplicate',
+    icon: 'duplicate',
+    label: 'Duplikovat',
+    requiresSelection: true,
+  },
+  attach: {
+    id: 'attach',
+    icon: 'attach',
+    label: 'Připojit',
+    requiresSelection: true,
+  },
+  archive: {
+    id: 'archive',
+    icon: 'archive',
+    label: 'Archivovat',
+    requiresSelection: true,
+  },
+  delete: {
+    id: 'delete',
+    icon: 'delete',
+    label: 'Smazat',
+    requiresSelection: true,
+  },
+  save: {
+    id: 'save',
+    icon: 'save',
+    label: 'Uložit',
+    requiresDirty: true,
+  },
+  saveAndClose: {
+    id: 'saveAndClose',
+    icon: 'save',
+    label: 'Uložit a zavřít',
+    requiresDirty: true,
+  },
+  cancel: {
+    id: 'cancel',
+    icon: 'cancel',
+    label: 'Zrušit',
+  },
 
-    // 👉 nové akce pro listview:
-
-    invite: {
-      id: 'invite',
-      icon: 'invite', // klidně si pak změníš na jiný key z icons
-      label: 'Pozvat',
-      // requiresSelection: true,
-    },
-    reject: {
-      id: 'reject',
-      icon: 'cancel',
-      label: 'Odmítnout',
-      // requiresSelection: true,
-    },
-    import: {
-      id: 'import',
-      icon: 'import',
-      label: 'Import',
-    },
-    export: {
-      id: 'export',
-      icon: 'export',
-      label: 'Export',
-    },
-    columnSettings: {
-      id: 'columnSettings',
-      icon: 'settings',
-      label: 'Nastavení sloupců',
-    },
-  }
+  // ===== NOVÉ PRO LISTVIEW (stub akce) ======================
+  invite: {
+    id: 'invite',
+    icon: 'invite',
+    label: 'Pozvat',
+  },
+  columnSettings: {
+    id: 'columnSettings',
+    icon: 'settings',
+    label: 'Nastavení sloupců',
+  },
+  import: {
+    id: 'import',
+    icon: 'import',
+    label: 'Import',
+  },
+  export: {
+    id: 'export',
+    icon: 'export',
+    label: 'Export',
+  },
+  reject: {
+    id: 'reject',
+    icon: 'cancel',
+    label: 'Zamítnout',
+    requiresSelection: true,
+  },
+}
 
 // Konfigurace jedné akce z pohledu konkrétního modulu/tilu/formu
 export type CommonActionConfig = {
@@ -139,8 +138,7 @@ export type CommonActionConfig = {
 
 // Prop pro komponentu CommonActions
 type Props = {
-  // Volitelné: pokud neuvedeš, lišta je prázdná.
-  // Pokud předáš pole ID nebo konfigurací, vykreslí se jen tyto akce.
+  // Volitelné: pokud neuvedeš, použije se defaultní sada (view, add, edit, archive, delete)
   actions?: CommonActionId[] | CommonActionConfig[]
 
   // Globální disabled (např. formulář v read-only)
@@ -163,9 +161,17 @@ type Props = {
 function resolveActions(
   actions: Props['actions'],
 ): CommonActionDefinition[] {
-  // Pokud není nic předané, standardně žádné tlačítko
+  // Pokud není nic předané, zachováme původní chování
+  const base: CommonActionDefinition[] = [
+    COMMON_ACTION_DEFS.view,
+    COMMON_ACTION_DEFS.add,
+    COMMON_ACTION_DEFS.edit,
+    COMMON_ACTION_DEFS.archive,
+    COMMON_ACTION_DEFS.delete,
+  ]
+
   if (!actions || actions.length === 0) {
-    return []
+    return base
   }
 
   // Pokud je to prosté pole ID
@@ -177,7 +183,6 @@ function resolveActions(
 
   // Pokud je to pole konfigurací
   return (actions as CommonActionConfig[])
-    .filter((cfg) => cfg.visible !== false)
     .map((cfg) => {
       const baseDef = COMMON_ACTION_DEFS[cfg.id]
       if (!baseDef) return null
@@ -192,20 +197,16 @@ function resolveActions(
     .filter((def): def is CommonActionDefinition => !!def)
 }
 
-// Hlavní komponenta
+// Hlavní komponenta – stylování je v layout.css (common-actions__*)
 export default function CommonActions({
   actions,
   disabled = false,
   hasSelection = false,
   isDirty = false,
-  align = 'right',
+  align = 'left',
   onActionClick,
 }: Props) {
-  console.log('[CommonActions] props.actions:', actions)
-  
   const resolved = resolveActions(actions)
-  
-  console.log('[CommonActions] resolved actions:', resolved)
 
   if (!resolved.length) return null
 
@@ -230,6 +231,7 @@ export default function CommonActions({
             type="button"
             className="common-actions__btn"
             disabled={isDisabled}
+            title={a.label}
             onClick={() => {
               if (isDisabled) return
               onActionClick?.(a.id)
