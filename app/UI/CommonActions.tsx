@@ -201,7 +201,11 @@ export default function CommonActions({
   align = 'right',
   onActionClick,
 }: Props) {
+  console.log('[CommonActions] props.actions:', actions)
+  
   const resolved = resolveActions(actions)
+  
+  console.log('[CommonActions] resolved actions:', resolved)
 
   if (!resolved.length) return null
 
