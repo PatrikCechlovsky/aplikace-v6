@@ -543,3 +543,13 @@
   gap: 0.5rem;
   margin-top: 0.75rem;
 }
+/* Režim zobrazení ikon – formulářové akční tlačítka v GenericTypeTile
+   v textovém režimu schováme ikonky a necháme jen text */
+.layout.icons-mode-text .generic-type__button-icon {
+  display: none;
+}
+
+/* Ujistíme se, že text tlačítka zůstane normálně viditelný */
+.layout.icons-mode-text .generic-type__button-text {
+  display: inline-flex;
+}
