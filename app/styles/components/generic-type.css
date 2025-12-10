@@ -553,3 +553,34 @@
 .layout.icons-mode-text .generic-type__button-text {
   display: inline-flex;
 }
+/* =========================================
+   Režim BEZ IKON – GenericTypeTile
+   ========================================= */
+
+/* 1) Schovat ikonky v tlačítkách formuláře */
+.layout.icons-mode-text .generic-type__button-icon {
+  display: none;
+}
+
+/* 2) Text tlačítka má být vždy viditelný, ne jen na hover */
+.layout.icons-mode-text .generic-type__button-text {
+  max-width: 120px;      /* dostatečná šířka na text */
+  opacity: 1;
+  margin-left: 0.35rem;  /* malý odstup od místa, kde dřív byla ikona */
+}
+
+/* 3) Tlačítka nejsou „kolečka kolem ikony“, ale normální textové čudlíky */
+.layout.icons-mode-text
+  .generic-type__button,
+.layout.icons-mode-text
+  .generic-type__button-nav,
+.layout.icons-mode-text
+  .generic-type__button-add-top,
+.layout.icons-mode-text
+  .generic-type__button-save-main,
+.layout.icons-mode-text
+  .generic-type__button-archive,
+.layout.icons-mode-text
+  .generic-type__alert-btn {
+  padding: 0.35rem 0.75rem; /* místo čistě ikonového paddingu */
+}
