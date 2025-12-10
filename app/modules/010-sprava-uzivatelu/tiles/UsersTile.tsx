@@ -112,13 +112,12 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
 
     const actions: CommonActionConfig[] = [
       { id: 'add' },
-      { id: 'detail' },
       { id: 'edit', requiresSelection: true },
       { id: 'invite' },
       { id: 'columnSettings', label: 'Nastavení sloupců' },
       { id: 'import' },
       { id: 'export' },
-      { id: 'reject' },
+      { id: 'reject' , requiresSelection: true },
     ]
 
     console.log('[UsersTile] registruju commonActions:', actions)
