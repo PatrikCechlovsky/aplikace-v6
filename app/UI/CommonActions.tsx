@@ -19,6 +19,12 @@ export type CommonActionId =
   | 'save'
   | 'saveAndClose'
   | 'cancel'
+  | 'invite'
+  | 'reject'
+  | 'import'
+  | 'export'
+  | 'columnSettings'
+
 
 export type CommonActionDefinition = {
   id: CommonActionId
@@ -40,54 +46,85 @@ export const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> 
       id: 'edit',
       icon: 'edit',
       label: 'Upravit',
-      requiresSelection: true,
+      // logiku requiresSelection zapojíme, až budeme řešit výběr řádku
+      // requiresSelection: true,
     },
     view: {
       id: 'view',
       icon: 'view',
       label: 'Zobrazit',
-      requiresSelection: true,
+      // requiresSelection: true,
     },
     duplicate: {
       id: 'duplicate',
       icon: 'duplicate',
       label: 'Duplikovat',
-      requiresSelection: true,
+      // requiresSelection: true,
     },
     attach: {
       id: 'attach',
       icon: 'attach',
       label: 'Připojit',
-      requiresSelection: true,
+      // requiresSelection: true,
     },
     archive: {
       id: 'archive',
       icon: 'archive',
       label: 'Archivovat',
-      requiresSelection: true,
+      // requiresSelection: true,
     },
     delete: {
       id: 'delete',
       icon: 'delete',
       label: 'Smazat',
-      requiresSelection: true,
+      // requiresSelection: true,
     },
     save: {
       id: 'save',
       icon: 'save',
       label: 'Uložit',
-      requiresDirty: true,
+      // requiresDirty: true,
     },
     saveAndClose: {
       id: 'saveAndClose',
       icon: 'save',
       label: 'Uložit a zavřít',
-      requiresDirty: true,
+      // requiresDirty: true,
     },
     cancel: {
       id: 'cancel',
       icon: 'cancel',
       label: 'Zrušit',
+    },
+
+    // 👉 nové akce pro listview:
+
+    invite: {
+      id: 'invite',
+      icon: 'invite', // klidně si pak změníš na jiný key z icons
+      label: 'Pozvat',
+      // requiresSelection: true,
+    },
+    reject: {
+      id: 'reject',
+      icon: 'cancel',
+      label: 'Odmítnout',
+      // requiresSelection: true,
+    },
+    import: {
+      id: 'import',
+      icon: 'import',
+      label: 'Import',
+    },
+    export: {
+      id: 'export',
+      icon: 'export',
+      label: 'Export',
+    },
+    columnSettings: {
+      id: 'columnSettings',
+      icon: 'settings',
+      label: 'Nastavení sloupců',
     },
   }
 
