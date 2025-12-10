@@ -28,28 +28,30 @@ export default function HomeActions({
 
   return (
     <div className={`home-actions ${disabled ? 'is-disabled' : ''}`}>
-      {/* Vlevo zobrazíme alias / display_name */}
+      {/* Jméno / alias uživatele */}
       <span className="home-actions__user" title={name}>
         {name}
       </span>
 
-      {/* Ikonová / textová tlačítka vpravo */}
+      {/* Akční tlačítka */}
       {HOME_ACTIONS.map((action) => (
         <button
           key={action.id}
           className="home-actions__icon"
           disabled={disabled}
-          // title záměrně NEpoužíváme – text řešíme vizuálně
           type="button"
         >
+          {/* Ikona – tu skryjeme v text režimu */}
           <span className="home-actions__icon-emoji" aria-hidden="true">
             {action.icon}
           </span>
+
+          {/* Text – ten budeme v text režimu ukazovat vždy */}
           <span className="home-actions__label">{action.label}</span>
         </button>
       ))}
 
-      {/* Odhlášení – už textové tlačítko, to necháme tak jak je */}
+      {/* Odhlášení – klasické textové tlačítko */}
       <button
         className="home-actions__logout"
         disabled={disabled}
