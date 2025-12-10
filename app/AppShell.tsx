@@ -455,7 +455,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               aria-label={tile.label}
             >
               <TileComponent
-                onRegisterCommonActions={setCommonActions}
+                disabled={!isAuthenticated}
+                actions={commonActions}
               />
             </section>
           </div>
