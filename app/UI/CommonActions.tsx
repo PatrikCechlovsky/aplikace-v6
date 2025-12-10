@@ -2,7 +2,7 @@
 // PURPOSE: Společná sada akcí (tlačítek) pro seznamy a formuláře.
 // - Každý tile / form si může nadefinovat, jaké akce chce zobrazit.
 // - CommonActions umí vyhodnotit requiresSelection / requiresDirty.
-// - Pokud není předáno "actions", použije se původní pevná sada (view/add/edit/archive/delete).
+// - Pokud není předáno "actions", lišta je prázdná (žádná default sada).
 
 'use client'
 
@@ -102,7 +102,8 @@ export type CommonActionConfig = {
 
 // Prop pro komponentu CommonActions
 type Props = {
-  // Volitelné: pokud neuvedeš, použije se defaultní sada (view, add, edit, archive, delete)
+  // Volitelné: pokud neuvedeš, lišta je prázdná.
+  // Pokud předáš pole ID nebo konfigurací, vykreslí se jen tyto akce.
   actions?: CommonActionId[] | CommonActionConfig[]
 
   // Globální disabled (např. formulář v read-only)
@@ -125,17 +126,9 @@ type Props = {
 function resolveActions(
   actions: Props['actions'],
 ): CommonActionDefinition[] {
-  // Pokud není nic předané, zachováme původní chování
-  const base: CommonActionDefinition[] = [
-    COMMON_ACTION_DEFS.view,
-    COMMON_ACTION_DEFS.add,
-    COMMON_ACTION_DEFS.edit,
-    COMMON_ACTION_DEFS.archive,
-    COMMON_ACTION_DEFS.delete,
-  ]
-
+  // Pokud není nic předané, standardně žádné tlačítko
   if (!actions || actions.length === 0) {
-    return base
+    return []
   }
 
   // Pokud je to prosté pole ID
@@ -147,6 +140,7 @@ function resolveActions(
 
   // Pokud je to pole konfigurací
   return (actions as CommonActionConfig[])
+    .filter((cfg) => cfg.visible !== false)
     .map((cfg) => {
       const baseDef = COMMON_ACTION_DEFS[cfg.id]
       if (!baseDef) return null
@@ -167,7 +161,7 @@ export default function CommonActions({
   disabled = false,
   hasSelection = false,
   isDirty = false,
-  align = 'left',
+  align = 'right',
   onActionClick,
 }: Props) {
   const resolved = resolveActions(actions)
@@ -195,7 +189,6 @@ export default function CommonActions({
             type="button"
             className="common-actions__btn"
             disabled={isDisabled}
-            title={a.label}
             onClick={() => {
               if (isDisabled) return
               onActionClick?.(a.id)
@@ -208,42 +201,6 @@ export default function CommonActions({
           </button>
         )
       })}
-
-      <style jsx>{`
-        .common-actions {
-          display: inline-flex;
-          gap: 8px;
-        }
-
-        .common-actions--align-right {
-          justify-content: flex-end;
-        }
-
-        .common-actions__btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 10px;
-          border-radius: 999px;
-          border: 1px solid #e5e7eb;
-          background: white;
-          font-size: 0.8rem;
-          cursor: pointer;
-        }
-
-        .common-actions__btn:disabled {
-          opacity: 0.5;
-          cursor: default;
-        }
-
-        .common-actions__icon {
-          display: inline-flex;
-        }
-
-        .common-actions__label {
-          white-space: nowrap;
-        }
-      `}</style>
     </div>
   )
 }
