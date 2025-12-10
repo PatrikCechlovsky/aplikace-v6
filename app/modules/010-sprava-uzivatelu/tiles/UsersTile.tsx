@@ -117,7 +117,7 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
       { id: 'columnSettings', label: 'Nastavení sloupců' },
       { id: 'import' },
       { id: 'export' },
-      { id: 'reject', requiresSelection: true },
+      { id: 'reject' },
     ]
 
     console.log('[UsersTile] registruju commonActions:', actions)
