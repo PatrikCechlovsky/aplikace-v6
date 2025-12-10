@@ -102,28 +102,33 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
 
   // 🔘 Při mountu zaregistrujeme default sadu tlačítek do CommonActions
   useEffect(() => {
-    if (!onRegisterCommonActions) return
+  console.log(
+    '[UsersTile] onRegisterCommonActions je:',
+    typeof onRegisterCommonActions,
+  )
 
-    const actions: CommonActionConfig[] = [
-      { id: 'add' },                      // Přidat
-      { id: 'edit' },                     // Upravit
-      { id: 'invite' },                   // Pozvat
-      {
-        id: 'columnSettings',             // Nastavení sloupců (ColumnPicker)
-        label: 'Nastavení sloupců',
-      },
-      { id: 'import' },                   // Import
-      { id: 'export' },                   // Export
-      { id: 'reject' },                   // Odmítnout
-    ]
+  if (!onRegisterCommonActions) return
 
-    onRegisterCommonActions(actions)
+  const actions: CommonActionConfig[] = [
+    { id: 'add' },
+    { id: 'edit' },
+    { id: 'invite' },
+    { id: 'columnSettings', label: 'Nastavení sloupců' },
+    { id: 'import' },
+    { id: 'export' },
+    { id: 'reject' },
+  ]
 
-    // při unmountu CommonActions vyčistíme
-    return () => {
-      onRegisterCommonActions([])
-    }
-  }, [onRegisterCommonActions])
+  console.log('[UsersTile] registruju commonActions:', actions)
+
+  onRegisterCommonActions(actions)
+
+  return () => {
+    console.log('[UsersTile] Čištění commonActions při unmountu')
+    onRegisterCommonActions([])
+  }
+}, [onRegisterCommonActions])
+
 
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
     const normalizedFilter = filterText.trim().toLowerCase()
