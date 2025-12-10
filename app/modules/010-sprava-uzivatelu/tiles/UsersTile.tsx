@@ -118,7 +118,7 @@ export default function UsersTile() {
       <ListView
         columns={COLUMNS}
         rows={rows}
-        filterPlaceholder="Filtrovat…"
+        filterPlaceholder="Hledat podle názvu, kódu nebo popisu..."
         filterValue={filterText}
         onFilterChange={setFilterText}
         showArchived={showArchived}
