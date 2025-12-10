@@ -130,10 +130,14 @@ export const COMMON_ACTION_DEFS: Record<
 // Konfigurace jedné akce z pohledu konkrétního modulu/tilu/formu
 export type CommonActionConfig = {
   id: CommonActionId
-  label?: string // možnost přepsat label
-  icon?: string // možnost přepsat ikonu
-  visible?: boolean // možnost schovat akci (např. podle role)
-  disabled?: boolean // navíc k logice requiresSelection / requiresDirty
+  label?: string
+  icon?: string
+  visible?: boolean
+  disabled?: boolean
+
+  // volitelné přepsání logiky – používáš v UsersTile
+  requiresSelection?: boolean
+  requiresDirty?: boolean
 }
 
 // Prop pro komponentu CommonActions
