@@ -1,16 +1,18 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
  * PURPOSE: Tile modulu 010 – přehled uživatelů v jednotném ListView vzoru.
- *          Žádný detail vpravo, žádný vlastní CommonActions – jen seznam.
+ *          Žádný detail vpravo, CommonActions nahoře: add, edit, invite,
+ *          columnSettings, import, export, reject (zatím bez logiky).
  */
 
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ListView, {
   type ListViewColumn,
   type ListViewRow,
 } from '@/app/UI/ListView'
+import type { CommonActionConfig } from '@/app/UI/CommonActions'
 
 // Dočasná mock data – později napojíme na tabulku subject + role z modulu 900
 type MockUser = {
@@ -88,10 +90,40 @@ function toRow(user: MockUser): ListViewRow<MockUser> {
   }
 }
 
-export default function UsersTile() {
+// Props – AppShell sem může poslat registrátor CommonActions
+type UsersTileProps = {
+  onRegisterCommonActions?: (actions: CommonActionConfig[]) => void
+}
+
+export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
+
+  // 🔘 Při mountu zaregistrujeme default sadu tlačítek do CommonActions
+  useEffect(() => {
+    if (!onRegisterCommonActions) return
+
+    const actions: CommonActionConfig[] = [
+      { id: 'add' },                      // Přidat
+      { id: 'edit' },                     // Upravit
+      { id: 'invite' },                   // Pozvat
+      {
+        id: 'columnSettings',             // Nastavení sloupců (ColumnPicker)
+        label: 'Nastavení sloupců',
+      },
+      { id: 'import' },                   // Import
+      { id: 'export' },                   // Export
+      { id: 'reject' },                   // Odmítnout
+    ]
+
+    onRegisterCommonActions(actions)
+
+    // při unmountu CommonActions vyčistíme
+    return () => {
+      onRegisterCommonActions([])
+    }
+  }, [onRegisterCommonActions])
 
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
     const normalizedFilter = filterText.trim().toLowerCase()
