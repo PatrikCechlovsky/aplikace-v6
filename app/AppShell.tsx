@@ -74,6 +74,8 @@ type AppShellProps = {
   initialModuleId?: string | null
 }
 
+type CommonActionsInput = CommonActionId[] | CommonActionConfig[]
+
 export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const router = useRouter()
 
@@ -94,14 +96,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   const [hasUnsavedChanges] = useState(false)
 
-  // 🔘 Common actions – dynamicky podle aktivního tilu / formuláře
-  // Buď čisté pole ID, nebo čisté pole konfigurací, nebo nic.
+  // 🔘 Common actions – dynamicky registruje aktuální tile
   const [commonActions, setCommonActions] = useState<
-    CommonActionId[] | CommonActionConfig[] | undefined
+    CommonActionsInput | undefined
   >(undefined)
 
-
-  // 🎨 Při mountu aplikace nastavíme theme + režim ikon z localStorage
+  // 🎨 Při mountu aplikace nastavíme theme z localStorage
   useEffect(() => {
     const themeSettings = loadThemeFromLocalStorage()
     applyThemeToLayout(themeSettings)
@@ -128,10 +128,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           setUser({
             email: session.user.email,
             displayName:
-              meta.display_name ??
-              meta.full_name ??
-              meta.name ??
-              null,
+              meta.display_name ?? meta.full_name ?? meta.name ?? null,
           })
         } else {
           setIsAuthenticated(false)
@@ -151,10 +148,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               setUser({
                 email: session.user.email,
                 displayName:
-                  meta.display_name ??
-                  meta.full_name ??
-                  meta.name ??
-                  null,
+                  meta.display_name ?? meta.full_name ?? meta.name ?? null,
               })
             } else {
               setIsAuthenticated(false)
@@ -243,10 +237,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     // jinak Dashboard / Domov
   }, [isAuthenticated, modules, activeModuleId, initialModuleId])
 
-  // 🔘 Kdykoliv se změní výběr (modul/sekce/tile), common actions se vynulují
+  // 🧹 Když nemáme vybraný tile, smažeme commonActions (prázdná lišta)
   useEffect(() => {
-    setCommonActions(undefined)
-  }, [activeModuleId, activeSelection?.sectionId, activeSelection?.tileId])
+    if (!activeSelection?.tileId) {
+      setCommonActions(undefined)
+    }
+  }, [activeSelection?.tileId])
 
   // 🚪 Logout
   async function handleLogout() {
@@ -263,8 +259,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   function handleModuleSelect(selection: SidebarSelection) {
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
-    // common actions vyčistíme, nový tile si je zaregistruje
-    setCommonActions(undefined)
   }
 
   // 🏠 Home button
@@ -286,9 +280,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // 🧭 Breadcrumbs – generické podle module.sections + tiles
   function getBreadcrumbSegments(): BreadcrumbSegment[] {
-    const segments: BreadcrumbSegment[] = [
-      { label: 'Dashboard', icon: 'home' },
-    ]
+    const segments: BreadcrumbSegment[] = [{ label: 'Dashboard', icon: 'home' }]
 
     if (!isAuthenticated || !activeModuleId) {
       segments.push({ label: 'Domov' })
@@ -324,9 +316,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     // Tile (konkrétní obrazovka)
     if (selection?.tileId && activeModule.tiles?.length) {
-      const tile = activeModule.tiles.find(
-        (t) => t.id === selection.tileId,
-      )
+      const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
       if (tile) {
         segments.push({
           label: tile.label,
@@ -381,7 +371,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="content">
           <h2>Dashboard</h2>
           <p>
-            Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho obsah.
+            Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho
+            obsah.
           </p>
         </div>
       )
@@ -394,8 +385,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="content">
           <h2>Neznámý modul</h2>
           <p>
-            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen v
-            konfiguraci. Zkontroluj <code>module.config.js</code>.
+            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen
+            v konfiguraci. Zkontroluj <code>module.config.js</code>.
           </p>
         </div>
       )
@@ -441,13 +432,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     // 3) Vybraný konkrétní tile
     if (selection.tileId && activeModule.tiles?.length) {
-      const tile = activeModule.tiles.find(
-        (t) => t.id === selection.tileId,
-      )
-    
+      const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
+
       if (tile) {
         const TileComponent = tile.component
-    
+
         return (
           <div className="content">
             <section
@@ -480,9 +469,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   <h3 className="content__section-title">
                     {tile.label}
                   </h3>
-                  <TileComponent
-                    onRegisterCommonActions={setCommonActions}
-                  />
+                  <TileComponent />
                 </section>
               )
             })}
@@ -496,9 +483,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       <div className="content">
         <h2>{activeModule.label}</h2>
         <p>
-          Tento modul zatím nemá nakonfigurované žádné dlaždice ani formuláře.
-          Přidej je do <code>{activeModule.id}/module.config.js</code> (pole{' '}
-          <code>tiles</code>, <code>overview</code>, <code>detail</code>).
+          Tento modul zatím nemá nakonfigurované žádné dlaždice ani
+          formuláře. Přidej je do <code>{activeModule.id}/module.config.js</code>{' '}
+          (pole <code>tiles</code>, <code>overview</code>,{' '}
+          <code>detail</code>).
         </p>
       </div>
     )
