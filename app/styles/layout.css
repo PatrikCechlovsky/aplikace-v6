@@ -238,7 +238,10 @@
   border-color: var(--color-primary-soft);
 }
 
-.common-actions__label {
+/* Text v tlačítkách – výchozí (ikonový) režim:
+   text je skrytý a ukáže se po najetí myší */
+.common-actions__label,
+.home-actions__label {
   white-space: nowrap;
   opacity: 0;
   max-width: 0;
@@ -246,7 +249,8 @@
   transition: opacity 0.15s ease, max-width 0.15s ease;
 }
 
-.common-actions__btn:hover .common-actions__label {
+.common-actions__btn:hover .common-actions__label,
+.home-actions__icon:hover .home-actions__label {
   opacity: 1;
   max-width: 80px;
 }
