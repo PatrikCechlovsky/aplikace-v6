@@ -444,10 +444,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       const tile = activeModule.tiles.find(
         (t) => t.id === selection.tileId,
       )
-
+    
       if (tile) {
         const TileComponent = tile.component
-
+    
         return (
           <div className="content">
             <section
@@ -455,8 +455,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               aria-label={tile.label}
             >
               <TileComponent
-                disabled={!isAuthenticated}
-                actions={commonActions}
+                onRegisterCommonActions={setCommonActions}
               />
             </section>
           </div>
