@@ -259,6 +259,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   function handleModuleSelect(selection: SidebarSelection) {
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
+     setCommonActions(undefined)
   }
 
   // 🏠 Home button
