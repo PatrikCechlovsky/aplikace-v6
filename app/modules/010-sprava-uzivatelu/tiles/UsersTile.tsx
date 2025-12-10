@@ -15,6 +15,7 @@ import type {
   CommonActionId,
   CommonActionConfig,
 } from '@/app/UI/CommonActions'
+import UserDetailFrame from '../forms/UserDetailFrame'
 
 // Dočasná mock data – později napojíme na tabulku subject + role z modulu 900
 type MockUser = {
@@ -102,6 +103,7 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
+  const [detailUser, setDetailUser] = useState<MockUser | null>(null) // ➕ NOVÉ
 
   // 🔘 Registrace společných akcí pro tento tile (zatím bez logiky)
   useEffect(() => {
@@ -142,45 +144,57 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
     }).map(toRow)
   }, [filterText, showArchived])
 
-  return (
-    <div className="users-list">
-      <ListView
-        columns={COLUMNS}
-        rows={rows}
-        filterPlaceholder="Hledat podle názvu, kódu nebo popisu..."
-        filterValue={filterText}
-        onFilterChange={setFilterText}
-        showArchived={showArchived}
-        onShowArchivedChange={setShowArchived}
-        showArchivedLabel="Zobrazit archivované"
-        emptyText="Zatím žádní uživatelé."
-        selectedId={selectedId}
-        onRowClick={(row) => setSelectedId(row.id)}
-        onRowDoubleClick={(row) => {
-          // tady zatím jen vyzkoušíme, že to funguje:
-          console.log('Dvojklik na řádek, otevřu detail pro:', row.raw)
-          setSelectedId(row.id)
-          // později sem dáme otevření EntityDetailFrame + DetailForm (view)
-        }}
-      />
+return (
+  <div className="users-list">
+    <ListView<MockUser>
+      columns={COLUMNS}
+      rows={rows}
+      filterPlaceholder="Hledat podle názvu, kódu nebo popisu..."
+      filterValue={filterText}
+      onFilterChange={setFilterText}
+      showArchived={showArchived}
+      onShowArchivedChange={setShowArchived}
+      showArchivedLabel="Zobrazit archivované"
+      emptyText="Zatím žádní uživatelé."
+      selectedId={selectedId}
+      onRowClick={(row) => setSelectedId(row.id)}
+      onRowDoubleClick={(row) => {
+        setSelectedId(row.id)
+        // raw máme z toRow(), je to celý MockUser
+        if (row.raw) {
+          setDetailUser(row.raw)
+        }
+      }}
+    />
 
-      <style jsx>{`
+    {detailUser && (
+      <div className="users-detail">
+        <UserDetailFrame user={detailUser} />
+      </div>
+    )}
+
+    <style jsx>{`
+      .users-list {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 12px 16px 16px;
+        box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .users-detail {
+        /* detail zatím prostě pod seznamem */
+      }
+
+      @media (max-width: 900px) {
         .users-list {
-          background: white;
-          border-radius: 0.75rem;
-          padding: 12px 16px 16px;
-          box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
-          height: 100%;
-          display: flex;
-          flex-direction: column;
+          padding: 8px 8px 12px;
         }
-
-        @media (max-width: 900px) {
-          .users-list {
-            padding: 8px 8px 12px;
-          }
-        }
-      `}</style>
-    </div>
+      }
+    `}</style>
+  </div>
   )
 }
