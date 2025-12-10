@@ -164,6 +164,12 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
         emptyText="Zatím žádní uživatelé."
         selectedId={selectedId}
         onRowClick={(row) => setSelectedId(row.id)}
+        onRowDoubleClick={(row) => {
+          // tady zatím jen vyzkoušíme, že to funguje:
+          console.log('Dvojklik na řádek, otevřu detail pro:', row.raw)
+          setSelectedId(row.id)
+          // později sem dáme otevření EntityDetailFrame + DetailForm (view)
+        }}
       />
 
       <style jsx>{`
