@@ -1,4 +1,4 @@
-// app/UI/HomeActions.tsx
+// FILE: app/UI/HomeActions.tsx
 'use client'
 
 type Props = {
@@ -6,6 +6,18 @@ type Props = {
   onLogout?: () => void
   displayName?: string | null
 }
+
+type HomeActionConfig = {
+  id: 'profile' | 'search' | 'notifications'
+  icon: string
+  label: string
+}
+
+const HOME_ACTIONS: HomeActionConfig[] = [
+  { id: 'profile', icon: '👤', label: 'Profil' },
+  { id: 'search', icon: '🔍', label: 'Hledat' },
+  { id: 'notifications', icon: '🔔', label: 'Upozornění' },
+]
 
 export default function HomeActions({
   disabled = false,
@@ -21,38 +33,28 @@ export default function HomeActions({
         {name}
       </span>
 
-      {/* Profil */}
-      <button
-        className="home-actions__icon"
-        title="Profil"
-        disabled={disabled}
-      >
-        👤
-      </button>
+      {/* Ikonová / textová tlačítka vpravo */}
+      {HOME_ACTIONS.map((action) => (
+        <button
+          key={action.id}
+          className="home-actions__icon"
+          disabled={disabled}
+          // title záměrně NEpoužíváme – text řešíme vizuálně
+          type="button"
+        >
+          <span className="home-actions__icon-emoji" aria-hidden="true">
+            {action.icon}
+          </span>
+          <span className="home-actions__label">{action.label}</span>
+        </button>
+      ))}
 
-      {/* Hledat */}
-      <button
-        className="home-actions__icon"
-        title="Hledat"
-        disabled={disabled}
-      >
-        🔍
-      </button>
-
-      {/* Upozornění */}
-      <button
-        className="home-actions__icon"
-        title="Upozornění"
-        disabled={disabled}
-      >
-        🔔
-      </button>
-
-      {/* Odhlášení */}
+      {/* Odhlášení – už textové tlačítko, to necháme tak jak je */}
       <button
         className="home-actions__logout"
         disabled={disabled}
         onClick={disabled ? undefined : onLogout}
+        type="button"
       >
         Odhlásit
       </button>
