@@ -12,7 +12,10 @@ import HomeButton from '@/app/UI/HomeButton'
 import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
 import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
-import CommonActions from '@/app/UI/CommonActions'
+import CommonActions, {
+  type CommonActionId,
+  type CommonActionConfig,
+} from '@/app/UI/CommonActions'
 import LoginPanel from '@/app/UI/LoginPanel'
 import {
   applyThemeToLayout,
@@ -32,7 +35,6 @@ import {
 } from '@/app/lib/services/auth'
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
-
 
 type SessionUser = {
   email?: string | null
@@ -92,7 +94,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   const [hasUnsavedChanges] = useState(false)
 
-  // 🎨 Při mountu aplikace nastavíme theme z localStorage
+  // 🔘 Common actions – dynamicky podle aktivního tilu / formuláře
+  const [commonActions, setCommonActions] = useState<
+    (CommonActionId | CommonActionConfig)[] | undefined
+  >(undefined)
+
+  // 🎨 Při mountu aplikace nastavíme theme + režim ikon z localStorage
   useEffect(() => {
     const themeSettings = loadThemeFromLocalStorage()
     applyThemeToLayout(themeSettings)
@@ -129,6 +136,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           setUser(null)
           setActiveModuleId(null)
           setActiveSelection(null)
+          setCommonActions(undefined)
         }
 
         const { data: sub } = onAuthStateChange(
@@ -151,6 +159,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               setUser(null)
               setActiveModuleId(null)
               setActiveSelection(null)
+              setCommonActions(undefined)
             }
           },
         )
@@ -162,6 +171,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         setUser(null)
         setActiveModuleId(null)
         setActiveSelection(null)
+        setCommonActions(undefined)
       } finally {
         setAuthLoading(false)
       }
@@ -231,6 +241,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     // jinak Dashboard / Domov
   }, [isAuthenticated, modules, activeModuleId, initialModuleId])
 
+  // 🔘 Kdykoliv se změní výběr (modul/sekce/tile), common actions se vynulují
+  useEffect(() => {
+    setCommonActions(undefined)
+  }, [activeModuleId, activeSelection?.sectionId, activeSelection?.tileId])
+
   // 🚪 Logout
   async function handleLogout() {
     await logout()
@@ -238,6 +253,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setUser(null)
     setActiveModuleId(null)
     setActiveSelection(null)
+    setCommonActions(undefined)
     router.push('/')
   }
 
@@ -245,6 +261,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   function handleModuleSelect(selection: SidebarSelection) {
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
+    // common actions vyčistíme, nový tile si je zaregistruje
+    setCommonActions(undefined)
   }
 
   // 🏠 Home button
@@ -260,6 +278,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     setActiveModuleId(null)
     setActiveSelection(null)
+    setCommonActions(undefined)
     router.push('/')
   }
 
@@ -433,7 +452,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               className="content__section"
               aria-label={tile.label}
             >
-              <TileComponent />
+              <TileComponent
+                onRegisterCommonActions={setCommonActions}
+              />
             </section>
           </div>
         )
@@ -457,7 +478,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   <h3 className="content__section-title">
                     {tile.label}
                   </h3>
-                  <TileComponent />
+                  <TileComponent
+                    onRegisterCommonActions={setCommonActions}
+                  />
                 </section>
               )
             })}
@@ -517,7 +540,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       </header>
 
       <div className="layout__actions">
-        <CommonActions disabled={!isAuthenticated} />
+        <CommonActions
+          disabled={!isAuthenticated}
+          actions={commonActions}
+        />
       </div>
 
       <main className="layout__content">{renderContent()}</main>
