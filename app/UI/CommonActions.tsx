@@ -1,10 +1,8 @@
+'use client'
+
 // FILE: app/UI/CommonActions.tsx
 // PURPOSE: Společná sada akcí (tlačítek) pro seznamy a formuláře.
-// - Každý tile / form si může nadefinovat, jaké akce chce zobrazit.
-// - CommonActions umí vyhodnotit requiresSelection / requiresDirty.
-// - Pokud není předáno "actions", použije se původní pevná sada (view/add/edit/archive/delete).
-
-'use client'
+// Akce jsou plně řízené zvenku – pokud nepřijdou žádné actions, lišta se nevykreslí.
 
 import { getIcon } from './icons'
 
@@ -98,7 +96,7 @@ export const COMMON_ACTION_DEFS: Record<
     label: 'Zrušit',
   },
 
-  // ===== NOVÉ PRO LISTVIEW (stub akce) ======================
+  // ===== NOVÉ PRO LISTVIEW (zatím bez logiky) ======================
   invite: {
     id: 'invite',
     icon: 'invite',
@@ -134,15 +132,14 @@ export type CommonActionConfig = {
   icon?: string
   visible?: boolean
   disabled?: boolean
-
-  // volitelné přepsání logiky – používáš v UsersTile
+  // volitelné přepsání logiky – můžeš použít v tilu
   requiresSelection?: boolean
   requiresDirty?: boolean
 }
 
 // Prop pro komponentu CommonActions
 type Props = {
-  // Volitelné: pokud neuvedeš, použije se defaultní sada (view, add, edit, archive, delete)
+  // Volitelné: pokud neuvedeš, lišta bude úplně prázdná
   actions?: CommonActionId[] | CommonActionConfig[]
 
   // Globální disabled (např. formulář v read-only)
@@ -154,14 +151,14 @@ type Props = {
   // Je formulář „dirty“ (jsou neuložené změny)?
   isDirty?: boolean
 
-  // Zarovnání celé lišty (do budoucna)
+  // Zarovnání celé lišty (pro budoucnost)
   align?: 'left' | 'right'
 
   // Handler kliknutí na akci
   onActionClick?: (id: CommonActionId) => void
 }
 
-// Pomocná funkce – normalizace vstupu na plnohodnotnou definici akce
+// 💡 Pomocná funkce – normalizace vstupu na plnohodnotnou definici akce
 function resolveActions(
   actions: Props['actions'],
 ): CommonActionDefinition[] {
@@ -178,7 +175,10 @@ function resolveActions(
   }
 
   // Pokud je to pole konfigurací
-  return (actions as CommonActionConfig[])
+  const configs = actions as CommonActionConfig[]
+
+  return configs
+    .filter((cfg) => cfg.visible !== false)
     .map((cfg) => {
       const baseDef = COMMON_ACTION_DEFS[cfg.id]
       if (!baseDef) return null
@@ -187,42 +187,21 @@ function resolveActions(
         ...baseDef,
         label: cfg.label ?? baseDef.label,
         icon: cfg.icon ?? baseDef.icon,
-        // requiresSelection / requiresDirty zůstávají z base
-      } as CommonActionDefinition
-    })
-    .filter((def): def is CommonActionDefinition => !!def)
-  }
-
-  // Pokud je to prosté pole ID
-  if (typeof actions[0] === 'string') {
-    return (actions as CommonActionId[])
-      .map((id) => COMMON_ACTION_DEFS[id])
-      .filter(Boolean)
-  }
-
-  // Pokud je to pole konfigurací
-  return (actions as CommonActionConfig[])
-    .map((cfg) => {
-      const baseDef = COMMON_ACTION_DEFS[cfg.id]
-      if (!baseDef) return null
-
-      return {
-        ...baseDef,
-        label: cfg.label ?? baseDef.label,
-        icon: cfg.icon ?? baseDef.icon,
-        // requiresSelection / requiresDirty zůstávají z base
+        requiresSelection:
+          cfg.requiresSelection ?? baseDef.requiresSelection,
+        requiresDirty: cfg.requiresDirty ?? baseDef.requiresDirty,
       } as CommonActionDefinition
     })
     .filter((def): def is CommonActionDefinition => !!def)
 }
 
-// Hlavní komponenta – stylování je v layout.css (common-actions__*)
+// Hlavní komponenta – vzhled je v layout.css (common-actions__*)
 export default function CommonActions({
   actions,
   disabled = false,
   hasSelection = false,
   isDirty = false,
-  align = 'left',
+  align = 'right',
   onActionClick,
 }: Props) {
   const resolved = resolveActions(actions)
