@@ -119,7 +119,7 @@ export const COMMON_ACTION_DEFS: Record<
   },
   reject: {
     id: 'reject',
-    icon: 'cancel',
+    icon: 'reject',
     label: 'Zrušit',
     requiresSelection: true,
   },
