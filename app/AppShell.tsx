@@ -95,9 +95,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [hasUnsavedChanges] = useState(false)
 
   // 🔘 Common actions – dynamicky podle aktivního tilu / formuláře
+  // Buď čisté pole ID, nebo čisté pole konfigurací, nebo nic.
   const [commonActions, setCommonActions] = useState<
-    (CommonActionId | CommonActionConfig)[] | undefined
+    CommonActionId[] | CommonActionConfig[] | undefined
   >(undefined)
+
 
   // 🎨 Při mountu aplikace nastavíme theme + režim ikon z localStorage
   useEffect(() => {
