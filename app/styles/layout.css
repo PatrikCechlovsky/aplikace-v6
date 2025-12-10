@@ -328,6 +328,7 @@
 .layout.icons-mode-text .sidebar__subicon { 
    display: none;
    }
+.layout.icons-mode-text .sidebar__section-icon,
 .layout.icons-mode-text .breadcrumbs__icon,
 .layout.icons-mode-text .common-actions__icon,
 .layout.icons-mode-text .home-button__icon {
