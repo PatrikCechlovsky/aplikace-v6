@@ -42,7 +42,7 @@ export type ListViewProps<TData = any> = {
 export default function ListView<TData = any>({
   columns,
   rows,
-  filterPlaceholder = 'Filtrovat…',
+  filterPlaceholder = 'Hledat podle názvu, kódu nebo popisu...…',
   filterValue,
   onFilterChange,
   showArchived = false,
