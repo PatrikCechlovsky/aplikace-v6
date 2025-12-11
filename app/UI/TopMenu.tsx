@@ -49,9 +49,6 @@ const TopMenu: React.FC<TopMenuProps> = ({
                   onClick={() => onSelectModule(m.id)}
                 >
                   <span className="topmenu__label">{m.label}</span>
-                </button>
-                <button ...>
-                  <span className="topmenu__label">{m.label}</span>
                   {m.hasChildren && (
                     <span className="topmenu__chevron" aria-hidden="true">
                       ▾
