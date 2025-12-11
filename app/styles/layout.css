@@ -388,3 +388,51 @@
 .layout.icons-mode-text .home-actions__icon:hover .home-actions__label {
   max-width: none;
 }
+/* ===========================
+   Horní lišta modulů – TopMenu
+   =========================== */
+
+.topmenu {
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+  background-color: var(--surface-subtle, #f3f4f6);
+}
+
+.topmenu__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topmenu__item {
+  margin: 0;
+  padding: 0;
+}
+
+.topmenu__button {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 9999px; /* „pill“ jako záložky */
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* aktivní modul */
+.topmenu__item--active .topmenu__button {
+  background: var(--accent-soft, #e0f2fe);
+  border-color: var(--accent, #0ea5e9);
+  font-weight: 600;
+}
+
+/* hover efekt */
+.topmenu__button:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
