@@ -42,6 +42,7 @@ import { loadThemeSettingsFromSupabase } from '@/app/lib/themeSettings'
 import TopMenu from '@/app/UI/TopMenu'
 
 type SessionUser = {
+  id?: string | null
   email?: string | null
   displayName?: string | null
 }
@@ -174,10 +175,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             if (session?.user) {
               const meta = session.user.user_metadata || {}
               setIsAuthenticated(true)
-              setUser({
-                email: session.user.email,
-                displayName:
-                  meta.display_name ?? meta.full_name ?? meta.name ?? null,
+                id: session.user.id,
+                  email: session.user.email,
+                  displayName:
+                    meta.display_name ?? meta.full_name ?? meta.name ?? null,
               })
             } else {
               setIsAuthenticated(false)
@@ -210,14 +211,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }, [])
   // 🎨 Po přihlášení načteme theme ze Supabase
   useEffect(() => {
-    if (!isAuthenticated || !user?.email) return
+    if (!isAuthenticated || !user?.id) return
   
     ;(async () => {
       try {
-        const userId = session?.user?.id
-        if (!userId) return
-  
-        const settings = await loadThemeSettingsFromSupabase(userId)
+        const settings = await loadThemeSettingsFromSupabase(user.id!)
   
         if (settings) {
           applyThemeToLayout(settings)
@@ -227,7 +225,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         console.error('Nepodařilo se načíst theme ze Supabase:', e)
       }
     })()
-  }, [isAuthenticated])
+  }, [isAuthenticated, user?.id])
 
   // 📦 Načtení modulů
   useEffect(() => {
