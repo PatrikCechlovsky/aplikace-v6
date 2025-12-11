@@ -11,6 +11,24 @@
   min-height: 100vh;
 }
 
+/* Režim horního menu – bez sidebaru, plná šířka */
+.layout.layout--topmenu {
+  grid-template-columns: 1fr;          /* žádných 260px vlevo */
+  grid-template-rows: auto auto auto 1fr;
+}
+
+.layout.layout--topmenu .layout__topbar {
+  grid-column: 1;
+}
+
+.layout.layout--topmenu .layout__actions {
+  grid-column: 1;
+}
+
+.layout.layout--topmenu .layout__content {
+  grid-column: 1;
+}
+
 /* SIDEBAR */
 
 .layout__sidebar,
