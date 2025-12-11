@@ -572,12 +572,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         {/* V režimu TOP zobrazíme modulovou lištu nad běžnými actions */}
         {menuLayout === 'top' && (
           <TopMenu
-            disabled={!isAuthenticated}
             modules={modules}
             activeModuleId={activeModuleId ?? undefined}
-            activeSelection={activeSelection ?? undefined}
-            hasUnsavedChanges={hasUnsavedChanges}
-            onModuleSelect={handleModuleSelect}
+            onSelectModule={handleModuleSelect}
           />
         )}
 
