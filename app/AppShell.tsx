@@ -221,7 +221,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   
         if (settings) {
           applyThemeToLayout(settings)
-          saveThemeToLocalStorage(settings)
         }
       } catch (e) {
         console.error('Nepodařilo se načíst theme ze Supabase:', e)
