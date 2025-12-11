@@ -7,8 +7,10 @@
 
 import React, { useState } from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
-import DetailView, { DetailViewMode } from '@/app/UI/DetailView'
+import DetailView, { type DetailViewMode } from '@/app/UI/DetailView'
 import UserDetailForm from './UserDetailForm'
+
+export type UserDetailMode = DetailViewMode
 
 type UserDetailFrameProps = {
   user: {
@@ -21,39 +23,67 @@ type UserDetailFrameProps = {
     createdAt: string
     isArchived?: boolean
   }
+  onClose?: () => void
 }
 
-export default function UserDetailFrame({ user }: UserDetailFrameProps) {
+export default function UserDetailFrame({ user, onClose }: UserDetailFrameProps) {
   const [mode, setMode] = useState<DetailViewMode>('view')
   const [isDirty, setIsDirty] = useState(false)
 
-  // TODO: tady později doplníme reálnou logiku
   const handleAttach = () => {
+    // 📎 přechod na sekci Přílohy – později napojíme na tab v EntityDetailFrame
     console.log('[UserDetailFrame] Paperclip → otevřít sekci Přílohy')
   }
 
   const handleUndo = () => {
+    // ↺ vrácení změn – tady můžeš případně resetnout stav formuláře
     console.log('[UserDetailFrame] Undo → vrátit změny formuláře')
-    // tady bys resetnul stav formuláře (např. přes key nebo předání funkce do UserDetailForm)
+    setIsDirty(false)
   }
 
   const handleReject = () => {
+    // ✕ zamítnout / odmítnout – modulová logika (např. zrušit pozvánku)
     console.log('[UserDetailFrame] Reject → zamítnout / archivovat uživatele')
   }
 
   const handleSave = () => {
-    console.log('[UserDetailFrame] Save → uložit změny')
+    console.log('[UserDetailFrame] Save → uložit změny (zatím mock)')
+    // tady později volání API + po úspěchu setIsDirty(false)
+    setIsDirty(false)
+    if (mode === 'create') {
+      setMode('view')
+    }
   }
 
   const handleCancel = () => {
     console.log('[UserDetailFrame] Cancel → zavřít detail uživatele')
+    onClose?.()
   }
 
   return (
     <EntityDetailFrame
       title={user.displayName}
       subtitle={user.email}
-      // attachmentsSlot / systemInfoSlot necháme zatím default
+      systemInfoSlot={
+        <dl className="entity-detail__meta">
+          <div className="entity-detail__meta-row">
+            <dt>ID</dt>
+            <dd>{user.id}</dd>
+          </div>
+          <div className="entity-detail__meta-row">
+            <dt>Vytvořen</dt>
+            <dd>{new Date(user.createdAt).toLocaleString('cs-CZ')}</dd>
+          </div>
+          <div className="entity-detail__meta-row">
+            <dt>Stav účtu</dt>
+            <dd>{user.isArchived ? 'Archivovaný' : 'Aktivní'}</dd>
+          </div>
+          <div className="entity-detail__meta-row">
+            <dt>Role</dt>
+            <dd>{user.roleLabel}</dd>
+          </div>
+        </dl>
+      }
     >
       <DetailView
         mode={mode}
