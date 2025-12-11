@@ -1,27 +1,38 @@
 // FILE: app/modules/900-nastaveni/tiles/AppViewSettingsTile.tsx
+// PURPOSE: Uživatelská nastavení vzhledu → výchozí zobrazení seznamů + rozložení hlavního menu
+// Poznámka: Toto nastavení je per-user (uloženo v localStorage), aplikace-v6 standard.
 
 'use client'
 
 import React, { useEffect, useState } from 'react'
 
+/* -------------------------------------------------------
+   Typy nastavení – pouze to, co je povoleno v tomto tile.
+-------------------------------------------------------- */
 type ViewMode = 'table' | 'cards'
 type MenuLayout = 'sidebar' | 'top'
-type IconMode = 'text' | 'icon-text'
-
-const STORAGE_KEY = 'app-view-settings'
 
 interface AppViewSettings {
   viewMode: ViewMode
   menuLayout: MenuLayout
-  iconMode: IconMode
 }
 
+/* -------------------------------------------------------
+   Klíč pro localStorage – per-user preference
+-------------------------------------------------------- */
+const STORAGE_KEY = 'app-view-settings'
+
+/* -------------------------------------------------------
+   Výchozí hodnoty (použije se při prvním spuštění)
+-------------------------------------------------------- */
 const DEFAULT_SETTINGS: AppViewSettings = {
   viewMode: 'table',
   menuLayout: 'sidebar',
-  iconMode: 'icon-text',
 }
 
+/* -------------------------------------------------------
+   Načtení nastavení z localStorage (bezpečné)
+-------------------------------------------------------- */
 function loadSettings(): AppViewSettings {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS
   try {
@@ -34,6 +45,9 @@ function loadSettings(): AppViewSettings {
   }
 }
 
+/* -------------------------------------------------------
+   Uložení nastavení do localStorage
+-------------------------------------------------------- */
 function saveSettings(settings: AppViewSettings) {
   if (typeof window === 'undefined') return
   try {
@@ -43,36 +57,43 @@ function saveSettings(settings: AppViewSettings) {
   }
 }
 
+/* -------------------------------------------------------
+   TILE: Vzhled a zobrazení (pouze 2 volby + náhled tabulky)
+-------------------------------------------------------- */
 const AppViewSettingsTile: React.FC = () => {
   const [settings, setSettings] = useState<AppViewSettings>(DEFAULT_SETTINGS)
 
+  // První načtení – jen klient
   useEffect(() => {
     setSettings(loadSettings())
   }, [])
 
+  // Aktualizace jedné části nastavení
   function updateSettings(partial: Partial<AppViewSettings>) {
     const next = { ...settings, ...partial }
     setSettings(next)
     saveSettings(next)
-    // 👉 sem se později může doplnit napojení na globální uiConfig / context
+    // zde bude napojení na globální UIConfig (fáze 2)
   }
 
   return (
     <section className="generic-type">
+      {/* Hlavička tile */}
       <header className="generic-type__header">
         <h1 className="generic-type__title">Vzhled a zobrazení</h1>
         <p className="generic-type__description">
-          Nastavení výchozího vzhledu aplikace a ukázkové tabulkové zobrazení
-          podle aktuálního barevného tématu.
+          Nastavení výchozího zobrazení seznamů a umístění hlavního menu.
+          Nastavení je uloženo pro každého uživatele samostatně.
         </p>
       </header>
 
       <div className="generic-type__body">
-        {/* 1) Nastavení vzhledu */}
-        <div className="generic-type__panel">
-          <h2 className="generic-type__panel-title">Výchozí zobrazení</h2>
 
-          {/* Způsob zobrazení seznamů */}
+        {/* PANEL: Nastavení výchozích pohledů */}
+        <div className="generic-type__panel">
+          <h2 className="generic-type__panel-title">Preferované rozložení</h2>
+
+          {/* Výchozí zobrazení seznamů */}
           <div className="generic-type__field-group">
             <label className="generic-type__label">Zobrazení seznamů</label>
             <div className="generic-type__radio-row">
@@ -83,8 +104,9 @@ const AppViewSettingsTile: React.FC = () => {
                   checked={settings.viewMode === 'table'}
                   onChange={() => updateSettings({ viewMode: 'table' })}
                 />
-                <span>Tabulka</span>
+                <span>Tabulkové (výchozí)</span>
               </label>
+
               <label className="generic-type__radio">
                 <input
                   type="radio"
@@ -92,17 +114,16 @@ const AppViewSettingsTile: React.FC = () => {
                   checked={settings.viewMode === 'cards'}
                   onChange={() => updateSettings({ viewMode: 'cards' })}
                 />
-                <span>Dlaždice / karty</span>
+                <span>Karty / Dlaždice</span>
               </label>
             </div>
           </div>
 
-          {/* Rozložení menu */}
+          {/* Rozložení hlavního menu */}
           <div className="generic-type__field-group">
-            <label className="generic-type__label">
-              Rozložení hlavního menu
-            </label>
+            <label className="generic-type__label">Umístění hlavního menu</label>
             <div className="generic-type__radio-row">
+
               <label className="generic-type__radio">
                 <input
                   type="radio"
@@ -112,6 +133,7 @@ const AppViewSettingsTile: React.FC = () => {
                 />
                 <span>Sidebar vlevo</span>
               </label>
+
               <label className="generic-type__radio">
                 <input
                   type="radio"
@@ -119,46 +141,19 @@ const AppViewSettingsTile: React.FC = () => {
                   checked={settings.menuLayout === 'top'}
                   onChange={() => updateSettings({ menuLayout: 'top' })}
                 />
-                <span>Horní menu (vodorovné)</span>
+                <span>Horní lišta (Excel styl)</span>
               </label>
-            </div>
-          </div>
 
-          {/* Ikony */}
-          <div className="generic-type__field-group">
-            <label className="generic-type__label">Zobrazení ikon</label>
-            <div className="generic-type__radio-row">
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="iconMode"
-                  checked={settings.iconMode === 'text'}
-                  onChange={() => updateSettings({ iconMode: 'text' })}
-                />
-                <span>Bez ikon (jen text)</span>
-              </label>
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="iconMode"
-                  checked={settings.iconMode === 'icon-text'}
-                  onChange={() => updateSettings({ iconMode: 'icon-text' })}
-                />
-                <span>Ikona + text</span>
-              </label>
             </div>
           </div>
         </div>
 
-        {/* 2) Ukázkové tabulkové zobrazení */}
+        {/* PANEL: Náhled tabulky */}
         <div className="generic-type__panel">
-          <h2 className="generic-type__panel-title">
-            Náhled tabulkového zobrazení
-          </h2>
+          <h2 className="generic-type__panel-title">Náhled tabulkového zobrazení</h2>
           <p className="generic-type__panel-description">
-            Tento náhled používá stejné barvy a styly jako skutečné seznamy v
-            aplikaci. Změnou motivu (téma vzhledu) uvidíš, jak se tabulka
-            přizpůsobí.
+            Tato ukázka používá stejné styly jako skutečné seznamy v aplikaci.
+            Náhled se automaticky přizpůsobuje podle vybraného barevného vzhledu.
           </p>
 
           <div className="generic-type__table-wrapper">
@@ -176,30 +171,25 @@ const AppViewSettingsTile: React.FC = () => {
                   <td>USR-001</td>
                   <td>Jan Novák</td>
                   <td>Aktivní</td>
-                  <td>10.12.2025</td>
+                  <td>10. 12. 2025</td>
                 </tr>
                 <tr>
                   <td>USR-002</td>
                   <td>Firma Alfa s.r.o.</td>
                   <td>Aktivní</td>
-                  <td>05.12.2025</td>
+                  <td>05. 12. 2025</td>
                 </tr>
                 <tr>
                   <td>USR-003</td>
                   <td>Testovací subjekt</td>
                   <td>Neaktivní</td>
-                  <td>01.12.2025</td>
+                  <td>01. 12. 2025</td>
                 </tr>
               </tbody>
             </table>
           </div>
-
-          <p className="generic-type__hint">
-            V produkční verzi se zde může zobrazit buď ukázkový dataset, nebo
-            skutečný seznam podle vybraných filtrů – důležité je, že tabulka
-            využívá stejné CSS třídy jako ostatní seznamy.
-          </p>
         </div>
+
       </div>
     </section>
   )
