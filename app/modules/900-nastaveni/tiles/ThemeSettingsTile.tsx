@@ -21,6 +21,13 @@ import {
   saveThemeToLocalStorage,
   saveThemeSettingsToSupabase,
 } from '../../../lib/themeSettings'
+import {
+  applyThemeToLayout,
+  loadThemeFromLocalStorage,
+  saveThemeToLocalStorage,
+  type ThemeSettings,
+} from '../../../lib/themeSettings'
+
 import { getCurrentSession } from '../../../lib/services/auth'
 
 type ThemePreset = {
@@ -136,6 +143,18 @@ export default function ThemeSettingsTile() {
   const [isSaving, setIsSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
 
+  // načtu aktuální theme z localStorage a zkusím k němu najít preset
+  useEffect(() => {
+    const current = loadThemeFromLocalStorage()
+
+    const matchedPreset = PRESETS.find(
+      (p) => p.mode === current.mode && p.accent === current.accent,
+    )
+
+    if (matchedPreset) {
+      setSelectedPresetId(matchedPreset.id)
+    }
+  }, [])
   // 0) zjistíme aktuálního uživatele (jen na clientu)
   useEffect(() => {
     let cancelled = false
