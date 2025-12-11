@@ -123,6 +123,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       // když je localStorage rozbitý, ignorujeme a necháme sidebar
     }
   }, [])
+  
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const el = document.querySelector('.layout')
+    if (!el) return
+  
+    el.classList.toggle('layout--topmenu', menuLayout === 'top')
+  }, [menuLayout])
 
   // 🔘 Common actions – dynamicky registruje aktuální tile
   const [commonActions, setCommonActions] = useState<
@@ -539,13 +547,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }
 
     // 🧱 Layout – přepínání mezi "sidebar" a "top" layoutem
-
-  // ⬅️ NOVÁ ŘÁDKA navíc – vybere správnou CSS třídu podle layoutu
-  const layoutClassName =
-    menuLayout === 'top' ? 'layout layout--topmenu' : 'layout'
-
   return (
-    <div className={layoutClassName}>
+    <div className="layout">
       {/* SIDEBAR se vykreslí jen v režimu "sidebar" */}
       {menuLayout === 'sidebar' && (
         <aside className="layout__sidebar">
