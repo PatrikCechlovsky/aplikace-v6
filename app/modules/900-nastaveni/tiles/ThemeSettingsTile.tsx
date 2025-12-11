@@ -11,22 +11,16 @@
  */
 
 import { useEffect, useState } from 'react'
-import type {
-  ThemeMode,
-  ThemeAccent,
-  ThemeSettings,
-} from '../../../lib/themeSettings'
-import {
-  applyThemeToLayout,
-  saveThemeToLocalStorage,
-  saveThemeSettingsToSupabase,
-} from '../../../lib/themeSettings'
 import {
   applyThemeToLayout,
   loadThemeFromLocalStorage,
   saveThemeToLocalStorage,
+  saveThemeSettingsToSupabase,
   type ThemeSettings,
+  type ThemeMode,
+  type ThemeAccent,
 } from '../../../lib/themeSettings'
+
 
 import { getCurrentSession } from '../../../lib/services/auth'
 
