@@ -187,9 +187,9 @@
 }
 
 .layout__topbar-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* STŘED = breadcrumbs, zabere vše mezi */
   align-items: center;
-  width: 100%;
   gap: 16px;
 }
 
@@ -235,6 +235,20 @@
 .breadcrumbs__separator {
   margin: 0 4px;
   color: var(--color-text-muted);
+}
+/* MODE: topmenu – roztáhnout breadcrumbs mezi logo a user blok */
+.layout--topmenu .layout__topbar-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Breadcrumbs v topmenu: povolit růst + zalomení */
+.layout--topmenu .breadcrumbs {
+  flex-wrap: wrap;        /* místo nowrap */
+  white-space: normal;    /* dovolí zalomení */
+  overflow-x: visible;    /* žádný scroll */
 }
 
 /* COMMON ACTIONS */
