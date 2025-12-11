@@ -593,7 +593,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         {/* V režimu TOP zobrazíme modulovou lištu nad běžnými actions */}
         {menuLayout === 'top' && (
           <TopMenu
-            modules={modules}
+            modules={modules.map((m) => ({
+              id: m.id,
+              label: m.label,
+              enabled: m.enabled,
+              // má tento modul sekce nebo tiles?
+              hasChildren: !!((m.sections && m.sections.length) || (m.tiles && m.tiles.length)),
+            }))}
             activeModuleId={activeModuleId ?? undefined}
             onSelectModule={(id) =>
               handleModuleSelect({ moduleId: id })
