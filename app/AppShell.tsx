@@ -174,11 +174,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
             if (session?.user) {
               const meta = session.user.user_metadata || {}
+            
               setIsAuthenticated(true)
+              setUser({
                 id: session.user.id,
-                  email: session.user.email,
-                  displayName:
-                    meta.display_name ?? meta.full_name ?? meta.name ?? null,
+                email: session.user.email,
+                displayName:
+                  meta.display_name ?? meta.full_name ?? meta.name ?? null,
               })
             } else {
               setIsAuthenticated(false)
