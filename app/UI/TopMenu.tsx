@@ -1,14 +1,23 @@
-// FILE: app/UI/TopMenu.tsx
+/**
+ * FILE: TopMenu.tsx
+ * PATH: /app/UI/TopMenu.tsx
+ * PURPOSE: Horní horizontální lišta modulů (Excel styl).
+ */
 
 'use client'
 
 import React from 'react'
-import type { AppModuleConfig } from '../modules.types' // použij tvůj typ modulů
+
+interface TopMenuModule {
+  id: string
+  label: string
+  enabled?: boolean
+}
 
 interface TopMenuProps {
-  modules: AppModuleConfig[]
-  activeModuleId: string | null
-  onSelectModule: (id: string | null) => void
+  modules: TopMenuModule[]
+  activeModuleId?: string
+  onSelectModule: (id: string) => void
 }
 
 const TopMenu: React.FC<TopMenuProps> = ({
@@ -21,25 +30,28 @@ const TopMenu: React.FC<TopMenuProps> = ({
       <ul className="topmenu__list">
         {modules
           .filter((m) => m.enabled !== false)
-          .map((module) => (
-            <li
-              key={module.id}
-              className={
-                module.id === activeModuleId
-                  ? 'topmenu__item topmenu__item--active'
-                  : 'topmenu__item'
-              }
-            >
-              <button
-                type="button"
-                className="topmenu__button"
-                onClick={() => onSelectModule(module.id)}
+          .map((m) => {
+            const isActive = m.id === activeModuleId
+
+            return (
+              <li
+                key={m.id}
+                className={
+                  isActive
+                    ? 'topmenu__item topmenu__item--active'
+                    : 'topmenu__item'
+                }
               >
-                {/* můžeš přidat ikonu, když budeš chtít */}
-                <span className="topmenu__label">{module.label}</span>
-              </button>
-            </li>
-          ))}
+                <button
+                  type="button"
+                  className="topmenu__button"
+                  onClick={() => onSelectModule(m.id)}
+                >
+                  <span className="topmenu__label">{m.label}</span>
+                </button>
+              </li>
+            )
+          })}
       </ul>
     </nav>
   )
