@@ -216,17 +216,20 @@
 
 .breadcrumbs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;          /* ✅ už neláme na další řádek */
   align-items: center;
   gap: 4px;
   font-size: 13px;
   color: var(--color-text-muted);
+  white-space: nowrap;        /* drž vše v jednom řádku */
+  overflow-x: auto;           /* na malém displeji raději scroll než zalomení */
 }
 
 .breadcrumbs__item {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: inherit;       /* bere nastavení z .breadcrumbs */
 }
 
 .breadcrumbs__separator {
