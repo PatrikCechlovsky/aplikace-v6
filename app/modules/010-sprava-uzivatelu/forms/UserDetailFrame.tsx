@@ -1,6 +1,10 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
  * PURPOSE: Rámec detailu uživatele – používá EntityDetailFrame + DetailView + UserDetailForm
+ *
+ * DŮLEŽITÉ:
+ *  - ŽÁDNÁ akční tlačítka nejsou ve formuláři, ale v CommonActions (horní lišta).
+ *  - Tohle je jen "stránka s detailem" pro modul 010.
  */
 
 'use client'
@@ -9,8 +13,6 @@ import React, { useState } from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
 import DetailView, { type DetailViewMode } from '@/app/UI/DetailView'
 import UserDetailForm from './UserDetailForm'
-
-export type UserDetailMode = DetailViewMode
 
 type UserDetailFrameProps = {
   user: {
@@ -27,32 +29,17 @@ type UserDetailFrameProps = {
 }
 
 export default function UserDetailFrame({ user, onClose }: UserDetailFrameProps) {
-  const [mode, setMode] = useState<DetailViewMode>('view')
+  // Režim formuláře – zatím vždy "view".
+  // Později ho budeme přepínat přes CommonActions (edit/view/create).
+  const [mode] = useState<DetailViewMode>('view')
+
+  // Dirty flag – dostává info z UserDetailForm přes onDirtyChange
   const [isDirty, setIsDirty] = useState(false)
-
-  const handleAttach = () => {
-    // 📎 přechod na sekci Přílohy – později napojíme na tab v EntityDetailFrame
-    console.log('[UserDetailFrame] Paperclip → otevřít sekci Přílohy')
-  }
-
-  const handleUndo = () => {
-    // ↺ vrácení změn – tady můžeš případně resetnout stav formuláře
-    console.log('[UserDetailFrame] Undo → vrátit změny formuláře')
-    setIsDirty(false)
-  }
-
-  const handleReject = () => {
-    // ✕ zamítnout / odmítnout – modulová logika (např. zrušit pozvánku)
-    console.log('[UserDetailFrame] Reject → zamítnout / archivovat uživatele')
-  }
 
   const handleSave = () => {
     console.log('[UserDetailFrame] Save → uložit změny (zatím mock)')
-    // tady později volání API + po úspěchu setIsDirty(false)
+    // TODO: volání API + setIsDirty(false)
     setIsDirty(false)
-    if (mode === 'create') {
-      setMode('view')
-    }
   }
 
   const handleCancel = () => {
@@ -91,10 +78,6 @@ export default function UserDetailFrame({ user, onClose }: UserDetailFrameProps)
         isSaving={false}
         onSave={handleSave}
         onCancel={handleCancel}
-        onModeChange={setMode}
-        onAttach={handleAttach}
-        onUndo={handleUndo}
-        onReject={handleReject}
       >
         <UserDetailForm
           user={user}
