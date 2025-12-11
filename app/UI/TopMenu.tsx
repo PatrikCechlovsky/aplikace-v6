@@ -26,7 +26,7 @@ const TopMenu: React.FC<TopMenuProps> = ({
   onSelectModule,
 }) => {
   return (
-    <nav className="topmenu">
+    <nav className="topmenu" aria-label="Hlavní moduly">
       <ul className="topmenu__list">
         {modules
           .filter((m) => m.enabled !== false)
