@@ -1,17 +1,26 @@
 /*
- * FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
- * PURPOSE: Spojení EntityDetailFrame + UserDetailForm pro modul 010
+ * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
+ * PURPOSE: Modul 010 – přehled uživatelů.
+ *          ✅ Vždy buď jen SEZNAM, nebo jen DETAIL přes celý content.
  */
 
 'use client'
 
-import React from 'react'
-import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
-import UserDetailForm from './UserDetailForm'
+import React, { useEffect, useMemo, useState } from 'react'
+import ListView, {
+  type ListViewColumn,
+  type ListViewRow,
+} from '@/app/UI/ListView'
+import type {
+  CommonActionId,
+  CommonActionConfig,
+} from '@/app/UI/CommonActions'
+import UserDetailFrame, {
+  type UserDetailMode,
+} from '../forms/UserDetailFrame'
 
-export type UserDetailMode = 'view' | 'edit' | 'create'
-
-export type UserForDetail = {
+// ⚙️ Dočasná mock data – později napojíme na Supabase / subject tabulku
+type MockUser = {
   id: string
   displayName: string
   email: string
@@ -22,49 +31,179 @@ export type UserForDetail = {
   isArchived?: boolean
 }
 
-type UserDetailFrameProps = {
-  user: UserForDetail
-  mode?: UserDetailMode
-  onDirtyChange?: (dirty: boolean) => void
+const ROLE_COLORS: Record<string, string> = {
+  Administrátor: '#f4d35e',
+  Manager: '#e05570',
+  Nájemník: '#1e6fff',
+  Pronajímatel: '#1fb086',
+  Údržbář: '#d63ea5',
+  Uživatel: '#6b7280',
 }
 
-const MODE_LABEL: Record<UserDetailMode, string> = {
-  view: 'Detail uživatele',
-  edit: 'Upravit uživatele',
-  create: 'Nový uživatel',
+const MOCK_USERS: MockUser[] = [
+  {
+    id: 'u-001',
+    displayName: 'Páťa',
+    email: 'patrik.cechlovsky@centrum.cz',
+    phone: '+420 777 111 222',
+    roleLabel: 'Administrátor',
+    twoFactorMethod: 'app',
+    createdAt: '2024-01-15',
+    isArchived: false,
+  },
+  {
+    id: 'u-002',
+    displayName: 'patizonan',
+    email: 'patizonan@gmail.com',
+    phone: '+420 602 333 444',
+    roleLabel: 'Uživatel',
+    twoFactorMethod: null,
+    createdAt: '2024-02-03',
+    isArchived: false,
+  },
+]
+
+// Sloupce pro ListView
+const COLUMNS: ListViewColumn[] = [
+  { key: 'roleLabel', label: 'Role', width: '18%' },
+  { key: 'displayName', label: 'Jméno' },
+  { key: 'email', label: 'E-mail' },
+  { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
+]
+
+// Mapování mock dat na ListViewRow – stejný pattern použijeme i v dalších modulech
+function toRow(user: MockUser): ListViewRow<MockUser> {
+  const color = ROLE_COLORS[user.roleLabel] ?? '#6b7280'
+
+  return {
+    id: user.id,
+    raw: user,
+    data: {
+      roleLabel: (
+        <span
+          className="generic-type__name-badge"
+          style={{ backgroundColor: color }}
+        >
+          {user.roleLabel}
+        </span>
+      ),
+      displayName: user.displayName,
+      email: user.email,
+      isArchived: user.isArchived ? '✓' : '',
+    },
+  }
 }
 
-export default function UserDetailFrame({
-  user,
-  mode = 'view',
-  onDirtyChange,
-}: UserDetailFrameProps) {
-  return (
-    <EntityDetailFrame
-      title={user.displayName}
-      subtitle={`${user.email} · ${MODE_LABEL[mode]}`}
-      systemInfoSlot={
-        <dl className="entity-detail__meta">
-          <div className="entity-detail__meta-row">
-            <dt>ID</dt>
-            <dd>{user.id}</dd>
-          </div>
-          <div className="entity-detail__meta-row">
-            <dt>Vytvořen</dt>
-            <dd>{new Date(user.createdAt).toLocaleString('cs-CZ')}</dd>
-          </div>
-          <div className="entity-detail__meta-row">
-            <dt>Stav účtu</dt>
-            <dd>{user.isArchived ? 'Archivovaný' : 'Aktivní'}</dd>
-          </div>
-          <div className="entity-detail__meta-row">
-            <dt>Role</dt>
-            <dd>{user.roleLabel}</dd>
-          </div>
-        </dl>
-      }
-    >
-      <UserDetailForm user={user} onDirtyChange={onDirtyChange} />
-    </EntityDetailFrame>
-  )
+type UsersTileProps = {
+  onRegisterCommonActions?: (
+    actions: CommonActionId[] | CommonActionConfig[],
+  ) => void
+}
+
+// 🔁 Vzorový typ viewMode, který můžeme okopírovat i pro další moduly
+type UsersViewMode = 'list' | UserDetailMode
+
+export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
+  const [selectedId, setSelectedId] = useState<string | number | null>(null)
+  const [filterText, setFilterText] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
+
+  const [viewMode, setViewMode] = useState<UsersViewMode>('list')
+  const [detailUser, setDetailUser] = useState<MockUser | null>(null)
+
+  // Registrace společných akcí – zatím jen definujeme tlačítka, logiku napojíme později
+  useEffect(() => {
+    if (!onRegisterCommonActions) return
+
+    const actions: CommonActionConfig[] = [
+      { id: 'add' }, // později → viewMode = 'create'
+      { id: 'view', requiresSelection: true },
+      { id: 'edit', requiresSelection: true },
+      { id: 'invite' },
+      { id: 'columnSettings', label: 'Nastavení sloupců' },
+      { id: 'import' },
+      { id: 'export' },
+      { id: 'reject', requiresSelection: true },
+    ]
+
+    onRegisterCommonActions(actions)
+  }, [onRegisterCommonActions])
+
+  // Filtrování mock dat podle textu + archivace
+  const rows: ListViewRow<MockUser>[] = useMemo(() => {
+    const normalizedFilter = filterText.trim().toLowerCase()
+
+    return MOCK_USERS.filter((u) => {
+      if (!showArchived && u.isArchived) return false
+      if (!normalizedFilter) return true
+
+      const haystack = [u.displayName, u.email, u.phone ?? '', u.roleLabel]
+        .join(' ')
+        .toLowerCase()
+
+      return haystack.includes(normalizedFilter)
+    }).map(toRow)
+  }, [filterText, showArchived])
+
+  const openDetail = (mode: UserDetailMode, user: MockUser | null) => {
+    if (!user) return
+    setDetailUser(user)
+    setViewMode(mode)
+  }
+
+  // ===========================
+  //  RENDER: 1) SEZNAM UŽIVATELŮ
+  // ===========================
+  if (viewMode === 'list') {
+    return (
+      <div className="users-list">
+        <ListView<MockUser>
+          columns={COLUMNS}
+          rows={rows}
+          filterPlaceholder="Hledat podle názvu, kódu nebo popisu..."
+          filterValue={filterText}
+          onFilterChange={setFilterText}
+          showArchived={showArchived}
+          onShowArchivedChange={setShowArchived}
+          showArchivedLabel="Zobrazit archivované"
+          emptyText="Zatím žádní uživatelé."
+          selectedId={selectedId}
+          onRowClick={(row) => setSelectedId(row.id)}
+          onRowDoubleClick={(row) => {
+            // Dvojklik = otevřít detail pro ČTENÍ přes celý content
+            setSelectedId(row.id)
+            openDetail('view', row.raw ?? null)
+          }}
+        />
+
+        <style jsx>{`
+          .users-list {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 12px 16px 16px;
+            box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+
+          @media (max-width: 900px) {
+            .users-list {
+              padding: 8px 8px 12px;
+            }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  // ===========================
+  //  RENDER: 2) DETAIL UŽIVATELE
+  // ===========================
+  if (detailUser) {
+    return <UserDetailFrame user={detailUser} mode={viewMode} />
+  }
+
+  // Fallback – kdyby něco nesedělo
+  return null
 }
