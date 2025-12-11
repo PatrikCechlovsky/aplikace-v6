@@ -535,9 +535,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     )
   }
 
-  // 🧱 Layout – přepínání mezi "sidebar" a "top" layoutem
+    // 🧱 Layout – přepínání mezi "sidebar" a "top" layoutem
+
+  // ⬅️ NOVÁ ŘÁDKA navíc – vybere správnou CSS třídu podle layoutu
+  const layoutClassName =
+    menuLayout === 'top' ? 'layout layout--topmenu' : 'layout'
+
   return (
-    <div className="layout">
+    <div className={layoutClassName}>
       {/* SIDEBAR se vykreslí jen v režimu "sidebar" */}
       {menuLayout === 'sidebar' && (
         <aside className="layout__sidebar">
@@ -578,7 +583,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               disabled={!isAuthenticated}
               onLogout={handleLogout}
               displayName={displayName}
-              onForceSidebar={forceSidebarLayout}   // ⬅️ přidáno
+              onForceSidebar={forceSidebarLayout}
             />
           </div>
         </div>
