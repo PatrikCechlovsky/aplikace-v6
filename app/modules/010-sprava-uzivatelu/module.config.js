@@ -14,8 +14,8 @@ export default {
   tiles: [
     {
       id: 'users-list',
-      label: 'Seznam uživatelů',
-      icon: 'user',
+      label: 'Přehled uživatelů',
+      icon: 'list-alt',
       component: UsersTile,
       order: 10,
     },
