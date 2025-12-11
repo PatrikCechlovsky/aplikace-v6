@@ -18,13 +18,17 @@ type UserDetailFormProps = {
     createdAt: string
     isArchived?: boolean
   }
-  // callback zvenku (UsersTile) – potřebujeme pro CommonActions (isDirty)
+  // callback zvenku (UsersTile / UserDetailFrame) – pro CommonActions (isDirty)
   onDirtyChange?: (dirty: boolean) => void
+
+  // řízení režimu view/edit – pokud true, vstupy jsou disabled
+  readOnly?: boolean
 }
 
 export default function UserDetailForm({
   user,
   onDirtyChange,
+  readOnly = false,
 }: UserDetailFormProps) {
   // jednoduchý lokální stav – zatím jen mock (později napojíme na reálná data)
   const [firstName, setFirstName] = useState('')
@@ -69,6 +73,7 @@ export default function UserDetailForm({
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Jméno"
+              disabled={readOnly}
             />
           </div>
 
@@ -79,6 +84,7 @@ export default function UserDetailForm({
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Příjmení"
+              disabled={readOnly}
             />
           </div>
 
@@ -89,6 +95,7 @@ export default function UserDetailForm({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+420 777 000 000"
+              disabled={readOnly}
             />
           </div>
 
@@ -99,6 +106,7 @@ export default function UserDetailForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="uživatel@example.com"
+              disabled={readOnly}
             />
           </div>
         </div>
