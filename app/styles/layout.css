@@ -214,6 +214,13 @@
   padding: 36px 16px 4px;
 }
 
+/* TOPMENU – breadcrumbs musí umět zúžit se v gridu a neomezovat obsah */
+.layout--topmenu .layout__breadcrumbs {
+  padding: 8px 0 4px;   /* menší padding, aby nebyla tak vysoko */
+  min-width: 0;        /* DŮLEŽITÉ – dovolí zmenšit se */
+  width: 100%;
+}
+
 .breadcrumbs {
   display: flex;
   flex-wrap: nowrap;          /* ✅ už neláme na další řádek */
@@ -223,6 +230,11 @@
   color: var(--color-text-muted);
   white-space: nowrap;        /* drž vše v jednom řádku */
   overflow-x: auto;           /* na malém displeji raději scroll než zalomení */
+}
+
+/* TOPMENU – plná šířka, žádný scrollbar */
+.layout--topmenu .breadcrumbs {
+  overflow-x: visible !important;
 }
 
 .breadcrumbs__item {
