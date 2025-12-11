@@ -7,10 +7,6 @@
  *          - filtr (input)
  *          - zaškrtávátko „Zobrazit archivované“
  *          - tabulka se záhlavím a řádky.
- *
- * Pattern:
- *  - klik na řádek → onRowClick(row) → rodič si nastaví selectedId
- *  - dvojklik na řádek → onRowDoubleClick(row) → rodič otevře EntityDetailFrame
  */
 
 import React from 'react'
@@ -36,16 +32,32 @@ export type ListViewRow<TData = any> = {
 export type ListViewProps<TData = any> = {
   columns: ListViewColumn[]
   rows: ListViewRow<TData>[]
-  filterPlaceholder?: string
+
+  /** Text ve filtru */
   filterValue: string
+  /** Změna filtru */
   onFilterChange: (value: string) => void
+  /** Placeholder filtru */
+  filterPlaceholder?: string
+
+  /** Stav přepínače „Zobrazit archivované“ */
   showArchived?: boolean
+  /** Změna přepínače „Zobrazit archivované“ */
   onShowArchivedChange?: (value: boolean) => void
+  /** Popisek vedle checkboxu */
   showArchivedLabel?: string
+
+  /** Text, pokud nejsou žádné záznamy */
   emptyText?: string
+
+  /** ID aktuálně vybraného řádku – pro podbarvení */
   selectedId?: string | number | null
+
+  /** Klik na řádek – typicky pro nastavení selectedId v rodiči */
   onRowClick?: (row: ListViewRow<TData>) => void
-  onRowDoubleClick?: (row: ListViewRow<TData>) => void   // ➕ NOVÉ
+
+  /** Dvojklik na řádek – typicky pro otevření detailu (celostránkově) */
+  onRowDoubleClick?: (row: ListViewRow<TData>) => void
 }
 
 export default function ListView<TData = any>({
@@ -60,7 +72,7 @@ export default function ListView<TData = any>({
   emptyText = 'Žádné záznamy.',
   selectedId = null,
   onRowClick,
-  onRowDoubleClick,            // ➕ NOVÉ
+  onRowDoubleClick,
 }: ListViewProps<TData>) {
   const hasCheckbox = typeof onShowArchivedChange === 'function'
 
@@ -120,7 +132,10 @@ export default function ListView<TData = any>({
           <tbody>
             {rows.length === 0 ? (
               <tr className="generic-type__row generic-type__row--empty">
-                <td className="generic-type__cell" colSpan={columns.length}>
+                <td
+                  className="generic-type__cell"
+                  colSpan={columns.length}
+                >
                   {emptyText}
                 </td>
               </tr>
