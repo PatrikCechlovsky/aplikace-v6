@@ -193,6 +193,13 @@
   margin-left: auto;
 }
 
+/* V HEADERU – HomeButton + breadcrumbs vedle sebe */
+.layout__topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* BREADCRUMBS */
 
 .layout__breadcrumbs {
