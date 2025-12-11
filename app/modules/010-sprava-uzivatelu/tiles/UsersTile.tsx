@@ -29,6 +29,7 @@ type MockUser = {
   isArchived?: boolean
 }
 
+// 💡 Dočasná mapa barev podle role – později se vezme z modulu 900 (typy rolí)
 const ROLE_COLORS: Record<string, string> = {
   Administrátor: '#f4d35e',
   Manager: '#e05570',
@@ -109,23 +110,36 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   const [viewMode, setViewMode] = useState<UsersViewMode>('list')
   const [detailUser, setDetailUser] = useState<MockUser | null>(null)
 
-  // Registrace společných akcí – zatím jen definujeme tlačítka, logiku napojíme později
+  // 🔘 Registrace společných akcí podle aktuálního viewMode
   useEffect(() => {
     if (!onRegisterCommonActions) return
 
-    const actions: CommonActionConfig[] = [
-      { id: 'add' }, // později → otevře nový prázdný formulář (create)
-      { id: 'view', requiresSelection: true }, // zobrazit detail vybraného
-      { id: 'edit', requiresSelection: true }, // přepnout detail do editace
-      { id: 'invite' },
-      { id: 'columnSettings', label: 'Nastavení sloupců' },
-      { id: 'import' },
-      { id: 'export' },
-      { id: 'reject', requiresSelection: true },
-    ]
+    let actions: CommonActionConfig[]
+
+    if (viewMode === 'list') {
+      // SEZNAM – tvoje původní sada tlačítek
+      actions = [
+        { id: 'add' }, // nové založení
+        { id: 'view', requiresSelection: true }, // zobrazit detail vybraného
+        { id: 'edit', requiresSelection: true }, // přepnout detail do editace (později)
+        { id: 'invite' },
+        { id: 'columnSettings', label: 'Nastavení sloupců' },
+        { id: 'import' },
+        { id: 'export' },
+        { id: 'reject', requiresSelection: true },
+      ]
+    } else {
+      // DETAIL – jen “formulářová” sada
+      // (zatím základ: view/edit + reject; příloha/undo doplníme, až rozšíříme CommonActions)
+      actions = [
+        { id: 'view' },
+        { id: 'edit' },
+        { id: 'reject' },
+      ]
+    }
 
     onRegisterCommonActions(actions)
-  }, [onRegisterCommonActions])
+  }, [onRegisterCommonActions, viewMode])
 
   // Filtrování mock dat podle textu + archivace
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
@@ -199,7 +213,7 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   //  RENDER: 2) DETAIL UŽIVATELE
   // ===========================
   if (detailUser) {
-    // UserDetailFrame si uvnitř sám řeší view/edit + tlačítka v DetailView
+    // UserDetailFrame si uvnitř sám řeší obsah formuláře
     return <UserDetailFrame user={detailUser} />
   }
 
