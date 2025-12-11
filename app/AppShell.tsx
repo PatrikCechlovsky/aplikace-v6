@@ -306,6 +306,21 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     router.push('/')
   }
 
+  // 🔁 Nouzové tlačítko: rychlé přepnutí zpět na sidebar
+  function forceSidebarLayout() {
+    setMenuLayout('sidebar')
+
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem('app-view-settings')
+        const parsed = raw ? JSON.parse(raw) : {}
+        const next = { ...parsed, menuLayout: 'sidebar' }
+        window.localStorage.setItem('app-view-settings', JSON.stringify(next))
+      } catch {
+        // když je localStorage rozbitý, nic se neděje
+      }
+    }
+  }
   // 🧭 Breadcrumbs – generické podle module.sections + tiles
   function getBreadcrumbSegments(): BreadcrumbSegment[] {
     const segments: BreadcrumbSegment[] = [{ label: 'Dashboard', icon: 'home' }]
@@ -563,6 +578,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               disabled={!isAuthenticated}
               onLogout={handleLogout}
               displayName={displayName}
+              onForceSidebar={forceSidebarLayout}   // ⬅️ přidáno
             />
           </div>
         </div>
