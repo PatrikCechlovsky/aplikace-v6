@@ -8,8 +8,11 @@
 import React from 'react'
 
 type Props = {
-  title: string
+  /** Volitelný nadpis detailu (když nechceš, nech prázdné) */
+  title?: string
+  /** Volitelný podtitulek (např. e-mail, kód…) */
   subtitle?: string
+  /** Vlastní obsah detailu (formulář / sekce) */
   children?: React.ReactNode
   /** Volitelné – pokud pošleš obsah, zobrazí se pravý panel */
   attachmentsSlot?: React.ReactNode
@@ -24,18 +27,21 @@ export default function EntityDetailFrame({
   systemInfoSlot,
 }: Props) {
   const hasSide = !!attachmentsSlot || !!systemInfoSlot
+  const hasHeader = !!title || !!subtitle
 
   return (
     <div className="entity-detail">
-      {/* Hlavička detailu */}
-      <div className="entity-detail__header">
-        <div>
-          <h2 className="entity-detail__title">{title}</h2>
-          {subtitle && (
-            <div className="entity-detail__subtitle">{subtitle}</div>
-          )}
+      {/* Hlavička detailu – jen pokud máme něco k zobrazení */}
+      {hasHeader && (
+        <div className="entity-detail__header">
+          <div>
+            {title && <h2 className="entity-detail__title">{title}</h2>}
+            {subtitle && (
+              <div className="entity-detail__subtitle">{subtitle}</div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tělo detailu – 1 sloupec (jen formulář) nebo 2 sloupce (form + pravý panel) */}
       <div
@@ -136,7 +142,7 @@ export default function EntityDetailFrame({
           color: #6b7280;
         }
 
-        /* Mobil / užší obrazovky – vždy 1 sloupec pod sebe */
+        /* Mobil – vše pod sebe */
         @media (max-width: 900px) {
           .entity-detail {
             padding: 8px 8px 16px;
