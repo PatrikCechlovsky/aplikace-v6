@@ -85,8 +85,6 @@ export function saveThemeToLocalStorage(settings: ThemeSettings) {
 /**
  * Načtení theme z Supabase
  */
-export async function loadThemeFromSupabase(userId: string) { ... }
-export async function saveThemeToSupabase(userId: string, presetId: string) { ... }
 
 export async function loadThemeSettingsFromSupabase(
   userId: string,
