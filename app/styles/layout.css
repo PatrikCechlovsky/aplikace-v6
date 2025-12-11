@@ -109,11 +109,17 @@
   transform: translateY(1px);
   transition: transform 0.15s ease;
   cursor: pointer;
+  color: var(--color-text);             /* světlá v dark, tmavá v light */
 }
 
 .sidebar__toggle--open,
 .sidebar__section-toggle--open {
   transform: rotate(90deg) translateY(1px);
+}
+
+.sidebar__toggle:hover,
+.sidebar__section-toggle:hover {
+  color: var(--color-primary-strong);
 }
 
 /* 2. úroveň – sekce */
@@ -161,7 +167,7 @@
 }
 
 .sidebar__subitem--active .sidebar__sublink {
-   background: var(--color-selected-row-bg);
+  background: var(--color-selected-row-bg);
 }
 
 .sidebar__sublabel {
@@ -225,7 +231,7 @@
 
 .breadcrumbs__separator {
   margin: 0 4px;
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 /* COMMON ACTIONS */
@@ -374,18 +380,6 @@
 
 /* === Sidebar – šipky viditelné ve všech theme =================== */
 
-/* Šipka pro rozbalení modulu / sekce */
-.sidebar__toggle,
-.sidebar__section-toggle {
-  color: var(--color-text);             /* světlá v dark, tmavá v light */
-}
-
-/* Hover – mírně zvýraznit accent barvou */
-.sidebar__toggle:hover,
-.sidebar__section-toggle:hover {
-  color: var(--color-primary-strong);
-}
-
 /* Režim zobrazení ikon – přepíná se class na .layout
    .icons-mode-icons – výchozí (ikony + text / text na hover)
    .icons-mode-text  – textový režim (ikony skryté, text vždy viditelný) */
@@ -413,14 +407,15 @@
 .layout.icons-mode-text .home-actions__icon:hover .home-actions__label {
   max-width: none;
 }
+
 /* ===========================
    Horní lišta modulů – TopMenu
    =========================== */
 
 .topmenu {
   padding: 6px 16px;
-  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
-  background-color: var(--surface-subtle, #f3f4f6);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-actions-bg);
 }
 
 .topmenu__list {
@@ -448,16 +443,25 @@
   line-height: 1.2;
   cursor: pointer;
   white-space: nowrap;
+  color: var(--color-text);
 }
 
-/* aktivní modul */
+/* aktivní modul – stejné barvy jako aktivní záznam v seznamu */
 .topmenu__item--active .topmenu__button {
   background: var(--color-selected-row-bg);
   border-color: var(--color-border);
   font-weight: 600;
 }
 
-/* hover efekt */
+/* hover efekt – jemné zesvětlení podle theme */
 .topmenu__button:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--color-surface-subtle);
+}
+
+/* šipka pro moduly s další úrovní (sekce/tiles) */
+.topmenu__chevron {
+  font-size: 11px;
+  margin-left: 4px;
+  color: currentColor;
+  opacity: 0.7;
 }
