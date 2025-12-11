@@ -474,3 +474,51 @@
   color: currentColor;
   opacity: 0.7;
 }
+/* ==== FIX: zarovnání topbaru, breadcrumbs a HomeActions ==== */
+
+/* VŠECHNY layouty – topbar je jednoduchý flex: vlevo (logo + breadcrumbs), vpravo HomeActions */
+.layout__topbar-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+/* Vlevo: logo + breadcrumbs – tenhle blok se roztáhne a může se zmenšovat */
+.layout__topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;           /* dovolí zmenšit se, aby se vešly HomeActions */
+}
+
+/* Vpravo: Páťa + ikonky + Odhlásit – drží se úplně vpravo */
+.layout__topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;      /* vytlačí blok doprava */
+}
+
+/* Breadcrumbs – jeden řádek, když není místo, zbytek se ořízne (…) */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Speciálně pro topmenu přepíšeme případná stará grid pravidla,
+   aby i tam platilo flex chování výše */
+.layout.layout--topmenu .layout__topbar-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
