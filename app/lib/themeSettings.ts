@@ -81,16 +81,13 @@ export function saveThemeToLocalStorage(settings: ThemeSettings) {
     // ignoruj chybu
   }
 }
-
-/**
- * Načtení theme ze Supabase – volitelné, ale nevadí, že tu je
- */
+// Načtení theme ze Supabase – používá sloupce theme_mode + theme_accent
 export async function loadThemeSettingsFromSupabase(
   userId: string,
 ): Promise<ThemeSettings> {
   const { data, error } = await supabase
     .from('user_theme_settings')
-    .select('mode, accent')
+    .select('theme_mode, theme_accent')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -99,14 +96,12 @@ export async function loadThemeSettingsFromSupabase(
   }
 
   return {
-    mode: (data.mode as ThemeMode) ?? DEFAULT_SETTINGS.mode,
-    accent: (data.accent as ThemeAccent) ?? DEFAULT_SETTINGS.accent,
+    mode: (data.theme_mode as ThemeMode) ?? DEFAULT_SETTINGS.mode,
+    accent: (data.theme_accent as ThemeAccent) ?? DEFAULT_SETTINGS.accent,
   }
 }
 
-/**
- * Uložení theme do Supabase – volitelně
- */
+// Uložení theme do Supabase – stejné názvy sloupců
 export async function saveThemeSettingsToSupabase(
   userId: string,
   settings: ThemeSettings,
@@ -114,8 +109,8 @@ export async function saveThemeSettingsToSupabase(
   const { error } = await supabase.from('user_theme_settings').upsert(
     {
       user_id: userId,
-      mode: settings.mode,
-      accent: settings.accent,
+      theme_mode: settings.mode,
+      theme_accent: settings.accent,
     },
     { onConflict: 'user_id' },
   )
@@ -124,3 +119,4 @@ export async function saveThemeSettingsToSupabase(
     console.error('Failed to save theme settings', error)
   }
 }
+
