@@ -574,7 +574,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           <TopMenu
             modules={modules}
             activeModuleId={activeModuleId ?? undefined}
-            onSelectModule={handleModuleSelect}
+            onSelectModule={(id) =>
+              handleModuleSelect({ moduleId: id })
+            }
           />
         )}
 
