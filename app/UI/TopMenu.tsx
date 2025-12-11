@@ -1,71 +1,60 @@
-// 🧱 Layout – přepínání mezi "sidebar" a "top" layoutem
+/**
+ * FILE: TopMenu.tsx
+ * PATH: /app/UI/TopMenu.tsx
+ * PURPOSE: Horní horizontální lišta modulů (Excel styl).
+ */
+
+'use client'
+
+import React from 'react'
+
+interface TopMenuModule {
+  id: string
+  label: string
+  enabled?: boolean
+}
+
+interface TopMenuProps {
+  modules: TopMenuModule[]
+  activeModuleId?: string
+  onSelectModule: (id: string) => void
+}
+
+const TopMenu: React.FC<TopMenuProps> = ({
+  modules,
+  activeModuleId,
+  onSelectModule,
+}) => {
   return (
-    <div className="layout">
-      {/* SIDEBAR se vykreslí jen v režimu "sidebar" */}
-      {menuLayout === 'sidebar' && (
-        <aside className="layout__sidebar">
-          <HomeButton
-            disabled={!isAuthenticated}
-            onClick={handleHomeClick}
-          />
+    <nav className="topmenu" aria-label="Hlavní moduly">
+      <ul className="topmenu__list">
+        {modules
+          .filter((m) => m.enabled !== false)
+          .map((m) => {
+            const isActive = m.id === activeModuleId
 
-          <Sidebar
-            disabled={!isAuthenticated}
-            activeModuleId={activeModuleId ?? undefined}
-            activeSelection={activeSelection ?? undefined}
-            hasUnsavedChanges={hasUnsavedChanges}
-            onModuleSelect={handleModuleSelect}
-          />
-        </aside>
-      )}
-
-      <header className="layout__topbar">
-        <div className="layout__topbar-inner">
-          <div className="layout__topbar-left">
-            {/* V režimu TOP zobrazíme HomeButton tady, aby nechyběl */}
-            {menuLayout === 'top' && (
-              <HomeButton
-                disabled={!isAuthenticated}
-                onClick={handleHomeClick}
-              />
-            )}
-
-            <Breadcrumbs
-              disabled={!isAuthenticated}
-              segments={getBreadcrumbSegments()}
-            />
-          </div>
-
-          <div className="layout__topbar-right">
-            <HomeActions
-              disabled={!isAuthenticated}
-              onLogout={handleLogout}
-              displayName={displayName}
-              onForceSidebar={forceSidebarLayout}   // ⬅️ přidáno
-            />
-          </div>
-        </div>
-      </header>
-
-      <div className="layout__actions">
-        {/* V režimu TOP zobrazíme modulovou lištu nad běžnými actions */}
-        {menuLayout === 'top' && (
-          <TopMenu
-            modules={modules}
-            activeModuleId={activeModuleId ?? undefined}
-            onSelectModule={(id) =>
-              handleModuleSelect({ moduleId: id })
-            }
-          />
-        )}
-
-        <CommonActions
-          disabled={!isAuthenticated}
-          actions={commonActions}
-        />
-      </div>
-
-      <main className="layout__content">{renderContent()}</main>
-    </div>
+            return (
+              <li
+                key={m.id}
+                className={
+                  isActive
+                    ? 'topmenu__item topmenu__item--active'
+                    : 'topmenu__item'
+                }
+              >
+                <button
+                  type="button"
+                  className="topmenu__button"
+                  onClick={() => onSelectModule(m.id)}
+                >
+                  <span className="topmenu__label">{m.label}</span>
+                </button>
+              </li>
+            )
+          })}
+      </ul>
+    </nav>
   )
 }
+
+export default TopMenu
