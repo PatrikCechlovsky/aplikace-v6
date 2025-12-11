@@ -1,14 +1,15 @@
-'use client'
-
 /*
  * FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
  * PURPOSE: Spojení EntityDetailFrame + UserDetailForm pro modul 010
- *          (zatím režim „view“/„edit“ neřešíme, jde o první zobrazení detailu).
  */
+
+'use client'
 
 import React from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
 import UserDetailForm from './UserDetailForm'
+
+export type UserDetailMode = 'view' | 'edit' | 'create'
 
 export type UserForDetail = {
   id: string
@@ -23,17 +24,25 @@ export type UserForDetail = {
 
 type UserDetailFrameProps = {
   user: UserForDetail
+  mode?: UserDetailMode
   onDirtyChange?: (dirty: boolean) => void
+}
+
+const MODE_LABEL: Record<UserDetailMode, string> = {
+  view: 'Detail uživatele',
+  edit: 'Upravit uživatele',
+  create: 'Nový uživatel',
 }
 
 export default function UserDetailFrame({
   user,
+  mode = 'view',
   onDirtyChange,
 }: UserDetailFrameProps) {
   return (
     <EntityDetailFrame
       title={user.displayName}
-      subtitle={user.email}
+      subtitle={`${user.email} · ${MODE_LABEL[mode]}`}
       systemInfoSlot={
         <dl className="entity-detail__meta">
           <div className="entity-detail__meta-row">
