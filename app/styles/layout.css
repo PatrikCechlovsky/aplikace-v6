@@ -452,8 +452,8 @@
 
 /* aktivní modul */
 .topmenu__item--active .topmenu__button {
-  background: var(--accent-soft, #e0f2fe);
-  border-color: var(--accent, #0ea5e9);
+  background: var(--color-selected-row-bg);
+  border-color: var(--color-border);
   font-weight: 600;
 }
 
