@@ -36,6 +36,8 @@ import {
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
+import { loadThemeSettingsFromSupabase } from '@/app/lib/themeSettings'
+
 // 🔹 NOVĚ: horní lišta modulů (Excel styl)
 import TopMenu from '@/app/UI/TopMenu'
 
@@ -206,6 +208,26 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       if (unsubscribe) unsubscribe()
     }
   }, [])
+  // 🎨 Po přihlášení načteme theme ze Supabase
+  useEffect(() => {
+    if (!isAuthenticated || !user?.email) return
+  
+    ;(async () => {
+      try {
+        const userId = session?.user?.id
+        if (!userId) return
+  
+        const settings = await loadThemeSettingsFromSupabase(userId)
+  
+        if (settings) {
+          applyThemeToLayout(settings)
+          saveThemeToLocalStorage(settings)
+        }
+      } catch (e) {
+        console.error('Nepodařilo se načíst theme ze Supabase:', e)
+      }
+    })()
+  }, [isAuthenticated])
 
   // 📦 Načtení modulů
   useEffect(() => {
