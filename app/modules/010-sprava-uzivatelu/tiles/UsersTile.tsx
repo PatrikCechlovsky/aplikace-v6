@@ -15,9 +15,7 @@ import type {
   CommonActionId,
   CommonActionConfig,
 } from '@/app/UI/CommonActions'
-import UserDetailFrame, {
-  type UserDetailMode,
-} from '../forms/UserDetailFrame'
+import UserDetailFrame from '../forms/UserDetailFrame'
 
 // ⚙️ Dočasná mock data – později napojíme na Supabase / subject tabulku
 type MockUser = {
@@ -100,8 +98,8 @@ type UsersTileProps = {
   ) => void
 }
 
-// 🔁 Vzorový typ viewMode, který můžeme okopírovat i pro další moduly
-type UsersViewMode = 'list' | UserDetailMode
+// 🔁 Jednoduchý viewMode: list ↔ detail
+type UsersViewMode = 'list' | 'detail'
 
 export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
@@ -116,9 +114,9 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
     if (!onRegisterCommonActions) return
 
     const actions: CommonActionConfig[] = [
-      { id: 'add' }, // později → viewMode = 'create'
-      { id: 'view', requiresSelection: true },
-      { id: 'edit', requiresSelection: true },
+      { id: 'add' }, // později → otevře nový prázdný formulář (create)
+      { id: 'view', requiresSelection: true }, // zobrazit detail vybraného
+      { id: 'edit', requiresSelection: true }, // přepnout detail do editace
       { id: 'invite' },
       { id: 'columnSettings', label: 'Nastavení sloupců' },
       { id: 'import' },
@@ -145,10 +143,10 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
     }).map(toRow)
   }, [filterText, showArchived])
 
-  const openDetail = (mode: UserDetailMode, user: MockUser | null) => {
+  const openDetail = (user: MockUser | null) => {
     if (!user) return
     setDetailUser(user)
-    setViewMode(mode)
+    setViewMode('detail')
   }
 
   // ===========================
@@ -172,7 +170,7 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
           onRowDoubleClick={(row) => {
             // Dvojklik = otevřít detail pro ČTENÍ přes celý content
             setSelectedId(row.id)
-            openDetail('view', row.raw ?? null)
+            openDetail(row.raw ?? null)
           }}
         />
 
@@ -201,7 +199,8 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   //  RENDER: 2) DETAIL UŽIVATELE
   // ===========================
   if (detailUser) {
-    return <UserDetailFrame user={detailUser} mode={viewMode} />
+    // UserDetailFrame si uvnitř sám řeší view/edit + tlačítka v DetailView
+    return <UserDetailFrame user={detailUser} />
   }
 
   // Fallback – kdyby něco nesedělo
