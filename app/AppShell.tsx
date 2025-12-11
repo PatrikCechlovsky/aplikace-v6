@@ -36,6 +36,9 @@ import {
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
+// 🔹 NOVĚ: horní lišta modulů (Excel styl)
+import TopMenu from '@/app/UI/TopMenu'
+
 type SessionUser = {
   email?: string | null
   displayName?: string | null
@@ -76,6 +79,9 @@ type AppShellProps = {
 
 type CommonActionsInput = CommonActionId[] | CommonActionConfig[]
 
+// 🔹 typ layoutu menu – boď sidebar vlevo, nebo horní lišta
+type MenuLayout = 'sidebar' | 'top'
+
 export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const router = useRouter()
 
@@ -90,26 +96,27 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
 
-  // 📌 Výběr v sidebaru
+  // 📌 Výběr v sidebaru (nebo v TopMenu – používají stejný typ)
   const [activeSelection, setActiveSelection] =
     useState<SidebarSelection | null>(null)
 
   const [hasUnsavedChanges] = useState(false)
-  
-  // výchozí: sidebar vlevo, dokud si uživatel nezvolí jinak
-  const [menuLayout, setMenuLayout] = useState<'sidebar' | 'top'>('sidebar')
-  
+
+  // 🔹 Výchozí: sidebar vlevo, dokud si uživatel nezvolí jinak
+  const [menuLayout, setMenuLayout] = useState<MenuLayout>('sidebar')
+
+  // 🔹 Načtení preferovaného layoutu z localStorage (per-user)
   useEffect(() => {
     if (typeof window === 'undefined') return
-  
+
     try {
       const raw = window.localStorage.getItem('app-view-settings')
       if (!raw) return
-  
+
       const parsed = JSON.parse(raw)
-  
+
       if (parsed.menuLayout === 'top' || parsed.menuLayout === 'sidebar') {
-        setMenuLayout(parsed.menuLayout)
+        setMenuLayout(parsed.menuLayout as MenuLayout)
       }
     } catch {
       // když je localStorage rozbitý, ignorujeme a necháme sidebar
@@ -275,11 +282,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     router.push('/')
   }
 
-  // Sidebar klik
+  // Sidebar / TopMenu klik – používají stejnou logiku
   function handleModuleSelect(selection: SidebarSelection) {
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
-     setCommonActions(undefined)
+    setCommonActions(undefined)
   }
 
   // 🏠 Home button
@@ -392,8 +399,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="content">
           <h2>Dashboard</h2>
           <p>
-            Vyber modul v levém menu. Po kliknutí se tady zobrazí jeho
-            obsah.
+            Vyber modul v levém menu nebo v horní liště. Po kliknutí se tady
+            zobrazí jeho obsah.
           </p>
         </div>
       )
@@ -422,7 +429,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           <h2>{activeModule.introTitle ?? activeModule.label}</h2>
           <p>
             {activeModule.introText ??
-              'Vlevo vyber konkrétní oblast, kterou chceš v tomto modulu zobrazit nebo upravit.'}
+              'Vlevo nebo nahoře vyber konkrétní oblast, kterou chceš v tomto modulu zobrazit nebo upravit.'}
           </p>
         </div>
       )
@@ -438,7 +445,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         section?.introTitle ?? section?.label ?? activeModule.label
       const text =
         section?.introText ??
-        'Vyber konkrétní položku v levém menu, kterou chceš upravit.'
+        'Vyber konkrétní položku v levém menu / horní liště, kterou chceš upravit.'
 
       return (
         <div className="content">
@@ -513,27 +520,38 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     )
   }
 
-  // 🧱 Layout – POZOR: už jen "layout", žádné theme-XYZ v JSX
+  // 🧱 Layout – přepínání mezi "sidebar" a "top" layoutem
   return (
     <div className="layout">
-      <aside className="layout__sidebar">
-        <HomeButton
-          disabled={!isAuthenticated}
-          onClick={handleHomeClick}
-        />
+      {/* SIDEBAR se vykreslí jen v režimu "sidebar" */}
+      {menuLayout === 'sidebar' && (
+        <aside className="layout__sidebar">
+          <HomeButton
+            disabled={!isAuthenticated}
+            onClick={handleHomeClick}
+          />
 
-        <Sidebar
-          disabled={!isAuthenticated}
-          activeModuleId={activeModuleId ?? undefined}
-          activeSelection={activeSelection ?? undefined}
-          hasUnsavedChanges={hasUnsavedChanges}
-          onModuleSelect={handleModuleSelect}
-        />
-      </aside>
+          <Sidebar
+            disabled={!isAuthenticated}
+            activeModuleId={activeModuleId ?? undefined}
+            activeSelection={activeSelection ?? undefined}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onModuleSelect={handleModuleSelect}
+          />
+        </aside>
+      )}
 
       <header className="layout__topbar">
         <div className="layout__topbar-inner">
           <div className="layout__topbar-left">
+            {/* V režimu TOP zobrazíme HomeButton tady, aby nechyběl */}
+            {menuLayout === 'top' && (
+              <HomeButton
+                disabled={!isAuthenticated}
+                onClick={handleHomeClick}
+              />
+            )}
+
             <Breadcrumbs
               disabled={!isAuthenticated}
               segments={getBreadcrumbSegments()}
@@ -551,6 +569,18 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       </header>
 
       <div className="layout__actions">
+        {/* V režimu TOP zobrazíme modulovou lištu nad běžnými actions */}
+        {menuLayout === 'top' && (
+          <TopMenu
+            disabled={!isAuthenticated}
+            modules={modules}
+            activeModuleId={activeModuleId ?? undefined}
+            activeSelection={activeSelection ?? undefined}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onModuleSelect={handleModuleSelect}
+          />
+        )}
+
         <CommonActions
           disabled={!isAuthenticated}
           actions={commonActions}
