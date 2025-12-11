@@ -1,70 +1,77 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
- * PURPOSE: Spojení EntityDetailFrame + UserDetailForm pro modul 010
+ * PURPOSE: Rámec detailu uživatele – používá EntityDetailFrame + DetailView + UserDetailForm
  */
 
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
+import DetailView, { DetailViewMode } from '@/app/UI/DetailView'
 import UserDetailForm from './UserDetailForm'
 
-export type UserDetailMode = 'view' | 'edit' | 'create'
-
-export type UserForDetail = {
-  id: string
-  displayName: string
-  email: string
-  phone?: string
-  roleLabel: string
-  twoFactorMethod?: string | null
-  createdAt: string
-  isArchived?: boolean
-}
-
 type UserDetailFrameProps = {
-  user: UserForDetail
-  mode?: UserDetailMode
-  onDirtyChange?: (dirty: boolean) => void
+  user: {
+    id: string
+    displayName: string
+    email: string
+    phone?: string
+    roleLabel: string
+    twoFactorMethod?: string | null
+    createdAt: string
+    isArchived?: boolean
+  }
 }
 
-const MODE_LABEL: Record<UserDetailMode, string> = {
-  view: 'Detail uživatele',
-  edit: 'Upravit uživatele',
-  create: 'Nový uživatel',
-}
+export default function UserDetailFrame({ user }: UserDetailFrameProps) {
+  const [mode, setMode] = useState<DetailViewMode>('view')
+  const [isDirty, setIsDirty] = useState(false)
 
-export default function UserDetailFrame({
-  user,
-  mode = 'view',
-  onDirtyChange,
-}: UserDetailFrameProps) {
+  // TODO: tady později doplníme reálnou logiku
+  const handleAttach = () => {
+    console.log('[UserDetailFrame] Paperclip → otevřít sekci Přílohy')
+  }
+
+  const handleUndo = () => {
+    console.log('[UserDetailFrame] Undo → vrátit změny formuláře')
+    // tady bys resetnul stav formuláře (např. přes key nebo předání funkce do UserDetailForm)
+  }
+
+  const handleReject = () => {
+    console.log('[UserDetailFrame] Reject → zamítnout / archivovat uživatele')
+  }
+
+  const handleSave = () => {
+    console.log('[UserDetailFrame] Save → uložit změny')
+  }
+
+  const handleCancel = () => {
+    console.log('[UserDetailFrame] Cancel → zavřít detail uživatele')
+  }
+
   return (
     <EntityDetailFrame
       title={user.displayName}
-      subtitle={`${user.email} · ${MODE_LABEL[mode]}`}
-      systemInfoSlot={
-        <dl className="entity-detail__meta">
-          <div className="entity-detail__meta-row">
-            <dt>ID</dt>
-            <dd>{user.id}</dd>
-          </div>
-          <div className="entity-detail__meta-row">
-            <dt>Vytvořen</dt>
-            <dd>{new Date(user.createdAt).toLocaleString('cs-CZ')}</dd>
-          </div>
-          <div className="entity-detail__meta-row">
-            <dt>Stav účtu</dt>
-            <dd>{user.isArchived ? 'Archivovaný' : 'Aktivní'}</dd>
-          </div>
-          <div className="entity-detail__meta-row">
-            <dt>Role</dt>
-            <dd>{user.roleLabel}</dd>
-          </div>
-        </dl>
-      }
+      subtitle={user.email}
+      // attachmentsSlot / systemInfoSlot necháme zatím default
     >
-      <UserDetailForm user={user} onDirtyChange={onDirtyChange} />
+      <DetailView
+        mode={mode}
+        isDirty={isDirty}
+        isSaving={false}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onModeChange={setMode}
+        onAttach={handleAttach}
+        onUndo={handleUndo}
+        onReject={handleReject}
+      >
+        <UserDetailForm
+          user={user}
+          onDirtyChange={setIsDirty}
+          readOnly={mode === 'view'}
+        />
+      </DetailView>
     </EntityDetailFrame>
   )
 }
