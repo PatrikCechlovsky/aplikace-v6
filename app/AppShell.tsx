@@ -95,6 +95,26 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     useState<SidebarSelection | null>(null)
 
   const [hasUnsavedChanges] = useState(false)
+  
+  // výchozí: sidebar vlevo, dokud si uživatel nezvolí jinak
+  const [menuLayout, setMenuLayout] = useState<'sidebar' | 'top'>('sidebar')
+  
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+  
+    try {
+      const raw = window.localStorage.getItem('app-view-settings')
+      if (!raw) return
+  
+      const parsed = JSON.parse(raw)
+  
+      if (parsed.menuLayout === 'top' || parsed.menuLayout === 'sidebar') {
+        setMenuLayout(parsed.menuLayout)
+      }
+    } catch {
+      // když je localStorage rozbitý, ignorujeme a necháme sidebar
+    }
+  }, [])
 
   // 🔘 Common actions – dynamicky registruje aktuální tile
   const [commonActions, setCommonActions] = useState<
