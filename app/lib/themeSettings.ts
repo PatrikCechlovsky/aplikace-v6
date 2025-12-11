@@ -83,9 +83,8 @@ export function saveThemeToLocalStorage(settings: ThemeSettings) {
 }
 
 /**
- * Načtení theme z Supabase
+ * Načtení theme ze Supabase – volitelné, ale nevadí, že tu je
  */
-
 export async function loadThemeSettingsFromSupabase(
   userId: string,
 ): Promise<ThemeSettings> {
@@ -106,7 +105,7 @@ export async function loadThemeSettingsFromSupabase(
 }
 
 /**
- * Uložení theme do Supabase
+ * Uložení theme do Supabase – volitelně
  */
 export async function saveThemeSettingsToSupabase(
   userId: string,
