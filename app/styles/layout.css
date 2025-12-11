@@ -186,81 +186,61 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* V režimu topmenu je topbar přes celou šířku – grid-column se řeší výš v souboru */
+
 .layout__topbar-inner {
   display: grid;
-  grid-template-columns: auto 1fr auto; /* STŘED = breadcrumbs, zabere vše mezi */
+  grid-template-columns: auto 1fr auto; /* 1) logo  2) breadcrumbs  3) Páťa + ikony */
   align-items: center;
-  gap: 16px;
+  column-gap: 16px;
 }
 
-.layout__topbar-right {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-}
-
-/* V HEADERU – HomeButton + breadcrumbs vedle sebe */
+/* V HEADERU – vlevo logo / název aplikace */
 .layout__topbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-/* BREADCRUMBS */
+/* BREADCRUMBS – prostřední sloupec v topbaru */
 
 .layout__breadcrumbs {
   grid-column: 2;
   grid-row: 1;
-  padding: 36px 16px 4px;
-}
-
-/* TOPMENU – breadcrumbs musí umět zúžit se v gridu a neomezovat obsah */
-.layout--topmenu .layout__breadcrumbs {
-  padding: 8px 0 4px;   /* menší padding, aby nebyla tak vysoko */
-  min-width: 0;        /* DŮLEŽITÉ – dovolí zmenšit se */
-  width: 100%;
+  /* žádný extra padding – breadcrumbs sedí ve stejné výšce jako logo a ikony */
 }
 
 .breadcrumbs {
   display: flex;
-  flex-wrap: nowrap;          /* ✅ už neláme na další řádek */
   align-items: center;
   gap: 4px;
   font-size: 13px;
   color: var(--color-text-muted);
-  white-space: nowrap;        /* drž vše v jednom řádku */
-  overflow-x: auto;           /* na malém displeji raději scroll než zalomení */
-}
 
-/* TOPMENU – plná šířka, žádný scrollbar */
-.layout--topmenu .breadcrumbs {
-  overflow-x: visible !important;
+  /* Vždy jeden řádek, bez scrollbaru – když je to moc dlouhé, prostě se usekne */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .breadcrumbs__item {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  white-space: inherit;       /* bere nastavení z .breadcrumbs */
 }
 
 .breadcrumbs__separator {
   margin: 0 4px;
   color: var(--color-text-muted);
 }
-/* MODE: topmenu – roztáhnout breadcrumbs mezi logo a user blok */
-.layout--topmenu .layout__topbar-inner {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-}
 
-/* Breadcrumbs v topmenu: povolit růst + zalomení */
-.layout--topmenu .breadcrumbs {
-  flex-wrap: wrap;        /* místo nowrap */
-  white-space: normal;    /* dovolí zalomení */
-  overflow-x: visible;    /* žádný scroll */
+/* Pravá strana topbaru – Páťa + kulaté ikonky + Odhlásit */
+
+.layout__topbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* COMMON ACTIONS */
