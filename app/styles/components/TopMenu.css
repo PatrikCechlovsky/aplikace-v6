@@ -28,6 +28,7 @@
   white-space: nowrap;
 
   scrollbar-gutter: stable; /* ať lišta neskáče */
+  min-width: 0;  /* pomůže flexu */
 }
 
 .topmenu__item {
