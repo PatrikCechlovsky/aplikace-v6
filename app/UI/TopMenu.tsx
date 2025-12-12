@@ -18,12 +18,14 @@ interface TopMenuProps {
   modules: TopMenuModule[]
   activeModuleId?: string
   onSelectModule: (id: string) => void
+  showIcons?: boolean
 }
 
 const TopMenu: React.FC<TopMenuProps> = ({
   modules,
   activeModuleId,
   onSelectModule,
+  showIcons = true,
 }) => {
   return (
     <nav className="topmenu" aria-label="Hlavní moduly">
@@ -54,10 +56,11 @@ const TopMenu: React.FC<TopMenuProps> = ({
                     </span>
                   )}
 
-                  {/* ✅ Ikona */}
-                  {m.icon && <span className="topmenu__icon">{m.icon}</span>}
-
-                  {/* Label */}
+                  {showIcons && m.icon && (
+                    <span className="topmenu__icon">
+                      {getIcon(m.icon as any)}
+                    </span>
+                  )}
                   <span className="topmenu__label">{m.label}</span>
                 </button>
               </li>
