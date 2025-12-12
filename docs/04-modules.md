@@ -670,3 +670,102 @@ nemovitosti/, jednotky/, smlouvy/ atd.~~
 ---
 
 # 📌 Konec archivních historických částí pro dokument 04
+
+---
+
+## DOPLNĚNÍ (2025-12-12) – Moduly, UI nastavení a modul 900 (Nastavení)
+
+### 1) Základní pravidla modulární architektury (upřesnění)
+- Každý modul má:
+  - jednoznačné ID (číselné + slug)
+  - vlastní `module.config.*`
+  - vlastní registry sekcí / tiles
+- Modul **neřeší layout aplikace** (to je úloha AppShell).
+- Modul **může ovlivňovat UI chování**, ale pouze přes:
+  - změnu UI konfigurace (např. uložení do `localStorage`)
+  - nikoliv přímou manipulaci s layoutem nebo CSS třídami.
+
+---
+
+### 2) Modul 900 – Nastavení (role v systému)
+Modul **900 – Nastavení** je centrální konfigurační modul aplikace.
+
+Účel:
+- správa číselníků
+- správa uživatelských preferencí
+- správa UI nastavení (vzhled, rozložení)
+
+Modul 900:
+- **není závislý** na ostatních modulech
+- **ostatní moduly jsou závislé na jeho výstupech** (nepřímo – přes UI config)
+
+---
+
+### 3) UI nastavení řízené modulem 900
+Modul 900 obsahuje tiles (nebo sekce), které ovlivňují UI chování aplikace.
+
+Typické oblasti:
+- **Režim menu**
+  - sidebar / topmenu
+- **Režim ikon**
+  - icons / text
+- **Theme a accent**
+  - světlý / tmavý / auto
+  - barevný akcent
+
+Pravidlo:
+- Tile v modulu 900 **nikdy přímo nemění layout**
+- Tile pouze:
+  1. uloží hodnotu (např. do `localStorage`)
+  2. případně aktualizuje UI config
+- Změna se projeví až přes:
+  `uiConfig → AppShell → className → CSS`
+
+---
+
+### 4) Tok dat – UI nastavení z modulu 900
+Standardní tok dat pro UI volby:
+
+1. Uživatel změní nastavení v tile (modul 900)
+2. Hodnota se uloží (např. `localStorage`)
+3. UI config načte aktuální hodnoty
+4. `AppShell.tsx` přepočítá výsledné režimy
+5. Root `.layout` dostane nové `className`
+6. CSS přepíše vzhled / rozložení
+
+Modul 900 tedy:
+- **neřídí vykreslení**
+- **řídí pouze konfiguraci**
+
+---
+
+### 5) Registrace modulu 900 – realita projektu
+- Modul je registrován přes `module.config.*`
+- Musí být:
+  - zahrnut v centrálním registru modulů
+  - povolen (`enabled: true`)
+- Pokud se modul „nezobrazuje“, nejčastější příčiny:
+  1. není zahrnut v registry modulů
+  2. `enabled` je false
+  3. renderer menu (Sidebar / TopMenu) filtruje moduly
+  4. chyba v datech předaných rendereru
+
+---
+
+### 6) Vztah modulů a UI rendererů
+- Sidebar a TopMenu:
+  - **nesmí filtrovat moduly rozdílně**
+  - musí používat stejný seznam modulů
+- Rozdíl mezi nimi je pouze:
+  - vizuální reprezentace
+  - způsob zobrazení ikon / textu
+
+---
+
+### 7) Debug checklist – modul 900
+Pokud se změna v Nastavení neprojeví:
+1. ověř, že tile skutečně ukládá hodnotu
+2. ověř, že UI config hodnotu čte
+3. ověř třídy na `.layout`
+4. ověř, že CSS reaguje na danou třídu
+5. ověř, že renderer menu modul 900 nezakrývá
