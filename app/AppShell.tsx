@@ -67,7 +67,7 @@ import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
 // 🔹 NOVĚ: horní lišta modulů (Excel styl)
-import TopMenu from '@/app/UI/TopMenu'
+import { TopMenu } from '@/app/UI/TopMenu'
 
 type SessionUser = {
   id?: string | null
