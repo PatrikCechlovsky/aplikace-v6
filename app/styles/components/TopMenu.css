@@ -1,86 +1,76 @@
 // app/styles/components/TopMenu.css
 
 :root {
-  --tm-pad-x: 8px;     /* mezera od kraje appky */
-  --tm-gap: 4px;       /* mezera mezi prvky (šipka/ikona/text) */
-  --tm-gutter: 18px;   /* falešné místo pro šipku */
+  --tm-pad-x: 8px;    /* mezera od kraje */
+  --tm-gap: 4px;      /* šipka ↔ ikona ↔ text */
+  --tm-gutter: 18px;  /* “sloupec” pro šipku */
 }
 
 .topmenu {
   padding: 6px var(--tm-pad-x);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-actions-bg);
-  overflow: hidden; /* zakáže to “vyhazovat” horizontální scroll do celé stránky */
+
+  /* důležité: ať nic nevyleze ven, scroll řeší list */
+  overflow: hidden;
 }
 
 .topmenu__list {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: nowrap;      /* ✅ nikdy nezalomí do další řádky */
   gap: 8px;
   list-style: none;
   margin: 0;
   padding: 0;
 
-  overflow-x: auto;     /* scroll jen uvnitř TopMenu */
+  overflow-x: auto;       /* ✅ scroll jen v topmenu */
   overflow-y: hidden;
   white-space: nowrap;
 
-  scrollbar-gutter: stable;  /* ať lišta neskáče */
+  scrollbar-gutter: stable; /* ať lišta neskáče */
 }
 
 .topmenu__item {
   flex: 0 0 auto;
 }
 
-/* tlačítko jako "řádek": šipka | ikona | text */
 .topmenu__button {
   display: inline-flex;
   align-items: center;
   gap: var(--tm-gap);
 
-  padding: 6px 10px; /* lehce méně než 12px, ať je to kompaktní */
+  padding: 6px 10px;
   border-radius: 9999px;
   border: 1px solid transparent;
   background: transparent;
+
   font-size: 13px;
   white-space: nowrap;
   cursor: pointer;
 }
 
-/* 1) GUTTER: pokud šipka není, uděláme místo stejně jako v sidebaru */
+/* GUTTER na šipku, když tam šipka není */
 .topmenu__button::before {
   content: '';
   width: var(--tm-gutter);
   flex: 0 0 var(--tm-gutter);
 }
 
-/* 2) Pokud šipka existuje, gutter z pseudo prvku vypneme a šipku dáme vlevo */
+/* Pokud šipka existuje, pseudo-gutter vypneme */
 .topmenu__button:has(.topmenu__chevron)::before {
   display: none;
 }
 
+/* Šipku dáme vlevo (i když je v DOM na konci) */
 .topmenu__chevron {
-  order: -1;                 /* přesune šipku na začátek i když je v DOM na konci */
-  width: var(--tm-gutter);   /* stejné jako "gutter" */
+  order: -1;
+  width: var(--tm-gutter);
   flex: 0 0 var(--tm-gutter);
   text-align: center;
-
   font-size: 11px;
-  margin: 0;                 /* zrušíme původní margin-left */
+  margin: 0;
   opacity: 0.7;
 }
-
-/* 3) Ikona: držet kompaktní mezery */
-.topmenu__icon,
-.topmenu__button svg {
-  flex: 0 0 auto;
-}
-
-/* 4) Ikony schovávat jen když je text mód – ale nešahej na chevron */
-.layout.icons-mode-text .topmenu__icon {
-  display: none;
-}
-
 
 .topmenu__item--active .topmenu__button {
   background: var(--color-selected-row-bg);
