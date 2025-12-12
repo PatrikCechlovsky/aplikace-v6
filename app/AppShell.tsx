@@ -20,6 +20,7 @@ import './styles/components/LoginPanel.css'
 import './styles/components/GenericTypeTile.css'
 import './styles/components/ThemeSettingsTile.css'
 import './styles/components/Entity.css'
+import './styles/components/TableView.css'
 
 /* ====== JEŠTĚ NE – budeme tvořit ======
 import './styles/components/ConfigListWithForm.css'
@@ -174,6 +175,26 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     const iconSettings = loadIconDisplayFromLocalStorage()
     applyIconDisplayToLayout(iconSettings)
   }, [])
+   
+   // TABLE VIEW MODE – přidáme .view-table nebo .view-cards
+   useEffect(() => {
+     if (typeof document === 'undefined') return
+   
+     try {
+       const raw = window.localStorage.getItem('app-view-settings')
+       if (!raw) return
+       const parsed = JSON.parse(raw)
+   
+       const viewMode = parsed.viewMode || 'cards'  // výchozí
+       const layoutEl = document.querySelector('.layout')
+       if (!layoutEl) return
+   
+       layoutEl.classList.toggle('view-table', viewMode === 'table')
+       layoutEl.classList.toggle('view-cards', viewMode === 'cards')
+     } catch (err) {
+       console.error('Error loading viewMode:', err)
+     }
+   }, [])
 
   // 🔐 Načtení session
   useEffect(() => {
