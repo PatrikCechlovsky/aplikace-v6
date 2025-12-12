@@ -249,3 +249,27 @@ Od tohoto data platí:
 ### 📌 POZNÁMKA
 Tento TODO list řídí **prioritu práce**,  
 MODULE-TODO soubory řídí **konkrétní implementaci**.
+## TODO – TopMenu (horní menu) + CommonActions
+
+### 1️⃣ Aktivní stav TopMenu (MVP)
+- [ ] Napojit `TopMenu` na `activeModuleId`
+- [ ] Zvýraznit aktivní modul (`.topmenu__item--active`)
+- [ ] Ověřit, že klik na modul:
+  - nastaví `activeModuleId`
+  - zruší předchozí výběr sekce / tile
+
+---
+
+### 2️⃣ TopMenu – struktura obsahu (logika)
+- [ ] Replikovat **logiku Sidebaru** pro TopMenu:
+  - modul (level 1)
+  - sekce (level 2)
+  - tile (level 3)
+- [ ] Zachovat stejný typ výběru:
+  ```ts
+  {
+    moduleId: string
+    sectionId?: string | null
+    tileId?: string | null
+  }
+
