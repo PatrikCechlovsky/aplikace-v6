@@ -5,30 +5,34 @@
  * PURPOSE: Hlavní shell aplikace – layout (6 bloků), autentizace, moduly
  */
 /* ============================
-   UI COMPONENT STYLES (disabled)
-   Budeme postupně odkomentovávat
+   UI COMPONENT STYLES (ACTIVE + TODO)
 =============================== */
 
-/*
-import './styles/components/AppIcon.css'
+/* ====== HOTOVÉ – MŮŽEŠ ODkomentovat ====== */
+import './styles/components/AppShell.css'
+import './styles/components/Sidebar.css'
 import './styles/components/Breadcrumbs.css'
 import './styles/components/CommonActions.css'
+import './styles/components/HomeActions.css'
+import './styles/components/TopMenu.css'
+import './styles/components/HomeButton.css'
+import './styles/components/LoginPanel.css'
+import './styles/components/GenericTypeTile.css'
+import './styles/components/ThemeSettingsTile.css'
+import './styles/components/Entity.css'
+
+/* ====== JEŠTĚ NE – budeme tvořit ======
 import './styles/components/ConfigListWithForm.css'
 import './styles/components/DetailView.css'
 import './styles/components/EntityDetailFrame.css'
 import './styles/components/EntityList.css'
-import './styles/components/GenericTypeTile.css'
-import './styles/components/HomeActions.css'
-import './styles/components/HomeButton.css'
 import './styles/components/ListView.css'
-import './styles/components/LoginPanel.css'
 import './styles/components/MfaSetupPanel.css'
 import './styles/components/RelationListWithDetail.css'
-import './styles/components/Sidebar.css'
 import './styles/components/Tabs.css'
-import './styles/components/TopMenu.css'
-import './styles/components/AppShell.css'
+import './styles/components/AppIcon.css'
 */
+
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
