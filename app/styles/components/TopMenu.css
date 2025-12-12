@@ -105,3 +105,4 @@
   padding: 4px 10px;
   min-height: 40px;
 }
+.layout.icons-mode-text .topmenu__icon { display: none; }
