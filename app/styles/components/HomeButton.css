@@ -28,3 +28,27 @@
 .home-button:not(.is-disabled) {
   cursor: pointer;
 }
+/* =========================================
+   HomeButton – kompaktní varianta v TOPMENU
+========================================= */
+
+.layout.layout--topmenu .home-button {
+  padding: 4px 8px;      /* bylo 8px 10px */
+  gap: 6px;              /* bylo 8px */
+  font-size: 13px;       /* bylo 14px */
+  border-radius: 6px;    /* méně “pill” */
+  width: auto;           /* pojistka */
+  max-width: 180px;      /* ať nesežere menu */
+}
+
+.layout.layout--topmenu .home-button__icon {
+  font-size: 16px;       /* bylo 18px */
+}
+
+/* když by text byl dlouhý */
+.layout.layout--topmenu .home-button__label,
+.layout.layout--topmenu .home-button span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
