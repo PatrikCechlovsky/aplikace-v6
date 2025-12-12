@@ -116,13 +116,25 @@
 .sidebar__subitem--active .sidebar__sublink {
   background: var(--color-selected-row-bg);
 }
-/* === HARD FIX: odsazení úrovní v text módu (když zmizí šipka/ikona) === */
+/* === Indent podle hloubky vnoření (2. a 3. úroveň) === */
 
-.layout.icons-mode-text .sidebar__section-row {
-  padding-left: 24px !important;
+/* 1. úroveň (moduly) – základ */
+.sidebar__list > .sidebar__item > .sidebar__row {
+  padding-left: 8px;
 }
 
-.layout.icons-mode-text .sidebar__sublink {
-  padding-left: 44px !important; /* klidně 44–52 podle oka */
+/* 2. úroveň (sekce) – je to li uvnitř li */
+.sidebar__list .sidebar__item .sidebar__list > .sidebar__item > .sidebar__row {
+  padding-left: 24px;
 }
-.layout.icons-mode-text .sidebar__sublink { outline: 2px solid red; }
+
+/* 3. úroveň (položky/tiles) */
+.sidebar__list
+  .sidebar__item
+  .sidebar__list
+  .sidebar__item
+  .sidebar__list
+  > .sidebar__item
+  > .sidebar__row {
+  padding-left: 40px;
+}
