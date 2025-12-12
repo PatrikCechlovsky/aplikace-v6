@@ -386,3 +386,175 @@ Nová architektura odděluje metadata, role, permissions a entity.~~
 ---
 
 # 📌 Konec archivních historických částí pro dokument 02.
+
+---
+
+## DOPLNĚNÍ (2025-12-12) – Architektura UI, role AppShell a modulů
+
+### 1) Vrstvy aplikace (upřesnění)
+Aplikace je rozdělena do jasných vrstev s pevně danými odpovědnostmi:
+
+- **Layout / Shell vrstva**
+  - řídí strukturu obrazovky
+  - aplikuje UI konfiguraci (theme, menu, ikony)
+  - neobsahuje doménovou logiku
+
+- **Modulární vrstva**
+  - obsahuje funkční části aplikace (010, 020, 900, …)
+  - neřeší layout aplikace
+  - může pouze měnit konfiguraci (např. UI nastavení)
+
+- **UI komponenty**
+  - prezentace (Sidebar, TopMenu, Actions, Breadcrumbs)
+  - bez znalosti odkud data pochází
+  - bez vlastní konfigurace vzhledu
+
+- **Styling vrstva**
+  - CSS proměnné + selektory
+  - reaguje na třídy aplikované na `.layout`
+
+---
+
+### 2) AppShell – centrální bod UI architektury
+Soubor `app/AppShell.tsx` je **jediný centrální bod**, kde se:
+
+- skládá hlavní UI kostra aplikace
+- vyhodnocuje výsledný UI config
+- rozhoduje o režimu menu (Sidebar / TopMenu)
+- aplikuje `className` na root `.layout`
+
+**Pravidlo:**  
+Žádný modul, tile ani UI komponenta nesmí přímo manipulovat s layoutem nebo CSS třídami.
+
+---
+
+### 3) Moduly – konfigurační vs. prezentační odpovědnost
+Moduly:
+- poskytují data a konfiguraci
+- neřeší prezentaci mimo svůj vlastní obsah
+
+Příklad:
+- modul 900 (Nastavení)
+  - ukládá UI preference
+  - **neví**, jak je Sidebar nebo TopMenu vykreslí
+
+---
+
+### 4) UI konfigurace – architektonický tok
+UI konfigurace je **stav aplikace**, ne součást modulů.
+
+Tok:
+1. default hodnoty (kód)
+2. uživatelská preference (localStorage)
+3. výpočet `uiConfig`
+4. aplikace v `AppShell.tsx`
+5. reakce CSS a rendererů
+
+Tento tok nesmí být přerušen přímým zásahem modulů do UI vrstvy.
+
+---
+
+### 5) Architektonické zákazy (upřesnění)
+Zakazuje se:
+- měnit layout z modulu
+- měnit CSS třídy mimo AppShell
+- mít rozdílnou logiku pro Sidebar a TopMenu
+- obcházet UI config přímým přepisem stylů
+
+Doporučení:
+- pokud je potřeba nová UI varianta, **nejdřív ji popsat v docs**, až potom implementovat.
+
+---
+
+### 6) Kontrolní otázky (při ladění)
+Při každém UI problému si položit:
+1. je to konfigurace, nebo prezentace?
+2. kde se konfigurace vyhodnocuje?
+3. kde se aplikuje `className`?
+4. reaguje CSS na správnou třídu?
+
+5. ---
+
+## DOPLNĚNÍ (2025-12-12) – Routing vs UI layout (AppShell)
+
+### 1) Odpovědnost routingu (upřesnění)
+Routing v aplikaci:
+- řeší **který obsah** se má zobrazit
+- **neřeší** strukturu UI (menu, actions, layout)
+
+Routing:
+- určuje modul / stránku / detail
+- nikdy neurčuje:
+  - zda je Sidebar nebo TopMenu
+  - zda se zobrazují ikony nebo text
+  - jaké je téma nebo akcent
+
+---
+
+### 2) Vztah routingu a AppShell
+`AppShell.tsx` je **nadřazený** routingu z pohledu UI.
+
+Princip:
+- routing vybere obsah
+- AppShell:
+  - obalí obsah do jednotné UI kostry
+  - aplikuje UI konfiguraci
+  - vykreslí navigaci a akce
+
+Zjednodušeně:
+- routing = „CO zobrazit“
+- AppShell = „JAK to vypadá“
+
+---
+
+### 3) Typické routovací stavy
+Routing může vyústit do těchto stavů obsahu:
+
+- dashboard / home
+- seznam (list)
+- detail / formulář
+- tile přehled
+- autentizační obrazovky
+
+Tyto stavy:
+- se renderují uvnitř `layout__content`
+- nemění strukturu layoutu
+- nemění UI konfiguraci
+
+---
+
+### 4) Autentizace a routing
+Při změně autentizačního stavu:
+- routing může přesměrovat uživatele
+- AppShell:
+  - může skrýt / zobrazit části UI
+  - ale **nemění architekturu layoutu**
+
+Příklad:
+- nepřihlášený uživatel:
+  - omezený obsah
+  - stále jednotná kostra aplikace (pokud není výslovně jinak)
+
+---
+
+### 5) Routing a moduly
+- Modul je identifikován routou (nebo parametrem routy)
+- Routing:
+  - určuje aktivní modul
+  - předává kontext AppShellu
+- AppShell:
+  - podle aktivního modulu zvýrazní navigaci
+  - zobrazí breadcrumbs a actions
+
+**Pravidlo:**  
+Routing nikdy nesmí přímo řídit Sidebar / TopMenu – pouze poskytuje informaci „kde jsem“.
+
+---
+
+### 6) Debug checklist – routing vs UI
+Pokud UI nereaguje správně na změnu stránky:
+1. ověř, že routing správně mění aktivní modul
+2. ověř, že AppShell dostává informaci o aktivním modulu
+3. ověř, že UI konfigurace se nemění routou
+4. ověř, že navigace reaguje na změnu kontextu, ne na změnu routy přímo
+
