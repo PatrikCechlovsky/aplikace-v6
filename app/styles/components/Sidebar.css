@@ -125,4 +125,4 @@
 .layout.icons-mode-text .sidebar__sublink {
   padding-left: 44px !important; /* klidně 44–52 podle oka */
 }
-
+.layout.icons-mode-text .sidebar__sublink { outline: 2px solid red; }
