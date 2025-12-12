@@ -104,23 +104,58 @@
   color: var(--color-primary-strong);
 }
 
-/* -------------------------------------------------
-   INDENT: úroveň 1 / 2 / 3 (podle hloubky vnoření)
-   (tvoje appka reálně nemá section-row / sublink,
-    používá pořád sidebar__row)
-------------------------------------------------- */
 
-/* 1. úroveň */
-.sidebar__list > .sidebar__item > .sidebar__row {
-  padding-left: var(--sb-indent-l1);
+
+/* ============================
+   RESET: žádné odrážky, žádné link-look
+============================ */
+
+/* jistota: žádné kolečka/odrážky nikde */
+.sidebar__list,
+.sidebar__list li {
+  list-style: none;
 }
 
-/* 2. úroveň (li uvnitř li) */
+/* jistota: odkazy nevypadají jako odkazy */
+.sidebar__link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* jistota: žádné modré podtržení při focusu jako u odkazu */
+.sidebar__link:focus,
+.sidebar__link:focus-visible {
+  outline: none;
+}
+
+/* šipka/toggle: bez rámečku, bez default focus boxu */
+.sidebar__toggle {
+  border: none;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+.sidebar__toggle:focus,
+.sidebar__toggle:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ============================
+   INDENTY – zachovat původní vzhled, jen odsazení
+============================ */
+
+/* 1. úroveň (nech jak sis doladil) */
+/* .sidebar__list > .sidebar__item > .sidebar__row { padding-left: ... } */
+
+/* 2. úroveň – pokud máš svůj selector, nech ho.
+   Jinak můžeš použít tento: */
 .sidebar__list .sidebar__item .sidebar__list > .sidebar__item > .sidebar__row {
-  padding-left: var(--sb-indent-l2);
+  padding-left: 18px;
 }
 
-/* 3. úroveň */
+/* 3. úroveň – PŘESNĚ ten tvůj dlouhý selector, nic neměním, jen číslo */
 .sidebar__list
   .sidebar__item
   .sidebar__list
@@ -128,45 +163,32 @@
   .sidebar__list
   > .sidebar__item
   > .sidebar__row {
-  padding-left: var(--sb-indent-l3);
+  padding-left: 34px; /* tady ladíš */
 }
 
-/* -------------------------------------------------
-   REZERVA NA ŠIPKU (GUTTER) – úroveň 1 i 2
-   - pokud v řádku není toggle, link dostane margin-left
-   - pokud toggle je, margin-left = 0
-   - úroveň 3 se tím NIKDY nepřebije
-------------------------------------------------- */
+/* ============================
+   REZERVA NA ŠIPKU – ale BEZ změny vzhledu
+   (jen zarovnání, žádné boxy)
+============================ */
 
-/* 1. úroveň – bez toggle */
-.sidebar__list > .sidebar__item > .sidebar__row > .sidebar__link {
+:root {
+  --sb-toggle-w: 18px; /* šířka prostoru na šipku */
+}
+
+.sidebar__toggle {
+  width: var(--sb-toggle-w);
+  flex: 0 0 var(--sb-toggle-w);
+  padding: 0;
+  background: transparent;
+}
+
+/* rezervuj místo, když toggle v řádku není – ale jen pro 1. a 2. úroveň */
+.sidebar__list > .sidebar__item > .sidebar__row > .sidebar__link,
+.sidebar__list .sidebar__item .sidebar__list > .sidebar__item > .sidebar__row > .sidebar__link {
   margin-left: var(--sb-toggle-w);
 }
-/* 1. úroveň – s toggle */
-.sidebar__list
-  > .sidebar__item
-  > .sidebar__row
-  > .sidebar__toggle
-  + .sidebar__link {
-  margin-left: 0;
-}
 
-/* 2. úroveň – bez toggle */
-.sidebar__list
-  .sidebar__item
-  .sidebar__list
-  > .sidebar__item
-  > .sidebar__row
-  > .sidebar__link {
-  margin-left: var(--sb-toggle-w);
-}
-/* 2. úroveň – s toggle */
-.sidebar__list
-  .sidebar__item
-  .sidebar__list
-  > .sidebar__item
-  > .sidebar__row
-  > .sidebar__toggle
-  + .sidebar__link {
+/* pokud toggle existuje, margin zruš */
+.sidebar__row > .sidebar__toggle + .sidebar__link {
   margin-left: 0;
 }
