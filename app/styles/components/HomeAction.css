@@ -42,3 +42,46 @@
   padding: 4px 10px;
   font-size: 13px;
 }
+// app/styles/components/HomeActions.css
+
+.home-actions__icon,
+.home-actions__logout {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.55rem;
+  min-height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.home-actions__icon:hover,
+.home-actions__logout:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+.home-actions.is-disabled button {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+/* text reveal */
+.home-actions__label {
+  white-space: nowrap;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.15s ease;
+}
+
+.home-actions__icon:hover .home-actions__label {
+  opacity: 1;
+  max-width: 80px;
+}
