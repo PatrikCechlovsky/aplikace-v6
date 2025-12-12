@@ -253,3 +253,46 @@ UI nastavení (vzhled a rozložení) se řídí jednotným tokem:
   - jasně pojmenovaný klíč v `uiConfig`
   - jasně pojmenovaný klíč v `localStorage` (pokud se ukládá)
 
+--------------------------------------------------------------------
+## DOPLNĚNÍ (2025-12-12) – Pravidla pro TODO dokumenty a Markdown
+--------------------------------------------------------------------
+
+### TODO / roadmap / checklist dokumenty
+- Dokumenty typu **TODO, roadmapa, checklist** musí zůstat **v jednom souvislém Markdown bloku**.
+- Cílem je:
+  - nerozbité číslování,
+  - funkční checkboxy,
+  - čitelná historie změn.
+
+### ZÁKAZ fenced code blocků v TODO
+- V TODO dokumentech je **zakázáno používat fenced code blocky**:
+  ```md
+  ```js
+  code
+- Důvod:
+- fenced code block **rozbíjí seznamy**
+- ukončuje checklist
+- způsobuje nekonzistentní render (GitHub / VS Code / Obsidian)
+
+### Povolené způsoby zápisu technických informací v TODO
+- **Inline kód** je povolen:
+- `handleModuleSelect({ moduleId, sectionId, tileId })`
+- **Datové struktury** zapisovat textově:
+- SidebarSelection:
+  - moduleId: string
+  - sectionId?: string | null
+  - tileId?: string | null
+- Technické poznámky psát jako běžný text, ne jako blok kódu.
+
+### Kód patří mimo TODO
+- Pokud je nutné uvést:
+- ukázkový kód
+- API kontrakt
+- TypeScript definice
+→ patří do:
+- samostatné kapitoly „Poznámky“
+- nebo do samostatného `.md` souboru (spec / návrh)
+
+### Shrnutí pravidla
+> TODO dokumenty = **plán práce**, ne technická specifikace.  
+> Žádné fenced code blocky, žádné rozbíjení struktury.
