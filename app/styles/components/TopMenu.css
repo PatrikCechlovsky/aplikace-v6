@@ -10,22 +10,26 @@
   padding: 6px var(--tm-pad-x);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-actions-bg);
+  overflow: hidden; /* zakáže to “vyhazovat” horizontální scroll do celé stránky */
 }
 
 .topmenu__list {
   display: flex;
-  flex-wrap: nowrap;   /* žádné zalomení */
+  flex-wrap: nowrap;
   gap: 8px;
   list-style: none;
   margin: 0;
   padding: 0;
 
-  overflow-x: auto;    /* když je toho moc, scroll */
+  overflow-x: auto;     /* scroll jen uvnitř TopMenu */
   overflow-y: hidden;
   white-space: nowrap;
+
+  scrollbar-gutter: stable;  /* ať lišta neskáče */
 }
+
 .topmenu__item {
-  flex: 0 0 auto;      /* aby se položky nemačkaly */
+  flex: 0 0 auto;
 }
 
 /* tlačítko jako "řádek": šipka | ikona | text */
