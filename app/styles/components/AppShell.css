@@ -12,8 +12,7 @@
 /* Top menu mode */
 .layout.layout--topmenu {
   grid-template-columns: 1fr;
-  grid-template-rows: auto auto auto 1fr;
-}
+ }
 
 .layout.layout--topmenu .layout__topbar,
 .layout.layout--topmenu .layout__actions,
@@ -23,7 +22,7 @@
 /* v topmenu módu je content ve 4. řádku (ne ve 3.) */
 .layout.layout--topmenu .layout__content {
   grid-column: 1;
-  grid-row: 4;
+  grid-row: 3;
   min-height: 0;
   overflow: auto;
 }
@@ -77,8 +76,6 @@
 .layout__content {
   grid-column: 2;
   grid-row: 3;
-  padding: 16px;
-  background: var(--color-app-bg);
   min-height: 0;
   overflow: auto;
 }
