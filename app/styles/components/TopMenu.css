@@ -64,15 +64,24 @@
 
 /* Šipku dáme vlevo (i když je v DOM na konci) */
 .topmenu__chevron {
-  order: -1;
-  width: var(--tm-gutter);
+  order: -1;                 /* vlevo před ikonou */
+  display: inline-block;
+  width: var(--tm-gutter);   /* nebo 16px, ale JEDNO číslo */
   flex: 0 0 var(--tm-gutter);
   text-align: center;
   font-size: 11px;
   margin: 0;
   opacity: 0.7;
 }
+.topmenu__chevron {
+  display: inline-block;
+  width: 16px; /* drží stejný prostor */
+  text-align: center;
+}
 
+.topmenu__chevron--placeholder {
+  opacity: 0; /* místo zůstane, jen není vidět */
+}
 .topmenu__item--active .topmenu__button {
   background: var(--color-selected-row-bg);
   border-color: var(--color-border);
