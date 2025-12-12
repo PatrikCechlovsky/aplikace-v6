@@ -83,6 +83,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 6px 12px;  /* bylo 8px 16px */
   min-width: 0;            /* KRITICKÉ: dovolí vnitřním flex itemům se zmenšit */
 }
 
