@@ -1,0 +1,28 @@
+// app/styles/components/Breadcrumbs.css
+
+.layout__breadcrumbs {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.breadcrumbs__separator {
+  margin: 0 4px;
+  color: var(--color-text-muted);
+}
