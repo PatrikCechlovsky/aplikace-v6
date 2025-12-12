@@ -20,7 +20,13 @@
 .layout.layout--topmenu .layout__content {
   grid-column: 1;
 }
-
+/* v topmenu módu je content ve 4. řádku (ne ve 3.) */
+.layout.layout--topmenu .layout__content {
+  grid-column: 1;
+  grid-row: 4;
+  min-height: 0;
+  overflow: auto;
+}
 // app/styles/components/AppShell.css
 
 /* ... tvůj existující kód nahoře ... */
@@ -41,7 +47,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 16px;
+  gap: 12px;
 }
 
 .layout__topbar-left {
@@ -56,10 +62,16 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto; 
   margin-left: auto; /* vytlačí HomeActions doprava */
 }
 
-
+/* ať breadcrumbs nevystrčí pravý blok */
+.breadcrumbs {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Content */
 .layout__content {
