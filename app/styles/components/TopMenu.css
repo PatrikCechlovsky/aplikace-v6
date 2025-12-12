@@ -14,11 +14,18 @@
 
 .topmenu__list {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;   /* žádné zalomení */
   gap: 8px;
   list-style: none;
   margin: 0;
   padding: 0;
+
+  overflow-x: auto;    /* když je toho moc, scroll */
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+.topmenu__item {
+  flex: 0 0 auto;      /* aby se položky nemačkaly */
 }
 
 /* tlačítko jako "řádek": šipka | ikona | text */
@@ -65,11 +72,11 @@
   flex: 0 0 auto;
 }
 
-/* 4) Přepínání ikon/text režimu (stejně jako jinde) */
-.layout.icons-mode-text .topmenu__icon,
-.layout.icons-mode-text .topmenu__button svg {
+/* 4) Ikony schovávat jen když je text mód – ale nešahej na chevron */
+.layout.icons-mode-text .topmenu__icon {
   display: none;
 }
+
 
 .topmenu__item--active .topmenu__button {
   background: var(--color-selected-row-bg);
