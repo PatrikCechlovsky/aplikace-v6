@@ -1703,3 +1703,41 @@ Pokud se objeví nekonzistence (např. ikony vidět v Sidebaru, ale ne v TopMenu
 2) zda rozhodnutí `showIcons` není vyhodnocené rozdílně v různých místech
 3) zda CSS pro topmenu režim nepřepisuje styly ikon (např. `display:none`, barvy v dark mode, apod.)
 
+---
+
+## DOPLNĚNÍ (2025-12-12) – Tok UI nastavení, layout třídy a debug
+
+### 1) Tok UI nastavení (source → aplikace)
+UI nastavení se v aplikaci aplikuje jednotným tokem:
+
+1. **Default hodnoty** – výchozí UI config (definované v kódu)
+2. **Perzistence** – uživatelské nastavení uložené v `localStorage`
+3. **Kombinace** – výsledný `uiConfig` = defaulty přepsané hodnotami z `localStorage`
+4. **Aplikace tříd** – `AppShell.tsx` složí `className` na root `.layout`
+5. **Styly** – `globals.css` a `app/styles/**` používají:
+   - CSS proměnné (tokens)
+   - selektory přes `.layout` třídy (theme/accent/menu/icons)
+
+**Pravidlo:** rozhodnutí o režimech (menu / icons / theme / accent) se vyhodnocuje centrálně a renderery (Sidebar/TopMenu/Actions) dostávají jednotný výsledek (např. `showIcons`).
+
+---
+
+### 2) Standardní layout třídy (na `.layout`)
+Root kontejner `.layout` může nést kombinaci tříd, které řídí vzhled a rozložení.
+Doporučený minimální set (dle aktuální implementace projektu):
+
+- `theme-light` / `theme-dark` / `theme-auto` (dle projektu)
+- `accent-neutral` / `accent-purple` / … (dle presetů)
+- `icons-mode-icons` / `icons-mode-text`
+- `layout--sidebar` / `layout--topmenu` (nebo ekvivalent dle kódu)
+
+Pozn.: Konkrétní názvy tříd musí být jednotné napříč kódem i CSS. Pokud existuje historický název, přidat sem poznámku „legacy“.
+
+---
+
+### 3) Debug – rychlé konzolové příkazy
+Pro rychlé ověření, co je aktuálně aplikováno:
+
+**A) Jaké třídy má layout**
+```js
+document.querySelector('.layout')?.className
