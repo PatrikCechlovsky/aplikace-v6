@@ -1,0 +1,157 @@
+// app/styles/components/ThemeSettingsTile.css
+
+/* =========================================
+   THEME SETTINGS TILE – BAREVNÉ ZOBRAZENÍ
+   ========================================= */
+
+.settings-tile {
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.settings-tile__header {
+  margin-bottom: 1rem;
+}
+
+.settings-tile__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
+}
+
+.settings-tile__description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.settings-tile__section {
+  margin-top: 1.25rem;
+}
+
+.settings-tile__section-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin: 0 0 0.75rem 0;
+}
+
+/* Grid dlaždic */
+
+.settings-tile__palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Dlaždice/preset */
+
+.palette-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.palette-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary-soft);
+  transform: translateY(-1px);
+}
+
+.palette-card:disabled,
+.palette-card[disabled] {
+  cursor: default;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
+}
+
+.palette-card--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+/* Hlavička v dlaždici */
+
+.palette-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.palette-card__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.palette-card__badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+/* Popisek */
+
+.palette-card__description {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* Barevný náhled (3 puntíky) */
+
+.palette-card__preview {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.palette-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+/* ukázkové barvy pro jednotlivé accenty */
+
+.palette-preview--neutral.primary { background: #4f46e5; }
+.palette-preview--neutral.soft    { background: #e0e7ff; }
+.palette-preview--neutral.accent  { background: #111827; }
+
+.palette-preview--grey.primary { background: #6b7280; }
+.palette-preview--grey.soft    { background: #e5e7eb; }
+.palette-preview--grey.accent  { background: #374151; }
+
+.palette-preview--blue.primary { background: #2563eb; }
+.palette-preview--blue.soft    { background: #dbeafe; }
+.palette-preview--blue.accent  { background: #1d4ed8; }
+
+.palette-preview--green.primary { background: #16a34a; }
+.palette-preview--green.soft    { background: #dcfce7; }
+.palette-preview--green.accent  { background: #15803d; }
+
+.palette-preview--purple.primary { background: #a855f7; }
+.palette-preview--purple.soft    { background: #f3e8ff; }
+.palette-preview--purple.accent  { background: #7c3aed; }
