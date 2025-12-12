@@ -8,6 +8,7 @@ export type TopMenuModule = {
   label: string
   icon?: string | null
   enabled?: boolean
+  hasChildren?: boolean
 }
 
 type TopMenuProps = {
@@ -43,6 +44,15 @@ export function TopMenu({
                   className="topmenu__button"
                   onClick={() => onSelectModule(m.id)}
                 >
+                  <span
+                    className={
+                      'topmenu__chevron' +
+                      (m.hasChildren ? '' : ' topmenu__chevron--placeholder')
+                    }
+                    aria-hidden="true"
+                  >
+                    ▸
+                  </span>
                   {showIcons && m.icon && (
                     <span className="topmenu__icon">{getIcon(m.icon as any)}</span>
                   )}
