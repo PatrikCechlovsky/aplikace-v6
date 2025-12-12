@@ -1741,3 +1741,20 @@ Pro rychlé ověření, co je aktuálně aplikováno:
 **A) Jaké třídy má layout**
 ```js
 document.querySelector('.layout')?.className
+**B) Jaké CSS proměnné jsou aktuálně použité (výběr)
+const el = document.querySelector('.layout')
+el && getComputedStyle(el).getPropertyValue('--color-text')
+**C) Který CSS soubor/selektor přepisuje problémový styl
+- použij DevTools → Inspect → Computed → najdi vlastnost → rozklikni „kde je definovaná“
+- pokud je problém s tmavým režimem: ověř selektory pod .theme-dark ...
+
+### 4) Pravidla pro přidání nové UI volby (aby se to nerozjelo)
+Když přidáme novou UI volbu (např. nový režim menu nebo nový akcent), musí být splněno:
+1. Typy + default v centrálním UI configu (kód)
+2. Uložení/načtení z localStorage (pokud je to user preference)
+3. Aplikace tříd v AppShell.tsx (nebo jiném centrálním místě)
+4. CSS podpora v globals.css / app/styles/**
+5. Doplnění dokumentace:
+- UI-specifikace.md (co to je a jak se to chová)
+- 03-ui-system.md (tok + třídy)
+- případně stav-struktury.md (kde to v kódu je)
