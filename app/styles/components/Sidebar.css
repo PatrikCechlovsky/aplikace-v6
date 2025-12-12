@@ -32,7 +32,7 @@
 /* ---------- společné tokeny ---------- */
 :root {
   --sb-gutter: 24px;        /* falešné místo na šipku */
-  --sb-gap: 8px;            /* šipka ↔ ikona ↔ text */
+  --sb-gap: 5px;            /* šipka ↔ ikona ↔ text */
 }
 
 /* ---------- Level 1 ---------- */
@@ -40,7 +40,7 @@
   display: flex;
   align-items: center;
   gap: var(--sb-gap);
-  padding: 6px 8px;         /* můžeš klidně 6px 6px pokud chceš ještě víc ke kraji */
+  padding: 6px 5px;         /* můžeš klidně 6px 6px pokud chceš ještě víc ke kraji */
   border-radius: 10px;
   cursor: pointer;
 }
