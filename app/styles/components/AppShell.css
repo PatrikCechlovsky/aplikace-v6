@@ -34,10 +34,10 @@
 .layout__topbar {
   grid-column: 2;
   grid-row: 1;
-
+  min-height: 40px; 
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 4px 10px;
 
   background: var(--color-topbar-bg);
   border-bottom: 1px solid var(--color-border);
@@ -75,6 +75,8 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 12px;       /* bylo 13px */
+  line-height: 1.2;
 }
 
 /* ---------- ACTIONS BAR (TopMenu + CommonActions) ---------- */
