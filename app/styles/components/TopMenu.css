@@ -40,7 +40,7 @@
   align-items: center;
   gap: var(--tm-gap);
   padding: 4px 8px; 
-  line-height: 1.2
+  line-height: 1.2;
   border-radius: 9999px;
   border: 1px solid transparent;
   background: transparent;
@@ -93,4 +93,15 @@
 
 .topmenu__list::-webkit-scrollbar-thumb {
   border-radius: 999px;
+}
+/* ===== Kompaktní lišty i v TOPMENU módu ===== */
+
+.layout.layout--topmenu .layout__topbar {
+  padding: 4px 10px;
+  min-height: 40px;
+}
+
+.layout.layout--topmenu .layout__actions {
+  padding: 4px 10px;
+  min-height: 40px;
 }
