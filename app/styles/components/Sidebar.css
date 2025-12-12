@@ -116,14 +116,13 @@
 .sidebar__subitem--active .sidebar__sublink {
   background: var(--color-selected-row-bg);
 }
-/* === Fix odsazení úrovní v text módu (ikony skryté) === */
+/* === HARD FIX: odsazení úrovní v text módu (když zmizí šipka/ikona) === */
 
-/* 2. úroveň – sekce pod modulem */
 .layout.icons-mode-text .sidebar__section-row {
-  padding-left: 24px;  /* nebo stejná hodnota, jakou máš v normálním módu */
+  padding-left: 24px !important;
 }
 
-/* 3. úroveň – konkrétní dlaždice v sekci */
 .layout.icons-mode-text .sidebar__sublink {
-  padding-left: 40px;  /* o něco víc než sekce, ať je vidět hierarchie */
+  padding-left: 44px !important; /* klidně 44–52 podle oka */
 }
+
