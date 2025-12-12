@@ -1,7 +1,10 @@
-// app/styles/components/HomeAction.css
+// app/styles/components/HomeActions.css
 
-/* HomeActions vpravo nahoře */
+/* =========================================
+   HOME ACTIONS – uživatel + ikonky vpravo nahoře
+   ========================================= */
 
+/* Kontejner vpravo nahoře */
 .home-actions {
   display: flex;
   align-items: center;
@@ -15,6 +18,7 @@
   pointer-events: none;
 }
 
+/* Text „Páťa / Uživatel“ */
 .home-actions__user {
   display: inline-flex;
   align-items: center;
@@ -22,41 +26,32 @@
   font-weight: 500;
 }
 
-.home-actions__btn,
-.home-actions__logout {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  cursor: pointer;
-}
-
-.home-actions__btn {
-  width: 28px;
-  height: 28px;
-}
-
-.home-actions__logout {
-  padding: 4px 10px;
-  font-size: 13px;
-}
-// app/styles/components/HomeActions.css
-
+/* Oválná tlačítka (ikonky + Odhlásit) – sjednoceno s CommonActions /
+   GenericType, navázané na theme proměnné */
 .home-actions__icon,
 .home-actions__logout {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   padding: 0.35rem 0.55rem;
   min-height: 30px;
+
   border-radius: 999px;
   border: 1px solid var(--color-border-soft);
   background: var(--color-surface-subtle);
   color: var(--color-text);
+
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1;
+
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
 }
 
 .home-actions__icon:hover,
@@ -64,15 +59,17 @@
   background: var(--color-primary-soft);
   border-color: var(--color-primary);
   color: var(--color-primary-strong);
+  transform: translateY(-1px);
 }
 
+/* Disabled stav – tlačítka nereagují */
 .home-actions.is-disabled button {
   opacity: 0.5;
   cursor: default;
   transform: none;
 }
 
-/* text reveal */
+/* Text v tlačítkách – výchozí (ikonový) režim: text je schovaný a ukáže se na hover */
 .home-actions__label {
   white-space: nowrap;
   opacity: 0;
