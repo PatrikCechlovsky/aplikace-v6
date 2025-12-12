@@ -120,7 +120,7 @@
 
 /* 1. úroveň (moduly) – základ */
 .sidebar__list > .sidebar__item > .sidebar__row {
-  padding-left: 12px;
+  padding-left: 16px;
 }
 
 /* 2. úroveň (sekce) – je to li uvnitř li */
