@@ -273,3 +273,59 @@ MODULE-TODO soubory řídí **konkrétní implementaci**.
     tileId?: string | null
   }
 
+## TODO – TopMenu (horní menu) + CommonActions
+
+1) Aktivní stav TopMenu (MVP)
+- [ ] Napojit `TopMenu` na `activeModuleId`
+- [ ] Zvýraznit aktivní modul (`.topmenu__item--active`)
+- [ ] Ověřit, že klik na modul:
+  - [ ] nastaví `activeModuleId`
+  - [ ] zruší předchozí výběr `sectionId` / `tileId` (tj. návrat na “úvod modulu”, pokud nebylo vybráno nic dalšího)
+
+2) TopMenu – struktura obsahu (logika)
+- [ ] Replikovat navigační logiku Sidebaru pro TopMenu (jen UI bude jiné):
+  - [ ] modul (level 1)
+  - [ ] sekce (level 2)
+  - [ ] tile (level 3; svázané přes `tile.sectionId`)
+- [ ] Zachovat stejný typ výběru jako Sidebar:
+  - [ ] `SidebarSelection = { moduleId: string, sectionId?: string | null, tileId?: string | null }`
+- [ ] TopMenu musí volat `handleModuleSelect(...)` stejně jako Sidebar:
+  - [ ] modul: `handleModuleSelect({ moduleId })`
+  - [ ] sekce: `handleModuleSelect({ moduleId, sectionId })`
+  - [ ] tile: `handleModuleSelect({ moduleId, sectionId, tileId })`
+
+3) TopMenu – UI chování
+- [ ] Modul bez children → klik rovnou aktivuje modul (žádné podmenu)
+- [ ] Modul s children → klik otevře podmenu (dropdown nebo “druhý řádek”)
+- [ ] V podmenu zobrazit:
+  - [ ] seznam sekcí modulu
+  - [ ] po rozkliknutí sekce zobrazit tiles v dané sekci
+  - [ ] fallback: pokud modul nemá sections → zobrazit tiles rovnou
+- [ ] Aktivní položky (vizuálně):
+  - [ ] aktivní modul
+  - [ ] aktivní sekce (pokud vybraná)
+  - [ ] aktivní tile (nejhlubší úroveň)
+
+4) TopMenu – UX pravidla
+- [ ] V jeden okamžik otevřené pouze jedno podmenu (1 aktivní “expanded” modul)
+- [ ] Klik mimo TopMenu zavře podmenu
+- [ ] Změna modulu zavře předchozí podmenu
+- [ ] Konzistence chování se Sidebarem (TopMenu je jiná vizualizace, ne jiná logika)
+
+5) Layout – CommonActions v TopMenu režimu (AŽ POTOM)
+- [ ] Neřešit dřív, dokud TopMenu nebude funkční a otestovatelné
+- [ ] Upravit `layout__actions` na 2 řádky:
+  - [ ] řádek 1: `TopMenu`
+  - [ ] řádek 2: `CommonActions`
+- [ ] CommonActions zarovnat doprava
+- [ ] Sidebar režim zůstává beze změny
+
+6) Test scénáře
+- [ ] Přepnutí Sidebar ↔ TopMenu
+- [ ] Aktivace modulu bez sekcí
+- [ ] Aktivace modulu se sekcemi
+- [ ] Výběr tile → registrace `CommonActions` (lišta se objeví a je správně zarovnaná)
+- [ ] Přihlášen / odhlášen stav (disabled chování)
+- [ ] Zavírání podmenu klikem mimo / změnou modulu
+
+Poznámka: TopMenu je pouze alternativní prezentace stejné navigační logiky jako Sidebar. Žádná duplicitní business logika.
