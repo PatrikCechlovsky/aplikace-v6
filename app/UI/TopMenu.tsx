@@ -49,12 +49,13 @@ const TopMenu: React.FC<TopMenuProps> = ({
                   className="topmenu__button"
                   onClick={() => onSelectModule(m.id)}
                 >
-                  {/* Chevron */}
-                  {m.hasChildren && (
-                    <span className="topmenu__chevron" aria-hidden="true">
-                      ▾
-                    </span>
-                  )}
+-                  {/* Chevron */}
+-                  {m.hasChildren && (
+-                    <span className="topmenu__chevron" aria-hidden="true">
+-                      ▾
+-                    </span>
+-                  )}
++                  {/* MVP: bez dropdownů → chevron schválně nezobrazujeme */}
 
                   {showIcons && m.icon && (
                     <span className="topmenu__icon">
