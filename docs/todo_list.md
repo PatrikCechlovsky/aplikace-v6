@@ -192,3 +192,60 @@ Je doporučeno aktualizovat jej po:
 - úpravě logiky,
 - nebo změně dokumentace.
 
+---
+
+## DOPLNĚNÍ (2025-12-12) – Konsolidace UI a modulového postupu
+
+### ✅ UZAVŘENO – UI ARCHITEKTURA & DOKUMENTACE
+Následující oblast je považována za **architektonicky hotovou**:
+
+- UI architektura (AppShell, layout, role vrstev)
+- Routing vs UI layout
+- UI konfigurace (theme, accent, menu, icons)
+- Sidebar / TopMenu – jednotný model, různé renderery
+- Modul 900 jako zdroj UI konfigurace
+- UI-specifikace
+- UI-system
+- stav-struktury
+- glossary (pojmy)
+
+➡️ Další změny v UI architektuře **pouze formou doplnění**, nikoliv přepisů.
+
+---
+
+### 🔄 NOVÝ STANDARD – MODULOVÝ POSTUP
+Od tohoto data platí:
+
+- Každý modul musí mít:
+  - vlastní `MODULE-TODO.md`
+  - postup dle dokumentu **POSTUP.md**
+- Implementace modulu **nesmí začít**, dokud:
+  - není vyplněn MODULE-TODO
+  - nejsou definována pole, selecty, role a UI struktura
+
+---
+
+### ⏳ AKTUÁLNÍ PRIORITY (DLE POSTUPU)
+
+#### Modul 010 – Správa uživatelů
+- [ ] Ověřit MODULE-TODO dle POSTUP.md
+- [ ] Zkontrolovat generic types (role, permissions)
+- [ ] Navázat na modul 900 (číselníky)
+- [ ] Implementace ListView + DetailView podle checklistu
+
+#### Modul 020 – Můj účet
+- [ ] Ověřit MODULE-TODO dle POSTUP.md
+- [ ] Oddělit „self-edit“ logiku od admin logiky
+- [ ] Napojení na auth flow (2FA, změna hesla)
+
+#### Modul 900 – Nastavení
+- [ ] Vytvořit MODULE-TODO (nový)
+- [ ] Definovat všechny GenericTypeTiles
+- [ ] UI nastavení (theme, menu, icons) = referenční modul
+- [ ] Dokumentační autorita pro číselníky
+
+---
+
+### 📌 POZNÁMKA
+Tento TODO list řídí **prioritu práce**,  
+MODULE-TODO soubory řídí **konkrétní implementaci**.
