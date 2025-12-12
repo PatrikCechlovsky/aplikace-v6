@@ -1,13 +1,4 @@
 /* app/globals.css */
 
-/* 1) Základ + témata */
+/* 1) Základ + design tokens + tema */
 @import './styles/base.css';
-
-/* 2) Rozložení aplikace (layout, sidebar, topbar, breadcrumbs, actions) */
-@import './styles/layout.css';
-
-/* 3) Sdílené komponenty */
-@import './styles/components/generic-type.css';
-@import './styles/components/entity.css';
-@import './styles/components/theme-settings.css';
-@import './styles/components/login-home.css';
