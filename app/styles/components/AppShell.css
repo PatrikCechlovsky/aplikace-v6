@@ -5,7 +5,8 @@
   display: grid;
   grid-template-columns: 260px 1fr;
   grid-template-rows: auto auto 1fr;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Top menu mode */
@@ -66,6 +67,8 @@
   grid-row: 3;
   padding: 16px;
   background: var(--color-app-bg);
+  min-height: 0;
+  overflow: auto;
 }
 
 /* Common actions wrapper */
