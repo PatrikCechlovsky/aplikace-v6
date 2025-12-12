@@ -80,12 +80,22 @@
 /* ---------- ACTIONS BAR (TopMenu + CommonActions) ---------- */
 
 .layout__actions {
-  grid-column: 2;
-  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;            /* KRITICKÉ: dovolí vnitřním flex itemům se zmenšit */
+}
 
-  padding: 8px 16px;
-  background: var(--color-actions-bg);
-  border-bottom: 1px solid var(--color-border);
+/* TopMenu se smí zmenšit a bude scrollovat */
+.layout__actions .topmenu {
+  flex: 1;
+  min-width: 0;            /* KRITICKÉ */
+}
+
+/* Pravé akce se NESMÍ schovat */
+.layout__actions .common-actions {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* ---------- CONTENT (jediné místo se scroll) ---------- */
