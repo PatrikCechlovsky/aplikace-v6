@@ -1,7 +1,13 @@
 // app/styles/components/TopMenu.css
 
+:root {
+  --tm-pad-x: 8px;     /* mezera od kraje appky */
+  --tm-gap: 4px;       /* mezera mezi prvky (šipka/ikona/text) */
+  --tm-gutter: 18px;   /* falešné místo pro šipku */
+}
+
 .topmenu {
-  padding: 6px 16px;
+  padding: 6px var(--tm-pad-x);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-actions-bg);
 }
@@ -11,16 +17,58 @@
   flex-wrap: wrap;
   gap: 8px;
   list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
+/* tlačítko jako "řádek": šipka | ikona | text */
 .topmenu__button {
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-gap);
+
+  padding: 6px 10px; /* lehce méně než 12px, ať je to kompaktní */
   border-radius: 9999px;
   border: 1px solid transparent;
   background: transparent;
   font-size: 13px;
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* 1) GUTTER: pokud šipka není, uděláme místo stejně jako v sidebaru */
+.topmenu__button::before {
+  content: '';
+  width: var(--tm-gutter);
+  flex: 0 0 var(--tm-gutter);
+}
+
+/* 2) Pokud šipka existuje, gutter z pseudo prvku vypneme a šipku dáme vlevo */
+.topmenu__button:has(.topmenu__chevron)::before {
+  display: none;
+}
+
+.topmenu__chevron {
+  order: -1;                 /* přesune šipku na začátek i když je v DOM na konci */
+  width: var(--tm-gutter);   /* stejné jako "gutter" */
+  flex: 0 0 var(--tm-gutter);
+  text-align: center;
+
+  font-size: 11px;
+  margin: 0;                 /* zrušíme původní margin-left */
+  opacity: 0.7;
+}
+
+/* 3) Ikona: držet kompaktní mezery */
+.topmenu__icon,
+.topmenu__button svg {
+  flex: 0 0 auto;
+}
+
+/* 4) Přepínání ikon/text režimu (stejně jako jinde) */
+.layout.icons-mode-text .topmenu__icon,
+.layout.icons-mode-text .topmenu__button svg {
+  display: none;
 }
 
 .topmenu__item--active .topmenu__button {
@@ -31,10 +79,4 @@
 
 .topmenu__button:hover {
   background: var(--color-surface-subtle);
-}
-
-.topmenu__chevron {
-  font-size: 11px;
-  margin-left: 4px;
-  opacity: 0.7;
 }
