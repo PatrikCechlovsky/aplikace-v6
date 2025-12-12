@@ -1,8 +1,4 @@
-/**
- * FILE: TopMenu.tsx
- * PATH: /app/UI/TopMenu.tsx
- * PURPOSE: Horní horizontální lišta modulů (Excel styl).
- */
+// app/UI/TopMenu.tsx
 
 'use client'
 
@@ -13,6 +9,7 @@ interface TopMenuModule {
   label: string
   enabled?: boolean
   hasChildren?: boolean
+  icon?: string // ✅ NOVĚ (např. '⚙️' nebo '🏠')
 }
 
 interface TopMenuProps {
@@ -48,12 +45,18 @@ const TopMenu: React.FC<TopMenuProps> = ({
                   className="topmenu__button"
                   onClick={() => onSelectModule(m.id)}
                 >
-                  <span className="topmenu__label">{m.label}</span>
+                  {/* Chevron */}
                   {m.hasChildren && (
                     <span className="topmenu__chevron" aria-hidden="true">
                       ▾
                     </span>
                   )}
+
+                  {/* ✅ Ikona */}
+                  {m.icon && <span className="topmenu__icon">{m.icon}</span>}
+
+                  {/* Label */}
+                  <span className="topmenu__label">{m.label}</span>
                 </button>
               </li>
             )
