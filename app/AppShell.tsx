@@ -653,6 +653,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               id: m.id,
               label: m.label,
               enabled: m.enabled,
+              icon: m.icon, // ✅ DŮLEŽITÉ – stejná ikona jako v Sidebaru
               // má tento modul sekce nebo tiles?
               hasChildren: !!((m.sections && m.sections.length) || (m.tiles && m.tiles.length)),
             }))}
