@@ -84,8 +84,9 @@
 .layout__actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 12px;  /* bylo 8px 16px */
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 10px;  /* bylo 8px 16px */
   min-width: 0;            /* KRITICKÉ: dovolí vnitřním flex itemům se zmenšit */
 }
 
