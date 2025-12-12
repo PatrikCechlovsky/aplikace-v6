@@ -1,32 +1,27 @@
-// app/UI/TopMenu.tsx
-
-'use client'
+// FILE: app/UI/TopMenu.tsx
 
 import React from 'react'
-import { getIcon } from './icons'
-import type { IconKey } from './icons'
 
-interface TopMenuModule {
+export type TopMenuModule = {
   id: string
   label: string
+  icon?: React.ReactNode
   enabled?: boolean
-  hasChildren?: boolean
-  icon?: string // ✅ NOVĚ (např. '⚙️' nebo '🏠')
 }
 
-interface TopMenuProps {
+type TopMenuProps = {
   modules: TopMenuModule[]
   activeModuleId?: string
   onSelectModule: (id: string) => void
   showIcons?: boolean
 }
 
-const TopMenu: React.FC<TopMenuProps> = ({
+export function TopMenu({
   modules,
   activeModuleId,
   onSelectModule,
   showIcons = true,
-}) => {
+}: TopMenuProps) {
   return (
     <nav className="topmenu" aria-label="Hlavní moduly">
       <ul className="topmenu__list">
@@ -38,29 +33,17 @@ const TopMenu: React.FC<TopMenuProps> = ({
             return (
               <li
                 key={m.id}
-                className={
-                  isActive
-                    ? 'topmenu__item topmenu__item--active'
-                    : 'topmenu__item'
-                }
+                className={`topmenu__item ${
+                  isActive ? 'topmenu__item--active' : ''
+                }`}
               >
                 <button
                   type="button"
                   className="topmenu__button"
                   onClick={() => onSelectModule(m.id)}
                 >
--                  {/* Chevron */}
--                  {m.hasChildren && (
--                    <span className="topmenu__chevron" aria-hidden="true">
--                      ▾
--                    </span>
--                  )}
-+                  {/* MVP: bez dropdownů → chevron schválně nezobrazujeme */}
-
                   {showIcons && m.icon && (
-                    <span className="topmenu__icon">
-                      {getIcon(m.icon as any)}
-                    </span>
+                    <span className="topmenu__icon">{m.icon}</span>
                   )}
                   <span className="topmenu__label">{m.label}</span>
                 </button>
@@ -71,5 +54,3 @@ const TopMenu: React.FC<TopMenuProps> = ({
     </nav>
   )
 }
-
-export default TopMenu
