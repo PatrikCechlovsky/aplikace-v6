@@ -8,17 +8,19 @@
   border-right: 1px solid var(--color-border);
 }
 
+/* více ke kraji (ať sidebar nesežere content) */
 .layout__sidebar {
-  padding: 12px;
+  padding: 8px;            /* bylo 12px */
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;               /* bylo 12px */
 }
 
 .sidebar__inner {
-  padding: 12px 8px;
+  padding: 8px 6px;        /* bylo 12px 8px */
 }
 
+/* listy bez odrážek */
 .sidebar__list,
 .sidebar__sectionlist,
 .sidebar__sublist {
@@ -27,12 +29,18 @@
   padding: 0;
 }
 
-/* Level 1 */
+/* ---------- společné tokeny ---------- */
+:root {
+  --sb-gutter: 24px;        /* falešné místo na šipku */
+  --sb-gap: 8px;            /* šipka ↔ ikona ↔ text */
+}
+
+/* ---------- Level 1 ---------- */
 .sidebar__row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
+  gap: var(--sb-gap);
+  padding: 6px 8px;         /* můžeš klidně 6px 6px pokud chceš ještě víc ke kraji */
   border-radius: 10px;
   cursor: pointer;
 }
@@ -46,10 +54,12 @@
   cursor: not-allowed;
 }
 
+/* Pozn.: i když v některých místech není <a>, tenhle blok neublíží;
+   pokud máš někde <div class="sidebar__link">, je to OK. */
 .sidebar__link {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sb-gap);
   text-decoration: none;
   color: inherit;
   flex: 1;
@@ -64,14 +74,16 @@
   white-space: nowrap;
 }
 
-/* Toggles */
+/* ---------- Toggles (šipky) ---------- */
+/* šipka má pevnou šířku = náš "gutter" */
 .sidebar__toggle,
 .sidebar__section-toggle {
   border: none;
   background: transparent;
   padding: 0;
   font-size: 16px;
-  width: 18px;
+  width: var(--sb-gutter);
+  flex: 0 0 var(--sb-gutter);
   text-align: center;
   transition: transform 0.15s ease;
   cursor: pointer;
@@ -88,12 +100,22 @@
   color: var(--color-primary-strong);
 }
 
-/* Level 2 */
+/* ✅ JEDNO PRAVIDLO: když toggle v řádku NENÍ, uděláme falešné místo 24px
+   Platí pro 1., 2. i 3. úroveň (pro row + section-row + sublink). */
+.sidebar__row:not(:has(> .sidebar__toggle))::before,
+.sidebar__section-row:not(:has(> .sidebar__section-toggle))::before,
+.sidebar__sublink:not(:has(> .sidebar__toggle))::before {
+  content: '';
+  width: var(--sb-gutter);
+  flex: 0 0 var(--sb-gutter);
+}
+
+/* ---------- Level 2 ---------- */
 .sidebar__section-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px 6px 32px;
+  gap: var(--sb-gap);
+  padding: 6px 8px 6px 24px;   /* bylo 32px -> méně doprava */
   cursor: pointer;
   border-radius: 8px;
 }
@@ -102,12 +124,12 @@
   background: var(--color-selected-row-bg);
 }
 
-/* Level 3 */
+/* ---------- Level 3 ---------- */
 .sidebar__sublink {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 32px;
+  gap: var(--sb-gap);
+  padding: 4px 8px 4px 40px;   /* bylo 32px -> level 3 víc než level 2 */
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
@@ -115,42 +137,4 @@
 
 .sidebar__subitem--active .sidebar__sublink {
   background: var(--color-selected-row-bg);
-}
-/* === Indent podle hloubky vnoření (2. a 3. úroveň) === */
-
-/* 1. úroveň (moduly) – základ */
-.sidebar__list > .sidebar__item > .sidebar__row {
-  padding-left: 12px;
-}
-
-/* 2. úroveň (sekce) – je to li uvnitř li */
-.sidebar__list .sidebar__item .sidebar__list > .sidebar__item > .sidebar__row {
-  padding-left: 24px;
-}
-
-/* 3. úroveň (položky/tiles) */
-.sidebar__list
-  .sidebar__item
-  .sidebar__list
-  .sidebar__item
-  .sidebar__list
-  > .sidebar__item
-  > .sidebar__row {
-  padding-left: 40px;
-}
-
-/* Rezervuj místo pro šipku i tam, kde není (zarovnání sloupků) */
-.sidebar__toggle {
-  width: 24px;
-  flex: 0 0 18px;
-}
-
-/* když v řádku toggle není, uděláme falešný prostor před linkem */
-.sidebar__row > .sidebar__link {
-  margin-left: 24px;
-}
-
-/* ale pokud toggle existuje, margin vypneme */
-.sidebar__row > .sidebar__toggle + .sidebar__link {
-  margin-left: 0;
 }
