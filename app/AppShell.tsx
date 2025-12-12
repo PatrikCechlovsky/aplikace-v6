@@ -646,30 +646,26 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       </header>
 
       <div className="layout__actions">
-        {/* V režimu TOP zobrazíme modulovou lištu nad běžnými actions */}
         {menuLayout === 'top' && (
           <TopMenu
             modules={modules.map((m) => ({
               id: m.id,
               label: m.label,
               enabled: m.enabled,
-              icon: m.icon, // ✅ DŮLEŽITÉ – stejná ikona jako v Sidebaru
-              // má tento modul sekce nebo tiles?
-              hasChildren: !!((m.sections && m.sections.length) || (m.tiles && m.tiles.length)),
+              icon: m.icon,
+              hasChildren: !!(
+                (m.sections && m.sections.length) ||
+                (m.tiles && m.tiles.length)
+              ),
             }))}
             activeModuleId={activeModuleId ?? undefined}
-            onSelectModule={(id) =>
-            handleModuleSelect({ moduleId: id })
-            showIcons={uiConfig.iconDisplay !== 'text'} // nebo co u vás vrací nastavení
-            }
+            onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
+            showIcons={uiConfig.iconDisplay !== 'text'}
           />
         )}
 
-        <CommonActions
-          disabled={!isAuthenticated}
-          actions={commonActions}
-        />
-      </div>
+  <CommonActions disabled={!isAuthenticated} actions={commonActions} />
+</div>
 
       <main className="layout__content">{renderContent()}</main>
     </div>
