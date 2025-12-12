@@ -138,3 +138,19 @@
   > .sidebar__row {
   padding-left: 40px;
 }
+
+/* Rezervuj místo pro šipku i tam, kde není (zarovnání sloupků) */
+.sidebar__toggle {
+  width: 18px;
+  flex: 0 0 18px;
+}
+
+/* když v řádku toggle není, uděláme falešný prostor před linkem */
+.sidebar__row > .sidebar__link {
+  margin-left: 18px;
+}
+
+/* ale pokud toggle existuje, margin vypneme */
+.sidebar__row > .sidebar__toggle + .sidebar__link {
+  margin-left: 0;
+}
