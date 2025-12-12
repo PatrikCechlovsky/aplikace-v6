@@ -1,11 +1,12 @@
 // FILE: app/UI/TopMenu.tsx
 
 import React from 'react'
+import { getIcon } from './icons'
 
 export type TopMenuModule = {
   id: string
   label: string
-  icon?: React.ReactNode
+  icon?: string | null
   enabled?: boolean
 }
 
@@ -43,7 +44,7 @@ export function TopMenu({
                   onClick={() => onSelectModule(m.id)}
                 >
                   {showIcons && m.icon && (
-                    <span className="topmenu__icon">{m.icon}</span>
+                    <span className="topmenu__icon">{getIcon(m.icon as any)}</span>
                   )}
                   <span className="topmenu__label">{m.label}</span>
                 </button>
