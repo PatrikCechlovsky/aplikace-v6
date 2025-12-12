@@ -3,6 +3,8 @@
 'use client'
 
 import React from 'react'
+import { getIcon } from './icons'
+import type { IconKey } from './icons'
 
 interface TopMenuModule {
   id: string
