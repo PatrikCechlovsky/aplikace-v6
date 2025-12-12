@@ -82,3 +82,15 @@
 .topmenu__button:hover {
   background: var(--color-surface-subtle);
 }
+/* Užší scrollbar v TopMenu */
+.topmenu__list {
+  scrollbar-width: thin; /* Firefox */
+}
+
+.topmenu__list::-webkit-scrollbar {
+  height: 6px;           /* Chrome/Edge – zmenši třeba na 5px */
+}
+
+.topmenu__list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+}
