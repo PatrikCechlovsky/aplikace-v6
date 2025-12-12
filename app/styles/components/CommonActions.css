@@ -1,0 +1,44 @@
+// app/styles/components/CommonActions.css
+
+.common-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.common-actions__btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.55rem;
+  min-height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.common-actions__btn:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+/* hidden text by default */
+.common-actions__label {
+  white-space: nowrap;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.15s ease;
+}
+
+.common-actions__btn:hover .common-actions__label {
+  opacity: 1;
+  max-width: 80px;
+}
