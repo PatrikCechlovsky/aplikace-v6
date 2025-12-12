@@ -1,0 +1,142 @@
+// app/styles/components/TableView.css
+
+/* =========================================
+   TABLE VIEW – "excelový" mód celé aplikace
+   Aktivuje se třídou .view-table na .layout
+   ========================================= */
+
+/* === SIDEBAR – víc tabulkový, řádky s mřížkou === */
+
+.layout.view-table .sidebar__row {
+  padding: 4px 8px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.layout.view-table .sidebar__row--active {
+  background: var(--color-selected-row-bg);
+  font-weight: 600;
+}
+
+.layout.view-table .sidebar__section-row {
+  padding-left: 24px;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.layout.view-table .sidebar__sublink {
+  padding-left: 32px;
+}
+
+/* === TOPBAR + ACTIONS – plošší, víc "line" === */
+
+.layout.view-table .layout__topbar {
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+.layout.view-table .layout__actions {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+}
+
+/* CommonActions tlačítka jako malé "toolbar" */
+.layout.view-table .common-actions__btn {
+  border-radius: 4px;
+  min-height: 26px;
+}
+
+/* HomeActions tlačítka – také plošší */
+.layout.view-table .home-actions__icon,
+.layout.view-table .home-actions__logout {
+  border-radius: 4px;
+  min-height: 26px;
+}
+
+/* === ENTITY LIST – mřížka, zebra řádky === */
+
+.layout.view-table .entity-list {
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.layout.view-table .entity-list__header-row,
+.layout.view-table .entity-list__row {
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.layout.view-table .entity-list__row:nth-child(even) {
+  background: var(--color-surface-subtle);
+}
+
+.layout.view-table .entity-list__cell,
+.layout.view-table .entity-list__cell--header {
+  border-right: 1px solid var(--color-border-soft);
+}
+
+.layout.view-table
+  .entity-list__row
+  .entity-list__cell:last-child,
+.layout.view-table
+  .entity-list__header-row
+  .entity-list__cell--header:last-child {
+  border-right: none;
+}
+
+/* Aktivní řádek dál respektuje barvu podle theme */
+.layout.view-table .entity-list__row.entity-list__row--active,
+.layout.view-table .entity-list__row.entity-list__row--active:hover {
+  background: var(--color-selected-row-bg);
+}
+
+/* === RELATION PANE – seznam vztahů taky tabulkově === */
+
+.layout.view-table .relation-pane__list {
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.layout.view-table .relation-pane__item {
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.layout.view-table .relation-pane__item:nth-child(even) {
+  background: var(--color-surface-subtle);
+}
+
+/* === GENERIC TYPE TABLE – jemná mřížka === */
+
+.layout.view-table .generic-type__table {
+  border: 1px solid var(--color-border);
+}
+
+.layout.view-table .generic-type__table th,
+.layout.view-table .generic-type__table td,
+.layout.view-table .generic-type__cell {
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.layout.view-table .generic-type__cell,
+.layout.view-table .generic-type__table th {
+  border-right: 1px solid var(--color-border-soft);
+}
+
+.layout.view-table .generic-type__table tr th:last-child,
+.layout.view-table .generic-type__table tr td:last-child {
+  border-right: none;
+}
+
+.layout.view-table .generic-type__table tbody tr:nth-child(even) {
+  background: var(--color-surface-subtle);
+}
+
+.layout.view-table .generic-type__row--selected {
+  background-color: var(--color-selected-row-bg);
+}
+
+/* === OBECNĚ: hover chování v tabulkovém módu === */
+
+.layout.view-table .entity-list__row:hover,
+.layout.view-table .relation-pane__item:hover {
+  background: var(--color-primary-soft);
+}
