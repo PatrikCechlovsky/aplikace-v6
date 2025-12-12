@@ -125,5 +125,5 @@
 
 /* 3. úroveň – konkrétní dlaždice v sekci */
 .layout.icons-mode-text .sidebar__sublink {
-  padding-left: 32px;  /* o něco víc než sekce, ať je vidět hierarchie */
+  padding-left: 40px;  /* o něco víc než sekce, ať je vidět hierarchie */
 }
