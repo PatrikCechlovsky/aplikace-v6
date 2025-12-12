@@ -1,0 +1,85 @@
+// app/styles/components/AppShell.css
+
+/* GRID + LAYOUT (zůstává globální) */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100vh;
+}
+
+/* Top menu mode */
+.layout.layout--topmenu {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto 1fr;
+}
+
+.layout.layout--topmenu .layout__topbar,
+.layout.layout--topmenu .layout__actions,
+.layout.layout--topmenu .layout__content {
+  grid-column: 1;
+}
+
+/* Topbar wrapper */
+.layout__topbar {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--color-topbar-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Content */
+.layout__content {
+  grid-column: 2;
+  grid-row: 3;
+  padding: 16px;
+  background: var(--color-app-bg);
+}
+
+/* Common actions wrapper */
+.layout__actions {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 8px 16px;
+  background: var(--color-actions-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ICONS / TEXT MODES */
+.layout.icons-mode-text .sidebar__icon,
+.layout.icons-mode-text .sidebar__subicon,
+.layout.icons-mode-text .sidebar__section-icon,
+.layout.icons-mode-text .breadcrumbs__icon,
+.layout.icons-mode-text .common-actions__icon,
+.layout.icons-mode-text .home-button__icon,
+.layout.icons-mode-text .home-actions__icon-emoji {
+  display: none;
+}
+
+.layout.icons-mode-text .common-actions__label,
+.layout.icons-mode-text .home-actions__label {
+  opacity: 1;
+  max-width: none;
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .layout__sidebar,
+  .layout__topbar,
+  .layout__actions,
+  .layout__content {
+    width: 100%;
+  }
+
+  .layout__content {
+    padding: 12px;
+  }
+}
