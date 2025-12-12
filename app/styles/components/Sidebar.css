@@ -19,20 +19,15 @@
   padding: 12px 8px;
 }
 
-/* -------------------------------------------------
-   LISTY – všechny úrovně
-------------------------------------------------- */
-
-.sidebar__list {
+.sidebar__list,
+.sidebar__sectionlist,
+.sidebar__sublist {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-/* -------------------------------------------------
-   ŘÁDEK (společné pro všechny úrovně)
-------------------------------------------------- */
-
+/* Level 1 */
 .sidebar__row {
   display: flex;
   align-items: center;
@@ -69,93 +64,71 @@
   white-space: nowrap;
 }
 
-/* -------------------------------------------------
-   TOGGLE (šipka)
-------------------------------------------------- */
-
-:root {
-  /* Jedno místo pro ladění */
-  --sb-toggle-w: 24px;
-
-  /* Odsazení úrovní – dolaď čísla tady */
-  --sb-indent-l1: 8px;
-  --sb-indent-l2: 18px;
-  --sb-indent-l3: 34px;
-}
-
-.sidebar__toggle {
+/* Toggles */
+.sidebar__toggle,
+.sidebar__section-toggle {
   border: none;
   background: transparent;
   padding: 0;
   font-size: 16px;
-  width: var(--sb-toggle-w);
-  flex: 0 0 var(--sb-toggle-w);
+  width: 18px;
   text-align: center;
   transition: transform 0.15s ease;
   cursor: pointer;
   color: var(--color-text);
 }
 
-.sidebar__toggle--open {
+.sidebar__toggle--open,
+.sidebar__section-toggle--open {
   transform: rotate(90deg);
 }
 
-.sidebar__toggle:hover {
+.sidebar__toggle:hover,
+.sidebar__section-toggle:hover {
   color: var(--color-primary-strong);
 }
 
-
-
-/* ============================
-   RESET: žádné odrážky, žádné link-look
-============================ */
-
-/* jistota: žádné kolečka/odrážky nikde */
-.sidebar__list,
-.sidebar__list li {
-  list-style: none;
+/* Level 2 */
+.sidebar__section-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 32px;
+  cursor: pointer;
+  border-radius: 8px;
 }
 
-/* jistota: odkazy nevypadají jako odkazy */
-.sidebar__link {
+.sidebar__section-item--active .sidebar__section-row {
+  background: var(--color-selected-row-bg);
+}
+
+/* Level 3 */
+.sidebar__sublink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 32px;
+  border-radius: 8px;
   text-decoration: none;
   color: inherit;
 }
 
-/* jistota: žádné modré podtržení při focusu jako u odkazu */
-.sidebar__link:focus,
-.sidebar__link:focus-visible {
-  outline: none;
+.sidebar__subitem--active .sidebar__sublink {
+  background: var(--color-selected-row-bg);
+}
+/* === Indent podle hloubky vnoření (2. a 3. úroveň) === */
+
+/* 1. úroveň (moduly) – základ */
+.sidebar__list > .sidebar__item > .sidebar__row {
+  padding-left: 12px;
 }
 
-/* šipka/toggle: bez rámečku, bez default focus boxu */
-.sidebar__toggle {
-  border: none;
-  background: transparent;
-  outline: none;
-  box-shadow: none;
-}
-
-.sidebar__toggle:focus,
-.sidebar__toggle:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-/* ============================
-   INDENTY – zachovat původní vzhled, jen odsazení
-============================ */
-
-/* 1. úroveň (nech jak sis doladil) */
-/* .sidebar__list > .sidebar__item > .sidebar__row { padding-left: ... } */
-
-/* 2. úroveň – pokud máš svůj selector, nech ho.
-   Jinak můžeš použít tento: */
+/* 2. úroveň (sekce) – je to li uvnitř li */
 .sidebar__list .sidebar__item .sidebar__list > .sidebar__item > .sidebar__row {
-  padding-left: 18px;
+  padding-left: 24px;
 }
 
-/* 3. úroveň – PŘESNĚ ten tvůj dlouhý selector, nic neměním, jen číslo */
+/* 3. úroveň (položky/tiles) */
 .sidebar__list
   .sidebar__item
   .sidebar__list
@@ -163,32 +136,21 @@
   .sidebar__list
   > .sidebar__item
   > .sidebar__row {
-  padding-left: 34px; /* tady ladíš */
+  padding-left: 40px;
 }
 
-/* ============================
-   REZERVA NA ŠIPKU – ale BEZ změny vzhledu
-   (jen zarovnání, žádné boxy)
-============================ */
-
-:root {
-  --sb-toggle-w: 18px; /* šířka prostoru na šipku */
-}
-
+/* Rezervuj místo pro šipku i tam, kde není (zarovnání sloupků) */
 .sidebar__toggle {
-  width: var(--sb-toggle-w);
-  flex: 0 0 var(--sb-toggle-w);
-  padding: 0;
-  background: transparent;
+  width: 24px;
+  flex: 0 0 18px;
 }
 
-/* rezervuj místo, když toggle v řádku není – ale jen pro 1. a 2. úroveň */
-.sidebar__list > .sidebar__item > .sidebar__row > .sidebar__link,
-.sidebar__list .sidebar__item .sidebar__list > .sidebar__item > .sidebar__row > .sidebar__link {
-  margin-left: var(--sb-toggle-w);
+/* když v řádku toggle není, uděláme falešný prostor před linkem */
+.sidebar__row > .sidebar__link {
+  margin-left: 24px;
 }
 
-/* pokud toggle existuje, margin zruš */
+/* ale pokud toggle existuje, margin vypneme */
 .sidebar__row > .sidebar__toggle + .sidebar__link {
   margin-left: 0;
 }
