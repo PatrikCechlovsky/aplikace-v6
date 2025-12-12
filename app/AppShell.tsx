@@ -664,8 +664,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           />
         )}
 
-  <CommonActions disabled={!isAuthenticated} actions={commonActions} />
-</div>
+        <CommonActions disabled={!isAuthenticated} actions={commonActions} />
+      </div>
 
       <main className="layout__content">{renderContent()}</main>
     </div>
