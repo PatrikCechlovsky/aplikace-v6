@@ -239,3 +239,71 @@ Tento dokument ukazuje:
 Slouží jako kontrolní seznam i chronologická mapa projektu.
 
 Všechny změny v aplikaci musí být následně aktualizovány zde, aby dokumentace odpovídala skutečnému stavu systému.
+
+---
+
+## DOPLNĚNÍ (2025-12-12) – Mapa reality UI (layout, menu, theme, ikony)
+
+### 1) Root layout – zdroj pravdy
+- `app/AppShell.tsx`
+  - skládá hlavní UI kostru (HomeButton, Menu, Breadcrumbs, HomeActions, CommonActions, Content)
+  - aplikuje výsledné `className` na root `.layout` (theme / accent / icons / menu režim)
+  - rozhoduje o režimu menu (Sidebar vs TopMenu) dle UI configu
+
+- `app/layout.tsx` + `app/page.tsx`
+  - Next.js vstupní vrstvy (routing + render root stránky)
+  - UI kostru neřeší (to je úloha AppShell)
+
+---
+
+### 2) UI config – realita ukládání a aplikace
+- Definice a typy UI nastavení: `app/lib/uiConfig.ts` (nebo ekvivalent dle projektu)
+- Perzistence uživatelských voleb: `localStorage`
+- Aplikace tříd: probíhá při renderu root `.layout` (typicky v `AppShell.tsx`)
+- CSS: opírá se o třídy na `.layout` a CSS proměnné
+
+Doporučená runtime kontrola:
+- `document.querySelector('.layout')?.className`
+
+---
+
+### 3) Navigace (Menu) – renderery
+Menu existuje ve dvou režimech, ale musí používat společný model dat:
+
+- Sidebar renderer: `app/UI/Sidebar.tsx`
+- TopMenu renderer: `app/UI/TopMenu.tsx` (pokud existuje)
+- Společná data (moduly / sekce / tiles):
+  - model se skládá centrálně (typicky v `AppShell.tsx`)
+  - renderer nesmí mít vlastní logiku ikon, labelů nebo enabled stavů
+
+Pravidlo:
+- pokud Sidebar zobrazuje ikony a TopMenu ne, je chyba v:
+  1. předávání `showIcons` / UI configu
+  2. CSS selektorech pro topmenu režim
+  3. nebo v tom, že TopMenu nedostává `icon` z modelu
+
+---
+
+### 4) UI komponenty – aktuálně klíčové
+- `app/UI/HomeButton.tsx` – levý horní prvek (domů)
+- `app/UI/Breadcrumbs.tsx` – drobečková navigace
+- `app/UI/HomeActions.tsx` – pravý horní panel (globální akce)
+- `app/UI/CommonActions.tsx` – kontextové akce (list/detail)
+- `app/UI/AppIcon.tsx` + `app/UI/icons.ts` – jednotný systém ikon
+
+---
+
+### 5) CSS a theme – kde hledat realitu
+- `app/globals.css` – základní tokens a globální styly
+- `app/styles/**` – komponentové / layout / theme styly (přepisy dle tříd na `.layout`)
+
+Typický problém:
+- v tmavém režimu mizí šipky nebo ikony → ověř selektory pod `.theme-dark ...` a barvy ikon
+
+---
+
+### 6) Debug checklist (rychlý)
+1. ověř třídy na `.layout`:
+   - `document.querySelector('.layout')?.className`
+2. ověř, že rozhodnutí `showIcons` je centrální (AppShell)
+3. ověř, že CSS pro topmenu režim neschovává ikony (display / opacity / color)
