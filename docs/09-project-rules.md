@@ -232,4 +232,24 @@ major.minor.patch
 --------------------------------------------------------------------
 16. HISTORICKÁ ČÁST
 --------------------------------------------------------------------
-Sem lze vkládat staré verze obsahu při dalších aktualizacích.
+---
+
+## DOPLNĚNÍ (2025-12-12) – Pravidla dokumentace a UI nastavení
+
+### Append-only dokumentace (nic nemažeme)
+- Dokumentaci **nikdy nemažeme**. Pokud se něco mění, přidává se nová sekce „DOPLNĚNÍ (YYYY-MM-DD)“.
+- Starší text zůstává kvůli historii; nové doplnění má přednost (pokud je v rozporu, uvést to výslovně).
+
+### UI nastavení (source of truth)
+UI nastavení (vzhled a rozložení) se řídí jednotným tokem:
+1) **Zdroj dat:** `uiConfig` (typy + defaulty v kódu)
+2) **Perzistence:** `localStorage` (uživatelská volba přepisuje default)
+3) **Aplikace tříd:** `AppShell.tsx` aplikuje className na `.layout`
+4) **Styly:** globální CSS proměnné + theme/accent/ikony režimy v `globals.css` a `app/styles/**`
+
+### Povinné pravidlo pro nové UI volby
+- Každá nová UI volba (např. nový režim menu, nová varianta ikon, nové téma) musí mít:
+  - zápis do dokumentace (min. 5–10 řádků) v příslušném doc souboru
+  - jasně pojmenovaný klíč v `uiConfig`
+  - jasně pojmenovaný klíč v `localStorage` (pokud se ukládá)
+
