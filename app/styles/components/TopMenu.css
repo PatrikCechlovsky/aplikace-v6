@@ -1,0 +1,40 @@
+// app/styles/components/TopMenu.css
+
+.topmenu {
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-actions-bg);
+}
+
+.topmenu__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+}
+
+.topmenu__button {
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.topmenu__item--active .topmenu__button {
+  background: var(--color-selected-row-bg);
+  border-color: var(--color-border);
+  font-weight: 600;
+}
+
+.topmenu__button:hover {
+  background: var(--color-surface-subtle);
+}
+
+.topmenu__chevron {
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
