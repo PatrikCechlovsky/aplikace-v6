@@ -1638,3 +1638,68 @@ Content (center)
 ---
 
 # 📌 Konec archivních historických částí pro dokument 03 UI.
+
+---
+
+## DOPLNĚNÍ (2025-12-12) – Menu režimy, ikony a jednotná kostra layoutu
+
+### 1) Kostra UI (6 bloků layoutu)
+Aplikace se skládá z 6 hlavních bloků, které musí zůstat konzistentní bez ohledu na theme nebo režim menu:
+
+1. **HomeButton** – návrat na „domů“ (dashboard)
+2. **Menu** – buď Sidebar, nebo TopMenu (viz níže)
+3. **Breadcrumbs** – orientace (modul → sekce → tile / detail)
+4. **HomeActions** – pravý horní panel (globální akce uživatele)
+5. **CommonActions** – kontextové akce (seznam/detail – např. uložit, přidat, smazat)
+6. **Content** – hlavní obsah (seznamy, detaily, tiles, dashboard)
+
+Pozn.: Implementační „zdroj pravdy“ pro skládání těchto bloků je `app/AppShell.tsx`.
+
+---
+
+### 2) Režim menu: Sidebar vs TopMenu
+Menu má dva režimy zobrazení, ale musí používat **stejná data** (moduly/sekce/tiles) a liší se pouze rendererem:
+
+- **Sidebar režim**
+  - klasické levé menu (moduly + sekce + tiles)
+  - vhodné pro detailní práci a hlubší hierarchii
+
+- **TopMenu režim**
+  - modulová lišta nahoře (nad standardními actions)
+  - vhodné pro rychlé přepínání modulů
+  - sekce/tiles se mohou zobrazovat odlišně (dle implementace), ale zdroj dat musí být shodný
+
+**Pravidlo:** Sidebar a TopMenu nesmí mít „vlastní“ logiku ikon, labelů nebo enabled stavů – pouze renderují společný model.
+
+---
+
+### 3) Režim ikon: icons vs text
+Aplikace podporuje minimálně tyto režimy zobrazení v navigaci (a případně i v akcích):
+
+- **icons** – zobrazovat ikony + text (kde to dává smysl)
+- **text** – preferovat text, ikony se mohou skrýt (nebo minimalizovat)
+
+**Pravidlo:** Pokud je aktivní režim `text`, menu (Sidebar/TopMenu) nesmí „náhodně“ zobrazovat ikony jen někde. Rozhodnutí o zobrazení ikon musí být konzistentní.
+
+Doporučení: rozhodnutí „zobrazit ikony“ se vyhodnocuje v jednom místě (typicky v AppShell) a předává se rendererům jako boolean (např. `showIcons`).
+
+---
+
+### 4) Třídy na `.layout` (theme/accent/menu/icons)
+Aktuální vzhled se promítá do className na root kontejneru `.layout`, aby CSS mohlo jednotně stylovat UI.
+Typicky se zde promítají:
+- `theme-*` (světlý/tmavý/auto varianty dle projektu)
+- `accent-*` (barevný akcent)
+- `icons-mode-*` (icons/text)
+- `layout--topmenu` apod. (režim menu)
+
+**Pravidlo:** Třídy se skládají na jednom místě a CSS se opírá primárně o tyto třídy + CSS proměnné.
+
+---
+
+### 5) Kontrolní checklist (pro ladění)
+Pokud se objeví nekonzistence (např. ikony vidět v Sidebaru, ale ne v TopMenu), ověř:
+1) zda oba renderery dostávají stejný model dat (moduly/ikony/labely/enabled)
+2) zda rozhodnutí `showIcons` není vyhodnocené rozdílně v různých místech
+3) zda CSS pro topmenu režim nepřepisuje styly ikon (např. `display:none`, barvy v dark mode, apod.)
+
