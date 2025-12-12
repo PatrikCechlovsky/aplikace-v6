@@ -1,0 +1,50 @@
+/* app/styles/components/LoginPanel.css */
+
+.login-panel {
+  max-width: 420px;
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  font-size: 14px;
+}
+
+.login-panel__tabs {
+  display: flex;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.login-panel__tab {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.login-panel__tab--active {
+  border-bottom: 2px solid var(--color-primary);
+  font-weight: 600;
+}
+
+.login-panel__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-panel__field label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.login-panel__field input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
