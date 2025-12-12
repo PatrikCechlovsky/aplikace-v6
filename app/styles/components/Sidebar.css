@@ -120,7 +120,7 @@
 
 /* 1. úroveň (moduly) – základ */
 .sidebar__list > .sidebar__item > .sidebar__row {
-  padding-left: 40px;
+  padding-left: 12px;
 }
 
 /* 2. úroveň (sekce) – je to li uvnitř li */
@@ -141,13 +141,13 @@
 
 /* Rezervuj místo pro šipku i tam, kde není (zarovnání sloupků) */
 .sidebar__toggle {
-  width: 20px;
+  width: 24px;
   flex: 0 0 18px;
 }
 
 /* když v řádku toggle není, uděláme falešný prostor před linkem */
 .sidebar__row > .sidebar__link {
-  margin-left: 20px;
+  margin-left: 24px;
 }
 
 /* ale pokud toggle existuje, margin vypneme */
