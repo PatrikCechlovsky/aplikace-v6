@@ -1,0 +1,30 @@
+// app/styles/components/HomeButton.css
+
+/* Home button vlevo nahoře */
+.home-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  width: auto;
+  text-align: left;
+}
+
+.home-button__icon {
+  font-size: 18px;
+}
+
+.home-button.is-disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.home-button:not(.is-disabled) {
+  cursor: pointer;
+}
