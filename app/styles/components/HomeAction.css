@@ -1,0 +1,44 @@
+// app/styles/components/HomeAction.css
+
+/* HomeActions vpravo nahoře */
+
+.home-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.home-actions.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.home-actions__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.home-actions__btn,
+.home-actions__logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.home-actions__btn {
+  width: 28px;
+  height: 28px;
+}
+
+.home-actions__logout {
+  padding: 4px 10px;
+  font-size: 13px;
+}
