@@ -660,7 +660,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             }))}
             activeModuleId={activeModuleId ?? undefined}
             onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
-            showIcons={uiConfig.iconDisplay !== 'text'}
+           
           />
         )}
 
