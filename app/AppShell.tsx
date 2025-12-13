@@ -675,7 +675,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               onSelectSection={(sectionId) => {
                 const moduleId = activeModuleId ?? activeSelection?.moduleId
                 if (!moduleId) return
-                handleSectionSelect({ moduleId, sectionId })
+                handleModuleSelect({ moduleId, sectionId })
               }}
               showIcons={uiConfig.iconDisplay !== 'text'}
            
