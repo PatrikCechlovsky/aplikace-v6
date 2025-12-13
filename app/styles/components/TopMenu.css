@@ -1,37 +1,55 @@
-// app/styles/components/TopMenu.css
+/* app/styles/components/TopMenu.css */
 
 :root {
   --tm-pad-x: 8px;    /* mezera od kraje */
-  --tm-gap: 4px;      /* šipka ↔ ikona ↔ text */
+  --tm-gap: 6px;      /* šipka ↔ ikona ↔ text */
   --tm-gutter: 18px;  /* “sloupec” pro šipku */
 }
 
+/* wrapper pro TopMenu.tsx (kvůli popoveru) */
+.topmenu-root {
+  position: relative;
+}
+
+/* ====== BAR (řádek s moduly) ====== */
 .topmenu {
   padding: 6px var(--tm-pad-x);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-actions-bg);
 
-  /* důležité: ať nic nevyleze ven, scroll řeší list */
-  overflow: hidden;
+  /* DŮLEŽITÉ: popover nesmí být uříznutý */
+  overflow: visible;
 }
 
 .topmenu__list {
   display: flex;
-  flex-wrap: nowrap;      /* ✅ nikdy nezalomí do další řádky */
+  flex-wrap: nowrap;
   gap: 8px;
   list-style: none;
   margin: 0;
   padding: 0;
 
-  overflow-x: auto;       /* ✅ scroll jen v topmenu */
+  overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
 
-  scrollbar-gutter: stable; /* ať lišta neskáče */
-  min-width: 0;  /* pomůže flexu */
+  scrollbar-gutter: stable;
+  min-width: 0;
+
+  /* Užší scrollbar v TopMenu */
+  scrollbar-width: thin;
+}
+
+.topmenu__list::-webkit-scrollbar {
+  height: 6px;
+}
+
+.topmenu__list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
 }
 
 .topmenu__item {
+  position: relative; /* kotva pro popover */
   flex: 0 0 auto;
 }
 
@@ -39,7 +57,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--tm-gap);
-  padding: 4px 8px; 
+  padding: 4px 10px;
   line-height: 1.2;
   border-radius: 9999px;
   border: 1px solid transparent;
@@ -50,38 +68,23 @@
   cursor: pointer;
 }
 
-/* GUTTER na šipku, když tam šipka není */
-.topmenu__button::before {
-  content: '';
-  width: var(--tm-gutter);
-  flex: 0 0 var(--tm-gutter);
-}
-
-/* Pokud šipka existuje, pseudo-gutter vypneme */
-.topmenu__button:has(.topmenu__chevron)::before {
-  display: none;
-}
-
-/* Šipku dáme vlevo (i když je v DOM na konci) */
+/* ====== Chevron + placeholder (držení místa) ====== */
 .topmenu__chevron {
-  order: -1;                 /* vlevo před ikonou */
+  order: -1;
   display: inline-block;
-  width: var(--tm-gutter);   /* nebo 16px, ale JEDNO číslo */
+  width: var(--tm-gutter);
   flex: 0 0 var(--tm-gutter);
   text-align: center;
   font-size: 11px;
   margin: 0;
   opacity: 0.7;
 }
-.topmenu__chevron {
-  display: inline-block;
-  width: 16px; /* drží stejný prostor */
-  text-align: center;
-}
 
 .topmenu__chevron--placeholder {
-  opacity: 0; /* místo zůstane, jen není vidět */
+  opacity: 0; /* místo zůstane */
 }
+
+/* ====== Active / hover ====== */
 .topmenu__item--active .topmenu__button {
   background: var(--color-selected-row-bg);
   border-color: var(--color-border);
@@ -91,20 +94,13 @@
 .topmenu__button:hover {
   background: var(--color-surface-subtle);
 }
-/* Užší scrollbar v TopMenu */
-.topmenu__list {
-  scrollbar-width: thin; /* Firefox */
+
+/* ====== Icons mode (pokud používáte na layoutu) ====== */
+.layout.icons-mode-text .topmenu__icon {
+  display: none;
 }
 
-.topmenu__list::-webkit-scrollbar {
-  height: 6px;           /* Chrome/Edge – zmenši třeba na 5px */
-}
-
-.topmenu__list::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-}
-/* ===== Kompaktní lišty i v TOPMENU módu ===== */
-
+/* ====== Kompaktní lišty i v TOPMENU módu ====== */
 .layout.layout--topmenu .layout__topbar {
   padding: 4px 10px;
   min-height: 40px;
@@ -114,4 +110,58 @@
   padding: 4px 10px;
   min-height: 40px;
 }
-.layout.icons-mode-text .topmenu__icon { display: none; }
+
+/* ===========================
+   PHASE 2: DESKTOP POPOVER
+   =========================== */
+
+.topmenu__popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  max-width: 320px;
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+
+  z-index: 50;
+}
+
+.topmenu__popover-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.topmenu__popover-item {
+  margin: 0;
+}
+
+.topmenu__popover-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--tm-gap);
+  text-align: left;
+
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.topmenu__popover-button:hover {
+  background: var(--color-surface-subtle);
+}
+
+.topmenu__popover-button--active {
+  background: var(--color-selected-row-bg);
+  border-color: var(--color-border);
+  font-weight: 600;
+}
