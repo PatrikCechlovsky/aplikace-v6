@@ -3,13 +3,17 @@
 /*
  * FILE: app/UI/ListView.tsx
  * PURPOSE: Opakovatelný ListView vzor pro všechny přehledové seznamy.
- *          Vizuálně vychází z horní části GenericTypeTile:
  *          - filtr (input)
  *          - zaškrtávátko „Zobrazit archivované“
  *          - tabulka se záhlavím a řádky.
+ *
+ * POZNÁMKA:
+ * - Vizuální "panel" (rámeček okolo celého listu) je řešen přes .listview (ListView.css).
+ * - generic-type__* třídy zůstávají pro tabulku/buňky, aby se držel jednotný styl v app.
  */
 
 import React from 'react'
+import '@/app/styles/components/ListView.css'
 
 export type ListViewColumn = {
   key: string
@@ -77,9 +81,9 @@ export default function ListView<TData = any>({
   const hasCheckbox = typeof onShowArchivedChange === 'function'
 
   return (
-    <div className="generic-type__list">
+    <div className="listview">
       {/* Horní lišta: filtr + zobrazit archivované */}
-      <div className="generic-type__list-toolbar">
+      <div className="listview__toolbar">
         <input
           type="text"
           className="generic-type__filter-input"
@@ -103,7 +107,7 @@ export default function ListView<TData = any>({
       </div>
 
       {/* Vlastní tabulka */}
-      <div className="generic-type__table-wrapper">
+      <div className="listview__table-wrapper">
         <table className="generic-type__table">
           <thead>
             <tr>
@@ -132,17 +136,13 @@ export default function ListView<TData = any>({
           <tbody>
             {rows.length === 0 ? (
               <tr className="generic-type__row generic-type__row--empty">
-                <td
-                  className="generic-type__cell"
-                  colSpan={columns.length}
-                >
+                <td className="generic-type__cell" colSpan={columns.length}>
                   {emptyText}
                 </td>
               </tr>
             ) : (
               rows.map((row) => {
-                const isSelected =
-                  selectedId !== null && row.id === selectedId
+                const isSelected = selectedId !== null && row.id === selectedId
 
                 const rowClassNames = [
                   'generic-type__row',
