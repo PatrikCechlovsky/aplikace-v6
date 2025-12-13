@@ -1,24 +1,18 @@
 /* app/styles/components/TopMenu.css */
 
 :root {
-  --tm-pad-x: 8px;    /* mezera od kraje */
-  --tm-gap: 6px;      /* šipka ↔ ikona ↔ text */
-  --tm-gutter: 18px;  /* “sloupec” pro šipku */
+  --tm-pad-x: 8px;
+  --tm-gap: 6px;
+  --tm-gutter: 18px;
 }
 
-/* wrapper pro TopMenu.tsx (kvůli click-outside + popover) */
-.topmenu-root {
-  position: relative;
-}
+.topmenu-root { position: relative; }
 
-/* ====== BAR (řádek s moduly) ====== */
 .topmenu {
   padding: 6px var(--tm-pad-x);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-actions-bg);
-
-  /* DŮLEŽITÉ: popover nesmí být uříznutý */
-  overflow: visible;
+  overflow: visible; /* !!! nesmí řezat popover ani scroll */
 }
 
 .topmenu__list {
@@ -36,20 +30,14 @@
   scrollbar-gutter: stable;
   min-width: 0;
 
-  /* Užší scrollbar v TopMenu */
   scrollbar-width: thin;
 }
 
-.topmenu__list::-webkit-scrollbar {
-  height: 6px;
-}
-
-.topmenu__list::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-}
+.topmenu__list::-webkit-scrollbar { height: 6px; }
+.topmenu__list::-webkit-scrollbar-thumb { border-radius: 999px; }
 
 .topmenu__item {
-  position: relative; /* kotva pro popover */
+  position: relative;
   flex: 0 0 auto;
 }
 
@@ -62,14 +50,11 @@
   border-radius: 9999px;
   border: 1px solid transparent;
   background: transparent;
-
   font-size: 14px;
   white-space: nowrap;
   cursor: pointer;
 }
 
-/* ====== Chevron + placeholder (držení místa) ====== */
-/* Pozor: žádné :has() a žádný pseudo-gutter – místo drží placeholder */
 .topmenu__chevron {
   order: -1;
   display: inline-block;
@@ -81,66 +66,38 @@
   opacity: 0.7;
 }
 
-.topmenu__chevron--placeholder {
-  opacity: 0; /* místo zůstane */
-}
+.topmenu__chevron--placeholder { opacity: 0; }
 
-/* ====== Active / hover ====== */
 .topmenu__item--active .topmenu__button {
   background: var(--color-selected-row-bg);
   border-color: var(--color-border);
   font-weight: 600;
 }
 
-.topmenu__button:hover {
-  background: var(--color-surface-subtle);
-}
+.topmenu__button:hover { background: var(--color-surface-subtle); }
 
-/* ====== Icons mode (pokud používáte na layoutu) ====== */
-.layout.icons-mode-text .topmenu__icon {
-  display: none;
-}
+.layout.icons-mode-text .topmenu__icon { display: none; }
 
-/* ====== Kompaktní lišty i v TOPMENU módu ====== */
-.layout.layout--topmenu .layout__topbar {
-  padding: 4px 10px;
-  min-height: 40px;
-}
+.layout.layout--topmenu .layout__topbar { padding: 4px 10px; min-height: 40px; }
+.layout.layout--topmenu .layout__actions { padding: 4px 10px; min-height: 40px; }
 
-.layout.layout--topmenu .layout__actions {
-  padding: 4px 10px;
-  min-height: 40px;
-}
-
-/* ===========================
-   PHASE 2: DESKTOP POPOVER
-   =========================== */
-
+/* POPOVER */
 .topmenu__popover {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   min-width: 240px;
   max-width: 320px;
-
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   padding: 6px;
-
   z-index: 50;
 }
 
-.topmenu__popover-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.topmenu__popover-item {
-  margin: 0;
-}
+.topmenu__popover-list { list-style: none; padding: 0; margin: 0; }
+.topmenu__popover-item { margin: 0; }
 
 .topmenu__popover-button {
   width: 100%;
@@ -148,18 +105,14 @@
   align-items: center;
   gap: var(--tm-gap);
   text-align: left;
-
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
-
   cursor: pointer;
 }
 
-.topmenu__popover-button:hover {
-  background: var(--color-surface-subtle);
-}
+.topmenu__popover-button:hover { background: var(--color-surface-subtle); }
 
 .topmenu__popover-button--active {
   background: var(--color-selected-row-bg);
