@@ -69,7 +69,20 @@ export function TopMenu({
   useEffect(() => {
     setOpenModuleId(null)
   }, [activeModuleId])
-
+  ``` :contentReference[oaicite:1]{index=1}
+  
+  ## Oprava
+  Chceme zavírat popover **jen když se modul změní “externě”** (např. ze Sidebaru), ale **ne když klikneš v TopMenu**.
+  
+  Nejjednodušší: přidat “flag”, že změna pochází z TopMenu, a efekt ji pak ignoruje.
+  
+  ---
+  
+  # ✅ Patch – zkopíruj přesně tyto změny do `TopMenu.tsx`
+  
+  ### 1) Přidej `useRef` flag (hned pod `rootRef`)
+  ```ts
+  const lastChangeFromTopMenuRef = useRef(false)
   // click-outside → zavřít
   useEffect(() => {
     function onDocPointerDown(e: MouseEvent) {
