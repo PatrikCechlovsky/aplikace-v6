@@ -649,17 +649,27 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         {menuLayout === 'top' && (
           <TopMenu
             modules={modules.map((m) => ({
-              id: m.id,
-              label: m.label,
-              enabled: m.enabled,
-              icon: m.icon,
-              hasChildren: !!(
-                (m.sections && m.sections.length) ||
-                (m.tiles && m.tiles.length)
-              ),
-            }))}
-            activeModuleId={activeModuleId ?? undefined}
-            onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
+             id: m.id,
+             label: m.label,
+             enabled: m.enabled,
+             icon: m.icon,
+             hasChildren: !!m.sections?.length,
+             sections: m.sections?.map((s) => ({
+               id: s.id,
+               label: s.label,
+               enabled: s.enabled,
+               icon: s.icon,
+               hasChildren: !!s.tiles?.length, // jen indikátor šipky, žádné tiles render zatím
+             })),
+           }))}
+           activeModuleId={activeModuleId ?? undefined}
+           activeSectionId={activeSectionId ?? null}
+           onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
+           onSelectSection={(sectionId) => {
+             if (!activeModuleId) return
+             handleSectionSelect({ moduleId: activeModuleId, sectionId })
+           }}
+           showIcons={uiConfig.iconDisplay !== 'text'}
            
           />
         )}
