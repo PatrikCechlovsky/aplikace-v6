@@ -6,7 +6,7 @@
   --tm-gutter: 18px;  /* “sloupec” pro šipku */
 }
 
-/* wrapper pro TopMenu.tsx (kvůli popoveru) */
+/* wrapper pro TopMenu.tsx (kvůli click-outside + popover) */
 .topmenu-root {
   position: relative;
 }
@@ -69,6 +69,7 @@
 }
 
 /* ====== Chevron + placeholder (držení místa) ====== */
+/* Pozor: žádné :has() a žádný pseudo-gutter – místo drží placeholder */
 .topmenu__chevron {
   order: -1;
   display: inline-block;
