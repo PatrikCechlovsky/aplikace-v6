@@ -1,0 +1,55 @@
+/* FILE: app/styles/components/EntityDetailFrame.css */
+/* PURPOSE: Sjednocení detailu do "tile" vzhledu jako GenericTypeTile:
+   - karta přes obsah (max-width)
+   - header + jemná linka
+   - tělo detailu jen 1 sloupec (žádná pravá prázdná strana)
+*/
+
+/* celá karta detailu */
+.entity-detail {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px 14px 16px;
+}
+
+/* header podobně jako tile */
+.entity-detail__header {
+  margin: 0 0 10px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.entity-detail__title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.entity-detail__subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* KLÍČ: zrušit 2-sloupcový layout z Entity.css a jet 1 sloupec */
+.entity-detail__body {
+  display: block; /* přebije grid */
+  width: 100%;
+}
+
+/* Pokud někde existuje side panel, schováme ho (ať nezůstává prázdný sloupec) */
+.entity-detail__side {
+  display: none;
+}
+
+/* Volitelně: omezit šířku obsahu a vycentrovat (čitelnost na wide monitorech) */
+.detail-view,
+.entity-detail {
+  max-width: 1400px;
+}
+
+/* Když chceš centrovat v contentu, přidej margin auto na detail kartu */
+.entity-detail {
+  margin: 0 auto;
+}
