@@ -1,25 +1,20 @@
 'use client'
 
 // FILE: app/UI/TopMenu.tsx
-// PURPOSE:
-// TopMenu = jiný pohled na stejný navigační stav jako Sidebar
-// ŘÁDEK 1: Moduly
-// ŘÁDEK 2: Sekce aktivního modulu
-// (tiles až později)
+// PHASE 2 (DESKTOP): Popover se sekcemi pod aktivním modulem
+// - klik na modul: aktivuje modul + otevře popover (toggle)
+// - klik na sekci: navigace + zavření
+// - klik mimo: zavření
+// Bez tiles, bez animací, bez dalších úrovní
 
-import React from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { getIcon } from './icons'
-
-/* =======================
-   TYPY – STEJNÉ JAKO SIDEBAR
-   ======================= */
 
 export type TopMenuSection = {
   id: string
   label: string
   icon?: string | null
-  /** má sekce tiles? → zobrazíme šipku */
-  hasChildren?: boolean
+  hasChildren?: boolean // zatím jen pro šipku/placeholder
 }
 
 export type TopMenuModule = {
@@ -27,11 +22,7 @@ export type TopMenuModule = {
   label: string
   icon?: string | null
   enabled?: boolean
-
-  /** má modul sekce nebo tiles? → zobrazíme šipku */
   hasChildren?: boolean
-
-  /** sekce modulu (level 2) */
   sections?: TopMenuSection[]
 }
 
@@ -47,10 +38,6 @@ type TopMenuProps = {
   showIcons?: boolean
 }
 
-/* =======================
-   KOMPONENTA
-   ======================= */
-
 export function TopMenu({
   modules,
   activeModuleId,
@@ -59,24 +46,76 @@ export function TopMenu({
   onSelectSection,
   showIcons = true,
 }: TopMenuProps) {
-  const visibleModules = (modules ?? []).filter((m) => m.enabled !== false)
+  // UI-only stav popoveru (ne navigace)
+  const [openModuleId, setOpenModuleId] = useState<string | null>(null)
 
-  const activeModule =
-    activeModuleId != null
-      ? visibleModules.find((m) => m.id === activeModuleId) ?? null
-      : null
+  // wrapper pro click-outside
+  const rootRef = useRef<HTMLDivElement | null>(null)
 
-  const sections = activeModule?.sections ?? []
+  const visibleModules = useMemo(
+    () => (modules ?? []).filter((m) => m.enabled !== false),
+    [modules]
+  )
+
+  const activeModule = useMemo(() => {
+    if (!activeModuleId) return null
+    return visibleModules.find((m) => m.id === activeModuleId) ?? null
+  }, [activeModuleId, visibleModules])
+
+  const activeSections = activeModule?.sections ?? []
+  const hasActiveSections = activeSections.length > 0
+
+  // Když se aktivní modul změní externě (např. Sidebar), zavřeme popover
+  useEffect(() => {
+    setOpenModuleId(null)
+  }, [activeModuleId])
+
+  // click-outside → zavřít
+  useEffect(() => {
+    function onDocPointerDown(e: MouseEvent) {
+      if (!openModuleId) return
+      const root = rootRef.current
+      if (!root) return
+      const target = e.target as Node
+      if (!root.contains(target)) {
+        setOpenModuleId(null)
+      }
+    }
+    document.addEventListener('mousedown', onDocPointerDown)
+    return () => document.removeEventListener('mousedown', onDocPointerDown)
+  }, [openModuleId])
+
+  function handleModuleClick(moduleId: string, hasSections: boolean) {
+    // 1) navigace (aktivní modul)
+    onSelectModule(moduleId)
+
+    // 2) UI: popover jen pokud modul má sekce
+    if (!hasSections) {
+      setOpenModuleId(null)
+      return
+    }
+
+    // toggle pro stejný modul
+    setOpenModuleId((prev) => (prev === moduleId ? null : moduleId))
+  }
+
+  function handleSectionClick(sectionId: string) {
+    onSelectSection(sectionId)
+    setOpenModuleId(null)
+  }
+
+  const isPopoverOpen =
+    !!openModuleId && !!activeModuleId && openModuleId === activeModuleId
 
   return (
-    <>
-      {/* =======================
-          ŘÁDEK 1 – MODULY
-         ======================= */}
+    <div ref={rootRef} className="topmenu-root">
+      {/* ŘÁDEK 1 – MODULY */}
       <nav className="topmenu" aria-label="Hlavní moduly">
         <ul className="topmenu__list">
           {visibleModules.map((m) => {
             const isActive = m.id === activeModuleId
+            const sections = m.sections ?? []
+            const hasSections = sections.length > 0
 
             return (
               <li
@@ -88,9 +127,11 @@ export function TopMenu({
                 <button
                   type="button"
                   className="topmenu__button"
-                  onClick={() => onSelectModule(m.id)}
+                  aria-haspopup={hasSections ? 'menu' : undefined}
+                  aria-expanded={isActive && isPopoverOpen ? true : undefined}
+                  onClick={() => handleModuleClick(m.id, hasSections)}
                 >
-                  {/* Šipka / placeholder – STEJNĚ JAKO SIDEBAR */}
+                  {/* Šipka / placeholder – drží zarovnání */}
                   <span
                     className={
                       'topmenu__chevron' +
@@ -109,58 +150,58 @@ export function TopMenu({
 
                   <span className="topmenu__label">{m.label}</span>
                 </button>
+
+                {/* POPOVER – jen pro aktivní modul a jen když má sekce */}
+                {isActive && isPopoverOpen && hasActiveSections && (
+                  <div className="topmenu__popover" role="menu">
+                    <ul className="topmenu__popover-list">
+                      {activeSections.map((s) => {
+                        const isSectionActive = s.id === activeSectionId
+
+                        return (
+                          <li key={s.id} className="topmenu__popover-item">
+                            <button
+                              type="button"
+                              className={
+                                'topmenu__popover-button' +
+                                (isSectionActive
+                                  ? ' topmenu__popover-button--active'
+                                  : '')
+                              }
+                              role="menuitem"
+                              onClick={() => handleSectionClick(s.id)}
+                            >
+                              <span
+                                className={
+                                  'topmenu__chevron' +
+                                  (s.hasChildren
+                                    ? ''
+                                    : ' topmenu__chevron--placeholder')
+                                }
+                                aria-hidden="true"
+                              >
+                                ▸
+                              </span>
+
+                              {showIcons && s.icon && (
+                                <span className="topmenu__icon">
+                                  {getIcon(s.icon as any)}
+                                </span>
+                              )}
+
+                              <span className="topmenu__label">{s.label}</span>
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
               </li>
             )
           })}
         </ul>
       </nav>
-
-      {/* =======================
-          ŘÁDEK 2 – SEKCE
-         ======================= */}
-      {activeModule && sections.length > 0 && (
-        <nav className="topmenu topmenu--sections" aria-label="Sekce modulu">
-          <ul className="topmenu__list topmenu__list--sections">
-            {sections.map((s) => {
-              const isActive = s.id === activeSectionId
-
-              return (
-                <li
-                  key={s.id}
-                  className={`topmenu__item ${
-                    isActive ? 'topmenu__item--active' : ''
-                  }`}
-                >
-                  <button
-                    type="button"
-                    className="topmenu__button"
-                    onClick={() => onSelectSection(s.id)}
-                  >
-                    {/* Šipka / placeholder – STEJNĚ JAKO SIDEBAR */}
-                    <span
-                      className={
-                        'topmenu__chevron' +
-                        (s.hasChildren ? '' : ' topmenu__chevron--placeholder')
-                      }
-                      aria-hidden="true"
-                    >
-                      ▸
-                    </span>
-
-                    {showIcons && s.icon && (
-                      <span className="topmenu__icon">
-                        {getIcon(s.icon as any)}
-                      </span>
-                    )}
-
-                    <span className="topmenu__label">{s.label}</span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
-      )}
-    </>
+    </div>
   )
 }
