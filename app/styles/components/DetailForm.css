@@ -1,0 +1,92 @@
+/* FILE: app/styles/components/DetailForm.css */
+/* PURPOSE: Jednotný layout a vzhled formulářů v DetailView (theme-based) */
+
+/* ===== KONTEJNER CELÉHO FORMULÁŘE ===== */
+
+.detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  /* využít šířku, ale držet čitelnost */
+  max-width: 1400px;
+}
+
+/* ===== SEKCE FORMULÁŘE (Profil, Účet, …) ===== */
+
+.detail-form__section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.detail-form__section-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-text);
+}
+
+/* ===== GRID POLÍ ===== */
+/* max 4 sloupce, responzivně */
+
+.detail-form__grid {
+  display: grid;
+  gap: 12px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* úzká varianta (stav, role, 2FA…) */
+.detail-form__grid--narrow {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* ===== POLE ===== */
+
+.detail-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-form__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.detail-form__input {
+  font-size: 13px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.detail-form__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary-soft);
+}
+
+/* readonly / view režim */
+.detail-form__input--readonly {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+}
+
+/* ===== ROZTAŽENÍ POLE (SPAN) ===== */
+
+.detail-form__field--span-2 {
+  grid-column: span 2;
+}
+
+.detail-form__field--span-3 {
+  grid-column: span 3;
+}
+
+.detail-form__field--span-4 {
+  grid-column: span 4;
+}
