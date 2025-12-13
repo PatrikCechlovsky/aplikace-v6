@@ -657,29 +657,25 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   label: m.label,
                   enabled: m.enabled,
                   icon: m.icon,
-            
-                  // modul má "další úroveň" pokud má sekce nebo tiles
                   hasChildren: sections.length > 0 || tiles.length > 0,
-            
-                  // sekce = stejné minimum jako v Sidebaru (bez enabled)
                   sections: sections.map((s) => {
                     const hasSectionTiles = tiles.some((t: any) => t.sectionId === s.id)
-            
                     return {
                       id: s.id,
                       label: s.label ?? s.id,
                       icon: s.icon ?? null,
-                      hasChildren: hasSectionTiles, // šipka/placeholder v TopMenu
+                      hasChildren: hasSectionTiles,
                     }
                   }),
                 }
               })}
               activeModuleId={activeModuleId ?? undefined}
-              activeSectionId={activeSectionId ?? null}
+              activeSectionId={activeSelection?.sectionId ?? null}
               onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
               onSelectSection={(sectionId) => {
-                if (!activeModuleId) return
-                handleSectionSelect({ moduleId: activeModuleId, sectionId })
+                const moduleId = activeModuleId ?? activeSelection?.moduleId
+                if (!moduleId) return
+                handleSectionSelect({ moduleId, sectionId })
               }}
               showIcons={uiConfig.iconDisplay !== 'text'}
            
