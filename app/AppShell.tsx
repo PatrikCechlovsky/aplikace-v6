@@ -23,6 +23,7 @@ import './styles/components/Entity.css'
 import './styles/components/TableView.css'
 import './styles/components/DetailTabs.css'
 import './styles/components/DetailForm.css'
+import './styles/components/EntityDetailFrame.css'
 
 /* ====== JEŠTĚ NE – budeme tvořit ======
 import './styles/components/ConfigListWithForm.css'
