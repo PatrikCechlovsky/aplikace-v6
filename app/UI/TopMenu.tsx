@@ -93,6 +93,7 @@ export function TopMenu({
 
   function handleModuleClick(moduleId: string, hasSections: boolean) {
     // 1) navigace (aktivní modul)
+    lastChangeFromTopMenuRef.current = true
     onSelectModule(moduleId)
 
     // 2) UI: popover jen pokud modul má sekce
