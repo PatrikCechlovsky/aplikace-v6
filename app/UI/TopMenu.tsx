@@ -1,18 +1,24 @@
-// FILE: app/UI/TopMenu.tsx
-// PURPOSE: Horní menu – řádek 1 (moduly) + řádek 2 (sekce aktivního modulu)
-// MVP: žádné dropdowny, žádné tiles – jen render + klik = aktivace
-
 'use client'
+
+// FILE: app/UI/TopMenu.tsx
+// PURPOSE:
+// TopMenu = jiný pohled na stejný navigační stav jako Sidebar
+// ŘÁDEK 1: Moduly
+// ŘÁDEK 2: Sekce aktivního modulu
+// (tiles až později)
 
 import React from 'react'
 import { getIcon } from './icons'
+
+/* =======================
+   TYPY – STEJNÉ JAKO SIDEBAR
+   ======================= */
 
 export type TopMenuSection = {
   id: string
   label: string
   icon?: string | null
-  enabled?: boolean
-  /** true = existuje další úroveň (tiles) → zobrazíme ▸, jinak placeholder */
+  /** má sekce tiles? → zobrazíme šipku */
   hasChildren?: boolean
 }
 
@@ -21,9 +27,11 @@ export type TopMenuModule = {
   label: string
   icon?: string | null
   enabled?: boolean
-  /** true = existuje další úroveň (sekce) → zobrazíme ▸, jinak placeholder */
+
+  /** má modul sekce nebo tiles? → zobrazíme šipku */
   hasChildren?: boolean
-  /** Sekce modulu (level 2) */
+
+  /** sekce modulu (level 2) */
   sections?: TopMenuSection[]
 }
 
@@ -33,11 +41,15 @@ type TopMenuProps = {
   activeModuleId?: string
   activeSectionId?: string | null
 
-  onSelectModule: (id: string) => void
+  onSelectModule: (moduleId: string) => void
   onSelectSection: (sectionId: string) => void
 
   showIcons?: boolean
 }
+
+/* =======================
+   KOMPONENTA
+   ======================= */
 
 export function TopMenu({
   modules,
@@ -54,13 +66,13 @@ export function TopMenu({
       ? visibleModules.find((m) => m.id === activeModuleId) ?? null
       : null
 
-  const visibleSections = (activeModule?.sections ?? []).filter(
-    (s) => s.enabled !== false
-  )
+  const sections = activeModule?.sections ?? []
 
   return (
     <>
-      {/* ŘÁDEK 1 – MODULY */}
+      {/* =======================
+          ŘÁDEK 1 – MODULY
+         ======================= */}
       <nav className="topmenu" aria-label="Hlavní moduly">
         <ul className="topmenu__list">
           {visibleModules.map((m) => {
@@ -78,7 +90,7 @@ export function TopMenu({
                   className="topmenu__button"
                   onClick={() => onSelectModule(m.id)}
                 >
-                  {/* Šipka / placeholder – stejné zarovnání jako v Sidebaru */}
+                  {/* Šipka / placeholder – STEJNĚ JAKO SIDEBAR */}
                   <span
                     className={
                       'topmenu__chevron' +
@@ -103,11 +115,13 @@ export function TopMenu({
         </ul>
       </nav>
 
-      {/* ŘÁDEK 2 – SEKCE aktivního modulu (jen pokud existují) */}
-      {activeModule && visibleSections.length > 0 && (
+      {/* =======================
+          ŘÁDEK 2 – SEKCE
+         ======================= */}
+      {activeModule && sections.length > 0 && (
         <nav className="topmenu topmenu--sections" aria-label="Sekce modulu">
           <ul className="topmenu__list topmenu__list--sections">
-            {visibleSections.map((s) => {
+            {sections.map((s) => {
               const isActive = s.id === activeSectionId
 
               return (
@@ -122,7 +136,7 @@ export function TopMenu({
                     className="topmenu__button"
                     onClick={() => onSelectSection(s.id)}
                   >
-                    {/* Šipka / placeholder – stejné zarovnání jako v Sidebaru */}
+                    {/* Šipka / placeholder – STEJNĚ JAKO SIDEBAR */}
                     <span
                       className={
                         'topmenu__chevron' +
