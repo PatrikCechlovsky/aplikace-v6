@@ -51,7 +51,7 @@ export function TopMenu({
 
   // wrapper pro click-outside
   const rootRef = useRef<HTMLDivElement | null>(null)
-
+  const lastChangeFromTopMenuRef = useRef(false)
   const visibleModules = useMemo(
     () => (modules ?? []).filter((m) => m.enabled !== false),
     [modules]
@@ -75,7 +75,7 @@ export function TopMenu({
     // Změna přišla externě (např. Sidebar) → zavřít
     setOpenModuleId(null)
   }, [activeModuleId])
-  
+    
   // click-outside → zavřít
   useEffect(() => {
     function onDocPointerDown(e: MouseEvent) {
