@@ -190,14 +190,11 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
 
         <style jsx>{`
           .users-list {
-            background: transparent;
-            border: 0;
-            border-radius: 0;
-            padding: 0;
-            box-shadow: none;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
+             background: transparent;
+             border: 0;
+             border-radius: 0;
+             padding: 0;
+             box-shadow: none;
           }
 
           @media (max-width: 900px) {
