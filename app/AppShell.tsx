@@ -648,20 +648,32 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       <div className="layout__actions">
         {menuLayout === 'top' && (
           <TopMenu
-            modules={modules.map((m) => ({
-                id: m.id,
-                label: m.label,
-                enabled: m.enabled,
-                icon: m.icon,
-                hasChildren: !!m.sections?.length,
-                sections: m.sections?.map((s) => ({
-                  id: s.id,
-                  label: s.label,
-                  enabled: s.enabled,
-                  icon: s.icon,
-                  hasChildren: !!s.tiles?.length, // jen indikátor šipky, žádné tiles render zatím
-                })),
-              }))}
+              modules={modules.map((m) => {
+                const tiles = (m as any).tiles ?? []
+                const sections = m.sections ?? []
+            
+                return {
+                  id: m.id,
+                  label: m.label,
+                  enabled: m.enabled,
+                  icon: m.icon,
+            
+                  // modul má "další úroveň" pokud má sekce nebo tiles
+                  hasChildren: sections.length > 0 || tiles.length > 0,
+            
+                  // sekce = stejné minimum jako v Sidebaru (bez enabled)
+                  sections: sections.map((s) => {
+                    const hasSectionTiles = tiles.some((t: any) => t.sectionId === s.id)
+            
+                    return {
+                      id: s.id,
+                      label: s.label ?? s.id,
+                      icon: s.icon ?? null,
+                      hasChildren: hasSectionTiles, // šipka/placeholder v TopMenu
+                    }
+                  }),
+                }
+              })}
               activeModuleId={activeModuleId ?? undefined}
               activeSectionId={activeSectionId ?? null}
               onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
