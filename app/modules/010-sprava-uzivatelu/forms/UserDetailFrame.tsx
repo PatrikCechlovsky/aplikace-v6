@@ -46,7 +46,6 @@ export default function UserDetailFrame({ user }: UserDetailFrameProps) {
   return (
     <EntityDetailFrame
       title="Uživatel"
-      subtitle={`${user.displayName} • ${user.email}`}
     >
       <DetailView
         mode={mode}
