@@ -22,6 +22,7 @@ import './styles/components/ThemeSettingsTile.css'
 import './styles/components/Entity.css'
 import './styles/components/TableView.css'
 import './styles/components/DetailTabs.css'
+import './styles/components/DetailForm.css'
 
 /* ====== JEŠTĚ NE – budeme tvořit ======
 import './styles/components/ConfigListWithForm.css'
