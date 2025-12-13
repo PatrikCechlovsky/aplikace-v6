@@ -1,0 +1,46 @@
+/* =========================
+   LIST VIEW – PANEL
+   ========================= */
+
+.listview {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* toolbar nahoře */
+.listview__toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* tabulka */
+.listview__table-wrapper {
+  overflow-x: auto;
+}
+
+/* jemnější tabulka */
+.generic-type__table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.generic-type__cell {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.generic-type__row:hover {
+  background: var(--color-surface-hover);
+}
+
+.generic-type__row--selected {
+  background: var(--color-selected-row-bg);
+}
