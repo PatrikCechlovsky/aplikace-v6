@@ -1,16 +1,16 @@
 /* FILE: app/styles/components/detail-tabs.css */
-/* PURPOSE: Excel-like ouška pod headerem, napojené na theme tokeny. */
+/* PURPOSE: Modernější Excel-like ouška, sjednocené s theme a jasně aktivní tab */
 
 .detail-tabs {
-  margin: 0 0 10px;
+  margin: 2px 0 12px;
 }
 
 .detail-tabs__rail {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: flex-end;
   overflow-x: auto;
-  padding: 2px 2px 0;
+  padding: 4px 2px 0;
   scrollbar-width: thin;
 }
 
@@ -19,16 +19,25 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface-subtle);
   color: var(--color-text);
-  border-bottom: 1px solid var(--color-border);
-  padding: 6px 10px;
-  border-radius: 10px 10px 0 0;
+  padding: 7px 12px;
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
   white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+
+  /* Excel-ish “šikmo” */
+  transform: skewX(-12deg);
+
+  /* zakulacení a jemnější dojem */
+  border-radius: 12px 12px 0 0;
+
+  /* jemné oddělení od okolí (bez tvrdých čar) */
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.detail-tabs__tab > * {
+  /* obsah vrátíme zpět, aby text nebyl šikmý */
+  transform: skewX(12deg);
 }
 
 .detail-tabs__tab:hover {
@@ -40,14 +49,20 @@
   cursor: default;
 }
 
+/* Aktivní tab: viditelně vybraný “list”, napojený na obsah */
 .detail-tabs__tab.is-active {
   background: var(--color-surface);
-  font-weight: 600;
+  font-weight: 700;
 
-  /* "napojení" na panel – aktivní ouško opticky splyne s obsahem */
+  /* “napojení” na panel – spodní hrana zmizí */
   border-bottom-color: var(--color-surface);
   position: relative;
-  top: 1px; /* lehké překrytí hrany */
+  top: 1px;
+
+  /* jemné zvýraznění vybraného listu */
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .detail-tabs__icon {
