@@ -677,9 +677,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 if (!moduleId) return
                 handleModuleSelect({ moduleId, sectionId })
               }}
-              showIcons={uiConfig.iconDisplay !== 'text'}
-           
-          />
+            />
+          
         )}
 
         <CommonActions disabled={!isAuthenticated} actions={commonActions} />
