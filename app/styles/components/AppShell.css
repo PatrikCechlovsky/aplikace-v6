@@ -114,6 +114,7 @@
 .layout.layout--topmenu .layout__content {
   grid-column: 1 / -1 !important;
   grid-row: 4;
+  align-self: start;
 }
 
 /* ✅ TOP režim: zabráníme “utíkání za roh” v horních pruzích */
