@@ -124,16 +124,20 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
         'edit',
         'reject',
       ]
-  <CommonActions
-  actions={commonActions}
-  hasSelection={!!activeId}
-  isDirty={isDirty}
-  ctx={{
-    setMode,
-    setActiveId,
-    activeId,
-  }}
-/>
+
+    return (
+      <>
+        <CommonActions
+          actions={commonActions}
+          hasSelection={!!activeId}
+          isDirty={isDirty}
+          ctx={{ setMode, setActiveId, activeId }}
+        />
+    
+        {/* zbytek obsahu */}
+      </>
+    )
+    
 
   // Filtrování mock dat podle textu + archivace
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
