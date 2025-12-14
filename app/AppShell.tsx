@@ -45,10 +45,6 @@ import HomeButton from '@/app/UI/HomeButton'
 import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
 import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
-import CommonActions, {
-  type CommonActionId,
-  type CommonActionConfig,
-} from '@/app/UI/CommonActions'
 import LoginPanel from '@/app/UI/LoginPanel'
 import {
   applyThemeToLayout,
