@@ -695,7 +695,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         </div>
 
         <main className="layout__content">{renderContent()}</main>
-      </div> {/* /layout__actions */}
-    </div>   {/* /layout */}
+      </div>
+    </div>
   )
 }
