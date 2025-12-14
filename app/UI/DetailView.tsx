@@ -49,15 +49,97 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   },
 
   roles: {
-    id: 'roles',
-    label: 'Role a oprávnění',
-    order: 20,
-    render: () => (
-      <div className="detail-view__placeholder">
-        Role a oprávnění – doplníme (uživatel).
+  id: 'roles',
+  label: 'Role a oprávnění',
+  order: 20,
+  render: (ctx) => {
+    const data = (ctx as any)?.rolesData as
+      | {
+          role?: { code: string; name: string; description?: string | null }
+          permissions?: { code: string; name: string; description?: string | null }[]
+          availableRoles?: { code: string; name: string; description?: string | null }[]
+        }
+      | undefined
+
+    const ui = (ctx as any)?.rolesUi as
+      | {
+          canEdit?: boolean
+          mode?: 'view' | 'edit' | 'create'
+          onChangeRoleCode?: (roleCode: string) => void
+        }
+      | undefined
+
+    const role = data?.role
+    const permissions = data?.permissions ?? []
+    const canEdit = !!ui?.canEdit && (ui?.mode === 'edit' || ui?.mode === 'create')
+
+    return (
+      <div className="detail-form">
+        {/* ROLE */}
+        <section className="detail-form__section">
+          <h3 className="detail-form__section-title">Role</h3>
+
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-2">
+              <label className="detail-form__label">Aktuální role</label>
+
+              {canEdit ? (
+                <select
+                  className="detail-form__input"
+                  value={role?.code ?? ''}
+                  onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
+                >
+                  {(data?.availableRoles ?? []).map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={role?.name ?? '—'}
+                  readOnly
+                />
+              )}
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Popis role</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={role?.description ?? '—'}
+                readOnly
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* OPRÁVNĚNÍ (A: odvozené z role) */}
+        <section className="detail-form__section">
+          <h3 className="detail-form__section-title">Oprávnění (odvozené z role)</h3>
+
+          {permissions.length === 0 ? (
+            <div className="detail-view__placeholder">Žádná oprávnění.</div>
+          ) : (
+            <div className="detail-form__grid">
+              {permissions.map((p) => (
+                <div key={p.code} className="detail-form__field">
+                  <label className="detail-form__label">{p.name}</label>
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={p.description ?? ''}
+                    readOnly
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-    ),
+    )
   },
+},
 
   users: {
     id: 'users',
