@@ -1,4 +1,4 @@
-'use see client'
+'use client'
 
 // FILE: app/UI/TopMenu.tsx
 // DESKTOP POPOVER (PORTAL):
@@ -190,7 +190,9 @@ export function TopMenu({
             return (
               <li key={m.id} className="topmenu__item">
                 <button
-                  ref={(el) => (buttonRefs.current[m.id] = el)}
+                  ref={(el) => {
+                    buttonRefs.current[m.id] = el
+                  }}
                   className="topmenu__button"
                   onClick={() => handleModuleClick(m.id, hasChildren)}
                 >
