@@ -8,15 +8,18 @@
 
 .topmenu-root { position: relative; }
 
+/* Root bar: musí zůstat overflow: visible kvůli popoveru */
 .topmenu {
   padding: 6px var(--tm-pad-x);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-actions-bg);
-  overflow: visible; /* !!! nesmí řezat popover ani scroll */
+
+  overflow: visible; /* ✅ popover nesmí být oříznutý */
   min-width: 0;
   max-width: 100%;
 }
 
+/* Scroll se řeší pouze na listu */
 .topmenu__list {
   display: flex;
   flex-wrap: nowrap;
@@ -25,19 +28,39 @@
   margin: 0;
   padding: 0;
 
-  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  overflow-x: auto;     /* ✅ tady je scroll */
   overflow-y: hidden;
   white-space: nowrap;
-  width: 100%;
+
   scrollbar-gutter: stable;
-  min-width: 0;
-  max-width: 100%;
-  scrollbar-width: thin;
+
+  /* Firefox – thin je často skoro neviditelný, radši auto */
+  scrollbar-width: auto;
+  scrollbar-color: var(--color-border) var(--color-surface-subtle);
+
+  -webkit-overflow-scrolling: touch;
 }
 
-.topmenu__list::-webkit-scrollbar { height: 6px; }
-.topmenu__list::-webkit-scrollbar-thumb { border-radius: 999px; }
+/* WebKit scrollbars (Chrome/Edge/Safari) – uděláme ho viditelný */
+.topmenu__list::-webkit-scrollbar {
+  height: 10px;
+}
 
+.topmenu__list::-webkit-scrollbar-track {
+  background: var(--color-surface-subtle);
+  border-radius: 999px;
+}
+
+.topmenu__list::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+
+/* Položky se nesmí smrštit (ať je co scrollovat) */
 .topmenu__item {
   position: relative;
   flex: 0 0 auto;
@@ -121,6 +144,7 @@
   border-color: var(--color-border);
   font-weight: 600;
 }
+
 /* klik myší bez rámečku, klávesnice ano */
 .topmenu__button:focus,
 .topmenu__popover-button:focus {
