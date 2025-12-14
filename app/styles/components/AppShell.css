@@ -113,6 +113,7 @@
   background: var(--color-app-bg);
 
   min-height: 0;     /* kritické pro grid – jinak nefunguje overflow */
+  min-width: 0;   /* ✅ kvůli horizontálnímu scrollu *
   overflow: auto;    /* scroll jen tady */
 }
 
