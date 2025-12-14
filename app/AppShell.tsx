@@ -129,7 +129,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
-
+   if (typeof window !== 'undefined') {
+     ;(window as any).__modules = modules
+   }
   // 📌 Výběr v sidebaru (nebo v TopMenu – používají stejný typ)
   const [activeSelection, setActiveSelection] =
     useState<SidebarSelection | null>(null)
