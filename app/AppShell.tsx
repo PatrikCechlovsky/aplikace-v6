@@ -674,6 +674,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                     id: t.id,
                     label: t.label ?? t.title ?? t.id,
                     icon: t.icon ?? null,
+                    sectionId: t.sectionId ?? null,
                   })),
                 }
               })}
