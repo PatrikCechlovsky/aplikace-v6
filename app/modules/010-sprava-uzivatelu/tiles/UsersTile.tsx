@@ -24,7 +24,6 @@ type MockUser = {
 }
 
 // 💡 Dočasná mapa barev podle role – později se vezme z modulu 900 (typy rolí)
-// Pozn.: Hard-coded barvy jsou MVP; později bude přes theme/tokeny / číselník.
 const ROLE_COLORS: Record<string, string> = {
   Administrátor: '#f4d35e',
   Manager: '#e05570',
@@ -65,7 +64,7 @@ const COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
-// Mapování mock dat na ListViewRow – stejný pattern použijeme i v dalších modulech
+// Mapování mock dat na ListViewRow
 function toRow(user: MockUser): ListViewRow<MockUser> {
   const color = ROLE_COLORS[user.roleLabel] ?? '#6b7280'
 
@@ -85,15 +84,30 @@ function toRow(user: MockUser): ListViewRow<MockUser> {
   }
 }
 
+type CommonActionsState = {
+  hasSelection: boolean
+  isDirty: boolean
+}
+
 type UsersTileProps = {
   // AppShell si přes tohle přebírá, které akce má ukázat v sekci 4 (CommonActions).
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
+
+  // ✅ NOVĚ: AppShell si přes tohle přebírá stav (disabled podmínky)
+  onRegisterCommonActionsState?: (state: CommonActionsState) => void
+
+  // ✅ NOVĚ: AppShell si přes tohle přebírá handler kliknutí na akce
+  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
 }
 
 // 🔁 Jednoduchý viewMode: list ↔ detail
 type UsersViewMode = 'list' | 'detail'
 
-export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
+export default function UsersTile({
+  onRegisterCommonActions,
+  onRegisterCommonActionsState,
+  onRegisterCommonActionHandler,
+}: UsersTileProps) {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
@@ -101,7 +115,10 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   const [viewMode, setViewMode] = useState<UsersViewMode>('list')
   const [detailUser, setDetailUser] = useState<MockUser | null>(null)
 
-  // ✅ Akce už nejsou config objekty – jen IDčka (CommonActionId[])
+  // MVP – zatím neřešíme edit/create v rámci formu => dirty false
+  const [isDirty] = useState(false)
+
+  // ✅ Akce už nejsou config objekty – jen IDčka
   const commonActions = useMemo<CommonActionId[]>(() => {
     return viewMode === 'list'
       ? ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
@@ -113,6 +130,15 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
     if (!onRegisterCommonActions) return
     onRegisterCommonActions(commonActions)
   }, [onRegisterCommonActions, commonActions])
+
+  // ✅ Registrace state (selection/dirty) do AppShell – aby se správně zapínaly/vypínaly tlačítka
+  useEffect(() => {
+    if (!onRegisterCommonActionsState) return
+    onRegisterCommonActionsState({
+      hasSelection: !!selectedId,
+      isDirty: !!isDirty,
+    })
+  }, [onRegisterCommonActionsState, selectedId, isDirty])
 
   // Filtrování mock dat podle textu + archivace
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
@@ -136,6 +162,44 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
     setViewMode('detail')
   }
 
+  // ✅ Handler pro CommonActions (MVP)
+  useEffect(() => {
+    if (!onRegisterCommonActionHandler) return
+
+    const handler = (id: CommonActionId) => {
+      // MVP – zatím jen základní chování
+      if (id === 'add') {
+        // vytvoříme prázdný mock uživatel jako "nový"
+        const empty: MockUser = {
+          id: 'new',
+          displayName: '',
+          email: '',
+          phone: '',
+          roleLabel: 'Uživatel',
+          twoFactorMethod: null,
+          createdAt: new Date().toISOString().slice(0, 10),
+          isArchived: false,
+        }
+        setSelectedId(empty.id)
+        openDetail(empty)
+        return
+      }
+
+      if (id === 'view' || id === 'edit') {
+        if (!selectedId) return
+        const user = MOCK_USERS.find((u) => u.id === selectedId) ?? null
+        if (!user) return
+        openDetail(user)
+        return
+      }
+
+      // ostatní zatím jen log (MVP)
+      console.log('[UsersTile] action:', id)
+    }
+
+    onRegisterCommonActionHandler(handler)
+  }, [onRegisterCommonActionHandler, selectedId])
+
   // ===========================
   //  RENDER: 1) SEZNAM UŽIVATELŮ
   // ===========================
@@ -155,7 +219,6 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
           selectedId={selectedId}
           onRowClick={(row) => setSelectedId(row.id)}
           onRowDoubleClick={(row) => {
-            // Dvojklik = otevřít detail pro ČTENÍ přes celý content
             setSelectedId(row.id)
             openDetail(row.raw ?? null)
           }}
@@ -184,10 +247,8 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
   //  RENDER: 2) DETAIL UŽIVATELE
   // ===========================
   if (detailUser) {
-    // UserDetailFrame si uvnitř sám řeší obsah formuláře
     return <UserDetailFrame user={detailUser} />
   }
 
-  // Fallback – kdyby něco nesedělo
   return null
 }
