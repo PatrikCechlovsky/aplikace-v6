@@ -83,22 +83,33 @@ Horní lišta je statická podle layoutu, ale obsah dynamicky reaguje na:
 
 ## 2.3 Sekce 4: CommonActions
 
-Cílem CommonActions je:
+**CommonActions** je centrální lišta kontextových akcí umístěná v pevné sekci layoutu.
+Je společná pro všechny moduly a zajišťuje jednotné chování akcí v celé aplikaci.
 
-- nabídnout relevantní akce podle stavu UI  
-- být jednotné pro všechny moduly  
-- eliminovat duplikaci tlačítek v každém formuláři
+### Cíle CommonActions
+- nabídnout pouze relevantní akce podle aktuálního stavu UI,
+- zajistit jednotný vzhled a chování napříč moduly,
+- eliminovat duplikaci akčních tlačítek ve formulářích a detailech.
 
-Aktuální verze:
+### Aktuální stav (implementováno)
+- centrálně definovaný seznam všech podporovaných akcí,
+- centrální handlery (funkce) ke každé akci,
+- automatické vyhodnocení dostupnosti akcí podle stavu UI:
+  - vybraný záznam (selection),
+  - neuložené změny (dirty state),
+  - globální disabled stav,
+- moduly a tiles pouze vybírají, které akce se mají zobrazit,
+- formuláře žádné akční tlačítko nedefinují.
 
-- statický seznam akcí  
-- základní UI
+### Budoucí rozšíření (plán)
+- dynamický výběr akcí podle konfigurace modulu,
+- napojení na role a oprávnění uživatele,
+- jemnější stavové podmínky (např. detail otevřený / readonly),
+- konfigurovatelné akce z `module.config.js`.
 
-Budoucí verze:
+CommonActions je jediný povolený mechanismus pro práci s akčními tlačítky
+v hlavním UI aplikace.
 
-- **dynamicky generované akce podle modulu**  
-- **filtrace podle role a oprávnění uživatele**  
-- **stavové podmínky (requiresDirty, requiresSelection, requiresDetailOpen)**
 
 ---
 
@@ -183,39 +194,65 @@ Zobrazuje z `session.user_metadata.display_name`.
 ---
 
 ## 3.5 CommonActions
+## 3.5.1 CommonActions – centrální definice a handlery (finální pravidlo)
 
-Aktuální seznam dostupných akcí:
+**CommonActions** je jednotná lišta kontextových akcí používaná v celé aplikaci
+(seznamy, hlavní detail entity, formuláře).
 
-```
-add
-edit
-view
-duplicate
-attach
-archive
-delete
-save
-saveAndClose
-cancel
-```
+### Základní princip
+- Všechny akce jsou definované centrálně v jednom souboru.
+- Žádná akce se nikdy nedefinuje ve formuláři ani v tile.
+- Tile nebo modul pouze vybírá, které akce chce zobrazit.
 
-Budoucí definice akcí bude v:
+### Zdroj pravdy
+Existuje jediný soubor **CommonActions**, který obsahuje:
+- seznam všech podporovaných akcí,
+- definice jejich vzhledu (label, ikona),
+- podmínky dostupnosti (např. vyžaduje výběr, vyžaduje neuložené změny),
+- centrální funkce (handlery) ke každé akci.
 
-```
-module.config.js
-```
+### Pravidlo bezpečnosti
+- Ke každé akci musí existovat odpovídající funkce.
+- Přidání nové akce bez funkce není možné (chyba při sestavení aplikace).
+- Tím je zajištěno, že žádné tlačítko nemůže existovat bez logiky.
 
-Např.:
+### Chování CommonActions
+- CommonActions samo vyhodnocuje, zda je akce aktivní nebo deaktivovaná:
+  - podle toho, zda je vybraný záznam,
+  - podle dirty stavu formuláře,
+  - podle globálního disabled stavu.
+- Modul ani formulář tuto logiku neřeší.
 
-```js
-commonActions: {
-  overview: ['add', 'delete'],
-  detail: ['edit', 'archive'],
-  form: ['save', 'cancel'],
-}
-```
+### Použití v modulech a tiles
+- Modul nebo tile pouze určí seznam akcí, které chce zobrazit.
+- Neřeší onClick logiku ani přepínání stavů.
+- CommonActions automaticky zavolá odpovídající centrální funkci.
 
----
+### Role formuláře
+- Formulář nikdy neobsahuje akční tlačítka typu Uložit, Zrušit, Upravit.
+- Formulář pouze:
+  - hlásí dirty stav,
+  - reaguje na aktuální režim (read, edit, create).
+
+### Zakázané postupy
+- Definovat tlačítka ve formuláři.
+- Psát vlastní logiku kliknutí na akce v tile nebo detailu.
+- Duplikovat běžné akce (Uložit, Zrušit, Upravit, Smazat) mimo CommonActions.
+
+### Povolené a doporučené
+- Přidání nové akce pouze rozšířením centrálního CommonActions.
+- Výběr akcí na úrovni modulu nebo tile.
+- Budoucí rozšíření o role, oprávnění a konfiguraci z module.config.js.
+
+### Shrnutí
+- CommonActions je jediný zdroj pravdy pro akce v UI.
+- Definice i funkce existují pouze jednou.
+- Chování je jednotné napříč celou aplikací.
+- Architektura je uzavřená a bezpečná proti nekonzistencím.
+
+Toto pravidlo je závazné pro všechny nové i upravované moduly aplikace Pronajímatel v6.
+
+
 
 ## 3.6 UI – typy polí formulářů
 
