@@ -40,6 +40,15 @@
   overflow: visible;
 }
 
+/* SIDEBAR – sjednocení výšky řádků jako v TOP režimu */
+.layout:not(.layout--topmenu) .layout__topbar,
+.layout:not(.layout--topmenu) .layout__actions {
+  min-height: 40px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+}
+
 .layout__content {
   grid-column: 2;
   grid-row: 3;
