@@ -1,13 +1,14 @@
 'use client'
 
 // FILE: app/UI/TopMenu.tsx
-// PHASE 2 (DESKTOP): Popover se sekcemi pod aktivním modulem
+// PHASE 2 (DESKTOP): Popover se sekcemi přes PORTAL do document.body
 // - klik na modul: aktivuje modul + otevře popover (toggle)
 // - klik na sekci: navigace + zavření
-// - klik mimo: zavření
-// Bez tiles, bez animací, bez dalších úrovní
+// - klik mimo / ESC: zavření
+// Bez tiles, bez animací
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { getIcon } from './icons'
 
 export type TopMenuSection = {
@@ -38,6 +39,12 @@ type TopMenuProps = {
   showIcons?: boolean
 }
 
+type PopoverPos = {
+  top: number
+  left: number
+  width: number
+}
+
 export function TopMenu({
   modules,
   activeModuleId,
@@ -48,10 +55,13 @@ export function TopMenu({
 }: TopMenuProps) {
   // UI-only stav popoveru (ne navigace)
   const [openModuleId, setOpenModuleId] = useState<string | null>(null)
+  const [pos, setPos] = useState<PopoverPos | null>(null)
+  const [portalReady, setPortalReady] = useState(false)
 
-  // wrapper pro click-outside
-  const rootRef = useRef<HTMLDivElement | null>(null)
-  const lastChangeFromTopMenuRef = useRef(false)
+  // refs pro ukotvení a pro click-outside
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const popoverRef = useRef<HTMLDivElement | null>(null)
+
   const visibleModules = useMemo(
     () => (modules ?? []).filter((m) => m.enabled !== false),
     [modules]
@@ -65,44 +75,92 @@ export function TopMenu({
   const activeSections = activeModule?.sections ?? []
   const hasActiveSections = activeSections.length > 0
 
-  // Když se aktivní modul změní externě (např. Sidebar), zavřeme popover
+  // portal readiness (Next/SSR safe)
   useEffect(() => {
-    // Pokud změna přišla z kliknutí v TopMenu, NEZAVÍRÁME popover
-    if (lastChangeFromTopMenuRef.current) {
-      lastChangeFromTopMenuRef.current = false
-      return
+    setPortalReady(true)
+  }, [])
+
+  const isPopoverOpen =
+    !!openModuleId && !!activeModuleId && openModuleId === activeModuleId && hasActiveSections
+
+  // spočítat pozici popoveru podle tlačítka aktivního modulu
+  function recomputePos() {
+    if (!activeModuleId) return
+    const btn = buttonRefs.current[activeModuleId]
+    if (!btn) return
+
+    const r = btn.getBoundingClientRect()
+
+    // popover je "fixed" vůči viewportu
+    const top = Math.round(r.bottom + 6)
+    const left = Math.round(r.left)
+    const width = Math.round(Math.max(240, Math.min(320, r.width))) // min/max jen pro stabilitu
+
+    setPos({ top, left, width })
+  }
+
+  // při otevření / změně aktivního modulu dopočítat pozici
+  useLayoutEffect(() => {
+    if (!isPopoverOpen) return
+    recomputePos()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPopoverOpen, activeModuleId])
+
+  // když se scrolluje/resize, držet popover na správném místě
+  useEffect(() => {
+    if (!isPopoverOpen) return
+
+    const on = () => recomputePos()
+    window.addEventListener('resize', on)
+    // scroll může probíhat i v nestandardních containerech → zachytíme v capture
+    window.addEventListener('scroll', on, true)
+
+    return () => {
+      window.removeEventListener('resize', on)
+      window.removeEventListener('scroll', on, true)
     }
-    // Změna přišla externě (např. Sidebar) → zavřít
-    setOpenModuleId(null)
-  }, [activeModuleId])
-    
-  // click-outside → zavřít
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPopoverOpen, activeModuleId])
+
+  // click-outside + ESC → zavřít
   useEffect(() => {
-    function onDocPointerDown(e: MouseEvent) {
-      if (!openModuleId) return
-      const root = rootRef.current
-      if (!root) return
+    if (!isPopoverOpen) return
+
+    function onDocMouseDown(e: MouseEvent) {
       const target = e.target as Node
-      if (!root.contains(target)) {
-        setOpenModuleId(null)
-      }
+      const pop = popoverRef.current
+      if (pop && pop.contains(target)) return
+
+      // klik na tlačítko aktivního modulu je "toggle", to řeší handler tlačítka
+      const btn = activeModuleId ? buttonRefs.current[activeModuleId] : null
+      if (btn && btn.contains(target)) return
+
+      setOpenModuleId(null)
     }
-    document.addEventListener('mousedown', onDocPointerDown)
-    return () => document.removeEventListener('mousedown', onDocPointerDown)
-  }, [openModuleId])
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpenModuleId(null)
+    }
+
+    document.addEventListener('mousedown', onDocMouseDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isPopoverOpen, activeModuleId])
 
   function handleModuleClick(moduleId: string, hasSections: boolean) {
-    // 1) navigace (aktivní modul)
-    lastChangeFromTopMenuRef.current = true
+    // navigace (aktivní modul)
     onSelectModule(moduleId)
 
-    // 2) UI: popover jen pokud modul má sekce
+    // popover jen když modul má sekce
     if (!hasSections) {
       setOpenModuleId(null)
       return
     }
 
-    // toggle pro stejný modul
+    // toggle
     setOpenModuleId((prev) => (prev === moduleId ? null : moduleId))
   }
 
@@ -111,11 +169,8 @@ export function TopMenu({
     setOpenModuleId(null)
   }
 
-  const isPopoverOpen =
-    !!openModuleId && !!activeModuleId && openModuleId === activeModuleId
-
   return (
-    <div ref={rootRef} className="topmenu-root">
+    <>
       {/* ŘÁDEK 1 – MODULY */}
       <nav className="topmenu" aria-label="Hlavní moduly">
         <ul className="topmenu__list">
@@ -127,18 +182,18 @@ export function TopMenu({
             return (
               <li
                 key={m.id}
-                className={`topmenu__item ${
-                  isActive ? 'topmenu__item--active' : ''
-                }`}
+                className={`topmenu__item ${isActive ? 'topmenu__item--active' : ''}`}
               >
                 <button
+                  ref={(el) => {
+                    buttonRefs.current[m.id] = el
+                  }}
                   type="button"
                   className="topmenu__button"
                   aria-haspopup={hasSections ? 'menu' : undefined}
                   aria-expanded={isActive && isPopoverOpen ? true : undefined}
                   onClick={() => handleModuleClick(m.id, hasSections)}
                 >
-                  {/* Šipka / placeholder – drží zarovnání */}
                   <span
                     className={
                       'topmenu__chevron' +
@@ -150,65 +205,72 @@ export function TopMenu({
                   </span>
 
                   {showIcons && m.icon && (
-                    <span className="topmenu__icon">
-                      {getIcon(m.icon as any)}
-                    </span>
+                    <span className="topmenu__icon">{getIcon(m.icon as any)}</span>
                   )}
 
                   <span className="topmenu__label">{m.label}</span>
                 </button>
-
-                {/* POPOVER – jen pro aktivní modul a jen když má sekce */}
-                {isActive && isPopoverOpen && hasActiveSections && (
-                  <div className="topmenu__popover" role="menu">
-                    <ul className="topmenu__popover-list">
-                      {activeSections.map((s) => {
-                        const isSectionActive = s.id === activeSectionId
-
-                        return (
-                          <li key={s.id} className="topmenu__popover-item">
-                            <button
-                              type="button"
-                              className={
-                                'topmenu__popover-button' +
-                                (isSectionActive
-                                  ? ' topmenu__popover-button--active'
-                                  : '')
-                              }
-                              role="menuitem"
-                              onClick={() => handleSectionClick(s.id)}
-                            >
-                              <span
-                                className={
-                                  'topmenu__chevron' +
-                                  (s.hasChildren
-                                    ? ''
-                                    : ' topmenu__chevron--placeholder')
-                                }
-                                aria-hidden="true"
-                              >
-                                ▸
-                              </span>
-
-                              {showIcons && s.icon && (
-                                <span className="topmenu__icon">
-                                  {getIcon(s.icon as any)}
-                                </span>
-                              )}
-
-                              <span className="topmenu__label">{s.label}</span>
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                )}
               </li>
             )
           })}
         </ul>
       </nav>
-    </div>
+
+      {/* PORTAL POPOVER */}
+      {portalReady && isPopoverOpen && pos &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            className="topmenu__popover"
+            role="menu"
+            style={{
+              position: 'fixed',
+              top: pos.top,
+              left: pos.left,
+              minWidth: 240,
+              maxWidth: 320,
+              width: pos.width,
+              zIndex: 2000,
+            }}
+          >
+            <ul className="topmenu__popover-list">
+              {activeSections.map((s) => {
+                const isSectionActive = s.id === activeSectionId
+                return (
+                  <li key={s.id} className="topmenu__popover-item">
+                    <button
+                      type="button"
+                      className={
+                        'topmenu__popover-button' +
+                        (isSectionActive ? ' topmenu__popover-button--active' : '')
+                      }
+                      role="menuitem"
+                      onClick={() => handleSectionClick(s.id)}
+                    >
+                      <span
+                        className={
+                          'topmenu__chevron' +
+                          (s.hasChildren ? '' : ' topmenu__chevron--placeholder')
+                        }
+                        aria-hidden="true"
+                      >
+                        ▸
+                      </span>
+
+                      {showIcons && s.icon && (
+                        <span className="topmenu__icon">{getIcon(s.icon as any)}</span>
+                      )}
+
+                      <span className="topmenu__label">{s.label}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>,
+          document.body
+        )}
+    </>
   )
 }
+
