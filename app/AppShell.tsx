@@ -650,50 +650,52 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       </header>
 
       <div className="layout__actions">
-      {/* TOP MENU NAV (odděleně od kontextových akcí) */}
-      {menuLayout === 'top' && (
-        <div className="layout__nav">
-          <TopMenu
-            modules={modules.map((m) => ({
-              id: m.id,
-              label: m.label,
-              enabled: m.enabled,
-              icon: m.icon,
-              hasChildren: !!(m.sections?.length || (m as any).tiles?.length),
-              sections: (m.sections ?? []).map((s) => ({
-                id: s.id,
-                label: (s as any).label ?? s.id,
-                icon: (s as any).icon ?? null,
-              })),
-              tiles: ((m as any).tiles ?? []).map((t: any) => ({
-                id: t.id,
-                label: t.label ?? t.id,
-                icon: t.icon ?? null,
-                sectionId: t.sectionId ?? null,
-              })),
-            }))}
-            activeModuleId={activeModuleId ?? undefined}
-            activeSectionId={activeSelection?.sectionId ?? null}
-            activeTileId={activeSelection?.tileId ?? null}
-            onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
-            onSelectSection={(sectionId) => {
-              const moduleId = activeModuleId ?? activeSelection?.moduleId
-              if (!moduleId) return
-              handleModuleSelect({ moduleId, sectionId })
-            }}
-            onSelectTile={(tileId) => {
-              const moduleId = activeModuleId ?? activeSelection?.moduleId
-              if (!moduleId) return
-              handleModuleSelect({ moduleId, tileId })
-            }}
-            showIcons={true /* nebo tvoje nastavení */}
-          />
-        </div>
-      )}
-      
-      {/* 2) BAR: CommonActions – vždy samostatný řádek nad obsahem (TOP i SIDEBAR) */}
-      <div className="layout__context">
-        <CommonActions disabled={!isAuthenticated} actions={commonActions} />
-      </div>
+        {menuLayout === 'top' && (
+          <div className="layout__nav">
+            <TopMenu
+              modules={modules.map((m) => ({
+                id: m.id,
+                label: m.label,
+                enabled: m.enabled,
+                icon: m.icon,
+                hasChildren: !!(m.sections?.length || (m as any).tiles?.length),
+                sections: (m.sections ?? []).map((s) => ({
+                  id: s.id,
+                  label: (s as any).label ?? s.id,
+                  icon: (s as any).icon ?? null,
+                })),
+                tiles: ((m as any).tiles ?? []).map((t: any) => ({
+                  id: t.id,
+                  label: t.label ?? t.id,
+                  icon: t.icon ?? null,
+                  sectionId: t.sectionId ?? null,
+                })),
+              }))}
+              activeModuleId={activeModuleId ?? undefined}
+              activeSectionId={activeSelection?.sectionId ?? null}
+              activeTileId={activeSelection?.tileId ?? null}
+              onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
+              onSelectSection={(sectionId) => {
+                const moduleId = activeModuleId ?? activeSelection?.moduleId
+                if (!moduleId) return
+                handleModuleSelect({ moduleId, sectionId })
+              }}
+              onSelectTile={(tileId) => {
+                const moduleId = activeModuleId ?? activeSelection?.moduleId
+                if (!moduleId) return
+                handleModuleSelect({ moduleId, tileId })
+              }}
+              showIcons={true}
+            />
+          </div>
+        )}
 
-      <main className="layout__content">{renderContent()}</main>
+        <div className="layout__context">
+          <CommonActions disabled={!isAuthenticated} actions={commonActions} />
+        </div>
+
+        <main className="layout__content">{renderContent()}</main>
+      </div> {/* /layout__actions */}
+    </div>   {/* /layout */}
+  )
+}
