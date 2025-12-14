@@ -11,10 +11,7 @@ import ListView, {
   type ListViewColumn,
   type ListViewRow,
 } from '@/app/UI/ListView'
-import type {
-  CommonActionId,
-  CommonActionConfig,
-} from '@/app/UI/CommonActions'
+import type { CommonActionId } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
 
 // ⚙️ Dočasná mock data – později napojíme na Supabase / subject tabulku
@@ -95,7 +92,7 @@ function toRow(user: MockUser): ListViewRow<MockUser> {
 
 type UsersTileProps = {
   onRegisterCommonActions?: (
-    actions: CommonActionId[] | CommonActionConfig[],
+    actions: CommonActionId[],
   ) => void
 }
 
@@ -109,37 +106,34 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
 
   const [viewMode, setViewMode] = useState<UsersViewMode>('list')
   const [detailUser, setDetailUser] = useState<MockUser | null>(null)
-
-  // 🔘 Registrace společných akcí podle aktuálního viewMode
-  useEffect(() => {
-    if (!onRegisterCommonActions) return
-
-    let actions: CommonActionConfig[]
-
-    if (viewMode === 'list') {
-      // SEZNAM – tvoje původní sada tlačítek
-      actions = [
-        { id: 'add' }, // nové založení
-        { id: 'view', requiresSelection: true }, // zobrazit detail vybraného
-        { id: 'edit', requiresSelection: true }, // přepnout detail do editace (později)
-        { id: 'invite' },
-        { id: 'columnSettings', label: 'Nastavení sloupců' },
-        { id: 'import' },
-        { id: 'export' },
-        { id: 'reject', requiresSelection: true },
+  
+  const commonActions: CommonActionId[] =
+  viewMode === 'list'
+    ? [
+        'add',
+        'view',
+        'edit',
+        'invite',
+        'columnSettings',
+        'import',
+        'export',
+        'reject',
       ]
-    } else {
-      // DETAIL – jen “formulářová” sada
-      // (zatím základ: view/edit + reject; příloha/undo doplníme, až rozšíříme CommonActions)
-      actions = [
-        { id: 'view' },
-        { id: 'edit' },
-        { id: 'reject' },
+    : [
+        'view',
+        'edit',
+        'reject',
       ]
-    }
-
-    onRegisterCommonActions(actions)
-  }, [onRegisterCommonActions, viewMode])
+  <CommonActions
+  actions={commonActions}
+  hasSelection={!!activeId}
+  isDirty={isDirty}
+  ctx={{
+    setMode,
+    setActiveId,
+    activeId,
+  }}
+/>
 
   // Filtrování mock dat podle textu + archivace
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
