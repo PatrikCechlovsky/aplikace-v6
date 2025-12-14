@@ -94,6 +94,7 @@ type AppShellProps = {
   initialModuleId?: string | null
 }
 
+// ✅ po refaktoru: pouze IDčka akcí
 type CommonActionsInput = CommonActionId[]
 
 type CommonActionsState = {
@@ -160,16 +161,24 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     CommonActionsInput | undefined
   >(undefined)
 
-  // ✅ NOVĚ: dynamický state pro disabled podmínky
-  const [commonActionsState, setCommonActionsState] = useState<CommonActionsState>({
-    hasSelection: false,
-    isDirty: false,
-  })
+  // ✅ dynamický state pro disabled podmínky
+  const [commonActionsState, setCommonActionsState] =
+    useState<CommonActionsState>({
+      hasSelection: false,
+      isDirty: false,
+    })
 
-  // ✅ NOVĚ: handler kliknutí na akce – registruje aktuální tile
+  // ✅ handler kliknutí na akce – registruje aktuální tile
   const [commonActionHandler, setCommonActionHandler] = useState<
     ((id: CommonActionId) => void) | undefined
   >(undefined)
+
+  // ✅ bezpečný reset – používáme na více místech (nepřepisuje ostatní věci)
+  function resetCommonActions() {
+    setCommonActions(undefined)
+    setCommonActionHandler(undefined)
+    setCommonActionsState({ hasSelection: false, isDirty: false })
+  }
 
   // 🎨 Při mountu aplikace nastavíme theme z localStorage
   useEffect(() => {
@@ -217,40 +226,40 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           setIsAuthenticated(true)
           setUser({
             email: session.user.email,
-            displayName: meta.display_name ?? meta.full_name ?? meta.name ?? null,
+            displayName:
+              meta.display_name ?? meta.full_name ?? meta.name ?? null,
           })
         } else {
           setIsAuthenticated(false)
           setUser(null)
           setActiveModuleId(null)
           setActiveSelection(null)
-          setCommonActions(undefined)
-          setCommonActionHandler(undefined)
-          setCommonActionsState({ hasSelection: false, isDirty: false })
+          resetCommonActions()
         }
 
-        const { data: sub } = onAuthStateChange((event: string, session: any) => {
-          console.log('[auth] event', event, session)
+        const { data: sub } = onAuthStateChange(
+          (event: string, session: any) => {
+            console.log('[auth] event', event, session)
 
-          if (session?.user) {
-            const meta = session.user.user_metadata || {}
+            if (session?.user) {
+              const meta = session.user.user_metadata || {}
 
-            setIsAuthenticated(true)
-            setUser({
-              id: session.user.id,
-              email: session.user.email,
-              displayName: meta.display_name ?? meta.full_name ?? meta.name ?? null,
-            })
-          } else {
-            setIsAuthenticated(false)
-            setUser(null)
-            setActiveModuleId(null)
-            setActiveSelection(null)
-            setCommonActions(undefined)
-            setCommonActionHandler(undefined)
-            setCommonActionsState({ hasSelection: false, isDirty: false })
-          }
-        })
+              setIsAuthenticated(true)
+              setUser({
+                id: session.user.id,
+                email: session.user.email,
+                displayName:
+                  meta.display_name ?? meta.full_name ?? meta.name ?? null,
+              })
+            } else {
+              setIsAuthenticated(false)
+              setUser(null)
+              setActiveModuleId(null)
+              setActiveSelection(null)
+              resetCommonActions()
+            }
+          },
+        )
 
         unsubscribe = sub?.subscription?.unsubscribe
       } catch (err) {
@@ -259,9 +268,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         setUser(null)
         setActiveModuleId(null)
         setActiveSelection(null)
-        setCommonActions(undefined)
-        setCommonActionHandler(undefined)
-        setCommonActionsState({ hasSelection: false, isDirty: false })
+        resetCommonActions()
       } finally {
         setAuthLoading(false)
       }
@@ -327,15 +334,15 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (initialModuleId && modules.some((m) => m.id === initialModuleId)) {
       setActiveModuleId(initialModuleId)
       setActiveSelection({ moduleId: initialModuleId })
+      // ✅ nový modul = reset actions (aby nezůstaly z předchozího výběru)
+      resetCommonActions()
     }
   }, [isAuthenticated, modules, activeModuleId, initialModuleId])
 
   // 🧹 Když nemáme vybraný tile, smažeme commonActions i handler i state
   useEffect(() => {
     if (!activeSelection?.tileId) {
-      setCommonActions(undefined)
-      setCommonActionHandler(undefined)
-      setCommonActionsState({ hasSelection: false, isDirty: false })
+      resetCommonActions()
     }
   }, [activeSelection?.tileId])
 
@@ -346,9 +353,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setUser(null)
     setActiveModuleId(null)
     setActiveSelection(null)
-    setCommonActions(undefined)
-    setCommonActionHandler(undefined)
-    setCommonActionsState({ hasSelection: false, isDirty: false })
+    resetCommonActions()
     router.push('/')
   }
 
@@ -356,9 +361,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   function handleModuleSelect(selection: SidebarSelection) {
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
-    setCommonActions(undefined)
-    setCommonActionHandler(undefined)
-    setCommonActionsState({ hasSelection: false, isDirty: false })
+    // ✅ pokaždé resetujeme (tile si zaregistruje nové)
+    resetCommonActions()
   }
 
   // 🏠 Home button
@@ -374,9 +378,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     setActiveModuleId(null)
     setActiveSelection(null)
-    setCommonActions(undefined)
-    setCommonActionHandler(undefined)
-    setCommonActionsState({ hasSelection: false, isDirty: false })
+    resetCommonActions()
     router.push('/')
   }
 
@@ -416,7 +418,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     const selection = activeSelection
 
     if (selection?.sectionId && activeModule.sections?.length) {
-      const section = activeModule.sections.find((s) => s.id === selection.sectionId)
+      const section = activeModule.sections.find(
+        (s) => s.id === selection.sectionId,
+      )
       if (section) segments.push({ label: section.label, icon: section.icon })
     }
 
@@ -470,7 +474,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="content">
           <h2>Dashboard</h2>
           <p>
-            Vyber modul v levém menu nebo v horní liště. Po kliknutí se tady zobrazí jeho obsah.
+            Vyber modul v levém menu nebo v horní liště. Po kliknutí se tady
+            zobrazí jeho obsah.
           </p>
         </div>
       )
@@ -483,7 +488,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="content">
           <h2>Neznámý modul</h2>
           <p>
-            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen v konfiguraci.
+            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen v
+            konfiguraci.
           </p>
         </div>
       )
@@ -504,7 +510,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
 
     if (selection.sectionId && !selection.tileId) {
-      const section = activeModule.sections?.find((s) => s.id === selection.sectionId)
+      const section = activeModule.sections?.find(
+        (s) => s.id === selection.sectionId,
+      )
 
       const title = section?.introTitle ?? section?.label ?? activeModule.label
       const text =
@@ -550,7 +558,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             {activeModule.tiles.map((tile) => {
               const TileComponent = tile.component
               return (
-                <section key={tile.id} className="content__section" aria-label={tile.label}>
+                <section
+                  key={tile.id}
+                  className="content__section"
+                  aria-label={tile.label}
+                >
                   <h3 className="content__section-title">{tile.label}</h3>
                   <TileComponent />
                 </section>
@@ -565,8 +577,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       <div className="content">
         <h2>{activeModule.label}</h2>
         <p>
-          Tento modul zatím nemá nakonfigurované žádné dlaždice ani formuláře. Přidej je do{' '}
-          <code>{activeModule.id}/module.config.js</code>.
+          Tento modul zatím nemá nakonfigurované žádné dlaždice ani formuláře.
+          Přidej je do <code>{activeModule.id}/module.config.js</code>.
         </p>
       </div>
     )
@@ -596,7 +608,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               <HomeButton disabled={!isAuthenticated} onClick={handleHomeClick} />
             )}
 
-            <Breadcrumbs disabled={!isAuthenticated} segments={getBreadcrumbSegments()} />
+            <Breadcrumbs
+              disabled={!isAuthenticated}
+              segments={getBreadcrumbSegments()}
+            />
           </div>
 
           <div className="layout__topbar-right">
@@ -649,7 +664,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         </div>
       )}
 
-      {/* CommonActions: vždy vlastní řádek nad obsahem (v obou režimech) */}
+      {/* CommonActions: vlastní řádek nad obsahem */}
       <div className="layout__context">
         <CommonActions
           disabled={!isAuthenticated}
