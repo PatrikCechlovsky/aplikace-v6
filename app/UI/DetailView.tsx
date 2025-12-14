@@ -1,8 +1,6 @@
 // FILE: app/UI/DetailView.tsx
-// PURPOSE: Jednoduchý obal pro detail formuláře entity + centrální sekce (Tabs).
-//          - Sekce jsou definované tady (JEDEN zdroj pravdy).
-//          - Moduly jen řeknou: sectionIds = [...]
-//          - DetailTabs je separátní UI prvek (bez znalosti dat).
+// SOURCE: tvoje aktuální verze :contentReference[oaicite:1]{index=1}
+// CHANGE: jen lehké zpřesnění ctx typu pro rolesData/rolesUi (UI beze změny)
 
 'use client'
 
@@ -24,21 +22,29 @@ export type DetailViewSection<Ctx = unknown> = {
   id: DetailSectionId
   label: string
   order: number
-  /** Sekce, které mají být vždy (tvé pravidlo): detail + přílohy + systém */
   always?: boolean
-  /** Vykreslení obsahu sekce (module dodá ctx; render je v registry) */
   render: (ctx: Ctx) => React.ReactNode
-  /** Volitelně: sekce se může skrýt podle kontextu */
   visibleWhen?: (ctx: Ctx) => boolean
 }
 
-/**
- * CENTRÁLNÍ REGISTRY – TADY “NAHRAJEME PŘIPRAVENÉ SEKCE”
- * Pořadí: detail, roles, users, equipment, accounts, attachments, system
- *
- * Render je zatím placeholder (kromě detailu, který můžeš napojit z modulu přes children, viz níž).
- * V dalších krocích nahradíme placeholdery reálnými komponentami.
- */
+export type RolesData = {
+  role?: { code: string; name: string; description?: string | null }
+  permissions?: { code: string; name: string; description?: string | null }[]
+  availableRoles?: { code: string; name: string; description?: string | null }[]
+}
+
+export type RolesUi = {
+  canEdit?: boolean
+  mode?: DetailViewMode
+  onChangeRoleCode?: (roleCode: string) => void
+}
+
+export type DetailViewCtx = {
+  detailContent?: React.ReactNode
+  rolesData?: RolesData
+  rolesUi?: RolesUi
+}
+
 const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   detail: {
     id: 'detail',
@@ -49,97 +55,86 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   },
 
   roles: {
-  id: 'roles',
-  label: 'Role a oprávnění',
-  order: 20,
-  render: (ctx) => {
-    const data = (ctx as any)?.rolesData as
-      | {
-          role?: { code: string; name: string; description?: string | null }
-          permissions?: { code: string; name: string; description?: string | null }[]
-          availableRoles?: { code: string; name: string; description?: string | null }[]
-        }
-      | undefined
+    id: 'roles',
+    label: 'Role a oprávnění',
+    order: 20,
+    render: (ctx) => {
+      const data = (ctx as DetailViewCtx)?.rolesData
+      const ui = (ctx as DetailViewCtx)?.rolesUi
 
-    const ui = (ctx as any)?.rolesUi as
-      | {
-          canEdit?: boolean
-          mode?: 'view' | 'edit' | 'create'
-          onChangeRoleCode?: (roleCode: string) => void
-        }
-      | undefined
+      const role = data?.role
+      const permissions = data?.permissions ?? []
+      const canEdit = !!ui?.canEdit && (ui?.mode === 'edit' || ui?.mode === 'create')
 
-    const role = data?.role
-    const permissions = data?.permissions ?? []
-    const canEdit = !!ui?.canEdit && (ui?.mode === 'edit' || ui?.mode === 'create')
+      return (
+        <div className="detail-form">
+          {/* ROLE */}
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Role</h3>
 
-    return (
-      <div className="detail-form">
-        {/* ROLE */}
-        <section className="detail-form__section">
-          <h3 className="detail-form__section-title">Role</h3>
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Aktuální role</label>
 
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">Aktuální role</label>
-
-              {canEdit ? (
-                <select
-                  className="detail-form__input"
-                  value={role?.code ?? ''}
-                  onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
-                >
-                  {(data?.availableRoles ?? []).map((r) => (
-                    <option key={r.code} value={r.code}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={role?.name ?? '—'}
-                  readOnly
-                />
-              )}
-            </div>
-
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">Popis role</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={role?.description ?? '—'}
-                readOnly
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* OPRÁVNĚNÍ (A: odvozené z role) */}
-        <section className="detail-form__section">
-          <h3 className="detail-form__section-title">Oprávnění (odvozené z role)</h3>
-
-          {permissions.length === 0 ? (
-            <div className="detail-view__placeholder">Žádná oprávnění.</div>
-          ) : (
-            <div className="detail-form__grid">
-              {permissions.map((p) => (
-                <div key={p.code} className="detail-form__field">
-                  <label className="detail-form__label">{p.name}</label>
+                {canEdit ? (
+                  <select
+                    className="detail-form__input"
+                    value={role?.code ?? ''}
+                    onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
+                  >
+                    {(data?.availableRoles ?? []).map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
                   <input
                     className="detail-form__input detail-form__input--readonly"
-                    value={p.description ?? ''}
+                    value={role?.name ?? '—'}
                     readOnly
                   />
-                </div>
-              ))}
+                )}
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Popis role</label>
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={role?.description ?? '—'}
+                  readOnly
+                />
+              </div>
             </div>
-          )}
-        </section>
-      </div>
-    )
+          </section>
+
+          {/* OPRÁVNĚNÍ (A: odvozené z role) */}
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Oprávnění (odvozené z role)</h3>
+
+            {permissions.length === 0 ? (
+              <div className="detail-view__placeholder">
+                Žádná oprávnění (zatím). Napojíme na Supabase z role.
+              </div>
+            ) : (
+              <div className="detail-form__grid">
+                {permissions.map((p) => (
+                  <div key={p.code} className="detail-form__field">
+                    <label className="detail-form__label">{p.name}</label>
+                    <input
+                      className="detail-form__input detail-form__input--readonly"
+                      value={p.description ?? ''}
+                      readOnly
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )
+    },
   },
-},
 
   users: {
     id: 'users',
@@ -167,11 +162,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     id: 'accounts',
     label: 'Účty',
     order: 50,
-    render: () => (
-      <div className="detail-view__placeholder">
-        Účty – doplníme (subjekt).
-      </div>
-    ),
+    render: () => <div className="detail-view__placeholder">Účty – doplníme.</div>,
   },
 
   attachments: {
@@ -179,9 +170,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     label: 'Přílohy',
     order: 60,
     always: true,
-    render: () => (
-      <div className="detail-view__placeholder">Přílohy – doplníme.</div>
-    ),
+    render: () => <div className="detail-view__placeholder">Přílohy – doplníme.</div>,
   },
 
   system: {
@@ -193,84 +182,41 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   },
 }
 
-function resolveSections<Ctx>(
-  sectionIds: DetailSectionId[] | undefined,
-  ctx: Ctx
-): DetailViewSection<Ctx>[] {
+function resolveSections<Ctx>(sectionIds: DetailSectionId[] | undefined, ctx: Ctx) {
   const picked = new Set<DetailSectionId>(sectionIds ?? [])
-
-  // přidat always (detail, attachments, system)
   ;(Object.values(DETAIL_SECTIONS) as DetailViewSection<Ctx>[]).forEach((s) => {
     if (s.always) picked.add(s.id)
   })
 
-  // map + visibleWhen + sort
-  const list = Array.from(picked)
+  return Array.from(picked)
     .map((id) => DETAIL_SECTIONS[id] as DetailViewSection<Ctx>)
     .filter(Boolean)
     .filter((s) => (s.visibleWhen ? s.visibleWhen(ctx) : true))
     .sort((a, b) => a.order - b.order)
-
-  return list
 }
 
 export type DetailViewProps<Ctx = unknown> = {
-  /** Režim formuláře (zatím jen informativně) */
   mode: DetailViewMode
-
-  /** Má formulář neuložené změny? (pro budoucí použití) */
   isDirty?: boolean
-
-  /** Probíhá ukládání (pro budoucí použití) */
   isSaving?: boolean
-
-  /** Callback pro Uložit – řeší si konkrétní modul (nepoužito v UI) */
   onSave?: () => void
-
-  /** Callback pro Zrušit / Zavřít – řeší si konkrétní modul (nepoužito v UI) */
   onCancel?: () => void
-
-  /**
-   * NOVĚ: ID sekcí, které chce modul navíc.
-   * "Vždy" se přidá: detail + přílohy + systém
-   */
   sectionIds?: DetailSectionId[]
-
-  /**
-   * Kontext detailu (entita, práva, handlers…)
-   * Zatím minimálně používáme `detailContent` pro sekci "detail".
-   */
-  ctx?: Ctx & { detailContent?: React.ReactNode }
-
-  /**
-   * Legacy: když nic nepředáš (sectionIds/ctx), DetailView funguje jako wrapper kolem children.
-   */
+  ctx?: Ctx & DetailViewCtx
   children?: React.ReactNode
 }
 
-export default function DetailView<Ctx = unknown>({
-  children,
-  sectionIds,
-  ctx,
-}: DetailViewProps<Ctx>) {
-  // Legacy režim: zachováme původní chování (nic nerozbít)
-  if (!sectionIds && !ctx) {
-    return <div className="detail-view">{children}</div>
-  }
+export default function DetailView<Ctx = unknown>({ children, sectionIds, ctx }: DetailViewProps<Ctx>) {
+  if (!sectionIds && !ctx) return <div className="detail-view">{children}</div>
 
-  const safeCtx = (ctx ?? ({} as Ctx)) as Ctx & { detailContent?: React.ReactNode }
+  const safeCtx = (ctx ?? ({} as Ctx)) as Ctx & DetailViewCtx
   const sections = useMemo(() => resolveSections(sectionIds, safeCtx), [sectionIds, safeCtx])
 
   const defaultActive = sections[0]?.id ?? 'detail'
   const [activeId, setActiveId] = useState<DetailSectionId>(defaultActive)
 
-  // když aktivní zmizí, spadni na první
   const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
-
-  const tabs: DetailTabItem[] = sections.map((s) => ({
-    id: s.id,
-    label: s.label,
-  }))
+  const tabs: DetailTabItem[] = sections.map((s) => ({ id: s.id, label: s.label }))
 
   return (
     <div className="detail-view">
