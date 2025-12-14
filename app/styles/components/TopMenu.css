@@ -119,3 +119,14 @@
   border-color: var(--color-border);
   font-weight: 600;
 }
+/* klik myší bez rámečku, klávesnice ano */
+.topmenu__button:focus,
+.topmenu__popover-button:focus {
+  outline: none;
+}
+
+.topmenu__button:focus-visible,
+.topmenu__popover-button:focus-visible {
+  outline: 2px solid var(--color-border);
+  outline-offset: 2px;
+}
