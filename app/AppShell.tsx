@@ -661,26 +661,38 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   enabled: m.enabled,
                   icon: m.icon,
                   hasChildren: sections.length > 0 || tiles.length > 0,
-                  sections: sections.map((s) => {
-                    const hasSectionTiles = tiles.some((t: any) => t.sectionId === s.id)
-                    return {
-                      id: s.id,
-                      label: s.label ?? s.id,
-                      icon: s.icon ?? null,
-                      hasChildren: hasSectionTiles,
-                    }
-                  }),
+            
+                  sections: sections.map((s) => ({
+                    id: s.id,
+                    label: s.label ?? s.id,
+                    icon: s.icon ?? null,
+                  })),
+            
+                  tiles: tiles.map((t: any) => ({
+                    id: t.id,
+                    label: t.label ?? t.title ?? t.id,
+                    icon: t.icon ?? null,
+                  })),
                 }
               })}
               activeModuleId={activeModuleId ?? undefined}
               activeSectionId={activeSelection?.sectionId ?? null}
-              onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
-              onSelectSection={(sectionId) => {
-                const moduleId = activeModuleId ?? activeSelection?.moduleId
-                if (!moduleId) return
-                handleModuleSelect({ moduleId, sectionId })
-              }}
+              activeTileId={activeSelection?.tileId ?? null}
+              onSelectModule={(moduleId) => handleModuleSelect({ moduleId })}
+              onSelectSection={(sectionId) =>
+                handleModuleSelect({
+                  moduleId: activeModuleId ?? activeSelection?.moduleId,
+                  sectionId,
+                })
+              }
+              onSelectTile={(tileId) =>
+                handleModuleSelect({
+                  moduleId: activeModuleId ?? activeSelection?.moduleId,
+                  tileId,
+                })
+              }
             />
+
           
         )}
 
