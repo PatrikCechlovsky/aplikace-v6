@@ -13,6 +13,7 @@
   padding: 6px var(--tm-pad-x);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-actions-bg);
+  color: var(--color-text);
 
   overflow: visible; /* ✅ popover nesmí být oříznutý */
   min-width: 0;
@@ -78,6 +79,7 @@
   font-size: 14px;
   white-space: nowrap;
   cursor: pointer;
+  color: var(--color-text);
 }
 
 .topmenu__chevron {
@@ -89,6 +91,7 @@
   font-size: 14px;
   margin: 0;
   opacity: 0.7;
+  color: var(--color-text-muted, var(--color-text));
 }
 
 .topmenu__chevron--placeholder { opacity: 0; }
@@ -97,6 +100,7 @@
   background: var(--color-selected-row-bg);
   border-color: var(--color-border);
   font-weight: 600;
+  color: var(--color-text);
 }
 
 .topmenu__button:hover { background: var(--color-surface-subtle); }
