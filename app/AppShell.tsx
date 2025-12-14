@@ -67,7 +67,7 @@ import type { IconKey } from '@/app/UI/icons'
 
 // 🔹 NOVĚ: horní lišta modulů (Excel styl)
 import { TopMenu } from '@/app/UI/TopMenu'
-
+import CommonActions from '@/app/UI/CommonActions'
 import type { CommonActionId } from '@/app/UI/CommonActions'
 
 
