@@ -16,6 +16,10 @@
  * 3) Přidání nové akce MUSÍ mít:
  *    - definici
  *    - handler (jinak TypeScript failne build)
+ *
+ * Poznámka:
+ * - AppShell může dodat externí handler přes onActionClick (preferováno pro MVP),
+ *   aby klik na akci šel do právě aktivního tile.
  */
 
 import { getIcon } from './icons'
@@ -55,99 +59,58 @@ type CommonActionDefinition = {
 
 /* ============================================================================
  * 3) Centrální slovník definic akcí
- *    (UI vlastnosti + podmínky dostupnosti)
  * ========================================================================== */
 
-const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> =
-  {
-    add: {
-      id: 'add',
-      label: 'Přidat',
-      icon: 'add',
-    },
-    edit: {
-      id: 'edit',
-      label: 'Upravit',
-      icon: 'edit',
-      requiresSelection: true,
-    },
-    view: {
-      id: 'view',
-      label: 'Zobrazit',
-      icon: 'view',
-      requiresSelection: true,
-    },
-    duplicate: {
-      id: 'duplicate',
-      label: 'Duplikovat',
-      icon: 'duplicate',
-      requiresSelection: true,
-    },
-    attach: {
-      id: 'attach',
-      label: 'Připojit',
-      icon: 'attach',
-      requiresSelection: true,
-    },
-    archive: {
-      id: 'archive',
-      label: 'Archivovat',
-      icon: 'archive',
-      requiresSelection: true,
-    },
-    delete: {
-      id: 'delete',
-      label: 'Smazat',
-      icon: 'delete',
-      requiresSelection: true,
-    },
-    save: {
-      id: 'save',
-      label: 'Uložit',
-      icon: 'save',
-      requiresDirty: true,
-    },
-    saveAndClose: {
-      id: 'saveAndClose',
-      label: 'Uložit a zavřít',
-      icon: 'save',
-      requiresDirty: true,
-    },
-    cancel: {
-      id: 'cancel',
-      label: 'Zrušit',
-      icon: 'cancel',
-    },
-    invite: {
-      id: 'invite',
-      label: 'Pozvat',
-      icon: 'invite',
-    },
-    columnSettings: {
-      id: 'columnSettings',
-      label: 'Sloupce',
-      icon: 'settings',
-    },
-    import: {
-      id: 'import',
-      label: 'Import',
-      icon: 'import',
-    },
-    export: {
-      id: 'export',
-      label: 'Export',
-      icon: 'export',
-    },
-    reject: {
-      id: 'reject',
-      label: 'Zamítnout',
-      icon: 'cancel',
-      requiresSelection: true,
-    },
-  }
+const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
+  add: { id: 'add', label: 'Přidat', icon: 'add' },
+  edit: { id: 'edit', label: 'Upravit', icon: 'edit', requiresSelection: true },
+  view: { id: 'view', label: 'Zobrazit', icon: 'view', requiresSelection: true },
+  duplicate: {
+    id: 'duplicate',
+    label: 'Duplikovat',
+    icon: 'duplicate',
+    requiresSelection: true,
+  },
+  attach: {
+    id: 'attach',
+    label: 'Připojit',
+    icon: 'attach',
+    requiresSelection: true,
+  },
+  archive: {
+    id: 'archive',
+    label: 'Archivovat',
+    icon: 'archive',
+    requiresSelection: true,
+  },
+  delete: {
+    id: 'delete',
+    label: 'Smazat',
+    icon: 'delete',
+    requiresSelection: true,
+  },
+  save: { id: 'save', label: 'Uložit', icon: 'save', requiresDirty: true },
+  saveAndClose: {
+    id: 'saveAndClose',
+    label: 'Uložit a zavřít',
+    icon: 'save',
+    requiresDirty: true,
+  },
+  cancel: { id: 'cancel', label: 'Zrušit', icon: 'cancel' },
+  invite: { id: 'invite', label: 'Pozvat', icon: 'invite' },
+  columnSettings: { id: 'columnSettings', label: 'Sloupce', icon: 'settings' },
+  import: { id: 'import', label: 'Import', icon: 'import' },
+  export: { id: 'export', label: 'Export', icon: 'export' },
+  reject: {
+    id: 'reject',
+    label: 'Zamítnout',
+    icon: 'cancel',
+    requiresSelection: true,
+  },
+}
 
 /* ============================================================================
- * 4) Kontext, který dostávají handlery
+ * 4) Kontext, který dostávají handlery (fallback)
  * ========================================================================== */
 
 export type CommonActionContext = {
@@ -157,8 +120,7 @@ export type CommonActionContext = {
 }
 
 /* ============================================================================
- * 5) Centrální HANDLERY pro všechny akce
- *    ⚠️ PŘIDÁNÍ NOVÉ AKCE BEZ HANDLERU = TS ERROR
+ * 5) Centrální HANDLERY pro všechny akce (fallback)
  * ========================================================================== */
 
 const COMMON_ACTION_HANDLERS: Record<
@@ -169,27 +131,11 @@ const COMMON_ACTION_HANDLERS: Record<
     setActiveId(null)
     setMode('create')
   },
-
-  view: ({ setMode }) => {
-    setMode('read')
-  },
-
-  edit: ({ setMode }) => {
-    setMode('edit')
-  },
-
-  cancel: ({ setMode, activeId }) => {
-    setMode(activeId ? 'read' : 'list')
-  },
-
-  save: () => {
-    // skutečné uložení řeší EntityDetailFrame / form manager
-  },
-
-  saveAndClose: () => {
-    // uložit + návrat do listu / detailu
-  },
-
+  view: ({ setMode }) => setMode('read'),
+  edit: ({ setMode }) => setMode('edit'),
+  cancel: ({ setMode, activeId }) => setMode(activeId ? 'read' : 'list'),
+  save: () => {},
+  saveAndClose: () => {},
   delete: () => {},
   duplicate: () => {},
   attach: () => {},
@@ -211,6 +157,9 @@ type Props = {
   hasSelection?: boolean
   isDirty?: boolean
   ctx?: CommonActionContext
+
+  // ✅ Preferovaná cesta: AppShell pošle handler aktivního tile
+  onActionClick?: (id: CommonActionId) => void
 }
 
 /* ============================================================================
@@ -223,6 +172,7 @@ export default function CommonActions({
   hasSelection = false,
   isDirty = false,
   ctx,
+  onActionClick,
 }: Props) {
   if (!actions || actions.length === 0) return null
 
@@ -245,6 +195,8 @@ export default function CommonActions({
             title={def.label}
             onClick={() => {
               if (isDisabled) return
+              if (onActionClick) return onActionClick(id)
+              // fallback – když bys někdy rendroval CommonActions lokálně v tile
               COMMON_ACTION_HANDLERS[id](ctx as CommonActionContext)
             }}
           >
