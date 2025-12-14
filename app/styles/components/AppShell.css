@@ -92,6 +92,7 @@
   max-width: 100vw;
   justify-content: stretch;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
 }
 
 /* V TOP režimu vše do 1 sloupce */
@@ -113,7 +114,7 @@
 /* Content v TOP režimu také do 1 sloupce */
 .layout.layout--topmenu .layout__content {
   grid-column: 1 / -1 !important;
-  grid-row: 4;
+  grid-row: 3;
   align-self: start;
 }
 
