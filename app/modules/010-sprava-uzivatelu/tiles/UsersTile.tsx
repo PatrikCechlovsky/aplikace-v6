@@ -7,10 +7,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import ListView, {
-  type ListViewColumn,
-  type ListViewRow,
-} from '@/app/UI/ListView'
+import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
 
@@ -27,6 +24,7 @@ type MockUser = {
 }
 
 // 💡 Dočasná mapa barev podle role – později se vezme z modulu 900 (typy rolí)
+// Pozn.: Hard-coded barvy jsou MVP; později bude přes theme/tokeny / číselník.
 const ROLE_COLORS: Record<string, string> = {
   Administrátor: '#f4d35e',
   Manager: '#e05570',
@@ -76,10 +74,7 @@ function toRow(user: MockUser): ListViewRow<MockUser> {
     raw: user,
     data: {
       roleLabel: (
-        <span
-          className="generic-type__name-badge"
-          style={{ backgroundColor: color }}
-        >
+        <span className="generic-type__name-badge" style={{ backgroundColor: color }}>
           {user.roleLabel}
         </span>
       ),
@@ -91,9 +86,8 @@ function toRow(user: MockUser): ListViewRow<MockUser> {
 }
 
 type UsersTileProps = {
-  onRegisterCommonActions?: (
-    actions: CommonActionId[],
-  ) => void
+  // AppShell si přes tohle přebírá, které akce má ukázat v sekci 4 (CommonActions).
+  onRegisterCommonActions?: (actions: CommonActionId[]) => void
 }
 
 // 🔁 Jednoduchý viewMode: list ↔ detail
@@ -106,38 +100,19 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
 
   const [viewMode, setViewMode] = useState<UsersViewMode>('list')
   const [detailUser, setDetailUser] = useState<MockUser | null>(null)
-  
-  const commonActions: CommonActionId[] =
-  viewMode === 'list'
-    ? [
-        'add',
-        'view',
-        'edit',
-        'invite',
-        'columnSettings',
-        'import',
-        'export',
-        'reject',
-      ]
-    : [
-        'view',
-        'edit',
-        'reject',
-      ]
 
-    return (
-      <>
-        <CommonActions
-          actions={commonActions}
-          hasSelection={!!activeId}
-          isDirty={isDirty}
-          ctx={{ setMode, setActiveId, activeId }}
-        />
-    
-        {/* zbytek obsahu */}
-      </>
-    )
-    
+  // ✅ Akce už nejsou config objekty – jen IDčka (CommonActionId[])
+  const commonActions = useMemo<CommonActionId[]>(() => {
+    return viewMode === 'list'
+      ? ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
+      : ['view', 'edit', 'reject']
+  }, [viewMode])
+
+  // ✅ Registrace CommonActions do AppShell (sekce 4)
+  useEffect(() => {
+    if (!onRegisterCommonActions) return
+    onRegisterCommonActions(commonActions)
+  }, [onRegisterCommonActions, commonActions])
 
   // Filtrování mock dat podle textu + archivace
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
@@ -188,11 +163,11 @@ export default function UsersTile({ onRegisterCommonActions }: UsersTileProps) {
 
         <style jsx>{`
           .users-list {
-             background: transparent;
-             border: 0;
-             border-radius: 0;
-             padding: 0;
-             box-shadow: none;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
           }
 
           @media (max-width: 900px) {
