@@ -1,239 +1,331 @@
-// FILE: app/UI/DetailView.tsx
-// SOURCE: tvoje aktuální verze :contentReference[oaicite:1]{index=1}
-// CHANGE: jen lehké zpřesnění ctx typu pro rolesData/rolesUi (UI beze změny)
-
 'use client'
 
-import React, { useMemo, useState } from 'react'
-import DetailTabs, { type DetailTabItem } from './DetailTabs'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { getIcon } from './icons'
 
-export type DetailViewMode = 'create' | 'edit' | 'view'
-
-export type DetailSectionId =
-  | 'detail'
-  | 'roles'
-  | 'users'
-  | 'equipment'
-  | 'accounts'
-  | 'attachments'
-  | 'system'
-
-export type DetailViewSection<Ctx = unknown> = {
-  id: DetailSectionId
+export type TopMenuSection = {
+  id: string
   label: string
-  order: number
-  always?: boolean
-  render: (ctx: Ctx) => React.ReactNode
-  visibleWhen?: (ctx: Ctx) => boolean
+  icon?: string | null
 }
 
-export type RolesData = {
-  role?: { code: string; name: string; description?: string | null }
-  permissions?: { code: string; name: string; description?: string | null }[]
-  availableRoles?: { code: string; name: string; description?: string | null }[]
+export type TopMenuTile = {
+  id: string
+  label: string
+  icon?: string | null
+  sectionId?: string | null
 }
 
-export type RolesUi = {
-  canEdit?: boolean
-  mode?: DetailViewMode
-  onChangeRoleCode?: (roleCode: string) => void
+export type TopMenuModule = {
+  id: string
+  label: string
+  icon?: string | null
+  enabled?: boolean
+  hasChildren?: boolean
+  sections?: TopMenuSection[]
+  tiles?: TopMenuTile[]
 }
 
-export type DetailViewCtx = {
-  detailContent?: React.ReactNode
-  rolesData?: RolesData
-  rolesUi?: RolesUi
+type TopMenuProps = {
+  modules: TopMenuModule[]
+  activeModuleId?: string
+  activeSectionId?: string | null
+  activeTileId?: string | null
+  onSelectModule: (moduleId: string) => void
+  onSelectSection: (sectionId: string) => void
+  onSelectTile: (tileId: string) => void
+  showIcons?: boolean
 }
 
-const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
-  detail: {
-    id: 'detail',
-    label: 'Detail',
-    order: 10,
-    always: true,
-    render: (ctx) => ctx?.detailContent ?? null,
-  },
+type PopoverPos = { top: number; left: number; width: number }
+type PopoverView =
+  | { kind: 'root' } // sekce nebo (fallback) tiles
+  | { kind: 'sectionTiles'; sectionId: string }
 
-  roles: {
-    id: 'roles',
-    label: 'Role a oprávnění',
-    order: 20,
-    render: (ctx) => {
-      const data = (ctx as DetailViewCtx)?.rolesData
-      const ui = (ctx as DetailViewCtx)?.rolesUi
+export function TopMenu({
+  modules,
+  activeModuleId,
+  activeSectionId = null,
+  activeTileId = null,
+  onSelectModule,
+  onSelectSection,
+  onSelectTile,
+  showIcons = true,
+}: TopMenuProps) {
+  const [openModuleId, setOpenModuleId] = useState<string | null>(null)
+  const [pos, setPos] = useState<PopoverPos | null>(null)
+  const [portalReady, setPortalReady] = useState(false)
+  const [view, setView] = useState<PopoverView>({ kind: 'root' })
 
-      const role = data?.role
-      const permissions = data?.permissions ?? []
-      const canEdit = !!ui?.canEdit && (ui?.mode === 'edit' || ui?.mode === 'create')
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const popoverRef = useRef<HTMLDivElement | null>(null)
 
-      return (
-        <div className="detail-form">
-          {/* ROLE */}
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Role</h3>
+  const visibleModules = useMemo(
+    () => (modules ?? []).filter((m) => m.enabled !== false),
+    [modules]
+  )
 
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Aktuální role</label>
+  const activeModule = useMemo(() => {
+    if (!activeModuleId) return null
+    return visibleModules.find((m) => m.id === activeModuleId) ?? null
+  }, [activeModuleId, visibleModules])
 
-                {canEdit ? (
-                  <select
-                    className="detail-form__input"
-                    value={role?.code ?? ''}
-                    onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
-                  >
-                    {(data?.availableRoles ?? []).map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={role?.name ?? '—'}
-                    readOnly
-                  />
-                )}
-              </div>
+  const sections = activeModule?.sections ?? []
+  const tiles = activeModule?.tiles ?? []
+  const hasSections = sections.length > 0
+  const hasTiles = tiles.length > 0
 
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Popis role</label>
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={role?.description ?? '—'}
-                  readOnly
-                />
-              </div>
-            </div>
-          </section>
+  const isPopoverOpen =
+    !!openModuleId &&
+    !!activeModuleId &&
+    openModuleId === activeModuleId &&
+    (hasSections || hasTiles)
 
-          {/* OPRÁVNĚNÍ (A: odvozené z role) */}
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Oprávnění (odvozené z role)</h3>
+  useEffect(() => setPortalReady(true), [])
 
-            {permissions.length === 0 ? (
-              <div className="detail-view__placeholder">
-                Žádná oprávnění (zatím). Napojíme na Supabase z role.
-              </div>
-            ) : (
-              <div className="detail-form__grid">
-                {permissions.map((p) => (
-                  <div key={p.code} className="detail-form__field">
-                    <label className="detail-form__label">{p.name}</label>
-                    <input
-                      className="detail-form__input detail-form__input--readonly"
-                      value={p.description ?? ''}
-                      readOnly
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      )
-    },
-  },
+  // když se aktivní modul změní (sidebar apod.), zavři + reset view
+  useEffect(() => {
+    setOpenModuleId(null)
+    setView({ kind: 'root' })
+  }, [activeModuleId])
 
-  users: {
-    id: 'users',
-    label: 'Seznam uživatelů',
-    order: 30,
-    render: () => (
-      <div className="detail-view__placeholder">
-        Seznam uživatelů – doplníme (např. uživatelé jednotky / nájemníci).
-      </div>
-    ),
-  },
+  function recomputePos() {
+    if (!activeModuleId) return
+    const btn = buttonRefs.current[activeModuleId]
+    if (!btn) return
 
-  equipment: {
-    id: 'equipment',
-    label: 'Vybavení jednotky',
-    order: 40,
-    render: () => (
-      <div className="detail-view__placeholder">
-        Vybavení jednotky – doplníme (jednotka).
-      </div>
-    ),
-  },
+    const r = btn.getBoundingClientRect()
+    const margin = 8
+    const minW = 240
+    const maxW = 320
 
-  accounts: {
-    id: 'accounts',
-    label: 'Účty',
-    order: 50,
-    render: () => <div className="detail-view__placeholder">Účty – doplníme.</div>,
-  },
+    const viewportMax = Math.max(0, window.innerWidth - margin * 2)
+    const width = Math.min(maxW, Math.max(minW, viewportMax))
 
-  attachments: {
-    id: 'attachments',
-    label: 'Přílohy',
-    order: 60,
-    always: true,
-    render: () => <div className="detail-view__placeholder">Přílohy – doplníme.</div>,
-  },
+    const desiredLeft = r.left
+    const maxLeft = window.innerWidth - margin - width
+    const left = Math.max(margin, Math.min(desiredLeft, maxLeft))
+    const top = r.bottom + 6
 
-  system: {
-    id: 'system',
-    label: 'Systém',
-    order: 70,
-    always: true,
-    render: () => <div className="detail-view__placeholder">Systém – doplníme.</div>,
-  },
-}
+    setPos({ top: Math.round(top), left: Math.round(left), width: Math.round(width) })
+  }
 
-function resolveSections<Ctx>(sectionIds: DetailSectionId[] | undefined, ctx: Ctx) {
-  const picked = new Set<DetailSectionId>(sectionIds ?? [])
-  ;(Object.values(DETAIL_SECTIONS) as DetailViewSection<Ctx>[]).forEach((s) => {
-    if (s.always) picked.add(s.id)
-  })
+  useLayoutEffect(() => {
+    if (!isPopoverOpen) return
+    recomputePos()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPopoverOpen, activeModuleId])
 
-  return Array.from(picked)
-    .map((id) => DETAIL_SECTIONS[id] as DetailViewSection<Ctx>)
-    .filter(Boolean)
-    .filter((s) => (s.visibleWhen ? s.visibleWhen(ctx) : true))
-    .sort((a, b) => a.order - b.order)
-}
+  useEffect(() => {
+    if (!isPopoverOpen) return
+    const on = () => recomputePos()
+    window.addEventListener('resize', on)
+    window.addEventListener('scroll', on, true)
+    return () => {
+      window.removeEventListener('resize', on)
+      window.removeEventListener('scroll', on, true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPopoverOpen, activeModuleId])
 
-export type DetailViewProps<Ctx = unknown> = {
-  mode: DetailViewMode
-  isDirty?: boolean
-  isSaving?: boolean
-  onSave?: () => void
-  onCancel?: () => void
-  sectionIds?: DetailSectionId[]
-  ctx?: Ctx & DetailViewCtx
-  children?: React.ReactNode
-}
+  // click-outside + ESC
+  useEffect(() => {
+    if (!isPopoverOpen) return
 
-export default function DetailView<Ctx = unknown>({ children, sectionIds, ctx }: DetailViewProps<Ctx>) {
-  if (!sectionIds && !ctx) return <div className="detail-view">{children}</div>
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (popoverRef.current?.contains(t)) return
+      const btn = activeModuleId ? buttonRefs.current[activeModuleId] : null
+      if (btn && btn.contains(t)) return
+      setOpenModuleId(null)
+      setView({ kind: 'root' })
+    }
 
-  const safeCtx = (ctx ?? ({} as Ctx)) as Ctx & DetailViewCtx
-  const sections = useMemo(() => resolveSections(sectionIds, safeCtx), [sectionIds, safeCtx])
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setOpenModuleId(null)
+        setView({ kind: 'root' })
+      }
+    }
 
-  const defaultActive = sections[0]?.id ?? 'detail'
-  const [activeId, setActiveId] = useState<DetailSectionId>(defaultActive)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [isPopoverOpen, activeModuleId])
 
-  const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
-  const tabs: DetailTabItem[] = sections.map((s) => ({ id: s.id, label: s.label }))
+  function handleModuleClick(moduleId: string, hasChildren: boolean) {
+    onSelectModule(moduleId)
+
+    if (!hasChildren) {
+      setOpenModuleId(null)
+      setView({ kind: 'root' })
+      return
+    }
+
+    setOpenModuleId((prev) => (prev === moduleId ? null : moduleId))
+    setView({ kind: 'root' })
+  }
+
+  function handleSectionClick(sectionId: string) {
+    // sekce se jen rozbalí (tiles uvnitř popoveru), ale zároveň nastavíme activeSection pro breadcrumb
+    onSelectSection(sectionId)
+    setView({ kind: 'sectionTiles', sectionId })
+  }
+
+  function handleTileClick(tileId: string) {
+    onSelectTile(tileId)
+    setOpenModuleId(null)
+    setView({ kind: 'root' })
+  }
+
+  const tilesForSection =
+    view.kind === 'sectionTiles'
+      ? tiles.filter((t) => (t.sectionId ?? null) === view.sectionId)
+      : []
+
+  const sectionTitle =
+    view.kind === 'sectionTiles'
+      ? sections.find((s) => s.id === view.sectionId)?.label ?? ''
+      : ''
 
   return (
-    <div className="detail-view">
-      {tabs.length > 1 && (
-        <DetailTabs
-          items={tabs}
-          activeId={activeSection?.id ?? defaultActive}
-          onChange={(id) => setActiveId(id as DetailSectionId)}
-        />
-      )}
+    <>
+      <nav className="topmenu" aria-label="Hlavní moduly">
+        <ul className="topmenu__list">
+          {visibleModules.map((m) => {
+            const mHasChildren = (m.sections?.length ?? 0) > 0 || (m.tiles?.length ?? 0) > 0
+            const isActive = m.id === activeModuleId
 
-      {activeSection && (
-        <section id={`detail-section-${activeSection.id}`}>
-          {activeSection.render(safeCtx)}
-        </section>
-      )}
-    </div>
+            return (
+              <li key={m.id} className={`topmenu__item ${isActive ? 'topmenu__item--active' : ''}`}>
+                <button
+                  ref={(el) => {
+                    buttonRefs.current[m.id] = el
+                  }}
+                  type="button"
+                  className="topmenu__button"
+                  aria-haspopup={mHasChildren ? 'menu' : undefined}
+                  aria-expanded={isActive && isPopoverOpen ? true : undefined}
+                  onClick={() => handleModuleClick(m.id, mHasChildren)}
+                >
+                  <span
+                    className={'topmenu__chevron' + (mHasChildren ? '' : ' topmenu__chevron--placeholder')}
+                    aria-hidden="true"
+                  >
+                    ▸
+                  </span>
+
+                  {showIcons && m.icon && <span className="topmenu__icon">{getIcon(m.icon as any)}</span>}
+                  <span className="topmenu__label">{m.label}</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
+
+      {portalReady && isPopoverOpen && pos &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            className="topmenu__popover"
+            role="menu"
+            style={{
+              position: 'fixed',
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 2000,
+            }}
+          >
+            {view.kind === 'sectionTiles' ? (
+              <>
+                <button
+                  type="button"
+                  className="topmenu__popover-button"
+                  onClick={() => setView({ kind: 'root' })}
+                >
+                  <span className="topmenu__chevron" aria-hidden="true">◂</span>
+                  <span className="topmenu__label">Zpět</span>
+                </button>
+
+                <div style={{ padding: '4px 10px 8px', fontWeight: 600 }}>{sectionTitle}</div>
+
+                <ul className="topmenu__popover-list">
+                  {tilesForSection.map((t) => {
+                    const isActive = t.id === activeTileId
+                    return (
+                      <li key={t.id} className="topmenu__popover-item">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className={'topmenu__popover-button' + (isActive ? ' topmenu__popover-button--active' : '')}
+                          onClick={() => handleTileClick(t.id)}
+                        >
+                          <span className="topmenu__chevron topmenu__chevron--placeholder" aria-hidden="true">▸</span>
+                          {showIcons && t.icon && <span className="topmenu__icon">{getIcon(t.icon as any)}</span>}
+                          <span className="topmenu__label">{t.label}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </>
+            ) : (
+              <ul className="topmenu__popover-list">
+                {hasSections
+                  ? sections.map((s) => {
+                      const isActive = s.id === activeSectionId
+                      const hasSectionTiles = tiles.some((t) => (t.sectionId ?? null) === s.id)
+
+                      return (
+                        <li key={s.id} className="topmenu__popover-item">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className={'topmenu__popover-button' + (isActive ? ' topmenu__popover-button--active' : '')}
+                            onClick={() => handleSectionClick(s.id)}
+                          >
+                            <span
+                              className={'topmenu__chevron' + (hasSectionTiles ? '' : ' topmenu__chevron--placeholder')}
+                              aria-hidden="true"
+                            >
+                              ▸
+                            </span>
+
+                            {showIcons && s.icon && <span className="topmenu__icon">{getIcon(s.icon as any)}</span>}
+                            <span className="topmenu__label">{s.label}</span>
+                          </button>
+                        </li>
+                      )
+                    })
+                  : tiles.map((t) => {
+                      // fallback pro 010 (modul bez sekcí)
+                      const isActive = t.id === activeTileId
+                      return (
+                        <li key={t.id} className="topmenu__popover-item">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className={'topmenu__popover-button' + (isActive ? ' topmenu__popover-button--active' : '')}
+                            onClick={() => handleTileClick(t.id)}
+                          >
+                            <span className="topmenu__chevron topmenu__chevron--placeholder" aria-hidden="true">▸</span>
+                            {showIcons && t.icon && <span className="topmenu__icon">{getIcon(t.icon as any)}</span>}
+                            <span className="topmenu__label">{t.label}</span>
+                          </button>
+                        </li>
+                      )
+                    })}
+              </ul>
+            )}
+          </div>,
+          document.body
+        )}
+    </>
   )
 }
-export default TopMenu
