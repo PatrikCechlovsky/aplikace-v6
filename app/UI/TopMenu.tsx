@@ -236,3 +236,4 @@ export default function DetailView<Ctx = unknown>({ children, sectionIds, ctx }:
     </div>
   )
 }
+export default TopMenu
