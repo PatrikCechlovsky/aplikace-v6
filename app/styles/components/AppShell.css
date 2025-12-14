@@ -116,8 +116,9 @@
 /* ✅ TOP režim: ořezáváme jen vodorovně v horních pruzích,
    aby pravá část (HomeActions) nikdy nezmizela */
 .layout.layout--topmenu .layout__topbar-inner {
-  min-width: 0;
-  width: 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .layout.layout--topmenu .layout__topbar-left {
@@ -128,6 +129,13 @@
 .layout.layout--topmenu .layout__topbar-right {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+/* TOP režim: topbar se nesmí roztahovat podle obsahu */
+.layout.layout--topmenu .layout__topbar {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden; /* jen pro topbar, ať nic neutíká za roh */
 }
 
 /* =========================
