@@ -154,6 +154,8 @@
 
   .layout__sidebar,
   .layout__topbar,
+  .layout__nav,
+  .layout__context,
   .layout__actions,
   .layout__content {
     width: 100%;
