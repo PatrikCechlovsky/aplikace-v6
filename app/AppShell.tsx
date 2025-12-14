@@ -68,6 +68,9 @@ import type { IconKey } from '@/app/UI/icons'
 // 🔹 NOVĚ: horní lišta modulů (Excel styl)
 import { TopMenu } from '@/app/UI/TopMenu'
 
+import type { CommonActionId } from '@/app/UI/CommonActions'
+
+
 type SessionUser = {
   id?: string | null
   email?: string | null
@@ -107,7 +110,7 @@ type AppShellProps = {
   initialModuleId?: string | null
 }
 
-type CommonActionsInput = CommonActionId[] | CommonActionConfig[]
+type CommonActionsInput = CommonActionId[]
 
 // 🔹 typ layoutu menu – boď sidebar vlevo, nebo horní lišta
 type MenuLayout = 'sidebar' | 'top'
