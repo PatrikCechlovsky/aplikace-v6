@@ -88,16 +88,26 @@ export function TopMenu({
     if (!activeModuleId) return
     const btn = buttonRefs.current[activeModuleId]
     if (!btn) return
-
+  
     const r = btn.getBoundingClientRect()
-
-    // popover je "fixed" vůči viewportu
+  
+    const margin = 8
+    const minW = 240
+    const maxW = 320
+  
+    // šířku panelu volíme rozumně + nesmí být širší než viewport - okraje
+    const viewportMax = Math.max(0, window.innerWidth - margin * 2)
+    const width = Math.min(maxW, Math.max(minW, Math.min(viewportMax, r.width)))
+  
+    // preferujeme zarovnání na tlačítko, ale "clamp" do viewportu
+    const desiredLeft = r.left
+    const maxLeft = window.innerWidth - margin - width
+    const left = Math.max(margin, Math.min(desiredLeft, maxLeft))
+  
     const top = Math.round(r.bottom + 6)
-    const left = Math.round(r.left)
-    const width = Math.round(Math.max(240, Math.min(320, r.width))) // min/max jen pro stabilitu
-
-    setPos({ top, left, width })
-  }
+  
+    setPos({ top: Math.round(top), left: Math.round(left), width: Math.round(width) })
+   }
 
   // při otevření / změně aktivního modulu dopočítat pozici
   useLayoutEffect(() => {
