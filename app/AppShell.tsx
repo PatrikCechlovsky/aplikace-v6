@@ -650,58 +650,48 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       </header>
 
       <div className="layout__actions">
-        {menuLayout === 'top' && (
+      {/* TOP MENU NAV (odděleně od kontextových akcí) */}
+      {menuLayout === 'top' && (
+        <div className="layout__nav">
           <TopMenu
-              modules={modules.map((m) => {
-                const tiles = (m as any).tiles ?? []
-                const sections = m.sections ?? []
-            
-                return {
-                  id: m.id,
-                  label: m.label,
-                  enabled: m.enabled,
-                  icon: m.icon,
-                  hasChildren: sections.length > 0 || tiles.length > 0,
-            
-                  sections: sections.map((s) => ({
+            modules={modules.map((m) => {
+              const tiles = (m as any).tiles ?? []
+              const sections = m.sections ?? []
+
+              return {
+                id: m.id,
+                label: m.label,
+                enabled: m.enabled,
+                icon: m.icon,
+                hasChildren: sections.length > 0 || tiles.length > 0,
+                sections: sections.map((s) => {
+                  const hasSectionTiles = tiles.some(
+                    (t: any) => t.sectionId === s.id
+                  )
+                  return {
                     id: s.id,
                     label: s.label ?? s.id,
                     icon: s.icon ?? null,
-                  })),
-            
-                  tiles: tiles.map((t: any) => ({
-                    id: t.id,
-                    label: t.label ?? t.title ?? t.id,
-                    icon: t.icon ?? null,
-                    sectionId: t.sectionId ?? null,
-                  })),
-                }
-              })}
-              activeModuleId={activeModuleId ?? undefined}
-              activeSectionId={activeSelection?.sectionId ?? null}
-              activeTileId={activeSelection?.tileId ?? null}
-              onSelectModule={(moduleId) => handleModuleSelect({ moduleId })}
-              onSelectSection={(sectionId) =>
-                handleModuleSelect({
-                  moduleId: activeModuleId ?? activeSelection?.moduleId,
-                  sectionId,
-                })
+                    hasChildren: hasSectionTiles,
+                  }
+                }),
               }
-              onSelectTile={(tileId) =>
-                handleModuleSelect({
-                  moduleId: activeModuleId ?? activeSelection?.moduleId,
-                  tileId,
-                })
-              }
-            />
+            })}
+            activeModuleId={activeModuleId ?? undefined}
+            activeSectionId={activeSelection?.sectionId ?? null}
+            onSelectModule={(id) => handleModuleSelect({ moduleId: id })}
+            onSelectSection={(sectionId) => {
+              const moduleId = activeModuleId ?? activeSelection?.moduleId
+              if (!moduleId) return
+              handleModuleSelect({ moduleId, sectionId })
+            }}
+          />
+        </div>
+      )}
 
-          
-        )}
-
+      {/* CONTEXT BAR (CommonActions) – vždy nad obsahem, nikdy vedle TopMenu */}
+      <div className="layout__context">
         <CommonActions disabled={!isAuthenticated} actions={commonActions} />
       </div>
 
       <main className="layout__content">{renderContent()}</main>
-    </div>
-  )
-}
