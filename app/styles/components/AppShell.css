@@ -89,21 +89,28 @@
 
 .layout.layout--topmenu {
   grid-template-columns: 1fr;
-  grid-template-rows: auto auto 1fr;
 }
 
 /* V TOP režimu vše do 1 sloupce */
 .layout.layout--topmenu .layout__topbar {
-  grid-column: 1;
+  grid-column: 1 / -1 !important;
+  grid-row: 1;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .layout.layout--topmenu .layout__actions {
-  grid-column: 1;
+  grid-column: 1 / -1 !important;
+  grid-row: 2;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Content v TOP režimu také do 1 sloupce */
 .layout.layout--topmenu .layout__content {
-  grid-column: 1;
+  grid-column: 1 / -1 !important;
+  grid-row: 4;
 }
 
 /* ✅ TOP režim: zabráníme “utíkání za roh” v horních pruzích */
