@@ -1,5 +1,9 @@
 /* FILE: app/styles/components/DetailForm.css */
-/* PURPOSE: Jednotný layout a vzhled formulářů v DetailView (theme-based) */
+/* PURPOSE: Jednotný layout a vzhled formulářů v DetailView (theme-based)
+   - responzivní grid 1→2→3→4 sloupce
+   - theme tokeny
+   - span funguje bezpečně (na mobilu se nerozbije)
+*/
 
 /* ===== KONTEJNER CELÉHO FORMULÁŘE ===== */
 
@@ -8,8 +12,9 @@
   flex-direction: column;
   gap: 24px;
 
-  /* využít šířku, ale držet čitelnost */
+  /* čitelnost na širokých monitorech */
   max-width: 1400px;
+  width: 100%;
 }
 
 /* ===== SEKCE FORMULÁŘE (Profil, Účet, …) ===== */
@@ -24,22 +29,54 @@
 .detail-form__section-title {
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin: 0 0 12px;
   color: var(--color-text);
 }
 
 /* ===== GRID POLÍ ===== */
-/* max 4 sloupce, responzivně */
-
+/* výchozí: 1 sloupec */
 .detail-form__grid {
   display: grid;
   gap: 12px 16px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
 }
 
-/* úzká varianta (stav, role, 2FA…) */
+/* 2 sloupce */
+@media (min-width: 640px) {
+  .detail-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 3 sloupce */
+@media (min-width: 980px) {
+  .detail-form__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* 4 sloupce (velká obrazovka) */
+@media (min-width: 1280px) {
+  .detail-form__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Úzká varianta – max 3 sloupce */
 .detail-form__grid--narrow {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .detail-form__grid--narrow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .detail-form__grid--narrow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* ===== POLE ===== */
@@ -48,6 +85,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0; /* aby se dlouhé texty nerozbíjely */
 }
 
 .detail-form__label {
@@ -78,15 +116,30 @@
 }
 
 /* ===== ROZTAŽENÍ POLE (SPAN) ===== */
-
-.detail-form__field--span-2 {
-  grid-column: span 2;
-}
-
-.detail-form__field--span-3 {
-  grid-column: span 3;
-}
-
+/* default: na mobilu vždy 1, aby se nic nepřekrylo */
+.detail-form__field--span-2,
+.detail-form__field--span-3,
 .detail-form__field--span-4 {
-  grid-column: span 4;
+  grid-column: span 1;
+}
+
+/* span dává smysl až od 2 sloupců */
+@media (min-width: 640px) {
+  .detail-form__field--span-2 {
+    grid-column: span 2;
+  }
+}
+
+/* span 3 až od 3 sloupců */
+@media (min-width: 980px) {
+  .detail-form__field--span-3 {
+    grid-column: span 3;
+  }
+}
+
+/* span 4 až od 4 sloupců */
+@media (min-width: 1280px) {
+  .detail-form__field--span-4 {
+    grid-column: span 4;
+  }
 }
