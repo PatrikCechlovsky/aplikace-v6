@@ -112,10 +112,10 @@
   max-width: 100%;
   overflow: hidden;
 
-  min-height: 40px;      /* sjednocení výšky s TopMenu */
-  padding: 4px 10px;     /* horní + dolní mezera kolem ikon */
+  min-height: 40px;
+  padding: 4px 10px;
   display: flex;
-  align-items: center;   /* vertikální zarovnání ikon *
+  align-items: center;
 }
 
 /* TOP: content */
