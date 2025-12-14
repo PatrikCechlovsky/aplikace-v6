@@ -1,3 +1,5 @@
+// app/styles/components/AppShell.css
+
 /* =========================================
    APP SHELL / LAYOUT
    - 2 režimy: sidebar (default) / topmenu (.layout--topmenu)
@@ -9,23 +11,20 @@
 .layout {
   display: grid;
   grid-template-columns: 260px 1fr;
+  grid-template-rows: auto auto 1fr;
 
-  /* 4 řádky, ale v sidebar režimu content posuneme na row 3 (viz níž) */
-  grid-template-rows: auto auto auto 1fr;
-
-  height: 100vh;
-  overflow: hidden;
+  height: 100vh;        /* fixní výška pro správný scroll v contentu */
+  overflow: hidden;     /* žádný globální scroll stránky */
 }
 
-/* Top menu mode: zrušíme sidebar sloupec */
+/* Top menu mode: zrušíme sidebar sloupec, řádky NEMĚNÍME */
 .layout.layout--topmenu {
   grid-template-columns: 1fr;
 }
 
 /* V topmenu módu je vše v prvním sloupci */
 .layout.layout--topmenu .layout__topbar,
-.layout.layout--topmenu .layout__nav,
-.layout.layout--topmenu .layout__context,
+.layout.layout--topmenu .layout__actions,
 .layout.layout--topmenu .layout__content {
   grid-column: 1;
 }
@@ -35,7 +34,7 @@
 .layout__topbar {
   grid-column: 2;
   grid-row: 1;
-  min-height: 40px;
+  min-height: 40px; 
   display: flex;
   align-items: center;
   padding: 4px 10px;
@@ -43,12 +42,7 @@
   background: var(--color-topbar-bg);
   border-bottom: 1px solid var(--color-border);
 
-  overflow: visible;
-}
-
-/* v topmenu režimu topbar je v jediném sloupci */
-.layout.layout--topmenu .layout__topbar {
-  grid-column: 1;
+  overflow: visible; /* HomeActions se nesmí "schovat za roh" */
 }
 
 .layout__topbar-inner {
@@ -64,7 +58,7 @@
   gap: 12px;
 
   flex: 1;
-  min-width: 0;
+  min-width: 0; /* dovolí breadcrumbs zkrátit se */
 }
 
 .layout__topbar-right {
@@ -72,105 +66,55 @@
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
-  white-space: nowrap;
-  margin-left: auto;
+  white-space: nowrap; /* HomeActions se nikdy nezlomí a nezmizí */
+  margin-left: auto; /* vytlačí HomeActions doprava */
 }
 
+/* Breadcrumbs se zkrátí, ne že vytlačí pravý blok */
 .breadcrumbs {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: 12px;       /* bylo 13px */
   line-height: 1.2;
 }
 
-/* ---------- NAV BAR (jen TOP režim) ---------- */
-
-.layout__nav {
-  grid-column: 2;
-  grid-row: 2;
-
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 4px 10px;
-  min-width: 0;
-
-  background: var(--color-topbar-bg);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.layout__nav .topmenu {
-  flex: 1;
-  min-width: 0;
-}
-
-/* ---------- ACTIONS BAR (původní) ----------
-   pokud ho někde ještě používáš pro sidebar režim,
-   necháváme ho funkční. V TOP režimu ho ale nechceme. */
+/* ---------- ACTIONS BAR (TopMenu + CommonActions) ---------- */
 
 .layout__actions {
-  grid-column: 2;
-  grid-row: 2;
-
   display: flex;
   align-items: center;
   gap: 10px;
   min-height: 40px;
-  padding: 4px 10px;
-  min-width: 0;
+  padding: 4px 10px;  /* bylo 8px 16px */
+  min-width: 0;            /* KRITICKÉ: dovolí vnitřním flex itemům se zmenšit */
 }
 
-/* v TOP režimu layout__actions nepoužívej (ať nevznikají duplicity) */
-.layout.layout--topmenu .layout__actions {
-  display: none;
+/* TopMenu se smí zmenšit a bude scrollovat */
+.layout__actions .topmenu {
+  flex: 1;
+  min-width: 0;            /* KRITICKÉ */
 }
 
-/* ---------- CONTEXT BAR (CommonActions) ---------- */
-
-.layout__context {
-  grid-column: 2;
-  grid-row: 2;
-
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 36px;
-  padding: 4px 10px;
-  min-width: 0;
-
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.layout__context .common-actions {
+/* Pravé akce se NESMÍ schovat */
+.layout__actions .common-actions {
   flex: 0 0 auto;
   white-space: nowrap;
-  margin-left: auto;
+  margin-left: auto; 
 }
 
 /* ---------- CONTENT (jediné místo se scroll) ---------- */
 
-/* sidebar režim: content hned pod topbar+actions (row 3) */
-.layout:not(.layout--topmenu) .layout__content {
-  grid-column: 1;
-  grid-row: 3;
-}
-
-/* topmenu režim: content až pod nav+context (row 4) */
-.layout.layout--topmenu .layout__content {
-  grid-column: 1;
-  grid-row: 4;
-}
-
 .layout__content {
+  grid-column: 2;
+  grid-row: 3;
+
   padding: 16px;
   background: var(--color-app-bg);
 
-  min-height: 0;
-  min-width: 0;
-  overflow: auto;
+  min-height: 0;     /* kritické pro grid – jinak nefunguje overflow */
+  min-width: 0;   /* ✅ kvůli horizontálnímu scrollu *
+  overflow: auto;    /* scroll jen tady */
 }
 
 /* ---------- ICONS / TEXT MODES ---------- */
@@ -203,9 +147,7 @@
 
   .layout__sidebar,
   .layout__topbar,
-  .layout__nav,
   .layout__actions,
-  .layout__context,
   .layout__content {
     width: 100%;
   }
