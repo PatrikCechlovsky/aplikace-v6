@@ -26,6 +26,11 @@
   white-space: nowrap
   border-radius: 10px 10px 0 0
 
+  /* aktivní tab – pořád pěkně čitelný */
+  .detail-tabs__tab.is-active {
+    font-weight: 600;
+  }
+  
   /* Excel-ish “šikmo” */
   transform: skewX(-12deg);
 
