@@ -40,7 +40,7 @@ type TopMenuProps = {
 
 type PopoverPos = { top: number; left: number; width: number }
 type PopoverView =
-  | { kind: 'root' } // sekce nebo (fallback) tiles
+  | { kind: 'root' }
   | { kind: 'sectionTiles'; sectionId: string }
 
 export function TopMenu({
@@ -60,6 +60,9 @@ export function TopMenu({
 
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const popoverRef = useRef<HTMLDivElement | null>(null)
+
+  // ✅ aby se popover po kliknutí v TopMenu hned nezavřel kvůli změně activeModuleId
+  const lastChangeFromTopMenuRef = useRef(false)
 
   const visibleModules = useMemo(
     () => (modules ?? []).filter((m) => m.enabled !== false),
@@ -84,8 +87,13 @@ export function TopMenu({
 
   useEffect(() => setPortalReady(true), [])
 
-  // když se aktivní modul změní (sidebar apod.), zavři + reset view
+  // ✅ když se aktivní modul změní "zvenku" (sidebar), zavři
+  // ✅ když změna přišla z TopMenu, NEZAVÍRÁME (protože právě otevíráme)
   useEffect(() => {
+    if (lastChangeFromTopMenuRef.current) {
+      lastChangeFromTopMenuRef.current = false
+      return
+    }
     setOpenModuleId(null)
     setView({ kind: 'root' })
   }, [activeModuleId])
@@ -96,6 +104,7 @@ export function TopMenu({
     if (!btn) return
 
     const r = btn.getBoundingClientRect()
+
     const margin = 8
     const minW = 240
     const maxW = 320
@@ -106,8 +115,8 @@ export function TopMenu({
     const desiredLeft = r.left
     const maxLeft = window.innerWidth - margin - width
     const left = Math.max(margin, Math.min(desiredLeft, maxLeft))
-    const top = r.bottom + 6
 
+    const top = r.bottom + 6
     setPos({ top: Math.round(top), left: Math.round(left), width: Math.round(width) })
   }
 
@@ -158,6 +167,8 @@ export function TopMenu({
   }, [isPopoverOpen, activeModuleId])
 
   function handleModuleClick(moduleId: string, hasChildren: boolean) {
+    // ✅ oznámit, že změna activeModuleId jde z TopMenu (jinak useEffect zavře popover)
+    lastChangeFromTopMenuRef.current = true
     onSelectModule(moduleId)
 
     if (!hasChildren) {
@@ -166,12 +177,12 @@ export function TopMenu({
       return
     }
 
-    setOpenModuleId((prev) => (prev === moduleId ? null : moduleId))
+    // ✅ otevřít hned na první klik
+    setOpenModuleId(moduleId)
     setView({ kind: 'root' })
   }
 
   function handleSectionClick(sectionId: string) {
-    // sekce se jen rozbalí (tiles uvnitř popoveru), ale zároveň nastavíme activeSection pro breadcrumb
     onSelectSection(sectionId)
     setView({ kind: 'sectionTiles', sectionId })
   }
@@ -197,11 +208,15 @@ export function TopMenu({
       <nav className="topmenu" aria-label="Hlavní moduly">
         <ul className="topmenu__list">
           {visibleModules.map((m) => {
-            const mHasChildren = (m.sections?.length ?? 0) > 0 || (m.tiles?.length ?? 0) > 0
+            const mHasChildren =
+              (m.sections?.length ?? 0) > 0 || (m.tiles?.length ?? 0) > 0
             const isActive = m.id === activeModuleId
 
             return (
-              <li key={m.id} className={`topmenu__item ${isActive ? 'topmenu__item--active' : ''}`}>
+              <li
+                key={m.id}
+                className={`topmenu__item ${isActive ? 'topmenu__item--active' : ''}`}
+              >
                 <button
                   ref={(el) => {
                     buttonRefs.current[m.id] = el
@@ -213,13 +228,18 @@ export function TopMenu({
                   onClick={() => handleModuleClick(m.id, mHasChildren)}
                 >
                   <span
-                    className={'topmenu__chevron' + (mHasChildren ? '' : ' topmenu__chevron--placeholder')}
+                    className={
+                      'topmenu__chevron' +
+                      (mHasChildren ? '' : ' topmenu__chevron--placeholder')
+                    }
                     aria-hidden="true"
                   >
                     ▸
                   </span>
 
-                  {showIcons && m.icon && <span className="topmenu__icon">{getIcon(m.icon as any)}</span>}
+                  {showIcons && m.icon && (
+                    <span className="topmenu__icon">{getIcon(m.icon as any)}</span>
+                  )}
                   <span className="topmenu__label">{m.label}</span>
                 </button>
               </li>
@@ -253,7 +273,9 @@ export function TopMenu({
                   <span className="topmenu__label">Zpět</span>
                 </button>
 
-                <div style={{ padding: '4px 10px 8px', fontWeight: 600 }}>{sectionTitle}</div>
+                <div style={{ padding: '4px 10px 8px', fontWeight: 600 }}>
+                  {sectionTitle}
+                </div>
 
                 <ul className="topmenu__popover-list">
                   {tilesForSection.map((t) => {
@@ -263,11 +285,21 @@ export function TopMenu({
                         <button
                           type="button"
                           role="menuitem"
-                          className={'topmenu__popover-button' + (isActive ? ' topmenu__popover-button--active' : '')}
+                          className={
+                            'topmenu__popover-button' +
+                            (isActive ? ' topmenu__popover-button--active' : '')
+                          }
                           onClick={() => handleTileClick(t.id)}
                         >
-                          <span className="topmenu__chevron topmenu__chevron--placeholder" aria-hidden="true">▸</span>
-                          {showIcons && t.icon && <span className="topmenu__icon">{getIcon(t.icon as any)}</span>}
+                          <span
+                            className="topmenu__chevron topmenu__chevron--placeholder"
+                            aria-hidden="true"
+                          >
+                            ▸
+                          </span>
+                          {showIcons && t.icon && (
+                            <span className="topmenu__icon">{getIcon(t.icon as any)}</span>
+                          )}
                           <span className="topmenu__label">{t.label}</span>
                         </button>
                       </li>
@@ -280,42 +312,62 @@ export function TopMenu({
                 {hasSections
                   ? sections.map((s) => {
                       const isActive = s.id === activeSectionId
-                      const hasSectionTiles = tiles.some((t) => (t.sectionId ?? null) === s.id)
+                      const hasSectionTiles = tiles.some(
+                        (t) => (t.sectionId ?? null) === s.id
+                      )
 
                       return (
                         <li key={s.id} className="topmenu__popover-item">
                           <button
                             type="button"
                             role="menuitem"
-                            className={'topmenu__popover-button' + (isActive ? ' topmenu__popover-button--active' : '')}
+                            className={
+                              'topmenu__popover-button' +
+                              (isActive ? ' topmenu__popover-button--active' : '')
+                            }
                             onClick={() => handleSectionClick(s.id)}
                           >
                             <span
-                              className={'topmenu__chevron' + (hasSectionTiles ? '' : ' topmenu__chevron--placeholder')}
+                              className={
+                                'topmenu__chevron' +
+                                (hasSectionTiles ? '' : ' topmenu__chevron--placeholder')
+                              }
                               aria-hidden="true"
                             >
                               ▸
                             </span>
 
-                            {showIcons && s.icon && <span className="topmenu__icon">{getIcon(s.icon as any)}</span>}
+                            {showIcons && s.icon && (
+                              <span className="topmenu__icon">{getIcon(s.icon as any)}</span>
+                            )}
                             <span className="topmenu__label">{s.label}</span>
                           </button>
                         </li>
                       )
                     })
                   : tiles.map((t) => {
-                      // fallback pro 010 (modul bez sekcí)
                       const isActive = t.id === activeTileId
                       return (
                         <li key={t.id} className="topmenu__popover-item">
                           <button
                             type="button"
                             role="menuitem"
-                            className={'topmenu__popover-button' + (isActive ? ' topmenu__popover-button--active' : '')}
+                            className={
+                              'topmenu__popover-button' +
+                              (isActive ? ' topmenu__popover-button--active' : '')
+                            }
                             onClick={() => handleTileClick(t.id)}
                           >
-                            <span className="topmenu__chevron topmenu__chevron--placeholder" aria-hidden="true">▸</span>
-                            {showIcons && t.icon && <span className="topmenu__icon">{getIcon(t.icon as any)}</span>}
+                            <span
+                              className="topmenu__chevron topmenu__chevron--placeholder"
+                              aria-hidden="true"
+                            >
+                              ▸
+                            </span>
+
+                            {showIcons && t.icon && (
+                              <span className="topmenu__icon">{getIcon(t.icon as any)}</span>
+                            )}
                             <span className="topmenu__label">{t.label}</span>
                           </button>
                         </li>
