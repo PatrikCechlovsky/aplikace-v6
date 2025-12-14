@@ -1,82 +1,59 @@
 /* FILE: app/styles/components/DetailTabs.css */
-/* PURPOSE: Modernější Excel-like ouška, sjednocené s theme a jasně aktivní tab */
+/* PURPOSE: Kompaktní Tabs (ouška) – 1 řádek, bez scrollu, menší výška */
 
 .detail-tabs {
-  margin: 2px 0 12px;
+  margin: 6px 0 12px;
 }
 
+/* řádek s oušky */
 .detail-tabs__rail {
   display: flex;
-  gap: 8px;
+  flex-wrap: nowrap;    /* vždy 1 řádek */
+  gap: 6px;             /* menší mezery */
   align-items: flex-end;
-  overflow-x: auto;
-  padding: 4px 2px 0;
-  scrollbar-width: thin;
+  overflow: hidden;     /* žádný scroll */
 }
 
+/* jednotlivé ouško */
 .detail-tabs__tab {
   appearance: none;
   border: 1px solid var(--color-border);
   background: var(--color-surface-subtle);
   color: var(--color-text);
-  padding: 4px 10px;
-  font-size: 11,5px;
+
+  padding: 4px 10px;        /* ⬅️ menší výška */
+  font-size: 11.5px;        /* ⬅️ menší text */
   line-height: 1;
   cursor: pointer;
-  white-space: nowrap
-  border-radius: 10px 10px 0 0
+  white-space: nowrap;     /* ⬅️ CHYBĚL STŘEDNÍK */
+  border-radius: 10px 10px 0 0;
 
-  /* aktivní tab – pořád pěkně čitelný */
-  .detail-tabs__tab.is-active {
-    font-weight: 600;
-  }
-  
-  /* Excel-ish “šikmo” */
-  transform: skewX(-12deg);
-
-  /* zakulacení a jemnější dojem */
-  border-radius: 12px 12px 0 0;
-
-  /* jemné oddělení od okolí (bez tvrdých čar) */
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  position: relative;
 }
 
-.detail-tabs__tab > * {
-  /* obsah vrátíme zpět, aby text nebyl šikmý */
-  transform: skewX(12deg);
-}
-
+/* hover */
 .detail-tabs__tab:hover {
   background: var(--color-surface);
 }
 
-.detail-tabs__tab:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-/* Aktivní tab: viditelně vybraný “list”, napojený na obsah */
+/* aktivní ouško */
 .detail-tabs__tab.is-active {
   background: var(--color-surface);
-  font-weight: 700;
-
-  /* “napojení” na panel – spodní hrana zmizí */
+  font-weight: 600;
   border-bottom-color: var(--color-surface);
-  position: relative;
-  top: 1px;
-
-  /* jemné zvýraznění vybraného listu */
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.02);
+  margin-bottom: -1px;
+  z-index: 2;
 }
 
-.detail-tabs__icon {
-  display: inline-flex;
-  align-items: center;
-}
-
+/* label */
 .detail-tabs__label {
   display: inline-flex;
   align-items: center;
+}
+
+/* icon (pokud někdy použiješ) */
+.detail-tabs__icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
 }
