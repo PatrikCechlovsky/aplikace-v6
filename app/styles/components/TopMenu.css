@@ -26,7 +26,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-
+  width: 100%;
   scrollbar-gutter: stable;
   min-width: 0;
 
@@ -129,27 +129,4 @@
 .topmenu__popover-button:focus-visible {
   outline: 2px solid var(--color-border);
   outline-offset: 2px;
-}
-/* ===== TOPMENU: horizontal scroll when overflow ===== */
-
-.topmenu {
-  min-width: 0;                 /* důležité ve flex/gridech */
-  overflow-x: auto;             /* zobrazí scroll když se nevejde */
-  overflow-y: hidden;
-  white-space: nowrap;          /* ať se to neláme do řádků */
-  -webkit-overflow-scrolling: touch;
-}
-
-/* pokud máš uvnitř wrapper/list, dej mu nowrap layout */
-.topmenu__list,
-.topmenu__items,
-.topmenu__row {
-  display: inline-flex;         /* inline-flex = bere jen tolik, kolik potřebuje */
-  flex-wrap: nowrap;
-  gap: 6px;
-}
-
-/* aby položky nemizely smrsknutím */
-.topmenu__item {
-  flex: 0 0 auto;
 }
