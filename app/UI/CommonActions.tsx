@@ -121,7 +121,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zobrazit detail záznamu.', en: 'Open record detail.' },
     requiresSelection: true,
     // v režimu read už jsi “v detailu”, tlačítko nemá smysl
-    hideWhen: ['read'],
+    hideWhen: ['edit', 'create'],
   },
 
   // kompatibilita (alias) – chová se stejně jako detail
