@@ -100,22 +100,31 @@ export default function UserDetailFrame({
     if (!onRegisterSubmit) return
 
     const submit = async () => {
-      const v = currentRef.current
-
-      const saved = await saveUserToSupabase({
-        id: user.id,
-        displayName: v.displayName,
-        email: v.email,
-        phone: v.phone,
-      })
-
-      // vracíme objekt pro UsersTile (aby uměl refresh detailUser)
-      return {
-        ...user,
-        id: saved.id,
-        displayName: v.displayName,
-        email: v.email,
-        phone: v.phone,
+      try {
+        const v = currentRef.current
+    
+        console.log('[SAVE] sending to supabase', v)
+    
+        const saved = await saveUserToSupabase({
+          id: user.id,
+          displayName: v.displayName,
+          email: v.email,
+          phone: v.phone,
+        })
+    
+        console.log('[SAVE] supabase OK', saved)
+    
+        return {
+          ...user,
+          id: saved.id,
+          displayName: v.displayName,
+          email: v.email,
+          phone: v.phone,
+        }
+      } catch (err) {
+        console.error('[SAVE] supabase ERROR', err)
+        alert('Chyba při ukládání – viz konzole')
+        return null
       }
     }
 
