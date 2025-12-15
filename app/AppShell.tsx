@@ -534,13 +534,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )}
 
       <div className="layout__context">
-        <CommonActions
-          disabled={!isAuthenticated}
-          actions={commonActions}
-          hasSelection={commonActionsState.hasSelection}
-          isDirty={commonActionsState.isDirty}
-          onActionClick={handleCommonActionClick}
-        />
+        const [commonActionsUi, setCommonActionsUi] = useState({
+          viewMode: 'list',
+          hasSelection: false,
+          isDirty: false,
+        })
       </div>
 
       <main className="layout__content">{renderContent()}</main>
