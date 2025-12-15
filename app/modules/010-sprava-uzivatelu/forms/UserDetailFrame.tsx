@@ -60,18 +60,30 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
 
   // hodnoty z formuláře (posíláme do saveUser)
   const currentRef = useRef<UserFormValue>({
-    displayName: user.displayName,
-    email: user.email,
+    displayName: user.displayName ?? '',
+    email: user.email ?? '',
     phone: user.phone ?? '',
+  
+    titleBefore: (user as any).titleBefore ?? '',
+    firstName: (user as any).firstName ?? '',
+    lastName: (user as any).lastName ?? '',
+    login: (user as any).login ?? '',
+    isArchived: !!user.isArchived,
   })
 
   useEffect(() => {
     // při přepnutí záznamu reset lokální stav
     setResolvedUser(user)
     currentRef.current = {
-      displayName: user.displayName,
-      email: user.email,
+      displayName: user.displayName ?? '',
+      email: user.email ?? '',
       phone: user.phone ?? '',
+    
+      titleBefore: (user as any).titleBefore ?? '',
+      firstName: (user as any).firstName ?? '',
+      lastName: (user as any).lastName ?? '',
+      login: (user as any).login ?? '',
+      isArchived: !!user.isArchived,
     }
     setRoleCode(null)
     setPermissionCodes([])
@@ -113,9 +125,15 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
 
         // srovnej i currentRef, ať save bere DB hodnoty
         currentRef.current = {
-          displayName: merged.displayName,
-          email: merged.email,
+          displayName: merged.displayName ?? '',
+          email: merged.email ?? '',
           phone: merged.phone ?? '',
+        
+          titleBefore: (d.subject.title_before ?? ''),
+          firstName: (d.subject.first_name ?? ''),
+          lastName: (d.subject.last_name ?? ''),
+          login: (d.subject.login ?? ''),
+          isArchived: !!d.subject.is_archived,
         }
       } catch (e: any) {
         if (cancelled) return
