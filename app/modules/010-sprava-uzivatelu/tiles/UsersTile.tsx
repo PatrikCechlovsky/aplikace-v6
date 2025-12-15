@@ -96,7 +96,7 @@ type UsersTileProps = {
 }
 
 // 🔁 Jednoduchý viewMode: list ↔ detail
-type UsersViewMode = 'list' | 'detail'
+type UsersViewMode = 'list' | 'read' | 'edit' | 'create'
 
 export default function UsersTile({
   onRegisterCommonActions,
@@ -131,7 +131,7 @@ export default function UsersTile({
   const openDetail = (user: MockUser | null) => {
     if (!user) return
     setDetailUser(user)
-    setViewMode('detail')
+    setViewMode('read')
   }
 
   const closeDetail = () => {
