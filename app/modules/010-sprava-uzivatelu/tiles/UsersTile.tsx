@@ -166,8 +166,8 @@ export default function UsersTile({
     if (!onRegisterCommonActionHandler) return
 
     const handler = (id: CommonActionId) => {
-      // DETAIL MODE
-      if (viewMode === 'detail') {
+      // READ MODE
+      if (viewMode === 'read') {
         if (id === 'cancel') {
           closeDetail()
           return
