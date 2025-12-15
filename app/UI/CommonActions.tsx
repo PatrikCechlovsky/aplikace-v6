@@ -111,7 +111,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     icon: 'add',
     label: { cs: 'Přidat', en: 'Add' },
     description: { cs: 'Vytvořit nový záznam.', en: 'Create a new record.' },
-    hideWhen: ['edit'], // v editaci typicky nepřidáváš nový záznam
+    hideWhen: ['read'], // v editaci typicky nepřidáváš nový záznam
   },
 
   detail: {
@@ -121,7 +121,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zobrazit detail záznamu.', en: 'Open record detail.' },
     requiresSelection: true,
     // v režimu read už jsi “v detailu”, tlačítko nemá smysl
-    hideWhen: ['edit', 'create'],
+    hideWhen: ['read'],
   },
 
   // kompatibilita (alias) – chová se stejně jako detail
