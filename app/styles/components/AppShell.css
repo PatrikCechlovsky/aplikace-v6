@@ -59,6 +59,18 @@
   overflow: auto; /* ✅ jediný scroll v appce */
 }
 
+/* SIDEBAR: vynutit, že obsah actions řádku nebude nalepený */
+.layout:not(.layout--topmenu) .layout__actions > * {
+  margin: 0;
+}
+
+/* SIDEBAR: CommonActions v actions řádku – vertikální vycentrování a trocha vzduchu */
+.layout:not(.layout--topmenu) .layout__actions .common-actions {
+  display: flex;
+  align-items: center;
+  padding: 2px 0; /* jen vertikálně, ať to nehne šířkou */
+}
+
 /* Topbar vnitřek – aby se nic “nevytlačilo za roh” */
 .layout__topbar-inner {
   display: flex;
