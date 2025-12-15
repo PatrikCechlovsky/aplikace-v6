@@ -1,11 +1,15 @@
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+// FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
+// PURPOSE: List + detail uživatelů (010) napojený na Supabase přes service vrstvu.
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
+import { listUsers, type SubjectUserRow } from '@/app/lib/services/users'
 
-type MockUser = {
+type UiUser = {
   id: string
   displayName: string
   email: string
@@ -16,38 +20,6 @@ type MockUser = {
   isArchived?: boolean
 }
 
-const ROLE_COLORS: Record<string, string> = {
-  Administrátor: '#f4d35e',
-  Manager: '#e05570',
-  Nájemník: '#1e6fff',
-  Pronajímatel: '#1fb086',
-  Údržbář: '#d63ea5',
-  Uživatel: '#6b7280',
-}
-
-const MOCK_USERS: MockUser[] = [
-  {
-    id: 'u-001',
-    displayName: 'Páťa',
-    email: 'patrik.cechlovsky@centrum.cz',
-    phone: '+420 777 111 222',
-    roleLabel: 'Administrátor',
-    twoFactorMethod: 'app',
-    createdAt: '2024-01-15',
-    isArchived: false,
-  },
-  {
-    id: 'u-002',
-    displayName: 'patizonan',
-    email: 'patizonan@gmail.com',
-    phone: '+420 602 333 444',
-    roleLabel: 'Uživatel',
-    twoFactorMethod: null,
-    createdAt: '2024-02-03',
-    isArchived: false,
-  },
-]
-
 const COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%' },
   { key: 'displayName', label: 'Jméno' },
@@ -55,17 +27,25 @@ const COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
-function toRow(user: MockUser): ListViewRow<MockUser> {
-  const color = ROLE_COLORS[user.roleLabel] ?? '#6b7280'
+function mapRowToUi(row: SubjectUserRow): UiUser {
+  return {
+    id: row.id,
+    displayName: row.display_name ?? '',
+    email: row.email ?? '',
+    phone: row.phone ?? '',
+    roleLabel: 'Uživatel', // TODO: napojíme později přes subject_roles
+    twoFactorMethod: null, // TODO: napojíme později (auth metadata / view)
+    createdAt: row.created_at ?? '',
+    isArchived: !!row.is_archived,
+  }
+}
+
+function toRow(user: UiUser): ListViewRow<UiUser> {
   return {
     id: user.id,
     raw: user,
     data: {
-      roleLabel: (
-        <span className="generic-type__name-badge" style={{ backgroundColor: color }}>
-          {user.roleLabel}
-        </span>
-      ),
+      roleLabel: user.roleLabel,
       displayName: user.displayName,
       email: user.email,
       isArchived: user.isArchived ? '✓' : '',
@@ -88,42 +68,58 @@ export default function UsersTile({
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
 
+  const [loading, setLoading] = useState(false)
+  const [users, setUsers] = useState<UiUser[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
+
   const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [detailUser, setDetailUser] = useState<MockUser | null>(null)
+  const [detailUser, setDetailUser] = useState<UiUser | null>(null)
   const [isDirty, setIsDirty] = useState(false)
 
   // submit funkce z Detailu (zaregistruje ji UserDetailFrame)
-  const submitRef = useRef<null | (() => Promise<MockUser | null>)>(null)
+  const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
 
-  const rows: ListViewRow<MockUser>[] = useMemo(() => {
-    const normalizedFilter = filterText.trim().toLowerCase()
-    return MOCK_USERS.filter((u) => {
-      if (!showArchived && u.isArchived) return false
-      if (!normalizedFilter) return true
-      const haystack = [u.displayName, u.email, u.phone ?? '', u.roleLabel].join(' ').toLowerCase()
-      return haystack.includes(normalizedFilter)
-    }).map(toRow)
+  const load = useCallback(async () => {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const rows = await listUsers({
+        searchText: filterText,
+        includeArchived: showArchived,
+      })
+      setUsers(rows.map(mapRowToUi))
+    } catch (e: any) {
+      setLoadError(e?.message ?? 'Chyba při načítání uživatelů.')
+      setUsers([])
+    } finally {
+      setLoading(false)
+    }
   }, [filterText, showArchived])
 
-  const openDetail = (user: MockUser | null, mode: ViewMode) => {
+  useEffect(() => {
+    // jednoduché “live” načítání; později můžeme debounce
+    void load()
+  }, [load])
+
+  const rows: ListViewRow<UiUser>[] = useMemo(() => users.map(toRow), [users])
+
+  const openDetail = useCallback((user: UiUser | null, mode: ViewMode) => {
     if (!user) return
     setDetailUser(user)
     setViewMode(mode)
-    // isDirty bude řídit form přes onDirtyChange
     setIsDirty(false)
-  }
+  }, [])
 
-  const closeDetail = () => {
+  const closeDetail = useCallback(() => {
     setViewMode('list')
     setDetailUser(null)
     setIsDirty(false)
     submitRef.current = null
-  }
+  }, [])
 
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
     if (viewMode === 'read') return ['cancel', 'edit', 'reject']
-    // edit/create
     return ['save', 'saveAndClose', 'cancel']
   }, [viewMode])
 
@@ -146,7 +142,7 @@ export default function UsersTile({
       // LIST
       if (viewMode === 'list') {
         if (id === 'add') {
-          const empty: MockUser = {
+          const empty: UiUser = {
             id: 'new',
             displayName: '',
             email: '',
@@ -163,7 +159,7 @@ export default function UsersTile({
 
         if (id === 'view' || id === 'detail' || id === 'edit') {
           if (!selectedId) return
-          const user = MOCK_USERS.find((u) => u.id === selectedId) ?? null
+          const user = users.find((u) => u.id === selectedId) ?? null
           if (!user) return
           openDetail(user, id === 'edit' ? 'edit' : 'read')
           return
@@ -188,7 +184,6 @@ export default function UsersTile({
       // EDIT / CREATE
       if (viewMode === 'edit' || viewMode === 'create') {
         if (id === 'cancel') {
-          // create -> zavřít, edit -> zpět do read
           if (viewMode === 'create') closeDetail()
           else {
             setViewMode('read')
@@ -205,6 +200,9 @@ export default function UsersTile({
           setDetailUser(saved)
           setIsDirty(false)
 
+          // refresh list po uložení
+          await load()
+
           if (id === 'saveAndClose') setViewMode('read')
           return
         }
@@ -212,21 +210,21 @@ export default function UsersTile({
     }
 
     onRegisterCommonActionHandler(handler)
-  }, [onRegisterCommonActionHandler, viewMode, selectedId])
+  }, [onRegisterCommonActionHandler, viewMode, selectedId, users, openDetail, closeDetail, load])
 
   if (viewMode === 'list') {
     return (
       <div className="users-list">
-        <ListView<MockUser>
+        <ListView<UiUser>
           columns={COLUMNS}
           rows={rows}
-          filterPlaceholder="Hledat podle názvu, kódu nebo popisu..."
+          filterPlaceholder="Hledat podle jména, e-mailu nebo telefonu…"
           filterValue={filterText}
           onFilterChange={setFilterText}
           showArchived={showArchived}
           onShowArchivedChange={setShowArchived}
           showArchivedLabel="Zobrazit archivované"
-          emptyText="Zatím žádní uživatelé."
+          emptyText={loading ? 'Načítám…' : loadError ? loadError : 'Zatím žádní uživatelé.'}
           selectedId={selectedId}
           onRowClick={(row) => setSelectedId(row.id)}
           onRowDoubleClick={(row) => {
