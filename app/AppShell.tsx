@@ -24,11 +24,11 @@ import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
 import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import LoginPanel from '@/app/UI/LoginPanel'
+
 import {
   applyThemeToLayout,
   loadThemeFromLocalStorage,
 } from '@/app/lib/themeSettings'
-
 import {
   applyIconDisplayToLayout,
   loadIconDisplayFromLocalStorage,
@@ -39,12 +39,17 @@ import {
   onAuthStateChange,
   logout,
 } from '@/app/lib/services/auth'
+
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
 import { TopMenu } from '@/app/UI/TopMenu'
 import CommonActions from '@/app/UI/CommonActions'
-import type { CommonActionId } from '@/app/UI/CommonActions'
+import type {
+  CommonActionId,
+  CommonActionsUiState,
+  ViewMode,
+} from '@/app/UI/CommonActions'
 
 type SessionUser = {
   id?: string | null
@@ -84,34 +89,63 @@ type AppShellProps = {
   initialModuleId?: string | null
 }
 
-type CommonActionsInput = CommonActionId[]
-
-type CommonActionsState = {
-  hasSelection: boolean
-  isDirty: boolean
-}
-
 type MenuLayout = 'sidebar' | 'top'
 
 export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const router = useRouter()
 
+  // Auth
   const [authLoading, setAuthLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<SessionUser | null>(null)
   const displayName = user?.displayName || user?.email || 'Uživatel'
 
+  // Modules
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
-
   const [activeSelection, setActiveSelection] =
     useState<SidebarSelection | null>(null)
 
-  const [hasUnsavedChanges] = useState(false)
-
+  // Menu layout
   const [menuLayout, setMenuLayout] = useState<MenuLayout>('sidebar')
 
+  // CommonActions v6 – registry inputs
+  const [commonActions, setCommonActions] = useState<CommonActionId[] | undefined>(undefined)
+  const [commonActionsUi, setCommonActionsUi] = useState<CommonActionsUiState>({
+    viewMode: 'list',
+    hasSelection: false,
+    isDirty: false,
+  })
+  const [commonActionHandler, setCommonActionHandler] = useState<
+    ((id: CommonActionId) => void) | undefined
+  >(undefined)
+
+  function resetCommonActions() {
+    setCommonActions(undefined)
+    setCommonActionHandler(undefined)
+    setCommonActionsUi({ viewMode: 'list', hasSelection: false, isDirty: false })
+  }
+
+  // Dirty guard – jen edit/create + isDirty
+  function confirmIfDirty(message?: string) {
+    const vm = commonActionsUi.viewMode
+    const shouldGuard = vm === 'edit' || vm === 'create'
+    if (!shouldGuard) return true
+    if (!commonActionsUi.isDirty) return true
+    return window.confirm(message ?? 'Máš neuložené změny. Opravdu chceš pokračovat?')
+  }
+
+  // Apply theme + icon mode
+  useEffect(() => {
+    const themeSettings = loadThemeFromLocalStorage()
+    applyThemeToLayout(themeSettings)
+
+    const iconSettings = loadIconDisplayFromLocalStorage()
+    applyIconDisplayToLayout(iconSettings)
+  }, [])
+
+  // Load menuLayout from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
@@ -121,7 +155,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       if (parsed.menuLayout === 'top' || parsed.menuLayout === 'sidebar') {
         setMenuLayout(parsed.menuLayout as MenuLayout)
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [])
 
   useEffect(() => {
@@ -131,49 +167,23 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     el.classList.toggle('layout--topmenu', menuLayout === 'top')
   }, [menuLayout])
 
-  const [commonActions, setCommonActions] = useState<
-    CommonActionsInput | undefined
-  >(undefined)
-
-  const [commonActionsState, setCommonActionsState] =
-    useState<CommonActionsState>({
-      hasSelection: false,
-      isDirty: false,
-    })
-
-  const [commonActionHandler, setCommonActionHandler] = useState<
-    ((id: CommonActionId) => void) | undefined
-  >(undefined)
-
-  function resetCommonActions() {
-    setCommonActions(undefined)
-    setCommonActionHandler(undefined)
-    setCommonActionsState({ hasSelection: false, isDirty: false })
-  }
-
-  useEffect(() => {
-    const themeSettings = loadThemeFromLocalStorage()
-    applyThemeToLayout(themeSettings)
-
-    const iconSettings = loadIconDisplayFromLocalStorage()
-    applyIconDisplayToLayout(iconSettings)
-  }, [])
-
+  // Auth init
   useEffect(() => {
     let unsubscribe: (() => void) | undefined
 
     async function initAuth() {
       try {
-        const { data } = await getCurrentSession()
-        const session = data?.session ?? null
+        const { data, error } = await getCurrentSession()
+        if (error) console.error('getCurrentSession error:', error)
 
+        const session = data?.session ?? null
         if (session?.user) {
           const meta = session.user.user_metadata || {}
           setIsAuthenticated(true)
           setUser({
+            id: session.user.id,
             email: session.user.email,
-            displayName:
-              meta.display_name ?? meta.full_name ?? meta.name ?? null,
+            displayName: meta.display_name ?? meta.full_name ?? meta.name ?? null,
           })
         } else {
           setIsAuthenticated(false)
@@ -183,17 +193,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           resetCommonActions()
         }
 
-        const { data: sub } = onAuthStateChange((event: string, session: any) => {
+        const { data: sub } = onAuthStateChange((event: string, sess: any) => {
           console.log('[auth] event', event)
 
-          if (session?.user) {
-            const meta = session.user.user_metadata || {}
+          if (sess?.user) {
+            const meta = sess.user.user_metadata || {}
             setIsAuthenticated(true)
             setUser({
-              id: session.user.id,
-              email: session.user.email,
-              displayName:
-                meta.display_name ?? meta.full_name ?? meta.name ?? null,
+              id: sess.user.id,
+              email: sess.user.email,
+              displayName: meta.display_name ?? meta.full_name ?? meta.name ?? null,
             })
           } else {
             setIsAuthenticated(false)
@@ -223,6 +232,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
   }, [])
 
+  // Load modules
   useEffect(() => {
     let cancelled = false
 
@@ -264,6 +274,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
   }, [])
 
+  // Initial module
   useEffect(() => {
     if (!isAuthenticated) return
     if (!modules.length) return
@@ -281,6 +292,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }, [activeSelection?.tileId])
 
   async function handleLogout() {
+    if (!confirmIfDirty('Máš neuložené změny. Opravdu se chceš odhlásit?')) return
     await logout()
     setIsAuthenticated(false)
     setUser(null)
@@ -291,6 +303,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }
 
   function handleModuleSelect(selection: SidebarSelection) {
+    if (!confirmIfDirty()) return
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
     resetCommonActions()
@@ -298,13 +311,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   function handleHomeClick() {
     if (!isAuthenticated) return
-
-    if (hasUnsavedChanges) {
-      const confirmLeave = window.confirm(
-        'Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?',
-      )
-      if (!confirmLeave) return
-    }
+    if (!confirmIfDirty('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')) return
 
     setActiveModuleId(null)
     setActiveSelection(null)
@@ -313,15 +320,18 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }
 
   function forceSidebarLayout() {
-    setMenuLayout('sidebar')
+    if (!confirmIfDirty()) return
 
+    setMenuLayout('sidebar')
     if (typeof window !== 'undefined') {
       try {
         const raw = window.localStorage.getItem('app-view-settings')
         const parsed = raw ? JSON.parse(raw) : {}
         const next = { ...parsed, menuLayout: 'sidebar' }
         window.localStorage.setItem('app-view-settings', JSON.stringify(next))
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
   }
 
@@ -395,7 +405,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       return (
         <div className="content">
           <h2>Dashboard</h2>
-          <p>Vyber modul v levém menu nebo v horní liště.</p>
+          <p>Vyber modul v menu.</p>
         </div>
       )
     }
@@ -422,16 +432,53 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )
     }
 
+    if (selection.sectionId && !selection.tileId) {
+      const section = activeModule.sections?.find((s) => s.id === selection.sectionId)
+      const title = section?.introTitle ?? section?.label ?? activeModule.label
+      const text = section?.introText ?? 'Vyber konkrétní položku v menu.'
+      return (
+        <div className="content">
+          <h2>{activeModule.label}</h2>
+          <section className="content__section">
+            <h3 className="content__section-title">{title}</h3>
+            <p>{text}</p>
+          </section>
+        </div>
+      )
+    }
+
     if (selection.tileId && activeModule.tiles?.length) {
       const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
       if (tile) {
         const TileComponent = tile.component
+
+        // kompatibilita: tile může poslat nový tvar {viewMode,hasSelection,isDirty}
+        // i starý tvar {hasSelection,isDirty}
+        const registerCommonActionsUi = (next: any) => {
+          if (!next || typeof next !== 'object') return
+
+          if (typeof next.viewMode === 'string') {
+            setCommonActionsUi({
+              viewMode: next.viewMode as ViewMode,
+              hasSelection: !!next.hasSelection,
+              isDirty: !!next.isDirty,
+            })
+            return
+          }
+
+          setCommonActionsUi((prev) => ({
+            ...prev,
+            hasSelection: typeof next.hasSelection === 'boolean' ? next.hasSelection : prev.hasSelection,
+            isDirty: typeof next.isDirty === 'boolean' ? next.isDirty : prev.isDirty,
+          }))
+        }
+
         return (
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
               <TileComponent
                 onRegisterCommonActions={setCommonActions}
-                onRegisterCommonActionsState={setCommonActionsState}
+                onRegisterCommonActionsState={registerCommonActionsUi}
                 onRegisterCommonActionHandler={setCommonActionHandler}
               />
             </section>
@@ -449,15 +496,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }
 
   function handleCommonActionClick(id: CommonActionId) {
-    console.log('[AppShell] CommonAction click:', id)
-
-    if (!commonActionHandler) {
-      console.warn('[AppShell] commonActionHandler is missing (tile ho neregistroval)')
-      return
-    }
-
-    commonActionHandler(id)
+    if (!confirmIfDirty()) return
+    commonActionHandler?.(id)
   }
+
+  const hasUnsavedChanges =
+    commonActionsUi.isDirty &&
+    (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
 
   return (
     <div className="layout">
@@ -534,11 +579,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       )}
 
       <div className="layout__context">
-        const [commonActionsUi, setCommonActionsUi] = useState({
-          viewMode: 'list',
-          hasSelection: false,
-          isDirty: false,
-        })
+        <CommonActions
+          disabled={!isAuthenticated}
+          actions={commonActions}
+          ui={commonActionsUi}
+          onActionClick={handleCommonActionClick}
+        />
       </div>
 
       <main className="layout__content">{renderContent()}</main>
