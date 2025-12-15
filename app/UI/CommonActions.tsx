@@ -19,6 +19,10 @@
 
 import { getIcon } from './icons'
 
+/* =========================================================
+   TYPES
+   ========================================================= */
+
 export type CommonActionId =
   | 'add'
   | 'detail'
@@ -29,7 +33,6 @@ export type CommonActionId =
   | 'archive'
   | 'delete'
   | 'save'
-  | 'saveAndClose'
   | 'cancel'
   | 'invite'
   | 'columnSettings'
@@ -62,6 +65,10 @@ type CommonActionDefinition = {
   requiresAllPermissions?: string[]
   hideWhen?: ViewMode[]
 }
+
+/* =========================================================
+   DEFINICE TLAČÍTEK (CENTRÁLNÍ REGISTR)
+   ========================================================= */
 
 const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
   add: {
@@ -108,18 +115,6 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     hideWhen: ['list', 'read'],
   },
 
-  saveAndClose: {
-    id: 'saveAndClose',
-    icon: 'save',
-    label: { cs: 'Uložit a zavřít', en: 'Save & close' },
-    description: {
-      cs: 'Uložit změny a vrátit se zpět do čtení/listu.',
-      en: 'Save changes and return to read/list.',
-    },
-    requiresDirty: true,
-    hideWhen: ['list', 'read'],
-  },
-
   cancel: {
     id: 'cancel',
     icon: 'cancel',
@@ -140,7 +135,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     id: 'duplicate',
     icon: 'duplicate',
     label: { cs: 'Duplikovat', en: 'Duplicate' },
-    description: { cs: 'Vytvořit kopii vybraného záznamu.', en: 'Create a copy of the selected record.' },
+    description: { cs: 'Vytvořit kopii vybraného záznamu.', en: 'Create a copy.' },
     requiresSelection: true,
   },
 
@@ -148,7 +143,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     id: 'attach',
     icon: 'attach',
     label: { cs: 'Připojit', en: 'Attach' },
-    description: { cs: 'Připojit soubor nebo dokument.', en: 'Attach a file or document.' },
+    description: { cs: 'Připojit soubor nebo dokument.', en: 'Attach file.' },
     requiresSelection: true,
   },
 
@@ -171,7 +166,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     id: 'columnSettings',
     icon: 'settings',
     label: { cs: 'Sloupce', en: 'Columns' },
-    description: { cs: 'Nastavení zobrazených sloupců.', en: 'Configure visible columns.' },
+    description: { cs: 'Nastavení sloupců.', en: 'Configure columns.' },
     hideWhen: ['edit', 'create'],
   },
 
@@ -200,6 +195,10 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
   },
 }
 
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
 type Props = {
   actions?: CommonActionId[]
   ui: CommonActionsUiState
@@ -225,6 +224,10 @@ function isHiddenByMode(def: CommonActionDefinition, viewMode: ViewMode) {
   return !!def.hideWhen?.includes(viewMode)
 }
 
+/* =========================================================
+   COMPONENT
+   ========================================================= */
+
 export default function CommonActions({
   actions,
   ui,
@@ -235,30 +238,24 @@ export default function CommonActions({
 }: Props) {
   if (!actions || actions.length === 0) return null
 
-  const viewMode = ui.viewMode
-  const hasSelection = !!ui.hasSelection
-  const isDirty = !!ui.isDirty
+  const { viewMode, hasSelection, isDirty } = ui
 
   return (
     <div className="common-actions" aria-label="Společné akce">
       {actions.map((id) => {
         const def = COMMON_ACTION_DEFS[id]
         if (!def) return null
-
         if (isHiddenByMode(def, viewMode)) return null
+        if (!hasAnyRole(auth, def.requiresAnyRole)) return null
+        if (!hasAllPermissions(auth, def.requiresAllPermissions)) return null
 
-        const roleOk = hasAnyRole(auth, def.requiresAnyRole)
-        const permsOk = hasAllPermissions(auth, def.requiresAllPermissions)
-        if (!roleOk || !permsOk) return null
-
-        const stateDisabled =
+        const isDisabled =
+          disabled ||
           (def.requiresSelection && !hasSelection) ||
           (def.requiresDirty && !isDirty)
 
-        const isDisabled = disabled || stateDisabled
-
         const label = def.label[locale]
-        const desc = def.description?.[locale] ?? def.description?.cs ?? label
+        const desc = def.description?.[locale] ?? label
 
         return (
           <button
@@ -267,10 +264,7 @@ export default function CommonActions({
             className="common-actions__btn"
             disabled={isDisabled}
             title={desc}
-            onClick={() => {
-              if (isDisabled) return
-              onActionClick(id)
-            }}
+            onClick={() => !isDisabled && onActionClick(id)}
           >
             <span className="common-actions__icon" aria-hidden="true">
               {getIcon(def.icon as any)}
