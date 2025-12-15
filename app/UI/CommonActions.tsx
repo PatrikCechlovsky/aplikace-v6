@@ -369,6 +369,8 @@ export default function CommonActions({
              
               console.log('CA: click', id)
               onActionClick?.(id)
+              console.log('CA: CommonActions onClick', actionId)
+              onActionClick?.(actionId)
             }}
           >
             <span className="common-actions__icon" aria-hidden="true">
