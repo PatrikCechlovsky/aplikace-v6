@@ -1,13 +1,5 @@
 'use client'
 
-/*
- * FILE: app/AppShell.tsx
- * PURPOSE: Hlavní shell aplikace – layout (6 bloků), autentizace, moduly
- */
-/* ============================
-   UI COMPONENT STYLES (ACTIVE + TODO)
-=============================== */
-
 import './styles/components/AppShell.css'
 import './styles/components/Sidebar.css'
 import './styles/components/Breadcrumbs.css'
@@ -42,7 +34,6 @@ import {
   loadIconDisplayFromLocalStorage,
 } from '@/app/lib/iconDisplaySettings'
 
-import { uiConfig } from '@/app/lib/uiConfig'
 import {
   getCurrentSession,
   onAuthStateChange,
@@ -51,14 +42,9 @@ import {
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
-// 🔹 NOVĚ: horní lišta modulů (Excel styl)
 import { TopMenu } from '@/app/UI/TopMenu'
 import CommonActions from '@/app/UI/CommonActions'
-import type {
-  CommonActionId,
-  CommonActionsUiState,
-  ViewMode,
-} from '@/app/UI/CommonActions'
+import type { CommonActionId } from '@/app/UI/CommonActions'
 
 type SessionUser = {
   id?: string | null
@@ -98,52 +84,44 @@ type AppShellProps = {
   initialModuleId?: string | null
 }
 
-// ✅ po refaktoru: pouze IDčka akcí
 type CommonActionsInput = CommonActionId[]
 
-// 🔹 typ layoutu menu – boď sidebar vlevo, nebo horní lišta
+type CommonActionsState = {
+  hasSelection: boolean
+  isDirty: boolean
+}
+
 type MenuLayout = 'sidebar' | 'top'
 
 export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const router = useRouter()
 
-  // 🔐 Stav autentizace
   const [authLoading, setAuthLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<SessionUser | null>(null)
   const displayName = user?.displayName || user?.email || 'Uživatel'
 
-  // 📦 Moduly a aktivní modul
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
-  if (typeof window !== 'undefined') {
-    ;(window as any).__modules = modules
-  }
 
-  // 📌 Výběr v sidebaru (nebo v TopMenu – používají stejný typ)
   const [activeSelection, setActiveSelection] =
     useState<SidebarSelection | null>(null)
 
-  // 🔹 Výchozí: sidebar vlevo, dokud si uživatel nezvolí jinak
+  const [hasUnsavedChanges] = useState(false)
+
   const [menuLayout, setMenuLayout] = useState<MenuLayout>('sidebar')
 
-  // 🔹 Načtení preferovaného layoutu z localStorage (per-user)
   useEffect(() => {
     if (typeof window === 'undefined') return
-
     try {
       const raw = window.localStorage.getItem('app-view-settings')
       if (!raw) return
-
       const parsed = JSON.parse(raw)
-
       if (parsed.menuLayout === 'top' || parsed.menuLayout === 'sidebar') {
         setMenuLayout(parsed.menuLayout as MenuLayout)
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [])
 
   useEffect(() => {
@@ -153,48 +131,26 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     el.classList.toggle('layout--topmenu', menuLayout === 'top')
   }, [menuLayout])
 
-  // 🔘 Common actions – dynamicky registruje aktuální tile
   const [commonActions, setCommonActions] = useState<
     CommonActionsInput | undefined
   >(undefined)
 
-  // ✅ UI stav pro CommonActions v6 (mode + selection + dirty)
-  const [commonActionsUi, setCommonActionsUi] = useState<CommonActionsUiState>({
-    viewMode: 'list',
-    hasSelection: false,
-    isDirty: false,
-  })
+  const [commonActionsState, setCommonActionsState] =
+    useState<CommonActionsState>({
+      hasSelection: false,
+      isDirty: false,
+    })
 
-  // ✅ handler kliknutí na akce – registruje aktuální tile
   const [commonActionHandler, setCommonActionHandler] = useState<
     ((id: CommonActionId) => void) | undefined
   >(undefined)
 
-  // ✅ bezpečný reset – používáme na více místech
   function resetCommonActions() {
     setCommonActions(undefined)
     setCommonActionHandler(undefined)
-    setCommonActionsUi({
-      viewMode: 'list',
-      hasSelection: false,
-      isDirty: false,
-    })
+    setCommonActionsState({ hasSelection: false, isDirty: false })
   }
 
-  // ✅ dirty guard – ptáme se JEN v edit/create a jen pokud isDirty=true
-  function confirmIfDirty(message?: string) {
-    const vm = commonActionsUi.viewMode
-    const shouldGuard = vm === 'edit' || vm === 'create'
-    if (!shouldGuard) return true
-
-    if (!commonActionsUi.isDirty) return true
-
-    return window.confirm(
-      message ?? 'Máš neuložené změny. Opravdu chceš pokračovat?',
-    )
-  }
-
-  // 🎨 Při mountu aplikace nastavíme theme z localStorage
   useEffect(() => {
     const themeSettings = loadThemeFromLocalStorage()
     applyThemeToLayout(themeSettings)
@@ -203,40 +159,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     applyIconDisplayToLayout(iconSettings)
   }, [])
 
-  // TABLE VIEW MODE – přidáme .view-table nebo .view-cards
-  useEffect(() => {
-    if (typeof document === 'undefined') return
-
-    try {
-      const raw = window.localStorage.getItem('app-view-settings')
-      if (!raw) return
-      const parsed = JSON.parse(raw)
-
-      const viewMode = parsed.viewMode || 'cards'
-      const layoutEl = document.querySelector('.layout')
-      if (!layoutEl) return
-
-      layoutEl.classList.toggle('view-table', viewMode === 'table')
-      layoutEl.classList.toggle('view-cards', viewMode === 'cards')
-    } catch (err) {
-      console.error('Error loading viewMode:', err)
-    }
-  }, [])
-
-  // 🔐 Načtení session
   useEffect(() => {
     let unsubscribe: (() => void) | undefined
 
     async function initAuth() {
       try {
-        const { data, error } = await getCurrentSession()
-        if (error) console.error('getCurrentSession error:', error)
-
+        const { data } = await getCurrentSession()
         const session = data?.session ?? null
 
         if (session?.user) {
           const meta = session.user.user_metadata || {}
-
           setIsAuthenticated(true)
           setUser({
             email: session.user.email,
@@ -251,29 +183,26 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           resetCommonActions()
         }
 
-        const { data: sub } = onAuthStateChange(
-          (event: string, session: any) => {
-            console.log('[auth] event', event, session)
+        const { data: sub } = onAuthStateChange((event: string, session: any) => {
+          console.log('[auth] event', event)
 
-            if (session?.user) {
-              const meta = session.user.user_metadata || {}
-
-              setIsAuthenticated(true)
-              setUser({
-                id: session.user.id,
-                email: session.user.email,
-                displayName:
-                  meta.display_name ?? meta.full_name ?? meta.name ?? null,
-              })
-            } else {
-              setIsAuthenticated(false)
-              setUser(null)
-              setActiveModuleId(null)
-              setActiveSelection(null)
-              resetCommonActions()
-            }
-          },
-        )
+          if (session?.user) {
+            const meta = session.user.user_metadata || {}
+            setIsAuthenticated(true)
+            setUser({
+              id: session.user.id,
+              email: session.user.email,
+              displayName:
+                meta.display_name ?? meta.full_name ?? meta.name ?? null,
+            })
+          } else {
+            setIsAuthenticated(false)
+            setUser(null)
+            setActiveModuleId(null)
+            setActiveSelection(null)
+            resetCommonActions()
+          }
+        })
 
         unsubscribe = sub?.subscription?.unsubscribe
       } catch (err) {
@@ -289,13 +218,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
 
     initAuth()
-
     return () => {
       if (unsubscribe) unsubscribe()
     }
   }, [])
 
-  // 📦 Načtení modulů
   useEffect(() => {
     let cancelled = false
 
@@ -306,7 +233,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         for (const loader of MODULE_SOURCES) {
           const modModule: any = await loader()
           const cfg: any = modModule.default
-
           if (!cfg?.id) continue
           if (cfg.enabled === false) continue
 
@@ -324,7 +250,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         }
 
         loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-
         if (!cancelled) setModules(loaded)
       } catch (err) {
         console.error('Chyba při načítání modulů:', err)
@@ -339,7 +264,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
   }, [])
 
-  // 🧭 Nastavení počátečního modulu
   useEffect(() => {
     if (!isAuthenticated) return
     if (!modules.length) return
@@ -352,17 +276,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
   }, [isAuthenticated, modules, activeModuleId, initialModuleId])
 
-  // 🧹 Když nemáme vybraný tile, smažeme commonActions i handler i ui state
   useEffect(() => {
-    if (!activeSelection?.tileId) {
-      resetCommonActions()
-    }
+    if (!activeSelection?.tileId) resetCommonActions()
   }, [activeSelection?.tileId])
 
-  // 🚪 Logout
   async function handleLogout() {
-    if (!confirmIfDirty('Máš neuložené změny. Opravdu se chceš odhlásit?')) return
-
     await logout()
     setIsAuthenticated(false)
     setUser(null)
@@ -372,23 +290,21 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     router.push('/')
   }
 
-  // Sidebar / TopMenu klik
   function handleModuleSelect(selection: SidebarSelection) {
-    if (!confirmIfDirty()) return
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
     resetCommonActions()
   }
 
-  // 🏠 Home button
   function handleHomeClick() {
     if (!isAuthenticated) return
-    if (
-      !confirmIfDirty(
+
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
         'Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?',
       )
-    )
-      return
+      if (!confirmLeave) return
+    }
 
     setActiveModuleId(null)
     setActiveSelection(null)
@@ -396,10 +312,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     router.push('/')
   }
 
-  // 🔁 Nouzové tlačítko: rychlé přepnutí zpět na sidebar
   function forceSidebarLayout() {
-    if (!confirmIfDirty()) return
-
     setMenuLayout('sidebar')
 
     if (typeof window !== 'undefined') {
@@ -408,13 +321,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         const parsed = raw ? JSON.parse(raw) : {}
         const next = { ...parsed, menuLayout: 'sidebar' }
         window.localStorage.setItem('app-view-settings', JSON.stringify(next))
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
   }
 
-  // 🧭 Breadcrumbs
   function getBreadcrumbSegments(): BreadcrumbSegment[] {
     const segments: BreadcrumbSegment[] = [{ label: 'Dashboard', icon: 'home' }]
 
@@ -432,11 +342,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     segments.push({ label: activeModule.label, icon: activeModule.icon })
 
     const selection = activeSelection
-
     if (selection?.sectionId && activeModule.sections?.length) {
-      const section = activeModule.sections.find(
-        (s) => s.id === selection.sectionId,
-      )
+      const section = activeModule.sections.find((s) => s.id === selection.sectionId)
       if (section) segments.push({ label: section.label, icon: section.icon })
     }
 
@@ -448,7 +355,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     return segments
   }
 
-  // 🧩 Hlavní obsah
   function renderContent() {
     if (authLoading) {
       return (
@@ -489,102 +395,43 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       return (
         <div className="content">
           <h2>Dashboard</h2>
-          <p>
-            Vyber modul v levém menu nebo v horní liště. Po kliknutí se tady
-            zobrazí jeho obsah.
-          </p>
+          <p>Vyber modul v levém menu nebo v horní liště.</p>
         </div>
       )
     }
 
     const activeModule = modules.find((m) => m.id === activeModuleId)
-
     if (!activeModule) {
       return (
         <div className="content">
           <h2>Neznámý modul</h2>
           <p>
-            Aktivní modul s ID <code>{activeModuleId}</code> nebyl nalezen v
-            konfiguraci.
+            Aktivní modul <code>{activeModuleId}</code> nebyl nalezen.
           </p>
         </div>
       )
     }
 
     const selection = activeSelection
-
     if (!selection || (!selection.sectionId && !selection.tileId)) {
       return (
         <div className="content">
           <h2>{activeModule.introTitle ?? activeModule.label}</h2>
-          <p>
-            {activeModule.introText ??
-              'Vlevo nebo nahoře vyber konkrétní oblast, kterou chceš v tomto modulu zobrazit nebo upravit.'}
-          </p>
-        </div>
-      )
-    }
-
-    if (selection.sectionId && !selection.tileId) {
-      const section = activeModule.sections?.find(
-        (s) => s.id === selection.sectionId,
-      )
-
-      const title = section?.introTitle ?? section?.label ?? activeModule.label
-      const text =
-        section?.introText ??
-        'Vyber konkrétní položku v levém menu / horní liště, kterou chceš upravit.'
-
-      return (
-        <div className="content">
-          <h2>{activeModule.label}</h2>
-          <section className="content__section">
-            <h3 className="content__section-title">{title}</h3>
-            <p>{text}</p>
-          </section>
+          <p>{activeModule.introText ?? 'Vyber položku v menu.'}</p>
         </div>
       )
     }
 
     if (selection.tileId && activeModule.tiles?.length) {
       const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
-
       if (tile) {
         const TileComponent = tile.component
-
-        // kompatibilita: tiles můžou posílat starý tvar {hasSelection,isDirty}
-        // nebo nový tvar {viewMode,hasSelection,isDirty}
-        const registerCommonActionsUi = (next: any) => {
-          if (!next || typeof next !== 'object') return
-
-          // nový tvar
-          if (typeof next.viewMode === 'string') {
-            setCommonActionsUi({
-              viewMode: next.viewMode as ViewMode,
-              hasSelection: !!next.hasSelection,
-              isDirty: !!next.isDirty,
-            })
-            return
-          }
-
-          // starý tvar → merge do stávajícího
-          setCommonActionsUi((prev) => ({
-            ...prev,
-            hasSelection:
-              typeof next.hasSelection === 'boolean'
-                ? next.hasSelection
-                : prev.hasSelection,
-            isDirty:
-              typeof next.isDirty === 'boolean' ? next.isDirty : prev.isDirty,
-          }))
-        }
-
         return (
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
               <TileComponent
                 onRegisterCommonActions={setCommonActions}
-                onRegisterCommonActionsState={registerCommonActionsUi}
+                onRegisterCommonActionsState={setCommonActionsState}
                 onRegisterCommonActionHandler={setCommonActionHandler}
               />
             </section>
@@ -593,58 +440,30 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       }
     }
 
-    if (activeModule.tiles && activeModule.tiles.length > 0) {
-      return (
-        <div className="content">
-          <h2>{activeModule.label}</h2>
-          <div className="content__tiles">
-            {activeModule.tiles.map((tile) => {
-              const TileComponent = tile.component
-              return (
-                <section
-                  key={tile.id}
-                  className="content__section"
-                  aria-label={tile.label}
-                >
-                  <h3 className="content__section-title">{tile.label}</h3>
-                  <TileComponent />
-                </section>
-              )
-            })}
-          </div>
-        </div>
-      )
-    }
-
     return (
       <div className="content">
         <h2>{activeModule.label}</h2>
-        <p>
-          Tento modul zatím nemá nakonfigurované žádné dlaždice ani formuláře.
-          Přidej je do <code>{activeModule.id}/module.config.js</code>.
-        </p>
+        <p>Modul nemá nakonfigurované tiles.</p>
       </div>
     )
   }
 
-  // ✅ pro Sidebar flag (dirty jen v edit/create)
-  const hasUnsavedChanges =
-    commonActionsUi.isDirty &&
-    (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
-
-  // ✅ klik z CommonActions (centrální bod)
   function handleCommonActionClick(id: CommonActionId) {
-    if (!confirmIfDirty()) return
-    commonActionHandler?.(id)
+    console.log('[AppShell] CommonAction click:', id)
+
+    if (!commonActionHandler) {
+      console.warn('[AppShell] commonActionHandler is missing (tile ho neregistroval)')
+      return
+    }
+
+    commonActionHandler(id)
   }
 
-  // 🧱 Layout
   return (
     <div className="layout">
       {menuLayout === 'sidebar' && (
         <aside className="layout__sidebar">
           <HomeButton disabled={!isAuthenticated} onClick={handleHomeClick} />
-
           <Sidebar
             disabled={!isAuthenticated}
             activeModuleId={activeModuleId ?? undefined}
@@ -659,16 +478,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="layout__topbar-inner">
           <div className="layout__topbar-left">
             {menuLayout === 'top' && (
-              <HomeButton
-                disabled={!isAuthenticated}
-                onClick={handleHomeClick}
-              />
+              <HomeButton disabled={!isAuthenticated} onClick={handleHomeClick} />
             )}
-
-            <Breadcrumbs
-              disabled={!isAuthenticated}
-              segments={getBreadcrumbSegments()}
-            />
+            <Breadcrumbs disabled={!isAuthenticated} segments={getBreadcrumbSegments()} />
           </div>
 
           <div className="layout__topbar-right">
@@ -721,12 +533,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         </div>
       )}
 
-      {/* CommonActions: vlastní řádek nad obsahem */}
       <div className="layout__context">
         <CommonActions
           disabled={!isAuthenticated}
           actions={commonActions}
-          ui={commonActionsUi}
+          hasSelection={commonActionsState.hasSelection}
+          isDirty={commonActionsState.isDirty}
           onActionClick={handleCommonActionClick}
         />
       </div>
