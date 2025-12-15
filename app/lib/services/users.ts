@@ -21,23 +21,29 @@ export type SubjectRow = {
 
 export type UsersListParams = {
   searchText?: string
+  includeArchived?: boolean
   limit?: number
 }
 
 export async function listUsers(params: UsersListParams = {}) {
-  const { searchText = '', limit = 200 } = params
+  const { searchText = '', includeArchived = false, limit = 200 } = params
 
   let q = supabase
     .from(SUBJECT_TABLE)
-    .select('id, subject_type, auth_user_id, display_name, email, phone, is_archived, archived_at, archived_by, created_at, updated_at')
+    .select(
+      'id, subject_type, auth_user_id, display_name, email, phone, is_archived, archived_at, archived_by, created_at, updated_at'
+    )
     .order('display_name', { ascending: true })
     .limit(limit)
+
+  if (!includeArchived) {
+    q = q.eq('is_archived', false)
+  }
 
   const s = searchText.trim()
   if (s) {
     const pattern = `%${s}%`
     q = q.or(`display_name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}`)
-    q = q.eq('is_archived', false)
   }
 
   const { data, error } = await q
