@@ -1,93 +1,135 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+// FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailForm.tsx
+// PURPOSE: Formulář uživatele pro subjects (010). Umí read/edit/create a posílá ven hodnoty pro DB.
+
+import React, { useEffect, useMemo, useState } from 'react'
+
+type UiUser = {
+  id: string
+  displayName: string
+  email: string
+  phone?: string
+  roleLabel: string
+  twoFactorMethod?: string | null
+  createdAt: string
+  isArchived?: boolean
+
+  // Volitelně – pokud to UserDetailFrame začne doplňovat z DB:
+  titleBefore?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  login?: string | null
+}
 
 export type UserFormValue = {
   displayName: string
   email: string
-  phone?: string
+  phone: string
+
+  // DB fields (subjects)
+  titleBefore: string
+  firstName: string
+  lastName: string
+  login: string
+  isArchived: boolean
 }
 
-type UserDetailFormProps = {
-  user: {
-    id: string
-    displayName: string
-    email: string
-    phone?: string
-    roleLabel: string
-    twoFactorMethod?: string | null
-    createdAt: string
-    isArchived?: boolean
-  }
-  readOnly?: boolean
+export type UserDetailFormProps = {
+  user: UiUser
+  readOnly: boolean
   onDirtyChange?: (dirty: boolean) => void
-  onValueChange?: (value: UserFormValue) => void
+  onValueChange?: (val: UserFormValue) => void
 }
 
-export default function UserDetailForm({
-  user,
-  readOnly = false,
-  onDirtyChange,
-  onValueChange,
-}: UserDetailFormProps) {
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [phone, setPhone] = useState(user.phone ?? '')
-  const [email, setEmail] = useState(user.email)
+function safe(v: any) {
+  return (v ?? '').toString()
+}
 
-  // init z displayName
+function computeDisplayName(titleBefore: string, firstName: string, lastName: string) {
+  const parts = [titleBefore?.trim(), firstName?.trim(), lastName?.trim()].filter(Boolean)
+  return parts.join(' ').trim()
+}
+
+export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueChange }: UserDetailFormProps) {
+  const initial = useMemo<UserFormValue>(
+    () => ({
+      displayName: safe(user.displayName),
+      email: safe(user.email),
+      phone: safe(user.phone),
+
+      titleBefore: safe((user as any).titleBefore),
+      firstName: safe((user as any).firstName),
+      lastName: safe((user as any).lastName),
+      login: safe((user as any).login),
+
+      isArchived: !!user.isArchived,
+    }),
+    [user]
+  )
+
+  const [val, setVal] = useState<UserFormValue>(initial)
+  const [dirty, setDirty] = useState(false)
+
+  // Když se změní user (např. načetl se z DB), přepiš form
   useEffect(() => {
-    const parts = user.displayName.split(' ').filter(Boolean)
-    setFirstName(parts.slice(0, -1).join(' ') || parts[0] || '')
-    setLastName(parts.length > 1 ? parts.slice(-1).join(' ') : '')
-    setPhone(user.phone ?? '')
-    setEmail(user.email)
-  }, [user.id, user.displayName, user.phone, user.email])
+    setVal(initial)
+    setDirty(false)
+    onDirtyChange?.(false)
+    onValueChange?.(initial)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial])
 
-  const displayName = `${firstName} ${lastName}`.trim()
+  const update = (patch: Partial<UserFormValue>, recomputeDisplayName = false) => {
+    setVal((prev) => {
+      const next = { ...prev, ...patch }
 
-  // ⬅️ POSÍLÁME AKTUÁLNÍ HODNOTY VEN (pro save)
-  useEffect(() => {
-    onValueChange?.({
-      displayName,
-      email,
-      phone,
+      // Volitelně dopočti displayName z title/first/last (pokud chceš)
+      if (recomputeDisplayName) {
+        const computed = computeDisplayName(next.titleBefore, next.firstName, next.lastName)
+        // display_name je u tebe NOT NULL → když je computed prázdný, nech původní ručně vyplněný
+        if (computed) next.displayName = computed
+      }
+
+      if (!dirty) {
+        setDirty(true)
+        onDirtyChange?.(true)
+      }
+
+      onValueChange?.(next)
+      return next
     })
-  }, [displayName, email, phone, onValueChange])
-
-  // ⬅️ DIRTY LOGIKA
-  useEffect(() => {
-    const dirty =
-      displayName !== (user.displayName ?? '') ||
-      phone !== (user.phone ?? '') ||
-      email !== (user.email ?? '')
-
-    onDirtyChange?.(dirty)
-  }, [displayName, phone, email, user.displayName, user.phone, user.email, onDirtyChange])
+  }
 
   return (
     <div className="detail-form">
-      <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Profil</h3>
+      {/* ZÁKLAD */}
+      <div className="detail-form__section">
+        <div className="detail-form__section-title">Základ</div>
 
         <div className="detail-form__grid">
           <div className="detail-form__field">
-            <label className="detail-form__label">Jméno</label>
+            <label className="detail-form__label">Zobrazované jméno (display_name)</label>
             <input
               className="detail-form__input"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              disabled={readOnly}
+              value={val.displayName}
+              readOnly={readOnly}
+              onChange={(e) => update({ displayName: e.target.value })}
+              placeholder="např. Páťo Admin"
             />
+            <div className="detail-form__hint">
+              Povinné pole (NOT NULL). Může být dopočítané z titulu/jména/příjmení nebo vyplněné ručně.
+            </div>
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">Příjmení</label>
+            <label className="detail-form__label">E-mail</label>
             <input
               className="detail-form__input"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              disabled={readOnly}
+              value={val.email}
+              readOnly={readOnly}
+              onChange={(e) => update({ email: e.target.value })}
+              placeholder="např. admin@local.test"
             />
           </div>
 
@@ -95,56 +137,75 @@ export default function UserDetailForm({
             <label className="detail-form__label">Telefon</label>
             <input
               className="detail-form__input"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              disabled={readOnly}
+              value={val.phone}
+              readOnly={readOnly}
+              onChange={(e) => update({ phone: e.target.value })}
+              placeholder="+420..."
             />
           </div>
 
-          <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">E-mail</label>
+          <div className="detail-form__field">
+            <label className="detail-form__label">Login</label>
             <input
               className="detail-form__input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={val.login}
+              readOnly={readOnly}
+              onChange={(e) => update({ login: e.target.value })}
+              placeholder="např. pato.admin"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* OSOBA */}
+      <div className="detail-form__section">
+        <div className="detail-form__section-title">Osoba</div>
+
+        <div className="detail-form__grid">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Titul před</label>
+            <input
+              className="detail-form__input"
+              value={val.titleBefore}
+              readOnly={readOnly}
+              onChange={(e) => update({ titleBefore: e.target.value }, true)}
+              placeholder="Ing., Bc., ..."
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Jméno</label>
+            <input
+              className="detail-form__input"
+              value={val.firstName}
+              readOnly={readOnly}
+              onChange={(e) => update({ firstName: e.target.value }, true)}
+              placeholder="Páťo"
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Příjmení</label>
+            <input
+              className="detail-form__input"
+              value={val.lastName}
+              readOnly={readOnly}
+              onChange={(e) => update({ lastName: e.target.value }, true)}
+              placeholder="Admin"
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Archivováno</label>
+            <input
+              type="checkbox"
+              checked={val.isArchived}
               disabled={readOnly}
+              onChange={(e) => update({ isArchived: e.target.checked })}
             />
           </div>
         </div>
-      </section>
-
-      <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Účet</h3>
-
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">Role</label>
-            <input
-              className="detail-form__input detail-form__input--readonly"
-              value={user.roleLabel}
-              readOnly
-            />
-          </div>
-
-          <div className="detail-form__field">
-            <label className="detail-form__label">2FA</label>
-            <input
-              className="detail-form__input detail-form__input--readonly"
-              value={user.twoFactorMethod ? user.twoFactorMethod.toUpperCase() : 'Nenastaveno'}
-              readOnly
-            />
-          </div>
-
-          <div className="detail-form__field">
-            <label className="detail-form__label">Stav účtu</label>
-            <input
-              className="detail-form__input detail-form__input--readonly"
-              value={user.isArchived ? 'Archivovaný' : 'Aktivní'}
-              readOnly
-            />
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
   )
 }
