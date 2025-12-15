@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
-import { listUsers, type SubjectRow } from '@/app/lib/services/users'
+import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 
 type UiUser = {
   id: string
@@ -27,14 +27,22 @@ const COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
-function mapRowToUi(row: SubjectRow): UiUser {
+function roleCodeToLabel(code: string | null | undefined): string {
+  const c = (code ?? '').trim().toLowerCase()
+  if (!c) return '—'
+  if (c === 'admin') return 'Admin'
+  if (c === 'user') return 'Uživatel'
+  return c
+}
+
+function mapRowToUi(row: UsersListRow): UiUser {
   return {
     id: row.id,
     displayName: row.display_name ?? '',
     email: row.email ?? '',
     phone: row.phone ?? '',
-    roleLabel: 'Uživatel', // TODO: napojíme později přes subject_roles
-    twoFactorMethod: null,
+    roleLabel: roleCodeToLabel(row.role_code),
+    twoFactorMethod: null, // zatím nenapojujeme (sloupec v DB nemáš)
     createdAt: row.created_at ?? '',
     isArchived: !!row.is_archived,
   }
