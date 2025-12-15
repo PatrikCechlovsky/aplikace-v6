@@ -175,7 +175,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
       en: 'Cancel edit / create.',
     },
     // cancel je relevantní hlavně v edit/create; v list/read je obvykle zbytečný
-    hideWhen: ['list', 'read'],
+    hideWhen: ['list'],
   },
 
   delete: {
