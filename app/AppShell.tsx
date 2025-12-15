@@ -481,14 +481,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   function handleCommonActionClick(id: CommonActionId) { 
     // ✅ Ukládací akce NIKDY neblokuj dirty guardem
-      if (id === 'save' || id === 'saveAndClose' || id === 'saveAndClose') {
-        commonActionHandler?.(id)
-        return
-      }
-    
-      // ✅ Cancel/odchod/navigace: guard smí běžet
-      if (!confirmIfDirty()) return
+    if (id === 'save' || id === 'saveAndClose' || id === 'saveAndClose') {
       commonActionHandler?.(id)
+      return
+    }
+    
+    // ✅ Cancel/odchod/navigace: guard smí běžet
+    if (!confirmIfDirty()) return
+    commonActionHandler?.(id)
   }
 
   const hasUnsavedChanges =
