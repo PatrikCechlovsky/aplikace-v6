@@ -63,7 +63,8 @@ export type SaveUserInput = {
 export async function saveUser(input: SaveUserInput) {
   const isCreate = input.id === 'new'
   const id = isCreate ? crypto.randomUUID() : input.id
-
+  const subjectType = (input.subjectType ?? 'osoba') // <- změna
+  
   const payload = {
     id,
     subject_type: input.subjectType ?? null,
