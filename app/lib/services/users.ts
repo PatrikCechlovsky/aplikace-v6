@@ -105,7 +105,7 @@ export async function listUsers(params: UsersListParams = {}) {
   const { data: subjects, error: subjectsErr } = await q
   if (subjectsErr) throw subjectsErr
 
-  const subjectRows = (subjects ?? []) as SubjectRow[]
+  const subjectRows = (subjects ?? []) as unknown as SubjectRow[]
   if (subjectRows.length === 0) return [] as UsersListRow[]
 
   // 2) roles (1 řádek na subject je u tebe typický případ)
@@ -118,7 +118,7 @@ export async function listUsers(params: UsersListParams = {}) {
   if (rolesErr) throw rolesErr
 
   const roleMap = new Map<string, string>()
-  ;((roles ?? []) as UserRoleRow[]).forEach((r) => roleMap.set(r.subject_id, r.role_code))
+  ;((roles ?? []) as unknown as UserRoleRow[]).forEach((r) => roleMap.set(r.subject_id, r.role_code))
 
   return subjectRows.map((s) => ({
     ...s,
@@ -163,7 +163,7 @@ export async function getUserDetail(id: string): Promise<GetUserDetailResult> {
     .single()
 
   if (subjectErr) throw subjectErr
-  const s = subject as SubjectRow
+  const s = subject as unknown as SubjectRow
 
   // role
   const { data: roleRow, error: roleErr } = await supabase
@@ -185,7 +185,7 @@ export async function getUserDetail(id: string): Promise<GetUserDetailResult> {
   return {
     subject: s,
     role_code: (roleRow as any)?.role_code ?? null,
-    permissions: (permRows ?? []).map((p: any) => p.permission_code).filter(Boolean),
+    permissions: ((permRows ?? []) as unknown as Array<{ permission_code: string }>).map((p) => p.permission_code).filter(Boolean),
   }
 }
 
@@ -281,7 +281,7 @@ export async function saveUser(input: SaveUserInput) {
 
   if (saveErr) throw saveErr
 
-  const savedRow = saved as SubjectRow
+  const savedRow = saved as unknown as SubjectRow
 
   // 2) role sync (pokud přijde)
   if (input.roleCode != null) {
