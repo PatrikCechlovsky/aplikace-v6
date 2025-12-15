@@ -219,7 +219,7 @@ export default function UsersTile({
   // ===========================
   if (viewMode === 'list') {
     return (
-      <div indicateName="users-list" className="users-list">
+      <div className="users-list">
         <ListView<MockUser>
           columns={COLUMNS}
           rows={rows}
