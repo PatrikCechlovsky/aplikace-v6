@@ -95,8 +95,8 @@ type UsersTileProps = {
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
 }
 
-// 🔁 Jednoduchý viewMode: list ↔ detail
-type UsersViewMode = 'list' | 'read' | 'edit' | 'create'
+// 🔁 Jednoduché režimy pro napojení na UserDetailFrame i CommonActions koncept
+type UsersViewMode = 'list' | 'read'
 
 export default function UsersTile({
   onRegisterCommonActions,
@@ -110,7 +110,7 @@ export default function UsersTile({
   const [viewMode, setViewMode] = useState<UsersViewMode>('list')
   const [detailUser, setDetailUser] = useState<MockUser | null>(null)
 
-  // MVP – zatím bez edit/create ve formu
+  // MVP – zatím nic needitujeme => dirty false
   const [isDirty] = useState(false)
 
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
@@ -139,21 +139,21 @@ export default function UsersTile({
     setDetailUser(null)
   }
 
-  // ✅ Akce – jen IDčka
+  // ✅ Akce – jen IDčka (pořadí zachováno)
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'list') {
-      // list: add/view/edit fungují, ostatní zatím log
       return ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
     }
-
-    // detail: potřebujeme se umět vrátit zpět → použijeme cancel jako “Zavřít”
+    // v detailu potřebuju hlavně "zpět"
     return ['cancel', 'edit', 'reject']
   }, [viewMode])
 
+  // Registrace actions
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
 
+  // Registrace state (selection/dirty) pro disabled logiku
   useEffect(() => {
     onRegisterCommonActionsState?.({
       hasSelection: !!selectedId,
@@ -161,12 +161,12 @@ export default function UsersTile({
     })
   }, [onRegisterCommonActionsState, selectedId, isDirty])
 
-  // ✅ Handler pro CommonActions – teď bude “viditelně” dělat změny
+  // ✅ Registrace handleru – to je to, co dělá akce "živé"
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
 
     const handler = (id: CommonActionId) => {
-      // READ MODE
+      // DETAIL / READ
       if (viewMode === 'read') {
         if (id === 'cancel') {
           closeDetail()
@@ -174,16 +174,16 @@ export default function UsersTile({
         }
 
         if (id === 'edit') {
-          // MVP: zatím jen log (ať víš, že klik funguje)
-          console.log('[UsersTile] edit (MVP) – tady později přepneme do edit režimu')
+          // MVP: zatím jen log (později přepneme do edit)
+          console.log('[UsersTile] edit (MVP)')
           return
         }
 
-        console.log('[UsersTile] action (detail):', id)
+        console.log('[UsersTile] action (read):', id)
         return
       }
 
-      // LIST MODE
+      // LIST
       if (id === 'add') {
         const empty: MockUser = {
           id: 'new',
@@ -203,7 +203,6 @@ export default function UsersTile({
       if (id === 'view' || id === 'edit') {
         if (!selectedId) return
         const user = MOCK_USERS.find((u) => u.id === selectedId) ?? null
-        if (!user) return
         openDetail(user)
         return
       }
