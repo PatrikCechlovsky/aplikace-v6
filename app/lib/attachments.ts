@@ -1,23 +1,9 @@
 /*
  * FILE: app/lib/attachments.ts
- * PURPOSE:
- *   Data layer pro sekci „Přílohy“ v DetailView (kontext entity).
- *
- * CONTEXT:
- *   - používá tabulky `documents` + `document_versions`
- *   - pro přehled v UI čteme přes view `v_document_latest_version`
- *
- * CURRENT STATE (KROK 3):
- *   - pouze READ: načtení příloh pro konkrétní entitu
+ * PURPOSE: Data layer pro sekci „Přílohy“ (DetailView). KROK 3+4a = READ + signed URL.
  */
 
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-
-// NOTE: Používáme stejný vzor jako ve tvém UserDetailFrame (client-side createClient).
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import { supabase } from '@/app/lib/supabaseClient'
 
 export type AttachmentRow = {
   id: string
@@ -28,7 +14,6 @@ export type AttachmentRow = {
   is_archived: boolean
   created_at: string
 
-  // z view "v_document_latest_version"
   version_id: string
   version_number: number
   file_path: string
@@ -57,9 +42,9 @@ export async function listAttachments(input: {
 
   const { data, error } = await q
   if (error) throw error
-
   return (data ?? []) as AttachmentRow[]
 }
+
 export async function getAttachmentSignedUrl(input: {
   filePath: string
   expiresInSeconds?: number
