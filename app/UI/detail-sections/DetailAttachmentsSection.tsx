@@ -12,6 +12,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { listAttachments, type AttachmentRow } from '@/app/lib/attachments'
+import { getAttachmentSignedUrl, listAttachments, type AttachmentRow } from '@/app/lib/attachments'
 
 export type DetailAttachmentsSectionProps = {
   entityType: string
@@ -54,6 +55,16 @@ export default function DetailAttachmentsSection({
         if (cancelled) return
         setLoading(false)
       })
+    
+    async function handleOpen(row: AttachmentRow) {
+      try {
+        const url = await getAttachmentSignedUrl({ filePath: row.file_path, expiresInSeconds: 60 })
+        // otevřeme do nového tabu
+        window.open(url, '_blank', 'noopener,noreferrer')
+      } catch (e: any) {
+        setErrorText(e?.message ?? 'Nepodařilo se otevřít přílohu.')
+      }
+    }
 
     return () => {
       cancelled = true
@@ -77,17 +88,31 @@ export default function DetailAttachmentsSection({
       {/* jen přepínač zobrazení, žádné “+ Přidat” (to bude přes CommonActions později) */}
       <div className="detail-form__section">
         <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field detail-form__field--span-4">
-            <label className="detail-form__label">Zobrazení</label>
-
-            <label className="detail-form__checkbox">
-              <input
-                type="checkbox"
-                checked={includeArchived}
-                onChange={(e) => setIncludeArchived(e.target.checked)}
-              />
-              <span> Zobrazit archivované</span>
+          <div className="detail-form__field detail-form__field--span-6">
+            <label className="detail-form__label">
+              {r.title}
+              {r.is_archived ? ' (archiv)' : ''}
             </label>
+          
+            <div className="detail-attachments__row">
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={r.file_name}
+                readOnly
+              />
+          
+              <button
+                type="button"
+                className="detail-attachments__link"
+                onClick={() => handleOpen(r)}
+              >
+                Otevřít
+              </button>
+            </div>
+          
+            {r.description ? (
+              <div className="detail-view__placeholder">{r.description}</div>
+            ) : null}
           </div>
         </div>
       </div>
