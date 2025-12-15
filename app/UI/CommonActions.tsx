@@ -111,7 +111,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     icon: 'add',
     label: { cs: 'Přidat', en: 'Add' },
     description: { cs: 'Vytvořit nový záznam.', en: 'Create a new record.' },
-    hideWhen: ['add','edit'], // v editaci typicky nepřidáváš nový záznam
+    hideWhen: ['edit'], // v editaci typicky nepřidáváš nový záznam
   },
 
   detail: {
