@@ -22,6 +22,7 @@ type UserDetailFrameProps = {
   }
   viewMode: ViewMode // read/edit/create
   onDirtyChange?: (dirty: boolean) => void
+  onRegisterSubmit?: (fn: () => Promise<any>) => void
 }
 
 export default function UserDetailFrame({ user, viewMode, onDirtyChange }: UserDetailFrameProps) {
