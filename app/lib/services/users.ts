@@ -1,44 +1,35 @@
 // FILE: app/lib/services/users.ts
-// PURPOSE: CRUD pro modul 010 (Users) nad entitou subject (Supabase). UI nesmí volat Supabase přímo.
+// PURPOSE: CRUD pro modul 010 nad tabulkou public.subjects (Supabase)
 
 import { supabase } from '@/app/lib/supabaseClient'
 
-/**
- * POZOR:
- * - podle docs je tabulka `subject` (singulár).
- * - pokud ji máš v DB jako `subjects`, změň SUBJECT_TABLE níže.
- */
-const SUBJECT_TABLE = 'subject'
+const SUBJECT_TABLE = 'subjects'
 
-export type SubjectUserRow = {
+export type SubjectRow = {
   id: string
+  subject_type: string | null
+  auth_user_id: string | null
   display_name: string | null
   email: string | null
   phone: string | null
-  is_archived: boolean | null
   created_at: string | null
+  updated_at: string | null
 }
 
 export type UsersListParams = {
   searchText?: string
-  includeArchived?: boolean
   limit?: number
 }
 
 export async function listUsers(params: UsersListParams = {}) {
-  const { searchText = '', includeArchived = false, limit = 200 } = params
+  const { searchText = '', limit = 200 } = params
 
   let q = supabase
     .from(SUBJECT_TABLE)
-    .select('id, display_name, email, phone, is_archived, created_at')
+    .select('id, subject_type, auth_user_id, display_name, email, phone, created_at, updated_at')
     .order('display_name', { ascending: true })
     .limit(limit)
 
-  if (!includeArchived) {
-    q = q.eq('is_archived', false)
-  }
-
-  // jednoduchý fulltext-ish filtr (bez trigramů): display_name/email/phone ilike
   const s = searchText.trim()
   if (s) {
     const pattern = `%${s}%`
@@ -47,12 +38,13 @@ export async function listUsers(params: UsersListParams = {}) {
 
   const { data, error } = await q
   if (error) throw error
-
-  return (data ?? []) as SubjectUserRow[]
+  return (data ?? []) as SubjectRow[]
 }
 
 export type SaveUserInput = {
   id: string // 'new' pro create
+  subjectType?: string | null // např. 'user' dle subject_types.code
+  authUserId?: string | null
   displayName: string
   email: string
   phone?: string
@@ -64,6 +56,8 @@ export async function saveUser(input: SaveUserInput) {
 
   const payload = {
     id,
+    subject_type: input.subjectType ?? null,
+    auth_user_id: input.authUserId ?? null,
     display_name: input.displayName || null,
     email: input.email || null,
     phone: input.phone?.trim() ? input.phone.trim() : null,
@@ -72,9 +66,9 @@ export async function saveUser(input: SaveUserInput) {
   const { data, error } = await supabase
     .from(SUBJECT_TABLE)
     .upsert(payload, { onConflict: 'id' })
-    .select('id, display_name, email, phone, is_archived, created_at')
+    .select('id, subject_type, auth_user_id, display_name, email, phone, created_at, updated_at')
     .single()
 
   if (error) throw error
-  return data as SubjectUserRow
+  return data as SubjectRow
 }
