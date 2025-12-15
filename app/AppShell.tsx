@@ -54,7 +54,11 @@ import type { IconKey } from '@/app/UI/icons'
 // 🔹 NOVĚ: horní lišta modulů (Excel styl)
 import { TopMenu } from '@/app/UI/TopMenu'
 import CommonActions from '@/app/UI/CommonActions'
-import type { CommonActionId } from '@/app/UI/CommonActions'
+import type {
+  CommonActionId,
+  CommonActionsUiState,
+  ViewMode,
+} from '@/app/UI/CommonActions'
 
 type SessionUser = {
   id?: string | null
@@ -97,11 +101,6 @@ type AppShellProps = {
 // ✅ po refaktoru: pouze IDčka akcí
 type CommonActionsInput = CommonActionId[]
 
-type CommonActionsState = {
-  hasSelection: boolean
-  isDirty: boolean
-}
-
 // 🔹 typ layoutu menu – boď sidebar vlevo, nebo horní lišta
 type MenuLayout = 'sidebar' | 'top'
 
@@ -125,8 +124,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   // 📌 Výběr v sidebaru (nebo v TopMenu – používají stejný typ)
   const [activeSelection, setActiveSelection] =
     useState<SidebarSelection | null>(null)
-
-  const [hasUnsavedChanges] = useState(false)
 
   // 🔹 Výchozí: sidebar vlevo, dokud si uživatel nezvolí jinak
   const [menuLayout, setMenuLayout] = useState<MenuLayout>('sidebar')
@@ -161,23 +158,35 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     CommonActionsInput | undefined
   >(undefined)
 
-  // ✅ dynamický state pro disabled podmínky
-  const [commonActionsState, setCommonActionsState] =
-    useState<CommonActionsState>({
-      hasSelection: false,
-      isDirty: false,
-    })
+  // ✅ UI stav pro CommonActions v6 (mode + selection + dirty)
+  const [commonActionsUi, setCommonActionsUi] = useState<CommonActionsUiState>({
+    viewMode: 'list',
+    hasSelection: false,
+    isDirty: false,
+  })
 
   // ✅ handler kliknutí na akce – registruje aktuální tile
   const [commonActionHandler, setCommonActionHandler] = useState<
     ((id: CommonActionId) => void) | undefined
   >(undefined)
 
-  // ✅ bezpečný reset – používáme na více místech (nepřepisuje ostatní věci)
+  // ✅ bezpečný reset – používáme na více místech
   function resetCommonActions() {
     setCommonActions(undefined)
     setCommonActionHandler(undefined)
-    setCommonActionsState({ hasSelection: false, isDirty: false })
+    setCommonActionsUi({
+      viewMode: 'list',
+      hasSelection: false,
+      isDirty: false,
+    })
+  }
+
+  // ✅ dirty guard – centrálně v AppShell
+  function confirmIfDirty(message?: string) {
+    if (!commonActionsUi.isDirty) return true
+    return window.confirm(
+      message ?? 'Máš neuložené změny. Opravdu chceš pokračovat?',
+    )
   }
 
   // 🎨 Při mountu aplikace nastavíme theme z localStorage
@@ -334,12 +343,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (initialModuleId && modules.some((m) => m.id === initialModuleId)) {
       setActiveModuleId(initialModuleId)
       setActiveSelection({ moduleId: initialModuleId })
-      // ✅ nový modul = reset actions (aby nezůstaly z předchozího výběru)
       resetCommonActions()
     }
   }, [isAuthenticated, modules, activeModuleId, initialModuleId])
 
-  // 🧹 Když nemáme vybraný tile, smažeme commonActions i handler i state
+  // 🧹 Když nemáme vybraný tile, smažeme commonActions i handler i ui state
   useEffect(() => {
     if (!activeSelection?.tileId) {
       resetCommonActions()
@@ -348,6 +356,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // 🚪 Logout
   async function handleLogout() {
+    // logout je “kontext změna” → chráníme
+    if (!confirmIfDirty('Máš neuložené změny. Opravdu se chceš odhlásit?')) return
+
     await logout()
     setIsAuthenticated(false)
     setUser(null)
@@ -359,22 +370,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // Sidebar / TopMenu klik
   function handleModuleSelect(selection: SidebarSelection) {
+    if (!confirmIfDirty()) return
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
-    // ✅ pokaždé resetujeme (tile si zaregistruje nové)
     resetCommonActions()
   }
 
   // 🏠 Home button
   function handleHomeClick() {
     if (!isAuthenticated) return
-
-    if (hasUnsavedChanges) {
-      const confirmLeave = window.confirm(
-        'Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?',
-      )
-      if (!confirmLeave) return
-    }
+    if (!confirmIfDirty('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')) return
 
     setActiveModuleId(null)
     setActiveSelection(null)
@@ -384,6 +389,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // 🔁 Nouzové tlačítko: rychlé přepnutí zpět na sidebar
   function forceSidebarLayout() {
+    if (!confirmIfDirty()) return
+
     setMenuLayout('sidebar')
 
     if (typeof window !== 'undefined') {
@@ -536,12 +543,35 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       if (tile) {
         const TileComponent = tile.component
 
+        // kompatibilita: tiles můžou posílat starý tvar {hasSelection,isDirty}
+        // nebo nový tvar {viewMode,hasSelection,isDirty}
+        const registerCommonActionsUi = (next: any) => {
+          if (!next || typeof next !== 'object') return
+
+          // nový tvar
+          if (typeof next.viewMode === 'string') {
+            setCommonActionsUi({
+              viewMode: next.viewMode as ViewMode,
+              hasSelection: !!next.hasSelection,
+              isDirty: !!next.isDirty,
+            })
+            return
+          }
+
+          // starý tvar → merge do stávajícího (viewMode zachováme)
+          setCommonActionsUi((prev) => ({
+            ...prev,
+            hasSelection: typeof next.hasSelection === 'boolean' ? next.hasSelection : prev.hasSelection,
+            isDirty: typeof next.isDirty === 'boolean' ? next.isDirty : prev.isDirty,
+          }))
+        }
+
         return (
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
               <TileComponent
                 onRegisterCommonActions={setCommonActions}
-                onRegisterCommonActionsState={setCommonActionsState}
+                onRegisterCommonActionsState={registerCommonActionsUi}
                 onRegisterCommonActionHandler={setCommonActionHandler}
               />
             </section>
@@ -582,6 +612,24 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         </p>
       </div>
     )
+  }
+
+  // ✅ pro Sidebar flag (aby zůstalo chování beze změny)
+  const hasUnsavedChanges = commonActionsUi.isDirty
+
+  // ✅ klik z CommonActions (centrální bod)
+  function handleCommonActionClick(id: CommonActionId) {
+    // pokud je dirty a akce není "save", "saveAndClose", chráníme
+    if (
+      commonActionsUi.isDirty &&
+      id !== 'save' &&
+      id !== 'saveAndClose'
+    ) {
+      const ok = confirmIfDirty()
+      if (!ok) return
+    }
+
+    commonActionHandler?.(id)
   }
 
   // 🧱 Layout
@@ -669,9 +717,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <CommonActions
           disabled={!isAuthenticated}
           actions={commonActions}
-          hasSelection={commonActionsState.hasSelection}
-          isDirty={commonActionsState.isDirty}
-          onActionClick={(id) => commonActionHandler?.(id)}
+          ui={commonActionsUi}
+          onActionClick={handleCommonActionClick}
         />
       </div>
 
