@@ -1,11 +1,12 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
-// PURPOSE: Detail uživatele (010) – modul jen vybírá sekce a dodá ctx, UI Tabs řeší DetailView.
+// PURPOSE: Detail uživatele (010) – modul vybírá sekce a dodá ctx.
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo } from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
-import DetailView, { type DetailViewMode, type DetailSectionId } from '@/app/UI/DetailView'
+import DetailView, { type DetailSectionId } from '@/app/UI/DetailView'
+import type { ViewMode } from '@/app/UI/CommonActions'
 import UserDetailForm from './UserDetailForm'
 
 type UserDetailFrameProps = {
@@ -19,24 +20,32 @@ type UserDetailFrameProps = {
     createdAt: string
     isArchived?: boolean
   }
+  viewMode: ViewMode // read/edit/create
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export default function UserDetailFrame({ user }: UserDetailFrameProps) {
-  const [mode] = useState<DetailViewMode>('view')
-  const [isDirty, setIsDirty] = useState(false)
-
+export default function UserDetailFrame({ user, viewMode, onDirtyChange }: UserDetailFrameProps) {
   const sectionIds: DetailSectionId[] = ['roles']
+
+  // DetailView má svoje typy 'view|edit|create', my mapujeme z CommonActions viewMode
+  const detailMode = useMemo(() => {
+    if (viewMode === 'edit') return 'edit'
+    if (viewMode === 'create') return 'create'
+    return 'view'
+  }, [viewMode])
+
+  const readOnly = detailMode === 'view'
 
   return (
     <EntityDetailFrame title="Uživatel">
       <DetailView
-        mode={mode}
-        isDirty={isDirty}
+        mode={detailMode}
         sectionIds={sectionIds}
         ctx={{
-          detailContent: <UserDetailForm user={user} onDirtyChange={setIsDirty} />,
+          detailContent: (
+            <UserDetailForm user={user} onDirtyChange={onDirtyChange} readOnly={readOnly} />
+          ),
 
-          // aby to bylo hned vidět (zatím bez Supabase dotazů)
           rolesData: {
             role: {
               code: (user.roleLabel || 'role').toLowerCase(),
@@ -44,6 +53,15 @@ export default function UserDetailFrame({ user }: UserDetailFrameProps) {
               description: 'Popis role doplníme po napojení na Supabase (role_types).',
             },
             permissions: [],
+            availableRoles: [],
+          },
+
+          rolesUi: {
+            canEdit: !readOnly,
+            mode: detailMode,
+            onChangeRoleCode: () => {
+              // MVP: zatím bez napojení
+            },
           },
         }}
       />
