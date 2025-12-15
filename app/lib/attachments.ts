@@ -58,3 +58,35 @@ export async function getAttachmentSignedUrl(input: {
   if (error) throw error
   return data.signedUrl
 }
+
+export type AttachmentVersionRow = {
+  id: string
+  document_id: string
+  version_number: number
+  file_path: string
+  file_name: string
+  mime_type: string | null
+  file_size: number | null
+  is_archived: boolean
+  created_at: string
+}
+
+export async function listAttachmentVersions(input: {
+  documentId: string
+  includeArchived?: boolean
+}) {
+  const { documentId, includeArchived = true } = input
+
+  let q = supabase
+    .from('document_versions')
+    .select('*')
+    .eq('document_id', documentId)
+    .order('version_number', { ascending: false })
+
+  if (!includeArchived) q = q.eq('is_archived', false)
+
+  const { data, error } = await q
+  if (error) throw error
+
+  return (data ?? []) as AttachmentVersionRow[]
+}
