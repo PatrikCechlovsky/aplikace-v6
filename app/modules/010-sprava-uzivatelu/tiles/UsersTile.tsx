@@ -262,8 +262,16 @@ export default function UsersTile({
   }
 
   if (detailUser) {
-    return <UserDetailFrame user={detailUser} viewMode={viewMode} />
-  }
+  return (
+    <UserDetailFrame
+      user={detailUser}
+      viewMode={viewMode}
+      onDirtyChange={(dirty) => {
+        setIsDirty(dirty)
+      }}
+    />
+  )
+}
 
   return null
 }
