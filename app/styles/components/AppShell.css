@@ -70,6 +70,10 @@
   align-items: center;
   padding: 2px 0; /* jen vertikálně, ať to nehne šířkou */
 }
+.layout:not(.layout--topmenu) .layout__actions .common-actions__button {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
 
 /* Topbar vnitřek – aby se nic “nevytlačilo za roh” */
 .layout__topbar-inner {
