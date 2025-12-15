@@ -16,7 +16,7 @@ import './styles/components/DetailTabs.css'
 import './styles/components/DetailForm.css'
 import './styles/components/EntityDetailFrame.css'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react''
 import { useRouter } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
@@ -120,7 +120,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [commonActionHandler, setCommonActionHandler] = useState<
     ((id: CommonActionId) => void) | undefined
   >(undefined)
-
+  const registerCommonActionHandler = useCallback((fn: (id: CommonActionId) => void) => {
+  setCommonActionHandler(() => fn) // uložit funkci jako hodnotu
+  }, [])
   function resetCommonActions() {
     setCommonActions(undefined)
     setCommonActionHandler(undefined)
