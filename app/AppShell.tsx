@@ -583,7 +583,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           disabled={!isAuthenticated}
           actions={commonActions}
           ui={commonActionsUi}
-          onActionClick={handleCommonActionClick}
+          onActionClick={(id) => {
+            console.log('[AppShell] action click:', id)
+          
+            if (!commonActionHandler) {
+              console.warn('[AppShell] commonActionHandler není zaregistrovaný (tile ho neposlal)')
+              return
+            }
+          
+            commonActionHandler(id)
+          }}
         />
       </div>
 
