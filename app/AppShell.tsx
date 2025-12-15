@@ -120,9 +120,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [commonActionHandler, setCommonActionHandler] = useState<
     ((id: CommonActionId) => void) | undefined
   >(undefined)
-  const registerCommonActionHandler = useCallback((fn: (id: CommonActionId) => void) => {
-  setCommonActionHandler(() => fn) // uložit funkci jako hodnotu
-  }, [])
+  
+  const registerCommonActionHandler = useCallback(
+    (fn: (id: CommonActionId) => void) => {
+      setCommonActionHandler(() => fn) // uložit funkci jako hodnotu (ne updater)
+    },
+    [],
+  )
+
   function resetCommonActions() {
     setCommonActions(undefined)
     setCommonActionHandler(undefined)
@@ -481,7 +486,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               <TileComponent
                 onRegisterCommonActions={setCommonActions}
                 onRegisterCommonActionsState={registerCommonActionsUi}
-                onRegisterCommonActionHandler={(fn) => setCommonActionHandler(() => fn)}
+                onRegisterCommonActionHandler={registerCommonActionHandler}
               />
             </section>
           </div>
