@@ -42,3 +42,10 @@
   opacity: 1;
   max-width: 80px;
 }
+/* SIDEBAR: dát CommonActions stejný vertikální rytmus jako TopMenu */
+.layout:not(.layout--topmenu) .layout__context .common-actions {
+  min-height: 40px;     /* stejná výška řádku */
+  padding: 4px 10px;    /* vzduch nahoře a dole */
+  display: flex;
+  align-items: center;  /* ikony nebudou sedět na lince */
+}
