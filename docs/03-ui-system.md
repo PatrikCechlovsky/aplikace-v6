@@ -110,6 +110,117 @@ Je společná pro všechny moduly a zajišťuje jednotné chování akcí v cel�
 CommonActions je jediný povolený mechanismus pro práci s akčními tlačítky
 v hlavním UI aplikace.
 
+# CommonActions v6 – finální koncept, který připravujeme
+
+## Cíl
+Mít **jeden jednotný řádek akcí** (CommonActions), který:
+- renderuje tlačítka v pořadí, které určí modul/tile/form,
+- má **centrální registr definic** tlačítek (ikony, labely, pravidla),
+- umí tlačítka **dynamicky skrývat / zakazovat** dle stavu, režimu a práv,
+- kliky deleguje na aktivní modul/tile (CommonActions není business logika),
+- a **všechny kontextové kliky** v celé aplikaci hlídá přes **dirty guard**.
+
+---
+
+## 1) Pořadí tlačítek určuje vždy modul / tile / form
+- V každém view (list/detail/form) se do AppShell posílá jen pole klíčů tlačítek, např.:
+  - `['add','detail','edit','delete']`
+- Pořadí zobrazení je **přesně takové**, jak je uvedeno v poli.
+- CommonActions **nepřerovnává** a **nevymýšlí vlastní pořadí**.
+
+---
+
+## 2) Jedna centrální definice všech tlačítek (ikona, label, pravidla)
+- Existuje **jediný registr** definic tlačítek (v CommonActions / UI vrstvě).
+- Každé tlačítko má:
+  - klíč (např. `add`)
+  - ikonu
+  - CZ/EN název
+  - popis (tooltip / help text)
+  - stavové podmínky (např. vyžaduje selection, vyžaduje dirty)
+  - oprávnění (role / permission)
+- Modul/tile už **nedefinuje labely ani ikony**, pouze vybírá klíče.
+
+---
+
+## 3) Tlačítka se budou dynamicky skrývat / zobrazovat (nebo disabled)
+CommonActions při renderu vyhodnotí pro každé tlačítko:
+- UI stav:
+  - selection (je vybraná položka?)
+  - dirty (existují neuložené změny?)
+  - detail open / context (jsme v detailu nebo listu?)
+  - mode (list/read/edit/create)
+- roli / oprávnění uživatele
+- stav formuláře (read/edit/create)
+
+Výsledek:
+- některá tlačítka se **skryjí**
+- některá se **zobrazí**
+- některá budou **disabled** (dle pravidel)
+
+---
+
+## 4) Přepínání „čtení vs editace“ se řeší automaticky
+### Pravidlo režimů:
+- Když jsem v režimu **read**:
+  - vidím `edit`
+  - nevidím `detail/view` (protože už jsem v detailu / čtení)
+- Když jsem v režimu **edit**:
+  - vidím `detail/view` (= „zpět do čtení“)
+  - nevidím `edit`
+  - navíc vidím `save` a `cancel` (pokud je editace uložitelné)
+
+Důsledek:
+- Nebudeme ručně hlídat „které tlačítko kdy“, řeší to pravidla.
+
+---
+
+## 5) Akce (klik) se nedefinují v CommonActions, ale v aktivním modulu
+- CommonActions je **UI + pravidla zobrazení**.
+- Klik na tlačítko vždy volá handler aktivního tile/modulu (přes AppShell).
+- Každý modul si implementuje **co udělá** `add/edit/save/...`,
+  ale tlačítka zůstávají jednotná.
+
+---
+
+## 6) Všechny kliky v aplikaci musí hlídat neuloženou práci (dirty guard)
+Zavádíme jednotné pravidlo:
+- Pokud `dirty = true` a uživatel chce udělat akci, která mění kontext
+  (změna modulu, tile, návrat, otevření jiného detailu, zavření editace, přepnutí režimu…),
+  akce se **zastaví** a zobrazí se potvrzení:
+
+  „Máš neuložené změny. Opravdu chceš pokračovat?“
+
+- Dirty guard bude **centrálně v AppShell**, ne v každém tile,
+  aby se to neopakovalo a bylo to konzistentní.
+
+---
+
+## Co je hotové (stav projektu)
+- Build běží bez chyb.
+- AppShell umí:
+  - přijmout `actions[]` z tile
+  - přijmout state (selection / dirty)
+  - přijmout `handler(actionId)`
+  - poslat klik do aktivního tile
+
+---
+
+## Další krok (implementace)
+1) Rozšířit CommonActions o plný registr tlačítek podle tabulky:
+   - klíče, ikony, CZ/EN, popisy, pravidla
+2) Zavést jednotný `viewMode` (list/read/edit/create) jako součást UI stavu:
+   - posílat do CommonActions
+3) Implementovat pravidla automatického skrývání:
+   - read ↔ edit + save/cancel
+4) Napojit dirty guard na:
+   - změny modulu / tile
+   - přepnutí list ↔ detail
+   - přepnutí read ↔ edit
+   - další navigační kliky
+
+---
+
 
 ---
 
