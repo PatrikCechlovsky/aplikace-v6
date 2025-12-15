@@ -366,11 +366,9 @@ export default function CommonActions({
             title={desc}
             onClick={() => {
               if (isDisabled) return
-             
-              console.log('CA: click', id)
+        
+              console.log('CA: CommonActions onClick', id)
               onActionClick?.(id)
-              console.log('CA: CommonActions onClick', actionId)
-              onActionClick?.(actionId)
             }}
           >
             <span className="common-actions__icon" aria-hidden="true">
