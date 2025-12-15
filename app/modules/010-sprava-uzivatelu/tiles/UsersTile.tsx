@@ -260,7 +260,7 @@ export default function UsersTile({
   //  RENDER: 2) DETAIL UŽIVATELE
   // ===========================
   if (detailUser) {
-    return <UserDetailFrame user={detailUser} />
+    return <UserDetailFrame user={detailUser} viewMode={viewMode} />
   }
 
   return null
