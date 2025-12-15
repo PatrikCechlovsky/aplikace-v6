@@ -16,7 +16,7 @@ import './styles/components/DetailTabs.css'
 import './styles/components/DetailForm.css'
 import './styles/components/EntityDetailFrame.css'
 
-import { useCallback, useEffect, useState } from 'react''
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
