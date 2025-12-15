@@ -142,19 +142,37 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
     const submit = async () => {
       try {
         const v = currentRef.current
-
-        // ✅ Uložíme subject + (volitelně) sync role/permissions
+               
+        // 🔑 display_name pravidla:
+        // 1) použij ručně vyplněné
+        // 2) fallback na email
+        const displayName =
+          v.displayName?.trim() ||
+          v.email?.trim() ||
+          'uživatel'
+        
         const saved = await saveUser({
           id: user.id,
-          subjectType: 'osoba', // pro 010 default; později vybereš ze subject_types
-          displayName: v.displayName,
-          email: v.email,
-          phone: v.phone,
-
-          // pro teď: role/permissions sync jen pokud už máme načteno nebo jsme v create
+        
+          // SUBJECT
+          subjectType: 'osoba',
+        
+          displayName,
+          email: v.email || null,
+          phone: v.phone || null,
+        
+          titleBefore: v.titleBefore || null,
+          firstName: v.firstName || null,
+          lastName: v.lastName || null,
+          login: v.login || displayName,
+        
+          isArchived: v.isArchived,
+        
+          // ROLE + PERMISSIONS
           roleCode: roleCode ?? (isCreate ? 'user' : null),
           permissionCodes: permissionCodes ?? (isCreate ? [] : null),
         })
+
 
         const next: UiUser = {
           ...resolvedUser,
