@@ -181,14 +181,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     })
   }
 
-  // ✅ dirty guard – centrálně v AppShell
+  // ✅ dirty guard – ptáme se JEN v edit/create a jen pokud isDirty=true
   function confirmIfDirty(message?: string) {
     const vm = commonActionsUi.viewMode
     const shouldGuard = vm === 'edit' || vm === 'create'
     if (!shouldGuard) return true
-   
+
     if (!commonActionsUi.isDirty) return true
-   
+
     return window.confirm(
       message ?? 'Máš neuložené změny. Opravdu chceš pokračovat?',
     )
@@ -361,7 +361,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // 🚪 Logout
   async function handleLogout() {
-    // logout je “kontext změna” → chráníme
     if (!confirmIfDirty('Máš neuložené změny. Opravdu se chceš odhlásit?')) return
 
     await logout()
@@ -384,7 +383,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   // 🏠 Home button
   function handleHomeClick() {
     if (!isAuthenticated) return
-    if (!confirmIfDirty('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')) return
+    if (
+      !confirmIfDirty(
+        'Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?',
+      )
+    )
+      return
 
     setActiveModuleId(null)
     setActiveSelection(null)
@@ -563,11 +567,15 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             return
           }
 
-          // starý tvar → merge do stávajícího (viewMode zachováme)
+          // starý tvar → merge do stávajícího
           setCommonActionsUi((prev) => ({
             ...prev,
-            hasSelection: typeof next.hasSelection === 'boolean' ? next.hasSelection : prev.hasSelection,
-            isDirty: typeof next.isDirty === 'boolean' ? next.isDirty : prev.isDirty,
+            hasSelection:
+              typeof next.hasSelection === 'boolean'
+                ? next.hasSelection
+                : prev.hasSelection,
+            isDirty:
+              typeof next.isDirty === 'boolean' ? next.isDirty : prev.isDirty,
           }))
         }
 
@@ -619,12 +627,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     )
   }
 
-  // ✅ pro Sidebar flag (aby zůstalo chování beze změny)
-  const hasUnsavedChanges = commonActionsUi.isDirty
+  // ✅ pro Sidebar flag (dirty jen v edit/create)
+  const hasUnsavedChanges =
+    commonActionsUi.isDirty &&
+    (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
 
   // ✅ klik z CommonActions (centrální bod)
   function handleCommonActionClick(id: CommonActionId) {
-   if (!confirmIfDirty()) return
+    if (!confirmIfDirty()) return
     commonActionHandler?.(id)
   }
 
@@ -649,7 +659,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         <div className="layout__topbar-inner">
           <div className="layout__topbar-left">
             {menuLayout === 'top' && (
-              <HomeButton disabled={!isAuthenticated} onClick={handleHomeClick} />
+              <HomeButton
+                disabled={!isAuthenticated}
+                onClick={handleHomeClick}
+              />
             )}
 
             <Breadcrumbs
