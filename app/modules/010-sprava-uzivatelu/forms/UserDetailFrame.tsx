@@ -1,20 +1,14 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
-// PURPOSE: Detail uživatele (010) – modul vybírá sekce a dodá ctx.
+// PURPOSE: Detail uživatele (010) – UI skládá sekce, data ukládá přes service vrstvu.
 
 'use client'
 
-import React, { useEffect, useMemo, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
 import DetailView, { type DetailSectionId } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
-import UserDetailForm from './UserDetailForm'
-
-export type UserFormValue = {
-  displayName: string
-  email: string
-  phone?: string
-}
+import UserDetailForm, { type UserFormValue } from './UserDetailForm'
+import { saveUser } from '@/app/lib/services/users'
 
 type UserDetailFrameProps = {
   user: {
@@ -32,45 +26,9 @@ type UserDetailFrameProps = {
   onRegisterSubmit?: (fn: () => Promise<any>) => void
 }
 
-// 🔧 Uprav podle reality v Supabase (zatím MVP)
-const TABLE_USERS = 'subjects'
-
-// ✅ client-side Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-async function saveUserToSupabase(input: { id: string; displayName: string; email: string; phone?: string }) {
-  // mapování na DB sloupce (uprav podle svých názvů)
-  const payload: any = {
-    display_name: input.displayName,
-    email: input.email,
-    phone: input.phone ?? null,
-  }
-
-  const isCreate = input.id === 'new'
-  const id = isCreate ? crypto.randomUUID() : input.id
-
-  const { data, error } = await supabase
-    .from(TABLE_USERS)
-    .upsert({ id, ...payload }, { onConflict: 'id' })
-    .select('*')
-    .single()
-
-  if (error) throw error
-
-  return { id, row: data }
-}
-
-export default function UserDetailFrame({
-  user,
-  viewMode,
-  onDirtyChange,
-  onRegisterSubmit,
-}: UserDetailFrameProps) {
+export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegisterSubmit }: UserDetailFrameProps) {
   const sectionIds: DetailSectionId[] = ['roles']
 
-  // DetailView má svoje typy 'view|edit|create', my mapujeme z CommonActions viewMode
   const detailMode = useMemo(() => {
     if (viewMode === 'edit') return 'edit'
     if (viewMode === 'create') return 'create'
@@ -79,14 +37,12 @@ export default function UserDetailFrame({
 
   const readOnly = detailMode === 'view'
 
-  // aktuální hodnoty formuláře – držíme v ref, aby šly uložit přes CommonActions save
   const currentRef = useRef<UserFormValue>({
     displayName: user.displayName,
     email: user.email,
     phone: user.phone ?? '',
   })
 
-  // při změně uživatele (jiný záznam) reset ref
   useEffect(() => {
     currentRef.current = {
       displayName: user.displayName,
@@ -95,34 +51,35 @@ export default function UserDetailFrame({
     }
   }, [user.id, user.displayName, user.email, user.phone])
 
-  // registrace submit funkce pro UsersTile (save/saveAndClose)
+  const handleValueChange = useCallback((val: UserFormValue) => {
+    currentRef.current = val
+  }, [])
+
   useEffect(() => {
     if (!onRegisterSubmit) return
 
     const submit = async () => {
       try {
         const v = currentRef.current
-    
-        console.log('[SAVE] sending to supabase', v)
-    
-        const saved = await saveUserToSupabase({
+
+        const saved = await saveUser({
           id: user.id,
           displayName: v.displayName,
           email: v.email,
           phone: v.phone,
         })
-    
-        console.log('[SAVE] supabase OK', saved)
-    
+
         return {
           ...user,
           id: saved.id,
-          displayName: v.displayName,
-          email: v.email,
-          phone: v.phone,
+          displayName: saved.display_name ?? v.displayName,
+          email: saved.email ?? v.email,
+          phone: saved.phone ?? v.phone,
+          isArchived: !!saved.is_archived,
+          createdAt: saved.created_at ?? user.createdAt,
         }
       } catch (err) {
-        console.error('[SAVE] supabase ERROR', err)
+        console.error('[UserDetailFrame.save] ERROR', err)
         alert('Chyba při ukládání – viz konzole')
         return null
       }
@@ -140,15 +97,13 @@ export default function UserDetailFrame({
           entityType: 'user',
           entityId: user.id,
           mode: detailMode,
-          
+
           detailContent: (
             <UserDetailForm
               user={user}
               readOnly={readOnly}
               onDirtyChange={onDirtyChange}
-              onValueChange={(val) => {
-                currentRef.current = val
-              }}
+              onValueChange={handleValueChange}
             />
           ),
 
@@ -156,7 +111,7 @@ export default function UserDetailFrame({
             role: {
               code: (user.roleLabel || 'role').toLowerCase(),
               name: user.roleLabel || '—',
-              description: 'Popis role doplníme po napojení na Supabase (role_types).',
+              description: 'Role napojíme přes subject_roles (modul 900).',
             },
             permissions: [],
             availableRoles: [],
@@ -166,7 +121,7 @@ export default function UserDetailFrame({
             canEdit: !readOnly,
             mode: detailMode,
             onChangeRoleCode: () => {
-              // MVP: zatím bez napojení
+              // TODO: napojíme později
             },
           },
         }}
