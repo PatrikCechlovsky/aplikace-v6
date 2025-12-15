@@ -1,5 +1,5 @@
 'use client'
-console.log('CA: CommonActions FILE LOADED')
+
 /**
  * FILE: app/UI/CommonActions.tsx
  *
@@ -19,14 +19,10 @@ console.log('CA: CommonActions FILE LOADED')
 
 import { getIcon } from './icons'
 
-/* ============================================================================
- * 1) ID všech podporovaných akcí
- * ========================================================================== */
-
 export type CommonActionId =
   | 'add'
-  | 'detail' // preferované (dříve se používalo "view")
-  | 'view' // kompatibilita (alias pro detail)
+  | 'detail'
+  | 'view'
   | 'edit'
   | 'duplicate'
   | 'attach'
@@ -41,10 +37,6 @@ export type CommonActionId =
   | 'export'
   | 'reject'
 
-/* ============================================================================
- * 2) UI režimy (AppShell/tile posílá do CommonActions)
- * ========================================================================== */
-
 export type ViewMode = 'list' | 'read' | 'edit' | 'create'
 export type Locale = 'cs' | 'en'
 
@@ -54,56 +46,22 @@ export type CommonActionsUiState = {
   isDirty?: boolean
 }
 
-/* ============================================================================
- * 3) Práva (volitelné – když zatím nemáš, neposílej)
- * ========================================================================== */
-
 export type CommonActionsAuth = {
-  roles?: string[] // např. ['admin','manager']
-  permissions?: string[] // např. ['users.edit','users.delete']
+  roles?: string[]
+  permissions?: string[]
 }
-
-/* ============================================================================
- * 4) Definice jedné akce (registry)
- * ========================================================================== */
 
 type CommonActionDefinition = {
   id: CommonActionId
-
   icon: string
-
-  label: {
-    cs: string
-    en: string
-  }
-
-  description?: {
-    cs?: string
-    en?: string
-  }
-
-  /**
-   * Stavové podmínky
-   */
+  label: { cs: string; en: string }
+  description?: { cs?: string; en?: string }
   requiresSelection?: boolean
   requiresDirty?: boolean
-
-  /**
-   * Oprávnění (volitelné)
-   */
   requiresAnyRole?: string[]
   requiresAllPermissions?: string[]
-
-  /**
-   * Režimové pravidlo: skrýt v určitých režimech
-   * (disabled řešíme zvlášť – hide je “úplně pryč”)
-   */
   hideWhen?: ViewMode[]
 }
-
-/* ============================================================================
- * 5) Centrální registry definic (JEDINÝ zdroj pravdy)
- * ========================================================================== */
 
 const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
   add: {
@@ -111,7 +69,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     icon: 'add',
     label: { cs: 'Přidat', en: 'Add' },
     description: { cs: 'Vytvořit nový záznam.', en: 'Create a new record.' },
-    hideWhen: ['edit'], // v editaci typicky nepřidáváš nový záznam
+    hideWhen: ['edit'],
   },
 
   detail: {
@@ -120,11 +78,9 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     label: { cs: 'Detail', en: 'Detail' },
     description: { cs: 'Zobrazit detail záznamu.', en: 'Open record detail.' },
     requiresSelection: true,
-    // v režimu read už jsi “v detailu”, tlačítko nemá smysl
     hideWhen: ['read'],
   },
 
-  // kompatibilita (alias) – chová se stejně jako detail
   view: {
     id: 'view',
     icon: 'view',
@@ -140,7 +96,6 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     label: { cs: 'Upravit', en: 'Edit' },
     description: { cs: 'Přejít do editace.', en: 'Switch to edit mode.' },
     requiresSelection: true,
-    // v editaci už jsi, v create taky nemá smysl, v listu dává smysl
     hideWhen: ['edit', 'create'],
   },
 
@@ -150,7 +105,6 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     label: { cs: 'Uložit', en: 'Save' },
     description: { cs: 'Uložit změny.', en: 'Save changes.' },
     requiresDirty: true,
-    // save je relevantní jen při edit/create
     hideWhen: ['list', 'read'],
   },
 
@@ -170,11 +124,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     id: 'cancel',
     icon: 'cancel',
     label: { cs: 'Zrušit', en: 'Cancel' },
-    description: {
-      cs: 'Zrušit editaci / vytvoření.',
-      en: 'Cancel edit / create.',
-    },
-    // cancel je relevantní hlavně v edit/create; v list/read je obvykle zbytečný
+    description: { cs: 'Zrušit editaci / vytvoření.', en: 'Cancel edit / create.' },
     hideWhen: ['list'],
   },
 
@@ -190,10 +140,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     id: 'duplicate',
     icon: 'duplicate',
     label: { cs: 'Duplikovat', en: 'Duplicate' },
-    description: {
-      cs: 'Vytvořit kopii vybraného záznamu.',
-      en: 'Create a copy of the selected record.',
-    },
+    description: { cs: 'Vytvořit kopii vybraného záznamu.', en: 'Create a copy of the selected record.' },
     requiresSelection: true,
   },
 
@@ -224,11 +171,8 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     id: 'columnSettings',
     icon: 'settings',
     label: { cs: 'Sloupce', en: 'Columns' },
-    description: {
-      cs: 'Nastavení zobrazených sloupců.',
-      en: 'Configure visible columns.',
-    },
-    hideWhen: ['edit', 'create'], // typicky upravuješ sloupce v listu
+    description: { cs: 'Nastavení zobrazených sloupců.', en: 'Configure visible columns.' },
+    hideWhen: ['edit', 'create'],
   },
 
   import: {
@@ -256,45 +200,14 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
   },
 }
 
-/* ============================================================================
- * 6) Props komponenty (UI only)
- * ========================================================================== */
-
 type Props = {
-  /**
-   * Pole klíčů akcí – pořadí je finální a závazné
-   */
   actions?: CommonActionId[]
-
-  /**
-   * UI stav pro vyhodnocení pravidel
-   */
   ui: CommonActionsUiState
-
-  /**
-   * Globální disable (např. když app běží v režimu readonly)
-   */
   disabled?: boolean
-
-  /**
-   * Locale pro labely (default cs)
-   */
   locale?: Locale
-
-  /**
-   * Auth kontext (role/permission) – volitelné
-   */
   auth?: CommonActionsAuth
-
-  /**
-   * Delegace kliku do aktivního tile/modulu (AppShell)
-   */
   onActionClick: (id: CommonActionId) => void
 }
-
-/* ============================================================================
- * 7) Pomocné evaluátory
- * ========================================================================== */
 
 function hasAnyRole(auth: CommonActionsAuth | undefined, roles: string[] | undefined) {
   if (!roles || roles.length === 0) return true
@@ -302,10 +215,7 @@ function hasAnyRole(auth: CommonActionsAuth | undefined, roles: string[] | undef
   return roles.some((r) => userRoles.has(r.toLowerCase()))
 }
 
-function hasAllPermissions(
-  auth: CommonActionsAuth | undefined,
-  perms: string[] | undefined,
-) {
+function hasAllPermissions(auth: CommonActionsAuth | undefined, perms: string[] | undefined) {
   if (!perms || perms.length === 0) return true
   const userPerms = new Set((auth?.permissions ?? []).map((p) => p.toLowerCase()))
   return perms.every((p) => userPerms.has(p.toLowerCase()))
@@ -314,10 +224,6 @@ function hasAllPermissions(
 function isHiddenByMode(def: CommonActionDefinition, viewMode: ViewMode) {
   return !!def.hideWhen?.includes(viewMode)
 }
-
-/* ============================================================================
- * 8) Hlavní komponenta CommonActions
- * ========================================================================== */
 
 export default function CommonActions({
   actions,
@@ -339,15 +245,12 @@ export default function CommonActions({
         const def = COMMON_ACTION_DEFS[id]
         if (!def) return null
 
-        // 1) Režimové skrývání (read/edit pravidla atd.)
         if (isHiddenByMode(def, viewMode)) return null
 
-        // 2) Práva – pokud neprojde, schovat (ne disabled)
         const roleOk = hasAnyRole(auth, def.requiresAnyRole)
         const permsOk = hasAllPermissions(auth, def.requiresAllPermissions)
         if (!roleOk || !permsOk) return null
 
-        // 3) Stavové disabled
         const stateDisabled =
           (def.requiresSelection && !hasSelection) ||
           (def.requiresDirty && !isDirty)
@@ -366,9 +269,7 @@ export default function CommonActions({
             title={desc}
             onClick={() => {
               if (isDisabled) return
-        
-              console.log('CA: CommonActions onClick', id)
-              onActionClick?.(id)
+              onActionClick(id)
             }}
           >
             <span className="common-actions__icon" aria-hidden="true">
