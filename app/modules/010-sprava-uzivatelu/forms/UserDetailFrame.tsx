@@ -128,6 +128,10 @@ export default function UserDetailFrame({
         mode={detailMode}
         sectionIds={sectionIds}
         ctx={{
+          entityType: 'user',
+          entityId: user.id,
+          mode: detailMode,
+          
           detailContent: (
             <UserDetailForm
               user={user}
