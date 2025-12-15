@@ -183,7 +183,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // ✅ dirty guard – centrálně v AppShell
   function confirmIfDirty(message?: string) {
+    const vm = commonActionsUi.viewMode
+    const shouldGuard = vm === 'edit' || vm === 'create'
+    if (!shouldGuard) return true
+   
     if (!commonActionsUi.isDirty) return true
+   
     return window.confirm(
       message ?? 'Máš neuložené změny. Opravdu chceš pokračovat?',
     )
@@ -619,16 +624,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   // ✅ klik z CommonActions (centrální bod)
   function handleCommonActionClick(id: CommonActionId) {
-    // pokud je dirty a akce není "save", "saveAndClose", chráníme
-    if (
-      commonActionsUi.isDirty &&
-      id !== 'save' &&
-      id !== 'saveAndClose'
-    ) {
-      const ok = confirmIfDirty()
-      if (!ok) return
-    }
-
+   if (!confirmIfDirty()) return
     commonActionHandler?.(id)
   }
 
