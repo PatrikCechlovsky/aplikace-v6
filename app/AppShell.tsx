@@ -584,18 +584,23 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           actions={commonActions}
           ui={commonActionsUi}
           onActionClick={(id) => {
-            console.log('[AppShell] action click:', id)
-          
+            console.log('CA: AppShell received', id, {
+              hasHandler: !!commonActionHandler,
+              actions: commonActions,
+              ui: commonActionsUi,
+            })
+      
             if (!commonActionHandler) {
-              console.warn('[AppShell] commonActionHandler není zaregistrovaný (tile ho neposlal)')
+              console.warn(
+                'CA: AppShell commonActionHandler není zaregistrovaný (tile ho neposlal)',
+              )
               return
             }
-          
+      
             commonActionHandler(id)
           }}
         />
       </div>
-
       <main className="layout__content">{renderContent()}</main>
     </div>
   )
