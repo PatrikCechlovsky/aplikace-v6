@@ -34,7 +34,7 @@ function mapRowToUi(row: SubjectRow): UiUser {
     email: row.email ?? '',
     phone: row.phone ?? '',
     roleLabel: 'Uživatel', // TODO: napojíme později přes subject_roles
-    twoFactorMethod: null, // TODO: napojíme později (auth metadata / view)
+    twoFactorMethod: null,
     createdAt: row.created_at ?? '',
     isArchived: !!row.is_archived,
   }
@@ -55,7 +55,11 @@ function toRow(user: UiUser): ListViewRow<UiUser> {
 
 type UsersTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
-  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionsState?: (state: {
+    viewMode: ViewMode
+    hasSelection: boolean
+    isDirty: boolean
+  }) => void
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
 }
 
@@ -76,7 +80,6 @@ export default function UsersTile({
   const [detailUser, setDetailUser] = useState<UiUser | null>(null)
   const [isDirty, setIsDirty] = useState(false)
 
-  // submit funkce z Detailu (zaregistruje ji UserDetailFrame)
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
 
   const load = useCallback(async () => {
@@ -97,11 +100,10 @@ export default function UsersTile({
   }, [filterText, showArchived])
 
   useEffect(() => {
-    // jednoduché “live” načítání; později můžeme debounce
     void load()
   }, [load])
 
-  const rows: ListViewRow<UiUser>[] = useMemo(() => users.map(toRow), [users])
+  const rows = useMemo(() => users.map(toRow), [users])
 
   const openDetail = useCallback((user: UiUser | null, mode: ViewMode) => {
     if (!user) return
@@ -117,10 +119,15 @@ export default function UsersTile({
     submitRef.current = null
   }, [])
 
+  /** 🔘 COMMON ACTIONS – BEZ saveAndClose */
   const commonActions = useMemo<CommonActionId[]>(() => {
-    if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
-    if (viewMode === 'read') return ['cancel', 'edit', 'reject']
-    return ['save', 'saveAndClose', 'cancel']
+    if (viewMode === 'list') {
+      return ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
+    }
+    if (viewMode === 'read') {
+      return ['cancel', 'edit', 'reject']
+    }
+    return ['save', 'cancel']
   }, [viewMode])
 
   useEffect(() => {
@@ -131,7 +138,7 @@ export default function UsersTile({
     onRegisterCommonActionsState?.({
       viewMode,
       hasSelection: !!selectedId,
-      isDirty: !!isDirty,
+      isDirty,
     })
   }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty])
 
@@ -159,52 +166,37 @@ export default function UsersTile({
 
         if (id === 'view' || id === 'detail' || id === 'edit') {
           if (!selectedId) return
-          const user = users.find((u) => u.id === selectedId) ?? null
+          const user = users.find((u) => u.id === selectedId)
           if (!user) return
           openDetail(user, id === 'edit' ? 'edit' : 'read')
-          return
         }
-
         return
       }
 
       // READ
       if (viewMode === 'read') {
-        if (id === 'cancel') {
-          closeDetail()
-          return
-        }
-        if (id === 'edit') {
-          setViewMode('edit')
-          return
-        }
+        if (id === 'cancel') closeDetail()
+        if (id === 'edit') setViewMode('edit')
         return
       }
 
       // EDIT / CREATE
       if (viewMode === 'edit' || viewMode === 'create') {
         if (id === 'cancel') {
-          if (viewMode === 'create') closeDetail()
-          else {
-            setViewMode('read')
-            setIsDirty(false)
-          }
+          viewMode === 'create' ? closeDetail() : setViewMode('read')
+          setIsDirty(false)
           return
         }
 
-        if (id === 'save' || id === 'saveAndClose') {
+        if (id === 'save') {
           if (!submitRef.current) return
           const saved = await submitRef.current()
           if (!saved) return
 
           setDetailUser(saved)
           setIsDirty(false)
-
-          // refresh list po uložení
           await load()
-
-          if (id === 'saveAndClose') setViewMode('read')
-          return
+          setViewMode('read')
         }
       }
     }
@@ -214,25 +206,23 @@ export default function UsersTile({
 
   if (viewMode === 'list') {
     return (
-      <div className="users-list">
-        <ListView<UiUser>
-          columns={COLUMNS}
-          rows={rows}
-          filterPlaceholder="Hledat podle jména, e-mailu nebo telefonu…"
-          filterValue={filterText}
-          onFilterChange={setFilterText}
-          showArchived={showArchived}
-          onShowArchivedChange={setShowArchived}
-          showArchivedLabel="Zobrazit archivované"
-          emptyText={loading ? 'Načítám…' : loadError ? loadError : 'Zatím žádní uživatelé.'}
-          selectedId={selectedId}
-          onRowClick={(row) => setSelectedId(row.id)}
-          onRowDoubleClick={(row) => {
-            setSelectedId(row.id)
-            openDetail(row.raw ?? null, 'read')
-          }}
-        />
-      </div>
+      <ListView<UiUser>
+        columns={COLUMNS}
+        rows={rows}
+        filterPlaceholder="Hledat podle jména, e-mailu nebo telefonu…"
+        filterValue={filterText}
+        onFilterChange={setFilterText}
+        showArchived={showArchived}
+        onShowArchivedChange={setShowArchived}
+        showArchivedLabel="Zobrazit archivované"
+        emptyText={loading ? 'Načítám…' : loadError ?? 'Zatím žádní uživatelé.'}
+        selectedId={selectedId}
+        onRowClick={(row) => setSelectedId(row.id)}
+        onRowDoubleClick={(row) => {
+          setSelectedId(row.id)
+          openDetail(row.raw ?? null, 'read')
+        }}
+      />
     )
   }
 
