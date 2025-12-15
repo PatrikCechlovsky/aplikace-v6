@@ -479,7 +479,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               <TileComponent
                 onRegisterCommonActions={setCommonActions}
                 onRegisterCommonActionsState={registerCommonActionsUi}
-                onRegisterCommonActionHandler={setCommonActionHandler}
+                onRegisterCommonActionHandler={(fn) => setCommonActionHandler(() => fn)}
               />
             </section>
           </div>
