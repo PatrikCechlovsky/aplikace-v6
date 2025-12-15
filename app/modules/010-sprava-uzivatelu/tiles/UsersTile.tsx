@@ -1,14 +1,13 @@
 /*
  * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
- * PURPOSE: Modul 010 – přehled uživatelů.
- *          ✅ Vždy buď jen SEZNAM, nebo jen DETAIL přes celý content.
+ * PURPOSE: Modul 010 – přehled uživatelů (list + detail) + CommonActions v6.
  */
 
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
-import type { CommonActionId } from '@/app/UI/CommonActions'
+import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
 
 // ⚙️ Dočasná mock data – později napojíme na Supabase / subject tabulku
@@ -84,24 +83,11 @@ function toRow(user: MockUser): ListViewRow<MockUser> {
   }
 }
 
-type CommonActionsState = {
-  hasSelection: boolean
-  isDirty: boolean
-}
-
 type UsersTileProps = {
-  // AppShell si přes tohle přebírá, které akce má ukázat v sekci 4 (CommonActions).
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
-
-  // ✅ NOVĚ: AppShell si přes tohle přebírá stav (disabled podmínky)
-  onRegisterCommonActionsState?: (state: CommonActionsState) => void
-
-  // ✅ NOVĚ: AppShell si přes tohle přebírá handler kliknutí na akce
+  onRegisterCommonActionsState?: (state: any) => void // kompatibilita (AppShell normalizuje)
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
 }
-
-// 🔁 Jednoduchý viewMode: list ↔ detail
-type UsersViewMode = 'list' | 'detail'
 
 export default function UsersTile({
   onRegisterCommonActions,
@@ -112,35 +98,20 @@ export default function UsersTile({
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
 
-  const [viewMode, setViewMode] = useState<UsersViewMode>('list')
+  // režim pro CommonActions v6: list/read/edit/create
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
+
+  // detail data
   const [detailUser, setDetailUser] = useState<MockUser | null>(null)
 
-  // MVP – zatím neřešíme edit/create v rámci formu => dirty false
-  const [isDirty] = useState(false)
+  // dirty stav detailu (hlásí UserDetailForm přes UserDetailFrame)
+  const [isDirty, setIsDirty] = useState(false)
 
-  // ✅ Akce už nejsou config objekty – jen IDčka
-  const commonActions = useMemo<CommonActionId[]>(() => {
-    return viewMode === 'list'
-      ? ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
-      : ['view', 'edit', 'reject']
-  }, [viewMode])
+  // key pro re-mount formu (např. cancel → reset)
+  const [formKey, setFormKey] = useState(1)
 
-  // ✅ Registrace CommonActions do AppShell (sekce 4)
-  useEffect(() => {
-    if (!onRegisterCommonActions) return
-    onRegisterCommonActions(commonActions)
-  }, [onRegisterCommonActions, commonActions])
+  const hasSelection = !!selectedId
 
-  // ✅ Registrace state (selection/dirty) do AppShell – aby se správně zapínaly/vypínaly tlačítka
-  useEffect(() => {
-    if (!onRegisterCommonActionsState) return
-    onRegisterCommonActionsState({
-      hasSelection: !!selectedId,
-      isDirty: !!isDirty,
-    })
-  }, [onRegisterCommonActionsState, selectedId, isDirty])
-
-  // Filtrování mock dat podle textu + archivace
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
     const normalizedFilter = filterText.trim().toLowerCase()
 
@@ -156,49 +127,142 @@ export default function UsersTile({
     }).map(toRow)
   }, [filterText, showArchived])
 
-  const openDetail = (user: MockUser | null) => {
-    if (!user) return
+  function openDetail(user: MockUser, mode: ViewMode = 'read') {
     setDetailUser(user)
-    setViewMode('detail')
+    setViewMode(mode)
+    setIsDirty(false)
+    setFormKey((k) => k + 1)
   }
 
-  // ✅ Handler pro CommonActions (MVP)
+  function closeDetailToList() {
+    setDetailUser(null)
+    setViewMode('list')
+    setIsDirty(false)
+    setFormKey((k) => k + 1)
+  }
+
+  // ✅ Akce = jen klíče v pořadí (nic nepřerovnáváme)
+  const commonActions = useMemo<CommonActionId[]>(() => {
+    if (viewMode === 'list') {
+      return ['add', 'detail', 'edit', 'invite', 'columnSettings', 'import', 'export', 'delete']
+    }
+
+    if (viewMode === 'read') {
+      // v read: vidím edit, nevidím detail (už jsem v detailu)
+      return ['edit', 'delete', 'archive']
+    }
+
+    if (viewMode === 'edit' || viewMode === 'create') {
+      // v edit/create: vidím detail (=zpět do čtení), save/cancel
+      return ['detail', 'save', 'saveAndClose', 'cancel']
+    }
+
+    return []
+  }, [viewMode])
+
+  // ✅ Registrace akcí do AppShell
+  useEffect(() => {
+    onRegisterCommonActions?.(commonActions)
+  }, [onRegisterCommonActions, commonActions])
+
+  // ✅ Registrace UI stavu do AppShell (v6 tvar)
+  useEffect(() => {
+    onRegisterCommonActionsState?.({
+      viewMode,
+      hasSelection,
+      isDirty,
+    })
+  }, [onRegisterCommonActionsState, viewMode, hasSelection, isDirty])
+
+  // ✅ Handler pro CommonActions
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
 
     const handler = (id: CommonActionId) => {
-      // MVP – zatím jen základní chování
-      if (id === 'add') {
-        // vytvoříme prázdný mock uživatel jako "nový"
-        const empty: MockUser = {
-          id: 'new',
-          displayName: '',
-          email: '',
-          phone: '',
-          roleLabel: 'Uživatel',
-          twoFactorMethod: null,
-          createdAt: new Date().toISOString().slice(0, 10),
-          isArchived: false,
+      // LIST
+      if (viewMode === 'list') {
+        if (id === 'add') {
+          const empty: MockUser = {
+            id: 'new',
+            displayName: '',
+            email: '',
+            phone: '',
+            roleLabel: 'Uživatel',
+            twoFactorMethod: null,
+            createdAt: new Date().toISOString().slice(0, 10),
+            isArchived: false,
+          }
+          setSelectedId(empty.id)
+          openDetail(empty, 'create')
+          return
         }
-        setSelectedId(empty.id)
-        openDetail(empty)
+
+        if (id === 'detail' || id === 'edit') {
+          if (!selectedId) return
+          const user = MOCK_USERS.find((u) => u.id === selectedId) ?? null
+          if (!user) return
+          openDetail(user, id === 'edit' ? 'edit' : 'read')
+          return
+        }
+
+        console.log('[UsersTile] action:', id)
         return
       }
 
-      if (id === 'view' || id === 'edit') {
-        if (!selectedId) return
-        const user = MOCK_USERS.find((u) => u.id === selectedId) ?? null
-        if (!user) return
-        openDetail(user)
+      // READ
+      if (viewMode === 'read') {
+        if (id === 'edit') {
+          setViewMode('edit')
+          return
+        }
+        console.log('[UsersTile] action:', id)
         return
       }
 
-      // ostatní zatím jen log (MVP)
+      // EDIT / CREATE
+      if (viewMode === 'edit' || viewMode === 'create') {
+        if (id === 'detail') {
+          // zpět do čtení
+          setViewMode('read')
+          setIsDirty(false)
+          setFormKey((k) => k + 1)
+          return
+        }
+
+        if (id === 'cancel') {
+          // cancel: create → zpět do listu, edit → zpět do read + reset form
+          if (viewMode === 'create') {
+            closeDetailToList()
+          } else {
+            setViewMode('read')
+            setIsDirty(false)
+            setFormKey((k) => k + 1)
+          }
+          return
+        }
+
+        if (id === 'save' || id === 'saveAndClose') {
+          // MVP: zatím neukládáme do DB, jen reset dirty + přepnutí
+          setIsDirty(false)
+
+          if (id === 'saveAndClose') {
+            closeDetailToList()
+          } else {
+            setViewMode('read')
+          }
+
+          return
+        }
+
+        console.log('[UsersTile] action:', id)
+        return
+      }
+
       console.log('[UsersTile] action:', id)
     }
 
     onRegisterCommonActionHandler(handler)
-  }, [onRegisterCommonActionHandler, selectedId])
+  }, [onRegisterCommonActionHandler, viewMode, selectedId])
 
   // ===========================
   //  RENDER: 1) SEZNAM UŽIVATELŮ
@@ -220,7 +284,7 @@ export default function UsersTile({
           onRowClick={(row) => setSelectedId(row.id)}
           onRowDoubleClick={(row) => {
             setSelectedId(row.id)
-            openDetail(row.raw ?? null)
+            if (row.raw) openDetail(row.raw, 'read')
           }}
         />
 
@@ -247,7 +311,14 @@ export default function UsersTile({
   //  RENDER: 2) DETAIL UŽIVATELE
   // ===========================
   if (detailUser) {
-    return <UserDetailFrame user={detailUser} />
+    return (
+      <UserDetailFrame
+        key={formKey}
+        user={detailUser}
+        viewMode={viewMode}
+        onDirtyChange={setIsDirty}
+      />
+    )
   }
 
   return null
