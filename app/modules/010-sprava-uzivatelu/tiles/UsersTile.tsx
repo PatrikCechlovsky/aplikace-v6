@@ -1,14 +1,9 @@
-/*
- * FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
- * PURPOSE: Modul 010 – přehled uživatelů.
- */
-
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
-import UserDetailFrame from '../forms/UserDetailFrame'
+import UserDetailFrame, { type UserFormValue } from '../forms/UserDetailFrame'
 
 type MockUser = {
   id: string
@@ -62,7 +57,6 @@ const COLUMNS: ListViewColumn[] = [
 
 function toRow(user: MockUser): ListViewRow<MockUser> {
   const color = ROLE_COLORS[user.roleLabel] ?? '#6b7280'
-
   return {
     id: user.id,
     raw: user,
@@ -96,42 +90,40 @@ export default function UsersTile({
 
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [detailUser, setDetailUser] = useState<MockUser | null>(null)
-
   const [isDirty, setIsDirty] = useState(false)
+
+  // submit funkce z Detailu (zaregistruje ji UserDetailFrame)
+  const submitRef = useRef<null | (() => Promise<MockUser | null>)>(null)
 
   const rows: ListViewRow<MockUser>[] = useMemo(() => {
     const normalizedFilter = filterText.trim().toLowerCase()
-
     return MOCK_USERS.filter((u) => {
       if (!showArchived && u.isArchived) return false
       if (!normalizedFilter) return true
-
       const haystack = [u.displayName, u.email, u.phone ?? '', u.roleLabel].join(' ').toLowerCase()
       return haystack.includes(normalizedFilter)
     }).map(toRow)
   }, [filterText, showArchived])
 
-  const openDetail = (user: MockUser | null, mode: ViewMode = 'read') => {
+  const openDetail = (user: MockUser | null, mode: ViewMode) => {
     if (!user) return
     setDetailUser(user)
     setViewMode(mode)
-    setIsDirty(mode === 'edit' || mode === 'create') // MVP: ať jde testovat save
+    // isDirty bude řídit form přes onDirtyChange
+    setIsDirty(false)
   }
 
   const closeDetail = () => {
     setViewMode('list')
     setDetailUser(null)
     setIsDirty(false)
+    submitRef.current = null
   }
 
   const commonActions = useMemo<CommonActionId[]>(() => {
-    if (viewMode === 'list') {
-      return ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
-    }
-    if (viewMode === 'read') {
-      return ['cancel', 'edit', 'reject']
-    }
-    // edit / create
+    if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'import', 'export', 'reject']
+    if (viewMode === 'read') return ['cancel', 'edit', 'reject']
+    // edit/create
     return ['save', 'saveAndClose', 'cancel']
   }, [viewMode])
 
@@ -150,7 +142,7 @@ export default function UsersTile({
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
 
-    const handler = (id: CommonActionId) => {
+    const handler = async (id: CommonActionId) => {
       // LIST
       if (viewMode === 'list') {
         if (id === 'add') {
@@ -169,7 +161,7 @@ export default function UsersTile({
           return
         }
 
-        if (id === 'view' || id === 'edit') {
+        if (id === 'view' || id === 'detail' || id === 'edit') {
           if (!selectedId) return
           const user = MOCK_USERS.find((u) => u.id === selectedId) ?? null
           if (!user) return
@@ -183,13 +175,11 @@ export default function UsersTile({
       // READ
       if (viewMode === 'read') {
         if (id === 'cancel') {
-          // v read používáme cancel jako "zavřít detail"
           closeDetail()
           return
         }
         if (id === 'edit') {
           setViewMode('edit')
-          setIsDirty(true) // MVP
           return
         }
         return
@@ -198,10 +188,9 @@ export default function UsersTile({
       // EDIT / CREATE
       if (viewMode === 'edit' || viewMode === 'create') {
         if (id === 'cancel') {
-          // zrušit edit/create -> zpět do read (nebo list u create)
-          if (viewMode === 'create') {
-            closeDetail()
-          } else {
+          // create -> zavřít, edit -> zpět do read
+          if (viewMode === 'create') closeDetail()
+          else {
             setViewMode('read')
             setIsDirty(false)
           }
@@ -209,11 +198,14 @@ export default function UsersTile({
         }
 
         if (id === 'save' || id === 'saveAndClose') {
-          // MVP: tady později napojíme skutečné uložení z UserDetailForm
+          if (!submitRef.current) return
+          const saved = await submitRef.current()
+          if (!saved) return
+
+          setDetailUser(saved)
           setIsDirty(false)
-          if (id === 'saveAndClose') {
-            setViewMode('read')
-          }
+
+          if (id === 'saveAndClose') setViewMode('read')
           return
         }
       }
@@ -242,36 +234,22 @@ export default function UsersTile({
             openDetail(row.raw ?? null, 'read')
           }}
         />
-
-        <style jsx>{`
-          .users-list {
-            background: transparent;
-            border: 0;
-            border-radius: 0;
-            padding: 0;
-            box-shadow: none;
-          }
-          @media (max-width: 900px) {
-            .users-list {
-              padding: 8px 8px 12px;
-            }
-          }
-        `}</style>
       </div>
     )
   }
 
   if (detailUser) {
-  return (
-    <UserDetailFrame
-      user={detailUser}
-      viewMode={viewMode}
-      onDirtyChange={(dirty) => {
-        setIsDirty(dirty)
-      }}
-    />
-  )
-}
+    return (
+      <UserDetailFrame
+        user={detailUser}
+        viewMode={viewMode}
+        onDirtyChange={setIsDirty}
+        onRegisterSubmit={(fn) => {
+          submitRef.current = fn
+        }}
+      />
+    )
+  }
 
   return null
 }
