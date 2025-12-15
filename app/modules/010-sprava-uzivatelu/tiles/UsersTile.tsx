@@ -144,7 +144,7 @@ export default function UsersTile({
   // ✅ Akce = jen klíče v pořadí
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'list') {
-      return ['add', 'detail', 'edit', 'invite', 'columnSettings', 'import', 'export', 'delete']
+      return ['add', 'detail', 'edit', 'invite', 'columnSettings', 'import', 'export']
     }
 
     if (viewMode === 'read') {
