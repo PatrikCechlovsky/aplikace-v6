@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
-import { listUsers, type SubjectUserRow } from '@/app/lib/services/users'
+import { listUsers, type SubjectRow } from '@/app/lib/services/users'
 
 type UiUser = {
   id: string
@@ -27,7 +27,7 @@ const COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
-function mapRowToUi(row: SubjectUserRow): UiUser {
+function mapRowToUi(row: SubjectRow): UiUser {
   return {
     id: row.id,
     displayName: row.display_name ?? '',
