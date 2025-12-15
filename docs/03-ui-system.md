@@ -1795,3 +1795,142 @@ Když přidáme novou UI volbu (např. nový režim menu nebo nový akcent), mus
 - UI-specifikace.md (co to je a jak se to chová)
 - 03-ui-system.md (tok + třídy)
 - případně stav-struktury.md (kde to v kódu je)
+
+# UI Layout – TopMenu režim a CommonActions bar
+
+Tento dokument popisuje chování a pravidla pro rozložení aplikace v režimu **TopMenu** (`.layout--topmenu`) a související úpravy vzhledu (theme) pro **TopMenu** a jeho **popover**.
+
+> Cíl: V režimu TopMenu mít **jasně oddělené řádky** (navigace vs akce) a zajistit **správné chování šířky** bez “utíkání za roh”, při zachování funkčního popoveru a čitelnosti v dark theme.
+
+---
+
+## Základní pojmy
+
+- **Topbar** = horní řádek se stavem aplikace (breadcrumbs, HomeActions, atd.)
+- **Nav řádek** = řádek s TopMenu (moduly/sekce/tiles)
+- **Context řádek** = řádek s CommonActions (akce pro aktuální kontext)
+- **Content** = hlavní obsah (ListView / DetailView / atd.)
+
+---
+
+## Pravidla rozložení v TopMenu režimu
+
+### 1) Aktivace režimu
+Režim TopMenu je aktivní, pokud má root layout třídu:
+
+- `.layout--topmenu`
+
+### 2) Struktura řádků
+V režimu TopMenu je layout **jednosloupcový** a má **4 řádky**:
+
+1. `layout__topbar`
+2. `layout__nav` (TopMenu)
+3. `layout__context` (CommonActions)
+4. `layout__content`
+
+**Důvod:** Navigace a kontextové akce musí být vizuálně oddělené, aby se nemíchaly do jednoho řádku a nevznikal “přetlak” v horní liště.
+
+### 3) Grid a šířka (zásadní pravidlo)
+V TopMenu režimu musí být layout omezen na šířku viewportu a nesmí se roztahovat podle obsahu.
+
+Používáme:
+
+- `grid-template-columns: minmax(0, 1fr)`
+
+**Důvod:** Bez `minmax(0, 1fr)` může grid “nafouknout” sloupec podle obsahu (typicky Topbar/TopMenu), což vede k tomu, že UI prvky “utečou za roh” a kvůli `overflow: hidden` nejsou vidět, i když stránka globálně nemá horizontální overflow.
+
+---
+
+## Pravidla pro TopMenu scroll a popover
+
+### 1) Horizontální scroll menu
+- Scroll se řeší **pouze** na seznamu položek TopMenu (typicky `.topmenu__list`)
+- Root `.topmenu` musí zůstat:
+
+- `overflow: visible`
+
+**Důvod:** Popover (rozbalovací menu) je absolutně pozicované a nesmí být “oříznuté” rodičem.
+
+### 2) Viditelnost scrollbaru
+V některých prostředích může být scrollbar “overlay” nebo málo viditelný. Pro TopMenu platí:
+
+- scrollbar má být **viditelný** alespoň v TopMenu řádku
+- použít theme tokeny pro thumb/track (viz dále)
+
+---
+
+## Theme pravidla pro TopMenu (čitelnost v dark)
+
+### 1) Barvy textu v TopMenu
+TopMenu musí používat theme tokeny pro text, aby nezmizelo v dark theme:
+
+- `.topmenu` dědí `color` z `--color-text`
+- `.topmenu__button` explicitně používá `--color-text`
+- doplňkové prvky (např. chevron) používají `--color-text-muted` (nebo fallback na `--color-text`)
+
+**Důvod:** Defaultní barvy (implicitní nebo hardcoded) v dark režimu často vedou k “tmavý text na tmavém pozadí”.
+
+### 2) Popover podle theme
+Popover nesmí být “natvrdo světlý”. Musí používat theme tokeny:
+
+- pozadí: `--color-surface`
+- okraj: `--color-border`
+- text: `--color-text`
+- hover: `--color-surface-subtle`
+- active: `--color-selected-row-bg`
+
+**Důvod:** Popover je součástí navigace a musí ladit se všemi theme preset variantami.
+
+---
+
+## CommonActions řádek (Context) – vizuální rytmus
+
+### 1) Samostatný řádek
+`CommonActions` se v TopMenu režimu vykresluje v:
+
+- `.layout__context`
+
+a má vlastní grid řádek (3).
+
+### 2) Stejný “rytmus” jako nav řádek
+Aby ikonky nebyly nalepené na horní/dolní hranu, `layout__context` má mít podobnou výšku/padding jako nav řádek.
+
+Doporučení:
+- `min-height` = stejné jako nav řádek (typicky kolem 40px)
+- `padding` = stejný vertikální rytmus jako nav (např. 4px nahoře/dole)
+
+### 3) Zarovnání doprava
+Pokud má být CommonActions na pravé straně, context řádek může použít:
+- zarovnání obsahu na pravý okraj (bez změny pořadí prvků)
+
+---
+
+## Sidebar režim – ochrana před nechtěnými změnami
+
+Jakákoliv úprava pro TopMenu režim musí být psaná tak, aby:
+
+- **neovlivnila sidebar režim**
+- používat selektor:
+  - `.layout.layout--topmenu ...`
+
+**Důvod:** Sidebar layout je stabilní a odladěný; změny pro TopMenu se izolují do `.layout--topmenu`, aby se nerozbily grid sloupce/řádky v sidebar režimu.
+
+---
+
+## Kontrolní checklist po úpravách
+
+### TopMenu režim
+- [ ] Topbar/TopMenu/CommonActions/Content jsou v samostatných řádcích
+- [ ] Nic “neutíká za roh” při šířce > 768px
+- [ ] TopMenu má horizontální scroll, když je položek více
+- [ ] Scrollbar v TopMenu je viditelný (nebo alespoň použitelný)
+- [ ] Text TopMenu je čitelný v dark theme
+- [ ] Popover není “světlý natvrdo” a respektuje theme tokeny
+
+### Sidebar režim
+- [ ] Nezměnilo se pořadí ani grid sloupce
+- [ ] Nezhoršila se viditelnost/spacing v topbar a actions
+- [ ] Nic není skryto za hranou layoutu
+
+---
+
