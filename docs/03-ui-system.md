@@ -753,24 +753,107 @@ DetailView zajišťuje:
 ---
 
 ### (5) Sekce Přílohy (povinná součást každého detailu)
-Každý EntityDetailFrame obsahuje záložku **Přílohy**, i když entita není dokument.
+## 5️⃣ Sekce Přílohy (povinná součást každého detailu)
 
-Sekce Přílohy umožňuje:
+Sekce **Přílohy** je povinnou součástí každého DetailView v aplikaci.
+Slouží k práci s dokumenty a soubory, které se vztahují ke konkrétní entitě
+(uživatel, nemovitost, smlouva, platba apod.).
 
-- nahrát libovolný soubor (PDF, CSV, JPG, XLSX…)
-- automaticky přejmenovat soubory (pokud je aktivní volba)
-- zobrazit archivované přílohy
-- přidat popis přílohy
-- archivovat / obnovit přílohu
-- uložit stav přílohy
+Cílem řešení je:
+- jednotné chování napříč aplikací
+- zachování historie dokumentů
+- možnost auditu
+- zabránění nevratné ztrátě dat
 
-Komponenta je jednoduchá a jednotná pro všechny entity.
+### 5.1 Základní princip
+- přílohy jsou řešeny centrálně
+- přílohy se **nikdy fyzicky nemažou**
+- místo mazání se používá **archivace**
+- každá příloha podporuje **verzování**
+- sekce Přílohy má vždy stejné chování i vzhled bez ohledu na typ entity
 
-Přílohy jsou **vázané na ID entity** a nejsou sdílené mezi entitami.
+### 5.2 Dokument × verze dokumentu
 
-*(Pozn.: Modul „Dokumenty“ slouží k jinému účelu – k agregaci a vyhledávání.)*
+**Dokument (logický celek)**  
+Dokument představuje jednu přílohu z pohledu uživatele (např. „Nájemní smlouva“, „Fotodokumentace“, „Revizní zpráva“).
+- má název a popis
+- je navázán na konkrétní entitu
+- může být archivovaný
+- neobsahuje samotný soubor
 
----
+**Verze dokumentu (konkrétní soubor)**  
+Verze dokumentu představuje konkrétní nahraný soubor.
+- má číslo verze (1, 2, 3, …)
+- odkazuje na soubor v úložišti
+- může být archivována samostatně
+- nikdy se fyzicky nemaže
+- aktuální (nejnovější) verze je považována za platnou
+
+### 5.3 Chování při nahrávání
+
+**Nová příloha**
+- vytvoří se nový dokument
+- automaticky se vytvoří verze 1
+
+**Opravený soubor**
+- nevzniká nový dokument
+- přidá se nová verze ke stávajícímu dokumentu
+- starší verze zůstávají zachovány
+
+### 5.4 Archivace
+- dokumenty ani jejich verze se nikdy nemažou
+- archivace znamená pouze označení příznakem „archivováno“
+- archivované položky nejsou standardně zobrazovány a lze je zobrazit přepínačem „Zobrazit archivované“
+- archivovat lze celý dokument nebo jednotlivou verzi dokumentu
+
+### 5.5 Uložení souborů (Supabase Storage)
+- soubory jsou ukládány do Supabase Storage
+- používá se centrální bucket: `documents`
+
+Struktura uložení souborů (cesta uvnitř bucketu):
+- {typ-entity}/{id-entity}/{id-dokumentu}/v{verze}/{nazev-souboru}
+
+Příklad:
+- contract/abc123/def456/v0003/Najemni_smlouva.pdf
+
+Význam:
+- typ-entity: typ entity (např. user, property, contract)
+- id-entity: identifikátor konkrétní entity
+- id-dokumentu: identifikátor dokumentu
+- v{verze}: číslo verze dokumentu
+- nazev-souboru: původní název souboru
+
+Poznámka: Složky se nevytvářejí ručně, vznikají automaticky při nahrávání souboru.
+
+### 5.6 Databázová evidence
+V databázi se neukládají samotné soubory, ale pouze metadata:
+- dokumentu
+- verzí dokumentu
+- cesta k souboru v úložišti
+
+Tento přístup umožňuje:
+- bezpečné verzování
+- přejmenování a popisy bez zásahu do souboru
+- audit změn
+
+### 5.7 Jednotné použití v aplikaci
+Sekce Přílohy:
+- je součástí každého DetailView
+- má jednotné UI i chování
+- je znovupoužitelná napříč moduly
+
+Uživatel má vždy stejný způsob práce s dokumenty bez ohledu na kontext.
+
+### 5.8 Stav řešení
+- návrh systému příloh: hotovo
+- verzování dokumentů: schváleno
+- archivace místo mazání: schváleno
+- struktura ukládání souborů: definována
+
+Další krok:
+- implementace UI sekce Přílohy
+- napojení na Supabase Storage a databázi
+
 
 ### (6) Sekce Systém (technické metadata)
 Každá entita má záložku „Systém“, obsahující:
