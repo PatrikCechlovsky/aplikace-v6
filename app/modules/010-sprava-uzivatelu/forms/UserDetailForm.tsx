@@ -1,9 +1,12 @@
-// FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailForm.tsx
-// PURPOSE: Detail uživatele – používá centrální DetailForm layout
-
 'use client'
 
 import React, { useEffect, useState } from 'react'
+
+export type UserFormValue = {
+  displayName: string
+  email: string
+  phone?: string
+}
 
 type UserDetailFormProps = {
   user: {
@@ -16,39 +19,54 @@ type UserDetailFormProps = {
     createdAt: string
     isArchived?: boolean
   }
-  onDirtyChange?: (dirty: boolean) => void
   readOnly?: boolean
+  onDirtyChange?: (dirty: boolean) => void
+  onValueChange?: (value: UserFormValue) => void
 }
 
 export default function UserDetailForm({
   user,
-  onDirtyChange,
   readOnly = false,
+  onDirtyChange,
+  onValueChange,
 }: UserDetailFormProps) {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState(user.phone ?? '')
   const [email, setEmail] = useState(user.email)
 
+  // init z displayName
   useEffect(() => {
-    const parts = user.displayName.split(' ')
-    setFirstName(parts.slice(0, -1).join(' ') || parts[0])
+    const parts = user.displayName.split(' ').filter(Boolean)
+    setFirstName(parts.slice(0, -1).join(' ') || parts[0] || '')
     setLastName(parts.length > 1 ? parts.slice(-1).join(' ') : '')
-  }, [user.displayName])
+    setPhone(user.phone ?? '')
+    setEmail(user.email)
+  }, [user.id, user.displayName, user.phone, user.email])
 
+  const displayName = `${firstName} ${lastName}`.trim()
+
+  // ⬅️ POSÍLÁME AKTUÁLNÍ HODNOTY VEN (pro save)
+  useEffect(() => {
+    onValueChange?.({
+      displayName,
+      email,
+      phone,
+    })
+  }, [displayName, email, phone, onValueChange])
+
+  // ⬅️ DIRTY LOGIKA
   useEffect(() => {
     const dirty =
-      firstName !== '' ||
-      lastName !== '' ||
+      displayName !== (user.displayName ?? '') ||
       phone !== (user.phone ?? '') ||
-      email !== user.email
+      email !== (user.email ?? '')
 
     onDirtyChange?.(dirty)
-  }, [firstName, lastName, phone, email, user, onDirtyChange])
+  }, [displayName, phone, email, user.displayName, user.phone, user.email, onDirtyChange])
 
   return (
     <div className="detail-form">
-      {/* PROFIL */}
       <section className="detail-form__section">
         <h3 className="detail-form__section-title">Profil</h3>
 
@@ -95,7 +113,6 @@ export default function UserDetailForm({
         </div>
       </section>
 
-      {/* ÚČET */}
       <section className="detail-form__section">
         <h3 className="detail-form__section-title">Účet</h3>
 
@@ -113,11 +130,7 @@ export default function UserDetailForm({
             <label className="detail-form__label">2FA</label>
             <input
               className="detail-form__input detail-form__input--readonly"
-              value={
-                user.twoFactorMethod
-                  ? user.twoFactorMethod.toUpperCase()
-                  : 'Nenastaveno'
-              }
+              value={user.twoFactorMethod ? user.twoFactorMethod.toUpperCase() : 'Nenastaveno'}
               readOnly
             />
           </div>
