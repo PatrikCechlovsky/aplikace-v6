@@ -1,9 +1,25 @@
 /*
  * FILE: app/lib/attachments.ts
- * PURPOSE: Data layer pro sekci „Přílohy“ (DetailView). KROK 3+4a = READ + signed URL.
+ * PURPOSE:
+ *   Data layer pro sekci „Přílohy“ v DetailView (kontext entity).
+ *
+ * CONTEXT:
+ *   - používá tabulky `documents` + `document_versions`
+ *   - pro list v UI čte přes view `v_document_latest_version`
+ *   - Storage bucket: `documents`
+ *
+ * CURRENT STATE (KROK 3 + 4a + 4b):
+ *   - READ: list příloh pro entitu (latest version)
+ *   - READ: list verzí pro dokument
+ *   - signed URL: otevření souboru/verze ze Storage
  */
 
-import { supabase } from '@/app/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
+
+// ✅ client-side Supabase client (stejný vzor jako UserDetailFrame)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export type AttachmentRow = {
   id: string
@@ -14,6 +30,7 @@ export type AttachmentRow = {
   is_archived: boolean
   created_at: string
 
+  // z view `v_document_latest_version`
   version_id: string
   version_number: number
   file_path: string
@@ -22,6 +39,18 @@ export type AttachmentRow = {
   file_size: number | null
   version_created_at: string
   version_is_archived: boolean
+}
+
+export type AttachmentVersionRow = {
+  id: string
+  document_id: string
+  version_number: number
+  file_path: string
+  file_name: string
+  mime_type: string | null
+  file_size: number | null
+  is_archived: boolean
+  created_at: string
 }
 
 export async function listAttachments(input: {
@@ -42,33 +71,8 @@ export async function listAttachments(input: {
 
   const { data, error } = await q
   if (error) throw error
+
   return (data ?? []) as AttachmentRow[]
-}
-
-export async function getAttachmentSignedUrl(input: {
-  filePath: string
-  expiresInSeconds?: number
-}) {
-  const { filePath, expiresInSeconds = 60 } = input
-
-  const { data, error } = await supabase.storage
-    .from('documents')
-    .createSignedUrl(filePath, expiresInSeconds)
-
-  if (error) throw error
-  return data.signedUrl
-}
-
-export type AttachmentVersionRow = {
-  id: string
-  document_id: string
-  version_number: number
-  file_path: string
-  file_name: string
-  mime_type: string | null
-  file_size: number | null
-  is_archived: boolean
-  created_at: string
 }
 
 export async function listAttachmentVersions(input: {
@@ -89,4 +93,18 @@ export async function listAttachmentVersions(input: {
   if (error) throw error
 
   return (data ?? []) as AttachmentVersionRow[]
+}
+
+export async function getAttachmentSignedUrl(input: {
+  filePath: string
+  expiresInSeconds?: number
+}) {
+  const { filePath, expiresInSeconds = 60 } = input
+
+  const { data, error } = await supabase.storage
+    .from('documents')
+    .createSignedUrl(filePath, expiresInSeconds)
+
+  if (error) throw error
+  return data.signedUrl
 }
