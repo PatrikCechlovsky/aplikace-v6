@@ -12,6 +12,9 @@ export type SubjectRow = {
   display_name: string | null
   email: string | null
   phone: string | null
+  is_archived: boolean // ✅ NOVĚ
+  archived_at: string | null // ✅ volitelné
+  archived_by: string | null // ✅ volitelné
   created_at: string | null
   updated_at: string | null
 }
@@ -26,7 +29,7 @@ export async function listUsers(params: UsersListParams = {}) {
 
   let q = supabase
     .from(SUBJECT_TABLE)
-    .select('id, subject_type, auth_user_id, display_name, email, phone, created_at, updated_at')
+    .select('id, subject_type, auth_user_id, display_name, email, phone, is_archived, archived_at, archived_by, created_at, updated_at')
     .order('display_name', { ascending: true })
     .limit(limit)
 
@@ -34,6 +37,7 @@ export async function listUsers(params: UsersListParams = {}) {
   if (s) {
     const pattern = `%${s}%`
     q = q.or(`display_name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}`)
+    q = q.eq('is_archived', false)
   }
 
   const { data, error } = await q
@@ -66,7 +70,9 @@ export async function saveUser(input: SaveUserInput) {
   const { data, error } = await supabase
     .from(SUBJECT_TABLE)
     .upsert(payload, { onConflict: 'id' })
-    .select('id, subject_type, auth_user_id, display_name, email, phone, created_at, updated_at')
+    .select(
+      'id, subject_type, auth_user_id, display_name, email, phone, is_archived, archived_at, archived_by, created_at, updated_at'
+    )
     .single()
 
   if (error) throw error
