@@ -6,6 +6,7 @@
 
 import React, { useMemo, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
+import DetailAttachmentsSection from './detail-sections/DetailAttachmentsSection'
 
 export type DetailViewMode = 'create' | 'edit' | 'view'
 
@@ -40,6 +41,11 @@ export type RolesUi = {
 }
 
 export type DetailViewCtx = {
+  /** Povinné pro systémové sekce (Přílohy, Systém) */
+  entityType?: string
+  entityId?: string
+  mode?: DetailViewMode
+  
   detailContent?: React.ReactNode
   rolesData?: RolesData
   rolesUi?: RolesUi
@@ -170,7 +176,13 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     label: 'Přílohy',
     order: 60,
     always: true,
-    render: () => <div className="detail-view__placeholder">Přílohy – doplníme.</div>,
+    render: (ctx) => (
+      <DetailAttachmentsSection
+        entityType={ctx.entityType ?? 'unknown'}
+        entityId={ctx.entityId ?? 'unknown'}
+        mode={ctx.mode ?? 'view'}
+      />
+    ),
   },
 
   system: {
