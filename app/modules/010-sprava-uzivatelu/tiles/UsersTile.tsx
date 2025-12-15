@@ -5,7 +5,7 @@
  */
 
 'use client'
-console.log('CA: UsersTile FILE LOADED')
+
 import React, { useEffect, useMemo, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId } from '@/app/UI/CommonActions'
@@ -103,6 +103,11 @@ export default function UsersTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: UsersTileProps) {
+  // Debug: jestli se soubor fakt načítá
+  useEffect(() => {
+    console.log('CA: UsersTile mounted', { hasRegisterHandlerProp: !!onRegisterCommonActionHandler })
+  }, [onRegisterCommonActionHandler])
+
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
@@ -163,9 +168,17 @@ export default function UsersTile({
 
   // ✅ Registrace handleru – to je to, co dělá akce "živé"
   useEffect(() => {
+    console.log('CA: UsersTile register handler effect', {
+      hasProp: !!onRegisterCommonActionHandler,
+      viewMode,
+      selectedId,
+    })
+
     if (!onRegisterCommonActionHandler) return
 
     const handler = (id: CommonActionId) => {
+      console.log('CA: UsersTile handler called', id, { viewMode, selectedId })
+
       // DETAIL / READ
       if (viewMode === 'read') {
         if (id === 'cancel') {
@@ -174,12 +187,10 @@ export default function UsersTile({
         }
 
         if (id === 'edit') {
-          // MVP: zatím jen log (později přepneme do edit)
           console.log('[UsersTile] edit (MVP)')
           return
         }
 
-        console.log('[UsersTile] action (read):', id)
         return
       }
 
@@ -203,11 +214,10 @@ export default function UsersTile({
       if (id === 'view' || id === 'edit') {
         if (!selectedId) return
         const user = MOCK_USERS.find((u) => u.id === selectedId) ?? null
+        if (!user) return
         openDetail(user)
         return
       }
-
-      console.log('[UsersTile] action (list):', id)
     }
 
     onRegisterCommonActionHandler(handler)
