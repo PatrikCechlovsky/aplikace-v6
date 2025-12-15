@@ -25,31 +25,17 @@ import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import LoginPanel from '@/app/UI/LoginPanel'
 
-import {
-  applyThemeToLayout,
-  loadThemeFromLocalStorage,
-} from '@/app/lib/themeSettings'
-import {
-  applyIconDisplayToLayout,
-  loadIconDisplayFromLocalStorage,
-} from '@/app/lib/iconDisplaySettings'
+import { applyThemeToLayout, loadThemeFromLocalStorage } from '@/app/lib/themeSettings'
+import { applyIconDisplayToLayout, loadIconDisplayFromLocalStorage } from '@/app/lib/iconDisplaySettings'
 
-import {
-  getCurrentSession,
-  onAuthStateChange,
-  logout,
-} from '@/app/lib/services/auth'
+import { getCurrentSession, onAuthStateChange, logout } from '@/app/lib/services/auth'
 
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
 
 import { TopMenu } from '@/app/UI/TopMenu'
 import CommonActions from '@/app/UI/CommonActions'
-import type {
-  CommonActionId,
-  CommonActionsUiState,
-  ViewMode,
-} from '@/app/UI/CommonActions'
+import type { CommonActionId, CommonActionsUiState, ViewMode } from '@/app/UI/CommonActions'
 
 type SessionUser = {
   id?: string | null
@@ -104,8 +90,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
-  const [activeSelection, setActiveSelection] =
-    useState<SidebarSelection | null>(null)
+  const [activeSelection, setActiveSelection] = useState<SidebarSelection | null>(null)
 
   // Menu layout
   const [menuLayout, setMenuLayout] = useState<MenuLayout>('sidebar')
@@ -117,16 +102,31 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     hasSelection: false,
     isDirty: false,
   })
-  const [commonActionHandler, setCommonActionHandler] = useState<
-    ((id: CommonActionId) => void) | undefined
-  >(undefined)
-  
-  const registerCommonActionHandler = useCallback(
-    (fn: (id: CommonActionId) => void) => {
-      setCommonActionHandler(() => fn) // uložit funkci jako hodnotu (ne updater)
-    },
-    [],
-  )
+  const [commonActionHandler, setCommonActionHandler] = useState<((id: CommonActionId) => void) | undefined>(undefined)
+
+  const registerCommonActions = useCallback((actions: CommonActionId[]) => {
+    setCommonActions(actions)
+  }, [])
+
+  const registerCommonActionsUi = useCallback((next: any) => {
+    if (!next || typeof next !== 'object') return
+
+    setCommonActionsUi((prev) => {
+      const viewMode = typeof next.viewMode === 'string' ? (next.viewMode as ViewMode) : prev.viewMode
+      const hasSelection = typeof next.hasSelection === 'boolean' ? next.hasSelection : prev.hasSelection
+      const isDirty = typeof next.isDirty === 'boolean' ? next.isDirty : prev.isDirty
+
+      if (prev.viewMode === viewMode && prev.hasSelection === hasSelection && prev.isDirty === isDirty) {
+        return prev
+      }
+
+      return { viewMode, hasSelection, isDirty }
+    })
+  }, [])
+
+  const registerCommonActionHandler = useCallback((fn: (id: CommonActionId) => void) => {
+    setCommonActionHandler(() => fn) // uložit funkci jako hodnotu
+  }, [])
 
   function resetCommonActions() {
     setCommonActions(undefined)
@@ -401,8 +401,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       return (
         <div className="content content--center">
           <p>
-            Nebyly nalezeny žádné moduly. Zkontroluj prosím soubor{' '}
-            <code>modules.index.js</code>.
+            Nebyly nalezeny žádné moduly. Zkontroluj prosím soubor <code>modules.index.js</code>.
           </p>
         </div>
       )
@@ -458,33 +457,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
       if (tile) {
         const TileComponent = tile.component
-
-        // kompatibilita: tile může poslat nový tvar {viewMode,hasSelection,isDirty}
-        // i starý tvar {hasSelection,isDirty}
-        const registerCommonActionsUi = (next: any) => {
-          if (!next || typeof next !== 'object') return
-
-          if (typeof next.viewMode === 'string') {
-            setCommonActionsUi({
-              viewMode: next.viewMode as ViewMode,
-              hasSelection: !!next.hasSelection,
-              isDirty: !!next.isDirty,
-            })
-            return
-          }
-
-          setCommonActionsUi((prev) => ({
-            ...prev,
-            hasSelection: typeof next.hasSelection === 'boolean' ? next.hasSelection : prev.hasSelection,
-            isDirty: typeof next.isDirty === 'boolean' ? next.isDirty : prev.isDirty,
-          }))
-        }
-
         return (
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
               <TileComponent
-                onRegisterCommonActions={setCommonActions}
+                onRegisterCommonActions={registerCommonActions}
                 onRegisterCommonActionsState={registerCommonActionsUi}
                 onRegisterCommonActionHandler={registerCommonActionHandler}
               />
@@ -529,9 +506,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       <header className="layout__topbar">
         <div className="layout__topbar-inner">
           <div className="layout__topbar-left">
-            {menuLayout === 'top' && (
-              <HomeButton disabled={!isAuthenticated} onClick={handleHomeClick} />
-            )}
+            {menuLayout === 'top' && <HomeButton disabled={!isAuthenticated} onClick={handleHomeClick} />}
             <Breadcrumbs disabled={!isAuthenticated} segments={getBreadcrumbSegments()} />
           </div>
 
@@ -590,24 +565,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           disabled={!isAuthenticated}
           actions={commonActions}
           ui={commonActionsUi}
-          onActionClick={(id) => {
-            console.log('CA: AppShell received', id, {
-              hasHandler: !!commonActionHandler,
-              actions: commonActions,
-              ui: commonActionsUi,
-            })
-      
-            if (!commonActionHandler) {
-              console.warn(
-                'CA: AppShell commonActionHandler není zaregistrovaný (tile ho neposlal)',
-              )
-              return
-            }
-      
-            commonActionHandler(id)
-          }}
+          onActionClick={handleCommonActionClick}
         />
       </div>
+
       <main className="layout__content">{renderContent()}</main>
     </div>
   )
