@@ -5,7 +5,7 @@
 
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
@@ -141,31 +141,29 @@ export default function UsersTile({
     setFormKey((k) => k + 1)
   }
 
-  // ✅ Akce = jen klíče v pořadí (nic nepřerovnáváme)
+  // ✅ Akce = jen klíče v pořadí
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'list') {
       return ['add', 'detail', 'edit', 'invite', 'columnSettings', 'import', 'export', 'delete']
     }
 
     if (viewMode === 'read') {
-      // v read: vidím edit, nevidím detail (už jsem v detailu)
-      return ['edit', 'delete', 'archive']
+      // cancel = zavřít detail → list
+      return ['cancel', 'edit', 'delete', 'archive']
     }
 
     if (viewMode === 'edit' || viewMode === 'create') {
-      // v edit/create: vidím detail (=zpět do čtení), save/cancel
+      // v edit/create: zpět do čtení + save/cancel
       return ['detail', 'save', 'saveAndClose', 'cancel']
     }
 
     return []
   }, [viewMode])
 
-  // ✅ Registrace akcí do AppShell
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
 
-  // ✅ Registrace UI stavu do AppShell (v6 tvar)
   useEffect(() => {
     onRegisterCommonActionsState?.({
       viewMode,
@@ -174,7 +172,6 @@ export default function UsersTile({
     })
   }, [onRegisterCommonActionsState, viewMode, hasSelection, isDirty])
 
-  // ✅ Handler pro CommonActions
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
 
@@ -211,10 +208,15 @@ export default function UsersTile({
 
       // READ
       if (viewMode === 'read') {
+        if (id === 'cancel') {
+          closeDetailToList()
+          return
+        }
         if (id === 'edit') {
           setViewMode('edit')
           return
         }
+
         console.log('[UsersTile] action:', id)
         return
       }
@@ -230,7 +232,7 @@ export default function UsersTile({
         }
 
         if (id === 'cancel') {
-          // cancel: create → zpět do listu, edit → zpět do read + reset form
+          // create → list, edit → read
           if (viewMode === 'create') {
             closeDetailToList()
           } else {
@@ -242,7 +244,6 @@ export default function UsersTile({
         }
 
         if (id === 'save' || id === 'saveAndClose') {
-          // MVP: zatím neukládáme do DB, jen reset dirty + přepnutí
           setIsDirty(false)
 
           if (id === 'saveAndClose') {
@@ -250,7 +251,6 @@ export default function UsersTile({
           } else {
             setViewMode('read')
           }
-
           return
         }
 
