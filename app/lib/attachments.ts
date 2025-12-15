@@ -60,3 +60,16 @@ export async function listAttachments(input: {
 
   return (data ?? []) as AttachmentRow[]
 }
+export async function getAttachmentSignedUrl(input: {
+  filePath: string
+  expiresInSeconds?: number
+}) {
+  const { filePath, expiresInSeconds = 60 } = input
+
+  const { data, error } = await supabase.storage
+    .from('documents')
+    .createSignedUrl(filePath, expiresInSeconds)
+
+  if (error) throw error
+  return data.signedUrl
+}
