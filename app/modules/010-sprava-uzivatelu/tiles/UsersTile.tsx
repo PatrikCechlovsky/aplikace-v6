@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
-import UserDetailFrame, { type UserFormValue } from '../forms/UserDetailFrame'
+import UserDetailFrame from '../forms/UserDetailFrame'
 
 type MockUser = {
   id: string
