@@ -479,9 +479,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     )
   }
 
-  function handleCommonActionClick(id: CommonActionId) {
-    function handleCommonActionClick(id: CommonActionId) {
-      // ✅ Ukládací akce NIKDY neblokuj dirty guardem
+  function handleCommonActionClick(id: CommonActionId) { 
+    // ✅ Ukládací akce NIKDY neblokuj dirty guardem
       if (id === 'save' || id === 'saveAndClose' || id === 'saveAndClose') {
         commonActionHandler?.(id)
         return
