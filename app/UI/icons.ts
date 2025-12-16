@@ -20,14 +20,6 @@ const data = {
     aliasesCZ: ["schválit","souhlasit"],
     aliasesEN: ["approve","agree"]
   },
-  "smile": {
-    emoji: "🙂",
-    nameCZ: "Lehký úsměv",
-    nameEN: "Slight Smile",
-    category: "EMOTIONS",
-    aliasesCZ: ["jemný úsměv","zdvořilý úsměv"],
-    aliasesEN: ["slightly smiling","polite smile"]
-  },
   "account": {
     emoji: "👤",
     nameCZ: "Účet",
@@ -436,23 +428,6 @@ const data = {
     aliasesCZ: ["doprava","další"],
     aliasesEN: ["right arrow","next"]
   },
-    "prev": {
-    emoji: "◀️",
-    nameCZ: "Předchozí",
-    nameEN: "Previous",
-    category: "ZÁKLAD / NAV",
-    aliasesCZ: ["zpět", "předchozí záznam"],
-    aliasesEN: ["back", "previous", "previous record"]
-  },
-  "next": {
-    emoji: "▶️",
-    nameCZ: "Další",
-    nameEN: "Next",
-    category: "ZÁKLAD / NAV",
-    aliasesCZ: ["vpřed", "další záznam"],
-    aliasesEN: ["forward", "next", "next record"]
-  },
-
   "chevron-up": {
     emoji: "▲",
     nameCZ: "Šipka nahoru",
@@ -476,6 +451,12 @@ const data = {
     category: "MISC",
     aliasesCZ: ["čas"],
     aliasesEN: ["time"]
+  },
+  "close": {
+    emoji: "❌",
+    nameCZ: "Zavřít",
+    nameEN: "Close",
+    category: "BUTTONS"
   },
   "cloud": {
     emoji: "☁️",
@@ -676,14 +657,6 @@ const data = {
     category: "STATUS / STATE",
     aliasesCZ: ["problém","selhání"],
     aliasesEN: ["issue","failure"]
-  },
-  "close": {
-    emoji: "❌",
-    nameCZ: "Zavřít",
-    nameEN: "Close",
-    category: "ACTION",
-    aliasesCZ: ["zavřít", "ukončit", "zpět", "odejít"],
-    aliasesEN: ["close", "exit", "back", "leave"]
   },
   "exit": {
     emoji: "🚪",
@@ -1446,7 +1419,7 @@ const data = {
     aliasesEN: ["reload","update"]
   },
   "reject": {
-    emoji: "⛔",
+    emoji: "❌",
     nameCZ: "Odmítnout",
     nameEN: "Reject",
     category: "CRUD / ACTIONS",
