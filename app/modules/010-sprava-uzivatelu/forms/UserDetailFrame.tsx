@@ -1,5 +1,6 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
 // PURPOSE: Detail uživatele (010) – načítá detail z DB + ukládá přes service vrstvu (subjects + role + permissions).
+// CHANGE: zabránění uložení bez role (povinná role)
 
 'use client'
 
@@ -193,6 +194,13 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
       try {
         const v = currentRef.current
 
+        // ✅ povinná role (nepovolíme save bez role)
+        const pickedRole = (roleCode ?? '').trim()
+        if (!pickedRole) {
+          alert('Vyber roli uživatele před uložením.')
+          return null
+        }
+
         const displayName = v.displayName?.trim() || v.email?.trim() || 'uživatel'
 
         const saved = await saveUser({
@@ -213,8 +221,8 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
           isArchived: v.isArchived,
 
           // ROLE + PERMISSIONS
-          roleCode: roleCode ?? (isCreate ? 'user' : null),
-          permissionCodes: permissionCodes ?? (isCreate ? [] : null),
+          roleCode: pickedRole, // ✅ už víme, že není prázdné
+          permissionCodes: permissionCodes ?? null,
         })
 
         const next: UiUser = {
@@ -225,7 +233,7 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
           phone: saved.phone ?? v.phone,
           isArchived: !!saved.is_archived,
           createdAt: saved.created_at ?? resolvedUser.createdAt,
-          roleLabel: roleCodeToLabel(roleCode ?? (isCreate ? 'user' : null)),
+          roleLabel: roleCodeToLabel(pickedRole),
         }
 
         setResolvedUser(next)
@@ -238,7 +246,7 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
     }
 
     onRegisterSubmit(submit)
-  }, [onRegisterSubmit, user.id, isCreate, resolvedUser, roleCode, permissionCodes])
+  }, [onRegisterSubmit, user.id, resolvedUser, roleCode, permissionCodes])
 
   const title = useMemo(() => {
     if (detailMode === 'create') return 'Nový uživatel'
@@ -284,7 +292,6 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
               name: code,
               description: '',
             })),
-            // ✅ tady už posíláme celý číselník pro select
             availableRoles,
           },
 
