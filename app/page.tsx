@@ -1,10 +1,12 @@
-/*
- * FILE: app/page.tsx
- * PURPOSE: Root stránka – spouští AppShell bez předvoleného modulu (dashboard)
- */
+// FILE: app/page.tsx
+import React, { Suspense } from 'react'
+import HomeClient from './HomeClient'
 
-import AppShell from '@/app/AppShell'
-
-export default function HomePage() {
-  return <AppShell />
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <HomeClient />
+    </Suspense>
+  )
 }
+
