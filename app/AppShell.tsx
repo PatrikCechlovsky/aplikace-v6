@@ -429,6 +429,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         sectionId: selection.sectionId ?? null,
         tileId: selection.tileId ?? null,
       },
+      'push'
+     ) 
     // Reset akcí jen když se mění tile (nebo odcházíš z tile)
     const prevTile = activeSelection?.tileId ?? null
     const nextTile = selection.tileId ?? null
