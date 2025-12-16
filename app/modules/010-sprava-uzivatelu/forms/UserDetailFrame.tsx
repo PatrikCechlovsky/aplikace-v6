@@ -10,6 +10,9 @@ import type { ViewMode } from '@/app/UI/CommonActions'
 import UserDetailForm, { type UserFormValue } from './UserDetailForm'
 import { getUserDetail, saveUser } from '@/app/lib/services/users'
 
+// ✅ stejné zdroje rolí jako modul 900 / RoleTypesTile
+import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
+
 type UiUser = {
   id: string
   displayName: string
@@ -55,6 +58,11 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
   const [roleCode, setRoleCode] = useState<string | null>(null)
   const [permissionCodes, setPermissionCodes] = useState<string[]>([])
 
+  // ✅ číselník rolí pro select
+  const [availableRoles, setAvailableRoles] = useState<
+    { code: string; name: string; description?: string | null }[]
+  >([])
+
   // DB “pravda” pro subjects (pro případ, že list měl zastaralé hodnoty)
   const [resolvedUser, setResolvedUser] = useState<UiUser>(user)
 
@@ -63,7 +71,7 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
     displayName: user.displayName ?? '',
     email: user.email ?? '',
     phone: user.phone ?? '',
-  
+
     titleBefore: (user as any).titleBefore ?? '',
     firstName: (user as any).firstName ?? '',
     lastName: (user as any).lastName ?? '',
@@ -78,7 +86,7 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
       displayName: user.displayName ?? '',
       email: user.email ?? '',
       phone: user.phone ?? '',
-    
+
       titleBefore: (user as any).titleBefore ?? '',
       firstName: (user as any).firstName ?? '',
       lastName: (user as any).lastName ?? '',
@@ -90,6 +98,31 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
     setDetailError(null)
   }, [user.id, user.displayName, user.email, user.phone])
 
+  // ✅ Načti číselník rolí vždy (nezávisle na read/edit)
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      try {
+        const rows = await fetchRoleTypes()
+        if (cancelled) return
+        setAvailableRoles(
+          (rows ?? []).map((r: any) => ({
+            code: r.code,
+            name: r.name,
+            description: r.description ?? null,
+          }))
+        )
+      } catch (e) {
+        // select nesmí umřít – jen zaloguj a nech fallback (aktuální role se zobrazí i bez listu)
+        console.warn('[UserDetailFrame] Failed to load role_types', e)
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   // Načti detail z DB (jen pokud existuje id)
   useEffect(() => {
     if (isCreate) return
@@ -100,7 +133,6 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
       setDetailError(null)
       try {
         const d = await getUserDetail(user.id)
-
         if (cancelled) return
 
         // subjects → UI
@@ -114,7 +146,7 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
           isArchived: !!s.is_archived,
           createdAt: s.created_at ?? user.createdAt,
           roleLabel: roleCodeToLabel(d.role_code ?? null),
-          twoFactorMethod: null, // sloupec v DB nemáš
+          twoFactorMethod: null,
         }
 
         setResolvedUser(merged)
@@ -128,11 +160,11 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
           displayName: merged.displayName ?? '',
           email: merged.email ?? '',
           phone: merged.phone ?? '',
-        
-          titleBefore: (d.subject.title_before ?? ''),
-          firstName: (d.subject.first_name ?? ''),
-          lastName: (d.subject.last_name ?? ''),
-          login: (d.subject.login ?? ''),
+
+          titleBefore: d.subject.title_before ?? '',
+          firstName: d.subject.first_name ?? '',
+          lastName: d.subject.last_name ?? '',
+          login: d.subject.login ?? '',
           isArchived: !!d.subject.is_archived,
         }
       } catch (e: any) {
@@ -160,37 +192,30 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
     const submit = async () => {
       try {
         const v = currentRef.current
-               
-        // 🔑 display_name pravidla:
-        // 1) použij ručně vyplněné
-        // 2) fallback na email
-        const displayName =
-          v.displayName?.trim() ||
-          v.email?.trim() ||
-          'uživatel'
-        
+
+        const displayName = v.displayName?.trim() || v.email?.trim() || 'uživatel'
+
         const saved = await saveUser({
           id: user.id,
-        
+
           // SUBJECT
           subjectType: 'osoba',
-        
+
           displayName,
           email: v.email || null,
           phone: v.phone || null,
-        
+
           titleBefore: v.titleBefore || null,
           firstName: v.firstName || null,
           lastName: v.lastName || null,
           login: v.login || displayName,
-        
+
           isArchived: v.isArchived,
-        
+
           // ROLE + PERMISSIONS
           roleCode: roleCode ?? (isCreate ? 'user' : null),
           permissionCodes: permissionCodes ?? (isCreate ? [] : null),
         })
-
 
         const next: UiUser = {
           ...resolvedUser,
@@ -232,9 +257,7 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
 
           detailContent: (
             <div>
-              {loadingDetail && !isCreate && (
-                <div className="detail-form__hint">Načítám detail…</div>
-              )}
+              {loadingDetail && !isCreate && <div className="detail-form__hint">Načítám detail…</div>}
               {detailError && !isCreate && (
                 <div className="detail-form__hint" style={{ color: 'var(--color-danger, #b00020)' }}>
                   {detailError}
@@ -250,7 +273,6 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
             </div>
           ),
 
-          // ✅ Role & permissions data do sekce "roles" v DetailView
           rolesData: {
             role: {
               code: roleCode ?? '',
@@ -262,16 +284,15 @@ export default function UserDetailFrame({ user, viewMode, onDirtyChange, onRegis
               name: code,
               description: '',
             })),
-            availableRoles: [],
+            // ✅ tady už posíláme celý číselník pro select
+            availableRoles,
           },
 
           rolesUi: {
             canEdit: !readOnly,
             mode: detailMode,
-            onChangeRoleCode: (nextCode: string) => {
-              // UI pro výběr role doplníme později; zatím umožníme změnu, pokud někdo zavolá handler.
-              setRoleCode(nextCode)
-            },
+            roleCode: roleCode ?? '',
+            onChangeRoleCode: (nextCode: string) => setRoleCode(nextCode),
           },
         }}
       />
