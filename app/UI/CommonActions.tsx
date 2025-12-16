@@ -125,7 +125,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
   },
    close: {
      id: 'close',
-     icon: 'cancel',
+     icon: 'close',
      label: { cs: 'Zavřít', en: 'Close' },
      description: { cs: 'Zavřít a vrátit se zpět.', en: 'Close and go back.' },
      hideWhen: [],
@@ -192,10 +192,10 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Exportovat data.', en: 'Export data.' },
     hideWhen: ['edit', 'create'],
   },
-
+   
   reject: {
     id: 'reject',
-    icon: 'cancel',
+    icon: 'reject',
     label: { cs: 'Zamítnout', en: 'Reject' },
     description: { cs: 'Zamítnout vybraný záznam.', en: 'Reject selected record.' },
     requiresSelection: true,
