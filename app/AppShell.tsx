@@ -330,7 +330,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (activeModuleId) return
 
     // 1) URL-first
-    if (urlState.moduleId && modules.some((m) => m.id === urlState.moduleId)) {
+    if (
+      urlState.moduleId &&
+      modules.some((m) => m.id === urlState.moduleId) &&
+      activeSelection?.moduleId !== urlState.moduleId
+    ) {
       setActiveModuleId(urlState.moduleId)
       setActiveSelection({
         moduleId: urlState.moduleId,
@@ -338,7 +342,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         tileId: urlState.tileId ?? undefined,
       })
       resetCommonActions()
-      return
     }
 
     // 2) Fallback (legacy)
