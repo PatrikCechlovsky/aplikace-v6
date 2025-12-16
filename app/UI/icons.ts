@@ -684,7 +684,7 @@ const data = {
     category: "ACTION",
     aliasesCZ: ["zavřít", "ukončit", "zpět", "odejít"],
     aliasesEN: ["close", "exit", "back", "leave"]
-  }
+  },
   "exit": {
     emoji: "🚪",
     nameCZ: "Odejít",
