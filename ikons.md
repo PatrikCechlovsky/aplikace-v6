@@ -21,8 +21,8 @@
 | `attach` | 📎 | Přílohy | Paperclip | Zobrazit přílohy |
 | `refresh` | 🔄 | Obnovit | Refresh | Obnovit data |
 | `search` | 🔍 | Hledat | Search | Hledat / filtrovat |
-| `approve` | 💾 | Uložit | Save | Uložit a zůstat |
-| `reject` | ❌ | Zpět | Reject | Zpět bez uložení |
+| `save` | 💾 | Uložit | Save | Uložit změny |
+| `close` | ❌ | Zavřít | Close | Zavřít a vrátit se zpět |
 | `invite` | 📨 | Pozvat | Invite | Odeslat pozvánku e-mailem |
 | `send` | 📤 | Odeslat | Send | Odeslat dokument / e-mail |
 | `export` | 📤 | Export | Export | Exportovat |
