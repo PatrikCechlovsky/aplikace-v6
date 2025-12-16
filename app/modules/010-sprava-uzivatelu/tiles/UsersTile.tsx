@@ -4,6 +4,7 @@
 // PURPOSE: List + detail uživatelů (010) napojený na Supabase přes service vrstvu.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
@@ -42,7 +43,7 @@ function mapRowToUi(row: UsersListRow): UiUser {
     email: row.email ?? '',
     phone: row.phone ?? '',
     roleLabel: roleCodeToLabel(row.role_code),
-    twoFactorMethod: null,
+    twoFactorMethod: null, // zatím nenapojujeme (sloupec v DB nemáš)
     createdAt: row.created_at ?? '',
     isArchived: !!row.is_archived,
   }
@@ -76,6 +77,10 @@ export default function UsersTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: UsersTileProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
@@ -89,6 +94,31 @@ export default function UsersTile({
   const [isDirty, setIsDirty] = useState(false)
 
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
+
+  // URL <-> state (detail id + mode)
+  const setUrl = useCallback(
+    (next: { id?: string | null; vm?: ViewMode | null }, mode: 'replace' | 'push' = 'replace') => {
+      const sp = new URLSearchParams(searchParams?.toString() ?? '')
+      const setOrDelete = (key: string, val?: string | null) => {
+        if (val && String(val).trim()) sp.set(key, String(val).trim())
+        else sp.delete(key)
+      }
+      setOrDelete('id', next.id ?? null)
+      setOrDelete('vm', next.vm ?? null)
+      const qs = sp.toString()
+      const nextUrl = qs ? `${pathname}?${qs}` : pathname
+      
+      const currentQs = searchParams.toString()
+      const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname
+      
+      // ✅ guard proti nekonečné smyčce
+      if (nextUrl === currentUrl) return
+      
+      if (mode === 'push') router.push(nextUrl)
+      else router.replace(nextUrl)
+    },
+    [pathname, router, searchParams.toString()]
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -127,19 +157,52 @@ export default function UsersTile({
     submitRef.current = null
   }, [])
 
-  /** 🔘 COMMON ACTIONS – bez import/export + místo zamítnout je zavřít */
-  const commonActions = useMemo<CommonActionId[]>(() => {
+  // URL -> state (after data load)
+  useEffect(() => {
+    const id = searchParams?.get('id')?.trim() ?? ''
+    const vm = (searchParams?.get('vm')?.trim() as ViewMode | null) ?? null
+    if (!id) return
+    const found = users.find((u) => u.id === id)
+    if (!found) return
+    setSelectedId(id)
+    // default: read
+    openDetail(found, vm === 'edit' || vm === 'create' ? vm : 'read')
+  }, [searchParams, users, openDetail])
+
+  // state -> URL
+  useEffect(() => {
     if (viewMode === 'list') {
-      // Seznam: žádný import/export, místo „zamítnout“ dáváme „zavřít“
+      // keep list state clean
+      if (searchParams?.get('id') || searchParams?.get('vm')) setUrl({ id: null, vm: null })
+      return
+    }
+    if (!detailUser?.id) return
+    setUrl({ id: detailUser.id, vm: viewMode })
+  }, [detailUser?.id, searchParams, setUrl, viewMode])
+
+  /** 🔘 COMMON ACTIONS – BEZ saveAndClose */
+  const commonActions = useMemo<CommonActionId[]>(() => {
+    // 📄 SEZNAM
+    if (viewMode === 'list') {
+      // ❌ bez import/export
+      // ❌ bez reject
+      // ✅ zavřít = zavře seznam
       return ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     }
+  
+    // 👁️ DETAIL – READ
     if (viewMode === 'read') {
-      // Formulář read: zrušit editovat a zamítnout → zůstane jen zavřít
+      // ❌ bez edit
+      // ❌ bez reject
+      // ❌ bez cancel
       return ['close']
     }
-    // Formulář edit/create: žádné "zrušit", místo toho zavřít (dirty upozornění řeší AppShell)
+  
+    // ✏️ EDIT / CREATE
+    // ❌ bez cancel
+    // ✅ save + close (dirty hlídá AppShell)
     return ['save', 'close']
-  }, [viewMode])
+}, [viewMode])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
@@ -174,21 +237,23 @@ export default function UsersTile({
           openDetail(empty, 'create')
           return
         }
-
+      
         if (id === 'view' || id === 'detail' || id === 'edit') {
           if (!selectedId) return
           const user = users.find((u) => u.id === selectedId)
           if (!user) return
           openDetail(user, id === 'edit' ? 'edit' : 'read')
+          return
         }
-
+      
         if (id === 'close') {
-          // Zavřít seznam = zpět v historii (AppShell si ohlídá dirty, pokud by někde bylo)
-          if (typeof window !== 'undefined') window.history.back()
+          // Zavře seznam – návrat zpět
+          router.back()
+          return
         }
+      
         return
       }
-
       // READ
       if (viewMode === 'read') {
         if (id === 'close') closeDetail()
@@ -198,7 +263,7 @@ export default function UsersTile({
       // EDIT / CREATE
       if (viewMode === 'edit' || viewMode === 'create') {
         if (id === 'close') {
-          // Pozn.: dirty warning běží v AppShell confirmIfDirty() pro všechny non-save akce
+          // ⚠️ dirty warning řeší AppShell (confirmIfDirty)
           viewMode === 'create' ? closeDetail() : setViewMode('read')
           setIsDirty(false)
           return
