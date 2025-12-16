@@ -34,6 +34,7 @@ export type CommonActionId =
   | 'delete'
   | 'save'
   | 'cancel'
+  | 'close'
   | 'invite'
   | 'columnSettings'
   | 'import'
@@ -122,7 +123,13 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zrušit editaci / vytvoření.', en: 'Cancel edit / create.' },
     hideWhen: ['list'],
   },
-
+   close: {
+     id: 'close',
+     icon: 'cancel',
+     label: { cs: 'Zavřít', en: 'Close' },
+     description: { cs: 'Zavřít a vrátit se zpět.', en: 'Close and go back.' },
+     hideWhen: [],
+   },
   delete: {
     id: 'delete',
     icon: 'delete',
