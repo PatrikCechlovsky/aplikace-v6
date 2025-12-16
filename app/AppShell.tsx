@@ -382,9 +382,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
 
     if (!target.moduleId) {
-      setActiveModuleId(null)
-      setActiveSelection(null)
-      resetCommonActions()
+      // ✅ když URL nemá ?m=..., tak NIC NERUŠ
+      // jinak vzniká blikání (přepínání modul ↔ dashboard)
       return
     }
 
