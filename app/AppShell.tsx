@@ -423,7 +423,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
-
+    setUrlState(
+      {
+        moduleId: selection.moduleId,
+        sectionId: selection.sectionId ?? null,
+        tileId: selection.tileId ?? null,
+      },
     // Reset akcí jen když se mění tile (nebo odcházíš z tile)
     const prevTile = activeSelection?.tileId ?? null
     const nextTile = selection.tileId ?? null
