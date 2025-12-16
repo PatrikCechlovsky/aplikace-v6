@@ -677,6 +677,14 @@ const data = {
     aliasesCZ: ["problém","selhání"],
     aliasesEN: ["issue","failure"]
   },
+  "close": {
+    emoji: "❌",
+    nameCZ: "Zavřít",
+    nameEN: "Close",
+    category: "ACTION",
+    aliasesCZ: ["zavřít", "ukončit", "zpět", "odejít"],
+    aliasesEN: ["close", "exit", "back", "leave"]
+  }
   "exit": {
     emoji: "🚪",
     nameCZ: "Odejít",
@@ -1438,7 +1446,7 @@ const data = {
     aliasesEN: ["reload","update"]
   },
   "reject": {
-    emoji: "❌",
+    emoji: "⛔",
     nameCZ: "Odmítnout",
     nameEN: "Reject",
     category: "CRUD / ACTIONS",
