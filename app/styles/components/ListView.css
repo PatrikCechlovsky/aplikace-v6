@@ -46,6 +46,6 @@
 }
 
 /* Hover řádek */
-.generic-type__row:hover {
+.generic-type__row:not(.generic-type__row--selected):hover {
   background: var(--color-surface-hover);
 }
