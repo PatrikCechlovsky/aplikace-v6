@@ -46,6 +46,6 @@
 }
 
 /* Hover řádek */
-.generic-type__row:not(.generic-type__row--selected):hover {
+.listview__row:not(.listview__row--selected):hover > td {
   background: var(--color-surface-hover);
 }
