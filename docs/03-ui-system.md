@@ -2128,3 +2128,186 @@ Jakákoliv úprava pro TopMenu režim musí být psaná tak, aby:
 
 ---
 
+# DOPLNĚNÍ (2025-12-16) – Modul 010: Pozvat uživatele (Invite flow)
+
+## 1. Cíl
+Zavést jednotný a bezpečný způsob „pozvání uživatele do aplikace“, který:
+- je oddělený od plného detailu uživatele (správa profilu),
+- funguje pro existující i neexistující uživatele,
+- minimalizuje povinná pole (jen to, co je nutné pro pozvánku),
+- zapisuje audit a stav pozvánky,
+- respektuje RLS a oprávnění.
+
+Pozvánka není editace uživatele. Je to samostatná akce a samostatný proces.
+
+---
+
+## 2. Umístění v UI (010 – Správa uživatelů)
+
+### 2.1 Seznam uživatelů (ListView)
+V modulu 010 (přehled uživatelů) budou v CommonActions dostupné dvě odlišné akce:
+
+- **Přidat uživatele**  
+  → otevírá plný detail/formulář uživatele (správa profilu)
+
+- **Pozvat uživatele**  
+  → otevírá samostatný formulář „Pozvánka“ (invite flow)
+
+Pozvání se nikdy neřeší „uvnitř“ plného detailu uživatele jako běžná editace.
+
+---
+
+## 3. Obrazovka „Pozvat uživatele“ (Invite)
+
+Pozvání je řešeno jako samostatná obrazovka v rámci modulu 010:
+- UI rámec odpovídá ostatním detailům (EntityDetailFrame + DetailView),
+- obsah je zjednodušený,
+- formulář má pouze dvě záložky.
+
+### 3.1 Záložky
+1. **Pozvánka** (editovatelná)  
+2. **Systém** (read-only, audit a stav pozvánky)
+
+Záložka „Systém“ se zobrazuje až poté, co existuje záznam pozvánky.
+
+---
+
+## 4. Záložka „Pozvánka“ – logika a pole
+
+### 4.1 Režim pozvánky
+Uživatel zvolí jednu ze dvou variant:
+- **Pozvat existujícího uživatele**
+- **Pozvat nového uživatele**
+
+Tato volba určuje podobu formuláře i další kroky.
+
+---
+
+### 4.2 Varianta A – Pozvat existujícího uživatele
+
+#### A1) Výběr uživatele
+- pole: **Vybrat uživatele**
+- zdroj: seznam uživatelů / subjektů
+
+Po výběru se automaticky předvyplní:
+- email
+- zobrazované jméno
+- aktuální role (pokud existuje)
+
+#### A2) Upravitelné položky
+- **Role** (povinné)
+- **Poznámka k pozvánce** (volitelné)
+
+Doporučení:
+- Email: read-only
+- Zobrazované jméno: volitelně editovatelné
+
+#### A3) Validace
+- musí být vybrán uživatel
+- musí být vybraná role
+- email musí existovat a být validní
+
+---
+
+### 4.3 Varianta B – Pozvat nového uživatele
+
+Formulář je záměrně minimalistický.
+
+#### B1) Povinná pole
+- **Email**
+- **Role**
+
+#### B2) Volitelná pole
+- **Zobrazované jméno** (fallback z emailu)
+- **Poznámka k pozvánce**
+
+#### B3) Pole, která se v invite nepoužívají
+- Přihlašovací jméno (login)
+- Heslo
+- Osobní údaje (jméno, příjmení, tituly)
+
+#### B4) Validace
+- email je povinný a validní
+- role je povinná
+- unikátnost emailu řeší backend
+
+---
+
+## 5. Akce a chování (CommonActions)
+
+### 5.1 Dostupné akce
+- **Odeslat pozvánku**
+- **Zrušit**
+
+Pozdější rozšíření:
+- Znovu odeslat pozvánku
+- Zrušit pozvánku
+
+### 5.2 Povinné chování
+- při chybějících povinných polích nelze pozvánku odeslat,
+- zobrazí se jasná validační hláška,
+- platí pravidla dirty guardu.
+
+---
+
+## 6. Backend proces (konceptuálně)
+
+### 6.1 Existující uživatel
+- ověření existence uživatele
+- případná aktualizace role
+- vytvoření záznamu pozvánky
+- odeslání emailu
+
+### 6.2 Nový uživatel
+- vytvoření minimálního subjektu (pending)
+- přiřazení role
+- vytvoření pozvánky
+- odeslání emailu
+
+### 6.3 Heslo
+Heslo se nikdy nezadává v invite.
+Uživatel si heslo nastaví sám při přijetí pozvánky.
+
+---
+
+## 7. Záložka „Systém“
+
+Read-only přehled stavu pozvánky.
+
+### 7.1 Zobrazená metadata
+- ID pozvánky
+- Datum vytvoření
+- Kdo pozvánku odeslal
+- Datum odeslání
+- Stav pozvánky (čeká / přijata / expirovala / zrušena)
+
+### 7.2 Budoucí rozšíření
+- datum prvního přihlášení
+- datum nastavení hesla
+- audit změn role
+
+---
+
+## 8. Terminologie v UI
+
+- **Zobrazované jméno** – jméno/přezdívka v aplikaci
+- **Email** – primární identita uživatele
+- **Přihlašovací jméno (login)** – technický identifikátor (nepoužívá se v invite)
+- **Role** – oprávnění v systému
+
+---
+
+## 9. Oprávnění
+Pozvání uživatele je administrátorská akce:
+- dostupná pouze oprávněným rolím,
+- chráněná RLS,
+- běžný uživatel akci nevidí.
+
+---
+
+## 10. Shrnutí
+- Pozvánka je samostatný proces.
+- Minimum povinných polí.
+- Oddělení správy profilu a pozvání.
+- Audit a dohledatelnost.
+- Konzistentní chování s UI systémem aplikace.
