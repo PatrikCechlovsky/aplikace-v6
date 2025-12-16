@@ -456,7 +456,9 @@ const data = {
     emoji: "❌",
     nameCZ: "Zavřít",
     nameEN: "Close",
-    category: "BUTTONS"
+    category: "BUTTONS",
+    aliasesCZ: ["zavřít","ukončit","zpět","odejít"],
+    aliasesEN: ["close","exit","back","leave"]
   },
   "cloud": {
     emoji: "☁️",
