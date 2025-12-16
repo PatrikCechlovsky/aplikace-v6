@@ -119,7 +119,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       if (mode === 'push') router.push(nextUrl)
       else router.replace(nextUrl)
     },
-    [pathname, router, searchParams,toString()]
+    [pathname, router, searchParams.toString()]
   )
 
   // Auth
@@ -349,35 +349,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
   }, [isAuthenticated, modules, activeModuleId, initialModuleId, urlState.moduleId, urlState.sectionId, urlState.tileId])
 
-  // Keep URL in sync with selection (so refresh/back/forward work)
-  useEffect(() => {
-    if (!isAuthenticated) return
-    // Do not write URL until modules are loaded (prevents flicker)
-    if (modulesLoading) return
-
-    // No module selected → clear m/s/t
-    if (!activeSelection?.moduleId) {
-      if (urlState.moduleId || urlState.sectionId || urlState.tileId) {
-        setUrlState({ moduleId: null, sectionId: null, tileId: null })
-      }
-      return
-    }
-
-    // Normal state
-    const next = {
-      moduleId: activeSelection.moduleId,
-      sectionId: activeSelection.sectionId ?? null,
-      tileId: activeSelection.tileId ?? null,
-    }
-
-    if (
-      next.moduleId !== urlState.moduleId ||
-      next.sectionId !== urlState.sectionId ||
-      next.tileId !== urlState.tileId
-    ) {
-      setUrlState(next)
-    }
-  }, [activeSelection, isAuthenticated, modulesLoading, setUrlState, urlState.moduleId, urlState.sectionId, urlState.tileId])
 
   // React to browser back/forward (URL -> state)
   useEffect(() => {
