@@ -420,12 +420,17 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       activeSelection?.moduleId === selection.moduleId &&
       (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
       (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
-
+  
     if (sameSelection) return
     if (!confirmIfDirty()) return
-
+  
+    const prevTile = activeSelection?.tileId ?? null
+    const nextTile = selection.tileId ?? null
+  
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
+  
+    // ✅ zapiš do URL (aby refresh/back/forward držel výběr)
     setUrlState(
       {
         moduleId: selection.moduleId,
@@ -433,10 +438,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         tileId: selection.tileId ?? null,
       },
       'push'
-     ) 
+    )
+  
     // Reset akcí jen když se mění tile (nebo odcházíš z tile)
-    const prevTile = activeSelection?.tileId ?? null
-    const nextTile = selection.tileId ?? null
     if (prevTile !== nextTile) resetCommonActions()
   }
 
