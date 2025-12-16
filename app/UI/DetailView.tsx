@@ -1,6 +1,5 @@
 // FILE: app/UI/DetailView.tsx
-// SOURCE: tvoje aktuální verze :contentReference[oaicite:1]{index=1}
-// CHANGE: jen lehké zpřesnění ctx typu pro rolesData/rolesUi (UI beze změny)
+// CHANGE: oprava selectu rolí v edit/create (neztrácí hodnotu, i když nejsou options)
 
 'use client'
 
@@ -37,6 +36,8 @@ export type RolesData = {
 export type RolesUi = {
   canEdit?: boolean
   mode?: DetailViewMode
+  /** Controlled hodnota pro select v edit/create (doporučeno: držet ve formuláři) */
+  roleCode?: string | null
   onChangeRoleCode?: (roleCode: string) => void
 }
 
@@ -45,7 +46,7 @@ export type DetailViewCtx = {
   entityType?: string
   entityId?: string
   mode?: DetailViewMode
-  
+
   detailContent?: React.ReactNode
   rolesData?: RolesData
   rolesUi?: RolesUi
@@ -72,6 +73,18 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       const permissions = data?.permissions ?? []
       const canEdit = !!ui?.canEdit && (ui?.mode === 'edit' || ui?.mode === 'create')
 
+      // Options pro select
+      const options = data?.availableRoles ?? []
+
+      // Zajisti, že aktuální role je v options (když číselník ještě není načtený)
+      const ensuredOptions =
+        role?.code && !options.some((r) => r.code === role.code)
+          ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...options]
+          : options
+
+      // Controlled hodnota: preferuj UI stav, fallback na aktuální roli
+      const selectedCode = (ui?.roleCode ?? role?.code ?? '') as string
+
       return (
         <div className="detail-form">
           {/* ROLE */}
@@ -85,10 +98,14 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
                 {canEdit ? (
                   <select
                     className="detail-form__input"
-                    value={role?.code ?? ''}
+                    value={selectedCode}
                     onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
                   >
-                    {(data?.availableRoles ?? []).map((r) => (
+                    <option value="" disabled>
+                      Vyber roli…
+                    </option>
+
+                    {ensuredOptions.map((r) => (
                       <option key={r.code} value={r.code}>
                         {r.name}
                       </option>
@@ -119,9 +136,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
             <h3 className="detail-form__section-title">Oprávnění (odvozené z role)</h3>
 
             {permissions.length === 0 ? (
-              <div className="detail-view__placeholder">
-                Žádná oprávnění (zatím). Napojíme na Supabase z role.
-              </div>
+              <div className="detail-view__placeholder">Žádná oprávnění (zatím). Napojíme na Supabase z role.</div>
             ) : (
               <div className="detail-form__grid">
                 {permissions.map((p) => (
@@ -157,11 +172,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     id: 'equipment',
     label: 'Vybavení jednotky',
     order: 40,
-    render: () => (
-      <div className="detail-view__placeholder">
-        Vybavení jednotky – doplníme (jednotka).
-      </div>
-    ),
+    render: () => <div className="detail-view__placeholder">Vybavení jednotky – doplníme (jednotka).</div>,
   },
 
   accounts: {
@@ -240,11 +251,7 @@ export default function DetailView<Ctx = unknown>({ children, sectionIds, ctx }:
         />
       )}
 
-      {activeSection && (
-        <section id={`detail-section-${activeSection.id}`}>
-          {activeSection.render(safeCtx)}
-        </section>
-      )}
+      {activeSection && <section id={`detail-section-${activeSection.id}`}>{activeSection.render(safeCtx)}</section>}
     </div>
   )
 }
