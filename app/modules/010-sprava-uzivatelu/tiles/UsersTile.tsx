@@ -192,10 +192,9 @@ export default function UsersTile({
   
     // 👁️ DETAIL – READ
     if (viewMode === 'read') {
-      // ❌ bez edit
       // ❌ bez reject
       // ❌ bez cancel
-      return ['close']
+      return ['edit','close']
     }
   
     // ✏️ EDIT / CREATE
@@ -256,6 +255,7 @@ export default function UsersTile({
       }
       // READ
       if (viewMode === 'read') {
+        if (id === 'edit') setViewMode('edit')
         if (id === 'close') closeDetail()
         return
       }
