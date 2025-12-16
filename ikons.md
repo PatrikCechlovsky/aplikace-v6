@@ -178,6 +178,7 @@
 | 🗑️ | `delete` | Smazat | Delete | odstranit, vymazat | remove, erase, trash |
 | 🗑️ | `trash` | Koš | Trash | smazat, odpad | delete, bin, garbage |
 | ❌ | `remove` | Odstranit | Remove | smazat, odebrat | delete, take out |
+| ❌ | `close` | Zavřít | Close | zavřít, ukončit, zpět, odejít | close, exit, back, leave |
 | 🗄️ | `archive` | Archivovat | Archive | uložit, zarchivovat | store, file away |
 | 📎 | `paperclip` | Sponka | Paperclip | příloha, připojit | attach, clip |
 | 📎 | `attach` | Příloha | Attach | připojit, přiložit | paperclip, append |
