@@ -106,11 +106,18 @@ export default function UsersTile({
       setOrDelete('id', next.id ?? null)
       setOrDelete('vm', next.vm ?? null)
       const qs = sp.toString()
-      const url = qs ? `${pathname}?${qs}` : pathname
-      if (mode === 'push') router.push(url)
-      else router.replace(url)
+      const nextUrl = qs ? `${pathname}?${qs}` : pathname
+      
+      const currentQs = searchParams.toString()
+      const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname
+      
+      // ✅ guard proti nekonečné smyčce
+      if (nextUrl === currentUrl) return
+      
+      if (mode === 'push') router.push(nextUrl)
+      else router.replace(nextUrl)
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams.toString()]
   )
 
   const load = useCallback(async () => {
