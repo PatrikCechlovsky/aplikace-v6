@@ -349,6 +349,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       setActiveModuleId(initialModuleId)
       setActiveSelection({ moduleId: initialModuleId })
       resetCommonActions()
+      setUrlState({ moduleId: initialModuleId, sectionId: null, tileId: null }, 'replace')
     }
   }, [isAuthenticated, modules, activeModuleId, initialModuleId, urlState.moduleId, urlState.sectionId, urlState.tileId])
 
