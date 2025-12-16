@@ -4,6 +4,7 @@
 // PURPOSE: List + detail uživatelů (010) napojený na Supabase přes service vrstvu.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
@@ -76,6 +77,10 @@ export default function UsersTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: UsersTileProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filterText, setFilterText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
@@ -89,6 +94,24 @@ export default function UsersTile({
   const [isDirty, setIsDirty] = useState(false)
 
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
+
+  // URL <-> state (detail id + mode)
+  const setUrl = useCallback(
+    (next: { id?: string | null; vm?: ViewMode | null }, mode: 'replace' | 'push' = 'replace') => {
+      const sp = new URLSearchParams(searchParams?.toString() ?? '')
+      const setOrDelete = (key: string, val?: string | null) => {
+        if (val && String(val).trim()) sp.set(key, String(val).trim())
+        else sp.delete(key)
+      }
+      setOrDelete('id', next.id ?? null)
+      setOrDelete('vm', next.vm ?? null)
+      const qs = sp.toString()
+      const url = qs ? `${pathname}?${qs}` : pathname
+      if (mode === 'push') router.push(url)
+      else router.replace(url)
+    },
+    [pathname, router, searchParams]
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -126,6 +149,29 @@ export default function UsersTile({
     setIsDirty(false)
     submitRef.current = null
   }, [])
+
+  // URL -> state (after data load)
+  useEffect(() => {
+    const id = searchParams?.get('id')?.trim() ?? ''
+    const vm = (searchParams?.get('vm')?.trim() as ViewMode | null) ?? null
+    if (!id) return
+    const found = users.find((u) => u.id === id)
+    if (!found) return
+    setSelectedId(id)
+    // default: read
+    openDetail(found, vm === 'edit' || vm === 'create' ? vm : 'read')
+  }, [searchParams, users, openDetail])
+
+  // state -> URL
+  useEffect(() => {
+    if (viewMode === 'list') {
+      // keep list state clean
+      if (searchParams?.get('id') || searchParams?.get('vm')) setUrl({ id: null, vm: null })
+      return
+    }
+    if (!detailUser?.id) return
+    setUrl({ id: detailUser.id, vm: viewMode })
+  }, [detailUser?.id, searchParams, setUrl, viewMode])
 
   /** 🔘 COMMON ACTIONS – BEZ saveAndClose */
   const commonActions = useMemo<CommonActionId[]>(() => {
