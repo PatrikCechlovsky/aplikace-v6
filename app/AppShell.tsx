@@ -16,8 +16,8 @@ import './styles/components/DetailTabs.css'
 import './styles/components/DetailForm.css'
 import './styles/components/EntityDetailFrame.css'
 
-import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
 import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
@@ -79,6 +79,41 @@ type MenuLayout = 'sidebar' | 'top'
 
 export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // URL state (MVP): /?m=010&s=...&t=...
+  const urlState = useMemo(() => {
+    const m = searchParams?.get('m')
+    const s = searchParams?.get('s')
+    const t = searchParams?.get('t')
+    return {
+      moduleId: m && m.trim() ? m.trim() : null,
+      sectionId: s && s.trim() ? s.trim() : null,
+      tileId: t && t.trim() ? t.trim() : null,
+    }
+  }, [searchParams])
+
+  const setUrlState = useCallback(
+    (next: { moduleId?: string | null; sectionId?: string | null; tileId?: string | null }, mode: 'replace' | 'push' = 'replace') => {
+      // Keep unknown query params (e.g. filters) – only manage m/s/t.
+      const sp = new URLSearchParams(searchParams?.toString() ?? '')
+      const setOrDelete = (key: string, val?: string | null) => {
+        if (val && val.trim()) sp.set(key, val.trim())
+        else sp.delete(key)
+      }
+
+      setOrDelete('m', next.moduleId)
+      setOrDelete('s', next.sectionId)
+      setOrDelete('t', next.tileId)
+
+      const qs = sp.toString()
+      const url = qs ? `${pathname}?${qs}` : pathname
+      if (mode === 'push') router.push(url)
+      else router.replace(url)
+    },
+    [pathname, router, searchParams]
+  )
 
   // Auth
   const [authLoading, setAuthLoading] = useState(true)
@@ -287,12 +322,101 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (!modules.length) return
     if (activeModuleId) return
 
+    // 1) URL-first
+    if (urlState.moduleId && modules.some((m) => m.id === urlState.moduleId)) {
+      setActiveModuleId(urlState.moduleId)
+      setActiveSelection({
+        moduleId: urlState.moduleId,
+        sectionId: urlState.sectionId ?? undefined,
+        tileId: urlState.tileId ?? undefined,
+      })
+      resetCommonActions()
+      return
+    }
+
+    // 2) Fallback (legacy)
     if (initialModuleId && modules.some((m) => m.id === initialModuleId)) {
       setActiveModuleId(initialModuleId)
       setActiveSelection({ moduleId: initialModuleId })
       resetCommonActions()
     }
-  }, [isAuthenticated, modules, activeModuleId, initialModuleId])
+  }, [isAuthenticated, modules, activeModuleId, initialModuleId, urlState.moduleId, urlState.sectionId, urlState.tileId])
+
+  // Keep URL in sync with selection (so refresh/back/forward work)
+  useEffect(() => {
+    if (!isAuthenticated) return
+    // Do not write URL until modules are loaded (prevents flicker)
+    if (modulesLoading) return
+
+    // No module selected → clear m/s/t
+    if (!activeSelection?.moduleId) {
+      if (urlState.moduleId || urlState.sectionId || urlState.tileId) {
+        setUrlState({ moduleId: null, sectionId: null, tileId: null })
+      }
+      return
+    }
+
+    // Normal state
+    const next = {
+      moduleId: activeSelection.moduleId,
+      sectionId: activeSelection.sectionId ?? null,
+      tileId: activeSelection.tileId ?? null,
+    }
+
+    if (
+      next.moduleId !== urlState.moduleId ||
+      next.sectionId !== urlState.sectionId ||
+      next.tileId !== urlState.tileId
+    ) {
+      setUrlState(next)
+    }
+  }, [activeSelection, isAuthenticated, modulesLoading, setUrlState, urlState.moduleId, urlState.sectionId, urlState.tileId])
+
+  // React to browser back/forward (URL -> state)
+  useEffect(() => {
+    if (!isAuthenticated) return
+    if (modulesLoading) return
+
+    const current = {
+      moduleId: activeSelection?.moduleId ?? null,
+      sectionId: activeSelection?.sectionId ?? null,
+      tileId: activeSelection?.tileId ?? null,
+    }
+
+    const target = {
+      moduleId: urlState.moduleId ?? null,
+      sectionId: urlState.sectionId ?? null,
+      tileId: urlState.tileId ?? null,
+    }
+
+    const differs =
+      current.moduleId !== target.moduleId || current.sectionId !== target.sectionId || current.tileId !== target.tileId
+    if (!differs) return
+
+    // If user is dirty, confirm; if they cancel, revert URL back to current.
+    if (!confirmIfDirty()) {
+      setUrlState(current, 'replace')
+      return
+    }
+
+    if (!target.moduleId) {
+      setActiveModuleId(null)
+      setActiveSelection(null)
+      resetCommonActions()
+      return
+    }
+
+    // Only accept modules that exist
+    if (!modules.some((m) => m.id === target.moduleId)) return
+    setActiveModuleId(target.moduleId)
+    setActiveSelection({
+      moduleId: target.moduleId,
+      sectionId: target.sectionId ?? undefined,
+      tileId: target.tileId ?? undefined,
+    })
+    // Actions are tile-owned; keep/reset only when switching tile.
+    if ((activeSelection?.tileId ?? null) !== (target.tileId ?? null)) resetCommonActions()
+  }, [activeSelection, isAuthenticated, modules, modulesLoading, setUrlState, urlState.moduleId, urlState.sectionId, urlState.tileId])
 
   useEffect(() => {
     if (!activeSelection?.tileId) resetCommonActions()
@@ -310,10 +434,22 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }
 
   function handleModuleSelect(selection: SidebarSelection) {
+    // Klik na už aktivní položku nesmí „resetovat“ kontext (např. CommonActions)
+    const sameSelection =
+      activeSelection?.moduleId === selection.moduleId &&
+      (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
+      (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
+
+    if (sameSelection) return
     if (!confirmIfDirty()) return
+
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
-    resetCommonActions()
+
+    // Reset akcí jen když se mění tile (nebo odcházíš z tile)
+    const prevTile = activeSelection?.tileId ?? null
+    const nextTile = selection.tileId ?? null
+    if (prevTile !== nextTile) resetCommonActions()
   }
 
   function handleHomeClick() {
@@ -494,6 +630,19 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const hasUnsavedChanges =
     commonActionsUi.isDirty &&
     (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
+
+  // Browser refresh / close tab guard
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) return
+      e.preventDefault()
+      // Chrome requires returnValue to be set.
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [hasUnsavedChanges])
 
   return (
     <div className="layout">
