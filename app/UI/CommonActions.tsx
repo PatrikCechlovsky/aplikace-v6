@@ -36,6 +36,7 @@ export type CommonActionId =
   | 'cancel'
   | 'close'
   | 'invite'
+  | 'sendInvite'
   | 'columnSettings'
   | 'import'
   | 'export'
@@ -166,7 +167,15 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     id: 'invite',
     icon: 'invite',
     label: { cs: 'Pozvat', en: 'Invite' },
-    description: { cs: 'Odeslat pozvánku.', en: 'Send an invitation.' },
+    description: { cs: 'Otevřít pozvánku.', en: 'Open invitation.' },
+  },
+
+  sendInvite: {
+    id: 'sendInvite',
+    icon: 'invite',
+    label: { cs: 'Odeslat pozvánku', en: 'Send invite' },
+    description: { cs: 'Odešle pozvánku e-mailem.', en: 'Sends invitation email.' },
+    hideWhen: ['read', 'edit', 'create'], // ✅ zobrazíme si to řízeně z tile (na invite obrazovce)
   },
 
   columnSettings: {
