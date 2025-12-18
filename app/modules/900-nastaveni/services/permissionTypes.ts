@@ -1,11 +1,30 @@
 /*
  * FILE: app/modules/900-nastaveni/services/permissionTypes.ts
  * PURPOSE: CRUD funkce pro číselník public.permission_types (napojení na Supabase)
+ *
+ * Struktura tabulky po sjednocení:
+ *  - code        (text, PK / UNIQUE)
+ *  - name        (text)
+ *  - description (text, nullable)
+ *  - color       (text, nullable)
+ *  - icon        (text, nullable)
+ *  - order_index (integer, nullable)
+ *  - active      (boolean, default true)
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
 
 const SELECT_FIELDS = 'code, name, description, color, icon, order_index, active'
+
+function normalizeOrderIndex(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+function normalizeText(v: unknown): string | null {
+  if (v == null) return null
+  const s = String(v).trim()
+  return s ? s : null
+}
 
 export type PermissionTypeRow = {
   code: string
@@ -24,16 +43,6 @@ export type PermissionTypePayload = {
   icon?: string | null
   order_index?: number | null
   active?: boolean | null
-}
-
-function normalizeOrderIndex(v: unknown): number | null {
-  return typeof v === 'number' && Number.isFinite(v) ? v : null
-}
-
-function normalizeText(v: unknown): string | null {
-  if (v == null) return null
-  const s = String(v).trim()
-  return s ? s : null
 }
 
 /**
@@ -62,7 +71,10 @@ export async function createPermissionType(
   payload: PermissionTypePayload,
 ): Promise<PermissionTypeRow> {
   const trimmedCode = code.trim()
-  if (!trimmedCode) throw new Error('Kód oprávnění nesmí být prázdný')
+
+  if (!trimmedCode) {
+    throw new Error('Kód oprávnění nesmí být prázdný')
+  }
 
   const insertPayload = {
     code: trimmedCode,
@@ -85,7 +97,7 @@ export async function createPermissionType(
     throw error
   }
 
-  // Když RLS nedovolí vrátit řádek (nebo nastane edge-case), zkusíme ho načíst zvlášť.
+  // Když RLS (nebo edge-case) nedovolí vrátit řádek, zkusíme ho dočíst zvlášť.
   if (!data) {
     const { data: fetched, error: fetchErr } = await supabase
       .from('permission_types')
@@ -97,10 +109,7 @@ export async function createPermissionType(
       console.warn('createPermissionType: insert ok, but cannot fetch row (RLS?)', fetchErr)
     }
 
-    if (fetched) return fetched as PermissionTypeRow
-
-    // Poslední fallback: vrať aspoň to, co jsme chtěli uložit.
-    return insertPayload as PermissionTypeRow
+    return (fetched ?? insertPayload) as PermissionTypeRow
   }
 
   return data as PermissionTypeRow
@@ -114,7 +123,10 @@ export async function updatePermissionType(
   payload: PermissionTypePayload,
 ): Promise<PermissionTypeRow> {
   const trimmedKey = codeKey.trim()
-  if (!trimmedKey) throw new Error('Chybí "code" pro update oprávnění')
+
+  if (!trimmedKey) {
+    throw new Error('Chybí "code" pro update oprávnění')
+  }
 
   const updatePayload = {
     name: payload.name.trim(),
@@ -137,7 +149,7 @@ export async function updatePermissionType(
     throw error
   }
 
-  // 0 rows returned (často RLS / nic netrefeno) – zkusíme dočíst řádek
+  // 0 rows returned (často RLS / nebo nic netrefeno) – zkusíme dočíst řádek.
   if (!data) {
     const { data: fetched, error: fetchErr } = await supabase
       .from('permission_types')
@@ -149,10 +161,7 @@ export async function updatePermissionType(
       console.warn('updatePermissionType: update ok/unknown, but cannot fetch row (RLS?)', fetchErr)
     }
 
-    if (fetched) return fetched as PermissionTypeRow
-
-    // Fallback: vrať syntetický řádek, aby UI nespadlo
-    return { code: trimmedKey, ...(updatePayload as any) } as PermissionTypeRow
+    return (fetched ?? { code: trimmedKey, ...(updatePayload as any) }) as PermissionTypeRow
   }
 
   return data as PermissionTypeRow
@@ -163,9 +172,11 @@ export async function updatePermissionType(
  */
 export async function deletePermissionType(codeKey: string): Promise<void> {
   const trimmedKey = codeKey.trim()
-  if (!trimmedKey) throw new Error('Chybí "code" pro smazání oprávnění')
 
-  const { error } = await supabase.from('permission_types').delete().eq('code', trimmedKey)
+  const { error } = await supabase
+    .from('permission_types')
+    .delete()
+    .eq('code', trimmedKey)
 
   if (error) {
     console.error('deletePermissionType error', error)

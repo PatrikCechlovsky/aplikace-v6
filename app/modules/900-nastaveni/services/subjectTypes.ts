@@ -14,6 +14,18 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 
+const SELECT_FIELDS = 'code, name, description, color, icon, sort_order, active'
+
+function normalizeSortOrder(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+function normalizeText(v: unknown): string | null {
+  if (v == null) return null
+  const s = String(v).trim()
+  return s ? s : null
+}
+
 /**
  * Datový typ přesně podle tabulky v Supabase.
  */
@@ -45,7 +57,7 @@ export type SubjectTypePayload = {
 export async function fetchSubjectTypes(): Promise<SubjectType[]> {
   const { data, error } = await supabase
     .from('subject_types')
-    .select('code, name, description, color, icon, sort_order, active')
+    .select(SELECT_FIELDS)
     .order('sort_order', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
 
@@ -76,25 +88,36 @@ export async function createSubjectType(
   const insertPayload = {
     code: trimmedCode,
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    sort_order:
-      typeof payload.sort_order === 'number' && !Number.isNaN(payload.sort_order)
-        ? payload.sort_order
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    sort_order: normalizeSortOrder(payload.sort_order),
     active: payload.active ?? true,
   }
 
   const { data, error } = await supabase
     .from('subject_types')
     .insert(insertPayload)
-    .select('code, name, description, color, icon, sort_order, active')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('createSubjectType error', error)
     throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('subject_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedCode)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('createSubjectType: insert ok, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    return (fetched ?? insertPayload) as SubjectType
   }
 
   return data as SubjectType
@@ -115,13 +138,10 @@ export async function updateSubjectType(
 
   const updatePayload = {
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    sort_order:
-      typeof payload.sort_order === 'number' && !Number.isNaN(payload.sort_order)
-        ? payload.sort_order
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    sort_order: normalizeSortOrder(payload.sort_order),
     active: payload.active ?? true,
   }
 
@@ -129,12 +149,31 @@ export async function updateSubjectType(
     .from('subject_types')
     .update(updatePayload)
     .eq('code', trimmedKey)
-    .select('code, name, description, color, icon, sort_order, active')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('updateSubjectType error', error)
     throw error
+  }
+
+  if (error) {
+    console.error('updateSubjectType error', error)
+    throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('subject_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedKey)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('updateSubjectType: update ok/unknown, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    return (fetched ?? { code: trimmedKey, ...(updatePayload as any) }) as SubjectType
   }
 
   return data as SubjectType

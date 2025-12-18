@@ -14,6 +14,18 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 
+const SELECT_FIELDS = 'code, name, description, color, icon, order_index, active'
+
+function normalizeOrderIndex(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+function normalizeText(v: unknown): string | null {
+  if (v == null) return null
+  const s = String(v).trim()
+  return s ? s : null
+}
+
 export type PaymentTypeRow = {
   code: string
   name: string
@@ -39,7 +51,7 @@ export type PaymentTypePayload = {
 export async function fetchPaymentTypes(): Promise<PaymentTypeRow[]> {
   const { data, error } = await supabase
     .from('payment_types')
-    .select('code, name, description, color, icon, order_index, active')
+    .select(SELECT_FIELDS)
     .order('order_index', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
 
@@ -67,25 +79,36 @@ export async function createPaymentType(
   const insertPayload = {
     code: trimmedCode,
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    order_index:
-      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
-        ? payload.order_index
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    order_index: normalizeOrderIndex(payload.order_index),
     active: payload.active ?? true,
   }
 
   const { data, error } = await supabase
     .from('payment_types')
     .insert(insertPayload)
-    .select('code, name, description, color, icon, order_index, active')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('createPaymentType error', error)
     throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('payment_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedCode)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('createPaymentType: insert ok, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    return (fetched ?? insertPayload) as PaymentTypeRow
   }
 
   return data as PaymentTypeRow
@@ -106,13 +129,10 @@ export async function updatePaymentType(
 
   const updatePayload = {
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    order_index:
-      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
-        ? payload.order_index
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    order_index: normalizeOrderIndex(payload.order_index),
     active: payload.active ?? true,
   }
 
@@ -120,12 +140,26 @@ export async function updatePaymentType(
     .from('payment_types')
     .update(updatePayload)
     .eq('code', trimmedKey)
-    .select('code, name, description, color, icon, order_index, active')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('updatePaymentType error', error)
     throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('payment_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedKey)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('updatePaymentType: update ok/unknown, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    return (fetched ?? { code: trimmedKey, ...(updatePayload as any) }) as PaymentTypeRow
   }
 
   return data as PaymentTypeRow

@@ -13,6 +13,18 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 
+const SELECT_FIELDS = 'code, name, description, color, icon, order_index'
+
+function normalizeOrderIndex(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+function normalizeText(v: unknown): string | null {
+  if (v == null) return null
+  const s = String(v).trim()
+  return s ? s : null
+}
+
 /**
  * Datový typ přesně podle tabulky v Supabase.
  */
@@ -42,7 +54,7 @@ export type PropertyTypePayload = {
 export async function fetchPropertyTypes(): Promise<PropertyTypeRow[]> {
   const { data, error } = await supabase
     .from('property_types')
-    .select('code, name, description, color, icon, order_index')
+    .select(SELECT_FIELDS)
     .order('order_index', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
 
@@ -73,24 +85,35 @@ export async function createPropertyType(
   const insertPayload = {
     code: trimmedCode,
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    order_index:
-      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
-        ? payload.order_index
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    order_index: normalizeOrderIndex(payload.order_index),
   }
 
   const { data, error } = await supabase
     .from('property_types')
     .insert(insertPayload)
-    .select('code, name, description, color, icon, order_index')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('createPropertyType error', error)
     throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('property_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedCode)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('createPropertyType: insert ok, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    return (fetched ?? insertPayload) as PropertyTypeRow
   }
 
   return data as PropertyTypeRow
@@ -111,25 +134,36 @@ export async function updatePropertyType(
 
   const updatePayload = {
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    order_index:
-      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
-        ? payload.order_index
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    order_index: normalizeOrderIndex(payload.order_index),
   }
 
   const { data, error } = await supabase
     .from('property_types')
     .update(updatePayload)
     .eq('code', trimmedKey)
-    .select('code, name, description, color, icon, order_index')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('updatePropertyType error', error)
     throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('property_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedKey)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('updatePropertyType: update ok/unknown, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    return (fetched ?? { code: trimmedKey, ...(updatePayload as any) }) as PropertyTypeRow
   }
 
   return data as PropertyTypeRow
