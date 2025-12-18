@@ -1,3 +1,6 @@
+// FILE: app/modules/010-sprava-uzivatelu/forms/InviteUserFrame.tsx
+// (obsah dle tvého uploadu)
+
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,7 +29,6 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
   })
 
   useEffect(() => {
-    // preset změna → reset
     currentRef.current = {
       mode: presetSubjectId ? 'existing' : 'new',
       subjectId: presetSubjectId ?? null,
@@ -106,74 +108,42 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
               <div className="detail-form__grid detail-form__grid--narrow">
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">ID pozvánky</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.inviteId}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.inviteId} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Stav</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.status ?? 'pending'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.status ?? 'pending'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Režim</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.mode ?? '—'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.mode ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Role</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.roleCode ?? '—'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.roleCode ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-4">
                   <label className="detail-form__label">Email</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.email ?? '—'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.email ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Vytvořeno</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.createdAt ?? '—'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdAt ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Odesláno</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.sentAt ?? '—'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.sentAt ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-4">
                   <label className="detail-form__label">Vytvořil</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={inviteResult.createdBy ?? '—'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdBy ?? '—'} readOnly />
                 </div>
               </div>
             </section>
@@ -183,4 +153,3 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     </EntityDetailFrame>
   )
 }
-
