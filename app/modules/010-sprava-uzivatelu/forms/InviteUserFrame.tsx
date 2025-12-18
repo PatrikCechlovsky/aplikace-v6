@@ -1,5 +1,5 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/InviteUserFrame.tsx
-// NEW
+// PURPOSE: Invite obrazovka (010) – samostatný proces, vlastní kontext (není UserDetail).
 
 'use client'
 
@@ -24,7 +24,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     subjectId: presetSubjectId ?? null,
     email: '',
     displayName: '',
-    roleCode: 'user',
+    roleCode: '',
     note: '',
   })
 
@@ -35,13 +35,13 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       subjectId: presetSubjectId ?? null,
       email: '',
       displayName: '',
-      roleCode: 'user',
+      roleCode: '',
       note: '',
     }
     setInviteResult(null)
     setActiveTab('invite')
     onDirtyChange?.(false)
-  }, [presetSubjectId])
+  }, [presetSubjectId, onDirtyChange])
 
   useEffect(() => {
     if (!onRegisterSubmit) return
@@ -52,15 +52,15 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
 
         // minimální validace (UI má i inline)
         if (v.mode === 'existing' && !v.subjectId) {
-          alert('Vyber uživatele.')
-          return false
-        }
-        if (!v.roleCode?.trim()) {
-          alert('Role je povinná.')
+          alert('Vyber existujícího uživatele.')
           return false
         }
         if (v.mode === 'new' && !v.email?.trim()) {
           alert('Email je povinný.')
+          return false
+        }
+        if (!v.roleCode?.trim()) {
+          alert('Role je povinná.')
           return false
         }
 
@@ -87,11 +87,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
 
   return (
     <EntityDetailFrame title="Pozvat uživatele">
-      <DetailTabs
-        tabs={tabs as any}
-        activeId={activeTab}
-        onSelect={(id: any) => setActiveTab(id)}
-      />
+      <DetailTabs tabs={tabs as any} activeId={activeTab} onSelect={(id: any) => setActiveTab(id)} />
 
       {activeTab === 'invite' && (
         <InviteUserForm
@@ -105,19 +101,51 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
 
       {activeTab === 'system' && inviteResult && (
         <div className="detail-form">
-          <div className="detail-form__grid" style={{ gridTemplateColumns: '220px 1fr' }}>
-            <div className="detail-form__label">ID pozvánky</div>
-            <div className="detail-form__value">{inviteResult.inviteId}</div>
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Systém</h3>
 
-            <div className="detail-form__label">Stav</div>
-            <div className="detail-form__value">{inviteResult.status}</div>
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">ID pozvánky</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.inviteId} readOnly />
+              </div>
 
-            <div className="detail-form__label">Vytvořeno</div>
-            <div className="detail-form__value">{inviteResult.createdAt ?? '—'}</div>
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Stav</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.status ?? 'pending'} readOnly />
+              </div>
 
-            <div className="detail-form__label">Odesláno</div>
-            <div className="detail-form__value">{inviteResult.sentAt ?? '—'}</div>
-          </div>
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Režim</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.mode ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Role</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.roleCode ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Email</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.email ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Vytvořeno</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdAt ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Odesláno</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.sentAt ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Vytvořil</label>
+                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdBy ?? '—'} readOnly />
+              </div>
+            </div>
+          </section>
         </div>
       )}
     </EntityDetailFrame>
