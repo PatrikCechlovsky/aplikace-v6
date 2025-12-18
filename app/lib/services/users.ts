@@ -1,13 +1,11 @@
 // FILE: app/lib/services/users.ts
-// PURPOSE: Users service pro modul 010: list + detail + save.
-// CONTRACT: UserDetailFrame očekává návratový tvar: { subject, role_code, permissions, roles? }.
-// NOTE: permissions/roles jsou načítané "best-effort" – když tabulka/view neexistuje, vrátíme [] a jedeme dál.
+// PURPOSE: Service pro Users modul (010) – list + detail + save.
+// NOTE:
+// - listUsers čte z view v_users_list (rychlé pro list)
+// - getUserDetail čte ze subjects + subject_roles + subject_permissions (detail)
+// - saveUser dělá insert/update subjects + role + permissions (MVP)
 
 import { supabase } from '@/app/lib/supabaseClient'
-
-/* =========================
-   LIST (UsersTile)
-   ========================= */
 
 export type UsersListParams = {
   searchText?: string
@@ -21,9 +19,10 @@ export type UsersListRow = {
   email: string | null
   phone: string | null
   role_code: string | null
-  created_at: string | null
   is_archived: boolean | null
+  created_at: string | null
 
+  // volitelné – pokud je máš ve view v_users_list
   first_login_at?: string | null
   last_invite_sent_at?: string | null
   last_invite_expires_at?: string | null
@@ -32,230 +31,210 @@ export type UsersListRow = {
 export async function listUsers(params: UsersListParams = {}): Promise<UsersListRow[]> {
   const search = (params.searchText ?? '').trim()
   const includeArchived = !!params.includeArchived
-  const limit = Math.max(1, Math.min(params.limit ?? 200, 2000))
+  const limit = params.limit ?? 500
 
   let q = supabase
     .from('v_users_list')
     .select(
-      [
-        'id',
-        'display_name',
-        'email',
-        'phone',
-        'role_code',
-        'created_at',
-        'is_archived',
-        'first_login_at',
-        'last_invite_sent_at',
-        'last_invite_expires_at',
-      ].join(',')
+      `
+        id,
+        display_name,
+        email,
+        phone,
+        role_code,
+        is_archived,
+        created_at,
+        first_login_at,
+        last_invite_sent_at,
+        last_invite_expires_at
+      `
     )
     .order('display_name', { ascending: true })
     .limit(limit)
 
-  if (!includeArchived) q = q.eq('is_archived', false)
+  if (!includeArchived) {
+    q = q.or('is_archived.is.null,is_archived.eq.false')
+  }
 
   if (search) {
-    q = q.or(
-      [
-        `display_name.ilike.%${search}%`,
-        `email.ilike.%${search}%`,
-        `phone.ilike.%${search}%`,
-      ].join(',')
-    )
+    // hledání přes více polí (ilike)
+    // Pozn.: Supabase neumí multi-field ilike jedním příkazem → použijeme OR filtr
+    const s = `%${search}%`
+    q = q.or(`display_name.ilike.${s},email.ilike.${s},phone.ilike.${s}`)
   }
 
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
-  return (Array.isArray(data) ? data : []) as unknown as UsersListRow[]
+  // Supabase typy občas vrací union s error stringy → tady to stabilizujeme bezpečně
+  return (data ?? []) as unknown as UsersListRow[]
 }
 
-/* =========================
-   DETAIL (UserDetailFrame)
-   ========================= */
-
-export type UserDetailSubject = {
+export type SubjectRow = {
   id: string
   display_name: string | null
   email: string | null
   phone: string | null
   is_archived: boolean | null
   created_at: string | null
-  updated_at?: string | null
   first_login_at?: string | null
   last_login_at?: string | null
-  note?: string | null
-
-  // pokud existuje v subjects
-  role_code?: string | null
 }
 
-// ✅ KONTRAKT: UI čte d.subject, d.role_code, d.permissions
 export type UserDetailRow = {
-  subject: UserDetailSubject
+  subject: SubjectRow
   role_code: string | null
   permissions: string[]
-  roles?: string[] | null
+}
+
+export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
+  // 1) subject
+  const { data: subject, error: subjectErr } = await supabase
+    .from('subjects')
+    .select(
+      `
+        id,
+        display_name,
+        email,
+        phone,
+        is_archived,
+        created_at,
+        first_login_at,
+        last_login_at
+      `
+    )
+    .eq('id', subjectId)
+    .single()
+
+  if (subjectErr) throw new Error(subjectErr.message)
+  if (!subject?.id) throw new Error('Uživatel nebyl nalezen.')
+
+  // 2) role (MVP: 1 role na subjekt)
+  const { data: roleRow, error: roleErr } = await supabase
+    .from('subject_roles')
+    .select(`role_code`)
+    .eq('subject_id', subjectId)
+    .maybeSingle()
+
+  if (roleErr) throw new Error(roleErr.message)
+
+  // 3) permissions (MVP)
+  const { data: permRows, error: permErr } = await supabase
+    .from('subject_permissions')
+    .select(`permission_code`)
+    .eq('subject_id', subjectId)
+
+  if (permErr) throw new Error(permErr.message)
+
+  const permissions =
+    (permRows ?? [])
+      .map((x: any) => (x?.permission_code ?? '').trim())
+      .filter((x: string) => !!x) ?? []
+
+  return {
+    subject: subject as SubjectRow,
+    role_code: (roleRow as any)?.role_code ?? null,
+    permissions,
+  }
 }
 
 export type SaveUserInput = {
-  id?: string | null
-  display_name?: string | null
+  id?: string | null // když chybí → insert
+  displayName?: string | null
   email?: string | null
   phone?: string | null
-  is_archived?: boolean | null
-  role_code?: string | null
-  note?: string | null
-}
+  isArchived?: boolean | null
 
-async function tryLoadPermissions(subjectId: string): Promise<string[]> {
-  // Best-effort: když tabulka/view neexistuje, vrátíme []
-  // Uprav si názvy dle DB: subject_permissions / v_subject_permissions apod.
-  try {
-    const { data, error } = await supabase
-      .from('subject_permissions')
-      .select('permission_code')
-      .eq('subject_id', subjectId)
-
-    if (error) return []
-    const rows = (Array.isArray(data) ? data : []) as any[]
-    return rows.map((r) => String(r.permission_code)).filter(Boolean)
-  } catch {
-    return []
-  }
-}
-
-async function tryLoadRoles(subjectId: string): Promise<string[] | null> {
-  // Best-effort: pokud máš roles ve vazbě (subject_roles), načteme je, jinak null
-  try {
-    const { data, error } = await supabase
-      .from('subject_roles')
-      .select('role_code')
-      .eq('subject_id', subjectId)
-
-    if (error) return null
-    const rows = (Array.isArray(data) ? data : []) as any[]
-    const codes = rows.map((r) => String(r.role_code)).filter(Boolean)
-    return codes.length ? codes : null
-  } catch {
-    return null
-  }
-}
-
-function pickRoleCode(subject: UserDetailSubject, roles: string[] | null): string | null {
-  // priorita: subjects.role_code, fallback: první role z vazby
-  const direct = (subject.role_code ?? '').trim()
-  if (direct) return direct
-  if (roles && roles.length) return roles[0]
-  return null
-}
-
-export async function getUserDetail(id: string): Promise<UserDetailRow | null> {
-  const userId = (id ?? '').trim()
-  if (!userId) return null
-
-  const { data, error } = await supabase
-    .from('subjects')
-    .select(
-      [
-        'id',
-        'display_name',
-        'email',
-        'phone',
-        'is_archived',
-        'created_at',
-        'updated_at',
-        'first_login_at',
-        'last_login_at',
-        'note',
-        'role_code',
-      ].join(',')
-    )
-    .eq('id', userId)
-    .maybeSingle()
-
-  if (error) throw new Error(error.message)
-  if (!data) return null
-
-  const subject = data as unknown as UserDetailSubject
-
-  // best-effort doplňky (nepoloží appku)
-  const [roles, permissions] = await Promise.all([tryLoadRoles(subject.id), tryLoadPermissions(subject.id)])
-
-  return {
-    subject,
-    roles,
-    permissions,
-    role_code: pickRoleCode(subject, roles),
-  }
+  // volitelné – UserDetailFrame si je může posílat
+  roleCode?: string | null
+  permissionCodes?: string[]
 }
 
 export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
-  const payload: any = {
-    display_name: input.display_name ?? null,
-    email: input.email ?? null,
-    phone: input.phone ?? null,
-    is_archived: input.is_archived ?? null,
-    note: input.note ?? null,
-    role_code: input.role_code ?? null,
+  const isNew = !input.id || input.id === 'new'
+
+  const subjectPayload = {
+    display_name: (input.displayName ?? '').trim() || null,
+    email: (input.email ?? '').trim().toLowerCase() || null,
+    phone: (input.phone ?? '').trim() || null,
+    is_archived: input.isArchived ?? false,
   }
 
-  Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k])
+  let subjectId = input.id ?? null
 
-  const isUpdate = !!(input.id && String(input.id).trim() && String(input.id) !== 'new')
+  if (isNew) {
+    const { data, error } = await supabase
+      .from('subjects')
+      .insert(subjectPayload)
+      .select(
+        `
+        id,
+        display_name,
+        email,
+        phone,
+        is_archived,
+        created_at,
+        first_login_at,
+        last_login_at
+      `
+      )
+      .single()
 
-  const q = isUpdate
-    ? supabase
-        .from('subjects')
-        .update(payload)
-        .eq('id', String(input.id))
-        .select(
-          [
-            'id',
-            'display_name',
-            'email',
-            'phone',
-            'is_archived',
-            'created_at',
-            'updated_at',
-            'first_login_at',
-            'last_login_at',
-            'note',
-            'role_code',
-          ].join(',')
-        )
-        .single()
-    : supabase
-        .from('subjects')
-        .insert(payload)
-        .select(
-          [
-            'id',
-            'display_name',
-            'email',
-            'phone',
-            'is_archived',
-            'created_at',
-            'updated_at',
-            'first_login_at',
-            'last_login_at',
-            'note',
-            'role_code',
-          ].join(',')
-        )
-        .single()
+    if (error) throw new Error(error.message)
+    subjectId = data?.id ?? null
+    if (!subjectId) throw new Error('Nepodařilo se vytvořit uživatele.')
+  } else {
+    const { data, error } = await supabase
+      .from('subjects')
+      .update(subjectPayload)
+      .eq('id', subjectId)
+      .select(
+        `
+        id,
+        display_name,
+        email,
+        phone,
+        is_archived,
+        created_at,
+        first_login_at,
+        last_login_at
+      `
+      )
+      .single()
 
-  const { data, error } = await q
-  if (error) throw new Error(error.message)
-
-  const subject = data as unknown as UserDetailSubject
-  const [roles, permissions] = await Promise.all([tryLoadRoles(subject.id), tryLoadPermissions(subject.id)])
-
-  return {
-    subject,
-    roles,
-    permissions,
-    role_code: pickRoleCode(subject, roles),
+    if (error) throw new Error(error.message)
+    subjectId = data?.id ?? subjectId
   }
+
+  // role (pokud poslána)
+  if (input.roleCode && subjectId) {
+    const { error: roleUpsertErr } = await supabase.from('subject_roles').upsert(
+      {
+        subject_id: subjectId,
+        role_code: input.roleCode,
+      },
+      { onConflict: 'subject_id' } // typicky 1 řádek na subjekt
+    )
+    if (roleUpsertErr) throw new Error(roleUpsertErr.message)
+  }
+
+  // permissions (pokud poslány)
+  if (Array.isArray(input.permissionCodes) && subjectId) {
+    // MVP: smaž a znovu vlož (jednoduché a auditovatelné)
+    const { error: delErr } = await supabase.from('subject_permissions').delete().eq('subject_id', subjectId)
+    if (delErr) throw new Error(delErr.message)
+
+    const rows = input.permissionCodes
+      .map((c) => (c ?? '').trim())
+      .filter((c) => !!c)
+      .map((c) => ({ subject_id: subjectId, permission_code: c }))
+
+    if (rows.length > 0) {
+      const { error: insErr } = await supabase.from('subject_permissions').insert(rows)
+      if (insErr) throw new Error(insErr.message)
+    }
+  }
+
+  // vrať detail v shape, který UserDetailFrame očekává (d.subject, d.role_code, d.permissions)
+  return await getUserDetail(subjectId!)
 }
