@@ -1,157 +1,147 @@
-# TODO MASTER – Aplikace v6
+# TODO MASTER – Aplikace Pronajímatel v6
 
-Jediný centrální seznam úkolů projektu.
+Tento dokument je:
+- jediný konsolidovaný seznam všech TODO nalezených v projektu
+- vznikl projitím celého ZIPu (kód, moduly, UI, dokumentace)
+- slouží jako kontrolní checklist dokončení a testování
 
-Tento dokument:
-- neobsahuje žádný JavaScript / TypeScript / kód
-- slouží jako hlavní řídicí checklist projektu
-- říká, co chybí, co je potřeba dodělat a v jakém pořadí
-
----
-
-## 0. Pravidla práce s TODO
-
-- Tento soubor je jediný zdroj pravdy o rozpracovanosti projektu
-- Úkoly se:
-  - nemažou
-  - nepřepisují
-  - pouze se označují jako hotové
-- Nové úkoly se přidávají výhradně sem
-- Každý úkol musí mít:
-  - jasný cíl
-  - ověřitelný výsledek
+Neobsahuje žádný programový kód.
 
 ---
 
-## 1. Architektura a technický dluh
+## 1. ZÁKLADNÍ ARCHITEKTURA A STAV APLIKACE
 
-- Sjednotit životní cyklus formulářů (read / edit / create)
-- Ujasnit odpovědnosti komponent:
-  - kdo řídí stav
-  - kdo ukládá data
-- Zkontrolovat obcházení pravidel definovaných v dokumentaci
-- Identifikovat a postupně odstranit technický dluh
-- Doplnit chybějící konceptuální popisy (stavové a datové)
+- [ ] Sjednotit životní cyklus všech formulářů (read / edit / create)
+- [ ] Ujasnit, kde vzniká a kde se ruší „dirty state“
+- [ ] Zajistit jednotné chování při opuštění rozpracovaného formuláře
+- [ ] Prověřit, že všechny detaily používají stejný vzor (EntityDetailFrame)
+- [ ] Odstranit dočasná řešení a poznámky typu „TODO later“
 
 ---
 
-## 2. CommonActions (globální akce)
+## 2. COMMON ACTIONS (globální tlačítka)
 
-- Dokončit centrální řízení viditelnosti tlačítek
-- Definovat pravidla pro:
+- [ ] Dokončit centrální engine CommonActions
+- [ ] Řízení viditelnosti tlačítek podle:
   - role
   - oprávnění
-  - stav formuláře
-- Zajistit správné chování tlačítek:
-  - ve čtení je vidět „Edit“, ne „Save“
-  - v editaci je vidět „Save“, ne „Edit“
-- Zavést globální ochranu proti ztrátě neuložených dat
-- Ujasnit chování při:
-  - změně tile
-  - změně modulu
-  - návratu v historii aplikace
+  - stavu formuláře
+  - výběru záznamu
+- [ ] Správné přepínání:
+  - Detail ↔ Edit
+  - Save pouze v editaci
+- [ ] Reset CommonActions při změně tile
+- [ ] Zamezit ztrátě neuložených dat při navigaci
+- [ ] Otestovat CommonActions ve všech modulech
 
 ---
 
-## 3. Modul 010 – Správa uživatelů
+## 3. TOP MENU (horní navigace)
+
+- [ ] Napojit TopMenu na stejný výběrový model jako Sidebar
+- [ ] Aktivní stav modulu
+- [ ] Aktivní stav sekce
+- [ ] Aktivní stav tile
+- [ ] Reset výběru při přepnutí modulu
+- [ ] Chování modulů bez sekcí
+- [ ] Zavírání podmenu klikem mimo
+- [ ] Konzistence chování se Sidebarem
+- [ ] Otestovat přepínání Sidebar ↔ TopMenu
+
+---
+
+## 4. LAYOUT A UI CHOVÁNÍ
+
+- [ ] Správné rozložení `layout__actions` v režimu TopMenu
+- [ ] Oddělení TopMenu a CommonActions do dvou řádků
+- [ ] Konzistence CSS mezi moduly
+- [ ] Sjednocení ListView vzhledu
+- [ ] Odstranění duplicitních nebo konfliktních stylů
+- [ ] Ověřit ikonový vs textový režim
+
+---
+
+## 5. AUTENTIZACE A UŽIVATEL
+
+- [ ] Editace profilu přihlášeného uživatele (Můj účet)
+- [ ] Avatar uživatele
+- [ ] Prověřit načítání session při startu
+- [ ] Ověřit reakce aplikace na změnu auth stavu
+- [ ] Připravit auditní stopy (základ)
+
+---
+
+## 6. ROLE A OPRÁVNĚNÍ
+
+- [ ] Opravit přečíslování rolí (duplicitní order)
+- [ ] Zajistit atomický reorder
+- [ ] Konzistence mezi rolemi a permission types
+- [ ] Ověřit chování archivovaných rolí
+- [ ] Prověřit oprávnění v UI (skrývání akcí)
+
+---
+
+## 7. MODUL 010 – SPRÁVA UŽIVATELŮ
 
 ### Uživatel
+- [ ] Kompletní formulář napojený na databázi
+- [ ] Správné mapování DB ↔ UI
+- [ ] Rozlišení read / edit / create
+- [ ] Kontrola archivace
 
-- Jasně oddělit:
-  - detail uživatele
-  - pozvánku uživatele
-- Ujasnit kdy vzniká:
-  - subjekt
-  - uživatel
-  - pouze pozvánka bez uživatele
-- Zkontrolovat vazby na databázi
-- Doplnit chybějící pole a stavy
-
-### Pozvánky (Invite flow)
-
-- Popsat celý proces pozvánky od začátku do konce
-- Ověřit kontrolu:
-  - již odeslaných pozvánek
-  - existujících uživatelů
-- Definovat stavový model pozvánky:
-  - koncept
-  - odeslaná
-  - přijatá
-  - expirovaná
-- Doplnit UI:
-  - tlačítko pro odeslání
-  - informaci o stavu pozvánky
+### Pozvánky
+- [ ] Oddělení pozvánky od detailu uživatele
+- [ ] Kontrola již odeslaných pozvánek
+- [ ] Kontrola existujícího uživatele
+- [ ] Stavový model pozvánky (koncept / odeslaná / přijatá / expirovaná)
+- [ ] Tlačítko pro odeslání pozvánky
+- [ ] Zobrazení stavu pozvánky
 
 ---
 
-## 4. Role a oprávnění
+## 8. DALŠÍ MODULY (ZÁKLADY)
 
-- Opravit přečíslování rolí (duplicitní pořadí)
-- Zajistit bezpečný a atomický reorder
-- Zkontrolovat konzistenci:
-  - rolí
-  - typů oprávnění
-- Ověřit chování archivovaných položek
-
----
-
-## 5. UI, layout a styly
-
-- Sjednotit vzhled všech seznamů (ListView)
-- Odstranit duplicitní nebo kolidující styly
-- Dořešit chování:
-  - sidebar vs topmenu
-  - lišta akcí
-- Ujasnit práci s:
-  - ikonovým režimem
-  - textovým režimem
-  - tématy aplikace
+- [ ] Modul 020 – Můj účet (oddělení self-edit a admin logiky)
+- [ ] Modul 030 – Pronajímatel (doplnit formuláře)
+- [ ] Modul 040 – Nemovitosti (datový model + UI)
+- [ ] Modul 050 – Nájemníci
+- [ ] Modul 900 – Nastavení jako referenční modul
 
 ---
 
-## 6. TopMenu (horní menu)
+## 9. DATA, IMPORTY A EXPORTY
 
-- Dokončit MVP TopMenu
-- Zajistit aktivní stav:
-  - modulu
-  - sekce
-  - tile
-- Sjednotit chování se Sidebarem
-- Dořešit reset výběru při změně modulu
-- Doplnit dokumentaci k TopMenu
+- [ ] Návrh jednotného importního mechanismu
+- [ ] Export vzorových šablon
+- [ ] Validace dat před importem
+- [ ] Přehledné hlášení chyb
 
 ---
 
-## 7. Data – importy a exporty
+## 10. DOKUMENTACE
 
-- Navrhnout jednotnou koncepci importů
-- Umožnit export vzorových šablon
-- Definovat validaci dat před importem
-- Zajistit přehlednou zpětnou vazbu chyb
-
----
-
-## 8. Dokumentace
-
-- Aktualizovat dokumentaci podle skutečného stavu aplikace
-- Doplnit popis:
-  - CommonActions v6
-  - TopMenu
-  - Invite flow
-- Vytvořit modulové TODO dokumenty
-- Označit historické části dokumentace (nemazat)
+- [ ] Aktualizovat dokumentaci dle reálného stavu kódu
+- [ ] Doplnit CommonActions v6
+- [ ] Doplnit TopMenu
+- [ ] Doplnit Invite flow
+- [ ] Modulová dokumentace
+- [ ] Označit historické dokumenty
 
 ---
 
-## 9. Doporučené pořadí řešení
+## 11. TESTOVÁNÍ A STABILITA
 
-1. CommonActions
-2. Modul 010 – Pozvánky
-3. TopMenu
-4. Role a oprávnění
-5. Dokumentace
+- [ ] Ruční testy hlavních scénářů
+- [ ] Ověření chování při chybách
+- [ ] Kontrola konzole (žádné chyby / warningy)
+- [ ] Stabilita buildu
 
 ---
 
-Další krok:
-Vybereme jednu kapitolu a půjdeme úkol po úkolu, dokud ji celou neuzavřeme.
+## 12. UZAVÍRÁNÍ ÚKOLŮ
+
+- [ ] Každý bod označit jako:
+  - hotovo
+  - otestováno
+- [ ] Nehotové body zůstávají v tomto dokumentu
+- [ ] Nové úkoly se přidávají výhradně sem
