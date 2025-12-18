@@ -1,22 +1,25 @@
 // FILE: app/lib/services/invites.ts
-// NEW
-// PURPOSE: service vrstva pro pozvánky (invite flow).
-// Backend může být tabulka "user_invites" nebo RPC/Edge Function – tady je to připravené.
+// PURPOSE: Service vrstva pro pozvánky (invite flow).
+// MVP: zatím jen uloží procesní záznam do tabulky user_invites (status=pending).
 
 import { supabase } from '@/app/lib/supabaseClient'
 import type { InviteFormValue } from '@/app/modules/010-sprava-uzivatelu/forms/InviteUserForm'
 
-const INVITES_TABLE = 'user_invites' // ✅ pokud máš jinak, přejmenuj tady
+const INVITES_TABLE = 'user_invites'
 
 export type InviteResult = {
   inviteId: string
   status: 'pending' | 'sent' | 'accepted' | 'expired' | 'canceled' | string
   createdAt?: string | null
+  createdBy?: string | null
   sentAt?: string | null
+  mode?: 'existing' | 'new' | string
+  subjectId?: string | null
+  email?: string | null
+  roleCode?: string | null
 }
 
 export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
-  // 1) normalizace
   const mode = v.mode
   const roleCode = (v.roleCode ?? '').trim()
   const email = (v.email ?? '').trim().toLowerCase()
@@ -24,43 +27,44 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
   const note = (v.note ?? '').trim()
 
   if (!roleCode) throw new Error('Role je povinná.')
-  if (mode === 'existing' && !v.subjectId) throw new Error('Chybí subjectId (existující uživatel).')
+  if (mode === 'existing' && !v.subjectId) throw new Error('Vyber existujícího uživatele (subjectId).')
   if (mode === 'new' && !email) throw new Error('Email je povinný.')
 
-  // 2) minimální payload – doplň si dle DB
+  // MVP payload (bez tokenu/email odeslání)
   const payload: any = {
     mode, // 'existing' | 'new'
     subject_id: mode === 'existing' ? v.subjectId : null,
-    email: mode === 'new' ? email : null,
-    display_name: displayName,
+
+    // ✅ ukládáme email vždy jako auditní kopii (u new povinné, u existing předvyplněné)
+    email: email || null,
+
+    display_name: displayName || null,
     role_code: roleCode,
     note: note || null,
     status: 'pending',
   }
 
-  // 3) pokus o insert do tabulky
   const { data, error } = await supabase
     .from(INVITES_TABLE)
     .insert(payload)
-    .select('id,status,created_at,sent_at')
+    .select('id,status,created_at,created_by,sent_at,mode,subject_id,email,role_code')
     .single()
 
   if (error) {
-    // sem ti spadne, pokud tabulka/RLS neexistuje → aspoň jasná zpráva
     throw new Error(
       `Nepodařilo se uložit pozvánku (tabulka "${INVITES_TABLE}" / RLS / schéma). Detail: ${error.message}`
     )
   }
 
-  // 4) pokud budeš později posílat email serverem, tady bude krok "send"
-  // - buď RPC: supabase.rpc('invite_user', {...})
-  // - nebo Edge Function: supabase.functions.invoke('invite-user', {...})
-  // a pak update status/sent_at
-
   return {
     inviteId: data.id,
     status: data.status ?? 'pending',
     createdAt: data.created_at ?? null,
+    createdBy: data.created_by ?? null,
     sentAt: data.sent_at ?? null,
+    mode: data.mode ?? mode,
+    subjectId: data.subject_id ?? (mode === 'existing' ? v.subjectId : null),
+    email: data.email ?? (email || null),
+    roleCode: data.role_code ?? roleCode,
   }
 }
