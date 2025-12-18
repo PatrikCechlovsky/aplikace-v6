@@ -218,7 +218,7 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
                 <input
                   className="detail-form__input"
                   value={v.displayName}
-                  readOnly={variant === 'existingOnly'}
+                  readOnly
                   onChange={(e) => {
                     setDirty()
                     setV((p) => ({ ...p, displayName: e.target.value }))
