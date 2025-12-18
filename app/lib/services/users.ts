@@ -1,7 +1,6 @@
 // FILE: app/lib/services/users.ts
 // PURPOSE: Načítání uživatelů pro modul 010 (list view).
 // NOTE: Používá existující supabase klient z '@/app/lib/supabaseClient'.
-//       Pokud nemáš view 'v_users_list', změň .from(...) na 'subjects' nebo tvoje view.
 
 import { supabase } from '@/app/lib/supabaseClient'
 
@@ -20,10 +19,7 @@ export type UsersListRow = {
   created_at: string | null
   is_archived: boolean | null
 
-  // ✅ důležité pro Invite lock (může být null)
   first_login_at?: string | null
-
-  // volitelné (pokud máš ve view)
   last_invite_sent_at?: string | null
   last_invite_expires_at?: string | null
 }
@@ -33,7 +29,6 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   const includeArchived = !!params.includeArchived
   const limit = Math.max(1, Math.min(params.limit ?? 200, 2000))
 
-  // ✅ preferujeme view (jak máš v architektuře)
   let q = supabase
     .from('v_users_list')
     .select(
@@ -56,7 +51,6 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   if (!includeArchived) q = q.eq('is_archived', false)
 
   if (search) {
-    // OR hledání přes více polí
     q = q.or(
       [
         `display_name.ilike.%${search}%`,
@@ -69,5 +63,7 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
-  return (data ?? []) as UsersListRow[]
+  // ✅ TS-safe: supabase generika v projektu vrací union typy → přetypujeme přes unknown
+  const rows = (Array.isArray(data) ? data : []) as unknown as UsersListRow[]
+  return rows
 }
