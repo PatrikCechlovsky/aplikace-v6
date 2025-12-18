@@ -200,3 +200,27 @@ V seznamu uživatelů zobrazujeme odvozené informace o pozvánkách:
 - Stav pozvánky se neukládá jako pole uživatele.
 - Použije se DB view (v_users_list) nebo join, který vrátí poslední pozvánku pro uživatele.
 - UI pouze zobrazuje hodnoty (bez business logiky).
+- 
+## Zobrazení a pravidla pro pozvánky v seznamu uživatelů
+
+### Základní princip
+Nejdůležitější informace je, zda se uživatel už někdy přihlásil.
+- `first_login_at != null` = uživatel je aktivní → pozvánky se již neposílají
+- `first_login_at == null` = uživatel není aktivní → pozvánky jsou povoleny dle stavu poslední pozvánky
+
+### Sloupce v seznamu (doporučení)
+- `first_login_at` (První přihlášení) – klíčová informace
+- `last_invite_sent_at` (Pozvánka odeslána) – informativní
+- `last_invite_expires_at` (Pozvánka vyprší) – pro rozhodnutí o resend
+- `last_invite_status` (interní/volitelné) – pro přesné řízení resend
+
+### Pravidla pro akci "Pozvat / Odeslat pozvánku"
+Akce je povolená pouze pokud:
+- `first_login_at IS NULL`
+a současně:
+- neexistuje aktivní pozvánka (nebo poslední expirovala/zrušena)
+
+Akce je zakázaná pokud:
+- `first_login_at IS NOT NULL`
+nebo:
+- existuje aktivní pozvánka (neexpiruje v budoucnosti).
