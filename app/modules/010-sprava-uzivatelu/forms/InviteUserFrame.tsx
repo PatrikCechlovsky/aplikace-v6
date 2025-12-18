@@ -88,16 +88,25 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
   return (
     <EntityDetailFrame title="Pozvat uživatele">
       <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
-
+    
       {activeTab === 'invite' && (
-        <InviteUserForm
-          initialValue={currentRef.current}
-          onDirtyChange={onDirtyChange}
-          onValueChange={(v) => {
-            currentRef.current = v
-          }}
-        />
+        <section id="detail-section-invite">
+          <InviteUserForm
+            initialValue={currentRef.current}
+            onDirtyChange={onDirtyChange}
+            onValueChange={(v) => {
+              currentRef.current = v
+            }}
+          />
+        </section>
       )}
+    
+      {activeTab === 'system' && inviteResult && (
+        <section id="detail-section-system">
+          {/* … tvůj systémový blok … */}
+        </section>
+      )}
+    </EntityDetailFrame>
 
       {activeTab === 'system' && inviteResult && (
         <div className="detail-form">
