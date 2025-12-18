@@ -598,63 +598,65 @@ export default function GenericTypeTile({
   // -------------------------------------------------------------
   // Změna pořadí v seznamu – tlačítka ↑ / ↓ vedle pole „Pořadí“
   // -------------------------------------------------------------
+  function fixOrderNow() {
+    const normalized = normalizeSortOrders(items)
+    setItems(normalized)
+  
+    // dorovnáme form podle vybraného záznamu
+    if (selectedCode) {
+      const current = normalized.find((it) => it.code === selectedCode)
+      if (current) {
+        setForm((prev) => ({ ...prev, sort_order: current.sort_order ?? null }))
+      }
+    }
+  
+    setDirty(true)
+    setInfo('Pořadí bylo automaticky přečíslováno. Nezapomeň uložit.')
+    setError(null)
+  }
 
   function moveSelectedItem(up: boolean) {
-    if (selectedIndex < 0 || selectedIndex >= items.length) return
+  if (!selectedCode) return
 
-    const current = items[selectedIndex]
-    const neighborIndex = up ? selectedIndex - 1 : selectedIndex + 1
-    if (neighborIndex < 0 || neighborIndex >= items.length) return
+  // Pokud jsou duplicity (nebo chybí pořadí), nejdřív normalizujeme,
+  // aby se šipky nikdy nezablokovaly.
+  const needsNormalize =
+    duplicateSortOrders.size > 0 ||
+    items.some((it) => getItemSortOrder(it) == null)
 
-    const neighbor = items[neighborIndex]
+  const base = needsNormalize ? normalizeSortOrders(items) : [...items].sort((a, b) => {
+    const ao = getItemSortOrder(a)
+    const bo = getItemSortOrder(b)
+    if (ao != null && bo != null) return ao - bo
+    if (ao != null) return -1
+    if (bo != null) return 1
+    return (a.name ?? '').localeCompare(b.name ?? '', 'cs')
+  })
 
-    // prohodíme sort_order
-    const aOrder = getItemSortOrder(current)
-    const bOrder = getItemSortOrder(neighbor)
+  const idx = base.findIndex((it) => it.code === selectedCode)
+  if (idx < 0) return
 
-    if (aOrder == null || bOrder == null) {
-      // pokud nějaké pořadí chybí, neděláme nic – pořadí se řeší až při editu
-      return
-    }
+  const neighborIndex = up ? idx - 1 : idx + 1
+  if (neighborIndex < 0 || neighborIndex >= base.length) return
 
-    const updatedCurrent: GenericTypeItem = {
-      ...current,
-      sort_order: bOrder,
-    }
-    const updatedNeighbor: GenericTypeItem = {
-      ...neighbor,
-      sort_order: aOrder,
-    }
+  // Přesun děláme na úrovni POLE (indexů), ne swapem hodnot sort_order
+  const swapped = [...base]
+  const tmp = swapped[idx]
+  swapped[idx] = swapped[neighborIndex]
+  swapped[neighborIndex] = tmp
 
-    const updatedItems = [...items]
-    updatedItems[selectedIndex] = updatedCurrent
-    updatedItems[neighborIndex] = updatedNeighbor
+  // Po přesunu znovu přečíslujeme na 1..N (garance unikátnosti)
+  const renumbered = swapped.map((it, i) => ({ ...it, sort_order: i + 1 }))
 
-    // seřadíme podle nového pořadí
-    updatedItems.sort((a, b) => {
-      const aOrder2 = getItemSortOrder(a)
-      const bOrder2 = getItemSortOrder(b)
-      if (aOrder2 != null && bOrder2 != null) return aOrder2 - bOrder2
-      if (aOrder2 != null) return -1
-      if (bOrder2 != null) return 1
-      return (a.name ?? '').localeCompare(b.name ?? '', 'cs')
-    })
+  setItems(renumbered)
 
-    setItems(updatedItems)
+  // Aktualizujeme sort_order ve formuláři pro vybraný záznam
+  const current = renumbered.find((it) => it.code === selectedCode)
+  setForm((prev) => ({ ...prev, sort_order: current?.sort_order ?? prev.sort_order }))
 
-    // aktualizujeme form, aby se zobrazilo nové pořadí
-    setForm((prev) => ({
-      ...prev,
-      sort_order:
-        prev.code === updatedCurrent.code
-          ? updatedCurrent.sort_order
-          : prev.code === updatedNeighbor.code
-          ? updatedNeighbor.sort_order
-          : prev.sort_order,
-    }))
-
-    setDirty(true)
-  }
+  setDirty(true)
+  setOrderEditInfo(null)
+}
 
   function moveSelectedItemUp() {
     moveSelectedItem(true)
