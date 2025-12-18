@@ -97,18 +97,20 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
   // 1) subject
   const { data: subject, error: subjectErr } = await supabase
     .from('subjects')
-    .select(
-      `
-        id,
-        display_name,
-        email,
-        phone,
-        is_archived,
-        created_at,
-        first_login_at,
-        last_login_at
-      `
-    )
+    .select(`
+      id,
+      display_name,
+      email,
+      phone,
+      is_archived,
+      created_at,
+      first_login_at,
+      last_login_at,
+      title_before,
+      first_name,
+      last_name,
+      login
+    `)
     .eq('id', subjectId)
     .single()
 
@@ -172,8 +174,7 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
     const { data, error } = await supabase
       .from('subjects')
       .insert(subjectPayload)
-      .select(
-        `
+      .select(`
         id,
         display_name,
         email,
@@ -181,9 +182,12 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
         is_archived,
         created_at,
         first_login_at,
-        last_login_at
-      `
-      )
+        last_login_at,
+        title_before,
+        first_name,
+        last_name,
+        login
+      `)
       .single()
 
     if (error) throw new Error(error.message)
