@@ -1,11 +1,14 @@
 // FILE: app/lib/services/users.ts
-// PURPOSE: Service pro Users modul (010) – list + detail + save.
-// NOTE:
-// - listUsers čte z view v_users_list (rychlé pro list)
-// - getUserDetail čte ze subjects + subject_roles + subject_permissions (detail)
-// - saveUser dělá insert/update subjects + role + permissions (MVP)
+// PURPOSE: Users service pro modul 010: list + detail + save.
+// CONTRACT (dle UserDetailFrame.tsx):
+// - getUserDetail(id) -> { subject, role_code, permissions }
+// - saveUser(input) -> vrací uložený SUBJECT ROW (saved.id, saved.display_name, ...)
 
 import { supabase } from '@/app/lib/supabaseClient'
+
+/* =========================
+   LIST
+   ========================= */
 
 export type UsersListParams = {
   searchText?: string
@@ -22,7 +25,6 @@ export type UsersListRow = {
   is_archived: boolean | null
   created_at: string | null
 
-  // volitelné – pokud je máš ve view v_users_list
   first_login_at?: string | null
   last_invite_sent_at?: string | null
   last_invite_expires_at?: string | null
@@ -57,8 +59,6 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   }
 
   if (search) {
-    // hledání přes více polí (ilike)
-    // Pozn.: Supabase neumí multi-field ilike jedním příkazem → použijeme OR filtr
     const s = `%${search}%`
     q = q.or(`display_name.ilike.${s},email.ilike.${s},phone.ilike.${s}`)
   }
@@ -66,21 +66,28 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
-  // Supabase typy občas vrací union s error stringy → tady to stabilizujeme bezpečně
   return (data ?? []) as unknown as UsersListRow[]
 }
 
+/* =========================
+   DETAIL SHAPE
+   ========================= */
+
 export type SubjectRow = {
   id: string
+  subject_type?: string | null
+
   display_name: string | null
   email: string | null
   phone: string | null
   is_archived: boolean | null
   created_at: string | null
+  updated_at?: string | null
+
   first_login_at?: string | null
   last_login_at?: string | null
 
-  // ✅ pole, která UserDetailFrame používá
+  // person fields (UserDetailFrame je používá)
   title_before?: string | null
   first_name?: string | null
   last_name?: string | null
@@ -93,31 +100,38 @@ export type UserDetailRow = {
   permissions: string[]
 }
 
+/* =========================
+   DETAIL: getUserDetail
+   ========================= */
+
 export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
-  // 1) subject
   const { data: subject, error: subjectErr } = await supabase
     .from('subjects')
-    .select(`
-      id,
-      display_name,
-      email,
-      phone,
-      is_archived,
-      created_at,
-      first_login_at,
-      last_login_at,
-      title_before,
-      first_name,
-      last_name,
-      login
-    `)
+    .select(
+      `
+        id,
+        subject_type,
+        display_name,
+        email,
+        phone,
+        is_archived,
+        created_at,
+        updated_at,
+        first_login_at,
+        last_login_at,
+        title_before,
+        first_name,
+        last_name,
+        login
+      `
+    )
     .eq('id', subjectId)
     .single()
 
   if (subjectErr) throw new Error(subjectErr.message)
   if (!subject?.id) throw new Error('Uživatel nebyl nalezen.')
 
-  // 2) role (MVP: 1 role na subjekt)
+  // role – MVP: 1 role na subject (upsert na subject_id)
   const { data: roleRow, error: roleErr } = await supabase
     .from('subject_roles')
     .select(`role_code`)
@@ -126,7 +140,7 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
 
   if (roleErr) throw new Error(roleErr.message)
 
-  // 3) permissions (MVP)
+  // permissions – MVP
   const { data: permRows, error: permErr } = await supabase
     .from('subject_permissions')
     .select(`permission_code`)
@@ -140,80 +154,94 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
       .filter((x: string) => !!x) ?? []
 
   return {
-    subject: subject as SubjectRow,
+    subject: subject as unknown as SubjectRow,
     role_code: (roleRow as any)?.role_code ?? null,
     permissions,
   }
 }
 
+/* =========================
+   SAVE INPUT
+   ========================= */
+
 export type SaveUserInput = {
   id?: string | null
 
-  // ✅ UI posílá subjectType (např. 'osoba')
+  // SUBJECT
   subjectType?: string | null
 
-  // subjects
   displayName?: string | null
   email?: string | null
   phone?: string | null
   isArchived?: boolean | null
 
-  // person fields (UI je evidentně používá)
+  // PERSON
   titleBefore?: string | null
   firstName?: string | null
   lastName?: string | null
   login?: string | null
 
-  // role + permissions
+  // ROLE + PERMISSIONS
   roleCode?: string | null
   permissionCodes?: string[]
 }
 
-export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
+/* =========================
+   SAVE: saveUser -> vrací SubjectRow (plochý row)
+   ========================= */
+
+export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
   const isNew = !input.id || input.id === 'new'
 
   const subjectPayload: any = {
-    // ✅ typ subjektu
     subject_type: input.subjectType ?? null,
-  
-    // základ
+
     display_name: (input.displayName ?? '').trim() || null,
     email: (input.email ?? '').trim().toLowerCase() || null,
     phone: (input.phone ?? '').trim() || null,
     is_archived: input.isArchived ?? false,
-  
-    // person fields
+
     title_before: (input.titleBefore ?? '').trim() || null,
     first_name: (input.firstName ?? '').trim() || null,
     last_name: (input.lastName ?? '').trim() || null,
     login: (input.login ?? '').trim() || null,
   }
 
+  // 1) save subject (insert/update)
   let subjectId = input.id ?? null
 
   if (isNew) {
     const { data, error } = await supabase
       .from('subjects')
       .insert(subjectPayload)
-      .select(`
+      .select(
+        `
         id,
+        subject_type,
         display_name,
         email,
         phone,
         is_archived,
         created_at,
+        updated_at,
         first_login_at,
         last_login_at,
         title_before,
         first_name,
         last_name,
         login
-      `)
+      `
+      )
       .single()
 
     if (error) throw new Error(error.message)
     subjectId = data?.id ?? null
     if (!subjectId) throw new Error('Nepodařilo se vytvořit uživatele.')
+
+    // 2) role + permissions (volitelné)
+    await saveRoleAndPermissions(subjectId, input.roleCode ?? null, input.permissionCodes ?? null)
+
+    return data as unknown as SubjectRow
   } else {
     const { data, error } = await supabase
       .from('subjects')
@@ -222,40 +250,54 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
       .select(
         `
         id,
+        subject_type,
         display_name,
         email,
         phone,
         is_archived,
         created_at,
+        updated_at,
         first_login_at,
-        last_login_at
+        last_login_at,
+        title_before,
+        first_name,
+        last_name,
+        login
       `
       )
       .single()
 
     if (error) throw new Error(error.message)
-    subjectId = data?.id ?? subjectId
-  }
 
+    await saveRoleAndPermissions(subjectId!, input.roleCode ?? null, input.permissionCodes ?? null)
+
+    return data as unknown as SubjectRow
+  }
+}
+
+async function saveRoleAndPermissions(
+  subjectId: string,
+  roleCode: string | null,
+  permissionCodes: string[] | null
+) {
   // role (pokud poslána)
-  if (input.roleCode && subjectId) {
+  if (roleCode) {
     const { error: roleUpsertErr } = await supabase.from('subject_roles').upsert(
       {
         subject_id: subjectId,
-        role_code: input.roleCode,
+        role_code: roleCode,
       },
-      { onConflict: 'subject_id' } // typicky 1 řádek na subjekt
+      { onConflict: 'subject_id' }
     )
     if (roleUpsertErr) throw new Error(roleUpsertErr.message)
   }
 
-  // permissions (pokud poslány)
-  if (Array.isArray(input.permissionCodes) && subjectId) {
-    // MVP: smaž a znovu vlož (jednoduché a auditovatelné)
+  // permissions (pokud poslané)
+  if (Array.isArray(permissionCodes)) {
     const { error: delErr } = await supabase.from('subject_permissions').delete().eq('subject_id', subjectId)
     if (delErr) throw new Error(delErr.message)
 
-    const rows = input.permissionCodes
+    const rows = permissionCodes
       .map((c) => (c ?? '').trim())
       .filter((c) => !!c)
       .map((c) => ({ subject_id: subjectId, permission_code: c }))
@@ -265,7 +307,4 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
       if (insErr) throw new Error(insErr.message)
     }
   }
-
-  // vrať detail v shape, který UserDetailFrame očekává (d.subject, d.role_code, d.permissions)
-  return await getUserDetail(subjectId!)
 }
