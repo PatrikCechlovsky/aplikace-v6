@@ -147,13 +147,24 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
 }
 
 export type SaveUserInput = {
-  id?: string | null // když chybí → insert
+  id?: string | null
+
+  // ✅ UI posílá subjectType (např. 'osoba')
+  subjectType?: string | null
+
+  // subjects
   displayName?: string | null
   email?: string | null
   phone?: string | null
   isArchived?: boolean | null
 
-  // volitelné – UserDetailFrame si je může posílat
+  // person fields (UI je evidentně používá)
+  titleBefore?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  login?: string | null
+
+  // role + permissions
   roleCode?: string | null
   permissionCodes?: string[]
 }
@@ -161,11 +172,21 @@ export type SaveUserInput = {
 export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
   const isNew = !input.id || input.id === 'new'
 
-  const subjectPayload = {
+  const subjectPayload: any = {
+    // ✅ typ subjektu
+    subject_type: input.subjectType ?? null,
+  
+    // základ
     display_name: (input.displayName ?? '').trim() || null,
     email: (input.email ?? '').trim().toLowerCase() || null,
     phone: (input.phone ?? '').trim() || null,
     is_archived: input.isArchived ?? false,
+  
+    // person fields
+    title_before: (input.titleBefore ?? '').trim() || null,
+    first_name: (input.firstName ?? '').trim() || null,
+    last_name: (input.lastName ?? '').trim() || null,
+    login: (input.login ?? '').trim() || null,
   }
 
   let subjectId = input.id ?? null
