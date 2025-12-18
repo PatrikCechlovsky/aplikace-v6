@@ -180,3 +180,23 @@ Záložka je pouze pro čtení.
 - Minimum povinných polí.
 - Auditovatelný a rozšiřitelný.
 - Konzistentní s architekturou aplikace-v6.
+
+---
+
+## 13. Zobrazení stavu pozvánky u uživatele (ListView)
+
+V seznamu uživatelů zobrazujeme odvozené informace o pozvánkách:
+
+### Zobrazované sloupce
+- invite_status (none/pending/sent/accepted/expired/canceled)
+- invite_sent_at
+- invite_accepted_at (pokud existuje)
+
+### Význam
+- „Pozvánka odeslána“ = invite_sent_at != null
+- „Zaregistrován“ = invite_status = accepted (nebo accepted_at != null)
+
+### Implementační princip
+- Stav pozvánky se neukládá jako pole uživatele.
+- Použije se DB view (v_users_list) nebo join, který vrátí poslední pozvánku pro uživatele.
+- UI pouze zobrazuje hodnoty (bez business logiky).
