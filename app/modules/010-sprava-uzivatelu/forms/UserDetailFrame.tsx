@@ -133,11 +133,11 @@ export default function UserDetailFrame({
 
         setResolvedUser((p) => ({
           ...p,
-          displayName: d?.display_name ?? p.displayName,
-          email: d?.email ?? p.email,
-          phone: d?.phone ?? p.phone,
-          isArchived: !!d?.is_archived,
-          createdAt: d?.created_at ?? p.createdAt,
+          displayName: d?.subject?.display_name ?? p.displayName,
+          email: d?.subject?.email ?? p.email,
+          phone: d?.subject?.phone ?? p.phone,
+          isArchived: !!d?.subject?.is_archived
+          createdAt: d?.subject?.created_at ?? p.createdAt,
           roleLabel: roleCodeToLabel(d?.role_code),
           firstLoginAt: (d as any)?.first_login_at ?? p.firstLoginAt,
         }))
