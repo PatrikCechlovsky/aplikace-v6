@@ -41,7 +41,11 @@ export type UserDetailSubject = {
 
 export type UserDetailRow = {
   subject: UserDetailSubject
-  // do budoucna: roles, permissions, audit…
+
+  // ✅ aliasy pro UI (UserDetailFrame dnes čte d.role_code)
+  role_code?: string | null
+
+  // do budoucna:
   roles?: any[] | null
 }
 
@@ -166,7 +170,11 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
       .single()
 
     if (error) throw new Error(error.message)
-    return { subject: data as unknown as UserDetailSubject, roles: null }
+    return {
+      subject: data as unknown as UserDetailSubject,
+      role_code: (data as any).role_code ?? null,
+      roles: null,
+    }
   }
 
   // INSERT
@@ -191,5 +199,9 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
     .single()
 
   if (error) throw new Error(error.message)
-  return { subject: data as unknown as UserDetailSubject, roles: null }
+  return {
+    subject: data as unknown as UserDetailSubject,
+    role_code: (data as any).role_code ?? null,
+    roles: null,
+  }
 }
