@@ -1,8 +1,9 @@
 // FILE: app/lib/services/users.ts
-// PURPOSE: Users list service (v_users_list / subjects) pro modul 010.
-// NOTE: Upravit názvy view/tabulky podle tvého Supabase schématu.
+// PURPOSE: Načítání uživatelů pro modul 010 (list view).
+// NOTE: Používá existující supabase klient z '@/app/lib/supabaseClient'.
+//       Pokud nemáš view 'v_users_list', změň .from(...) na 'subjects' nebo tvoje view.
 
-import { createClient } from '@/app/lib/supabase/client'
+import { supabase } from '@/app/lib/supabaseClient'
 
 export type UsersListParams = {
   searchText?: string
@@ -19,21 +20,20 @@ export type UsersListRow = {
   created_at: string | null
   is_archived: boolean | null
 
-  // volitelné (pokud je máš ve view v_users_list)
+  // ✅ důležité pro Invite lock (může být null)
   first_login_at?: string | null
+
+  // volitelné (pokud máš ve view)
   last_invite_sent_at?: string | null
   last_invite_expires_at?: string | null
 }
 
 export async function listUsers(params: UsersListParams = {}): Promise<UsersListRow[]> {
-  const supabase = createClient()
-
   const search = (params.searchText ?? '').trim()
   const includeArchived = !!params.includeArchived
   const limit = Math.max(1, Math.min(params.limit ?? 200, 2000))
 
-  // ✅ Doporučení: napoj na view `v_users_list` (MVP)
-  // Pokud view nemáš, změň na `subjects` + join na role.
+  // ✅ preferujeme view (jak máš v architektuře)
   let q = supabase
     .from('v_users_list')
     .select(
@@ -56,7 +56,7 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   if (!includeArchived) q = q.eq('is_archived', false)
 
   if (search) {
-    // jednoduché OR hledání – uprav podle toho, co tvé view podporuje
+    // OR hledání přes více polí
     q = q.or(
       [
         `display_name.ilike.%${search}%`,
