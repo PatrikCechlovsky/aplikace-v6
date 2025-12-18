@@ -5,7 +5,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
-import DetailTabs from '@/app/UI/DetailTabs'
+import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
 import InviteUserForm, { type InviteFormValue } from './InviteUserForm'
 import { sendInvite, type InviteResult } from '@/app/lib/services/invites'
 
@@ -79,15 +79,15 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     onRegisterSubmit(submit)
   }, [onRegisterSubmit, onDirtyChange])
 
-  const tabs = useMemo(() => {
-    const base = [{ id: 'invite', label: 'Pozvánka' }]
-    if (inviteResult) base.push({ id: 'system', label: 'Systém' })
-    return base
+  const tabItems: DetailTabItem[] = useMemo(() => {
+    const items: DetailTabItem[] = [{ id: 'invite', label: 'Pozvánka' }]
+    if (inviteResult) items.push({ id: 'system', label: 'Systém' })
+    return items
   }, [inviteResult])
 
   return (
     <EntityDetailFrame title="Pozvat uživatele">
-      <DetailTabs tabs={tabs as any} activeId={activeTab} onSelect={(id: any) => setActiveTab(id)} />
+      <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
 
       {activeTab === 'invite' && (
         <InviteUserForm
@@ -131,23 +131,4 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
               </div>
 
               <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Vytvořeno</label>
-                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdAt ?? '—'} readOnly />
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Odesláno</label>
-                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.sentAt ?? '—'} readOnly />
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Vytvořil</label>
-                <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdBy ?? '—'} readOnly />
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
-    </EntityDetailFrame>
-  )
-}
+                <label className="detail-form__label">Vytvořeno</label
