@@ -1,6 +1,3 @@
-// FILE: app/modules/010-sprava-uzivatelu/forms/InviteUserFrame.tsx
-// PURPOSE: Invite obrazovka (010) – samostatný proces, vlastní kontext (není UserDetail).
-
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -50,7 +47,6 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       try {
         const v = currentRef.current
 
-        // minimální validace (UI má i inline)
         if (v.mode === 'existing' && !v.subjectId) {
           alert('Vyber existujícího uživatele.')
           return false
@@ -139,4 +135,52 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
                   <label className="detail-form__label">Role</label>
                   <input
                     className="detail-form__input detail-form__input--readonly"
-                    value={inviteRe:contentReference[oaicite:2]{index=2}
+                    value={inviteResult.roleCode ?? '—'}
+                    readOnly
+                  />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-4">
+                  <label className="detail-form__label">Email</label>
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={inviteResult.email ?? '—'}
+                    readOnly
+                  />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Vytvořeno</label>
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={inviteResult.createdAt ?? '—'}
+                    readOnly
+                  />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Odesláno</label>
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={inviteResult.sentAt ?? '—'}
+                    readOnly
+                  />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-4">
+                  <label className="detail-form__label">Vytvořil</label>
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={inviteResult.createdBy ?? '—'}
+                    readOnly
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      )}
+    </EntityDetailFrame>
+  )
+}
+
