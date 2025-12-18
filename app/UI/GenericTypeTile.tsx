@@ -71,6 +71,39 @@ function getNextSortOrder(allItems: GenericTypeItem[]): number {
   return max + 1
 }
 
+function sortForOrderNormalization(a: GenericTypeItem, b: GenericTypeItem) {
+  const ao = getItemSortOrder(a)
+  const bo = getItemSortOrder(b)
+
+  // nejdřív podle existujícího pořadí
+  if (ao != null && bo != null && ao !== bo) return ao - bo
+  if (ao != null && bo == null) return -1
+  if (ao == null && bo != null) return 1
+
+  // fallback stabilní třídění
+  const an = (a.name ?? '').toString()
+  const bn = (b.name ?? '').toString()
+  const nameCmp = an.localeCompare(bn, 'cs')
+  if (nameCmp !== 0) return nameCmp
+
+  return (a.code ?? '').toString().localeCompare((b.code ?? '').toString(), 'cs')
+}
+
+function normalizeSortOrders(all: GenericTypeItem[]): GenericTypeItem[] {
+  // přečíslujeme VŠECHNO (včetně archivních), aby byly hodnoty unikátní globálně
+  const sorted = [...all].sort(sortForOrderNormalization)
+
+  let i = 1
+  const out = sorted.map((it) => {
+    const next: GenericTypeItem = { ...it, sort_order: i }
+    i += 1
+    return next
+  })
+
+  // vrátíme pole seřazené podle nového pořadí (už je to 1..N)
+  return out.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+}
+
 export default function GenericTypeTile({
   title,
   description,
