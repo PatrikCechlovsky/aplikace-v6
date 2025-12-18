@@ -382,11 +382,11 @@ export default function GenericTypeTile({
       setError(validationError)
       return
     }
-
+  
     setSaving(true)
     setError(null)
     setInfo(null)
-
+  
     const payload: GenericTypeItem = {
       code: form.code.trim(),
       name: form.name.trim(),
@@ -399,12 +399,18 @@ export default function GenericTypeTile({
           : null,
       active: form.active ?? true,
     }
-
+  
+    // ✅ LOG 1: co chceš uložit
+    console.log('SAVE selectedCode=', selectedCode)
+    console.log('SAVE payload=', payload)
+  
     try {
       if (!selectedCode) {
-        // CREATE
         const created = await createItem(payload)
-
+  
+        // ✅ LOG 2 (create): co přišlo zpět
+        console.log('SAVE created returned=', created)
+  
         setItems((prev) => {
           const merged = [...prev, created]
           return merged.sort((a, b) => {
@@ -416,13 +422,15 @@ export default function GenericTypeTile({
             return (a.name ?? '').localeCompare(b.name ?? '', 'cs')
           })
         })
-
+  
         applySelect(created)
         setInfo('Záznam byl vytvořen.')
       } else {
-        // UPDATE
         const updated = await updateItem(selectedCode, payload)
-
+  
+        // ✅ LOG 2 (update): co přišlo zpět
+        console.log('SAVE updated returned=', updated)
+        console.log('applySelect item=', item)
         setItems((prev) => {
           const idx = prev.findIndex((it) => it.code === selectedCode)
           if (idx === -1) return prev
@@ -437,11 +445,15 @@ export default function GenericTypeTile({
             return (a.name ?? '').localeCompare(b.name ?? '', 'cs')
           })
         })
-
+  
         applySelect(updated)
+  
+        // ✅ LOG 3: co se nastavilo do formuláře (pokud applySelect dělá setForm)
+        // (tenhle log dej případně do applySelect, viz níž)
+  
         setInfo('Záznam byl uložen.')
       }
-
+  
       setDirty(false)
       setPendingAction(null)
     } catch (e) {
@@ -451,7 +463,6 @@ export default function GenericTypeTile({
       setSaving(false)
     }
   }
-
   async function handleArchiveToggleInternal(target: GenericTypeItem) {
     const updatedPayload: GenericTypeItem = {
       ...target,
