@@ -845,12 +845,24 @@ export default function GenericTypeTile({
           <div className="generic-type__alert-wrapper">
             <div className="generic-type__alert generic-type__alert--warning">
               <div>
-                Některé položky mají stejné pořadí. Upravte prosím pořadí pomocí
-                šipek v seznamu, aby bylo unikátní.
+                Některé položky mají stejné pořadí. Upravte prosím pořadí pomocí šipek
+                v seznamu, aby bylo unikátní.
+              </div>
+        
+              <div className="generic-type__alert-actions" style={{ marginTop: 10 }}>
+                <button
+                  type="button"
+                  className="generic-type__alert-btn generic-type__alert-btn--primary"
+                  onClick={fixOrderNow}
+                  disabled={saving || loading}
+                >
+                  Opravit pořadí automaticky
+                </button>
               </div>
             </div>
           </div>
         )}
+
 
         {pendingAction && (
           <div className="generic-type__alert-wrapper">
