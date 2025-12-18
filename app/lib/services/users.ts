@@ -79,6 +79,12 @@ export type SubjectRow = {
   created_at: string | null
   first_login_at?: string | null
   last_login_at?: string | null
+
+  // ✅ pole, která UserDetailFrame používá
+  title_before?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  login?: string | null
 }
 
 export type UserDetailRow = {
