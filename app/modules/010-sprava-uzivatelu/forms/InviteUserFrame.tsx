@@ -1,5 +1,6 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/InviteUserFrame.tsx
 // (obsah dle tvého uploadu)
+// CHANGE: v "Systém" tab přidány položky Odesláno / Platí do / Odeslal (čte přes any – typ InviteResult můžeš doplnit v service)
 
 'use client'
 
@@ -69,7 +70,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
         return true
       } catch (e: any) {
         console.error('[InviteUserFrame.sendInvite] ERROR', e)
-        alert(e?.message ?? 'Chyba při odeslání pozvánky – viz konzole.')
+        alert(e?.message ?? 'Chyba při odeslání pozvánky')
         return false
       }
     }
@@ -118,32 +119,26 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Režim</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.mode ?? '—'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Role</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.roleCode ?? '—'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-4">
-                  <label className="detail-form__label">Email</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.email ?? '—'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Vytvořeno</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdAt ?? '—'} readOnly />
+                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).mode ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Odesláno</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.sentAt ?? '—'} readOnly />
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={(inviteResult as any).sentAt ?? (inviteResult as any).createdAt ?? '—'}
+                    readOnly
+                  />
                 </div>
 
-                <div className="detail-form__field detail-form__field--span-4">
-                  <label className="detail-form__label">Vytvořil</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.createdBy ?? '—'} readOnly />
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Platí do</label>
+                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).expiresAt ?? '—'} readOnly />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Odeslal</label>
+                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).createdBy ?? '—'} readOnly />
                 </div>
               </div>
             </section>
