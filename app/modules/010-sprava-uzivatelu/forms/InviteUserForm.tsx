@@ -1,5 +1,5 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/InviteUserForm.tsx
-// PURPOSE: Minimalistický invite formulář (existující / nový). Validace primárně v service vrstvě.
+// (obsah dle tvého uploadu)
 
 'use client'
 
@@ -47,13 +47,11 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
     onValueChange(v)
   }, [v, onValueChange])
 
-  // načti uživatele pro variantu A
   useEffect(() => {
     let cancelled = false
     const run = async () => {
       setLoadingUsers(true)
       try {
-        // Pozor: pokud tvá listUsers neumí includeArchived/limit, uprav sem podle její signatury.
         const rows = await listUsers({ includeArchived: false, limit: 500 } as any)
         if (!cancelled) setUsers(rows)
       } catch (e) {
@@ -68,7 +66,6 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
     }
   }, [])
 
-  // načti role z role_types (stejné jako modul 900)
   useEffect(() => {
     let cancelled = false
     const run = async () => {
@@ -132,7 +129,6 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
         <h3 className="detail-form__section-title">Pozvánka</h3>
 
         <div className="detail-form__grid detail-form__grid--narrow">
-          {/* MODE */}
           <div className="detail-form__field detail-form__field--span-4">
             <label className="detail-form__label">Režim</label>
             <div className="detail-form__value">
@@ -162,7 +158,6 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
             </div>
           </div>
 
-          {/* EXISTING */}
           {v.mode === 'existing' && (
             <>
               <div className="detail-form__field detail-form__field--span-4">
@@ -214,7 +209,6 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
             </>
           )}
 
-          {/* NEW */}
           {v.mode === 'new' && (
             <>
               <div className="detail-form__field detail-form__field--span-2">
@@ -250,7 +244,6 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
             </>
           )}
 
-          {/* COMMON */}
           <div className="detail-form__field detail-form__field--span-2">
             <label className="detail-form__label">Role *</label>
             <select
@@ -269,7 +262,9 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
                 </option>
               ))}
             </select>
-            {roleSelectDisabled && <div className="detail-form__hint">Role nejdou načíst (RLS nebo prázdná tabulka role_types).</div>}
+            {roleSelectDisabled && (
+              <div className="detail-form__hint">Role nejdou načíst (RLS nebo prázdná tabulka role_types).</div>
+            )}
           </div>
 
           <div className="detail-form__field detail-form__field--span-4">
@@ -288,7 +283,6 @@ export default function InviteUserForm({ initialValue, onValueChange, onDirtyCha
         </div>
       </section>
 
-      {/* ERRORS */}
       {errors.length > 0 && (
         <div className="detail-form__hint" style={{ color: 'var(--color-danger, #b00020)' }}>
           {errors.map((x) => (
