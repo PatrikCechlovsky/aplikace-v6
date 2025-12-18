@@ -1,21 +1,12 @@
 /*
  * FILE: app/modules/900-nastaveni/services/roleTypes.ts
  * PURPOSE: CRUD funkce pro číselník public.role_types (napojení na Supabase)
- *
- * V DB:
- *  - code        (text, PK / UNIQUE)
- *  - name        (text)
- *  - description (text, nullable)
- *  - color       (text, nullable)
- *  - icon        (text, nullable)
- *  - order_index (integer, nullable)
  */
 
 import { supabase } from '@/app/lib/supabaseClient'
 
-/**
- * Datový typ přesně podle tabulky v Supabase.
- */
+const SELECT_FIELDS = 'code, name, description, color, icon, order_index'
+
 export type RoleTypeRow = {
   code: string
   name: string
@@ -25,9 +16,6 @@ export type RoleTypeRow = {
   order_index: number | null
 }
 
-/**
- * Payload pro INSERT/UPDATE – vše kromě PK `code`.
- */
 export type RoleTypePayload = {
   name: string
   description?: string | null
@@ -36,13 +24,23 @@ export type RoleTypePayload = {
   order_index?: number | null
 }
 
+function normalizeOrderIndex(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+function normalizeText(v: unknown): string | null {
+  if (v == null) return null
+  const s = String(v).trim()
+  return s ? s : null
+}
+
 /**
  * Načte všechny typy rolí.
  */
 export async function fetchRoleTypes(): Promise<RoleTypeRow[]> {
   const { data, error } = await supabase
     .from('role_types')
-    .select('code, name, description, color, icon, order_index')
+    .select(SELECT_FIELDS)
     .order('order_index', { ascending: true, nullsFirst: true })
     .order('code', { ascending: true })
 
@@ -57,37 +55,43 @@ export async function fetchRoleTypes(): Promise<RoleTypeRow[]> {
 /**
  * Vytvoří nový typ role.
  */
-export async function createRoleType(
-  code: string,
-  payload: RoleTypePayload,
-): Promise<RoleTypeRow> {
+export async function createRoleType(code: string, payload: RoleTypePayload): Promise<RoleTypeRow> {
   const trimmedCode = code.trim()
-
-  if (!trimmedCode) {
-    throw new Error('Kód typu role nesmí být prázdný')
-  }
+  if (!trimmedCode) throw new Error('Kód typu role nesmí být prázdný')
 
   const insertPayload = {
     code: trimmedCode,
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    order_index:
-      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
-        ? payload.order_index
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    order_index: normalizeOrderIndex(payload.order_index),
   }
 
   const { data, error } = await supabase
     .from('role_types')
     .insert(insertPayload)
-    .select('code, name, description, color, icon, order_index')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('createRoleType error', error)
     throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('role_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedCode)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('createRoleType: insert ok, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    if (fetched) return fetched as RoleTypeRow
+    return insertPayload as RoleTypeRow
   }
 
   return data as RoleTypeRow
@@ -96,37 +100,43 @@ export async function createRoleType(
 /**
  * Aktualizuje existující typ role podle `codeKey`.
  */
-export async function updateRoleType(
-  codeKey: string,
-  payload: RoleTypePayload,
-): Promise<RoleTypeRow> {
+export async function updateRoleType(codeKey: string, payload: RoleTypePayload): Promise<RoleTypeRow> {
   const trimmedKey = codeKey.trim()
-
-  if (!trimmedKey) {
-    throw new Error('Chybí "code" pro update typu role')
-  }
+  if (!trimmedKey) throw new Error('Chybí "code" pro update typu role')
 
   const updatePayload = {
     name: payload.name.trim(),
-    description: payload.description?.trim() || null,
-    color: payload.color?.trim() || null,
-    icon: payload.icon?.trim() || null,
-    order_index:
-      typeof payload.order_index === 'number' && !Number.isNaN(payload.order_index)
-        ? payload.order_index
-        : null,
+    description: normalizeText(payload.description),
+    color: normalizeText(payload.color),
+    icon: normalizeText(payload.icon),
+    order_index: normalizeOrderIndex(payload.order_index),
   }
 
   const { data, error } = await supabase
     .from('role_types')
     .update(updatePayload)
     .eq('code', trimmedKey)
-    .select('code, name, description, color, icon, order_index')
-    .single()
+    .select(SELECT_FIELDS)
+    .maybeSingle()
 
   if (error) {
     console.error('updateRoleType error', error)
     throw error
+  }
+
+  if (!data) {
+    const { data: fetched, error: fetchErr } = await supabase
+      .from('role_types')
+      .select(SELECT_FIELDS)
+      .eq('code', trimmedKey)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.warn('updateRoleType: update ok/unknown, but cannot fetch row (RLS?)', fetchErr)
+    }
+
+    if (fetched) return fetched as RoleTypeRow
+    return { code: trimmedKey, ...(updatePayload as any) } as RoleTypeRow
   }
 
   return data as RoleTypeRow
@@ -137,15 +147,9 @@ export async function updateRoleType(
  */
 export async function deleteRoleType(codeKey: string): Promise<void> {
   const trimmedKey = codeKey.trim()
+  if (!trimmedKey) throw new Error('Chybí "code" pro smazání typu role')
 
-  if (!trimmedKey) {
-    throw new Error('Chybí "code" pro smazání typu role')
-  }
-
-  const { error } = await supabase
-    .from('role_types')
-    .delete()
-    .eq('code', trimmedKey)
+  const { error } = await supabase.from('role_types').delete().eq('code', trimmedKey)
 
   if (error) {
     console.error('deleteRoleType error', error)
