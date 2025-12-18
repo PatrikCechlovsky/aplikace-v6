@@ -1041,6 +1041,8 @@ export default function GenericTypeTile({
                 className="generic-type__input"
                 value={form.code}
                 onChange={(e) => handleChangeField('code', e.target.value)}
+                readOnly={!!selectedCode}              // ✅ zamknout při editaci existujícího
+                title={selectedCode ? 'Kód nelze změnit – je to identifikátor. Vytvoř nový záznam.' : ''}
               />
             </div>
 
