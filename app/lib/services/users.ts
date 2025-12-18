@@ -1,7 +1,6 @@
 // FILE: app/lib/services/users.ts
 // PURPOSE: Users service pro modul 010: list + detail + save (MVP).
-// NOTE: Používá supabase klient z '@/app/lib/supabaseClient'.
-//       LIST jde přes view 'v_users_list'. DETAIL/SAVE jde přes 'subjects'.
+// NOTE: LIST jde přes view 'v_users_list'. DETAIL/SAVE jde přes 'subjects'.
 
 import { supabase } from '@/app/lib/supabaseClient'
 
@@ -25,8 +24,8 @@ export type UsersListRow = {
   last_invite_expires_at?: string | null
 }
 
-/** Detail řádek (minimální) – rozšiř podle polí, co má UserDetailForm */
-export type UserDetailRow = {
+// ✅ přesně to, co chce UserDetailFrame: d.subject
+export type UserDetailSubject = {
   id: string
   display_name: string | null
   email: string | null
@@ -34,19 +33,20 @@ export type UserDetailRow = {
   is_archived: boolean | null
   created_at: string | null
   updated_at?: string | null
-
-  // volitelné – pokud existují v DB
   first_login_at?: string | null
   last_login_at?: string | null
   note?: string | null
-
-  // pokud ukládáš role do subjects.role_code (nebo přes vazbu), necháme volitelné:
   role_code?: string | null
 }
 
-/** Payload pro uložení (MVP) */
+export type UserDetailRow = {
+  subject: UserDetailSubject
+  // do budoucna: roles, permissions, audit…
+  roles?: any[] | null
+}
+
 export type SaveUserInput = {
-  id?: string | null // pokud null => insert
+  id?: string | null
   display_name?: string | null
   email?: string | null
   phone?: string | null
@@ -95,11 +95,10 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
-  // TS-safe (projektové supabase typy jsou union)
   return (Array.isArray(data) ? data : []) as unknown as UsersListRow[]
 }
 
-/** DETAIL */
+/** DETAIL – vrací { subject } */
 export async function getUserDetail(id: string): Promise<UserDetailRow | null> {
   const userId = (id ?? '').trim()
   if (!userId) return null
@@ -127,10 +126,10 @@ export async function getUserDetail(id: string): Promise<UserDetailRow | null> {
   if (error) throw new Error(error.message)
   if (!data) return null
 
-  return data as unknown as UserDetailRow
+  return { subject: data as unknown as UserDetailSubject, roles: null }
 }
 
-/** SAVE (insert/update) – MVP */
+/** SAVE – vrací stejně { subject } */
 export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
   const payload: any = {
     display_name: input.display_name ?? null,
@@ -141,7 +140,6 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
     role_code: input.role_code ?? null,
   }
 
-  // vyhážeme undefined, aby supabase neposílal klíče bez hodnot
   Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k])
 
   // UPDATE
@@ -168,7 +166,7 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
       .single()
 
     if (error) throw new Error(error.message)
-    return data as unknown as UserDetailRow
+    return { subject: data as unknown as UserDetailSubject, roles: null }
   }
 
   // INSERT
@@ -193,5 +191,5 @@ export async function saveUser(input: SaveUserInput): Promise<UserDetailRow> {
     .single()
 
   if (error) throw new Error(error.message)
-  return data as unknown as UserDetailRow
+  return { subject: data as unknown as UserDetailSubject, roles: null }
 }
