@@ -46,9 +46,9 @@ function roleCodeToLabel(code: string | null | undefined): string {
 function mapRowToUi(row: UsersListRow): UiUser {
   return {
     id: row.id,
-    displayName: row.display_name ?? '',
-    email: row.email ?? '',
-    phone: row.phone ?? undefined,
+    displayName: (row as any).display_name ?? '',
+    email: (row as any).email ?? '',
+    phone: (row as any).phone ?? undefined,
     roleLabel: roleCodeToLabel((row as any).role_code),
     twoFactorMethod: (row as any).two_factor_method ?? null,
     createdAt: (row as any).created_at ?? '',
@@ -57,16 +57,17 @@ function mapRowToUi(row: UsersListRow): UiUser {
   }
 }
 
-function toRow(u: UiUser): ListViewRow {
+function toRow(u: UiUser): ListViewRow<UiUser> {
   return {
     id: u.id,
-    cells: {
+    data: {
       roleLabel: u.roleLabel,
       displayName: u.displayName,
       email: u.email,
       isArchived: u.isArchived ? 'Ano' : '',
     },
-  } as any
+    raw: u,
+  }
 }
 
 type UsersTileProps = {
@@ -381,22 +382,45 @@ export default function UsersTile({
     }
 
     onRegisterCommonActionHandler(handler)
-  }, [onRegisterCommonActionHandler, viewMode, selectedId, users, openDetail, closeDetail, load, openInvite, router, detailActiveSectionId])
+  }, [
+    onRegisterCommonActionHandler,
+    viewMode,
+    selectedId,
+    users,
+    openDetail,
+    closeDetail,
+    load,
+    openInvite,
+    router,
+    detailActiveSectionId,
+  ])
 
   // =====================
   // RENDER
   // =====================
-  function toRow(u: UiUser): ListViewRow<UiUser> {
-   return {
-      id: u.id,
-      data: {
-        roleLabel: u.roleLabel,
-        displayName: u.displayName,
-        email: u.email,
-        isArchived: u.isArchived ? 'Ano' : '',
-      },
-      raw: u,
-    }
+  if (viewMode === 'list') {
+    return (
+      <div>
+        {error && <div style={{ padding: 8, color: 'crimson' }}>{error}</div>}
+        {loading && <div style={{ padding: 8 }}>Načítám…</div>}
+
+        <ListView<UiUser>
+          columns={COLUMNS}
+          rows={rows}
+          filterValue={filterText}
+          onFilterChange={setFilterText}
+          showArchived={showArchived}
+          onShowArchivedChange={setShowArchived}
+          selectedId={selectedId ?? null}
+          onRowClick={(row) => setSelectedId(String(row.id))}
+          onRowDoubleClick={(row) => {
+            const user = row.raw
+            if (!user) return
+            openDetail(user, 'read', 'detail')
+          }}
+        />
+      </div>
+    )
   }
 
   if (viewMode === 'invite') {
@@ -429,5 +453,6 @@ export default function UsersTile({
     )
   }
 
+  // fallback (nemělo by nastat)
   return null
 }
