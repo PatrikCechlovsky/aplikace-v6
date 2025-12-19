@@ -22,17 +22,15 @@ export type ListViewColumn = {
   width?: string
 }
 
-function toRow(u: UiUser): ListViewRow<UiUser> {
-  return {
-    id: u.id,
-    data: {
-      roleLabel: u.roleLabel,
-      displayName: u.displayName,
-      email: u.email,
-      isArchived: u.isArchived ? 'Ano' : '',
-    },
-    raw: u,
-  }
+export type ListViewRow<TData = any> = {
+  /** Unikátní identifikátor řádku (pro výběr, klíč v Reactu…) */
+  id: string | number
+  /** Data pro jednotlivé buňky – klíče odpovídají columns[].key */
+  data: Record<string, React.ReactNode>
+  /** Volitelná extra CSS class pro řádek */
+  className?: string
+  /** Původní raw data – rodič si je může předat dál (např. do detailu) */
+  raw?: TData
 }
 
 export type ListViewProps<TData = any> = {
