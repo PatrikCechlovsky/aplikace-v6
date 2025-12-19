@@ -386,26 +386,17 @@ export default function UsersTile({
   // =====================
   // RENDER
   // =====================
-  if (viewMode === 'list') {
-    return (
-      <ListView<UiUser>
-        columns={COLUMNS}
-        rows={rows}
-        loading={loading}
-        error={error ?? undefined}
-        filterText={filterText}
-        onFilterTextChange={setFilterText}
-        showArchived={showArchived}
-        onShowArchivedChange={setShowArchived}
-        selectedId={selectedId ?? undefined}
-        onSelect={(id) => setSelectedId(id ?? null)}
-        onRowDoubleClick={(id) => {
-          const found = users.find((u) => u.id === id)
-          if (!found) return
-          openDetail(found, 'read', 'detail')
-        }}
-      />
-    )
+  function toRow(u: UiUser): ListViewRow<UiUser> {
+   return {
+      id: u.id,
+      data: {
+        roleLabel: u.roleLabel,
+        displayName: u.displayName,
+        email: u.email,
+        isArchived: u.isArchived ? 'Ano' : '',
+      },
+      raw: u,
+    }
   }
 
   if (viewMode === 'invite') {
