@@ -60,11 +60,13 @@ function mapRowToUi(row: UsersListRow): UiUser {
 function toRow(u: UiUser): ListViewRow {
   return {
     id: u.id,
-    roleLabel: u.roleLabel,
-    displayName: u.displayName,
-    email: u.email,
-    isArchived: u.isArchived ? 'Ano' : '',
-  }
+    cells: {
+      roleLabel: u.roleLabel,
+      displayName: u.displayName,
+      email: u.email,
+      isArchived: u.isArchived ? 'Ano' : '',
+    },
+  } as any
 }
 
 type UsersTileProps = {
