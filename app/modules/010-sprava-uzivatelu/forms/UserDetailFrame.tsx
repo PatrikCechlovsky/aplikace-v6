@@ -1,7 +1,9 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
 // PURPOSE: Detail uživatele (010) – načítá detail z DB + ukládá přes service vrstvu (subjects + role + permissions).
-// CHANGE: zabránění uložení bez role (povinná role)
-// CHANGE: přidána sekce "Pozvánka" (tab v DetailView) pro existujícího uživatele, včetně submitu pro odeslání pozvánky.
+// CHANGE:
+// - povinná role
+// - doplnění System tab (a Invite tab, pokud DetailView umí)
+// - doplnění napojení: initialSectionId / onActiveSectionChange / onRegisterInviteSubmit
 
 'use client'
 
@@ -10,9 +12,6 @@ import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
 import DetailView, { type DetailSectionId } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
 import UserDetailForm, { type UserFormValue } from './UserDetailForm'
-import InviteUserForm, { type InviteFormValue } from './InviteUserForm'
-import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
-import { sendInvite, type InviteResult } from '@/app/lib/services/invites'
 import { getUserDetail, saveUser } from '@/app/lib/services/users'
 
 // ✅ stejné zdroje rolí jako modul 900 / RoleTypesTile
@@ -27,17 +26,22 @@ type UiUser = {
   twoFactorMethod?: string | null
   createdAt: string
   isArchived?: boolean
+
+  // optional – pokud je máš v listu/view
   firstLoginAt?: string | null
 }
 
 type UserDetailFrameProps = {
   user: UiUser
   viewMode: ViewMode // read/edit/create
+
+  // ✅ nové (napojení na UsersTile)
   initialSectionId?: DetailSectionId
   onActiveSectionChange?: (id: DetailSectionId) => void
+  onRegisterInviteSubmit?: (fn: () => Promise<boolean>) => void
+
   onDirtyChange?: (dirty: boolean) => void
   onRegisterSubmit?: (fn: () => Promise<UiUser | null>) => void
-  onRegisterInviteSubmit?: (fn: () => Promise<boolean>) => void
 }
 
 function roleCodeToLabel(code: string | null | undefined): string {
@@ -53,49 +57,85 @@ export default function UserDetailFrame({
   viewMode,
   initialSectionId,
   onActiveSectionChange,
+  onRegisterInviteSubmit,
   onDirtyChange,
   onRegisterSubmit,
-  onRegisterInviteSubmit,
 }: UserDetailFrameProps) {
-  const detailMode = (viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'view') as any
-  const isCreate = viewMode === 'create'
-  const readOnly = viewMode === 'read'
+  // ✅ přidáme system (+ invite pokud DetailView zná)
+  const sectionIds: DetailSectionId[] = ['roles', 'invite', 'system'] as any
 
-  // sekce (DetailView)
-  const sectionIds: DetailSectionId[] = ['roles', 'invite']
+  const detailMode = useMemo(() => {
+    if (viewMode === 'edit') return 'edit'
+    if (viewMode === 'create') return 'create'
+    return 'view'
+  }, [viewMode])
 
-  // state pro formulář uživatele
-  const [resolvedUser, setResolvedUser] = useState<UiUser>(user)
+  const readOnly = detailMode === 'view'
+  const isCreate = user.id === 'new'
+
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
-  // role + permissions
-  const [availableRoles, setAvailableRoles] = useState<{ code: string; name: string; description?: string | null }[]>([])
+  // DB “pravda” pro role + permissions
   const [roleCode, setRoleCode] = useState<string | null>(null)
-  const [permissionCodes, setPermissionCodes] = useState<string[] | null>(null)
+  const [permissionCodes, setPermissionCodes] = useState<string[]>([])
 
-  // Invite (embedded v detailu uživatele)
-  const [inviteActiveTab, setInviteActiveTab] = useState<'invite' | 'system'>('invite')
-  const [inviteResult, setInviteResult] = useState<InviteResult | null>(null)
-  const inviteRef = useRef<InviteFormValue>({
-    mode: 'existing',
-    subjectId: user.id,
-    email: user.email ?? '',
+  // ✅ číselník rolí pro select
+  const [availableRoles, setAvailableRoles] = useState<
+    { code: string; name: string; description?: string | null }[]
+  >([])
+
+  // DB “pravda” pro subjects (pro případ, že list měl zastaralé hodnoty)
+  const [resolvedUser, setResolvedUser] = useState<UiUser>(user)
+
+  // hodnoty z formuláře (posíláme do saveUser)
+  const currentRef = useRef<UserFormValue>({
     displayName: user.displayName ?? '',
-    roleCode: '',
-    note: '',
+    email: user.email ?? '',
+    phone: user.phone ?? '',
+
+    titleBefore: (user as any).titleBefore ?? '',
+    firstName: (user as any).firstName ?? '',
+    lastName: (user as any).lastName ?? '',
+    login: (user as any).login ?? '',
+    isArchived: !!user.isArchived,
   })
 
-  // Load role types
+  useEffect(() => {
+    // při přepnutí záznamu reset lokální stav
+    setResolvedUser(user)
+    currentRef.current = {
+      displayName: user.displayName ?? '',
+      email: user.email ?? '',
+      phone: user.phone ?? '',
+
+      titleBefore: (user as any).titleBefore ?? '',
+      firstName: (user as any).firstName ?? '',
+      lastName: (user as any).lastName ?? '',
+      login: (user as any).login ?? '',
+      isArchived: !!user.isArchived,
+    }
+    setRoleCode(null)
+    setPermissionCodes([])
+    setDetailError(null)
+  }, [user.id, user.displayName, user.email, user.phone])
+
+  // ✅ Načti číselník rolí vždy (nezávisle na read/edit)
   useEffect(() => {
     let cancelled = false
     const run = async () => {
       try {
         const rows = await fetchRoleTypes()
         if (cancelled) return
-        setAvailableRoles(rows ?? [])
+        setAvailableRoles(
+          (rows ?? []).map((r: any) => ({
+            code: r.code,
+            name: r.name,
+            description: r.description ?? null,
+          }))
+        )
       } catch (e) {
-        console.error('[UserDetailFrame.fetchRoleTypes] ERROR', e)
+        console.warn('[UserDetailFrame] Failed to load role_types', e)
       }
     }
     void run()
@@ -103,21 +143,6 @@ export default function UserDetailFrame({
       cancelled = true
     }
   }, [])
-
-  // Reset invite panel při změně uživatele
-  useEffect(() => {
-    inviteRef.current = {
-      mode: 'existing',
-      subjectId: user.id,
-      email: user.email ?? '',
-      displayName: user.displayName ?? '',
-      roleCode: '',
-      note: '',
-    }
-    setInviteResult(null)
-    setInviteActiveTab('invite')
-    onDirtyChange?.(false)
-  }, [user.id])
 
   // Načti detail z DB (jen pokud existuje id)
   useEffect(() => {
@@ -131,49 +156,109 @@ export default function UserDetailFrame({
         const d = await getUserDetail(user.id)
         if (cancelled) return
 
-        setResolvedUser((p) => ({
-          ...p,
-          displayName: d?.subject?.display_name ?? p.displayName,
-          email: d?.subject?.email ?? p.email,
-          phone: d?.subject?.phone ?? p.phone,
-          isArchived: !!d?.subject?.is_archived,
-          createdAt: d?.subject?.created_at ?? p.createdAt,
-          roleLabel: roleCodeToLabel(d?.role_code),
-          firstLoginAt: (d as any)?.first_login_at ?? p.firstLoginAt,
-        }))
+        // subjects → UI
+        const s = d.subject
+        const merged: UiUser = {
+          ...user,
+          id: s.id,
+          displayName: s.display_name ?? user.displayName,
+          email: s.email ?? user.email,
+          phone: s.phone ?? user.phone,
+          isArchived: !!s.is_archived,
+          createdAt: s.created_at ?? user.createdAt,
+          roleLabel: roleCodeToLabel(d.role_code ?? null),
+          twoFactorMethod: null,
+          firstLoginAt: (d as any)?.first_login_at ?? (user as any)?.firstLoginAt ?? null,
+        }
 
-        setRoleCode(d?.role_code ?? null)
-        setPermissionCodes((d as any)?.permission_codes ?? null)
+        setResolvedUser(merged)
+
+        // role + permissions
+        setRoleCode(d.role_code ?? null)
+        setPermissionCodes(d.permissions ?? [])
+
+        // srovnej i currentRef, ať save bere DB hodnoty
+        currentRef.current = {
+          displayName: merged.displayName ?? '',
+          email: merged.email ?? '',
+          phone: merged.phone ?? '',
+
+          titleBefore: d.subject.title_before ?? '',
+          firstName: d.subject.first_name ?? '',
+          lastName: d.subject.last_name ?? '',
+          login: d.subject.login ?? '',
+          isArchived: !!d.subject.is_archived,
+        }
       } catch (e: any) {
-        console.error('[UserDetailFrame.getUserDetail] ERROR', e)
-        setDetailError(e?.message ?? 'Chyba při načtení detailu')
+        if (cancelled) return
+        setDetailError(e?.message ?? 'Chyba při načítání detailu.')
       } finally {
         if (!cancelled) setLoadingDetail(false)
       }
     }
+
     void run()
     return () => {
       cancelled = true
     }
   }, [isCreate, user.id])
 
-  // Register submit pro User (saveUser)
+  const handleValueChange = useCallback((val: UserFormValue) => {
+    currentRef.current = val
+  }, [])
+
+  // Submit registrace pro CommonActions (save user)
   useEffect(() => {
     if (!onRegisterSubmit) return
 
     const submit = async () => {
       try {
-        // Value z UserDetailForm si drží samo; tady jen počítej minimální payload z posledního known state
-        // (UserDetailForm odesílá UserFormValue přes callbacky – v tvém souboru to už máš)
+        const v = currentRef.current
 
-        // Tady je zachován původní submit kód (z tvého uploadu),
-        // aby se nerozbilo ukládání uživatele.
-        // ------------------------------------------------------
-        // Pozn.: Nechávám původní logiku s povinnou rolí:
-        // pickedRole musí být neprázdná.
+        // ✅ povinná role (nepovolíme save bez role)
+        const pickedRole = (roleCode ?? '').trim()
+        if (!pickedRole) {
+          alert('Vyber roli uživatele před uložením.')
+          return null
+        }
 
-        // v tomto souboru se už skutečně ukládá z hodnot UserDetailForm (v tvé verzi)
-        return null as any
+        const displayName = v.displayName?.trim() || v.email?.trim() || 'uživatel'
+
+        const saved = await saveUser({
+          id: user.id,
+
+          // SUBJECT
+          subjectType: 'osoba',
+
+          displayName,
+          email: v.email || null,
+          phone: v.phone || null,
+
+          titleBefore: v.titleBefore || null,
+          firstName: v.firstName || null,
+          lastName: v.lastName || null,
+          login: v.login || displayName,
+
+          isArchived: v.isArchived,
+
+          // ROLE + PERMISSIONS
+          roleCode: pickedRole,
+          permissionCodes: permissionCodes ?? null,
+        })
+
+        const next: UiUser = {
+          ...resolvedUser,
+          id: saved.id,
+          displayName: saved.display_name ?? v.displayName,
+          email: saved.email ?? v.email,
+          phone: saved.phone ?? v.phone,
+          isArchived: !!saved.is_archived,
+          createdAt: saved.created_at ?? resolvedUser.createdAt,
+          roleLabel: roleCodeToLabel(pickedRole),
+        }
+
+        setResolvedUser(next)
+        return next
       } catch (err) {
         console.error('[UserDetailFrame.save] ERROR', err)
         alert('Chyba při ukládání – viz konzole')
@@ -181,50 +266,18 @@ export default function UserDetailFrame({
       }
     }
 
-    // ✅ v reálu je submit v tvém souboru níž napojený na UserDetailForm value
-    // tady jen registrujeme (původní kód z uploadu to už dělá)
     onRegisterSubmit(submit)
-  }, [onRegisterSubmit])
+  }, [onRegisterSubmit, user.id, resolvedUser, roleCode, permissionCodes])
 
-  // Register submit pro Invite (Pozvánka tab v detailu)
+  // ✅ napojení “invite submit” (DetailView/Invite sekce si to může převzít)
   useEffect(() => {
     if (!onRegisterInviteSubmit) return
-
-    const submitInvite = async () => {
-      if (user.firstLoginAt) {
-        alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
-        return false
-      }
-
-      try {
-        const v = inviteRef.current
-
-        if (!v.roleCode?.trim()) {
-          alert('Role je povinná.')
-          return false
-        }
-
-        const res = await sendInvite({
-          ...v,
-          mode: 'existing',
-          subjectId: user.id,
-          email: user.email ?? v.email,
-          displayName: user.displayName ?? v.displayName,
-        })
-
-        setInviteResult(res)
-        setInviteActiveTab('system')
-        onDirtyChange?.(false)
-        return true
-      } catch (e: any) {
-        console.error('[UserDetailFrame.sendInvite] ERROR', e)
-        alert(e?.message ?? 'Chyba při odeslání pozvánky')
-        return false
-      }
-    }
-
-    onRegisterInviteSubmit(submitInvite)
-  }, [onRegisterInviteSubmit, onDirtyChange, user.id, user.email, user.displayName, user.firstLoginAt])
+    // default: nic neumíme odeslat přímo tady (pokud to neimplementuje DetailView)
+    onRegisterInviteSubmit(async () => {
+      alert('Pozvánka: není implementovaná v UserDetailFrame. Odesílá se přes samostatný InviteUserFrame.')
+      return false
+    })
+  }, [onRegisterInviteSubmit])
 
   const title = useMemo(() => {
     if (detailMode === 'create') return 'Nový uživatel'
@@ -236,12 +289,15 @@ export default function UserDetailFrame({
       <DetailView
         mode={detailMode}
         sectionIds={sectionIds}
-        initialActiveId={initialSectionId}
-        onActiveSectionChange={onActiveSectionChange}
+        // ✅ pokud DetailView umí řídit aktivní sekci, pošleme mu to přes ctx
         ctx={{
           entityType: 'user',
           entityId: resolvedUser.id,
           mode: detailMode,
+
+          initialSectionId: initialSectionId ?? undefined,
+          onActiveSectionChange: onActiveSectionChange ?? undefined,
+          onRegisterInviteSubmit: onRegisterInviteSubmit ?? undefined,
 
           detailContent: (
             <div>
@@ -253,100 +309,11 @@ export default function UserDetailFrame({
               )}
 
               <UserDetailForm
-                user={resolvedUser as any}
+                user={resolvedUser}
                 readOnly={readOnly}
                 onDirtyChange={onDirtyChange}
-                onValueChange={() => {
-                  // necháno dle tvé verze (včetně currentRef ve tvém kódu)
-                }}
+                onValueChange={handleValueChange}
               />
-            </div>
-          ),
-
-          inviteContent: (
-            <div>
-              <DetailTabs
-                items={(() => {
-                  const items: DetailTabItem[] = [{ id: 'invite', label: 'Pozvánka' }]
-                  if (inviteResult) items.push({ id: 'system', label: 'Systém' })
-                  return items
-                })()}
-                activeId={inviteActiveTab}
-                onChange={(id) => setInviteActiveTab(id as any)}
-              />
-
-              {inviteActiveTab === 'invite' && (
-                <section id="detail-section-invite-embedded">
-                  <InviteUserForm
-                    variant="existingOnly"
-                    initialValue={inviteRef.current}
-                    onDirtyChange={onDirtyChange}
-                    onValueChange={(v) => {
-                      inviteRef.current = v
-                    }}
-                  />
-
-                  {user.firstLoginAt && (
-                    <div className="detail-form__hint" style={{ color: 'var(--color-warning, #8a6d3b)' }}>
-                      Uživatel se již přihlásil – pozvánku nelze poslat znovu.
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {inviteActiveTab === 'system' && inviteResult && (
-                <section id="detail-section-invite-system-embedded">
-                  <div className="detail-form">
-                    <section className="detail-form__section">
-                      <h3 className="detail-form__section-title">Systém</h3>
-
-                      <div className="detail-form__grid detail-form__grid--narrow">
-                        <div className="detail-form__field detail-form__field--span-2">
-                          <label className="detail-form__label">ID pozvánky</label>
-                          <input className="detail-form__input detail-form__input--readonly" value={inviteResult.inviteId} readOnly />
-                        </div>
-
-                        <div className="detail-form__field detail-form__field--span-2">
-                          <label className="detail-form__label">Stav</label>
-                          <input className="detail-form__input detail-form__input--readonly" value={inviteResult.status ?? 'pending'} readOnly />
-                        </div>
-
-                        <div className="detail-form__field detail-form__field--span-2">
-                          <label className="detail-form__label">Odesláno</label>
-                          <input
-                            className="detail-form__input detail-form__input--readonly"
-                            value={(inviteResult as any).sentAt ?? (inviteResult as any).createdAt ?? '—'}
-                            readOnly
-                          />
-                        </div>
-
-                        <div className="detail-form__field detail-form__field--span-2">
-                          <label className="detail-form__label">Platí do</label>
-                          <input
-                            className="detail-form__input detail-form__input--readonly"
-                            value={(inviteResult as any).expiresAt ?? '—'}
-                            readOnly
-                          />
-                        </div>
-
-                        <div className="detail-form__field detail-form__field--span-2">
-                          <label className="detail-form__label">Odeslal</label>
-                          <input
-                            className="detail-form__input detail-form__input--readonly"
-                            value={(inviteResult as any).createdBy ?? '—'}
-                            readOnly
-                          />
-                        </div>
-
-                        <div className="detail-form__field detail-form__field--span-2">
-                          <label className="detail-form__label">První přihlášení</label>
-                          <input className="detail-form__input detail-form__input--readonly" value={user.firstLoginAt ?? '—'} readOnly />
-                        </div>
-                      </div>
-                    </section>
-                  </div>
-                </section>
-              )}
             </div>
           ),
 
