@@ -1,344 +1,385 @@
-// FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
-// PURPOSE: Detail uživatele (010) – načítá detail z DB + ukládá přes service vrstvu (subjects + role + permissions).
+// FILE: app/UI/DetailView.tsx
 // CHANGE:
-// - povinná role
-// - doplnění System tab (a Invite tab, pokud DetailView umí)
-// - doplnění napojení: initialSectionId / onActiveSectionChange / onRegisterInviteSubmit
+// - Pozvánka + Systém jsou "viditelně" (nezmizí jen proto, že chybí ctx.inviteContent nebo entityId)
+// - podporuje initialSectionId + onActiveSectionChange i přes ctx (kvůli UserDetailFrame)
+// - systémový tab umí zobrazit invite info (sent_by, sent_at, valid_until, status, first_login_at, can_send_invite)
 
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
-import DetailView, { type DetailSectionId } from '@/app/UI/DetailView'
-import type { ViewMode } from '@/app/UI/CommonActions'
-import UserDetailForm, { type UserFormValue } from './UserDetailForm'
-import { getUserDetail, saveUser } from '@/app/lib/services/users'
+import React, { useEffect, useMemo, useState } from 'react'
+import DetailTabs, { type DetailTabItem } from './DetailTabs'
+import DetailAttachmentsSection from './detail-sections/DetailAttachmentsSection'
 
-// ✅ stejné zdroje rolí jako modul 900 / RoleTypesTile
-import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
+export type DetailViewMode = 'create' | 'edit' | 'view'
 
-type UiUser = {
-  id: string
-  displayName: string
-  email: string
-  phone?: string
-  roleLabel: string
-  twoFactorMethod?: string | null
-  createdAt: string
-  isArchived?: boolean
+export type DetailSectionId =
+  | 'detail'
+  | 'roles'
+  | 'invite'
+  | 'users'
+  | 'equipment'
+  | 'accounts'
+  | 'attachments'
+  | 'system'
 
-  // optional – pokud je máš v listu/view
-  firstLoginAt?: string | null
+export type DetailViewSection<Ctx = unknown> = {
+  id: DetailSectionId
+  label: string
+  order: number
+  always?: boolean
+  render: (ctx: Ctx) => React.ReactNode
+  /**
+   * POZOR: už nepoužívej pro "invite" a "system" tak, aby tab mizel.
+   * Lepší je nechat tab viditelný a uvnitř ukázat "není k dispozici".
+   */
+  visibleWhen?: (ctx: Ctx, picked?: Set<DetailSectionId>) => boolean
 }
 
-type UserDetailFrameProps = {
-  user: UiUser
-  viewMode: ViewMode // read/edit/create
+export type RolesData = {
+  role?: { code: string; name: string; description?: string | null }
+  permissions?: { code: string; name: string; description?: string | null }[]
+  availableRoles?: { code: string; name: string; description?: string | null }[]
+}
 
-  // ✅ nové (napojení na UsersTile)
+export type RolesUi = {
+  canEdit?: boolean
+  mode?: DetailViewMode
+  /** Controlled hodnota pro select v edit/create (doporučeno: držet ve formuláři) */
+  roleCode?: string | null
+  onChangeRoleCode?: (roleCode: string) => void
+}
+
+export type InviteSystemInfo = {
+  sentBy?: string | null
+  sentAt?: string | null
+  validUntil?: string | null
+  status?: string | null
+  firstLoginAt?: string | null
+  canSendInvite?: boolean | null
+}
+
+export type DetailViewCtx = {
+  /** Volitelné pro systémové sekce (Přílohy/Systém). Pokud nejsou, tab se stále ukáže, jen s hintem. */
+  entityType?: string
+  entityId?: string
+  mode?: DetailViewMode
+
+  /** Obsahy jednotlivých sekcí */
+  detailContent?: React.ReactNode
+  inviteContent?: React.ReactNode
+  rolesData?: RolesData
+  rolesUi?: RolesUi
+
+  /** Invite "audit" data pro System tab */
+  inviteSystem?: InviteSystemInfo
+
+  /**
+   * Napojení z parentů: UserDetailFrame to teď posílá přes ctx (ne přes props),
+   * takže to tady umíme přečíst a použít.
+   */
   initialSectionId?: DetailSectionId
   onActiveSectionChange?: (id: DetailSectionId) => void
+
+  /** Volitelné – do budoucna: registrace "odeslat pozvánku" submitu */
   onRegisterInviteSubmit?: (fn: () => Promise<boolean>) => void
-
-  onDirtyChange?: (dirty: boolean) => void
-  onRegisterSubmit?: (fn: () => Promise<UiUser | null>) => void
 }
 
-function roleCodeToLabel(code: string | null | undefined): string {
-  const c = (code ?? '').trim().toLowerCase()
-  if (!c) return '—'
-  if (c === 'admin') return 'Admin'
-  if (c === 'user') return 'Uživatel'
-  return c
+const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
+  detail: {
+    id: 'detail',
+    label: 'Detail',
+    order: 10,
+    always: true,
+    render: (ctx) => ctx?.detailContent ?? null,
+  },
+
+  invite: {
+    id: 'invite',
+    label: 'Pozvánka',
+    order: 15,
+    // ✅ tab se má ukázat, když je vyžádaný v sectionIds — i kdyby zatím nebyl inviteContent
+    visibleWhen: (_ctx, picked) => !!picked?.has('invite'),
+    render: (ctx: any) => {
+      if (ctx?.inviteContent) return ctx.inviteContent
+      return (
+        <div className="detail-form">
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Pozvánka</h3>
+            <div className="detail-form__hint">
+              Pozvánka není zatím napojená (chybí <code>inviteContent</code>). Přesto je záložka viditelná.
+            </div>
+          </section>
+        </div>
+      )
+    },
+  },
+
+  roles: {
+    id: 'roles',
+    label: 'Role a oprávnění',
+    order: 20,
+    visibleWhen: (ctx, picked) => !!picked?.has('roles') && !!(ctx as any)?.rolesData,
+    render: (ctx: any) => {
+      const data = ctx?.rolesData as RolesData | undefined
+      const ui = ctx?.rolesUi as RolesUi | undefined
+      const canEdit = !!ui?.canEdit
+      const mode = ui?.mode ?? 'view'
+
+      const role = data?.role
+      const permissions = data?.permissions ?? []
+      const options = data?.availableRoles ?? []
+
+      // Zajisti, že aktuální role je v options (když číselník ještě není načtený)
+      const ensuredOptions =
+        role?.code && !options.some((r) => r.code === role.code)
+          ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...options]
+          : options
+
+      // Controlled hodnota: preferuj UI stav, fallback na aktuální roli
+      const selectedCode = (ui?.roleCode ?? role?.code ?? '') as string
+
+      return (
+        <div className="detail-form">
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Role</h3>
+
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Role</label>
+
+                {(mode === 'edit' || mode === 'create') && canEdit ? (
+                  <select
+                    className="detail-form__input"
+                    value={selectedCode}
+                    onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      — vyber roli —
+                    </option>
+                    {ensuredOptions.map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name ?? r.code}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={role?.name ?? role?.code ?? '—'}
+                    readOnly
+                  />
+                )}
+
+                {mode !== 'view' && (
+                  <div className="detail-form__hint">Role je uložena v subject_roles (subject_id + role_code).</div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Oprávnění</h3>
+
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Oprávnění</label>
+                <div className="detail-form__value">
+                  {permissions.length ? (
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {permissions.map((p) => (
+                        <li key={p.code}>
+                          <strong>{p.code}</strong> {p.name ? `– ${p.name}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="detail-form__hint">Žádná oprávnění</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      )
+    },
+  },
+
+  attachments: {
+    id: 'attachments',
+    label: 'Přílohy',
+    order: 90,
+    // ✅ tab ukážeme jen pokud je v sectionIds; uvnitř si poradíme i s chybějícím entityId
+    visibleWhen: (_ctx, picked) => !!picked?.has('attachments'),
+    render: (ctx: any) => {
+      const entityType = ctx?.entityType
+      const entityId = ctx?.entityId
+      if (!entityType || !entityId) {
+        return (
+          <div className="detail-form">
+            <section className="detail-form__section">
+              <h3 className="detail-form__section-title">Přílohy</h3>
+              <div className="detail-form__hint">Přílohy jsou dostupné až po uložení záznamu (chybí entityId).</div>
+            </section>
+          </div>
+        )
+      }
+      return <DetailAttachmentsSection entityType={entityType} entityId={entityId} mode={ctx?.mode ?? 'view'} />
+    },
+  },
+
+  system: {
+    id: 'system',
+    label: 'Systém',
+    order: 100,
+    // ✅ tab se má ukázat, když je vyžádaný v sectionIds — i kdyby zatím nebyl entityId
+    visibleWhen: (_ctx, picked) => !!picked?.has('system'),
+    render: (ctx: any) => {
+      const sys: InviteSystemInfo | undefined = ctx?.inviteSystem
+
+      const row = (label: string, value?: React.ReactNode) => (
+        <div className="detail-form__field detail-form__field--span-4">
+          <label className="detail-form__label">{label}</label>
+          <div className="detail-form__value">
+            {value ?? <span className="detail-form__hint">—</span>}
+          </div>
+        </div>
+      )
+
+      const boolText = (v: any) => {
+        if (v === true) return 'Ano'
+        if (v === false) return 'Ne'
+        return '—'
+      }
+
+      return (
+        <div className="detail-form">
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Systém</h3>
+
+            <div className="detail-form__grid detail-form__grid--narrow">
+              {row('Entity', <input className="detail-form__input detail-form__input--readonly" value={ctx?.entityType ?? '—'} readOnly />)}
+              {row('ID', <input className="detail-form__input detail-form__input--readonly" value={ctx?.entityId ?? '—'} readOnly />)}
+            </div>
+
+            <div style={{ height: 12 }} />
+
+            <h4 className="detail-form__section-title" style={{ fontSize: 14, opacity: 0.9 }}>
+              Pozvánka – systémové informace
+            </h4>
+
+            <div className="detail-form__grid detail-form__grid--narrow">
+              {row('Kdo odeslal', sys?.sentBy ?? '—')}
+              {row('Kdy odesláno', sys?.sentAt ?? '—')}
+              {row('Platí do', sys?.validUntil ?? '—')}
+              {row('Status', sys?.status ?? '—')}
+              {row('První přihlášení', sys?.firstLoginAt ?? '—')}
+              {row('Lze odeslat (can_send_invite)', boolText(sys?.canSendInvite))}
+            </div>
+
+            {!sys && (
+              <div className="detail-form__hint" style={{ marginTop: 8 }}>
+                Pozvánka zatím nemá systémová data (chybí <code>ctx.inviteSystem</code>).
+              </div>
+            )}
+          </section>
+        </div>
+      )
+    },
+  },
+
+  // ostatní sekce – zatím placeholder
+  users: { id: 'users', label: 'Uživatelé', order: 30, visibleWhen: (_c, p) => !!p?.has('users'), render: () => null },
+  equipment: { id: 'equipment', label: 'Vybavení', order: 40, visibleWhen: (_c, p) => !!p?.has('equipment'), render: () => null },
+  accounts: { id: 'accounts', label: 'Účty', order: 50, visibleWhen: (_c, p) => !!p?.has('accounts'), render: () => null },
 }
 
-export default function UserDetailFrame({
-  user,
-  viewMode,
-  initialSectionId,
-  onActiveSectionChange,
-  onRegisterInviteSubmit,
-  onDirtyChange,
-  onRegisterSubmit,
-}: UserDetailFrameProps) {
-  // ✅ přidáme system (+ invite pokud DetailView zná)
-  const sectionIds: DetailSectionId[] = ['roles', 'invite', 'system'] as any
-
-  const detailMode = useMemo(() => {
-    if (viewMode === 'edit') return 'edit'
-    if (viewMode === 'create') return 'create'
-    return 'view'
-  }, [viewMode])
-
-  const readOnly = detailMode === 'view'
-  const isCreate = user.id === 'new'
-
-  const [loadingDetail, setLoadingDetail] = useState(false)
-  const [detailError, setDetailError] = useState<string | null>(null)
-
-  // DB “pravda” pro role + permissions
-  const [roleCode, setRoleCode] = useState<string | null>(null)
-  const [permissionCodes, setPermissionCodes] = useState<string[]>([])
-
-  // ✅ číselník rolí pro select
-  const [availableRoles, setAvailableRoles] = useState<
-    { code: string; name: string; description?: string | null }[]
-  >([])
-
-  // DB “pravda” pro subjects (pro případ, že list měl zastaralé hodnoty)
-  const [resolvedUser, setResolvedUser] = useState<UiUser>(user)
-
-  // hodnoty z formuláře (posíláme do saveUser)
-  const currentRef = useRef<UserFormValue>({
-    displayName: user.displayName ?? '',
-    email: user.email ?? '',
-    phone: user.phone ?? '',
-
-    titleBefore: (user as any).titleBefore ?? '',
-    firstName: (user as any).firstName ?? '',
-    lastName: (user as any).lastName ?? '',
-    login: (user as any).login ?? '',
-    isArchived: !!user.isArchived,
+function resolveSections<Ctx>(sectionIds: DetailSectionId[] | undefined, ctx: Ctx) {
+  const picked = new Set<DetailSectionId>(sectionIds ?? [])
+  ;(Object.values(DETAIL_SECTIONS) as DetailViewSection<Ctx>[]).forEach((s) => {
+    if (s.always) picked.add(s.id)
   })
 
+  return Array.from(picked)
+    .map((id) => DETAIL_SECTIONS[id] as DetailViewSection<Ctx>)
+    .filter(Boolean)
+    .filter((s) => (s.visibleWhen ? s.visibleWhen(ctx, picked) : true))
+    .sort((a, b) => a.order - b.order)
+}
+
+export type DetailViewProps<Ctx = unknown> = {
+  mode: DetailViewMode
+  isDirty?: boolean
+  isSaving?: boolean
+  onSave?: () => void
+  onCancel?: () => void
+  sectionIds?: DetailSectionId[]
+
+  /**
+   * Starý způsob (přímé props) – stále podporujeme.
+   * Nový způsob: posílej initialSectionId přes ctx (viz UserDetailFrame).
+   */
+  initialActiveId?: DetailSectionId
+
+  /**
+   * Starý způsob (přímé props) – stále podporujeme.
+   * Nový způsob: posílej onActiveSectionChange přes ctx (viz UserDetailFrame).
+   */
+  onActiveSectionChange?: (id: DetailSectionId) => void
+
+  ctx?: Ctx & DetailViewCtx
+  children?: React.ReactNode
+}
+
+export default function DetailView<Ctx = unknown>({
+  children,
+  sectionIds,
+  initialActiveId,
+  onActiveSectionChange,
+  ctx,
+}: DetailViewProps<Ctx>) {
+  if (!sectionIds && !ctx) return <div className="detail-view">{children}</div>
+
+  const safeCtx = (ctx ?? ({} as Ctx)) as Ctx & DetailViewCtx
+  const sections = useMemo(() => resolveSections(sectionIds, safeCtx), [sectionIds, safeCtx])
+
+  // ✅ kompatibilita: umíme číst initial i z ctx (UserDetailFrame to tak posílá)
+  const initialFromCtx = safeCtx.initialSectionId
+  const onActiveFromCtx = safeCtx.onActiveSectionChange
+
+  const preferredInitial = initialActiveId ?? initialFromCtx
+
+  const defaultActive =
+    (preferredInitial && sections.some((s) => s.id === preferredInitial) ? preferredInitial : sections[0]?.id) ?? 'detail'
+
+  const [activeId, setActiveId] = useState<DetailSectionId>(defaultActive)
+
+  // Reaguj na změnu preferredInitial (např. otevření detailu rovnou na sekci Pozvánka)
   useEffect(() => {
-    // při přepnutí záznamu reset lokální stav
-    setResolvedUser(user)
-    currentRef.current = {
-      displayName: user.displayName ?? '',
-      email: user.email ?? '',
-      phone: user.phone ?? '',
+    if (!preferredInitial) return
+    if (!sections.some((s) => s.id === preferredInitial)) return
+    setActiveId(preferredInitial)
+  }, [preferredInitial, sections])
 
-      titleBefore: (user as any).titleBefore ?? '',
-      firstName: (user as any).firstName ?? '',
-      lastName: (user as any).lastName ?? '',
-      login: (user as any).login ?? '',
-      isArchived: !!user.isArchived,
-    }
-    setRoleCode(null)
-    setPermissionCodes([])
-    setDetailError(null)
-  }, [user.id, user.displayName, user.email, user.phone])
-
-  // ✅ Načti číselník rolí vždy (nezávisle na read/edit)
+  // Report aktivní sekci parentovi (pro CommonActions režim)
   useEffect(() => {
-    let cancelled = false
-    const run = async () => {
-      try {
-        const rows = await fetchRoleTypes()
-        if (cancelled) return
-        setAvailableRoles(
-          (rows ?? []).map((r: any) => ({
-            code: r.code,
-            name: r.name,
-            description: r.description ?? null,
-          }))
-        )
-      } catch (e) {
-        console.warn('[UserDetailFrame] Failed to load role_types', e)
-      }
-    }
-    void run()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    onActiveSectionChange?.(activeId)
+    onActiveFromCtx?.(activeId)
+  }, [activeId, onActiveSectionChange, onActiveFromCtx])
 
-  // Načti detail z DB (jen pokud existuje id)
-  useEffect(() => {
-    if (isCreate) return
-
-    let cancelled = false
-    const run = async () => {
-      setLoadingDetail(true)
-      setDetailError(null)
-      try {
-        const d = await getUserDetail(user.id)
-        if (cancelled) return
-
-        // subjects → UI
-        const s = d.subject
-        const merged: UiUser = {
-          ...user,
-          id: s.id,
-          displayName: s.display_name ?? user.displayName,
-          email: s.email ?? user.email,
-          phone: s.phone ?? user.phone,
-          isArchived: !!s.is_archived,
-          createdAt: s.created_at ?? user.createdAt,
-          roleLabel: roleCodeToLabel(d.role_code ?? null),
-          twoFactorMethod: null,
-          firstLoginAt: (d as any)?.first_login_at ?? (user as any)?.firstLoginAt ?? null,
-        }
-
-        setResolvedUser(merged)
-
-        // role + permissions
-        setRoleCode(d.role_code ?? null)
-        setPermissionCodes(d.permissions ?? [])
-
-        // srovnej i currentRef, ať save bere DB hodnoty
-        currentRef.current = {
-          displayName: merged.displayName ?? '',
-          email: merged.email ?? '',
-          phone: merged.phone ?? '',
-
-          titleBefore: d.subject.title_before ?? '',
-          firstName: d.subject.first_name ?? '',
-          lastName: d.subject.last_name ?? '',
-          login: d.subject.login ?? '',
-          isArchived: !!d.subject.is_archived,
-        }
-      } catch (e: any) {
-        if (cancelled) return
-        setDetailError(e?.message ?? 'Chyba při načítání detailu.')
-      } finally {
-        if (!cancelled) setLoadingDetail(false)
-      }
-    }
-
-    void run()
-    return () => {
-      cancelled = true
-    }
-  }, [isCreate, user.id])
-
-  const handleValueChange = useCallback((val: UserFormValue) => {
-    currentRef.current = val
-  }, [])
-
-  // Submit registrace pro CommonActions (save user)
-  useEffect(() => {
-    if (!onRegisterSubmit) return
-
-    const submit = async () => {
-      try {
-        const v = currentRef.current
-
-        // ✅ povinná role (nepovolíme save bez role)
-        const pickedRole = (roleCode ?? '').trim()
-        if (!pickedRole) {
-          alert('Vyber roli uživatele před uložením.')
-          return null
-        }
-
-        const displayName = v.displayName?.trim() || v.email?.trim() || 'uživatel'
-
-        const saved = await saveUser({
-          id: user.id,
-
-          // SUBJECT
-          subjectType: 'osoba',
-
-          displayName,
-          email: v.email || null,
-          phone: v.phone || null,
-
-          titleBefore: v.titleBefore || null,
-          firstName: v.firstName || null,
-          lastName: v.lastName || null,
-          login: v.login || displayName,
-
-          isArchived: v.isArchived,
-
-          // ROLE + PERMISSIONS
-          roleCode: pickedRole,
-          permissionCodes: permissionCodes ?? null,
-        })
-
-        const next: UiUser = {
-          ...resolvedUser,
-          id: saved.id,
-          displayName: saved.display_name ?? v.displayName,
-          email: saved.email ?? v.email,
-          phone: saved.phone ?? v.phone,
-          isArchived: !!saved.is_archived,
-          createdAt: saved.created_at ?? resolvedUser.createdAt,
-          roleLabel: roleCodeToLabel(pickedRole),
-        }
-
-        setResolvedUser(next)
-        return next
-      } catch (err) {
-        console.error('[UserDetailFrame.save] ERROR', err)
-        alert('Chyba při ukládání – viz konzole')
-        return null
-      }
-    }
-
-    onRegisterSubmit(submit)
-  }, [onRegisterSubmit, user.id, resolvedUser, roleCode, permissionCodes])
-
-  // ✅ napojení “invite submit” (DetailView/Invite sekce si to může převzít)
-  useEffect(() => {
-    if (!onRegisterInviteSubmit) return
-    // default: nic neumíme odeslat přímo tady (pokud to neimplementuje DetailView)
-    onRegisterInviteSubmit(async () => {
-      alert('Pozvánka: není implementovaná v UserDetailFrame. Odesílá se přes samostatný InviteUserFrame.')
-      return false
-    })
-  }, [onRegisterInviteSubmit])
-
-  const title = useMemo(() => {
-    if (detailMode === 'create') return 'Nový uživatel'
-    return 'Uživatel'
-  }, [detailMode])
+  const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
+  const tabs: DetailTabItem[] = sections.map((s) => ({ id: s.id, label: s.label }))
 
   return (
-    <EntityDetailFrame title={title}>
-      <DetailView
-        mode={detailMode}
-        sectionIds={sectionIds}
-        // ✅ pokud DetailView umí řídit aktivní sekci, pošleme mu to přes ctx
-        ctx={{
-          entityType: 'user',
-          entityId: resolvedUser.id,
-          mode: detailMode,
+    <div className="detail-view">
+      {tabs.length > 1 && (
+        <DetailTabs
+          items={tabs}
+          activeId={activeSection?.id ?? defaultActive}
+          onChange={(id) => setActiveId(id as any)}
+        />
+      )}
 
-          initialSectionId: initialSectionId ?? undefined,
-          onActiveSectionChange: onActiveSectionChange ?? undefined,
-          onRegisterInviteSubmit: onRegisterInviteSubmit ?? undefined,
-
-          detailContent: (
-            <div>
-              {loadingDetail && !isCreate && <div className="detail-form__hint">Načítám detail…</div>}
-              {detailError && !isCreate && (
-                <div className="detail-form__hint" style={{ color: 'var(--color-danger, #b00020)' }}>
-                  {detailError}
-                </div>
-              )}
-
-              <UserDetailForm
-                user={resolvedUser}
-                readOnly={readOnly}
-                onDirtyChange={onDirtyChange}
-                onValueChange={handleValueChange}
-              />
-            </div>
-          ),
-
-          rolesData: {
-            role: {
-              code: roleCode ?? '',
-              name: roleCodeToLabel(roleCode),
-              description: 'Role je uložena v subject_roles (subject_id + role_code).',
-            },
-            permissions: (permissionCodes ?? []).map((code) => ({
-              code,
-              name: code,
-              description: '',
-            })),
-            availableRoles,
-          },
-
-          rolesUi: {
-            canEdit: !readOnly,
-            mode: detailMode,
-            roleCode: roleCode ?? '',
-            onChangeRoleCode: (nextCode: string) => setRoleCode(nextCode),
-          },
-        }}
-      />
-    </EntityDetailFrame>
+      {activeSection && <section id={`detail-section-${activeSection.id}`}>{activeSection.render(safeCtx)}</section>}
+    </div>
   )
 }
