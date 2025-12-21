@@ -5,6 +5,7 @@
 // UPDATED: Invite flow sjednocený:
 // - invite bez výběru -> InviteUserFrame (nový)
 // - invite s výběrem  -> UserDetailFrame na záložce "Pozvánka" (jen send/close)
+// + NOVĚ: v edit režimu tlačítko "invite" (odeslat pozvánku)
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -219,6 +220,13 @@ export default function UsersTile({
     setUrl({ id: detailUser.id, vm: viewMode })
   }, [detailUser?.id, searchParams, setUrl, viewMode])
 
+  const canInviteDetail = useMemo(() => {
+    if (!detailUser?.id) return false
+    if (!detailUser.id.trim()) return false
+    if (detailUser.firstLoginAt) return false
+    return true
+  }, [detailUser?.firstLoginAt, detailUser?.id])
+
   /** 🔘 COMMON ACTIONS – BEZ saveAndClose */
   const commonActions = useMemo<CommonActionId[]>(() => {
     // 📄 SEZNAM
@@ -233,14 +241,18 @@ export default function UsersTile({
 
     // 👁️ DETAIL – READ
     if (viewMode === 'read') {
-      // pokud jsme na záložce Pozvánka, nechceme editovat uživatele – jen odeslat / zavřít
       if (detailActiveSectionId === 'invite') return ['save', 'close']
       return ['edit', 'close']
     }
 
     // ✏️ EDIT / CREATE
+    if (viewMode === 'edit') {
+      // ✅ v edit režimu chceme tlačítko "invite" (odeslat pozvánku) – ale jen pokud dává smysl
+      return canInviteDetail ? ['save', 'invite', 'close'] : ['save', 'close']
+    }
+
     return ['save', 'close']
-  }, [viewMode, detailActiveSectionId])
+  }, [viewMode, detailActiveSectionId, canInviteDetail])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
@@ -368,6 +380,21 @@ export default function UsersTile({
           return
         }
 
+        if (id === 'invite') {
+          // ✅ nově: v edit režimu umíme rovnou odpálit pozvánku
+          if (isDirty) {
+            alert('Máš neuložené změny. Nejdřív ulož, nebo zavři změny, a pak pošli pozvánku.')
+            return
+          }
+          if (!detailUser?.id?.trim()) return
+          if ((detailUser as any)?.firstLoginAt) {
+            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+            return
+          }
+          openInvite(detailUser.id)
+          return
+        }
+
         if (id === 'save') {
           if (!submitRef.current) return
           const saved = await submitRef.current()
@@ -393,6 +420,8 @@ export default function UsersTile({
     openInvite,
     router,
     detailActiveSectionId,
+    detailUser,
+    isDirty,
   ])
 
   // =====================
@@ -453,6 +482,5 @@ export default function UsersTile({
     )
   }
 
-  // fallback (nemělo by nastat)
   return null
 }
