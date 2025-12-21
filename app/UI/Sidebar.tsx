@@ -174,6 +174,7 @@ export default function Sidebar({
       }
     }
 
+    e?.preventDefault()
     onModuleSelect?.(selection)
   }
 
