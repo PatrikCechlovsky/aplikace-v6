@@ -108,7 +108,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       setOrDelete('t', next.tileId)
 
       const qs = sp.toString()
-      const nextUrl = qs ? `${pathname}?${qs}` : pathname
+
+      const basePath = next.moduleId ? `/modules/${next.moduleId}` : '/'
+      const nextUrl = qs ? `${basePath}?${qs}` : basePath
       
       const currentQs = searchParams.toString()
       const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname
