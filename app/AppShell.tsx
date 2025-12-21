@@ -383,12 +383,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       return
     }
 
-    if (!target.moduleId) {
-      // ✅ když URL nemá ?m=..., tak NIC NERUŠ
-      // jinak vzniká blikání (přepínání modul ↔ dashboard)
+        if (!target.moduleId) {
+      // URL bez ?m=... = dashboard -> vyčisti výběr
+      setActiveModuleId(null)
+      setActiveSelection(null)
+      resetCommonActions()
       return
     }
-
     // Only accept modules that exist
     if (!modules.some((m) => m.id === target.moduleId)) return
     setActiveModuleId(target.moduleId)
@@ -453,7 +454,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setActiveModuleId(null)
     setActiveSelection(null)
     resetCommonActions()
-    router.push('/')
+    router.replace('/')
   }
 
   function forceSidebarLayout() {
