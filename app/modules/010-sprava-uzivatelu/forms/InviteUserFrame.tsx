@@ -44,6 +44,13 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
 
   const doSend = async () => {
     try {
+      // ✅ blokace opakovaného klikání/odeslání, když už máme výsledek
+      if (inviteResult?.inviteId) {
+        alert('Pozvánka už byla založena. Pokud chceš poslat další, vrať se a založ novou pozvánku.')
+        setActiveTab('system')
+        return true
+      }
+
       const v = currentRef.current
 
       if (v.mode === 'existing' && !v.subjectId) {
@@ -61,9 +68,12 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
 
       setIsSending(true)
       const res = await sendInvite(v)
+
       setInviteResult(res)
       setActiveTab('system')
       onDirtyChange?.(false)
+
+      alert('Pozvánka byla založena ✅') // jasný feedback (můžeš později nahradit toastem)
       return true
     } catch (e: any) {
       console.error('[InviteUserFrame.sendInvite] ERROR', e)
@@ -74,11 +84,11 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     }
   }
 
-  // pořád podporujeme CommonActions (když to používáš), ale už to není jediné místo
+  // pořád podporujeme CommonActions
   useEffect(() => {
     if (!onRegisterSubmit) return
     onRegisterSubmit(doSend)
-  }, [onRegisterSubmit])
+  }, [onRegisterSubmit]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tabItems: DetailTabItem[] = useMemo(() => {
     const items: DetailTabItem[] = [{ id: 'invite', label: 'Pozvánka' }]
@@ -91,83 +101,71 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
 
       {activeTab === 'invite' && (
-        <section id="detail-section-invite">
-          <InviteUserForm
-            initialValue={currentRef.current}
-            onDirtyChange={onDirtyChange}
-            onValueChange={(v) => {
-              currentRef.current = v
-            }}
-          />
-
-          {/* ✅ tlačítka přímo ve stránce (už nemusíš lovit CommonActions) */}
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '8px 0 2px 0' }}>
-            <button
-              type="button"
-              className="common-actions__btn"
-              onClick={() => {
-                // jen „soft“ – když to chceš, můžeš sem dát callback na zavření frame
-                history.back()
-              }}
-              disabled={isSending}
-            >
-              Zrušit
-            </button>
-
-            <button
-              type="button"
-              className="common-actions__btn common-actions__btn--primary"
-              onClick={() => void doSend()}
-              disabled={isSending}
-            >
-              {isSending ? 'Odesílám…' : 'Odeslat pozvánku'}
-            </button>
-          </div>
-        </section>
+        <InviteUserForm
+          initialValue={currentRef.current}
+          onValueChange={(v) => {
+            currentRef.current = v
+            onDirtyChange?.(true)
+          }}
+          onDirtyChange={onDirtyChange}
+          variant="standalone"
+        />
       )}
 
       {activeTab === 'system' && inviteResult && (
-        <section id="detail-section-system">
-          <div className="detail-form">
-            <section className="detail-form__section">
-              <h3 className="detail-form__section-title">Systém</h3>
+        <div style={{ padding: 12 }}>
+          <h3 style={{ marginTop: 0 }}>Výsledek</h3>
 
-              <div className="detail-form__grid detail-form__grid--narrow">
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">ID pozvánky</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.inviteId} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Stav</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={inviteResult.status ?? 'pending'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Kdy odesláno</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).sentAt ?? '—'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Platí do</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).validUntil ?? '—'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Kdo odeslal</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).sentBy ?? '—'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">První přihlášení</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).firstLoginAt ?? '—'} readOnly />
-                </div>
+          <div style={{ padding: 10, border: '1px solid #ddd', borderRadius: 8 }}>
+            <div>
+              <b>Status:</b> {inviteResult.status ?? '—'}
+            </div>
+            <div>
+              <b>Invite ID:</b> {inviteResult.inviteId}
+            </div>
+            <div>
+              <b>Mode:</b> {inviteResult.mode}
+            </div>
+            <div>
+              <b>Email:</b> {inviteResult.email ?? '—'}
+            </div>
+            <div>
+              <b>Role:</b> {inviteResult.roleCode ?? '—'}
+            </div>
+            <div>
+              <b>Subject ID:</b> {inviteResult.subjectId ?? '—'}
+            </div>
+            <div>
+              <b>Vytvořen nový subjekt:</b> {inviteResult.subjectCreated ? 'Ano' : 'Ne'}
+            </div>
+            {inviteResult.createdAt && (
+              <div>
+                <b>Vytvořeno:</b> {inviteResult.createdAt}
               </div>
-            </section>
+            )}
+            {inviteResult.expiresAt && (
+              <div>
+                <b>Platnost do:</b> {inviteResult.expiresAt}
+              </div>
+            )}
+            {inviteResult.message && (
+              <div style={{ marginTop: 8 }}>
+                <b>Poznámka:</b> {inviteResult.message}
+              </div>
+            )}
           </div>
-        </section>
+
+          <div style={{ marginTop: 12, opacity: 0.8 }}>
+            Teď už nejde „nepoznat“, že pozvánka proběhla. Opakované klikání je zablokované.
+          </div>
+        </div>
       )}
+
+      <div style={{ padding: 12, display: 'flex', gap: 8 }}>
+        <button onClick={() => void doSend()} disabled={isSending}>
+          {isSending ? 'Odesílám…' : 'Odeslat pozvánku'}
+        </button>
+      </div>
     </EntityDetailFrame>
   )
 }
- 
