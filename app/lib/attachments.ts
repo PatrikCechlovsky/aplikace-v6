@@ -40,6 +40,7 @@ export type AttachmentRow = {
   mime_type: string | null
   file_size: number | null
   version_created_at: string
+  version_created_by?: string | null
   version_is_archived: boolean
 }
 
@@ -67,6 +68,11 @@ function sanitizeFileName(name: string) {
 function logDebug(...args: any[]) {
   // eslint-disable-next-line no-console
   console.log('[attachments]', ...args)
+}
+
+async function getCurrentUserId() {
+  const { data } = await supabase.auth.getUser()
+  return data.user?.id ?? null
 }
 
 /* =========================================================
@@ -166,6 +172,8 @@ export async function createAttachmentWithUpload(input: {
 }) {
   const { entityType, entityId, title, description = null, file } = input
 
+  const userId = await getCurrentUserId()
+
   const { data: doc, error: docErr } = await supabase
     .from('documents')
     .insert({
@@ -174,6 +182,7 @@ export async function createAttachmentWithUpload(input: {
       title,
       description,
       is_archived: false,
+      created_by: userId,
     })
     .select('*')
     .single()
@@ -195,6 +204,7 @@ export async function createAttachmentWithUpload(input: {
     mime_type: file.type || null,
     file_size: file.size,
     is_archived: false,
+    created_by: userId,
   })
 
   if (verErr) throw verErr
@@ -214,6 +224,8 @@ export async function addAttachmentVersionWithUpload(input: {
 }) {
   const { entityType, entityId, documentId, file } = input
 
+  const userId = await getCurrentUserId()
+
   const versionNumber = await getNextVersionNumber(documentId)
   const safeName = sanitizeFileName(file.name)
   const filePath = `${entityType}/${entityId}/${documentId}/v${pad3(versionNumber)}_${safeName}`
@@ -228,6 +240,7 @@ export async function addAttachmentVersionWithUpload(input: {
     mime_type: file.type || null,
     file_size: file.size,
     is_archived: false,
+    created_by: userId,
   })
 
   if (error) throw error
@@ -241,9 +254,11 @@ export async function addAttachmentVersionWithUpload(input: {
 export async function updateAttachmentMetadata(input: { documentId: string; title: string; description?: string | null }) {
   const { documentId, title, description = null } = input
 
+  const userId = await getCurrentUserId()
+
   const { data, error } = await supabase
     .from('documents')
-    .update({ title, description })
+    .update({ title, description, updated_by: userId })
     .eq('id', documentId)
     .select('*')
     .single()
