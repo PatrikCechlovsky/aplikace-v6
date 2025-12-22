@@ -21,7 +21,15 @@ type Props = {
   initialValue: InviteFormValue
   onValueChange: (v: InviteFormValue) => void
   onDirtyChange?: (dirty: boolean) => void
+  /** 'standalone' = nový/existující, 'existingOnly' = pouze pro existujícího uživatele (v detailu) */
   variant?: 'standalone' | 'existingOnly'
+  /** pokud posíláš status (např. z detailu), můžeme zobrazit jemný hint a blokovat resend */
+  inviteState?: {
+    canSendInvite?: boolean | null
+    firstLoginAt?: string | null
+    status?: string | null
+    validUntil?: string | null
+  }
 }
 
 export default function InviteUserForm({
@@ -29,8 +37,22 @@ export default function InviteUserForm({
   onValueChange,
   onDirtyChange,
   variant = 'standalone',
+  inviteState,
 }: Props) {
   const [v, setV] = useState<InviteFormValue>(initialValue)
+
+  // V detailu uživatele (existingOnly) držíme režim vždy 'existing' a subjectId z preset hodnoty
+  useEffect(() => {
+    if (variant !== 'existingOnly') return
+    setV((p) => ({
+      ...p,
+      mode: 'existing',
+      subjectId: initialValue.subjectId ?? p.subjectId,
+      email: initialValue.email ?? p.email,
+      displayName: initialValue.displayName ?? p.displayName,
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variant, initialValue.subjectId, initialValue.email, initialValue.displayName])
 
   useEffect(() => {
     setV(initialValue)
@@ -40,12 +62,13 @@ export default function InviteUserForm({
     onValueChange(v)
   }, [v, onValueChange])
 
-  const setDirty = () => onDirtyChange?.(true)
-
-  // Users list jen pro standalone/existing režim
   const [users, setUsers] = useState<UsersListRow[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
+  const [roles, setRoles] = useState<{ code: string; name: string }[]>([])
+  const [loadingRoles, setLoadingRoles] = useState(false)
+
+  // load users only for standalone/existing
   useEffect(() => {
     if (variant !== 'standalone') return
     let cancelled = false
@@ -66,10 +89,7 @@ export default function InviteUserForm({
     }
   }, [variant])
 
-  // Role types
-  const [roles, setRoles] = useState<{ code: string; name: string }[]>([])
-  const [loadingRoles, setLoadingRoles] = useState(false)
-
+  // load roles always
   useEffect(() => {
     let cancelled = false
     const run = async () => {
@@ -77,11 +97,7 @@ export default function InviteUserForm({
       try {
         const rows = await fetchRoleTypes()
         if (cancelled) return
-        setRoles(
-          (rows ?? [])
-            .map((r: any) => ({ code: r.code, name: r.name }))
-            .filter((x: any) => !!x.code)
-        )
+        setRoles((rows ?? []).map((r: any) => ({ code: r.code, name: r.name })))
       } catch {
         if (!cancelled) setRoles([])
       } finally {
@@ -94,168 +110,142 @@ export default function InviteUserForm({
     }
   }, [])
 
-  // existingOnly => vždy existing
-  useEffect(() => {
-    if (variant !== 'existingOnly') return
-    setV((p) => ({
-      ...p,
-      mode: 'existing',
-      subjectId: initialValue.subjectId ?? p.subjectId,
-      email: initialValue.email ?? p.email,
-      displayName: initialValue.displayName ?? p.displayName,
-    }))
-  }, [variant, initialValue.subjectId, initialValue.email, initialValue.displayName])
+  const mode = variant === 'existingOnly' ? 'existing' : v.mode
 
-  const existingOptions = useMemo(() => {
-    return users
-      .filter((u) => !!u.email)
-      .map((u) => ({
-        id: u.id,
-        label: `${u.display_name}${u.email ? ` — ${u.email}` : ''}`,
-        email: u.email ?? '',
-        displayName: u.display_name ?? '',
-        roleCode: (u as any).role_code ?? '',
-      }))
-  }, [users])
+  const inviteBlockedReason = useMemo(() => {
+    if (!inviteState) return null
+    if (inviteState.firstLoginAt) return 'Uživatel už se přihlásil – pozvánka se znovu neposílá.'
+    if (inviteState.canSendInvite === false) return 'Pozvánku teď nelze odeslat (už existuje aktivní nebo je blokovaná).'
+    return null
+  }, [inviteState])
 
-  const roleSelectDisabled = loadingRoles || roles.length === 0
+  function markDirty() {
+    onDirtyChange?.(true)
+  }
 
   return (
     <div className="detail-form">
-      <div className="detail-form__hint">
-        Pozvi kolegu ke spolupráci. Po přijetí pozvánky získá přístup podle zvolené role.
-      </div>
-
       <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Pozvánka</h3>
+        <h3 className="detail-form__section-title">Pozvat ke spolupráci</h3>
 
-        <div className="detail-form__grid detail-form__grid--narrow">
-          {variant === 'standalone' && (
-            <div className="detail-form__field detail-form__field--span-6">
+        <div className="detail-form__hint" style={{ marginBottom: 10 }}>
+          Pozvánka slouží k přizvání uživatele do aplikace, aby mohl spolupracovat na tvých nemovitostech.
+          Později stejný mechanismus použijeme i pro pozvání nového pronajímatele (hlavní – platící entity).
+        </div>
+
+        {inviteBlockedReason && (
+          <div className="detail-form__hint" style={{ marginBottom: 10 }}>
+            {inviteBlockedReason}
+            {inviteState?.validUntil ? ` (platí do: ${inviteState.validUntil})` : ''}
+          </div>
+        )}
+
+        {variant === 'standalone' && (
+          <div className="detail-form__grid detail-form__grid--narrow" style={{ marginBottom: 8 }}>
+            <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">Režim</label>
-              <div className="detail-form__value">
-                <label className="detail-form__hint">
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', paddingTop: 8 }}>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <input
                     type="radio"
-                    checked={v.mode === 'existing'}
+                    checked={mode === 'existing'}
                     onChange={() => {
-                      setDirty()
                       setV((p) => ({ ...p, mode: 'existing' }))
+                      markDirty()
                     }}
-                  />{' '}
+                  />
                   Pozvat existujícího
                 </label>
 
-                <label className="detail-form__hint" style={{ marginLeft: 16 }}>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <input
                     type="radio"
-                    checked={v.mode === 'new'}
+                    checked={mode === 'new'}
                     onChange={() => {
-                      setDirty()
-                      setV((p) => ({ ...p, mode: 'new', subjectId: null }))
+                      setV((p) => ({ ...p, mode: 'new', subjectId: null, email: '', displayName: '' }))
+                      markDirty()
                     }}
-                  />{' '}
+                  />
                   Pozvat nového
                 </label>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {v.mode === 'existing' && variant === 'standalone' && (
+        <div className="detail-form__grid detail-form__grid--narrow">
+          {mode === 'existing' && variant === 'standalone' && (
             <div className="detail-form__field detail-form__field--span-6">
               <label className="detail-form__label">Uživatel</label>
               <select
                 className="detail-form__input"
                 value={v.subjectId ?? ''}
+                disabled={loadingUsers}
                 onChange={(e) => {
-                  setDirty()
-                  const id = e.target.value || null
-                  const found = existingOptions.find((o) => o.id === id)
+                  const nextId = e.target.value || null
+                  const picked = users.find((u: any) => u.id === nextId) as any
                   setV((p) => ({
                     ...p,
-                    subjectId: id,
-                    email: found?.email ?? p.email,
-                    displayName: found?.displayName ?? p.displayName,
-                    roleCode: found?.roleCode ?? p.roleCode,
+                    subjectId: nextId,
+                    email: picked?.email ?? p.email,
+                    displayName: picked?.display_name ?? picked?.displayName ?? p.displayName,
                   }))
+                  markDirty()
                 }}
               >
-                <option value="">{loadingUsers ? 'Načítám…' : '— vyber —'}</option>
-                {existingOptions.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
+                <option value="">{loadingUsers ? 'Načítám…' : '— vyber uživatele —'}</option>
+                {users.map((u: any) => (
+                  <option key={u.id} value={u.id}>
+                    {(u.display_name ?? u.displayName ?? 'Uživatel') + (u.email ? ` (${u.email})` : '')}
                   </option>
                 ))}
               </select>
             </div>
           )}
 
-          {/* NEW: užší email + role */}
-          {v.mode === 'new' && (
-            <div className="detail-form__field detail-form__field--span-3">
-              <label className="detail-form__label">Email</label>
-              <input
-                className="detail-form__input"
-                value={v.email}
-                onChange={(e) => {
-                  setDirty()
-                  const email = e.target.value
-                  setV((p) => ({
-                    ...p,
-                    email,
-                    displayName: p.displayName || (email.includes('@') ? email.split('@')[0] : p.displayName),
-                  }))
-                }}
-                placeholder="např. uzivatel@email.cz"
-              />
-            </div>
-          )}
+          {/* Email – užší */}
+          <div className="detail-form__field detail-form__field--span-3">
+            <label className="detail-form__label">Email</label>
+            <input
+              className={'detail-form__input' + (mode === 'existing' && variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
+              value={v.email}
+              readOnly={variant === 'existingOnly'} // v detailu existujícího read-only
+              onChange={(e) => {
+                setV((p) => ({ ...p, email: e.target.value }))
+                markDirty()
+              }}
+              placeholder="např. uzivatel@email.cz"
+            />
+          </div>
 
-          {v.mode === 'new' && (
-            <div className="detail-form__field detail-form__field--span-3">
-              <label className="detail-form__label">Zobrazované jméno</label>
-              <input
-                className="detail-form__input"
-                value={v.displayName}
-                onChange={(e) => {
-                  setDirty()
-                  setV((p) => ({ ...p, displayName: e.target.value }))
-                }}
-                placeholder="volitelné"
-              />
-            </div>
-          )}
+          {/* Zobrazované jméno */}
+          <div className="detail-form__field detail-form__field--span-3">
+            <label className="detail-form__label">Zobrazované jméno</label>
+            <input
+              className={'detail-form__input' + (variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
+              value={v.displayName}
+              readOnly={variant === 'existingOnly'}
+              onChange={(e) => {
+                setV((p) => ({ ...p, displayName: e.target.value }))
+                markDirty()
+              }}
+              placeholder="volitelné (fallback z emailu)"
+            />
+          </div>
 
-          {/* existingOnly / existing: email+name read-only (užší) */}
-          {(variant === 'existingOnly' || (v.mode === 'existing' && variant !== 'standalone')) ? null : null}
-
-          {variant === 'existingOnly' && (
-            <>
-              <div className="detail-form__field detail-form__field--span-3">
-                <label className="detail-form__label">Email</label>
-                <input className="detail-form__input detail-form__input--readonly" value={v.email} readOnly />
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-3">
-                <label className="detail-form__label">Zobrazované jméno</label>
-                <input className="detail-form__input detail-form__input--readonly" value={v.displayName} readOnly />
-              </div>
-            </>
-          )}
-
-          {/* Role: užší */}
-          <div className="detail-form__field detail-form__field--span-2">
+          {/* Role – užší */}
+          <div className="detail-form__field detail-form__field--span-3">
             <label className="detail-form__label">Role</label>
             <select
               className="detail-form__input"
               value={v.roleCode}
+              disabled={loadingRoles}
               onChange={(e) => {
-                setDirty()
                 setV((p) => ({ ...p, roleCode: e.target.value }))
+                markDirty()
               }}
-              disabled={roleSelectDisabled}
             >
-              <option value="">{loadingRoles ? 'Načítám…' : '— vyber —'}</option>
+              <option value="">{loadingRoles ? 'Načítám…' : '— vyber roli —'}</option>
               {roles.map((r) => (
                 <option key={r.code} value={r.code}>
                   {r.name}
@@ -264,17 +254,17 @@ export default function InviteUserForm({
             </select>
           </div>
 
-          <div className="detail-form__field detail-form__field--span-4">
+          <div className="detail-form__field detail-form__field--span-6">
             <label className="detail-form__label">Poznámka</label>
             <textarea
               className="detail-form__input"
               value={v.note}
               onChange={(e) => {
-                setDirty()
                 setV((p) => ({ ...p, note: e.target.value }))
+                markDirty()
               }}
-              rows={4}
               placeholder="volitelné"
+              rows={4}
             />
           </div>
         </div>
