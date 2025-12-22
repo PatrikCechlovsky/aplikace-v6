@@ -1,18 +1,17 @@
-/*
- * FILE: app/UI/detail-sections/DetailAttachmentsSection.tsx
- * PURPOSE:
- *   UI sekce „Přílohy“ pro DetailView (sekce id: 'attachments').
- *
- * FEATURES:
- *   - READ: list příloh (v_document_latest_version)
- *   - READ: list verzí (document_versions)
- *   - OPEN: signed URL ze Storage (bucket documents)
- *   - CREATE: přidat přílohu (upload + insert documents + document_versions)
- */
-
 'use client'
 
+/**
+ * FILE: app/UI/detail-sections/DetailAttachmentsSection.tsx
+ *
+ * PURPOSE:
+ * Detail tab "Přílohy" – jednotný UI toolbar (jako CommonActions) + list příloh + upload.
+ * - Vlevo: filtr + zobrazit archivované
+ * - Vpravo: grafická tlačítka (ikona/label se chová stejně jako CommonActions)
+ * - Akce: Přidat přílohu, Uložit (bez zavření), Zavřít (bez uložení + kontrola rozpracovanosti)
+ */
+
 import React, { useEffect, useMemo, useState } from 'react'
+import { getIcon } from '@/app/UI/icons'
 import {
   addAttachmentVersionWithUpload,
   createAttachmentWithUpload,
@@ -29,7 +28,38 @@ export type DetailAttachmentsSectionProps = {
   mode: 'view' | 'edit' | 'create'
 }
 
+type LocalActionId = 'addAttachment' | 'saveAttachment' | 'closePanel'
+
+const LOCAL_ACTIONS: Record<
+  LocalActionId,
+  {
+    icon: string
+    label: string
+    title: string
+  }
+> = {
+  addAttachment: {
+    icon: 'add',
+    label: 'Přidat přílohu',
+    title: 'Přidat přílohu',
+  },
+  saveAttachment: {
+    icon: 'save',
+    label: 'Uložit',
+    title: 'Uložit (bez zavření)',
+  },
+  closePanel: {
+    icon: 'close',
+    label: 'Zavřít',
+    title: 'Zavřít bez uložení',
+  },
+}
+
 export default function DetailAttachmentsSection({ entityType, entityId, mode }: DetailAttachmentsSectionProps) {
+  /* =========================
+     STATE
+     ========================= */
+
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -39,21 +69,23 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rows, setRows] = useState<AttachmentRow[]>([])
 
-  // Verze
+  // Verze – rozbalování (on-demand) + cache
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
   const [versionsByDocId, setVersionsByDocId] = useState<Record<string, AttachmentVersionRow[]>>({})
   const [versionsLoadingId, setVersionsLoadingId] = useState<string | null>(null)
 
-  // Přidání přílohy
-  const [showAdd, setShowAdd] = useState(false)
+  // Přidání přílohy – panel
+  const [panelOpen, setPanelOpen] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [newFile, setNewFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const addDirty = useMemo(() => {
-    return !!newTitle.trim() || !!newDesc.trim() || !!newFile
-  }, [newTitle, newDesc, newFile])
+  const panelDirty = useMemo(() => !!newTitle.trim() || !!newDesc.trim() || !!newFile, [newTitle, newDesc, newFile])
+
+  /* =========================
+     LOADERS
+     ========================= */
 
   async function loadAttachments() {
     setLoading(true)
@@ -74,12 +106,37 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canLoad, entityType, entityId, includeArchived])
 
+  /* =========================
+     HELPERS
+     ========================= */
+
+  function resetPanel() {
+    setNewTitle('')
+    setNewDesc('')
+    setNewFile(null)
+  }
+
+  const filteredRows = useMemo(() => {
+    const t = filterText.trim().toLowerCase()
+    if (!t) return rows
+    return rows.filter((r) => {
+      const a = (r.title ?? '').toLowerCase()
+      const b = (r.file_name ?? '').toLowerCase()
+      return a.includes(t) || b.includes(t)
+    })
+  }, [rows, filterText])
+
   async function openFileByPath(filePath: string) {
     const url = await getAttachmentSignedUrl({ filePath, expiresInSeconds: 60 })
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
+  /* =========================
+     HANDLERS
+     ========================= */
+
   async function handleOpenLatest(row: AttachmentRow) {
+    setErrorText(null)
     try {
       await openFileByPath(row.file_path)
     } catch (e: any) {
@@ -88,6 +145,7 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
   }
 
   async function handleOpenVersion(v: AttachmentVersionRow) {
+    setErrorText(null)
     try {
       await openFileByPath(v.file_path)
     } catch (e: any) {
@@ -100,10 +158,12 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
       setExpandedDocId(null)
       return
     }
+
     setExpandedDocId(documentId)
 
     if (versionsByDocId[documentId]) return
 
+    setErrorText(null)
     try {
       setVersionsLoadingId(documentId)
       const versions = await listAttachmentVersions({ documentId, includeArchived: true })
@@ -115,40 +175,51 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
     }
   }
 
-  function resetAddForm() {
-    setNewTitle('')
-    setNewDesc('')
-    setNewFile(null)
+  async function handleAddNewVersion(documentId: string, file: File) {
+    setErrorText(null)
+    try {
+      await addAttachmentVersionWithUpload({ entityType, entityId, documentId, file })
+      await loadAttachments()
+
+      // invalidate cache versions
+      setVersionsByDocId((prev) => {
+        const next = { ...prev }
+        delete next[documentId]
+        return next
+      })
+
+      // re-open versions if it was expanded
+      if (expandedDocId === documentId) {
+        setExpandedDocId(null)
+        setTimeout(() => void toggleVersions(documentId), 0)
+      }
+    } catch (e: any) {
+      setErrorText(e?.message ?? 'Nepodařilo se přidat verzi.')
+    }
   }
 
   function handleActionAdd() {
     setErrorText(null)
-    setShowAdd(true)
+    setPanelOpen(true)
   }
 
   function handleActionClose() {
     setErrorText(null)
-    if (showAdd && addDirty) {
+    if (panelOpen && panelDirty) {
       const ok = confirm('Zavřít bez uložení? Rozpracovaná příloha bude ztracena.')
       if (!ok) return
     }
-    setShowAdd(false)
-    resetAddForm()
+    setPanelOpen(false)
+    resetPanel()
   }
 
   async function handleActionSave() {
     setErrorText(null)
-    if (!showAdd) return
+    if (!panelOpen) return
 
     const title = newTitle.trim()
-    if (!title) {
-      setErrorText('Chybí název přílohy.')
-      return
-    }
-    if (!newFile) {
-      setErrorText('Vyber soubor.')
-      return
-    }
+    if (!title) return setErrorText('Chybí název přílohy.')
+    if (!newFile) return setErrorText('Vyber soubor.')
 
     setSaving(true)
     try {
@@ -160,9 +231,8 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
         file: newFile,
       })
 
-      // reset a refresh
-      setShowAdd(false)
-      resetAddForm()
+      setPanelOpen(false)
+      resetPanel()
       await loadAttachments()
     } catch (e: any) {
       setErrorText(e?.message ?? 'Nepodařilo se přidat přílohu.')
@@ -171,36 +241,18 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
     }
   }
 
-  async function handleAddNewVersion(documentId: string, file: File) {
-    setErrorText(null)
-    try {
-      await addAttachmentVersionWithUpload({ entityType, entityId, documentId, file })
-      await loadAttachments()
-
-      // invalidate cache verzí pro daný doc
-      setVersionsByDocId((prev) => {
-        const next = { ...prev }
-        delete next[documentId]
-        return next
-      })
-      if (expandedDocId === documentId) {
-        setExpandedDocId(null)
-        setTimeout(() => void toggleVersions(documentId), 0)
-      }
-    } catch (e: any) {
-      setErrorText(e?.message ?? 'Nepodařilo se přidat verzi.')
-    }
+  function onActionClick(id: LocalActionId) {
+    if (id === 'addAttachment') return handleActionAdd()
+    if (id === 'saveAttachment') return void handleActionSave()
+    if (id === 'closePanel') return handleActionClose()
   }
 
-  const filteredRows = useMemo(() => {
-    const t = filterText.trim().toLowerCase()
-    if (!t) return rows
-    return rows.filter((r) => {
-      const a = (r.title ?? '').toLowerCase()
-      const b = (r.file_name ?? '').toLowerCase()
-      return a.includes(t) || b.includes(t)
-    })
-  }, [rows, filterText])
+  const saveDisabled = !panelOpen || saving
+  const closeDisabled = !panelOpen && !panelDirty
+
+  /* =========================
+     RENDER
+     ========================= */
 
   if (!canLoad) {
     return (
@@ -216,18 +268,12 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
 
   return (
     <div className="detail-view__section">
-      {/* ======= TOOLBAR (vlevo filtr + archiv / vpravo akce) ======= */}
+      {/* =========================================================
+         TOOLBAR (vlevo filtr + archiv, vpravo akce jako CommonActions)
+         ========================================================= */}
       <div className="detail-form__section">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            gap: 12,
-            flexWrap: 'wrap',
-          }}
-        >
-          {/* Left: filter + archived */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          {/* LEFT */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div>
               <label className="detail-form__label">Filtr</label>
@@ -236,12 +282,12 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 placeholder="hledat v názvu / souboru…"
-                style={{ minWidth: 260 }}
+                style={{ minWidth: 280 }}
               />
             </div>
 
             <div>
-              <label className="detail-form__label"> </label>
+              <label className="detail-form__label">&nbsp;</label>
               <label className="detail-form__checkbox" style={{ marginTop: 6 }}>
                 <input
                   type="checkbox"
@@ -253,44 +299,36 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
             </div>
           </div>
 
-          {/* Right: actions (ikonová tlačítka na jednom místě) */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              type="button"
-              className="detail-attachments__iconbtn"
-              onClick={handleActionAdd}
-              title="Přidat přílohu"
-              aria-label="Přidat přílohu"
-            >
-              ➕
-            </button>
+          {/* RIGHT (oranžová oblast) */}
+          <div className="common-actions" aria-label="Akce příloh">
+            {(['addAttachment', 'saveAttachment', 'closePanel'] as LocalActionId[]).map((id) => {
+              const def = LOCAL_ACTIONS[id]
+              const disabled =
+                (id === 'saveAttachment' && saveDisabled) || (id === 'closePanel' && closeDisabled) || false
 
-            <button
-              type="button"
-              className="detail-attachments__iconbtn"
-              onClick={handleActionSave}
-              disabled={!showAdd || saving}
-              title="Uložit"
-              aria-label="Uložit"
-            >
-              💾
-            </button>
-
-            <button
-              type="button"
-              className="detail-attachments__iconbtn"
-              onClick={handleActionClose}
-              disabled={!showAdd && !addDirty}
-              title="Zavřít"
-              aria-label="Zavřít"
-            >
-              ✖
-            </button>
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="common-actions__btn"
+                  disabled={disabled}
+                  title={def.title}
+                  onClick={() => !disabled && onActionClick(id)}
+                >
+                  <span className="common-actions__icon" aria-hidden="true">
+                    {getIcon(def.icon as any)}
+                  </span>
+                  <span className="common-actions__label">{def.label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* ======= ADD PANEL ======= */}
-        {showAdd && (
+        {/* =========================================================
+           ADD PANEL
+           ========================================================= */}
+        {panelOpen && (
           <div className="detail-form" style={{ marginTop: 10 }}>
             <section className="detail-form__section">
               <h3 className="detail-form__section-title">Nová příloha</h3>
@@ -328,7 +366,8 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
               </div>
 
               <div className="detail-form__hint" style={{ marginTop: 8 }}>
-                Uložit můžeš ikonou 💾 vpravo nahoře.
+                Uložit můžeš tlačítkem <strong>Uložit</strong> (vpravo nahoře). Zavřít bez uložení tlačítkem{' '}
+                <strong>Zavřít</strong>.
               </div>
             </section>
           </div>
@@ -399,24 +438,14 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                           {(versionsByDocId[r.id] ?? []).map((v) => (
                             <div
                               key={v.id}
-                              style={{
-                                display: 'flex',
-                                gap: 8,
-                                alignItems: 'center',
-                                marginTop: 6,
-                                flexWrap: 'wrap',
-                              }}
+                              style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}
                             >
                               <span>
                                 v{String(v.version_number).padStart(3, '0')} — {v.file_name}
                                 {v.is_archived ? ' (archiv)' : ''}
                               </span>
 
-                              <button
-                                type="button"
-                                className="detail-attachments__link"
-                                onClick={() => handleOpenVersion(v)}
-                              >
+                              <button type="button" className="detail-attachments__link" onClick={() => handleOpenVersion(v)}>
                                 Otevřít
                               </button>
                             </div>
@@ -431,32 +460,6 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
           </section>
         </div>
       )}
-
-      {/* Minimal CSS (aby bylo vše bez dalších souborů) */}
-      <style jsx>{`
-        .detail-attachments__iconbtn {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          border: 1px solid rgba(0, 0, 0, 0.12);
-          background: white;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          line-height: 1;
-        }
-        .detail-attachments__iconbtn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .detail-attachments__iconbtn:hover:not(:disabled) {
-          border-color: rgba(0, 0, 0, 0.25);
-        }
-      `}</style>
     </div>
   )
 }
-
-
