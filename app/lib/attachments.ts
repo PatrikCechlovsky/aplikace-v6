@@ -28,11 +28,12 @@ export type AttachmentRow = {
   created_at: string
   created_by: string | null
 
-  // volitelně (pokud je ve view / tabulce)
   updated_at?: string | null
   updated_by?: string | null
 
-  // z view `v_document_latest_version`
+  // nové: view může vracet už rovnou jméno (join na subjects)
+  updated_by_name?: string | null
+
   version_id: string
   version_number: number
   file_path: string
@@ -41,6 +42,7 @@ export type AttachmentRow = {
   file_size: number | null
   version_created_at: string
   version_created_by?: string | null
+  version_created_by_name?: string | null
   version_is_archived: boolean
 }
 
@@ -56,6 +58,8 @@ export type AttachmentVersionRow = {
   created_at: string
   created_by: string | null
 }
+
+export type UserNameMap = Record<string, string>
 
 function pad3(n: number) {
   return String(n).padStart(3, '0')
@@ -73,6 +77,36 @@ function logDebug(...args: any[]) {
 async function getCurrentUserId() {
   const { data } = await supabase.auth.getUser()
   return data.user?.id ?? null
+}
+
+function uniq(ids: (string | null | undefined)[]) {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const id of ids) {
+    if (!id) continue
+    if (seen.has(id)) continue
+    seen.add(id)
+    out.push(id)
+  }
+  return out
+}
+
+/**
+ * Načte lidská jména (subjects.display_name) pro dané userId (uuid).
+ * Používáme jako fallback pro audit, když view ještě nevrací *_name nebo je null.
+ */
+export async function loadUserDisplayNames(userIds: (string | null | undefined)[]): Promise<UserNameMap> {
+  const ids = uniq(userIds)
+  if (ids.length === 0) return {}
+
+  const { data, error } = await supabase.from('subjects').select('id, display_name').in('id', ids)
+  if (error) throw error
+
+  const map: UserNameMap = {}
+  for (const row of data ?? []) {
+    if (row?.id) map[row.id] = row.display_name ?? ''
+  }
+  return map
 }
 
 /* =========================================================
@@ -204,7 +238,7 @@ export async function createAttachmentWithUpload(input: {
     mime_type: file.type || null,
     file_size: file.size,
     is_archived: false,
-    created_by: userId,
+    created_by: userId, // ✅ důležité pro jméno "Nahráno kým"
   })
 
   if (verErr) throw verErr
@@ -240,7 +274,7 @@ export async function addAttachmentVersionWithUpload(input: {
     mime_type: file.type || null,
     file_size: file.size,
     is_archived: false,
-    created_by: userId,
+    created_by: userId, // ✅ důležité pro jméno v historii verzí
   })
 
   if (error) throw error
@@ -258,7 +292,12 @@ export async function updateAttachmentMetadata(input: { documentId: string; titl
 
   const { data, error } = await supabase
     .from('documents')
-    .update({ title, description, updated_by: userId })
+    .update({
+      title,
+      description,
+      updated_by: userId, // ✅ pro "Změněno kým"
+      // updated_at ti nastavuje DB trigger (doporučeno)
+    })
     .eq('id', documentId)
     .select('*')
     .single()
