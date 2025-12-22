@@ -312,20 +312,23 @@ export default function UsersTile({
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     if (viewMode === 'invite') return ['sendInvite', 'close']
-
+  
+    // Detail: nabídni "Přílohy…" všude mimo invite záložku
+    const withAttachments = (base: CommonActionId[]) =>
+      detailActiveSectionId === 'invite' ? base : [...base, 'attachments']
+  
     if (viewMode === 'read') {
       if (detailActiveSectionId === 'invite') return canInviteDetail ? ['sendInvite', 'close'] : ['close']
-      return ['edit', 'close']
+      return withAttachments(['edit', 'close'])
     }
-
+  
     if (viewMode === 'edit') {
-      return canInviteDetail ? ['save', 'invite', 'close'] : ['save', 'close']
+      return withAttachments(canInviteDetail ? ['save', 'invite', 'close'] : ['save', 'close'])
     }
 
-    // create
-    return ['save', 'close']
-  }, [viewMode, detailActiveSectionId, canInviteDetail])
-
+  // create
+  return withAttachments(['save', 'close'])
+}, [viewMode, detailActiveSectionId, canInviteDetail])
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
@@ -351,7 +354,21 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-
+        if (id === 'attachments') {
+          if (!detailUser?.id?.trim() || !detailUser.id.trim()) {
+            alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+            return
+          }
+          alert(`TODO: Správa příloh pro user ${detailUser.id}`)
+          return
+        }
+        if (id === 'attachments') {
+          if (isDirty) {
+            alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+            return
+          }
+          ...
+        }
         // detail/invite -> list
         if (viewMode === 'invite') {
           closeToList()
