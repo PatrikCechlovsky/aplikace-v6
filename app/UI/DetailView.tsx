@@ -7,6 +7,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
 import DetailAttachmentsSection from './detail-sections/DetailAttachmentsSection'
+import AttachmentOverview from '@/app/UI/detail-sections/AttachmentOverview'
 
 export type DetailViewMode = 'create' | 'edit' | 'view'
 
