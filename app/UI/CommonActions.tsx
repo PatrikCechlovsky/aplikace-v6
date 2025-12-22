@@ -175,7 +175,9 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     icon: 'invite',
     label: { cs: 'Odeslat pozvánku', en: 'Send invite' },
     description: { cs: 'Odešle pozvánku e-mailem.', en: 'Sends invitation email.' },
-    hideWhen: ['read', 'edit', 'create'], // ✅ zobrazíme si to řízeně z tile (na invite obrazovce)
+    // Pozn.: nevyžadujeme isDirty – validace probíhá v Invite logice.
+    // Skryjeme jen v listu; ostatní režimy si tile/forma řídí seznamem actions.
+    hideWhen: ['list'],
   },
 
   columnSettings: {
