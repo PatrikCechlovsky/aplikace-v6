@@ -21,9 +21,11 @@ import {
   getAttachmentSignedUrl,
   listAttachments,
   listAttachmentVersions,
-  updateAttachmentMetadata,
+  loadUserDisplayNames,
   type AttachmentRow,
   type AttachmentVersionRow,
+  type UserNameMap,
+  updateAttachmentMetadata,
 } from '@/app/lib/attachments'
 
 export type DetailAttachmentsSectionProps = {
@@ -57,6 +59,10 @@ function formatDt(s?: string | null) {
   }
 }
 
+function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
+  return { ...a, ...b }
+}
+
 export default function DetailAttachmentsSection({ entityType, entityId, mode }: DetailAttachmentsSectionProps) {
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
@@ -66,6 +72,9 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rows, setRows] = useState<AttachmentRow[]>([])
+
+  // ✅ mapování userId -> display_name (fallback, když view nemá *_name nebo je null)
+  const [nameById, setNameById] = useState<UserNameMap>({})
 
   // Verze – rozbalování (on-demand) + cache
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
@@ -93,18 +102,37 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
     versionInputRefs.current[documentId] = el
   }, [])
 
+  const refreshNamesFromRows = useCallback(async (items: AttachmentRow[]) => {
+    const ids: (string | null | undefined)[] = []
+    for (const r of items) {
+      ids.push(r.updated_by ?? null)
+      ids.push(r.version_created_by ?? null)
+      ids.push(r.created_by ?? null)
+    }
+    const map = await loadUserDisplayNames(ids)
+    setNameById((prev) => mergeNameMaps(prev, map))
+  }, [])
+
+  const refreshNamesFromVersions = useCallback(async (items: AttachmentVersionRow[]) => {
+    const ids = items.map((v) => v.created_by)
+    const map = await loadUserDisplayNames(ids)
+    setNameById((prev) => mergeNameMaps(prev, map))
+  }, [])
+
   const loadAttachments = useCallback(async () => {
     setLoading(true)
     setErrorText(null)
     try {
       const data = await listAttachments({ entityType, entityId, includeArchived })
       setRows(data)
+      // ✅ dotáhneme jména jako fallback (bez závislosti na view)
+      await refreshNamesFromRows(data)
     } catch (e: any) {
       setErrorText(e?.message ?? 'Chyba načítání příloh.')
     } finally {
       setLoading(false)
     }
-  }, [entityType, entityId, includeArchived])
+  }, [entityType, entityId, includeArchived, refreshNamesFromRows])
 
   useEffect(() => {
     if (!canLoad) return
@@ -232,13 +260,14 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
         setVersionsLoadingId(documentId)
         const versions = await listAttachmentVersions({ documentId, includeArchived: true })
         setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
+        await refreshNamesFromVersions(versions)
       } catch (err: any) {
         setErrorText(err?.message ?? 'Chyba načítání verzí.')
       } finally {
         setVersionsLoadingId(null)
       }
     },
-    [expandedDocId, versionsByDocId]
+    [expandedDocId, versionsByDocId, refreshNamesFromVersions]
   )
 
   const handleRequestNewVersion = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
@@ -336,6 +365,15 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
 
   const saveDisabled = !panelOpen || saving
   const closeDisabled = !panelOpen && !panelDirty
+
+  const resolveName = useCallback(
+    (nameFromView: string | null | undefined, userId: string | null | undefined) => {
+      if (nameFromView && nameFromView.trim()) return nameFromView
+      if (userId && nameById[userId]) return nameById[userId]
+      return '—'
+    },
+    [nameById]
+  )
 
   if (!canLoad) {
     return (
@@ -487,6 +525,9 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                 const docUpdatedAt = (r.updated_at ?? null) as any
                 const docUpdatedBy = (r.updated_by ?? null) as any
 
+                const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
+                const updatedName = resolveName(r.updated_by_name ?? null, r.updated_by ?? null)
+
                 return (
                   <React.Fragment key={r.id}>
                     <div className="detail-attachments__row" role="row">
@@ -530,14 +571,14 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                       <div className="detail-attachments__cell" role="cell">
                         <div className="detail-attachments__meta">
                           <div>{formatDt(r.version_created_at ?? r.created_at)}</div>
-                          <div className="detail-attachments__muted">{r.created_by ?? '—'}</div>
+                          <div className="detail-attachments__muted">{uploadedName}</div>
                         </div>
                       </div>
 
                       <div className="detail-attachments__cell" role="cell">
                         <div className="detail-attachments__meta">
                           <div>{formatDt(docUpdatedAt)}</div>
-                          <div className="detail-attachments__muted">{docUpdatedBy ?? '—'}</div>
+                          <div className="detail-attachments__muted">{updatedName}</div>
                         </div>
                       </div>
 
@@ -607,23 +648,27 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                             <>Žádné verze.</>
                           ) : (
                             <div className="detail-attachments__versions-list">
-                              {(versionsByDocId[r.id] ?? []).map((v) => (
-                                <div key={v.id} className="detail-attachments__version-item">
-                                  <span className="detail-attachments__mono">
-                                    v{String(v.version_number).padStart(3, '0')}
-                                  </span>
-                                  <span>{v.file_name}</span>
-                                  <span className="detail-attachments__muted">{formatDt(v.created_at)}</span>
-                                  <button
-                                    type="button"
-                                    className="detail-attachments__link"
-                                    data-path={v.file_path}
-                                    onClick={handleOpenVersion}
-                                  >
-                                    Otevřít
-                                  </button>
-                                </div>
-                              ))}
+                              {(versionsByDocId[r.id] ?? []).map((v) => {
+                                const vName = resolveName(null, v.created_by ?? null)
+                                return (
+                                  <div key={v.id} className="detail-attachments__version-item">
+                                    <span className="detail-attachments__mono">
+                                      v{String(v.version_number).padStart(3, '0')}
+                                    </span>
+                                    <span>{v.file_name}</span>
+                                    <span className="detail-attachments__muted">{formatDt(v.created_at)}</span>
+                                    <span className="detail-attachments__muted">{vName}</span>
+                                    <button
+                                      type="button"
+                                      className="detail-attachments__link"
+                                      data-path={v.file_path}
+                                      onClick={handleOpenVersion}
+                                    >
+                                      Otevřít
+                                    </button>
+                                  </div>
+                                )
+                              })}
                             </div>
                           )}
                         </div>
