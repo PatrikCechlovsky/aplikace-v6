@@ -1,10 +1,9 @@
-// FILE: app/UI/DetailView.tsx
-// CHANGE: oprava selectu rolí v edit/create (neztrácí hodnotu, i když nejsou options)
-// CHANGE: přidána sekce 'invite' + možnost otevřít detail na konkrétní sekci (initialActiveId) + callback onActiveSectionChange
-// FIX (2025-12-22): taby šly přepínat, ale useEffect resetoval activeId zpět na initialActiveId při každém renderu,
-// protože se často mění "sections" (ctx je nový objekt). Teď initialActiveId aplikujeme jen při změně.
-
 'use client'
+
+// FILE: app/UI/DetailView.tsx
+// FIX: Tabs se resetovaly na initialActiveId, protože effect běžel při každé změně `sections`.
+//      To se děje často, protože `ctx` bývá nový objekt -> `sections` se mění -> reset active tab.
+//      Nově initialActiveId aplikujeme jen když se skutečně změnilo (přechod na jiný záznam / deep-link).
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
@@ -40,13 +39,11 @@ export type RolesData = {
 export type RolesUi = {
   canEdit?: boolean
   mode?: DetailViewMode
-  /** Controlled hodnota pro select v edit/create (doporučeno: držet ve formuláři) */
   roleCode?: string | null
   onChangeRoleCode?: (roleCode: string) => void
 }
 
 export type DetailViewCtx = {
-  /** Povinné pro systémové sekce (Přílohy, Systém) */
   entityType?: string
   entityId?: string
   mode?: DetailViewMode
@@ -56,9 +53,7 @@ export type DetailViewCtx = {
   rolesData?: RolesData
   rolesUi?: RolesUi
 
-  /** Volitelné rozšíření sekce Systém (bloky pod Entity/ID). */
   systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
-  /** Pokud chceš úplně vlastní obsah sekce Systém (pod základními poli). */
   systemContent?: React.ReactNode
 }
 
@@ -75,7 +70,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     id: 'invite',
     label: 'Pozvánka',
     order: 15,
-    // zobrazí se jen pokud parent předá inviteContent
     visibleWhen: (ctx) => !!(ctx as any)?.inviteContent,
     render: (ctx) => (ctx as any)?.inviteContent ?? null,
   },
@@ -95,13 +89,11 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       const permissions = data?.permissions ?? []
       const options = data?.availableRoles ?? []
 
-      // Zajisti, že aktuální role je v options (když číselník ještě není načtený)
       const ensuredOptions =
         role?.code && !options.some((r) => r.code === role.code)
           ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...options]
           : options
 
-      // Controlled hodnota: preferuj UI stav, fallback na aktuální roli
       const selectedCode = (ui?.roleCode ?? role?.code ?? '') as string
 
       return (
@@ -218,7 +210,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     },
   },
 
-  // ostatní sekce – beze změny
   users: { id: 'users', label: 'Uživatelé', order: 30, render: () => null },
   equipment: { id: 'equipment', label: 'Vybavení', order: 40, render: () => null },
   accounts: { id: 'accounts', label: 'Účty', order: 50, render: () => null },
@@ -267,7 +258,7 @@ export default function DetailView<Ctx = unknown>({
 
   const [activeId, setActiveId] = useState<DetailSectionId>(defaultActive)
 
-  // ✅ Apply initialActiveId pouze když se ZMĚNÍ (ne pokaždé při re-renderu/změně sections)
+  // ✅ Initial tab apply: jen když se initialActiveId skutečně změnilo (ne při každém přerenderu)
   const lastInitialAppliedRef = useRef<DetailSectionId | null>(null)
 
   useEffect(() => {
@@ -278,7 +269,8 @@ export default function DetailView<Ctx = unknown>({
       lastInitialAppliedRef.current = initialActiveId
       setActiveId(initialActiveId)
     }
-  }, [initialActiveId, sections])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialActiveId]) // ⚠️ záměrně NEzávisíme na `sections`, aby to neresetovalo aktivní tab
 
   // ✅ Když aktivní záložka přestane existovat (např. zmizí Pozvánka), přepni na první dostupnou
   useEffect(() => {
@@ -287,7 +279,6 @@ export default function DetailView<Ctx = unknown>({
     }
   }, [sections, activeId])
 
-  // Report aktivní sekci parentovi (pro CommonActions režim)
   useEffect(() => {
     onActiveSectionChange?.(activeId)
   }, [activeId, onActiveSectionChange])
@@ -298,10 +289,15 @@ export default function DetailView<Ctx = unknown>({
   return (
     <div className="detail-view">
       {tabs.length > 1 && (
-        <DetailTabs items={tabs} activeId={activeSection?.id ?? defaultActive} onChange={(id) => setActiveId(id as any)} />
+        <DetailTabs
+          items={tabs}
+          activeId={activeSection?.id ?? defaultActive}
+          onChange={(id) => setActiveId(id as any)}
+        />
       )}
 
       {activeSection && <section id={`detail-section-${activeSection.id}`}>{activeSection.render(safeCtx)}</section>}
+      {(!activeSection && children) || null}
     </div>
   )
 }
