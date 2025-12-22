@@ -363,27 +363,19 @@ export default function UserDetailFrame({
     return base
   }, [canShowInviteTab])
 
+    // Map ViewMode -> DetailViewMode (DetailView nezná "list")
+  const detailMode: 'create' | 'edit' | 'view' =
+    viewMode === 'read'
+      ? 'view'
+      : viewMode === 'edit'
+        ? 'edit'
+        : viewMode === 'create'
+          ? 'create'
+          : 'view' // fallback pro případ, že sem omylem přijde "list"
+
   return (
     <DetailView
-      // Map ViewMode -> DetailViewMode (DetailView nezná "list")
-      const detailMode: 'create' | 'edit' | 'view' =
-        viewMode === 'read' ? 'view' :
-        viewMode === 'edit' ? 'edit' :
-        viewMode === 'create' ? 'create' :
-        'view' // fallback pro případ, že sem omylem přijde "list"
-      
-      ...
-      
-      <DetailView
-        mode={detailMode}
-        sectionIds={sectionIds}
-        initialActiveId={initialSectionId}
-        onActiveSectionChange={(id) => {
-          setActiveSectionId(id)
-          onActiveSectionChange?.(id)
-        }}
-        ctx={...}
-      />
+      mode={detailMode}
       sectionIds={sectionIds}
       initialActiveId={initialSectionId}
       onActiveSectionChange={(id) => {
@@ -423,3 +415,4 @@ export default function UserDetailFrame({
     />
   )
 }
+
