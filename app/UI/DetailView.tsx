@@ -258,6 +258,191 @@ export default function DetailView<Ctx = unknown>({
   useEffect(() => {
     onActiveSectionChange?.(activeId)
   }, [activeId, onActiveSectionChange])
+// FILE: app/UI/DetailView.tsx
+// CHANGE: oprava selectu rolí v edit/create (neztrácí hodnotu, i když nejsou options)
+// CHANGE: přidána sekce 'invite' + možnost otevřít detail na konkrétní sekci (initialActiveId) + callback onActiveSectionChange
+
+'use client'
+
+import React, { useEffect, useMemo, useState } from 'react'
+import DetailTabs, { type DetailTabItem } from './DetailTabs'
+import DetailAttachmentsSection from './detail-sections/DetailAttachmentsSection'
+
+export type DetailViewMode = 'create' | 'edit' | 'view'
+
+export type DetailSectionId =
+  | 'detail'
+  | 'roles'
+  | 'invite'
+  | 'users'
+  | 'equipment'
+  | 'accounts'
+  | 'attachments'
+  | 'system'
+
+export type DetailViewSection<Ctx = unknown> = {
+  id: DetailSectionId
+  label: string
+  order: number
+  always?: boolean
+  render: (ctx: Ctx) => React.ReactNode
+  visibleWhen?: (ctx: Ctx) => boolean
+}
+
+export type RolesData = {
+  role?: { code: string; name: string; description?: string | null }
+  permissions?: { code: string; name: string; description?: string | null }[]
+  availableRoles?: { code: string; name: string; description?: string | null }[]
+}
+
+export type RolesUi = {
+  canEdit?: boolean
+  mode?: DetailViewMode
+  /** Controlled hodnota pro select v edit/create (doporučeno: držet ve formuláři) */
+  roleCode?: string | null
+  onChangeRoleCode?: (roleCode: string) => void
+}
+
+export type DetailViewCtx = {
+  /** Povinné pro systémové sekce (Přílohy, Systém) */
+  entityType?: string
+  entityId?: string
+  mode?: DetailViewMode
+
+  detailContent?: React.ReactNode
+  inviteContent?: React.ReactNode
+  rolesData?: RolesData
+  rolesUi?: RolesUi
+
+  /** Volitelné rozšíření sekce Systém (bloky pod Entity/ID). */
+  systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
+  /** Pokud chceš úplně vlastní obsah sekce Systém (pod základními poli). */
+  systemContent?: React.ReactNode
+}
+
+const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
+  detail: {
+    id: 'detail',
+    label: 'Detail',
+    order: 10,
+    always: true,
+    render: (ctx) => ctx?.detailContent ?? null,
+  },
+
+  invite: {
+    id: 'invite',
+    label: 'Pozvánka',
+    order: 15,
+    // zobrazí se jen pokud parent předá inviteContent
+    visibleWhen: (ctx) => !!(ctx as any)?.inviteContent,
+    render: (ctx) => (ctx as any)?.inviteContent ?? null,
+  },
+
+  roles: {
+    id: 'roles',
+    label: 'Role a oprávnění',
+    order: 20,
+    visibleWhen: (ctx) => !!(ctx as any)?.rolesData,
+    render: (ctx: any) => {
+      const data = ctx?.rolesData as RolesData | undefined
+      const ui = ctx?.rolesUi as RolesUi | undefined
+      const canEdit = !!ui?.canEdit
+      const mode = ui?.mode ?? 'view'
+
+      const role = data?.role
+      const permissions = data?.permissions ?? []
+
+      const options = data?.availableRoles ?? []
+
+      // Zajisti, že aktuální role je v options (když číselník ještě není načtený)
+      const ensuredOptions =
+        role?.code && !options.some((r) => r.code === role.code)
+          ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...options]
+          : options
+
+      // Controlled hodnota: preferuj UI stav, fallback na aktuální roli
+      const selectedCode = (ui?.roleCode ?? role?.code ?? '') as string
+
+      return (
+        <div className="detail-form">
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Role</h3>
+
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Role</label>
+
+                {(mode === 'edit' || mode === 'create') && canEdit ? (
+                  <select
+                    className="detail-form__input"
+                    value={selectedCode}
+                    onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      — vyber roli —
+                    </option>
+                    {ensuredOptions.map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name ?? r.code}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={role?.name ?? role?.code ?? '—'}
+                    readOnly
+                  />
+                )}
+
+                {mode !== 'view' && (
+                  <div className="detail-form__hint">Role je uložena v subject_roles (subject_id + role_code).</div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Oprávnění</h3>
+
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Oprávnění</label>
+                <div className="detail-form__value">
+                  {permissions.length ? (
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {permissions.map((p) => (
+                        <li key={p.code}>
+                          <strong>{p.code}</strong> {p.name ? `– ${p.name}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="detail-form__hint">Žádná oprávnění</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      )
+    },
+  },
+
+  attachments: {
+    id: 'attachments',
+    label: 'Přílohy',
+    order: 90,
+    visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
+    render: (ctx: any) => (
+      <DetailAttachmentsSection entityType={ctx.entityType} entityId={ctx.entityId} mode={ctx.mode ?? 'view'} />
+    ),
+  },
+
+  system: {
+    id: 'system',
+    label: 'Systém',
+    order: 100,
 
   const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
   const tabs: DetailTabItem[] = sections.map((s) => ({ id: s.id, label: s.label }))
