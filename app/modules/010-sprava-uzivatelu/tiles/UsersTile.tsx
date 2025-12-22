@@ -14,6 +14,7 @@ import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '../forms/UserDetailFrame'
 import InviteUserFrame from '../forms/InviteUserFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
+import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 type UiUser = {
   id: string
