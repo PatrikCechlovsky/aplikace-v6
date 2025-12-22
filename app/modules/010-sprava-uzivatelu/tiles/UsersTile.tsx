@@ -367,7 +367,7 @@ export default function UsersTile({
             alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
             return
           }
-          ...
+        
         }
         // detail/invite -> list
         if (viewMode === 'invite') {
