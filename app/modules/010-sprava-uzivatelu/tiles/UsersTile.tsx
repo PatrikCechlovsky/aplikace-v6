@@ -307,25 +307,35 @@ export default function UsersTile({
   // -------------------------
   // CommonActions list
   // -------------------------
-  const commonActions = useMemo<CommonActionId[]>(() => {
-    if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
-    if (viewMode === 'invite') return ['sendInvite', 'close']
-
-    // Detail: nabídni "Přílohy…" všude mimo invite záložku
-    const withAttachments = (base: CommonActionId[]) =>
-      detailActiveSectionId === 'invite' ? base : [...base, 'attachments']
-
+  const commonActions: CommonActionId[] = useMemo(() => {
+    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
+    const INVITE: CommonActionId[] = ['sendInvite', 'close']
+  
+    const READ_DEFAULT: CommonActionId[] = ['edit', 'close']
+    const EDIT_DEFAULT_WITH_INVITE: CommonActionId[] = ['save', 'invite', 'close']
+    const EDIT_DEFAULT: CommonActionId[] = ['save', 'close']
+    const CREATE_DEFAULT: CommonActionId[] = ['save', 'close']
+  
+    const withAttachments = (base: CommonActionId[]): CommonActionId[] => {
+      if (detailActiveSectionId === 'invite') return base
+      // přidej pouze jednou (pojistka)
+      return base.includes('attachments') ? base : [...base, 'attachments']
+    }
+  
+    if (viewMode === 'list') return LIST
+    if (viewMode === 'invite') return INVITE
+  
     if (viewMode === 'read') {
-      if (detailActiveSectionId === 'invite') return canInviteDetail ? ['sendInvite', 'close'] : ['close']
-      return withAttachments(['edit', 'close'])
+      if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
+      return withAttachments(READ_DEFAULT)
     }
-
+  
     if (viewMode === 'edit') {
-      return withAttachments(canInviteDetail ? ['save', 'invite', 'close'] : ['save', 'close'])
+      return withAttachments(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
     }
-
+  
     // create
-    return withAttachments(['save', 'close'])
+    return withAttachments(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId, canInviteDetail])
 
   useEffect(() => {
