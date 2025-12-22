@@ -276,12 +276,12 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
           {/* LEFT */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div>
-              <label className="detail-form__label">Filtr</label>
+              <label className="detail-form__label" style={{ display: 'none' }}>Filtr</label>
               <input
                 className="detail-form__input"
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
-                placeholder="hledat v názvu / souboru…"
+                placeholder="Hledat podle názvu nebo popisu"
                 style={{ minWidth: 280 }}
               />
             </div>
@@ -357,11 +357,7 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                 <div className="detail-form__field detail-form__field--span-4">
                   <label className="detail-form__label">Soubor</label>
                   <input type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
-                  {newFile ? (
-                    <div className="detail-form__hint" style={{ marginTop: 6 }}>
-                      Vybráno: <strong>{newFile.name}</strong>
-                    </div>
-                  ) : null}
+                  
                 </div>
               </div>
 
