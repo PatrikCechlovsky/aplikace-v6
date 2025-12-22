@@ -313,7 +313,7 @@ export default function UsersTile({
     if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     if (viewMode === 'invite') return ['sendInvite', 'close']
   
-    // Detail: nabídni "Přílohy…" všude mimo invite záložku
+    // Detail: "Přílohy…" chceme všude mimo invite záložku
     const withAttachments = (base: CommonActionId[]) =>
       detailActiveSectionId === 'invite' ? base : [...base, 'attachments']
   
@@ -325,10 +325,11 @@ export default function UsersTile({
     if (viewMode === 'edit') {
       return withAttachments(canInviteDetail ? ['save', 'invite', 'close'] : ['save', 'close'])
     }
+  
+    // create
+    return withAttachments(['save', 'close'])
+  }, [viewMode, detailActiveSectionId, canInviteDetail])
 
-  // create
-  return withAttachments(['save', 'close'])
-}, [viewMode, detailActiveSectionId, canInviteDetail])
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
