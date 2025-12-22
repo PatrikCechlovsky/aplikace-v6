@@ -322,7 +322,48 @@ export default function UsersTile({
         }
 
         if (id === 'close') {
-          router.back()
+          // 1) pokud máš rozdělanou práci, zeptej se (pokud už to v UsersTile řešíš, nech to tam)
+          // if (!confirmIfDirty()) return
+        
+          const m = moduleId // nebo string "010-sprava-uzivatelu" podle toho co tam máš
+          const t = searchParams.get('t')
+          const hasDetail = !!searchParams.get('id') || !!searchParams.get('vm')
+        
+          // DETAIL -> LIST
+          if (t === 'users-list' && hasDetail) {
+            setUrl({
+              m,
+              t: 'users-list',
+              id: null,
+              vm: null,
+            })
+            return
+          }
+        
+          // INVITE -> LIST (pokud máš pro invite jiný tile id, přizpůsob "t")
+          if (t === 'invite-user') {
+            setUrl({
+              m,
+              t: 'users-list',
+              id: null,
+              vm: null,
+            })
+            return
+          }
+        
+          // LIST -> MODUL (zavřít list)
+          if (t === 'users-list') {
+            setUrl({
+              m,
+              t: null,
+              id: null,
+              vm: null,
+            })
+            return
+          }
+        
+          // fallback: modul root
+          setUrl({ m, t: null, id: null, vm: null })
           return
         }
       }
