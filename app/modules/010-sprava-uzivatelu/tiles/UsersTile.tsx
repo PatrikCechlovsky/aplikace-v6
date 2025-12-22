@@ -12,7 +12,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetailFrame'
-import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetailFrame'
+import InviteUserFrame from '../forms/InviteUserFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
