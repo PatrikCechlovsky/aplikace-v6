@@ -176,9 +176,14 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 90,
     visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
     render: (ctx: any) => (
-      <DetailAttachmentsSection entityType={ctx.entityType} entityId={ctx.entityId} mode={ctx.mode ?? 'view'} />
+      <AttachmentOverview
+        entityType={ctx.entityType}
+        entityId={ctx.entityId}
+        mode={ctx.mode ?? 'view'}
+      />
     ),
   },
+
 
   system: {
     id: 'system',
