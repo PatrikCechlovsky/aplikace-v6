@@ -846,7 +846,7 @@ export default function GenericTypeTile({
               <button
                 type="button"
                 className="generic-type__button-nav generic-type__button--with-label"
-                getIcon('chevron-right')
+                onClick={requestNext}
                 disabled={selectedIndex < 0 || selectedIndex >= items.length - 1}
               >
                 <span className="generic-type__button-icon">
