@@ -313,7 +313,7 @@ export default function UsersTile({
     if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     if (viewMode === 'invite') return ['sendInvite', 'close']
   
-    // Detail: "Přílohy…" chceme všude mimo invite záložku
+    // Detail: nabídni "Přílohy…" všude mimo invite záložku
     const withAttachments = (base: CommonActionId[]) =>
       detailActiveSectionId === 'invite' ? base : [...base, 'attachments']
   
@@ -355,21 +355,6 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-        if (id === 'attachments') {
-          if (!detailUser?.id?.trim() || !detailUser.id.trim()) {
-            alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
-            return
-          }
-          alert(`TODO: Správa příloh pro user ${detailUser.id}`)
-          return
-        }
-        if (id === 'attachments') {
-          if (isDirty) {
-            alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
-            return
-          }
-        
-        }
         // detail/invite -> list
         if (viewMode === 'invite') {
           closeToList()
@@ -384,7 +369,24 @@ export default function UsersTile({
         closeListToModule()
         return
       }
-
+      // DETAIL: Správa příloh (FÁZE 1: placeholder)
+      if (id === 'attachments') {
+        // na invite záložce to ani nenabízíme, ale pojistka neškodí
+        if (detailActiveSectionId === 'invite') return
+      
+        if (isDirty) {
+          alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+          return
+        }
+      
+        if (!detailUser?.id || !detailUser.id.trim()) {
+          alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+          return
+        }
+      
+        alert(`TODO: Správa příloh pro user ${detailUser.id}`)
+        return
+      }
       // LIST
       if (viewMode === 'list') {
         if (id === 'add') {
