@@ -3,20 +3,19 @@
  * PURPOSE:
  *   UI sekce „Přílohy“ pro DetailView (sekce id: 'attachments').
  *
- * CURRENT STATE:
- *   - KROK 3: načtení seznamu příloh pro entitu (READ)
- *   - KROK 4a: otevření souboru přes signed URL (Storage bucket `documents`)
- *   - KROK 4b: rozbalení a zobrazení verzí (document_versions) + otevření verze
- *
- * NOTES:
- *   - Žádné lokální „+ Přidat“ akce (to bude později přes CommonActions / dialog)
- *   - Styling používá existující třídy detail-form / detail-view
+ * FEATURES:
+ *   - READ: list příloh (v_document_latest_version)
+ *   - READ: list verzí (document_versions)
+ *   - OPEN: signed URL ze Storage (bucket documents)
+ *   - CREATE: přidat přílohu (upload + insert documents + document_versions)
  */
 
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
 import {
+  addAttachmentVersionWithUpload,
+  createAttachmentWithUpload,
   getAttachmentSignedUrl,
   listAttachments,
   listAttachmentVersions,
@@ -46,10 +45,15 @@ export default function DetailAttachmentsSection({
 
   // Verze – rozbalování (on-demand) + jednoduchá cache
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
-  const [versionsByDocId, setVersionsByDocId] = useState<
-    Record<string, AttachmentVersionRow[]>
-  >({})
+  const [versionsByDocId, setVersionsByDocId] = useState<Record<string, AttachmentVersionRow[]>>({})
   const [versionsLoadingId, setVersionsLoadingId] = useState<string | null>(null)
+
+  // ✅ Přidání přílohy (simple panel)
+  const [showAdd, setShowAdd] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newDesc, setNewDesc] = useState('')
+  const [newFile, setNewFile] = useState<File | null>(null)
+  const [saving, setSaving] = useState(false)
 
   async function loadAttachments() {
     setLoading(true)
@@ -95,16 +99,13 @@ export default function DetailAttachmentsSection({
   }
 
   async function toggleVersions(documentId: string) {
-    // zavřít
     if (expandedDocId === documentId) {
       setExpandedDocId(null)
       return
     }
 
-    // otevřít
     setExpandedDocId(documentId)
 
-    // pokud už máme načteno, dál nic
     if (versionsByDocId[documentId]) return
 
     try {
@@ -118,6 +119,72 @@ export default function DetailAttachmentsSection({
       setErrorText(e?.message ?? 'Chyba načítání verzí.')
     } finally {
       setVersionsLoadingId(null)
+    }
+  }
+
+  async function handleAddNewAttachment() {
+    setErrorText(null)
+
+    const title = newTitle.trim()
+    if (!title) {
+      setErrorText('Chybí název přílohy.')
+      return
+    }
+    if (!newFile) {
+      setErrorText('Vyber soubor.')
+      return
+    }
+
+    setSaving(true)
+    try {
+      await createAttachmentWithUpload({
+        entityType,
+        entityId,
+        title,
+        description: newDesc.trim() ? newDesc.trim() : null,
+        file: newFile,
+      })
+
+      // reset UI
+      setNewTitle('')
+      setNewDesc('')
+      setNewFile(null)
+      setShowAdd(false)
+
+      // refresh list
+      await loadAttachments()
+    } catch (e: any) {
+      setErrorText(e?.message ?? 'Nepodařilo se přidat přílohu.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleAddNewVersion(documentId: string, file: File) {
+    setErrorText(null)
+    try {
+      await addAttachmentVersionWithUpload({
+        entityType,
+        entityId,
+        documentId,
+        file,
+      })
+
+      // refresh list + versions cache
+      await loadAttachments()
+      setVersionsByDocId((prev) => {
+        const next = { ...prev }
+        delete next[documentId]
+        return next
+      })
+
+      // pokud byl rozbalený, znovu načti
+      if (expandedDocId === documentId) {
+        setExpandedDocId(null)
+        setTimeout(() => void toggleVersions(documentId), 0)
+      }
+    } catch (e: any) {
+      setErrorText(e?.message ?? 'Nepodařilo se přidat verzi.')
     }
   }
 
@@ -135,7 +202,7 @@ export default function DetailAttachmentsSection({
 
   return (
     <div className="detail-view__section">
-      {/* Přepínač zobrazení – bez vlastních akcí */}
+      {/* Horní panel */}
       <div className="detail-form__section">
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field detail-form__field--span-4">
@@ -150,7 +217,74 @@ export default function DetailAttachmentsSection({
               <span> Zobrazit archivované</span>
             </label>
           </div>
+
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">Akce</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button
+                type="button"
+                className="detail-attachments__link"
+                onClick={() => setShowAdd((v) => !v)}
+              >
+                {showAdd ? 'Zavřít přidání' : 'Přidat přílohu'}
+              </button>
+            </div>
+          </div>
         </div>
+
+        {showAdd && (
+          <div className="detail-form" style={{ marginTop: 10 }}>
+            <section className="detail-form__section">
+              <h3 className="detail-form__section-title">Nová příloha</h3>
+
+              <div className="detail-form__grid detail-form__grid--narrow">
+                <div className="detail-form__field detail-form__field--span-4">
+                  <label className="detail-form__label">Název</label>
+                  <input
+                    className="detail-form__input"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="např. Nájemní smlouva"
+                  />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-4">
+                  <label className="detail-form__label">Poznámka</label>
+                  <input
+                    className="detail-form__input"
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="volitelné"
+                  />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-4">
+                  <label className="detail-form__label">Soubor</label>
+                  <input
+                    type="file"
+                    onChange={(e) => setNewFile(e.target.files?.[0] ?? null)}
+                  />
+                  {newFile ? (
+                    <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                      Vybráno: <strong>{newFile.name}</strong>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  className="detail-attachments__link"
+                  disabled={saving}
+                  onClick={handleAddNewAttachment}
+                >
+                  {saving ? 'Ukládám…' : 'Uložit přílohu'}
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
 
       {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
@@ -179,7 +313,7 @@ export default function DetailAttachmentsSection({
                   </label>
 
                   {/* řádek: název souboru + akce */}
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <input
                       className="detail-form__input detail-form__input--readonly"
                       value={r.file_name}
@@ -201,6 +335,21 @@ export default function DetailAttachmentsSection({
                     >
                       Verze
                     </button>
+
+                    {/* ✅ přidat verzi (rychle) */}
+                    <label className="detail-attachments__link" style={{ cursor: 'pointer' }}>
+                      Přidat verzi
+                      <input
+                        type="file"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          e.currentTarget.value = ''
+                          if (!f) return
+                          void handleAddNewVersion(r.id, f)
+                        }}
+                      />
+                    </label>
                   </div>
 
                   {r.description ? (
@@ -224,6 +373,7 @@ export default function DetailAttachmentsSection({
                                 gap: 8,
                                 alignItems: 'center',
                                 marginTop: 6,
+                                flexWrap: 'wrap',
                               }}
                             >
                               <span>
