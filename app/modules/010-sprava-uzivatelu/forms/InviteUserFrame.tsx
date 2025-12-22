@@ -12,18 +12,12 @@ type Props = {
   presetSubjectId?: string | null
   onDirtyChange?: (dirty: boolean) => void
   onRegisterSubmit?: (fn: () => Promise<boolean>) => void
-  /** pokud používáš pozvánku uvnitř detailu existujícího uživatele */
-  variant?: 'standalone' | 'existingOnly'
 }
 
-export default function InviteUserFrame({
-  presetSubjectId,
-  onDirtyChange,
-  onRegisterSubmit,
-  variant = 'standalone',
-}: Props) {
+export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegisterSubmit }: Props) {
   const [activeTab, setActiveTab] = useState<'invite' | 'system'>('invite')
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null)
+  const [isSending, setIsSending] = useState(false)
 
   const currentRef = useRef<InviteFormValue>({
     mode: presetSubjectId ? 'existing' : 'new',
@@ -48,48 +42,43 @@ export default function InviteUserFrame({
     onDirtyChange?.(false)
   }, [presetSubjectId, onDirtyChange])
 
-  useEffect(() => {
-    if (!onRegisterSubmit) return
+  const doSend = async () => {
+    try {
+      const v = currentRef.current
 
-    const submit = async () => {
-      try {
-        const v = currentRef.current
-
-        if (variant === 'existingOnly') {
-          if (!v.subjectId) {
-            alert('Chybí uživatel.')
-            return false
-          }
-        } else {
-          if (v.mode === 'existing' && !v.subjectId) {
-            alert('Vyber existujícího uživatele.')
-            return false
-          }
-          if (v.mode === 'new' && !v.email?.trim()) {
-            alert('Zadej e-mail.')
-            return false
-          }
-        }
-
-        if (!v.roleCode?.trim()) {
-          alert('Vyber roli.')
-          return false
-        }
-
-        const res = await sendInvite(v)
-        setInviteResult(res)
-        setActiveTab('system')
-        onDirtyChange?.(false)
-        return true
-      } catch (e: any) {
-        console.error('[InviteUserFrame.sendInvite] ERROR', e)
-        alert(e?.message ?? 'Chyba při odeslání pozvánky')
+      if (v.mode === 'existing' && !v.subjectId) {
+        alert('Vyber existujícího uživatele.')
         return false
       }
-    }
+      if (v.mode === 'new' && !v.email?.trim()) {
+        alert('Email je povinný.')
+        return false
+      }
+      if (!v.roleCode?.trim()) {
+        alert('Role je povinná.')
+        return false
+      }
 
-    onRegisterSubmit(submit)
-  }, [onRegisterSubmit, onDirtyChange, variant])
+      setIsSending(true)
+      const res = await sendInvite(v)
+      setInviteResult(res)
+      setActiveTab('system')
+      onDirtyChange?.(false)
+      return true
+    } catch (e: any) {
+      console.error('[InviteUserFrame.sendInvite] ERROR', e)
+      alert(e?.message ?? 'Chyba při odeslání pozvánky')
+      return false
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  // pořád podporujeme CommonActions (když to používáš), ale už to není jediné místo
+  useEffect(() => {
+    if (!onRegisterSubmit) return
+    onRegisterSubmit(doSend)
+  }, [onRegisterSubmit])
 
   const tabItems: DetailTabItem[] = useMemo(() => {
     const items: DetailTabItem[] = [{ id: 'invite', label: 'Pozvánka' }]
@@ -105,12 +94,35 @@ export default function InviteUserFrame({
         <section id="detail-section-invite">
           <InviteUserForm
             initialValue={currentRef.current}
-            variant={variant}
             onDirtyChange={onDirtyChange}
             onValueChange={(v) => {
               currentRef.current = v
             }}
           />
+
+          {/* ✅ tlačítka přímo ve stránce (už nemusíš lovit CommonActions) */}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '8px 0 2px 0' }}>
+            <button
+              type="button"
+              className="common-actions__btn"
+              onClick={() => {
+                // jen „soft“ – když to chceš, můžeš sem dát callback na zavření frame
+                history.back()
+              }}
+              disabled={isSending}
+            >
+              Zrušit
+            </button>
+
+            <button
+              type="button"
+              className="common-actions__btn common-actions__btn--primary"
+              onClick={() => void doSend()}
+              disabled={isSending}
+            >
+              {isSending ? 'Odesílám…' : 'Odeslat pozvánku'}
+            </button>
+          </div>
         </section>
       )}
 
@@ -132,22 +144,18 @@ export default function InviteUserFrame({
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Odesláno</label>
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={(inviteResult as any).sentAt ?? (inviteResult as any).createdAt ?? '—'}
-                    readOnly
-                  />
+                  <label className="detail-form__label">Kdy odesláno</label>
+                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).sentAt ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Platí do</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).expiresAt ?? '—'} readOnly />
+                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).validUntil ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Odeslal</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).createdBy ?? '—'} readOnly />
+                  <label className="detail-form__label">Kdo odeslal</label>
+                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).sentBy ?? '—'} readOnly />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
@@ -162,3 +170,4 @@ export default function InviteUserFrame({
     </EntityDetailFrame>
   )
 }
+ 
