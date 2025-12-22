@@ -838,7 +838,7 @@ export default function GenericTypeTile({
                 disabled={selectedIndex <= 0}
               >
                 <span className="generic-type__button-icon">
-                  {getIcon('prev' as IconKey)}
+                  getIcon('chevron-left')
                 </span>
                 <span className="generic-type__button-text">Předchozí</span>
               </button>
@@ -846,7 +846,7 @@ export default function GenericTypeTile({
               <button
                 type="button"
                 className="generic-type__button-nav generic-type__button--with-label"
-                onClick={requestNext}
+                getIcon('chevron-right')
                 disabled={selectedIndex < 0 || selectedIndex >= items.length - 1}
               >
                 <span className="generic-type__button-icon">
