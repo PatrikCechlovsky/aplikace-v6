@@ -80,7 +80,7 @@ async function createSubjectForNewInvite(input: {
   // DB: subjects.origin_module je NOT NULL -> posíláme vždy.
   // DB: subjects.subject_type často bývá NOT NULL -> zvolíme "user" (pokud máš jiný kód, uprav zde).
   const payload: any = {
-    subject_type: 'user',
+    subject_type: 'osoba',
     display_name: (input.displayName ?? '').trim() || input.email,
     email: input.email,
     is_archived: false,
