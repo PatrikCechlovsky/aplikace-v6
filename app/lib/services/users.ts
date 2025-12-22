@@ -222,7 +222,7 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
   await assertEmailUnique(email, isNew ? null : (input.id ?? null))
 
   const subjectPayload: any = {
-    subject_type: input.subjectType ?? 'user',
+    subject_type: input.subjectType ?? 'osoba',
 
     display_name: (input.displayName ?? '').trim() || null,
     email,
