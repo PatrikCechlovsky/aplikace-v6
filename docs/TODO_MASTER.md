@@ -97,6 +97,35 @@ Neobsahuje žádný programový kód.
 - [ ] Tlačítko pro odeslání pozvánky
 - [ ] Zobrazení stavu pozvánky
 
+
+### Pozvánky (Invite flow)
+- [x] Samostatná obrazovka „Pozvat uživatele“
+- [x] Pozvání existujícího uživatele z detailu
+- [x] Pozvání nového uživatele
+- [x] Respektovat can_send_invite + first_login_at
+- [x] Systémová data pozvánky (odeslal, kdy, platnost, status)
+- [ ] UI doladění formuláře pozvánky
+- [ ] Uživatelský text pozvánky (spolupráce / nemovitosti)
+- [ ] Přemapovat akci „Save“ → „Odeslat pozvánku“
+- [ ] Rozhodnout chování po odeslání (zůstat / zavřít)
+
+### Detail uživatele
+- [x] DetailView se sekcemi (detail, role, invite, přílohy, systém)
+- [x] Invite sekce pouze pro existující uživatele
+- [x] System sekce s invite informacemi
+- [ ] UX doladění sekcí (šířky, copy, pořadí)
+
+### Navigace / UX
+- [x] Close = krok zpět (list ← detail ← invite)
+- [x] Menu klik = okamžitý přechod (dirty confirm)
+- [ ] Sjednotit chování Home button
+
+### Koncepční
+- [ ] Definovat typy pozvánek (spolupráce / plátce)
+- [ ] Role-based invite policy
+- [ ] Expirace pozvánek (cron / job)
+- [ ] Audit log pozvánek
+      
 ---
 
 ## 8. DALŠÍ MODULY (ZÁKLADY)
