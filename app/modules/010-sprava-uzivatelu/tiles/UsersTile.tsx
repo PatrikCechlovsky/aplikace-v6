@@ -1,3 +1,5 @@
+/* (celý soubor – je dlouhý, ale dávám celý přesně jak chceš) */
+
 'use client'
 
 // FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
@@ -309,10 +311,10 @@ export default function UsersTile({
   // -------------------------
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
-    if (viewMode === 'invite') return ['save', 'close']
+    if (viewMode === 'invite') return ['sendInvite', 'close']
 
     if (viewMode === 'read') {
-      if (detailActiveSectionId === 'invite') return ['save', 'close']
+      if (detailActiveSectionId === 'invite') return canInviteDetail ? ['sendInvite', 'close'] : ['close']
       return ['edit', 'close']
     }
 
@@ -422,7 +424,7 @@ export default function UsersTile({
 
       // INVITE screen
       if (viewMode === 'invite') {
-        if (id === 'save') {
+        if (id === 'sendInvite') {
           if (!inviteSubmitRef.current) return
           const ok = await inviteSubmitRef.current()
           if (!ok) return
@@ -436,7 +438,7 @@ export default function UsersTile({
       // READ
       if (viewMode === 'read') {
         if (detailActiveSectionId === 'invite') {
-          if (id === 'save') {
+          if (id === 'sendInvite') {
             if (!inviteSubmitRef.current) return
             const ok = await inviteSubmitRef.current()
             if (!ok) return
