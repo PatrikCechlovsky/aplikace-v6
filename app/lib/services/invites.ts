@@ -36,11 +36,16 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
   }
 
   const payload = {
+    // ✅ DB: subject_invites.invite_mode je NOT NULL → musí se vždy poslat
+    invite_mode: v.mode,
+
     subject_id: v.mode === 'existing' ? v.subjectId : null,
     email: v.mode === 'new' ? normalizeEmail(v.email) : null,
+
     role_code: v.roleCode,
     display_name: v.displayName?.trim() || null,
     note: v.note?.trim() || null,
+
     status: 'pending',
     // sent_at / expires_at:
     // - buď řeší trigger
@@ -54,6 +59,7 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
       `
         id,
         status,
+        invite_mode,
         role_code,
         email,
         created_at,
@@ -76,7 +82,7 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
   return {
     inviteId: data.id,
     status: data.status,
-    mode: v.mode,
+    mode: (data as any).invite_mode ?? v.mode,
     roleCode: data.role_code,
     email: data.email,
     createdAt: data.created_at,
