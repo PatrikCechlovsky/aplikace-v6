@@ -188,3 +188,39 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
     message: subjectCreated ? 'Byl vytvořen nový subjekt + založena pozvánka.' : 'Byla založena pozvánka.',
   }
 }
+
+/**
+ * Vrátí poslední pozvánku pro daný subject (ORDER BY created_at DESC LIMIT 1).
+ * Používáme pro zobrazení v Detail -> Systém/Pozvánka.
+ */
+export async function getLatestInviteForSubject(subjectId: string): Promise<InviteResult | null> {
+  const id = (subjectId ?? '').trim()
+  if (!id) return null
+
+  const { data, error } = await supabase
+    .from('subject_invites')
+    .select('id,status,invite_mode,role_code,email,subject_id,created_at,sent_at,expires_at,created_by')
+    .eq('subject_id', id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (error) throw new Error(error.message)
+  const row = (data ?? [])[0] as any
+  if (!row?.id) return null
+
+  return {
+    inviteId: row.id,
+    status: row.status ?? null,
+    mode: (row.invite_mode ?? 'existing') as any,
+    roleCode: row.role_code ?? null,
+    email: row.email ?? null,
+    createdAt: row.created_at ?? null,
+    sentAt: row.sent_at ?? null,
+    expiresAt: row.expires_at ?? null,
+    createdBy: row.created_by ?? null,
+
+    subjectId: row.subject_id ?? id,
+    subjectCreated: false,
+    message: null,
+  }
+}
