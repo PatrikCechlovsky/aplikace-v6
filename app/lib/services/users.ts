@@ -187,17 +187,45 @@ export type SaveUserInput = {
 }
 
 /* =========================
+   HELPERS
+   ========================= */
+
+function normalizeEmail(email: string | null | undefined): string | null {
+  const e = (email ?? '').trim().toLowerCase()
+  return e || null
+}
+
+async function assertEmailUnique(email: string | null, ignoreSubjectId?: string | null) {
+  if (!email) return
+
+  let q = supabase.from('subjects').select('id').eq('email', email).limit(1)
+  if (ignoreSubjectId) q = q.neq('id', ignoreSubjectId)
+
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+
+  if ((data ?? []).length > 0) {
+    throw new Error('Subjekt s tímto emailem už existuje. Zadej jiný email.')
+  }
+}
+
+/* =========================
    SAVE: saveUser -> vrací SubjectRow (plochý row)
    ========================= */
 
 export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
   const isNew = !input.id || input.id === 'new'
 
+  const email = normalizeEmail(input.email)
+
+  // kontrola duplicitního emailu (přesně jak chceš)
+  await assertEmailUnique(email, isNew ? null : (input.id ?? null))
+
   const subjectPayload: any = {
-    subject_type: input.subjectType ?? null,
+    subject_type: input.subjectType ?? 'user',
 
     display_name: (input.displayName ?? '').trim() || null,
-    email: (input.email ?? '').trim().toLowerCase() || null,
+    email,
     phone: (input.phone ?? '').trim() || null,
     is_archived: input.isArchived ?? false,
 
@@ -205,6 +233,9 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
     first_name: (input.firstName ?? '').trim() || null,
     last_name: (input.lastName ?? '').trim() || null,
     login: (input.login ?? '').trim() || null,
+
+    // DB: subjects.origin_module je NOT NULL -> musí být vždy
+    origin_module: '010',
   }
 
   // 1) save subject (insert/update)
