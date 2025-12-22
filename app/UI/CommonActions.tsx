@@ -30,6 +30,7 @@ export type CommonActionId =
   | 'edit'
   | 'duplicate'
   | 'attach'
+  | 'attachments'
   | 'archive'
   | 'delete'
   | 'save'
@@ -155,6 +156,15 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     requiresSelection: true,
   },
 
+   attachments: {
+    id: 'attachments',
+    icon: 'attach',
+    label: { cs: 'Přílohy…', en: 'Attachments…' },
+    description: { cs: 'Otevřít správu příloh.', en: 'Open attachments manager.' },
+    // ✅ bez requiresSelection (v detailu už je kontext entity)
+    hideWhen: ['list'], // v listu to nechceme
+  },
+   
   archive: {
     id: 'archive',
     icon: 'archive',
