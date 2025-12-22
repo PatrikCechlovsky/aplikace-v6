@@ -22,7 +22,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-const BUCKET = 'documents'
+const BUCKET = 'TVUJ_REALNY_BUCKET'
 
 export type AttachmentRow = {
   id: string
