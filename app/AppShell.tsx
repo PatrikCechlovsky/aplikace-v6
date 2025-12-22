@@ -15,6 +15,7 @@ import './styles/components/TableView.css'
 import './styles/components/DetailTabs.css'
 import './styles/components/DetailForm.css'
 import './styles/components/EntityDetailFrame.css'
+import './styles/components/DetailAttachments.css'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
