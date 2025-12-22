@@ -1,9 +1,5 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
 // PURPOSE: Detail uživatele (010) – načítá detail z DB + ukládá přes service vrstvu (subjects + role + permissions).
-// CHANGE:
-// - povinná role
-// - doplnění System tab (a Invite tab, pokud DetailView umí)
-// - doplnění napojení: initialSectionId / onActiveSectionChange / onRegisterInviteSubmit
 
 'use client'
 
@@ -13,9 +9,7 @@ import DetailView, { type DetailSectionId } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
 import UserDetailForm, { type UserFormValue } from './UserDetailForm'
 import { getUserDetail, saveUser } from '@/app/lib/services/users'
-
-// ✅ stejné zdroje rolí jako modul 900 / RoleTypesTile
-// import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
+import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
 
 type UiUser = {
   id: string
@@ -26,272 +20,17 @@ type UiUser = {
   twoFactorMethod?: string | null
   createdAt: string
   isArchived?: boolean
-
-  // optional – pokud je máš v listu/view
   firstLoginAt?: string | null
-
-
-
-
-
-
-
-
-
-
-
 }
 
 type UserDetailFrameProps = {
   user: UiUser
-  viewMode: ViewMode // read/edit/create
-
-
-
-
-
-  // ✅ nové (napojení na UsersTile)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  viewMode: ViewMode // očekáváme: 'read' | 'list' | 'create'
   initialSectionId?: DetailSectionId
   onActiveSectionChange?: (id: DetailSectionId) => void
-
-
   onRegisterInviteSubmit?: (fn: () => Promise<boolean>) => void
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   onDirtyChange?: (dirty: boolean) => void
   onRegisterSubmit?: (fn: () => Promise<UiUser | null>) => void
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 function roleCodeToLabel(code: string | null | undefined): string {
@@ -300,52 +39,24 @@ function roleCodeToLabel(code: string | null | undefined): string {
   if (c === 'admin') return 'Admin'
   if (c === 'user') return 'Uživatel'
   return c
-
-
-
-
-
 }
 
 export default function UserDetailFrame({
   user,
   viewMode,
   initialSectionId,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   onActiveSectionChange,
   onRegisterInviteSubmit,
   onDirtyChange,
   onRegisterSubmit,
 }: UserDetailFrameProps) {
-  // ✅ přidáme system (+ invite pokud DetailView zná)
   const sectionIds: DetailSectionId[] = ['detail', 'roles', 'invite', 'system', 'attachments'] as any
 
+  // Map ViewMode -> DetailView mode (view/edit/create)
   const detailMode = useMemo(() => {
-    if (viewMode === 'edit') return 'edit'
-    if (viewMode === 'add' || viewMode === 'create') return 'create'
+    if (viewMode === 'create') return 'create'
+    if (viewMode === 'read') return 'view'
+    // 'list' sem může přijít při "detail" režimu z listu – chceme view
     return 'view'
   }, [viewMode])
 
@@ -355,24 +66,19 @@ export default function UserDetailFrame({
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
-  // DB “pravda” pro role + permissions
   const [roleCode, setRoleCode] = useState<string | null>(null)
   const [permissionCodes, setPermissionCodes] = useState<string[]>([])
 
-  // ✅ číselník rolí pro select
   const [availableRoles, setAvailableRoles] = useState<
     { code: string; name: string; description?: string | null }[]
   >([])
 
-  // DB “pravda” pro subjects (pro případ, že list měl zastaralé hodnoty)
   const [resolvedUser, setResolvedUser] = useState<UiUser>(user)
 
-  // hodnoty z formuláře (posíláme do saveUser)
   const currentRef = useRef<UserFormValue>({
     displayName: user.displayName ?? '',
     email: user.email ?? '',
     phone: user.phone ?? '',
-
     titleBefore: (user as any).titleBefore ?? '',
     firstName: (user as any).firstName ?? '',
     lastName: (user as any).lastName ?? '',
@@ -381,13 +87,11 @@ export default function UserDetailFrame({
   })
 
   useEffect(() => {
-    // při přepnutí záznamu reset lokální stav
     setResolvedUser(user)
     currentRef.current = {
       displayName: user.displayName ?? '',
       email: user.email ?? '',
       phone: user.phone ?? '',
-
       titleBefore: (user as any).titleBefore ?? '',
       firstName: (user as any).firstName ?? '',
       lastName: (user as any).lastName ?? '',
@@ -397,9 +101,9 @@ export default function UserDetailFrame({
     setRoleCode(null)
     setPermissionCodes([])
     setDetailError(null)
-  }, [user.id, user.displayName, user.email, user.phone])
+  }, [user.id])
 
-  // ✅ Načti číselník rolí vždy (nezávisle na read/edit)
+  // Role types číselník
   useEffect(() => {
     let cancelled = false
     const run = async () => {
@@ -423,7 +127,7 @@ export default function UserDetailFrame({
     }
   }, [])
 
-  // Načti detail z DB (jen pokud existuje id)
+  // Načti detail z DB
   useEffect(() => {
     if (isCreate) return
 
@@ -435,7 +139,6 @@ export default function UserDetailFrame({
         const d = await getUserDetail(user.id)
         if (cancelled) return
 
-        // subjects → UI
         const s = d.subject
         const merged: UiUser = {
           ...user,
@@ -451,17 +154,13 @@ export default function UserDetailFrame({
         }
 
         setResolvedUser(merged)
-
-        // role + permissions
         setRoleCode(d.role_code ?? null)
         setPermissionCodes(d.permissions ?? [])
 
-        // srovnej i currentRef, ať save bere DB hodnoty
         currentRef.current = {
           displayName: merged.displayName ?? '',
           email: merged.email ?? '',
           phone: merged.phone ?? '',
-
           titleBefore: d.subject.title_before ?? '',
           firstName: d.subject.first_name ?? '',
           lastName: d.subject.last_name ?? '',
@@ -486,7 +185,7 @@ export default function UserDetailFrame({
     currentRef.current = val
   }, [])
 
-  // Submit registrace pro CommonActions (save user)
+  // Register SAVE pro CommonActions
   useEffect(() => {
     if (!onRegisterSubmit) return
 
@@ -494,7 +193,6 @@ export default function UserDetailFrame({
       try {
         const v = currentRef.current
 
-        // ✅ povinná role (nepovolíme save bez role)
         const pickedRole = (roleCode ?? '').trim()
         if (!pickedRole) {
           alert('Vyber roli uživatele před uložením.')
@@ -505,22 +203,15 @@ export default function UserDetailFrame({
 
         const saved = await saveUser({
           id: user.id,
-
-          // SUBJECT
           subjectType: 'osoba',
-
           displayName,
           email: v.email || null,
           phone: v.phone || null,
-
           titleBefore: v.titleBefore || null,
           firstName: v.firstName || null,
           lastName: v.lastName || null,
           login: v.login || displayName,
-
           isArchived: v.isArchived,
-
-          // ROLE + PERMISSIONS
           roleCode: pickedRole,
           permissionCodes: permissionCodes ?? null,
         })
@@ -548,12 +239,11 @@ export default function UserDetailFrame({
     onRegisterSubmit(submit)
   }, [onRegisterSubmit, user.id, resolvedUser, roleCode, permissionCodes])
 
-  // ✅ napojení “invite submit” (DetailView/Invite sekce si to může převzít)
+  // Register INVITE submit
   useEffect(() => {
     if (!onRegisterInviteSubmit) return
-    // default: nic neumíme odeslat přímo tady (pokud to neimplementuje DetailView)
     onRegisterInviteSubmit(async () => {
-      alert('Pozvánka: není implementovaná v UserDetailFrame. Odesílá se přes samostatný InviteUserFrame.')
+      alert('Pozvánka: odesílá se přes samostatný InviteUserFrame.')
       return false
     })
   }, [onRegisterInviteSubmit])
@@ -563,13 +253,11 @@ export default function UserDetailFrame({
     return 'Uživatel'
   }, [detailMode])
 
-
   return (
     <EntityDetailFrame title={title}>
       <DetailView
-        mode={detailMode}
+        mode={detailMode as any}
         sectionIds={sectionIds}
-        // ✅ pokud DetailView umí řídit aktivní sekci, pošleme mu to přes ctx
         ctx={{
           entityType: 'user',
           entityId: resolvedUser.id,
