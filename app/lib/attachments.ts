@@ -16,11 +16,6 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 
-/**
- * Bucket name:
- * - Preferuj env (aby šlo snadno přepnout bez zásahu do kódu)
- * - Fallback: 'documents'
- */
 const BUCKET = (process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'documents').trim()
 
 export type AttachmentRow = {
@@ -32,6 +27,10 @@ export type AttachmentRow = {
   is_archived: boolean
   created_at: string
   created_by: string | null
+
+  // volitelně (pokud je ve view / tabulce)
+  updated_at?: string | null
+  updated_by?: string | null
 
   // z view `v_document_latest_version`
   version_id: string
@@ -66,7 +65,6 @@ function sanitizeFileName(name: string) {
 }
 
 function logDebug(...args: any[]) {
-  // Debug nechávám krátký a čitelný
   // eslint-disable-next-line no-console
   console.log('[attachments]', ...args)
 }
@@ -75,11 +73,7 @@ function logDebug(...args: any[]) {
    READ – list latest docs
    ========================================================= */
 
-export async function listAttachments(input: {
-  entityType: string
-  entityId: string
-  includeArchived?: boolean
-}) {
+export async function listAttachments(input: { entityType: string; entityId: string; includeArchived?: boolean }) {
   const { entityType, entityId, includeArchived = false } = input
 
   let q = supabase
@@ -93,7 +87,6 @@ export async function listAttachments(input: {
 
   const { data, error } = await q
   if (error) throw error
-
   return (data ?? []) as AttachmentRow[]
 }
 
@@ -110,7 +103,6 @@ export async function listAttachmentVersions(input: { documentId: string; includ
 
   const { data, error } = await q
   if (error) throw error
-
   return (data ?? []) as AttachmentVersionRow[]
 }
 
@@ -174,7 +166,6 @@ export async function createAttachmentWithUpload(input: {
 }) {
   const { entityType, entityId, title, description = null, file } = input
 
-  // 1) create document record
   const { data: doc, error: docErr } = await supabase
     .from('documents')
     .insert({
@@ -194,10 +185,8 @@ export async function createAttachmentWithUpload(input: {
   const safeName = sanitizeFileName(file.name)
   const filePath = `${entityType}/${entityId}/${documentId}/v${pad3(versionNumber)}_${safeName}`
 
-  // 2) upload file to storage
   await uploadToStorage({ filePath, file })
 
-  // 3) create version row
   const { error: verErr } = await supabase.from('document_versions').insert({
     document_id: documentId,
     version_number: versionNumber,
@@ -243,4 +232,22 @@ export async function addAttachmentVersionWithUpload(input: {
 
   if (error) throw error
   return { versionNumber, filePath }
+}
+
+/* =========================================================
+   UPDATE – metadata dokumentu (title/description)
+   ========================================================= */
+
+export async function updateAttachmentMetadata(input: { documentId: string; title: string; description?: string | null }) {
+  const { documentId, title, description = null } = input
+
+  const { data, error } = await supabase
+    .from('documents')
+    .update({ title, description })
+    .eq('id', documentId)
+    .select('*')
+    .single()
+
+  if (error) throw error
+  return data
 }
