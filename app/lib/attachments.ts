@@ -1,28 +1,27 @@
-/*
+/**
  * FILE: app/lib/attachments.ts
+ *
  * PURPOSE:
  *   Data layer pro sekci „Přílohy“ v DetailView (kontext entity).
  *
  * CONTEXT:
- *   - tabulky: `documents` + `document_versions`
  *   - view pro list: `v_document_latest_version`
- *   - Storage bucket: `documents`
+ *   - tabulky: `documents` + `document_versions`
+ *   - storage: Supabase Storage bucket (default: 'documents')
  *
- * FEATURES:
- *   - listAttachments (READ latest)
- *   - listAttachmentVersions (READ versions)
- *   - getAttachmentSignedUrl (SIGNED URL)
- *   - createAttachmentWithUpload (CREATE document + version 1 + upload)
- *   - addAttachmentVersionWithUpload (CREATE next version + upload)
+ * RULES:
+ *   - Používat jednotného Supabase klienta z `app/lib/supabaseClient.ts`
+ *   - Žádné další `createClient()` zde (kvůli GoTrueClient duplicitám)
  */
 
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/app/lib/supabaseClient'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-const BUCKET = 'TVUJ_REALNY_BUCKET'
+/**
+ * Bucket name:
+ * - Preferuj env (aby šlo snadno přepnout bez zásahu do kódu)
+ * - Fallback: 'documents'
+ */
+const BUCKET = (process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'documents').trim()
 
 export type AttachmentRow = {
   id: string
@@ -63,9 +62,18 @@ function pad3(n: number) {
 }
 
 function sanitizeFileName(name: string) {
-  // minimal-safe: odstraní divné znaky pro storage path
   return name.replace(/[^\w.\-]+/g, '_')
 }
+
+function logDebug(...args: any[]) {
+  // Debug nechávám krátký a čitelný
+  // eslint-disable-next-line no-console
+  console.log('[attachments]', ...args)
+}
+
+/* =========================================================
+   READ – list latest docs
+   ========================================================= */
 
 export async function listAttachments(input: {
   entityType: string
@@ -89,10 +97,7 @@ export async function listAttachments(input: {
   return (data ?? []) as AttachmentRow[]
 }
 
-export async function listAttachmentVersions(input: {
-  documentId: string
-  includeArchived?: boolean
-}) {
+export async function listAttachmentVersions(input: { documentId: string; includeArchived?: boolean }) {
   const { documentId, includeArchived = true } = input
 
   let q = supabase
@@ -109,32 +114,41 @@ export async function listAttachmentVersions(input: {
   return (data ?? []) as AttachmentVersionRow[]
 }
 
-export async function getAttachmentSignedUrl(input: {
-  filePath: string
-  expiresInSeconds?: number
-}) {
+/* =========================================================
+   STORAGE – signed url + upload
+   ========================================================= */
+
+export async function getAttachmentSignedUrl(input: { filePath: string; expiresInSeconds?: number }) {
   const { filePath, expiresInSeconds = 60 } = input
 
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(filePath, expiresInSeconds)
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(filePath, expiresInSeconds)
+  if (error) {
+    logDebug('signedUrl error', { bucket: BUCKET, filePath, error })
+    throw error
+  }
 
-  if (error) throw error
   return data.signedUrl
 }
 
 async function uploadToStorage(input: { filePath: string; file: File }) {
   const { filePath, file } = input
 
+  logDebug('upload start', { bucket: BUCKET, filePath, name: file.name, size: file.size, type: file.type })
+
   const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, {
     upsert: false,
     contentType: file.type || 'application/octet-stream',
   })
-  if (error) throw error
+
+  if (error) {
+    logDebug('upload error', { bucket: BUCKET, filePath, error })
+    throw error
+  }
+
+  logDebug('upload ok', { bucket: BUCKET, filePath })
 }
 
 async function getNextVersionNumber(documentId: string) {
-  // vezmeme nejvyšší verzi a +1
   const { data, error } = await supabase
     .from('document_versions')
     .select('version_number')
@@ -147,9 +161,10 @@ async function getNextVersionNumber(documentId: string) {
   return last + 1
 }
 
-/**
- * Vytvoří nový dokument (documents), nahraje soubor do Storage a vytvoří verzi 1 (document_versions).
- */
+/* =========================================================
+   CREATE – new document + v001 upload
+   ========================================================= */
+
 export async function createAttachmentWithUpload(input: {
   entityType: string
   entityId: string
@@ -159,7 +174,7 @@ export async function createAttachmentWithUpload(input: {
 }) {
   const { entityType, entityId, title, description = null, file } = input
 
-  // 1) documents
+  // 1) create document record
   const { data: doc, error: docErr } = await supabase
     .from('documents')
     .insert({
@@ -179,10 +194,10 @@ export async function createAttachmentWithUpload(input: {
   const safeName = sanitizeFileName(file.name)
   const filePath = `${entityType}/${entityId}/${documentId}/v${pad3(versionNumber)}_${safeName}`
 
-  // 2) upload
+  // 2) upload file to storage
   await uploadToStorage({ filePath, file })
 
-  // 3) document_versions
+  // 3) create version row
   const { error: verErr } = await supabase.from('document_versions').insert({
     document_id: documentId,
     version_number: versionNumber,
@@ -198,9 +213,10 @@ export async function createAttachmentWithUpload(input: {
   return { documentId, versionNumber, filePath }
 }
 
-/**
- * Přidá novou verzi k existujícímu dokumentu: upload + insert do document_versions.
- */
+/* =========================================================
+   CREATE – add new version (upload + insert)
+   ========================================================= */
+
 export async function addAttachmentVersionWithUpload(input: {
   entityType: string
   entityId: string
