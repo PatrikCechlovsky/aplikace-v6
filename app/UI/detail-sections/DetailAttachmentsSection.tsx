@@ -4,13 +4,16 @@
  * FILE: app/UI/detail-sections/DetailAttachmentsSection.tsx
  *
  * PURPOSE:
- * Detail tab "Přílohy" – jednotný UI toolbar (jako CommonActions) + list příloh + upload.
- * - Vlevo: filtr + zobrazit archivované
- * - Vpravo: grafická tlačítka (ikona/label se chová stejně jako CommonActions)
- * - Akce: Přidat přílohu, Uložit (bez zavření), Zavřít (bez uložení + kontrola rozpracovanosti)
+ * Detail tab "Přílohy" – jednotný UI toolbar (jako CommonActions) + vícesloupcový list (latest) + edit metadat + verzování.
+ *
+ * UI/UX:
+ * - Toolbar vlevo: filtr + zobrazit archivované
+ * - Toolbar vpravo: akce (ikona + label) ve stylu CommonActions
+ * - List: pouze poslední verze (latest). Historie verzí je on-demand (rozbalení).
+ * - Nová verze: potvrzení (confirm) → teprve poté file picker.
  */
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getIcon } from '@/app/UI/icons'
 import {
   addAttachmentVersionWithUpload,
@@ -18,6 +21,7 @@ import {
   getAttachmentSignedUrl,
   listAttachments,
   listAttachmentVersions,
+  updateAttachmentMetadata,
   type AttachmentRow,
   type AttachmentVersionRow,
 } from '@/app/lib/attachments'
@@ -30,36 +34,30 @@ export type DetailAttachmentsSectionProps = {
 
 type LocalActionId = 'addAttachment' | 'saveAttachment' | 'closePanel'
 
-const LOCAL_ACTIONS: Record<
-  LocalActionId,
-  {
-    icon: string
-    label: string
-    title: string
+const LOCAL_ACTIONS: Record<LocalActionId, { icon: string; label: string; title: string }> = {
+  addAttachment: { icon: 'add', label: 'Přidat přílohu', title: 'Přidat přílohu' },
+  saveAttachment: { icon: 'save', label: 'Uložit', title: 'Uložit (bez zavření)' },
+  closePanel: { icon: 'close', label: 'Zavřít', title: 'Zavřít bez uložení' },
+}
+
+function formatDt(s?: string | null) {
+  if (!s) return '—'
+  try {
+    const d = new Date(s)
+    if (Number.isNaN(d.getTime())) return s
+    return d.toLocaleString('cs-CZ', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return s
   }
-> = {
-  addAttachment: {
-    icon: 'add',
-    label: 'Přidat přílohu',
-    title: 'Přidat přílohu',
-  },
-  saveAttachment: {
-    icon: 'save',
-    label: 'Uložit',
-    title: 'Uložit (bez zavření)',
-  },
-  closePanel: {
-    icon: 'close',
-    label: 'Zavřít',
-    title: 'Zavřít bez uložení',
-  },
 }
 
 export default function DetailAttachmentsSection({ entityType, entityId, mode }: DetailAttachmentsSectionProps) {
-  /* =========================
-     STATE
-     ========================= */
-
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -81,13 +79,21 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
   const [newFile, setNewFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
 
+  // Edit metadat dokumentu (title/description)
+  const [editingDocId, setEditingDocId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+
   const panelDirty = useMemo(() => !!newTitle.trim() || !!newDesc.trim() || !!newFile, [newTitle, newDesc, newFile])
 
-  /* =========================
-     LOADERS
-     ========================= */
+  // Hidden file inputs pro „přidat verzi“ (po potvrzení)
+  const versionInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const setVersionInputRef = useCallback((documentId: string, el: HTMLInputElement | null) => {
+    versionInputRefs.current[documentId] = el
+  }, [])
 
-  async function loadAttachments() {
+  const loadAttachments = useCallback(async () => {
     setLoading(true)
     setErrorText(null)
     try {
@@ -98,105 +104,46 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
     } finally {
       setLoading(false)
     }
-  }
+  }, [entityType, entityId, includeArchived])
 
   useEffect(() => {
     if (!canLoad) return
     void loadAttachments()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canLoad, entityType, entityId, includeArchived])
-
-  /* =========================
-     HELPERS
-     ========================= */
-
-  function resetPanel() {
-    setNewTitle('')
-    setNewDesc('')
-    setNewFile(null)
-  }
+  }, [canLoad, loadAttachments])
 
   const filteredRows = useMemo(() => {
     const t = filterText.trim().toLowerCase()
     if (!t) return rows
     return rows.filter((r) => {
       const a = (r.title ?? '').toLowerCase()
-      const b = (r.file_name ?? '').toLowerCase()
-      return a.includes(t) || b.includes(t)
+      const b = (r.description ?? '').toLowerCase()
+      const c = (r.file_name ?? '').toLowerCase()
+      return a.includes(t) || b.includes(t) || c.includes(t)
     })
   }, [rows, filterText])
 
-  async function openFileByPath(filePath: string) {
+  const resetPanel = useCallback(() => {
+    setNewTitle('')
+    setNewDesc('')
+    setNewFile(null)
+  }, [])
+
+  const openFileByPath = useCallback(async (filePath: string) => {
     const url = await getAttachmentSignedUrl({ filePath, expiresInSeconds: 60 })
     window.open(url, '_blank', 'noopener,noreferrer')
-  }
+  }, [])
 
-  /* =========================
-     HANDLERS
-     ========================= */
-
-  async function handleOpenLatest(row: AttachmentRow) {
-    setErrorText(null)
-    try {
-      await openFileByPath(row.file_path)
-    } catch (e: any) {
-      setErrorText(e?.message ?? 'Nepodařilo se otevřít přílohu.')
-    }
-  }
-
-  async function handleOpenVersion(v: AttachmentVersionRow) {
-    setErrorText(null)
-    try {
-      await openFileByPath(v.file_path)
-    } catch (e: any) {
-      setErrorText(e?.message ?? 'Nepodařilo se otevřít verzi.')
-    }
-  }
-
-  async function toggleVersions(documentId: string) {
-    if (expandedDocId === documentId) {
-      setExpandedDocId(null)
-      return
-    }
-
-    setExpandedDocId(documentId)
-
-    if (versionsByDocId[documentId]) return
-
-    setErrorText(null)
-    try {
-      setVersionsLoadingId(documentId)
-      const versions = await listAttachmentVersions({ documentId, includeArchived: true })
-      setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
-    } catch (e: any) {
-      setErrorText(e?.message ?? 'Chyba načítání verzí.')
-    } finally {
-      setVersionsLoadingId(null)
-    }
-  }
-
-  async function handleAddNewVersion(documentId: string, file: File) {
-    setErrorText(null)
-    try {
-      await addAttachmentVersionWithUpload({ entityType, entityId, documentId, file })
-      await loadAttachments()
-
-      // invalidate cache versions
-      setVersionsByDocId((prev) => {
-        const next = { ...prev }
-        delete next[documentId]
-        return next
-      })
-
-      // re-open versions if it was expanded
-      if (expandedDocId === documentId) {
-        setExpandedDocId(null)
-        setTimeout(() => void toggleVersions(documentId), 0)
-      }
-    } catch (e: any) {
-      setErrorText(e?.message ?? 'Nepodařilo se přidat verzi.')
-    }
-  }
+  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setFilterText(e.target.value), [])
+  const handleNewTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNewTitle(e.target.value), [])
+  const handleNewDescChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNewDesc(e.target.value), [])
+  const handleNewFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewFile(e.target.files?.[0] ?? null)
+  }, [])
+  const handleEditTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value), [])
+  const handleEditDescChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setEditDesc(e.target.value), [])
+  const handleArchivedToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setIncludeArchived(e.target.checked)
+  }, [])
 
   function handleActionAdd() {
     setErrorText(null)
@@ -241,18 +188,154 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
     }
   }
 
-  function onActionClick(id: LocalActionId) {
-    if (id === 'addAttachment') return handleActionAdd()
-    if (id === 'saveAttachment') return void handleActionSave()
-    if (id === 'closePanel') return handleActionClose()
-  }
+  const onToolbarActionClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const id = e.currentTarget.dataset.action as LocalActionId | undefined
+      if (!id) return
+      if (id === 'addAttachment') return handleActionAdd()
+      if (id === 'saveAttachment') return void handleActionSave()
+      if (id === 'closePanel') return handleActionClose()
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panelDirty, panelOpen, newTitle, newDesc, newFile, saving, loadAttachments, resetPanel]
+  )
+
+  const handleOpenLatest = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const filePath = e.currentTarget.dataset.path
+      if (!filePath) return
+      setErrorText(null)
+      try {
+        await openFileByPath(filePath)
+      } catch (err: any) {
+        setErrorText(err?.message ?? 'Nepodařilo se otevřít přílohu.')
+      }
+    },
+    [openFileByPath]
+  )
+
+  const handleToggleVersions = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const documentId = e.currentTarget.dataset.docid
+      if (!documentId) return
+
+      if (expandedDocId === documentId) {
+        setExpandedDocId(null)
+        return
+      }
+
+      setExpandedDocId(documentId)
+      if (versionsByDocId[documentId]) return
+
+      setErrorText(null)
+      try {
+        setVersionsLoadingId(documentId)
+        const versions = await listAttachmentVersions({ documentId, includeArchived: true })
+        setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
+      } catch (err: any) {
+        setErrorText(err?.message ?? 'Chyba načítání verzí.')
+      } finally {
+        setVersionsLoadingId(null)
+      }
+    },
+    [expandedDocId, versionsByDocId]
+  )
+
+  const handleRequestNewVersion = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const documentId = e.currentTarget.dataset.docid
+    if (!documentId) return
+
+    const ok = confirm('Vytvořit novou verzi dokumentu?')
+    if (!ok) return
+
+    const input = versionInputRefs.current[documentId]
+    input?.click()
+  }, [])
+
+  const handleVersionFileSelected = useCallback(
+    async (documentId: string, file: File) => {
+      setErrorText(null)
+      try {
+        await addAttachmentVersionWithUpload({ entityType, entityId, documentId, file })
+        await loadAttachments()
+
+        setVersionsByDocId((prev) => {
+          const next = { ...prev }
+          delete next[documentId]
+          return next
+        })
+      } catch (err: any) {
+        setErrorText(err?.message ?? 'Nepodařilo se přidat verzi.')
+      }
+    },
+    [entityType, entityId, loadAttachments]
+  )
+
+  const handleVersionInputChange = useCallback(
+    (documentId: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0]
+      e.currentTarget.value = ''
+      if (!f) return
+      await handleVersionFileSelected(documentId, f)
+    },
+    [handleVersionFileSelected]
+  )
+
+  const handleOpenVersion = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const filePath = e.currentTarget.dataset.path
+      if (!filePath) return
+      setErrorText(null)
+      try {
+        await openFileByPath(filePath)
+      } catch (err: any) {
+        setErrorText(err?.message ?? 'Nepodařilo se otevřít verzi.')
+      }
+    },
+    [openFileByPath]
+  )
+
+  const handleStartEdit = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const documentId = e.currentTarget.dataset.docid
+    const title = e.currentTarget.dataset.title ?? ''
+    const desc = e.currentTarget.dataset.desc ?? ''
+    if (!documentId) return
+
+    setEditingDocId(documentId)
+    setEditTitle(title)
+    setEditDesc(desc)
+  }, [])
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingDocId(null)
+    setEditTitle('')
+    setEditDesc('')
+  }, [])
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!editingDocId) return
+    const title = editTitle.trim()
+    if (!title) return setErrorText('Chybí název dokumentu.')
+
+    setEditSaving(true)
+    setErrorText(null)
+    try {
+      await updateAttachmentMetadata({
+        documentId: editingDocId,
+        title,
+        description: editDesc.trim() ? editDesc.trim() : null,
+      })
+      setEditingDocId(null)
+      await loadAttachments()
+    } catch (err: any) {
+      setErrorText(err?.message ?? 'Nepodařilo se uložit změny dokumentu.')
+    } finally {
+      setEditSaving(false)
+    }
+  }, [editingDocId, editTitle, editDesc, loadAttachments])
 
   const saveDisabled = !panelOpen || saving
   const closeDisabled = !panelOpen && !panelDirty
-
-  /* =========================
-     RENDER
-     ========================= */
 
   if (!canLoad) {
     return (
@@ -268,38 +351,28 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
 
   return (
     <div className="detail-view__section">
-      {/* =========================================================
-         TOOLBAR (vlevo filtr + archiv, vpravo akce jako CommonActions)
-         ========================================================= */}
       <div className="detail-form__section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          {/* LEFT */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div>
-              <label className="detail-form__label" style={{ display: 'none' }}>Filtr</label>
+        <div className="detail-attachments__toolbar">
+          <div className="detail-attachments__toolbar-left">
+            <div className="detail-attachments__filter">
+              <label className="detail-form__label detail-attachments__label-hidden">Filtr</label>
               <input
                 className="detail-form__input"
                 value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                placeholder="Hledat podle názvu nebo popisu"
-                style={{ minWidth: 280 }}
+                onChange={handleFilterChange}
+                placeholder="Hledat podle názvu, popisu nebo souboru"
               />
             </div>
 
-            <div>
+            <div className="detail-attachments__archived">
               <label className="detail-form__label">&nbsp;</label>
-              <label className="detail-form__checkbox" style={{ marginTop: 6 }}>
-                <input
-                  type="checkbox"
-                  checked={includeArchived}
-                  onChange={(e) => setIncludeArchived(e.target.checked)}
-                />
+              <label className="detail-form__checkbox detail-attachments__checkbox">
+                <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
                 <span> Zobrazit archivované</span>
               </label>
             </div>
           </div>
 
-          {/* RIGHT (oranžová oblast) */}
           <div className="common-actions" aria-label="Akce příloh">
             {(['addAttachment', 'saveAttachment', 'closePanel'] as LocalActionId[]).map((id) => {
               const def = LOCAL_ACTIONS[id]
@@ -313,7 +386,8 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                   className="common-actions__btn"
                   disabled={disabled}
                   title={def.title}
-                  onClick={() => !disabled && onActionClick(id)}
+                  data-action={id}
+                  onClick={onToolbarActionClick}
                 >
                   <span className="common-actions__icon" aria-hidden="true">
                     {getIcon(def.icon as any)}
@@ -325,11 +399,8 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
           </div>
         </div>
 
-        {/* =========================================================
-           ADD PANEL
-           ========================================================= */}
         {panelOpen && (
-          <div className="detail-form" style={{ marginTop: 10 }}>
+          <div className="detail-form detail-attachments__panel">
             <section className="detail-form__section">
               <h3 className="detail-form__section-title">Nová příloha</h3>
 
@@ -339,29 +410,28 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
                   <input
                     className="detail-form__input"
                     value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
+                    onChange={handleNewTitleChange}
                     placeholder="např. Nájemní smlouva"
                   />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-4">
-                  <label className="detail-form__label">Poznámka</label>
+                  <label className="detail-form__label">Popis</label>
                   <input
                     className="detail-form__input"
                     value={newDesc}
-                    onChange={(e) => setNewDesc(e.target.value)}
+                    onChange={handleNewDescChange}
                     placeholder="volitelné"
                   />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-4">
                   <label className="detail-form__label">Soubor</label>
-                  <input type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
-                  
+                  <input type="file" onChange={handleNewFileChange} />
                 </div>
               </div>
 
-              <div className="detail-form__hint" style={{ marginTop: 8 }}>
+              <div className="detail-form__hint">
                 Uložit můžeš tlačítkem <strong>Uložit</strong> (vpravo nahoře). Zavřít bez uložení tlačítkem{' '}
                 <strong>Zavřít</strong>.
               </div>
@@ -387,71 +457,181 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
           <section className="detail-form__section">
             <h3 className="detail-form__section-title">Seznam příloh</h3>
 
-            <div className="detail-form__grid">
-              {filteredRows.map((r) => (
-                <div key={r.id} className="detail-form__field detail-form__field--span-6">
-                  <label className="detail-form__label">
-                    {r.title}
-                    {r.is_archived ? ' (archiv)' : ''}
-                  </label>
-
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <input className="detail-form__input detail-form__input--readonly" value={r.file_name} readOnly />
-
-                    <button type="button" className="detail-attachments__link" onClick={() => handleOpenLatest(r)}>
-                      Otevřít
-                    </button>
-
-                    <button type="button" className="detail-attachments__link" onClick={() => toggleVersions(r.id)}>
-                      Verze
-                    </button>
-
-                    <label className="detail-attachments__link" style={{ cursor: 'pointer' }}>
-                      Přidat verzi
-                      <input
-                        type="file"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          e.currentTarget.value = ''
-                          if (!f) return
-                          void handleAddNewVersion(r.id, f)
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  {r.description ? <div className="detail-view__placeholder">{r.description}</div> : null}
-
-                  {expandedDocId === r.id && (
-                    <div className="detail-view__placeholder">
-                      {versionsLoadingId === r.id ? (
-                        <>Načítám verze…</>
-                      ) : (versionsByDocId[r.id] ?? []).length === 0 ? (
-                        <>Žádné verze.</>
-                      ) : (
-                        <div>
-                          {(versionsByDocId[r.id] ?? []).map((v) => (
-                            <div
-                              key={v.id}
-                              style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}
-                            >
-                              <span>
-                                v{String(v.version_number).padStart(3, '0')} — {v.file_name}
-                                {v.is_archived ? ' (archiv)' : ''}
-                              </span>
-
-                              <button type="button" className="detail-attachments__link" onClick={() => handleOpenVersion(v)}>
-                                Otevřít
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+            <div className="detail-attachments__table" role="table" aria-label="Přílohy">
+              <div className="detail-attachments__row detail-attachments__row--head" role="row">
+                <div className="detail-attachments__cell" role="columnheader">
+                  Název
                 </div>
-              ))}
+                <div className="detail-attachments__cell" role="columnheader">
+                  Popis
+                </div>
+                <div className="detail-attachments__cell" role="columnheader">
+                  Soubor (latest)
+                </div>
+                <div className="detail-attachments__cell" role="columnheader">
+                  Verze
+                </div>
+                <div className="detail-attachments__cell" role="columnheader">
+                  Nahráno
+                </div>
+                <div className="detail-attachments__cell" role="columnheader">
+                  Změněno
+                </div>
+                <div className="detail-attachments__cell" role="columnheader">
+                  Akce
+                </div>
+              </div>
+
+              {filteredRows.map((r) => {
+                const isEditing = editingDocId === r.id
+                const docUpdatedAt = (r.updated_at ?? null) as any
+                const docUpdatedBy = (r.updated_by ?? null) as any
+
+                return (
+                  <React.Fragment key={r.id}>
+                    <div className="detail-attachments__row" role="row">
+                      <div className="detail-attachments__cell" role="cell">
+                        {isEditing ? (
+                          <input className="detail-form__input" value={editTitle} onChange={handleEditTitleChange} />
+                        ) : (
+                          <div className="detail-attachments__title">
+                            {r.title}
+                            {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="detail-attachments__cell" role="cell">
+                        {isEditing ? (
+                          <input className="detail-form__input" value={editDesc} onChange={handleEditDescChange} />
+                        ) : (
+                          <div className="detail-attachments__muted">{r.description ?? '—'}</div>
+                        )}
+                      </div>
+
+                      <div className="detail-attachments__cell" role="cell">
+                        <div className="detail-attachments__file">
+                          <span className="detail-attachments__file-name">{r.file_name}</span>
+                          <button
+                            type="button"
+                            className="detail-attachments__link"
+                            data-path={r.file_path}
+                            onClick={handleOpenLatest}
+                          >
+                            Otevřít
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="detail-attachments__cell" role="cell">
+                        <span className="detail-attachments__mono">v{String(r.version_number).padStart(3, '0')}</span>
+                      </div>
+
+                      <div className="detail-attachments__cell" role="cell">
+                        <div className="detail-attachments__meta">
+                          <div>{formatDt(r.version_created_at ?? r.created_at)}</div>
+                          <div className="detail-attachments__muted">{r.created_by ?? '—'}</div>
+                        </div>
+                      </div>
+
+                      <div className="detail-attachments__cell" role="cell">
+                        <div className="detail-attachments__meta">
+                          <div>{formatDt(docUpdatedAt)}</div>
+                          <div className="detail-attachments__muted">{docUpdatedBy ?? '—'}</div>
+                        </div>
+                      </div>
+
+                      <div className="detail-attachments__cell" role="cell">
+                        <div className="detail-attachments__actions">
+                          <button
+                            type="button"
+                            className="detail-attachments__link"
+                            data-docid={r.id}
+                            onClick={handleToggleVersions}
+                          >
+                            Historie
+                          </button>
+
+                          <button
+                            type="button"
+                            className="detail-attachments__link"
+                            data-docid={r.id}
+                            onClick={handleRequestNewVersion}
+                          >
+                            Přidat verzi
+                          </button>
+
+                          <input
+                            ref={(el) => setVersionInputRef(r.id, el)}
+                            type="file"
+                            className="detail-attachments__file-input"
+                            onChange={handleVersionInputChange(r.id)}
+                          />
+
+                          {isEditing ? (
+                            <>
+                              <button
+                                type="button"
+                                className="detail-attachments__link"
+                                disabled={editSaving}
+                                onClick={handleSaveEdit}
+                              >
+                                Uložit
+                              </button>
+                              <button type="button" className="detail-attachments__link" onClick={handleCancelEdit}>
+                                Zrušit
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              className="detail-attachments__link"
+                              data-docid={r.id}
+                              data-title={r.title}
+                              data-desc={r.description ?? ''}
+                              onClick={handleStartEdit}
+                            >
+                              Upravit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {expandedDocId === r.id && (
+                      <div className="detail-attachments__row detail-attachments__row--versions" role="row">
+                        <div className="detail-attachments__versions" role="cell">
+                          {versionsLoadingId === r.id ? (
+                            <>Načítám verze…</>
+                          ) : (versionsByDocId[r.id] ?? []).length === 0 ? (
+                            <>Žádné verze.</>
+                          ) : (
+                            <div className="detail-attachments__versions-list">
+                              {(versionsByDocId[r.id] ?? []).map((v) => (
+                                <div key={v.id} className="detail-attachments__version-item">
+                                  <span className="detail-attachments__mono">
+                                    v{String(v.version_number).padStart(3, '0')}
+                                  </span>
+                                  <span>{v.file_name}</span>
+                                  <span className="detail-attachments__muted">{formatDt(v.created_at)}</span>
+                                  <button
+                                    type="button"
+                                    className="detail-attachments__link"
+                                    data-path={v.file_path}
+                                    onClick={handleOpenVersion}
+                                  >
+                                    Otevřít
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                )
+              })}
             </div>
           </section>
         </div>
