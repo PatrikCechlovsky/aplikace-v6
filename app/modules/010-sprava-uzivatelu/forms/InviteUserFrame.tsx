@@ -1,6 +1,4 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/InviteUserFrame.tsx
-// (obsah dle tvého uploadu)
-// CHANGE: v "Systém" tab přidány položky Odesláno / Platí do / Odeslal (čte přes any – typ InviteResult můžeš doplnit v service)
 
 'use client'
 
@@ -14,9 +12,16 @@ type Props = {
   presetSubjectId?: string | null
   onDirtyChange?: (dirty: boolean) => void
   onRegisterSubmit?: (fn: () => Promise<boolean>) => void
+  /** pokud používáš pozvánku uvnitř detailu existujícího uživatele */
+  variant?: 'standalone' | 'existingOnly'
 }
 
-export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegisterSubmit }: Props) {
+export default function InviteUserFrame({
+  presetSubjectId,
+  onDirtyChange,
+  onRegisterSubmit,
+  variant = 'standalone',
+}: Props) {
   const [activeTab, setActiveTab] = useState<'invite' | 'system'>('invite')
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null)
 
@@ -50,16 +55,24 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       try {
         const v = currentRef.current
 
-        if (v.mode === 'existing' && !v.subjectId) {
-          alert('Vyber existujícího uživatele.')
-          return false
+        if (variant === 'existingOnly') {
+          if (!v.subjectId) {
+            alert('Chybí uživatel.')
+            return false
+          }
+        } else {
+          if (v.mode === 'existing' && !v.subjectId) {
+            alert('Vyber existujícího uživatele.')
+            return false
+          }
+          if (v.mode === 'new' && !v.email?.trim()) {
+            alert('Zadej e-mail.')
+            return false
+          }
         }
-        if (v.mode === 'new' && !v.email?.trim()) {
-          alert('Email je povinný.')
-          return false
-        }
+
         if (!v.roleCode?.trim()) {
-          alert('Role je povinná.')
+          alert('Vyber roli.')
           return false
         }
 
@@ -76,7 +89,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     }
 
     onRegisterSubmit(submit)
-  }, [onRegisterSubmit, onDirtyChange])
+  }, [onRegisterSubmit, onDirtyChange, variant])
 
   const tabItems: DetailTabItem[] = useMemo(() => {
     const items: DetailTabItem[] = [{ id: 'invite', label: 'Pozvánka' }]
@@ -92,6 +105,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
         <section id="detail-section-invite">
           <InviteUserForm
             initialValue={currentRef.current}
+            variant={variant}
             onDirtyChange={onDirtyChange}
             onValueChange={(v) => {
               currentRef.current = v
@@ -118,11 +132,6 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Režim</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).mode ?? '—'} readOnly />
-                </div>
-
-                <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Odesláno</label>
                   <input
                     className="detail-form__input detail-form__input--readonly"
@@ -139,6 +148,11 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Odeslal</label>
                   <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).createdBy ?? '—'} readOnly />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">První přihlášení</label>
+                  <input className="detail-form__input detail-form__input--readonly" value={(inviteResult as any).firstLoginAt ?? '—'} readOnly />
                 </div>
               </div>
             </section>
