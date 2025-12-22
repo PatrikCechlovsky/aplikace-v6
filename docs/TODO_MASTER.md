@@ -174,3 +174,53 @@ Neobsahuje žádný programový kód.
   - otestováno
 - [ ] Nehotové body zůstávají v tomto dokumentu
 - [ ] Nové úkoly se přidávají výhradně sem
+
+Sjednotit zobrazení datumů a časů v celé aplikaci (UI layer)
+
+Popis:
+V celé aplikaci se aktuálně na některých místech zobrazují databázové hodnoty timestamptz přímo ve formátu ISO
+(např. 2025-12-16T07:47:26.728831+00:00), což není vhodné pro koncového uživatele.
+
+Cílem je:
+
+zobrazovat pouze datum + čas (bez mikrosekund a bez explicitního timezone)
+
+mít jednotný formát napříč celou aplikací
+
+zachovat plnou přesnost v databázi
+
+Rozsah:
+
+Detail entity → záložka Systém
+
+Přílohy (Nahráno / Změněno)
+
+Pozvánky
+
+Audit / historie změn
+
+Jakékoliv další systémové nebo read-only zobrazení času
+
+Technické řešení:
+
+vytvořit centrální util funkci:
+
+formatDateTime(value?: string | null): string
+
+volitelně formatDate(value?: string | null): string
+
+používat toLocaleString('cs-CZ', { … })
+
+nikdy nezobrazovat ISO timestamp přímo v JSX
+
+Akceptační kritéria:
+
+v UI se nikde nezobrazuje znak T, mikrosekundy ani +00:00
+
+prázdná hodnota → zobrazí se —
+
+databázová struktura zůstává beze změny
+
+Priorita: 🟡 střední
+Typ: UX / UI consistency
+Závislosti: žádné
