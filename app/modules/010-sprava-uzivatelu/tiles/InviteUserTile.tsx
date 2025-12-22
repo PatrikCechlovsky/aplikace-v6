@@ -1,7 +1,7 @@
 'use client'
 
 // FILE: app/modules/010-sprava-uzivatelu/tiles/InviteUserTile.tsx
-// PURPOSE: Samostatný tile pro pozvání uživatele (010) – napojený na CommonActions (save/close).
+// PURPOSE: Samostatný tile pro pozvání uživatele (010) – napojený na CommonActions (sendInvite/close).
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -40,8 +40,7 @@ export default function InviteUserTile({
 
   // CommonActions pro invite obrazovku
   const commonActions = useMemo<CommonActionId[]>(() => {
-    // Použijeme standardní 'save' (v UI popisek si můžeš později přemapovat na "Odeslat pozvánku")
-    return ['save', 'close']
+    return ['sendInvite', 'close']
   }, [])
 
   useEffect(() => {
@@ -67,12 +66,12 @@ export default function InviteUserTile({
         return
       }
 
-      if (id === 'save') {
+      if (id === 'sendInvite') {
         if (!submitRef.current) return
         const ok = await submitRef.current()
         if (!ok) return
         setIsDirty(false)
-        // ✅ po uložení zůstáváme na obrazovce (InviteUserFrame přepne na "Systém" tab)
+        // po odeslání zůstáváme (InviteUserFrame přepne na 'Systém')
         return
       }
     }
