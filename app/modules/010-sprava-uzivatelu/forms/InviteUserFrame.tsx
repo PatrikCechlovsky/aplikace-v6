@@ -105,7 +105,6 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
           initialValue={currentRef.current}
           onValueChange={(v) => {
             currentRef.current = v
-            onDirtyChange?.(true)
           }}
           onDirtyChange={onDirtyChange}
           variant="standalone"
@@ -160,12 +159,6 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
           </div>
         </div>
       )}
-
-      <div style={{ padding: 12, display: 'flex', gap: 8 }}>
-        <button onClick={() => void doSend()} disabled={isSending}>
-          {isSending ? 'Odesílám…' : 'Odeslat pozvánku'}
-        </button>
-      </div>
     </EntityDetailFrame>
   )
 }
