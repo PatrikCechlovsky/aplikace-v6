@@ -1,12 +1,13 @@
 // FILE: app/UI/DetailView.tsx
 // CHANGE: oprava selectu rolí v edit/create (neztrácí hodnotu, i když nejsou options)
 // CHANGE: přidána sekce 'invite' + možnost otevřít detail na konkrétní sekci (initialActiveId) + callback onActiveSectionChange
+// FIX (2025-12-22): taby šly přepínat, ale useEffect resetoval activeId zpět na initialActiveId při každém renderu,
+// protože se často mění "sections" (ctx je nový objekt). Teď initialActiveId aplikujeme jen při změně.
 
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
-import DetailAttachmentsSection from './detail-sections/DetailAttachmentsSection'
 import AttachmentOverview from '@/app/UI/detail-sections/AttachmentOverview'
 
 export type DetailViewMode = 'create' | 'edit' | 'view'
@@ -92,7 +93,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
 
       const role = data?.role
       const permissions = data?.permissions ?? []
-
       const options = data?.availableRoles ?? []
 
       // Zajisti, že aktuální role je v options (když číselník ještě není načtený)
@@ -176,14 +176,9 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 90,
     visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
     render: (ctx: any) => (
-      <AttachmentOverview
-        entityType={ctx.entityType}
-        entityId={ctx.entityId}
-        mode={ctx.mode ?? 'view'}
-      />
+      <AttachmentOverview entityType={ctx.entityType} entityId={ctx.entityId} mode={ctx.mode ?? 'view'} />
     ),
   },
-
 
   system: {
     id: 'system',
@@ -195,30 +190,30 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       const visibleBlocks = blocks.filter((b) => b && b.visible !== false)
 
       return (
-      <div className="detail-form">
-        <section className="detail-form__section">
-          <h3 className="detail-form__section-title">Systém</h3>
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">Entity</label>
-              <input className="detail-form__input detail-form__input--readonly" value={ctx.entityType ?? '—'} readOnly />
+        <div className="detail-form">
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Systém</h3>
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Entity</label>
+                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityType ?? '—'} readOnly />
+              </div>
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">ID</label>
+                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityId ?? '—'} readOnly />
+              </div>
             </div>
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">ID</label>
-              <input className="detail-form__input detail-form__input--readonly" value={ctx.entityId ?? '—'} readOnly />
-            </div>
-          </div>
-        </section>
-
-        {ctx?.systemContent ?? null}
-
-        {visibleBlocks.map((b, idx) => (
-          <section key={idx} className="detail-form__section">
-            <h3 className="detail-form__section-title">{b.title}</h3>
-            {b.content}
           </section>
-        ))}
-      </div>
+
+          {ctx?.systemContent ?? null}
+
+          {visibleBlocks.map((b, idx) => (
+            <section key={idx} className="detail-form__section">
+              <h3 className="detail-form__section-title">{b.title}</h3>
+              {b.content}
+            </section>
+          ))}
+        </div>
       )
     },
   },
@@ -272,12 +267,25 @@ export default function DetailView<Ctx = unknown>({
 
   const [activeId, setActiveId] = useState<DetailSectionId>(defaultActive)
 
-  // Reaguj na změnu initialActiveId (např. otevření detailu rovnou na sekci Pozvánka)
+  // ✅ Apply initialActiveId pouze když se ZMĚNÍ (ne pokaždé při re-renderu/změně sections)
+  const lastInitialAppliedRef = useRef<DetailSectionId | null>(null)
+
   useEffect(() => {
     if (!initialActiveId) return
     if (!sections.some((s) => s.id === initialActiveId)) return
-    setActiveId(initialActiveId)
+
+    if (lastInitialAppliedRef.current !== initialActiveId) {
+      lastInitialAppliedRef.current = initialActiveId
+      setActiveId(initialActiveId)
+    }
   }, [initialActiveId, sections])
+
+  // ✅ Když aktivní záložka přestane existovat (např. zmizí Pozvánka), přepni na první dostupnou
+  useEffect(() => {
+    if (!sections.some((s) => s.id === activeId)) {
+      setActiveId(sections[0]?.id ?? 'detail')
+    }
+  }, [sections, activeId])
 
   // Report aktivní sekci parentovi (pro CommonActions režim)
   useEffect(() => {
