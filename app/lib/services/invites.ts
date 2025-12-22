@@ -1,9 +1,7 @@
 // FILE: app/lib/services/invites.ts
 // PURPOSE: Service pro vytvoření pozvánky (subject_invites) + (volitelně) vytvoření SUBJECTu pro nový email.
-// NOTE:
-// - RLS rozhoduje, jestli insert projde. Když padá "new row violates row-level security policy", chybí policy.
-// - DB kontrakty: subject_invites.invite_mode je NOT NULL (posíláme vždy).
-// - UX kontrakt: nechceme duplicitní pozvánky (pending) ani duplicitní email v subjects.
+// CHANGE (2025-12-22):
+// - "Vždy vytvořit novou pozvánku": před insert expirovat všechny aktivní pending pozvánky pro subject/email.
 
 import { supabase } from '@/app/lib/supabaseClient'
 import type { InviteFormValue } from '@/app/modules/010-sprava-uzivatelu/forms/InviteUserForm'
@@ -19,7 +17,6 @@ export type InviteResult = {
   expiresAt: string | null
   createdBy: string | null
 
-  // rozšíření pro UI:
   subjectId: string | null
   subjectCreated: boolean
   message?: string | null
@@ -36,68 +33,51 @@ async function findSubjectByEmail(email: string): Promise<{ id: string } | null>
   return data?.id ? { id: data.id } : null
 }
 
-async function ensureNoActiveInvite(params: { subjectId?: string | null; email?: string | null }) {
-  const subjectId = (params.subjectId ?? '').trim() || null
-  const email = normalizeEmail(params.email)
-
-  if (!subjectId && !email) return
-
-  // Aktivní = pending a (expires_at je null nebo v budoucnu)
-  // Pozn.: "now" děláme na klientovi, DB porovnání přes filtr nejde 1:1, proto bereme poslední a kontrolujeme v JS.
-  let q = supabase
-    .from('subject_invites')
-    .select('id,status,invite_mode,role_code,email,subject_id,created_at,sent_at,expires_at,created_by')
-    .order('created_at', { ascending: false })
-    .limit(1)
-
-  if (subjectId) q = q.eq('subject_id', subjectId)
-  else if (email) q = q.eq('email', email)
-
-  const { data, error } = await q
-  if (error) throw new Error(error.message)
-
-  const row = (data ?? [])[0] as any
-  if (!row?.id) return
-
-  const status = String(row.status ?? '').toLowerCase()
-  if (status !== 'pending') return
-
-  const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : null
-  const now = Date.now()
-  const isActive = expiresAt == null || expiresAt > now
-
-  if (isActive) {
-    throw new Error(
-      'Pozvánka už existuje a je stále aktivní (pending). Neodesílej ji znovu – použij resend až ho doplníme.'
-    )
-  }
-}
-
-async function createSubjectForNewInvite(input: {
-  email: string
-  displayName?: string | null
-}): Promise<{ subjectId: string }> {
+async function createSubjectForNewInvite(input: { email: string; displayName?: string | null }): Promise<{ subjectId: string }> {
   // DB: subjects.origin_module je NOT NULL -> posíláme vždy.
-  // DB: subjects.subject_type často bývá NOT NULL -> zvolíme "user" (pokud máš jiný kód, uprav zde).
+  // DB: subjects.subject_type může být NOT NULL -> podle tvé DB. Pokud máš jiný kód, uprav.
   const payload: any = {
     subject_type: 'osoba',
     display_name: (input.displayName ?? '').trim() || input.email,
     email: input.email,
     is_archived: false,
-
     origin_module: '010',
   }
 
-  const { data, error } = await supabase
-    .from('subjects')
-    .insert(payload)
-    .select('id,email,display_name')
-    .single()
-
+  const { data, error } = await supabase.from('subjects').insert(payload).select('id').single()
   if (error) throw new Error(error.message)
   if (!data?.id) throw new Error('Nepodařilo se vytvořit subjekt pro pozvánku.')
-
   return { subjectId: data.id }
+}
+
+/**
+ * Expirovat všechny pending pozvánky pro stejného adresáta.
+ * - preferujeme subject_id
+ * - fallback: email
+ *
+ * Děláme:
+ * - status = 'expired'
+ * - expires_at = now
+ *
+ * Pozn.: Pokud máš v DB i pole "expired_at" nebo audit, můžeš doplnit.
+ */
+async function expireActiveInvites(params: { subjectId?: string | null; email?: string | null }) {
+  const subjectId = (params.subjectId ?? '').trim() || null
+  const email = normalizeEmail(params.email)
+
+  if (!subjectId && !email) return
+
+  const nowIso = new Date().toISOString()
+  let q = supabase.from('subject_invites').update({ status: 'expired', expires_at: nowIso })
+
+  // expirovat jen pending
+  q = q.eq('status', 'pending')
+
+  if (subjectId) q = q.eq('subject_id', subjectId)
+  else if (email) q = q.eq('email', email)
+
+  const { error } = await q
+  if (error) throw new Error(error.message)
 }
 
 export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
@@ -121,7 +101,7 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
     if (!email) throw new Error('Email je povinný.')
     const existing = await findSubjectByEmail(email)
     if (existing?.id) {
-      // přesně co chceš: nedovolíme mít 2 subjekty se stejným emailem
+      // uživatel nechce 2 subjekty se stejným emailem
       throw new Error('Subjekt s tímto emailem už existuje. Použij režim „Existující uživatel“.')
     }
 
@@ -130,13 +110,12 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
     subjectCreated = true
   }
 
-  // 2) Blokace duplicitních aktivních pozvánek (pending)
-  await ensureNoActiveInvite({ subjectId, email })
+  // ✅ 2) ALWAYS NEW INVITE: expirovat staré pending pozvánky pro stejného adresáta
+  await expireActiveInvites({ subjectId, email })
 
-  // 3) Insert pozvánky
+  // 3) Insert nové pozvánky
   const payload: any = {
     invite_mode: mode, // NOT NULL
-
     subject_id: subjectId,
     email: email,
 
@@ -185,13 +164,14 @@ export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
 
     subjectId: (data as any).subject_id ?? subjectId ?? null,
     subjectCreated,
-    message: subjectCreated ? 'Byl vytvořen nový subjekt + založena pozvánka.' : 'Byla založena pozvánka.',
+    message: subjectCreated
+      ? 'Byl vytvořen nový subjekt + založena nová pozvánka (předchozí pending byly expirovány).'
+      : 'Byla založena nová pozvánka (předchozí pending byly expirovány).',
   }
 }
 
 /**
- * Vrátí poslední pozvánku pro daný subject (ORDER BY created_at DESC LIMIT 1).
- * Používáme pro zobrazení v Detail -> Systém/Pozvánka.
+ * Vrátí poslední pozvánku pro subject (ORDER BY created_at DESC LIMIT 1).
  */
 export async function getLatestInviteForSubject(subjectId: string): Promise<InviteResult | null> {
   const id = (subjectId ?? '').trim()
