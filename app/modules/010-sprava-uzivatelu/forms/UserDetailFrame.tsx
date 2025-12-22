@@ -7,7 +7,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import DetailTabs from '@/app/UI/DetailTabs'
+import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 
