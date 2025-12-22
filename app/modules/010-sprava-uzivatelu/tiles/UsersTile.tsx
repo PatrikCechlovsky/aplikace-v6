@@ -1,5 +1,3 @@
-/* (celý soubor – je dlouhý, ale dávám celý přesně jak chceš) */
-
 'use client'
 
 // FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
@@ -240,7 +238,6 @@ export default function UsersTile({
     if (!t) {
       // modul root (tile zavřený) -> nevnucujeme nic, necháme list režim (prázdno)
       if (viewMode !== 'list') {
-        // když už jsi v nějakém subview, zavři do listu bez t
         setViewMode('list')
         setDetailUser(null)
         setInvitePresetSubjectId(null)
@@ -312,20 +309,20 @@ export default function UsersTile({
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'list') return ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     if (viewMode === 'invite') return ['sendInvite', 'close']
-  
+
     // Detail: nabídni "Přílohy…" všude mimo invite záložku
     const withAttachments = (base: CommonActionId[]) =>
       detailActiveSectionId === 'invite' ? base : [...base, 'attachments']
-  
+
     if (viewMode === 'read') {
       if (detailActiveSectionId === 'invite') return canInviteDetail ? ['sendInvite', 'close'] : ['close']
       return withAttachments(['edit', 'close'])
     }
-  
+
     if (viewMode === 'edit') {
       return withAttachments(canInviteDetail ? ['save', 'invite', 'close'] : ['save', 'close'])
     }
-  
+
     // create
     return withAttachments(['save', 'close'])
   }, [viewMode, detailActiveSectionId, canInviteDetail])
@@ -369,24 +366,25 @@ export default function UsersTile({
         closeListToModule()
         return
       }
+
       // DETAIL: Správa příloh (FÁZE 1: placeholder)
       if (id === 'attachments') {
-        // na invite záložce to ani nenabízíme, ale pojistka neškodí
         if (detailActiveSectionId === 'invite') return
-      
+
         if (isDirty) {
           alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
           return
         }
-      
+
         if (!detailUser?.id || !detailUser.id.trim()) {
           alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
           return
         }
-      
+
         alert(`TODO: Správa příloh pro user ${detailUser.id}`)
         return
       }
+
       // LIST
       if (viewMode === 'list') {
         if (id === 'add') {
