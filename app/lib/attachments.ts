@@ -69,6 +69,28 @@ function sanitizeFileName(name: string) {
   return name.replace(/[^\w.\-]+/g, '_')
 }
 
+/**
+ * Vytvoří čitelný slug (bez diakritiky) pro použití ve Storage path.
+ * Pozn.: Slug je pouze „kosmetika“ – stabilitu zajišťuje UUID v path.
+ */
+function slugify(input?: string, maxLen = 60) {
+  const s = (input ?? '').toString().trim()
+  if (!s) return 'unknown'
+
+  // odstranění diakritiky
+  const noDia = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  // povolit jen bezpečné znaky
+  const slug = noDia
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-+/g, '-')
+
+  const out = slug || 'unknown'
+  return out.length > maxLen ? out.slice(0, maxLen).replace(/-+$/g, '') : out
+}
+
 function logDebug(...args: any[]) {
   // eslint-disable-next-line no-console
   console.log('[attachments]', ...args)
@@ -200,11 +222,13 @@ async function getNextVersionNumber(documentId: string) {
 export async function createAttachmentWithUpload(input: {
   entityType: string
   entityId: string
+  /** Čitelný název entity (např. subjects.display_name) pro hezčí file_path. */
+  entityLabel?: string
   title: string
   description?: string | null
   file: File
 }) {
-  const { entityType, entityId, title, description = null, file } = input
+  const { entityType, entityId, entityLabel, title, description = null, file } = input
 
   const userId = await getCurrentUserId()
 
@@ -226,7 +250,15 @@ export async function createAttachmentWithUpload(input: {
   const documentId = doc.id as string
   const versionNumber = 1
   const safeName = sanitizeFileName(file.name)
-  const filePath = `${entityType}/${entityId}/${documentId}/v${pad3(versionNumber)}_${safeName}`
+
+  // Nový „čitelný“ path (slug + id). Když nemáme entityLabel, zachováme původní formát.
+  const entitySlug = entityLabel ? slugify(entityLabel) : null
+  const docSlug = slugify(title)
+  const basePath = entitySlug
+    ? `${entityType}/${entitySlug}--${entityId}/${docSlug}--${documentId}`
+    : `${entityType}/${entityId}/${documentId}`
+
+  const filePath = `${basePath}/v${pad3(versionNumber)}_${safeName}`
 
   await uploadToStorage({ filePath, file })
 
@@ -253,16 +285,35 @@ export async function createAttachmentWithUpload(input: {
 export async function addAttachmentVersionWithUpload(input: {
   entityType: string
   entityId: string
+  /** Čitelný název entity (např. subjects.display_name) pro hezčí file_path. */
+  entityLabel?: string
   documentId: string
+  /** Název dokumentu (documents.title). Když není předán, načte se z DB. */
+  documentTitle?: string
   file: File
 }) {
-  const { entityType, entityId, documentId, file } = input
+  const { entityType, entityId, entityLabel, documentId, documentTitle, file } = input
 
   const userId = await getCurrentUserId()
 
   const versionNumber = await getNextVersionNumber(documentId)
   const safeName = sanitizeFileName(file.name)
-  const filePath = `${entityType}/${entityId}/${documentId}/v${pad3(versionNumber)}_${safeName}`
+
+  // Pokud není documentTitle předán, zkusíme ho načíst z documents.
+  let title = (documentTitle ?? '').toString().trim()
+  if (!title) {
+    const { data: d, error: e } = await supabase.from('documents').select('title').eq('id', documentId).single()
+    if (e) throw e
+    title = (d?.title ?? '').toString().trim()
+  }
+
+  const entitySlug = entityLabel ? slugify(entityLabel) : null
+  const docSlug = slugify(title)
+  const basePath = entitySlug
+    ? `${entityType}/${entitySlug}--${entityId}/${docSlug}--${documentId}`
+    : `${entityType}/${entityId}/${documentId}`
+
+  const filePath = `${basePath}/v${pad3(versionNumber)}_${safeName}`
 
   await uploadToStorage({ filePath, file })
 
