@@ -16,6 +16,7 @@ import InviteUserFrame from '../forms/InviteUserFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
+
 type UiUser = {
   id: string
   displayName: string
@@ -101,8 +102,10 @@ export default function UsersTile({
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [detailActiveSectionId, setDetailActiveSectionId] = useState<any>('detail')
   const [isDirty, setIsDirty] = useState(false)
+
+  // ✅ pamatujeme si poslední "id" v URL, abychom poznali návrat z detailu na list
   const prevUrlIdRef = useRef<string | null>(null)
-  
+
   // UserDetail submit
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
 
@@ -214,8 +217,9 @@ export default function UsersTile({
     inviteSubmitRef.current = null
     setIsDirty(false)
 
-    // ✅ FIX: návrat na list = žádný vybraný řádek
+    // návrat na list = žádný vybraný řádek
     setSelectedId(null)
+    prevUrlIdRef.current = null
 
     setUrl({ t: 'users-list', id: null, vm: null }, 'replace')
   }, [setUrl])
@@ -231,8 +235,9 @@ export default function UsersTile({
     inviteSubmitRef.current = null
     setIsDirty(false)
 
-    // ✅ FIX: zavření tile = žádný vybraný řádek
+    // zavření tile = žádný vybraný řádek
     setSelectedId(null)
+    prevUrlIdRef.current = null
 
     setUrl({ t: null, id: null, vm: null }, 'replace')
   }, [setUrl])
@@ -256,8 +261,9 @@ export default function UsersTile({
         inviteSubmitRef.current = null
         setIsDirty(false)
       }
-      // ✅ FIX: bez tile kontextu nechceme držet výběr
+      // bez tile kontextu nechceme držet výběr
       if (selectedId !== null) setSelectedId(null)
+      prevUrlIdRef.current = null
       return
     }
 
@@ -269,41 +275,64 @@ export default function UsersTile({
         inviteSubmitRef.current = null
         setIsDirty(false)
       }
-      // invite screen neřeší list selection (necháme), ale typicky je OK ji nemít
+      // invite screen: neřešíme selection z listu
       return
     }
 
-    if (!id) {
-      // list
-      if (viewMode !== 'list') {
-        setViewMode('list')
-        setDetailUser(null)
+    // list + detail
+    if (t === 'users-list') {
+      if (!id) {
+        // LIST
+        if (viewMode !== 'list') {
+          setViewMode('list')
+          setDetailUser(null)
+          submitRef.current = null
+          inviteSubmitRef.current = null
+          setInvitePresetSubjectId(null)
+          setIsDirty(false)
+        }
+
+        // ✅ klíč: na listu NEMAŽ selection při kliknutí na řádky.
+        //    Mažeme jen když jsme přišli z detailu (dřív bylo URL id).
+        const prevUrlId = prevUrlIdRef.current
+        if (prevUrlId) {
+          if (selectedId !== null) setSelectedId(null)
+        }
+
+        prevUrlIdRef.current = null
+        return
+      }
+
+      // DETAIL (id existuje)
+      prevUrlIdRef.current = id
+
+      const found = users.find((u) => u.id === id)
+      if (!found) return
+      if (selectedId !== id) setSelectedId(id)
+
+      const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
+      if (viewMode !== safeVm || detailUser?.id !== found.id) {
+        setDetailUser(found)
+        setDetailInitialSectionId('detail')
+        setDetailActiveSectionId('detail')
+        setViewMode(safeVm)
+        setIsDirty(false)
         submitRef.current = null
         inviteSubmitRef.current = null
         setInvitePresetSubjectId(null)
-        setIsDirty(false)
       }
-    
-      // ✅ Mazat selection jen když jsme přišli z detailu (URL id zmizelo)
-      //    Ne při každém kliknutí na řádek v listu.
-      const prevUrlId = prevUrlIdRef.current
-      if (prevUrlId) {
-        if (selectedId !== null) setSelectedId(null)
-      }
-    
-      prevUrlIdRef.current = null
       return
-        }
-      }, [searchParams, users, viewMode, detailUser?.id, selectedId])
-    
-      // -------------------------
-      // Invite availability for detail
-      // -------------------------
-      const canInviteDetail = useMemo(() => {
-        if (!detailUser?.id) return false
-        if (!detailUser.id.trim()) return false
-        if (detailUser.firstLoginAt) return false
-        return true
+    }
+  }, [searchParams, users, viewMode, detailUser?.id, selectedId])
+
+  // -------------------------
+  // Invite availability for detail
+  // -------------------------
+  const canInviteDetail = useMemo(() => {
+    if (!detailUser?.id) return false
+    if (!detailUser.id.trim()) return false
+    if (detailUser.firstLoginAt) return false
+    return true
   }, [detailUser?.firstLoginAt, detailUser?.id])
 
   // -------------------------
@@ -376,7 +405,7 @@ export default function UsersTile({
         return
       }
 
-      // DETAIL: Správa příloh (FÁZE 1: placeholder)
+      // DETAIL: Správa příloh (placeholder)
       if (id === 'attachments') {
         if (detailActiveSectionId === 'invite') return
 
@@ -413,8 +442,9 @@ export default function UsersTile({
           inviteSubmitRef.current = null
           setInvitePresetSubjectId(null)
 
-          // create detail => selection logically none yet
+          // create => zatím nic nevybíráme v listu
           setSelectedId(null)
+          prevUrlIdRef.current = ''
 
           setUrl({ t: 'users-list', id: '', vm: 'create' }, 'push')
           return
