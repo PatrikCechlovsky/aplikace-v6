@@ -83,7 +83,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // URL state (MVP): /?m=010&s=...&t=...
+  // URL state (MVP): /modules/010?m=010&s=...&t=...
   const urlState = useMemo(() => {
     const m = searchParams?.get('m')
     const s = searchParams?.get('s')
@@ -96,33 +96,41 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }, [searchParams])
 
   const setUrlState = useCallback(
-    (next: { moduleId?: string | null; sectionId?: string | null; tileId?: string | null }, mode: 'replace' | 'push' = 'replace') => {
-      // Keep unknown query params (e.g. filters) – only manage m/s/t.
-      const sp = new URLSearchParams(searchParams?.toString() ?? '')
+    (
+      next: { moduleId?: string | null; sectionId?: string | null; tileId?: string | null },
+      mode: 'replace' | 'push' = 'replace',
+      keepOtherParams: boolean = true
+    ) => {
+      // IMPORTANT:
+      // - keepOtherParams=true  => preserve unknown query params (filters etc.)
+      // - keepOtherParams=false => drop unknown params (tile-specific state like id/vm/...)
+      const sp = keepOtherParams
+        ? new URLSearchParams(searchParams?.toString() ?? '')
+        : new URLSearchParams()
+
       const setOrDelete = (key: string, val?: string | null) => {
         if (val && val.trim()) sp.set(key, val.trim())
         else sp.delete(key)
       }
 
-      setOrDelete('m', next.moduleId)
-      setOrDelete('s', next.sectionId)
-      setOrDelete('t', next.tileId)
+      setOrDelete('m', next.moduleId ?? null)
+      setOrDelete('s', next.sectionId ?? null)
+      setOrDelete('t', next.tileId ?? null)
 
       const qs = sp.toString()
-
       const basePath = next.moduleId ? `/modules/${next.moduleId}` : '/'
       const nextUrl = qs ? `${basePath}?${qs}` : basePath
-      
-      const currentQs = searchParams.toString()
+
+      const currentQs = searchParams?.toString() ?? ''
       const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname
-      
+
       // ✅ guard proti nekonečné smyčce
       if (nextUrl === currentUrl) return
-      
+
       if (mode === 'push') router.push(nextUrl)
       else router.replace(nextUrl)
     },
-    [pathname, router, searchParams.toString()]
+    [pathname, router, searchParams]
   )
 
   // Auth
@@ -147,7 +155,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     hasSelection: false,
     isDirty: false,
   })
-  const [commonActionHandler, setCommonActionHandler] = useState<((id: CommonActionId) => void) | undefined>(undefined)
+  const [commonActionHandler, setCommonActionHandler] = useState<((id: CommonActionId) => void) | undefined>(
+    undefined
+  )
 
   const registerCommonActions = useCallback((actions: CommonActionId[]) => {
     setCommonActions(actions)
@@ -170,7 +180,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }, [])
 
   const registerCommonActionHandler = useCallback((fn: (id: CommonActionId) => void) => {
-    setCommonActionHandler(() => fn) // uložit funkci jako hodnotu
+    setCommonActionHandler(() => fn)
   }, [])
 
   function resetCommonActions() {
@@ -179,7 +189,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setCommonActionsUi({ viewMode: 'list', hasSelection: false, isDirty: false })
   }
 
-  // Dirty guard – jen edit/create + isDirty
   function confirmIfDirty(message?: string) {
     const vm = commonActionsUi.viewMode
     const shouldGuard = vm === 'edit' || vm === 'create'
@@ -333,11 +342,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (activeModuleId) return
 
     // 1) URL-first
-    if (
-      urlState.moduleId &&
-      modules.some((m) => m.id === urlState.moduleId) &&
-      activeSelection?.moduleId !== urlState.moduleId
-    ) {
+    if (urlState.moduleId && modules.some((m) => m.id === urlState.moduleId) && activeSelection?.moduleId !== urlState.moduleId) {
       setActiveModuleId(urlState.moduleId)
       setActiveSelection({
         moduleId: urlState.moduleId,
@@ -352,10 +357,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       setActiveModuleId(initialModuleId)
       setActiveSelection({ moduleId: initialModuleId })
       resetCommonActions()
-      setUrlState({ moduleId: initialModuleId, sectionId: null, tileId: null }, 'replace')
+      // legacy init – OK to drop unknown params
+      setUrlState({ moduleId: initialModuleId, sectionId: null, tileId: null }, 'replace', false)
     }
   }, [isAuthenticated, modules, activeModuleId, initialModuleId, urlState.moduleId, urlState.sectionId, urlState.tileId])
-
 
   // React to browser back/forward (URL -> state)
   useEffect(() => {
@@ -378,20 +383,19 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       current.moduleId !== target.moduleId || current.sectionId !== target.sectionId || current.tileId !== target.tileId
     if (!differs) return
 
-    // If user is dirty, confirm; if they cancel, revert URL back to current.
     if (!confirmIfDirty()) {
-      setUrlState(current, 'replace')
+      // keep unknown params here (we are reverting user navigation)
+      setUrlState(current, 'replace', true)
       return
     }
 
-        if (!target.moduleId) {
-      // URL bez ?m=... = dashboard -> vyčisti výběr
+    if (!target.moduleId) {
       setActiveModuleId(null)
       setActiveSelection(null)
       resetCommonActions()
       return
     }
-    // Only accept modules that exist
+
     if (!modules.some((m) => m.id === target.moduleId)) return
     setActiveModuleId(target.moduleId)
     setActiveSelection({
@@ -399,7 +403,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       sectionId: target.sectionId ?? undefined,
       tileId: target.tileId ?? undefined,
     })
-    // Actions are tile-owned; keep/reset only when switching tile.
+
     if ((activeSelection?.tileId ?? null) !== (target.tileId ?? null)) resetCommonActions()
   }, [activeSelection, isAuthenticated, modules, modulesLoading, setUrlState, urlState.moduleId, urlState.sectionId, urlState.tileId])
 
@@ -419,33 +423,42 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }
 
   function handleModuleSelect(selection: SidebarSelection) {
-    // Klik na už aktivní položku nesmí „resetovat“ kontext (např. CommonActions)
     const sameSelection =
       activeSelection?.moduleId === selection.moduleId &&
       (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
       (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
-  
+
     if (sameSelection) return
     if (!confirmIfDirty()) return
-  
+
+    const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null
+
+    const nextModule = selection.moduleId ?? null
     const nextTile = selection.tileId ?? null
-  
+
+    const moduleChanged = prevModule !== nextModule
+    const tileChanged = prevTile !== nextTile
+
     setActiveModuleId(selection.moduleId)
     setActiveSelection(selection)
-  
-    // ✅ zapiš do URL (aby refresh/back/forward držel výběr)
+
+    // ✅ KEY FIX:
+    // Když měníš modul nebo tile, zahoď tile-specifické parametry (id/vm/...)
+    // Jinak se ti přenáší "vybraný záznam" mezi moduly/tiles.
+    const keepOtherParams = !(moduleChanged || tileChanged)
+
     setUrlState(
       {
         moduleId: selection.moduleId,
         sectionId: selection.sectionId ?? null,
         tileId: selection.tileId ?? null,
       },
-      'push'
+      'push',
+      keepOtherParams
     )
-  
-    // Reset akcí jen když se mění tile (nebo odcházíš z tile)
-    if (prevTile !== nextTile) resetCommonActions()
+
+    if (tileChanged) resetCommonActions()
   }
 
   function handleHomeClick() {
@@ -611,29 +624,23 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     )
   }
 
-  function handleCommonActionClick(id: CommonActionId) { 
-    // ✅ Ukládací akce NIKDY neblokuj dirty guardem
+  function handleCommonActionClick(id: CommonActionId) {
     if (id === 'save') {
       commonActionHandler?.(id)
       return
     }
-    
-    // ✅ Cancel/odchod/navigace: guard smí běžet
     if (!confirmIfDirty()) return
     commonActionHandler?.(id)
   }
 
   const hasUnsavedChanges =
-    commonActionsUi.isDirty &&
-    (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
+    commonActionsUi.isDirty && (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
 
-  // Browser refresh / close tab guard
   useEffect(() => {
     if (typeof window === 'undefined') return
     const handler = (e: BeforeUnloadEvent) => {
       if (!hasUnsavedChanges) return
       e.preventDefault()
-      // Chrome requires returnValue to be set.
       e.returnValue = ''
     }
     window.addEventListener('beforeunload', handler)
