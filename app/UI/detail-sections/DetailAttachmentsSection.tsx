@@ -31,6 +31,8 @@ import {
 export type DetailAttachmentsSectionProps = {
   entityType: string
   entityId: string
+  /** Čitelný název entity (např. subjects.display_name) pro hezčí file_path ve Storage. */
+  entityLabel?: string
   mode: 'view' | 'edit' | 'create'
 }
 
@@ -63,7 +65,7 @@ function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
   return { ...a, ...b }
 }
 
-export default function DetailAttachmentsSection({ entityType, entityId, mode }: DetailAttachmentsSectionProps) {
+export default function DetailAttachmentsSection({ entityType, entityId, entityLabel, mode }: DetailAttachmentsSectionProps) {
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -201,6 +203,7 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
       await createAttachmentWithUpload({
         entityType,
         entityId,
+        entityLabel,
         title,
         description: newDesc.trim() ? newDesc.trim() : null,
         file: newFile,
@@ -285,7 +288,15 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
     async (documentId: string, file: File) => {
       setErrorText(null)
       try {
-        await addAttachmentVersionWithUpload({ entityType, entityId, documentId, file })
+        const docTitle = (rows.find((r) => r.id === documentId)?.title ?? '').toString().trim()
+        await addAttachmentVersionWithUpload({
+          entityType,
+          entityId,
+          entityLabel,
+          documentId,
+          documentTitle: docTitle,
+          file,
+        })
         await loadAttachments()
 
         setVersionsByDocId((prev) => {
@@ -297,7 +308,7 @@ export default function DetailAttachmentsSection({ entityType, entityId, mode }:
         setErrorText(err?.message ?? 'Nepodařilo se přidat verzi.')
       }
     },
-    [entityType, entityId, loadAttachments]
+    [entityType, entityId, entityLabel, rows, loadAttachments]
   )
 
   const handleVersionInputChange = useCallback(
