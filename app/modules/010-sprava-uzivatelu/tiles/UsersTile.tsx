@@ -181,6 +181,9 @@ export default function UsersTile({
       inviteSubmitRef.current = null
       setInvitePresetSubjectId(null)
 
+      // detail implies selection
+      if (user?.id) setSelectedId(user.id)
+
       setUrl({ t: 'users-list', id: user.id, vm: mode }, 'push')
     },
     [setUrl]
@@ -210,6 +213,9 @@ export default function UsersTile({
     inviteSubmitRef.current = null
     setIsDirty(false)
 
+    // ✅ FIX: návrat na list = žádný vybraný řádek
+    setSelectedId(null)
+
     setUrl({ t: 'users-list', id: null, vm: null }, 'replace')
   }, [setUrl])
 
@@ -224,6 +230,9 @@ export default function UsersTile({
     inviteSubmitRef.current = null
     setIsDirty(false)
 
+    // ✅ FIX: zavření tile = žádný vybraný řádek
+    setSelectedId(null)
+
     setUrl({ t: null, id: null, vm: null }, 'replace')
   }, [setUrl])
 
@@ -237,7 +246,7 @@ export default function UsersTile({
 
     // tile state
     if (!t) {
-      // modul root (tile zavřený) -> nevnucujeme nic, necháme list režim (prázdno)
+      // modul root (tile zavřený) -> necháme list
       if (viewMode !== 'list') {
         setViewMode('list')
         setDetailUser(null)
@@ -246,6 +255,8 @@ export default function UsersTile({
         inviteSubmitRef.current = null
         setIsDirty(false)
       }
+      // ✅ FIX: bez tile kontextu nechceme držet výběr
+      if (selectedId !== null) setSelectedId(null)
       return
     }
 
@@ -257,6 +268,7 @@ export default function UsersTile({
         inviteSubmitRef.current = null
         setIsDirty(false)
       }
+      // invite screen neřeší list selection (necháme), ale typicky je OK ji nemít
       return
     }
 
@@ -272,13 +284,16 @@ export default function UsersTile({
           setInvitePresetSubjectId(null)
           setIsDirty(false)
         }
+        // ✅ FIX: list bez id = žádná selection
+        if (selectedId !== null) setSelectedId(null)
         return
       }
 
       // detail
       const found = users.find((u) => u.id === id)
       if (!found) return
-      setSelectedId(id)
+      if (selectedId !== id) setSelectedId(id)
+
       const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
       if (viewMode !== safeVm || detailUser?.id !== found.id) {
         setDetailUser(found)
@@ -292,7 +307,7 @@ export default function UsersTile({
       }
       return
     }
-  }, [searchParams, users, viewMode, detailUser?.id])
+  }, [searchParams, users, viewMode, detailUser?.id, selectedId])
 
   // -------------------------
   // Invite availability for detail
@@ -310,30 +325,29 @@ export default function UsersTile({
   const commonActions: CommonActionId[] = useMemo(() => {
     const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
-  
+
     const READ_DEFAULT: CommonActionId[] = ['edit', 'close']
     const EDIT_DEFAULT_WITH_INVITE: CommonActionId[] = ['save', 'invite', 'close']
     const EDIT_DEFAULT: CommonActionId[] = ['save', 'close']
     const CREATE_DEFAULT: CommonActionId[] = ['save', 'close']
-  
+
     const withAttachments = (base: CommonActionId[]): CommonActionId[] => {
       if (detailActiveSectionId === 'invite') return base
-      // přidej pouze jednou (pojistka)
       return base.includes('attachments') ? base : [...base, 'attachments']
     }
-  
+
     if (viewMode === 'list') return LIST
     if (viewMode === 'invite') return INVITE
-  
+
     if (viewMode === 'read') {
       if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
       return withAttachments(READ_DEFAULT)
     }
-  
+
     if (viewMode === 'edit') {
       return withAttachments(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
     }
-  
+
     // create
     return withAttachments(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId, canInviteDetail])
@@ -363,7 +377,6 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-        // detail/invite -> list
         if (viewMode === 'invite') {
           closeToList()
           return
@@ -372,8 +385,6 @@ export default function UsersTile({
           closeToList()
           return
         }
-
-        // list -> modul root (zavřít tile)
         closeListToModule()
         return
       }
@@ -415,6 +426,9 @@ export default function UsersTile({
           inviteSubmitRef.current = null
           setInvitePresetSubjectId(null)
 
+          // create detail => selection logically none yet
+          setSelectedId(null)
+
           setUrl({ t: 'users-list', id: '', vm: 'create' }, 'push')
           return
         }
@@ -428,13 +442,11 @@ export default function UsersTile({
         }
 
         if (id === 'invite') {
-          // bez výběru -> nový
           if (!selectedId) {
             openInvite(null)
             return
           }
 
-          // s výběrem -> detail na Pozvánce (pokud se ještě nepřihlásil)
           const user = users.find((u) => u.id === selectedId)
           if (!user) {
             openInvite(null)
@@ -505,6 +517,8 @@ export default function UsersTile({
           setIsDirty(false)
           await load()
           setViewMode('read')
+
+          if (saved?.id) setSelectedId(saved.id)
 
           setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
           return
