@@ -125,13 +125,13 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zrušit editaci / vytvoření.', en: 'Cancel edit / create.' },
     hideWhen: ['list'],
   },
-   close: {
-     id: 'close',
-     icon: 'close',
-     label: { cs: 'Zavřít', en: 'Close' },
-     description: { cs: 'Zavřít a vrátit se zpět.', en: 'Close and go back.' },
-     hideWhen: [],
-   },
+  close: {
+    id: 'close',
+    icon: 'close',
+    label: { cs: 'Zavřít', en: 'Close' },
+    description: { cs: 'Zavřít a vrátit se zpět.', en: 'Close and go back.' },
+    hideWhen: [],
+  },
   delete: {
     id: 'delete',
     icon: 'delete',
@@ -156,15 +156,14 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     requiresSelection: true,
   },
 
-   attachments: {
+  attachments: {
     id: 'attachments',
     icon: 'attach',
     label: { cs: 'Přílohy…', en: 'Attachments…' },
     description: { cs: 'Otevřít správu příloh.', en: 'Open attachments manager.' },
-    // ✅ bez requiresSelection (v detailu už je kontext entity)
-    hideWhen: ['list'], // v listu to nechceme
+    hideWhen: ['list'],
   },
-   
+
   archive: {
     id: 'archive',
     icon: 'archive',
@@ -185,8 +184,6 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     icon: 'invite',
     label: { cs: 'Odeslat pozvánku', en: 'Send invite' },
     description: { cs: 'Odešle pozvánku e-mailem.', en: 'Sends invitation email.' },
-    // Pozn.: nevyžadujeme isDirty – validace probíhá v Invite logice.
-    // Skryjeme jen v listu; ostatní režimy si tile/forma řídí seznamem actions.
     hideWhen: ['list'],
   },
 
@@ -213,7 +210,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Exportovat data.', en: 'Export data.' },
     hideWhen: ['edit', 'create'],
   },
-   
+
   reject: {
     id: 'reject',
     icon: 'reject',
