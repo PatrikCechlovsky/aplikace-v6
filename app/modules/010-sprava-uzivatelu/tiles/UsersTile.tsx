@@ -101,7 +101,8 @@ export default function UsersTile({
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [detailActiveSectionId, setDetailActiveSectionId] = useState<any>('detail')
   const [isDirty, setIsDirty] = useState(false)
-
+  const prevUrlIdRef = useRef<string | null>(null)
+  
   // UserDetail submit
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
 
@@ -272,51 +273,37 @@ export default function UsersTile({
       return
     }
 
-    // list + detail
-    if (t === 'users-list') {
-      if (!id) {
-        // list
-        if (viewMode !== 'list') {
-          setViewMode('list')
-          setDetailUser(null)
-          submitRef.current = null
-          inviteSubmitRef.current = null
-          setInvitePresetSubjectId(null)
-          setIsDirty(false)
-        }
-        // ✅ FIX: list bez id = žádná selection
-        if (selectedId !== null) setSelectedId(null)
-        return
-      }
-
-      // detail
-      const found = users.find((u) => u.id === id)
-      if (!found) return
-      if (selectedId !== id) setSelectedId(id)
-
-      const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
-      if (viewMode !== safeVm || detailUser?.id !== found.id) {
-        setDetailUser(found)
-        setDetailInitialSectionId('detail')
-        setDetailActiveSectionId('detail')
-        setViewMode(safeVm)
-        setIsDirty(false)
+    if (!id) {
+      // list
+      if (viewMode !== 'list') {
+        setViewMode('list')
+        setDetailUser(null)
         submitRef.current = null
         inviteSubmitRef.current = null
         setInvitePresetSubjectId(null)
+        setIsDirty(false)
       }
+    
+      // ✅ Mazat selection jen když jsme přišli z detailu (URL id zmizelo)
+      //    Ne při každém kliknutí na řádek v listu.
+      const prevUrlId = prevUrlIdRef.current
+      if (prevUrlId) {
+        if (selectedId !== null) setSelectedId(null)
+      }
+    
+      prevUrlIdRef.current = null
       return
-    }
-  }, [searchParams, users, viewMode, detailUser?.id, selectedId])
-
-  // -------------------------
-  // Invite availability for detail
-  // -------------------------
-  const canInviteDetail = useMemo(() => {
-    if (!detailUser?.id) return false
-    if (!detailUser.id.trim()) return false
-    if (detailUser.firstLoginAt) return false
-    return true
+        }
+      }, [searchParams, users, viewMode, detailUser?.id, selectedId])
+    
+      // -------------------------
+      // Invite availability for detail
+      // -------------------------
+      const canInviteDetail = useMemo(() => {
+        if (!detailUser?.id) return false
+        if (!detailUser.id.trim()) return false
+        if (detailUser.firstLoginAt) return false
+        return true
   }, [detailUser?.firstLoginAt, detailUser?.id])
 
   // -------------------------
