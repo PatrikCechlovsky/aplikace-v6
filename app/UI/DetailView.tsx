@@ -1,303 +1,419 @@
 'use client'
 
-// FILE: app/UI/DetailView.tsx
-// FIX: Tabs se resetovaly na initialActiveId, protože effect běžel při každé změně `sections`.
-//      To se děje často, protože `ctx` bývá nový objekt -> `sections` se mění -> reset active tab.
-//      Nově initialActiveId aplikujeme jen když se skutečně změnilo (přechod na jiný záznam / deep-link).
+// FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailFrame.tsx
+// PURPOSE: Detail uživatele (Subject/User) v modulu 010.
+// CHANGE (2025-12-22):
+// - Přidána záložka Pozvánka (jen když dává smysl).
+// - CommonActions "sendInvite" vytvoří VŽDY NOVOU pozvánku a staré pending expirováno v invites service.
+// - Oprava dirty: form nenastaví dirty při prvním renderu, jen při reálné změně.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import DetailTabs, { type DetailTabItem } from './DetailTabs'
-import AttachmentOverview from '@/app/UI/detail-sections/AttachmentOverview'
+import DetailView from '@/app/UI/DetailView'
+import type { DetailSectionId } from '@/app/UI/DetailView'
+import type { ViewMode, CommonActionId } from '@/app/UI/CommonActions'
 
-export type DetailViewMode = 'create' | 'edit' | 'view'
+import UserDetailForm from './UserDetailForm'
+import { getLatestInviteForSubject, sendInvite } from '@/app/lib/services/invites'
+import type { InviteFormValue } from './InviteUserForm'
 
-export type DetailSectionId =
-  | 'detail'
-  | 'roles'
-  | 'invite'
-  | 'users'
-  | 'equipment'
-  | 'accounts'
-  | 'attachments'
-  | 'system'
-
-export type DetailViewSection<Ctx = unknown> = {
-  id: DetailSectionId
-  label: string
-  order: number
-  always?: boolean
-  render: (ctx: Ctx) => React.ReactNode
-  visibleWhen?: (ctx: Ctx) => boolean
+export type UiUser = {
+  id: string
+  displayName: string
+  email: string
+  phone?: string
+  roleLabel: string
+  twoFactorMethod?: string | null
+  createdAt: string
+  isArchived?: boolean
+  firstLoginAt?: string | null
 }
 
-export type RolesData = {
-  role?: { code: string; name: string; description?: string | null }
-  permissions?: { code: string; name: string; description?: string | null }[]
-  availableRoles?: { code: string; name: string; description?: string | null }[]
+type Props = {
+  user: UiUser
+  viewMode: ViewMode
+  initialSectionId?: DetailSectionId
+
+  onActiveSectionChange?: (id: DetailSectionId) => void
+
+  // submit detail (save)
+  onRegisterSubmit?: (fn: () => Promise<UiUser | null>) => void
+
+  // submit invite (sendInvite z detailu)
+  onRegisterInviteSubmit?: (fn: () => Promise<boolean>) => void
+
+  // dirty signal do tile
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export type RolesUi = {
-  canEdit?: boolean
-  mode?: DetailViewMode
-  roleCode?: string | null
-  onChangeRoleCode?: (roleCode: string) => void
-}
+export default function UserDetailFrame({
+  user,
+  viewMode,
+  initialSectionId,
+  onActiveSectionChange,
+  onRegisterSubmit,
+  onRegisterInviteSubmit,
+  onDirtyChange,
+}: Props) {
+  // Pozn.: Aktivní záložku řídí DetailView interně.
+  // Parent (UsersTile) může přepnout záložku změnou `initialSectionId`.
 
-export type DetailViewCtx = {
-  entityType?: string
-  entityId?: string
-  mode?: DetailViewMode
+  // -----------------------------
+  // Dirty management (fix: nezašpiní hned po otevření)
+  // -----------------------------
+  const [isDirty, setIsDirty] = useState(false)
+  const initialSnapshotRef = useRef<string>('')
+  const firstRenderRef = useRef(true)
 
-  detailContent?: React.ReactNode
-  inviteContent?: React.ReactNode
-  rolesData?: RolesData
-  rolesUi?: RolesUi
+  useEffect(() => {
+    // reset snapshot při změně user nebo viewMode
+    initialSnapshotRef.current = JSON.stringify(user ?? {})
+    firstRenderRef.current = true
+    setIsDirty(false)
+    onDirtyChange?.(false)
+  }, [user?.id, viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
-  systemContent?: React.ReactNode
-}
+  const markDirtyIfChanged = (nextVal: any) => {
+    const snap = JSON.stringify(nextVal ?? {})
+    if (firstRenderRef.current) {
+      // první render nepočítáme jako změnu
+      firstRenderRef.current = false
+      initialSnapshotRef.current = snap
+      setIsDirty(false)
+      onDirtyChange?.(false)
+      return
+    }
+    const dirty = snap !== initialSnapshotRef.current
+    setIsDirty(dirty)
+    onDirtyChange?.(dirty)
+  }
 
-const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
-  detail: {
-    id: 'detail',
-    label: 'Detail',
-    order: 10,
-    always: true,
-    render: (ctx) => ctx?.detailContent ?? null,
-  },
+  // -----------------------------
+  // Invite state (latest invite)
+  // -----------------------------
+  const [latestInvite, setLatestInvite] = useState<any>(null)
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
 
-  invite: {
-    id: 'invite',
-    label: 'Pozvánka',
-    order: 15,
-    visibleWhen: (ctx) => !!(ctx as any)?.inviteContent,
-    render: (ctx) => (ctx as any)?.inviteContent ?? null,
-  },
+  const canShowInviteTab = useMemo(() => {
+    // ✅ vidět jen když to dává smysl:
+    // - uživatel není aktivní (ještě se nepřihlásil)
+    // - a máme email (aby šlo zvát)
+    if (!user?.id?.trim()) return false
+    if (user.firstLoginAt) return false
+    if (!user.email?.trim()) return false
+    return true
+  }, [user?.id, user?.firstLoginAt, user?.email])
 
-  roles: {
-    id: 'roles',
-    label: 'Role a oprávnění',
-    order: 20,
-    visibleWhen: (ctx) => !!(ctx as any)?.rolesData,
-    render: (ctx: any) => {
-      const data = ctx?.rolesData as RolesData | undefined
-      const ui = ctx?.rolesUi as RolesUi | undefined
-      const canEdit = !!ui?.canEdit
-      const mode = ui?.mode ?? 'view'
+  useEffect(() => {
+    let mounted = true
+    async function loadInvite() {
+      if (!user?.id?.trim()) return
+      if (!canShowInviteTab) {
+        setLatestInvite(null)
+        setInviteError(null)
+        setInviteLoading(false)
+        return
+      }
+      try {
+        setInviteLoading(true)
+        setInviteError(null)
+        const res = await getLatestInviteForSubject(user.id)
+        if (!mounted) return
+        setLatestInvite(res)
+      } catch (e: any) {
+        if (!mounted) return
+        setInviteError(e?.message ?? 'Chyba načtení pozvánky')
+      } finally {
+        if (!mounted) return
+        setInviteLoading(false)
+      }
+    }
+    void loadInvite()
+    return () => {
+      mounted = false
+    }
+  }, [user?.id, canShowInviteTab])
 
-      const role = data?.role
-      const permissions = data?.permissions ?? []
-      const options = data?.availableRoles ?? []
+  // -----------------------------
+  // RolesData mock (pokud ji už máš z backendu, napoj sem)
+  // -----------------------------
+  // Tady jen počítám, že role už je v user.roleLabel (label) a v reálu máš v ctx.rolesData i code.
+  // Pokud už `UserDetailFrame` dnes roleData načítá jinak, nech to svoje a jen z něj vezmi role.code.
+  const rolesData = useMemo(() => {
+    // placeholder — v tvém projektu to může být už napojené
+    return {
+      role: { code: (user as any).roleCode ?? null, name: user.roleLabel ?? null },
+      permissions: [],
+      availableRoles: (user as any).availableRoles ?? [],
+    }
+  }, [user])
 
-      const ensuredOptions =
-        role?.code && !options.some((r) => r.code === role.code)
-          ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...options]
-          : options
+  // -----------------------------
+  // Invite submit for CommonActions: vždy nová pozvánka
+  // -----------------------------
+  const inviteSubmitRef = useRef<null | (() => Promise<boolean>)>(null)
 
-      const selectedCode = (ui?.roleCode ?? role?.code ?? '') as string
+  useEffect(() => {
+    if (!onRegisterInviteSubmit) return
 
+    inviteSubmitRef.current = async () => {
+      try {
+        if (!canShowInviteTab) {
+          alert('Pozvánka nedává smysl: uživatel je aktivní nebo nemá email.')
+          return false
+        }
+
+        // roleCode: vezmeme z rolesData.role.code, fallback: nic -> blok
+        const roleCode = (rolesData as any)?.role?.code ?? null
+        if (!roleCode?.trim()) {
+          alert('Chybí role (role_code) – nelze vytvořit pozvánku.')
+          return false
+        }
+
+        const payload: InviteFormValue = {
+          mode: 'existing',
+          subjectId: user.id,
+          email: user.email, // není nutné pro existing, ale nevadí
+          displayName: user.displayName ?? '',
+          roleCode,
+          note: 'Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).',
+        }
+
+        await sendInvite(payload)
+
+        // refresh latest invite
+        const refreshed = await getLatestInviteForSubject(user.id)
+        setLatestInvite(refreshed)
+
+        alert('Vytvořena nová pozvánka ✅')
+        return true
+      } catch (e: any) {
+        console.error('[UserDetailFrame.sendInvite] ERROR', e)
+        alert(e?.message ?? 'Chyba při vytváření pozvánky')
+        return false
+      }
+    }
+
+    onRegisterInviteSubmit(inviteSubmitRef.current)
+  }, [onRegisterInviteSubmit, user?.id, user?.email, user?.displayName, canShowInviteTab, rolesData])
+
+  // -----------------------------
+  // Detail submit placeholder (pokud už máš ve svém projektu, nech svoje)
+  // -----------------------------
+  useEffect(() => {
+    if (!onRegisterSubmit) return
+    onRegisterSubmit(async () => {
+      // TODO: napojení na save user (už máš ve svém projektu)
+      // Zde vracíme původního uživatele jako "saved".
+      setIsDirty(false)
+      onDirtyChange?.(false)
+      initialSnapshotRef.current = JSON.stringify(user ?? {})
+      return user
+    })
+  }, [onRegisterSubmit, user, onDirtyChange])
+
+  // -----------------------------
+  // Invite tab content
+  // -----------------------------
+  const inviteContent = useMemo(() => {
+    if (!canShowInviteTab) return null
+
+    if (inviteLoading) {
+      return <div style={{ padding: 12 }}>Načítám pozvánku…</div>
+    }
+    if (inviteError) {
       return (
-        <div className="detail-form">
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Role</h3>
+        <div style={{ padding: 12, color: 'crimson' }}>
+          {inviteError}
+        </div>
+      )
+    }
 
+    const li = latestInvite
+
+    return (
+      <div className="detail-form">
+        <section className="detail-form__section">
+          <h3 className="detail-form__section-title">Pozvánka</h3>
+
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Email</label>
+              <input className="detail-form__input detail-form__input--readonly" value={user.email ?? '—'} readOnly />
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Aktuální role</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={(rolesData as any)?.role?.name ?? user.roleLabel ?? '—'}
+                readOnly
+              />
+              <div className="detail-form__hint">
+                Akce „Odeslat pozvánku“ vytvoří vždy novou pozvánku a předchozí pending expirováno.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="detail-form__section">
+          <h3 className="detail-form__section-title">Poslední pozvánka</h3>
+
+          {!li ? (
+            <div className="detail-form__hint" style={{ padding: 8 }}>
+              Zatím nebyla vytvořena žádná pozvánka. Použij CommonAction „Odeslat pozvánku“.
+            </div>
+          ) : (
             <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Status</label>
+                <input className="detail-form__input detail-form__input--readonly" value={li.status ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Invite ID</label>
+                <input className="detail-form__input detail-form__input--readonly" value={li.inviteId ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Vytvořeno</label>
+                <input className="detail-form__input detail-form__input--readonly" value={li.createdAt ?? '—'} readOnly />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Platnost do</label>
+                <input className="detail-form__input detail-form__input--readonly" value={li.expiresAt ?? '—'} readOnly />
+              </div>
+
               <div className="detail-form__field detail-form__field--span-4">
                 <label className="detail-form__label">Role</label>
-
-                {(mode === 'edit' || mode === 'create') && canEdit ? (
-                  <select
-                    className="detail-form__input"
-                    value={selectedCode}
-                    onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
-                  >
-                    <option value="" disabled>
-                      — vyber roli —
-                    </option>
-                    {ensuredOptions.map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.name ?? r.code}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={role?.name ?? role?.code ?? '—'}
-                    readOnly
-                  />
-                )}
-
-                {mode !== 'view' && (
-                  <div className="detail-form__hint">Role je uložena v subject_roles (subject_id + role_code).</div>
-                )}
+                <input className="detail-form__input detail-form__input--readonly" value={li.roleCode ?? '—'} readOnly />
               </div>
             </div>
-          </section>
+          )}
+        </section>
+      </div>
+    )
+  }, [canShowInviteTab, inviteLoading, inviteError, latestInvite, user.email, user.roleLabel, rolesData])
 
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Oprávnění</h3>
-
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Oprávnění</label>
-                <div className="detail-form__value">
-                  {permissions.length ? (
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                      {permissions.map((p) => (
-                        <li key={p.code}>
-                          <strong>{p.code}</strong> {p.name ? `– ${p.name}` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="detail-form__hint">Žádná oprávnění</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
+  // -----------------------------
+  // System blocks
+  // -----------------------------
+  const systemBlocks = useMemo(() => {
+    const userBlock = {
+      title: 'Systém uživatele',
+      content: (
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">Vytvořeno</label>
+            <input className="detail-form__input detail-form__input--readonly" value={user.createdAt ?? '—'} readOnly />
+          </div>
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">První přihlášení</label>
+            <input className="detail-form__input detail-form__input--readonly" value={user.firstLoginAt ?? '—'} readOnly />
+          </div>
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">Archivován</label>
+            <input className="detail-form__input detail-form__input--readonly" value={user.isArchived ? 'Ano' : 'Ne'} readOnly />
+          </div>
         </div>
-      )
-    },
-  },
+      ),
+    }
 
-  attachments: {
-    id: 'attachments',
-    label: 'Přílohy',
-    order: 90,
-    visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
-    render: (ctx: any) => (
-      <AttachmentOverview entityType={ctx.entityType} entityId={ctx.entityId} mode={ctx.mode ?? 'view'} />
-    ),
-  },
-
-  system: {
-    id: 'system',
-    label: 'Systém',
-    order: 100,
-    visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
-    render: (ctx: any) => {
-      const blocks = (ctx?.systemBlocks ?? []) as { title: string; content: React.ReactNode; visible?: boolean }[]
-      const visibleBlocks = blocks.filter((b) => b && b.visible !== false)
-
-      return (
-        <div className="detail-form">
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Systém</h3>
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Entity</label>
-                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityType ?? '—'} readOnly />
-              </div>
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">ID</label>
-                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityId ?? '—'} readOnly />
-              </div>
-            </div>
-          </section>
-
-          {ctx?.systemContent ?? null}
-
-          {visibleBlocks.map((b, idx) => (
-            <section key={idx} className="detail-form__section">
-              <h3 className="detail-form__section-title">{b.title}</h3>
-              {b.content}
-            </section>
-          ))}
+    const inviteBlock = {
+      title: 'Systém pozvánky',
+      visible: !!latestInvite,
+      content: !latestInvite ? (
+        <div className="detail-form__hint" style={{ padding: 8 }}>
+          Žádná pozvánka.
         </div>
-      )
-    },
-  },
-
-  users: { id: 'users', label: 'Uživatelé', order: 30, render: () => null },
-  equipment: { id: 'equipment', label: 'Vybavení', order: 40, render: () => null },
-  accounts: { id: 'accounts', label: 'Účty', order: 50, render: () => null },
-}
-
-function resolveSections<Ctx>(sectionIds: DetailSectionId[] | undefined, ctx: Ctx) {
-  const picked = new Set<DetailSectionId>(sectionIds ?? [])
-  ;(Object.values(DETAIL_SECTIONS) as DetailViewSection<Ctx>[]).forEach((s) => {
-    if (s.always) picked.add(s.id)
-  })
-
-  return Array.from(picked)
-    .map((id) => DETAIL_SECTIONS[id] as DetailViewSection<Ctx>)
-    .filter(Boolean)
-    .filter((s) => (s.visibleWhen ? s.visibleWhen(ctx) : true))
-    .sort((a, b) => a.order - b.order)
-}
-
-export type DetailViewProps<Ctx = unknown> = {
-  mode: DetailViewMode
-  isDirty?: boolean
-  isSaving?: boolean
-  onSave?: () => void
-  onCancel?: () => void
-  sectionIds?: DetailSectionId[]
-  initialActiveId?: DetailSectionId
-  onActiveSectionChange?: (id: DetailSectionId) => void
-  ctx?: Ctx & DetailViewCtx
-  children?: React.ReactNode
-}
-
-export default function DetailView<Ctx = unknown>({
-  children,
-  sectionIds,
-  initialActiveId,
-  onActiveSectionChange,
-  ctx,
-}: DetailViewProps<Ctx>) {
-  if (!sectionIds && !ctx) return <div className="detail-view">{children}</div>
-
-  const safeCtx = (ctx ?? ({} as Ctx)) as Ctx & DetailViewCtx
-  const sections = useMemo(() => resolveSections(sectionIds, safeCtx), [sectionIds, safeCtx])
-
-  const defaultActive =
-    (initialActiveId && sections.some((s) => s.id === initialActiveId) ? initialActiveId : sections[0]?.id) ?? 'detail'
-
-  const [activeId, setActiveId] = useState<DetailSectionId>(defaultActive)
-
-  // ✅ Initial tab apply: jen když se initialActiveId skutečně změnilo (ne při každém přerenderu)
-  const lastInitialAppliedRef = useRef<DetailSectionId | null>(null)
-
-  useEffect(() => {
-    if (!initialActiveId) return
-    if (!sections.some((s) => s.id === initialActiveId)) return
-
-    if (lastInitialAppliedRef.current !== initialActiveId) {
-      lastInitialAppliedRef.current = initialActiveId
-      setActiveId(initialActiveId)
+      ) : (
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">Status</label>
+            <input className="detail-form__input detail-form__input--readonly" value={latestInvite.status ?? '—'} readOnly />
+          </div>
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">Invite ID</label>
+            <input className="detail-form__input detail-form__input--readonly" value={latestInvite.inviteId ?? '—'} readOnly />
+          </div>
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">Vytvořeno</label>
+            <input className="detail-form__input detail-form__input--readonly" value={latestInvite.createdAt ?? '—'} readOnly />
+          </div>
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">Platnost do</label>
+            <input className="detail-form__input detail-form__input--readonly" value={latestInvite.expiresAt ?? '—'} readOnly />
+          </div>
+        </div>
+      ),
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialActiveId]) // ⚠️ záměrně NEzávisíme na `sections`, aby to neresetovalo aktivní tab
 
-  // ✅ Když aktivní záložka přestane existovat (např. zmizí Pozvánka), přepni na první dostupnou
-  useEffect(() => {
-    if (!sections.some((s) => s.id === activeId)) {
-      setActiveId(sections[0]?.id ?? 'detail')
+    return [userBlock, inviteBlock]
+  }, [user.createdAt, user.firstLoginAt, user.isArchived, latestInvite])
+
+  // -----------------------------
+  // Sections list
+  // -----------------------------
+  const sectionIds = useMemo<DetailSectionId[]>(() => {
+    const base: DetailSectionId[] = ['detail', 'roles', 'attachments', 'system']
+    if (canShowInviteTab) {
+      // Pozvánka jen když dává smysl
+      base.splice(2, 0, 'invite') // vlož po roles
     }
-  }, [sections, activeId])
+    return base
+  }, [canShowInviteTab])
 
-  useEffect(() => {
-    onActiveSectionChange?.(activeId)
-  }, [activeId, onActiveSectionChange])
-
-  const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
-  const tabs: DetailTabItem[] = sections.map((s) => ({ id: s.id, label: s.label }))
+    // Map ViewMode -> DetailViewMode (DetailView nezná "list")
+  const detailMode: 'create' | 'edit' | 'view' =
+    viewMode === 'read'
+      ? 'view'
+      : viewMode === 'edit'
+        ? 'edit'
+        : viewMode === 'create'
+          ? 'create'
+          : 'view' // fallback pro případ, že sem omylem přijde "list"
 
   return (
-    <div className="detail-view">
-      {tabs.length > 1 && (
-        <DetailTabs
-          items={tabs}
-          activeId={activeSection?.id ?? defaultActive}
-          onChange={(id) => setActiveId(id as any)}
-        />
-      )}
+    <DetailView
+      mode={detailMode}
+      sectionIds={sectionIds}
+      // ✅ umožní přepínat záložky i z parentu (CommonAction „attachments“)
+      initialActiveId={initialSectionId ?? 'detail'}
+      onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
+      ctx={{
+        // ✅ entityType musí odpovídat DB (documents.entity_type)
+        entityType: 'subjects',
+        entityId: user.id || undefined,
+        entityLabel: user.displayName ?? null,
+        mode: detailMode,
 
-      {activeSection && <section id={`detail-section-${activeSection.id}`}>{activeSection.render(safeCtx)}</section>}
-      {(!activeSection && children) || null}
-    </div>
+        detailContent: (
+          <UserDetailForm
+            user={user}
+            readOnly={viewMode === 'read'}
+            onDirtyChange={(dirty) => {
+              // z UserDetailForm může přijít dirty=true i při init – filtrujeme přes snapshot
+              if (dirty) markDirtyIfChanged(user)
+              else {
+                setIsDirty(false)
+                onDirtyChange?.(false)
+              }
+            }}
+            onValueChange={(val: any) => {
+              markDirtyIfChanged(val)
+            }}
+          />
+        ),
+
+        rolesData,
+
+        // ✅ sem se posílá content pro záložku Pozvánka
+        inviteContent,
+
+        // ✅ systémové bloky
+        systemBlocks,
+      }}
+    />
   )
 }
