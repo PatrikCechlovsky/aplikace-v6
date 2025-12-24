@@ -11,12 +11,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
+import Modal from '@/app/UI/Modal'
+import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetailFrame'
 import InviteUserFrame from '../forms/InviteUserFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
-
 type UiUser = {
   id: string
   displayName: string
@@ -103,20 +104,8 @@ export default function UsersTile({
   const [detailActiveSectionId, setDetailActiveSectionId] = useState<any>('detail')
   const [isDirty, setIsDirty] = useState(false)
 
-  // ✅ poznáme návrat z detailu na list (zmizí id v URL)
-  const prevUrlIdRef = useRef<string | null>(null)
-
-  // ✅ FIX pro "musím kliknout 2×" – handler vždy čte aktuální selection/users
-  const selectedIdRef = useRef<string | null>(null)
-  const usersRef = useRef<UiUser[]>([])
-
-  useEffect(() => {
-    selectedIdRef.current = selectedId
-  }, [selectedId])
-
-  useEffect(() => {
-    usersRef.current = users
-  }, [users])
+  // Attachments modal
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false)
 
   // UserDetail submit
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
@@ -130,34 +119,77 @@ export default function UsersTile({
   // -------------------------
   // URL helpers (t, id, vm)
   // -------------------------
+  function getParam(name: string) {
+    return searchParams.get(name)
+  }
+  const t = getParam('t') ?? 'users-list'
+  const id = getParam('id') ?? ''
+  const vm = (getParam('vm') ?? '') as ViewMode
+
   const setUrl = useCallback(
-    (
-      next: { t?: string | null; id?: string | null; vm?: string | null },
-      mode: 'replace' | 'push' = 'replace'
-    ) => {
-      const sp = new URLSearchParams(searchParams?.toString() ?? '')
-
-      const setOrDelete = (key: string, val?: string | null) => {
-        if (val && String(val).trim()) sp.set(key, String(val).trim())
-        else sp.delete(key)
-      }
-
-      setOrDelete('t', next.t ?? (sp.get('t') ?? null))
-      setOrDelete('id', next.id ?? null)
-      setOrDelete('vm', next.vm ?? null)
-
-      const qs = sp.toString()
-      const nextUrl = qs ? `${pathname}?${qs}` : pathname
-
-      const currentQs = searchParams?.toString() ?? ''
-      const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname
-
-      if (nextUrl === currentUrl) return
-
-      if (mode === 'push') router.push(nextUrl)
-      else router.replace(nextUrl)
+    (next: { t: string; id?: string; vm?: string }, mode: 'push' | 'replace') => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('t', next.t)
+      if (typeof next.id !== 'undefined') params.set('id', next.id)
+      if (typeof next.vm !== 'undefined') params.set('vm', next.vm)
+      const url = `${pathname}?${params.toString()}`
+      if (mode === 'push') router.push(url)
+      else router.replace(url)
     },
-    [pathname, router, searchParams]
+    [router, pathname, searchParams]
+  )
+
+  const closeListToModule = useCallback(() => {
+    router.push(pathname)
+  }, [router, pathname])
+
+  const closeToList = useCallback(() => {
+    setViewMode('list')
+    setDetailUser(null)
+    setSelectedId(null)
+    submitRef.current = null
+    inviteSubmitRef.current = null
+    setInvitePresetSubjectId(null)
+    setIsDirty(false)
+    setAttachmentsOpen(false)
+    setUrl({ t: 'users-list', id: '', vm: '' }, 'replace')
+  }, [setUrl])
+
+  const confirmIfDirty = useCallback(() => {
+    if (!isDirty) return true
+    return confirm('Máš neuložené změny. Opravdu chceš pokračovat?')
+  }, [isDirty])
+
+  const openDetail = useCallback(
+    (user: UiUser, mode: ViewMode, sectionId: any) => {
+      setViewMode(mode)
+      setDetailUser(user)
+      setSelectedId(user.id)
+      setDetailInitialSectionId(sectionId)
+      setDetailActiveSectionId(sectionId)
+      setIsDirty(false)
+      setAttachmentsOpen(false)
+      submitRef.current = null
+      inviteSubmitRef.current = null
+      setInvitePresetSubjectId(null)
+      setUrl({ t: 'users-list', id: user.id, vm: mode }, 'push')
+    },
+    [setUrl]
+  )
+
+  const openInvite = useCallback(
+    (presetSubjectId: string | null) => {
+      setViewMode('invite')
+      setDetailUser(null)
+      setSelectedId(null)
+      submitRef.current = null
+      inviteSubmitRef.current = null
+      setInvitePresetSubjectId(presetSubjectId)
+      setIsDirty(false)
+      setAttachmentsOpen(false)
+      setUrl({ t: 'invite-user', id: '', vm: '' }, 'push')
+    },
+    [setUrl]
   )
 
   // -------------------------
@@ -167,11 +199,13 @@ export default function UsersTile({
     setLoading(true)
     setError(null)
     try {
-      const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
-      setUsers(rows.map(mapRowToUi))
+      const rows = await listUsers({
+        searchText: filterText,
+        includeArchived: showArchived,
+      } as any)
+      setUsers((rows ?? []).map(mapRowToUi))
     } catch (e: any) {
-      console.error('[UsersTile.listUsers] ERROR', e)
-      setError(e?.message ?? 'Chyba načtení uživatelů')
+      setError(e?.message ?? 'Chyba načítání uživatelů.')
     } finally {
       setLoading(false)
     }
@@ -181,119 +215,27 @@ export default function UsersTile({
     void load()
   }, [load])
 
-  const rows = useMemo(() => users.map(toRow), [users])
-
   // -------------------------
-  // Open/Close
-  // -------------------------
-  const openDetail = useCallback(
-    (user: UiUser, mode: ViewMode, initialSection: any = 'detail') => {
-      setDetailUser(user)
-      setDetailInitialSectionId(initialSection)
-      setDetailActiveSectionId(initialSection)
-      setViewMode(mode)
-      setIsDirty(false)
-      submitRef.current = null
-      inviteSubmitRef.current = null
-      setInvitePresetSubjectId(null)
-
-      // detail implies selection
-      if (user?.id) {
-        selectedIdRef.current = user.id
-        setSelectedId(user.id)
-      }
-
-      setUrl({ t: 'users-list', id: user.id, vm: mode }, 'push')
-    },
-    [setUrl]
-  )
-
-  const openInvite = useCallback(
-    (subjectId: string | null) => {
-      setInvitePresetSubjectId(subjectId)
-      setViewMode('invite')
-      setIsDirty(false)
-      submitRef.current = null
-      inviteSubmitRef.current = null
-
-      setUrl({ t: 'invite-user', id: null, vm: null }, 'push')
-    },
-    [setUrl]
-  )
-
-  const closeToList = useCallback(() => {
-    setViewMode('list')
-    setDetailUser(null)
-    setDetailInitialSectionId('detail')
-    setDetailActiveSectionId('detail')
-    setInvitePresetSubjectId(null)
-    submitRef.current = null
-    inviteSubmitRef.current = null
-    setIsDirty(false)
-
-    selectedIdRef.current = null
-    setSelectedId(null)
-    prevUrlIdRef.current = null
-
-    setUrl({ t: 'users-list', id: null, vm: null }, 'replace')
-  }, [setUrl])
-
-  const closeListToModule = useCallback(() => {
-    setViewMode('list')
-    setDetailUser(null)
-    setDetailInitialSectionId('detail')
-    setDetailActiveSectionId('detail')
-    setInvitePresetSubjectId(null)
-    submitRef.current = null
-    inviteSubmitRef.current = null
-    setIsDirty(false)
-
-    selectedIdRef.current = null
-    setSelectedId(null)
-    prevUrlIdRef.current = null
-
-    setUrl({ t: null, id: null, vm: null }, 'replace')
-  }, [setUrl])
-
-  // -------------------------
-  // URL -> state
+  // URL -> state (React to browser back/forward)
   // -------------------------
   useEffect(() => {
-    const t = searchParams?.get('t')?.trim() ?? null
-    const id = searchParams?.get('id')?.trim() ?? null
-    const vm = (searchParams?.get('vm')?.trim() as ViewMode | null) ?? null
-
-    if (!t) {
-      if (viewMode !== 'list') {
-        setViewMode('list')
-        setDetailUser(null)
-        setInvitePresetSubjectId(null)
-        submitRef.current = null
-        inviteSubmitRef.current = null
-        setIsDirty(false)
-      }
-      if (selectedId !== null) {
-        selectedIdRef.current = null
-        setSelectedId(null)
-      }
-      prevUrlIdRef.current = null
-      return
-    }
-
+    // list / invite / detail
     if (t === 'invite-user') {
       if (viewMode !== 'invite') {
         setViewMode('invite')
         setDetailUser(null)
+        setSelectedId(null)
         submitRef.current = null
         inviteSubmitRef.current = null
+        setInvitePresetSubjectId(null)
         setIsDirty(false)
+        setAttachmentsOpen(false)
       }
       return
     }
 
     if (t === 'users-list') {
       if (!id) {
-        // LIST
         if (viewMode !== 'list') {
           setViewMode('list')
           setDetailUser(null)
@@ -301,100 +243,79 @@ export default function UsersTile({
           inviteSubmitRef.current = null
           setInvitePresetSubjectId(null)
           setIsDirty(false)
+          setAttachmentsOpen(false)
         }
-
-        // selection nemažeme při klikání v listu; jen když se vracíme z detailu (id zmizelo)
-        const prevUrlId = prevUrlIdRef.current
-        if (prevUrlId) {
-          if (selectedId !== null) {
-            selectedIdRef.current = null
-            setSelectedId(null)
-          }
-        }
-
-        prevUrlIdRef.current = null
+        if (selectedId !== null) setSelectedId(null)
         return
       }
 
-      // DETAIL
-      prevUrlIdRef.current = id
-
       const found = users.find((u) => u.id === id)
       if (!found) return
+      if (selectedId !== id) setSelectedId(id)
 
-      if (selectedId !== id) {
-        selectedIdRef.current = id
-        setSelectedId(id)
-      }
-
-      const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
-      if (viewMode !== safeVm || detailUser?.id !== found.id) {
-        setDetailUser(found)
-        setDetailInitialSectionId('detail')
-        setDetailActiveSectionId('detail')
-        setViewMode(safeVm)
-        setIsDirty(false)
-        submitRef.current = null
-        inviteSubmitRef.current = null
-        setInvitePresetSubjectId(null)
-      }
+      const nextMode: LocalViewMode = (vm || 'read') as any
+      if (viewMode !== nextMode) setViewMode(nextMode)
+      if (!detailUser || detailUser.id !== id) setDetailUser(found)
       return
     }
-  }, [searchParams, users, viewMode, detailUser?.id, selectedId])
+  }, [t, id, vm, users, viewMode, detailUser, selectedId])
 
   // -------------------------
-  // Invite availability for detail
+  // Rows
   // -------------------------
-  const canInviteDetail = useMemo(() => {
-    if (!detailUser?.id) return false
-    if (!detailUser.id.trim()) return false
-    if (detailUser.firstLoginAt) return false
-    return true
-  }, [detailUser?.firstLoginAt, detailUser?.id])
+  const rows = useMemo(() => users.map(toRow), [users])
 
   // -------------------------
-  // CommonActions list
+  // Register CommonActions list
   // -------------------------
-  const commonActions: CommonActionId[] = useMemo(() => {
-    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
-    const INVITE: CommonActionId[] = ['sendInvite', 'close']
+  useEffect(() => {
+    if (!onRegisterCommonActions) return
 
-    const READ_DEFAULT: CommonActionId[] = ['edit', 'close']
-    const EDIT_DEFAULT_WITH_INVITE: CommonActionId[] = ['save', 'invite', 'close']
-    const EDIT_DEFAULT: CommonActionId[] = ['save', 'close']
-    const CREATE_DEFAULT: CommonActionId[] = ['save', 'close']
+    const base: CommonActionId[] = ['close']
 
-    const withAttachments = (base: CommonActionId[]): CommonActionId[] => {
-      if (detailActiveSectionId === 'invite') return base
-      return base.includes('attachments') ? base : [...base, 'attachments']
+    if (viewMode === 'list') {
+      base.push('add', 'view', 'edit', 'invite')
+      // list: attachments nedává smysl (bez detailu)
+      onRegisterCommonActions(base)
+      return
     }
 
-    if (viewMode === 'list') return LIST
-    if (viewMode === 'invite') return INVITE
+    if (viewMode === 'invite') {
+      base.push('sendInvite')
+      onRegisterCommonActions(base)
+      return
+    }
 
+    // detail
     if (viewMode === 'read') {
-      if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
-      return withAttachments(READ_DEFAULT)
+      base.push('edit')
+      if (detailActiveSectionId === 'invite') base.push('sendInvite')
+      // ✅ attachments jen v detailu a ne na invite tab
+      if (detailActiveSectionId !== 'invite') base.push('attachments')
+      onRegisterCommonActions(base)
+      return
     }
 
-    if (viewMode === 'edit') {
-      return withAttachments(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
+    if (viewMode === 'edit' || viewMode === 'create') {
+      base.push('save', 'invite')
+      // attachments jen pokud máme uložený záznam (id)
+      if (detailUser?.id?.trim()) base.push('attachments')
+      onRegisterCommonActions(base)
+      return
     }
 
-    return withAttachments(CREATE_DEFAULT)
-  }, [viewMode, detailActiveSectionId, canInviteDetail])
+    onRegisterCommonActions(base)
+  }, [onRegisterCommonActions, viewMode, detailActiveSectionId, detailUser])
 
+  // -------------------------
+  // Register CommonActions state
+  // -------------------------
   useEffect(() => {
-    onRegisterCommonActions?.(commonActions)
-  }, [onRegisterCommonActions, commonActions])
-
-  useEffect(() => {
-    onRegisterCommonActionsState?.({
-      viewMode: (viewMode as any) as ViewMode,
-      hasSelection: !!selectedId,
-      isDirty,
-    })
-  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty])
+    if (!onRegisterCommonActionsState) return
+    const hasSelection = viewMode === 'list' ? !!selectedId : !!detailUser?.id
+    const vmState: ViewMode = viewMode === 'list' || viewMode === 'invite' ? 'read' : (viewMode as ViewMode)
+    onRegisterCommonActionsState({ viewMode: vmState, hasSelection, isDirty })
+  }, [onRegisterCommonActionsState, viewMode, selectedId, detailUser, isDirty])
 
   // -------------------------
   // CommonActions handler
@@ -403,11 +324,13 @@ export default function UsersTile({
     if (!onRegisterCommonActionHandler) return
 
     const handler = async (id: CommonActionId) => {
+      // ✅ jednotný CLOSE (žádné router.back)
       if (id === 'close') {
         if (isDirty) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
+        // detail/invite -> list
         if (viewMode === 'invite') {
           closeToList()
           return
@@ -416,21 +339,27 @@ export default function UsersTile({
           closeToList()
           return
         }
+
+        // list -> modul root (zavřít tile)
         closeListToModule()
         return
       }
 
+      // DETAIL: Správa příloh (modal)
       if (id === 'attachments') {
         if (detailActiveSectionId === 'invite') return
+
         if (isDirty) {
           alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
           return
         }
+
         if (!detailUser?.id || !detailUser.id.trim()) {
           alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
           return
         }
-        alert(`TODO: Správa příloh pro user ${detailUser.id}`)
+
+        setAttachmentsOpen(true)
         return
       }
 
@@ -449,35 +378,32 @@ export default function UsersTile({
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
           setIsDirty(false)
+          setAttachmentsOpen(false)
           submitRef.current = null
           inviteSubmitRef.current = null
           setInvitePresetSubjectId(null)
-
-          selectedIdRef.current = null
-          setSelectedId(null)
-          prevUrlIdRef.current = ''
 
           setUrl({ t: 'users-list', id: '', vm: 'create' }, 'push')
           return
         }
 
         if (id === 'view' || id === 'edit') {
-          const sid = selectedIdRef.current
-          if (!sid) return
-          const user = usersRef.current.find((u) => u.id === sid)
+          if (!selectedId) return
+          const user = users.find((u) => u.id === selectedId)
           if (!user) return
           openDetail(user, id === 'edit' ? 'edit' : 'read', 'detail')
           return
         }
 
         if (id === 'invite') {
-          const sid = selectedIdRef.current
-          if (!sid) {
+          // bez výběru -> nový
+          if (!selectedId) {
             openInvite(null)
             return
           }
 
-          const user = usersRef.current.find((u) => u.id === sid)
+          // s výběrem -> detail na Pozvánce (pokud se ještě nepřihlásil)
+          const user = users.find((u) => u.id === selectedId)
           if (!user) {
             openInvite(null)
             return
@@ -548,11 +474,6 @@ export default function UsersTile({
           await load()
           setViewMode('read')
 
-          if (saved?.id) {
-            selectedIdRef.current = saved.id
-            setSelectedId(saved.id)
-          }
-
           setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
           return
         }
@@ -564,6 +485,8 @@ export default function UsersTile({
   }, [
     onRegisterCommonActionHandler,
     viewMode,
+    selectedId,
+    users,
     openDetail,
     openInvite,
     load,
@@ -576,13 +499,61 @@ export default function UsersTile({
   ])
 
   // -------------------------
+  // Render helpers (bez anonymních fn v JSX)
+  // -------------------------
+  const handleRowClick = useCallback(
+    (row: ListViewRow<UiUser>) => {
+      setSelectedId(String(row.id))
+    },
+    [setSelectedId]
+  )
+
+  const handleRowDoubleClick = useCallback(
+    (row: ListViewRow<UiUser>) => {
+      const user = row.raw
+      if (!user) return
+      openDetail(user, 'read', 'detail')
+    },
+    [openDetail]
+  )
+
+  const handleInviteRegisterSubmit = useCallback((fn: () => Promise<boolean>) => {
+    inviteSubmitRef.current = fn
+  }, [])
+
+  const handleDetailRegisterInviteSubmit = useCallback((fn: () => Promise<boolean>) => {
+    inviteSubmitRef.current = fn
+  }, [])
+
+  const handleDetailRegisterSubmit = useCallback((fn: () => Promise<UiUser | null>) => {
+    submitRef.current = fn
+  }, [])
+
+  const handleDetailActiveSectionChange = useCallback((id: any) => {
+    setDetailActiveSectionId(id as any)
+  }, [])
+
+  const handleAttachmentsClose = useCallback(() => {
+    setAttachmentsOpen(false)
+  }, [])
+
+  const attachmentsTitle = useMemo(() => {
+    if (!detailUser) return 'Přílohy'
+    return `Přílohy – ${detailUser.displayName || detailUser.id}`
+  }, [detailUser])
+
+  // -------------------------
   // Render
   // -------------------------
   if (viewMode === 'list') {
     return (
       <div>
-        {error && <div style={{ padding: 8, color: 'crimson' }}>{error}</div>}
-        {loading && <div style={{ padding: 8 }}>Načítám…</div>}
+        {error && (
+          <div className="detail-view__placeholder">
+            Chyba: <strong>{error}</strong>
+          </div>
+        )}
+        {loading && <div className="detail-view__placeholder">Načítám…</div>}
 
         <ListView<UiUser>
           columns={COLUMNS}
@@ -592,16 +563,8 @@ export default function UsersTile({
           showArchived={showArchived}
           onShowArchivedChange={setShowArchived}
           selectedId={selectedId ?? null}
-          onRowClick={(row) => {
-            const id = String(row.id)
-            selectedIdRef.current = id
-            setSelectedId(id)
-          }}
-          onRowDoubleClick={(row) => {
-            const user = row.raw
-            if (!user) return
-            openDetail(user, 'read', 'detail')
-          }}
+          onRowClick={handleRowClick}
+          onRowDoubleClick={handleRowDoubleClick}
         />
       </div>
     )
@@ -609,31 +572,32 @@ export default function UsersTile({
 
   if (viewMode === 'invite') {
     return (
-      <InviteUserFrame
-        presetSubjectId={invitePresetSubjectId}
-        onDirtyChange={setIsDirty}
-        onRegisterSubmit={(fn) => {
-          inviteSubmitRef.current = fn
-        }}
-      />
+      <InviteUserFrame presetSubjectId={invitePresetSubjectId} onDirtyChange={setIsDirty} onRegisterSubmit={handleInviteRegisterSubmit} />
     )
   }
 
   if ((viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') && detailUser) {
     return (
-      <UserDetailFrame
-        user={detailUser}
-        viewMode={viewMode as ViewMode}
-        initialSectionId={detailInitialSectionId}
-        onActiveSectionChange={(id) => setDetailActiveSectionId(id as any)}
-        onRegisterInviteSubmit={(fn) => {
-          inviteSubmitRef.current = fn
-        }}
-        onDirtyChange={setIsDirty}
-        onRegisterSubmit={(fn) => {
-          submitRef.current = fn
-        }}
-      />
+      <>
+        <UserDetailFrame
+          user={detailUser}
+          viewMode={viewMode as ViewMode}
+          initialSectionId={detailInitialSectionId}
+          onActiveSectionChange={handleDetailActiveSectionChange}
+          onRegisterInviteSubmit={handleDetailRegisterInviteSubmit}
+          onDirtyChange={setIsDirty}
+          onRegisterSubmit={handleDetailRegisterSubmit}
+        />
+
+        <Modal open={attachmentsOpen} onClose={handleAttachmentsClose} title={attachmentsTitle}>
+          <DetailAttachmentsSection
+            entityType="subjects"
+            entityId={detailUser.id}
+            entityLabel={detailUser.displayName}
+            mode="view"
+          />
+        </Modal>
+      </>
     )
   }
 
