@@ -6,6 +6,12 @@
 // - t=users-list (list)
 // - t=invite-user (invite screen)
 // - id + vm (detail: read/edit/create)
+//
+// FIX (2025-12-24):
+// - "blikání" po kliknutí na 📎 bylo způsobeno tím, že useSearchParams() vrací často novou instanci,
+//   a náš useEffect měl dependency [searchParams] => efekt běžel na každém renderu => smyčka.
+// - Řešení: pracovat se stabilním stringem searchKey = searchParams.toString()
+//   a useEffect i setUrl stavět nad searchKey.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -16,6 +22,7 @@ import InviteUserFrame from '../forms/InviteUserFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
+
 type UiUser = {
   id: string
   displayName: string
@@ -88,6 +95,9 @@ export default function UsersTile({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // ✅ stabilní klíč pro URL (string), ne objekt searchParams
+  const searchKey = searchParams?.toString() ?? ''
+
   const [users, setUsers] = useState<UiUser[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -119,7 +129,8 @@ export default function UsersTile({
       next: { t?: string | null; id?: string | null; vm?: string | null },
       mode: 'replace' | 'push' = 'replace'
     ) => {
-      const sp = new URLSearchParams(searchParams?.toString() ?? '')
+      // ✅ pracuj se stabilním searchKey, ne searchParams objektem
+      const sp = new URLSearchParams(searchKey)
 
       const setOrDelete = (key: string, val?: string | null) => {
         if (val && String(val).trim()) sp.set(key, String(val).trim())
@@ -133,15 +144,13 @@ export default function UsersTile({
       const qs = sp.toString()
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
 
-      const currentQs = searchParams?.toString() ?? ''
-      const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname
-
+      const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
       if (nextUrl === currentUrl) return
 
       if (mode === 'push') router.push(nextUrl)
       else router.replace(nextUrl)
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchKey]
   )
 
   // -------------------------
@@ -231,9 +240,12 @@ export default function UsersTile({
   // URL -> state
   // -------------------------
   useEffect(() => {
-    const t = searchParams?.get('t')?.trim() ?? null
-    const id = searchParams?.get('id')?.trim() ?? null
-    const vm = (searchParams?.get('vm')?.trim() as ViewMode | null) ?? null
+    // ✅ parse z searchKey (stabilní)
+    const sp = new URLSearchParams(searchKey)
+
+    const t = sp.get('t')?.trim() ?? null
+    const id = sp.get('id')?.trim() ?? null
+    const vm = (sp.get('vm')?.trim() as ViewMode | null) ?? null
 
     // tile state
     if (!t) {
@@ -278,14 +290,21 @@ export default function UsersTile({
       // detail
       const found = users.find((u) => u.id === id)
       if (!found) return
+
       setSelectedId(id)
+
       const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
+
+      // ✅ důležité: nepřepisuj detail stav pořád dokola
       if (viewMode !== safeVm || detailUser?.id !== found.id) {
         setDetailUser(found)
+
+        // initial/active sekce nastav jen pokud opravdu není
         if (!detailActiveSectionId) {
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
         }
+
         setViewMode(safeVm)
         setIsDirty(false)
         submitRef.current = null
@@ -294,7 +313,7 @@ export default function UsersTile({
       }
       return
     }
-  }, [searchParams, users, viewMode, detailUser?.id])
+  }, [searchKey, users, viewMode, detailUser?.id]) // ✅ searchKey místo searchParams
 
   // -------------------------
   // Invite availability for detail
@@ -312,30 +331,29 @@ export default function UsersTile({
   const commonActions: CommonActionId[] = useMemo(() => {
     const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
-  
+
     const READ_DEFAULT: CommonActionId[] = ['edit', 'close']
     const EDIT_DEFAULT_WITH_INVITE: CommonActionId[] = ['save', 'invite', 'close']
     const EDIT_DEFAULT: CommonActionId[] = ['save', 'close']
     const CREATE_DEFAULT: CommonActionId[] = ['save', 'close']
-  
+
     const withAttachments = (base: CommonActionId[]): CommonActionId[] => {
       if (detailActiveSectionId === 'invite') return base
-      // přidej pouze jednou (pojistka)
       return base.includes('attachments') ? base : [...base, 'attachments']
     }
-  
+
     if (viewMode === 'list') return LIST
     if (viewMode === 'invite') return INVITE
-  
+
     if (viewMode === 'read') {
       if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
       return withAttachments(READ_DEFAULT)
     }
-  
+
     if (viewMode === 'edit') {
       return withAttachments(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
     }
-  
+
     // create
     return withAttachments(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId, canInviteDetail])
@@ -380,7 +398,7 @@ export default function UsersTile({
         return
       }
 
-      // DETAIL: Správa příloh (modal)
+      // DETAIL: Správa příloh (VARIANTA A)
       if (id === 'attachments') {
         if (detailActiveSectionId === 'invite') return
 
@@ -578,7 +596,6 @@ export default function UsersTile({
       <UserDetailFrame
         user={detailUser}
         viewMode={viewMode as ViewMode}
-        // ✅ DetailView přepínáme přes initialSectionId (DetailView umí reagovat na změnu)
         initialSectionId={detailActiveSectionId}
         onActiveSectionChange={(id) => setDetailActiveSectionId(id as any)}
         onRegisterInviteSubmit={(fn) => {
