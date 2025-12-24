@@ -282,8 +282,8 @@ export default function UsersTile({
       const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
       if (viewMode !== safeVm || detailUser?.id !== found.id) {
         setDetailUser(found)
-        setDetailInitialSectionId('detail')
-        setDetailActiveSectionId('detail')
+        setDetailInitialSectionId((prev) => prev ?? 'detail')
+        setDetailActiveSectionId((prev) => prev ?? 'detail')
         setViewMode(safeVm)
         setIsDirty(false)
         submitRef.current = null
