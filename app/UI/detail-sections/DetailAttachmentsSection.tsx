@@ -31,8 +31,7 @@ import {
 export type DetailAttachmentsSectionProps = {
   entityType: string
   entityId: string
-  /** Čitelný název entity (např. subjects.display_name) pro hezčí file_path ve Storage. */
-  entityLabel?: string
+  entityLabel?: string | null
   mode: 'view' | 'edit' | 'create'
 }
 
@@ -65,7 +64,12 @@ function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
   return { ...a, ...b }
 }
 
-export default function DetailAttachmentsSection({ entityType, entityId, entityLabel, mode }: DetailAttachmentsSectionProps) {
+export default function DetailAttachmentsSection({
+  entityType,
+  entityId,
+  entityLabel = null,
+  mode,
+}: DetailAttachmentsSectionProps) {
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -288,13 +292,12 @@ export default function DetailAttachmentsSection({ entityType, entityId, entityL
     async (documentId: string, file: File) => {
       setErrorText(null)
       try {
-        const docTitle = (rows.find((r) => r.id === documentId)?.title ?? '').toString().trim()
         await addAttachmentVersionWithUpload({
           entityType,
           entityId,
           entityLabel,
           documentId,
-          documentTitle: docTitle,
+          // Title se dohledá v data-layer když není
           file,
         })
         await loadAttachments()
@@ -308,7 +311,7 @@ export default function DetailAttachmentsSection({ entityType, entityId, entityL
         setErrorText(err?.message ?? 'Nepodařilo se přidat verzi.')
       }
     },
-    [entityType, entityId, entityLabel, rows, loadAttachments]
+    [entityType, entityId, entityLabel, loadAttachments]
   )
 
   const handleVersionInputChange = useCallback(
