@@ -3,14 +3,9 @@
 /**
  * FILE: app/UI/detail-sections/DetailAttachmentsSection.tsx
  *
- * PURPOSE:
- * Detail tab "Přílohy" – jednotný UI toolbar (jako CommonActions) + vícesloupcový list (latest) + edit metadat + verzování.
- *
- * UI/UX:
- * - Toolbar vlevo: filtr + zobrazit archivované
- * - Toolbar vpravo: akce (ikona + label) ve stylu CommonActions (jen v manager režimu)
- * - List: pouze poslední verze (latest). Historie verzí je on-demand (rozbalení) (jen v manager režimu)
- * - Nová verze: potvrzení (confirm) → teprve poté file picker. (jen v manager režimu)
+ * VARIANTY:
+ * - variant="list"    => read-only seznam (tab u entity): filtr + archiv + otevřít soubor
+ * - variant="manager" => plná správa (samostatný screen po 📎): upload, verze, historie, metadata
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -22,10 +17,10 @@ import {
   listAttachments,
   listAttachmentVersions,
   loadUserDisplayNames,
+  updateAttachmentMetadata,
   type AttachmentRow,
   type AttachmentVersionRow,
   type UserNameMap,
-  updateAttachmentMetadata,
 } from '@/app/lib/attachments'
 
 export type DetailAttachmentsSectionProps = {
@@ -33,16 +28,13 @@ export type DetailAttachmentsSectionProps = {
   entityId: string
   entityLabel?: string | null
   mode: 'view' | 'edit' | 'create'
-  /**
-   * list    = read-only list for entity tab
-   * manager = full manager (versions, upload, edit metadata)
-   */
   variant?: 'list' | 'manager'
 }
 
-type LocalActionId = 'addAttachment' | 'saveAttachment' | 'closePanel'
+type LocalActionId = 'addAttachment' | 'saveAttachment' | 'closePanel' | 'refresh'
 
 const LOCAL_ACTIONS: Record<LocalActionId, { icon: string; label: string; title: string }> = {
+  refresh: { icon: 'refresh', label: 'Obnovit', title: 'Obnovit seznam' },
   addAttachment: { icon: 'add', label: 'Přidat přílohu', title: 'Přidat přílohu' },
   saveAttachment: { icon: 'save', label: 'Uložit', title: 'Uložit (bez zavření)' },
   closePanel: { icon: 'close', label: 'Zavřít', title: 'Zavřít bez uložení' },
@@ -76,9 +68,8 @@ export default function DetailAttachmentsSection({
   mode,
   variant = 'list',
 }: DetailAttachmentsSectionProps) {
-  const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
-
   const isManager = variant === 'manager'
+  const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
   const [filterText, setFilterText] = useState('')
@@ -87,34 +78,34 @@ export default function DetailAttachmentsSection({
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rows, setRows] = useState<AttachmentRow[]>([])
 
-  // ✅ mapování userId -> display_name (fallback, když view nemá *_name nebo je null)
+  // fallback userId -> display_name
   const [nameById, setNameById] = useState<UserNameMap>({})
 
-  // Verze – rozbalování (on-demand) + cache (jen manager)
+  // versions (manager only UI, but hooks must exist)
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
   const [versionsByDocId, setVersionsByDocId] = useState<Record<string, AttachmentVersionRow[]>>({})
   const [versionsLoadingId, setVersionsLoadingId] = useState<string | null>(null)
 
-  // Load guards (anti-storm)
+  // anti-storm load guards
   const loadInFlightRef = useRef<Promise<void> | null>(null)
   const lastLoadKeyRef = useRef<string>('')
 
-  // Přidání přílohy – panel (jen manager)
+  // new attachment panel (manager)
   const [panelOpen, setPanelOpen] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [newFile, setNewFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // Edit metadat dokumentu (title/description) (jen manager)
+  const panelDirty = useMemo(() => !!newTitle.trim() || !!newDesc.trim() || !!newFile, [newTitle, newDesc, newFile])
+
+  // edit metadata (manager)
   const [editingDocId, setEditingDocId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [editSaving, setEditSaving] = useState(false)
 
-  const panelDirty = useMemo(() => !!newTitle.trim() || !!newDesc.trim() || !!newFile, [newTitle, newDesc, newFile])
-
-  // Hidden file inputs pro „přidat verzi“ (po potvrzení)
+  // file inputs for "new version" (manager)
   const versionInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const setVersionInputRef = useCallback((documentId: string, el: HTMLInputElement | null) => {
     versionInputRefs.current[documentId] = el
@@ -140,10 +131,7 @@ export default function DetailAttachmentsSection({
   const loadAttachments = useCallback(async () => {
     const key = `${entityType}:${entityId}:${includeArchived ? '1' : '0'}`
 
-    if (loadInFlightRef.current && lastLoadKeyRef.current === key) {
-      return loadInFlightRef.current
-    }
-
+    if (loadInFlightRef.current && lastLoadKeyRef.current === key) return loadInFlightRef.current
     lastLoadKeyRef.current = key
 
     const p = (async () => {
@@ -152,7 +140,6 @@ export default function DetailAttachmentsSection({
       try {
         const data = await listAttachments({ entityType, entityId, includeArchived })
         setRows(data)
-        // ✅ dotáhneme jména jako fallback (bez závislosti na view)
         await refreshNamesFromRows(data)
       } catch (e: any) {
         setErrorText(e?.message ?? 'Chyba načítání příloh.')
@@ -162,7 +149,6 @@ export default function DetailAttachmentsSection({
     })()
 
     loadInFlightRef.current = p
-
     try {
       await p
     } finally {
@@ -186,36 +172,47 @@ export default function DetailAttachmentsSection({
     })
   }, [rows, filterText])
 
-  const resetPanel = useCallback(() => {
-    setNewTitle('')
-    setNewDesc('')
-    setNewFile(null)
-  }, [])
+  const resolveName = useCallback(
+    (nameFromView: string | null | undefined, userId: string | null | undefined) => {
+      if (nameFromView && nameFromView.trim()) return nameFromView
+      if (userId && nameById[userId]) return nameById[userId]
+      return '—'
+    },
+    [nameById]
+  )
 
   const openFileByPath = useCallback(async (filePath: string) => {
     const url = await getAttachmentSignedUrl({ filePath, expiresInSeconds: 60 })
     window.open(url, '_blank', 'noopener,noreferrer')
   }, [])
 
-  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setFilterText(e.target.value), [])
-  const handleNewTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNewTitle(e.target.value), [])
-  const handleNewDescChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setNewDesc(e.target.value), [])
-  const handleNewFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewFile(e.target.files?.[0] ?? null)
-  }, [])
-  const handleEditTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value), [])
-  const handleEditDescChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setEditDesc(e.target.value), [])
-  const handleArchivedToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setIncludeArchived(e.target.checked)
+  const handleOpenLatest = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const filePath = e.currentTarget.dataset.path
+      if (!filePath) return
+      setErrorText(null)
+      try {
+        await openFileByPath(filePath)
+      } catch (err: any) {
+        setErrorText(err?.message ?? 'Nepodařilo se otevřít přílohu.')
+      }
+    },
+    [openFileByPath]
+  )
+
+  const resetPanel = useCallback(() => {
+    setNewTitle('')
+    setNewDesc('')
+    setNewFile(null)
   }, [])
 
-  function handleActionAdd() {
+  const handleActionAdd = useCallback(() => {
     if (!isManager) return
     setErrorText(null)
     setPanelOpen(true)
-  }
+  }, [isManager])
 
-  function handleActionClose() {
+  const handleActionClose = useCallback(() => {
     if (!isManager) return
     setErrorText(null)
     if (panelOpen && panelDirty) {
@@ -224,9 +221,9 @@ export default function DetailAttachmentsSection({
     }
     setPanelOpen(false)
     resetPanel()
-  }
+  }, [isManager, panelOpen, panelDirty, resetPanel])
 
-  async function handleActionSave() {
+  const handleActionSave = useCallback(async () => {
     if (!isManager) return
     setErrorText(null)
     if (!panelOpen) return
@@ -245,7 +242,6 @@ export default function DetailAttachmentsSection({
         description: newDesc.trim() ? newDesc.trim() : null,
         file: newFile,
       })
-
       setPanelOpen(false)
       resetPanel()
       await loadAttachments()
@@ -254,32 +250,29 @@ export default function DetailAttachmentsSection({
     } finally {
       setSaving(false)
     }
-  }
+  }, [
+    isManager,
+    panelOpen,
+    newTitle,
+    newDesc,
+    newFile,
+    entityType,
+    entityId,
+    entityLabel,
+    resetPanel,
+    loadAttachments,
+  ])
 
   const onToolbarActionClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       const id = e.currentTarget.dataset.action as LocalActionId | undefined
       if (!id) return
+      if (id === 'refresh') return void loadAttachments()
       if (id === 'addAttachment') return handleActionAdd()
       if (id === 'saveAttachment') return void handleActionSave()
       if (id === 'closePanel') return handleActionClose()
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [panelDirty, panelOpen, newTitle, newDesc, newFile, saving, loadAttachments, resetPanel]
-  )
-
-  const handleOpenLatest = useCallback(
-    async (e: React.MouseEvent<HTMLButtonElement>) => {
-      const filePath = e.currentTarget.dataset.path
-      if (!filePath) return
-      setErrorText(null)
-      try {
-        await openFileByPath(filePath)
-      } catch (err: any) {
-        setErrorText(err?.message ?? 'Nepodařilo se otevřít přílohu.')
-      }
-    },
-    [openFileByPath]
+    [loadAttachments, handleActionAdd, handleActionSave, handleActionClose]
   )
 
   const handleToggleVersions = useCallback(
@@ -295,7 +288,6 @@ export default function DetailAttachmentsSection({
 
       setExpandedDocId(documentId)
 
-      // cache hit
       if (versionsByDocId[documentId]) return
 
       setVersionsLoadingId(documentId)
@@ -309,25 +301,26 @@ export default function DetailAttachmentsSection({
         setVersionsLoadingId(null)
       }
     },
-    [expandedDocId, versionsByDocId, refreshNamesFromVersions, isManager]
+    [isManager, expandedDocId, versionsByDocId, refreshNamesFromVersions]
   )
 
-  const handleRequestNewVersion = useCallback(
+  const handleAddVersionRequest = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       if (!isManager) return
       const docId = e.currentTarget.dataset.docid
       if (!docId) return
       const ok = confirm('Vytvořit novou verzi souboru?')
       if (!ok) return
-      const el = versionInputRefs.current[docId]
-      el?.click()
+      versionInputRefs.current[docId]?.click()
     },
     [isManager]
   )
 
-  const handleVersionInputChange = useCallback(
-    (documentId: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddVersionPick = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!isManager) return
+      const docId = e.currentTarget.dataset.docid
+      if (!docId) return
       const file = e.target.files?.[0]
       if (!file) return
 
@@ -335,20 +328,18 @@ export default function DetailAttachmentsSection({
       setSaving(true)
       try {
         await addAttachmentVersionWithUpload({
-          documentId,
+          documentId: docId,
           entityType,
           entityId,
           entityLabel,
           file,
         })
-        // reset input
         e.target.value = ''
         await loadAttachments()
-        setExpandedDocId(documentId)
-        // invalidate cache for doc (reload on next expand)
+        setExpandedDocId(docId)
         setVersionsByDocId((prev) => {
           const next = { ...prev }
-          delete next[documentId]
+          delete next[docId]
           return next
         })
       } catch (err: any) {
@@ -357,45 +348,33 @@ export default function DetailAttachmentsSection({
         setSaving(false)
       }
     },
-    [entityType, entityId, entityLabel, loadAttachments, isManager]
+    [isManager, entityType, entityId, entityLabel, loadAttachments]
   )
 
-  const resolveName = useCallback(
-    (nameFromView: string | null | undefined, userId: string | null | undefined) => {
-      if (nameFromView && nameFromView.trim()) return nameFromView
-      if (userId && nameById[userId]) return nameById[userId]
-      return '—'
+  const handleEditMetadataStart = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!isManager) return
+      const docId = e.currentTarget.dataset.docid
+      const title = e.currentTarget.dataset.title ?? ''
+      const desc = e.currentTarget.dataset.desc ?? ''
+      if (!docId) return
+      setEditingDocId(docId)
+      setEditTitle(title)
+      setEditDesc(desc === 'null' ? '' : desc)
     },
-    [nameById]
+    [isManager]
   )
 
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingTitle, setEditingTitle] = useState('')
-  const [editingDesc, setEditingDesc] = useState('')
-
-  const isEditing = useCallback((id: string) => editingId === id, [editingId])
-
-  const handleStartEdit = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!isManager) return
-    const docId = e.currentTarget.dataset.docid
-    const title = e.currentTarget.dataset.title ?? ''
-    const desc = e.currentTarget.dataset.desc ?? ''
-    if (!docId) return
-    setEditingId(docId)
-    setEditingTitle(title)
-    setEditingDesc(desc === 'null' ? '' : desc)
-  }, [isManager])
-
-  const handleCancelEdit = useCallback(() => {
-    setEditingId(null)
-    setEditingTitle('')
-    setEditingDesc('')
+  const handleEditMetadataCancel = useCallback(() => {
+    setEditingDocId(null)
+    setEditTitle('')
+    setEditDesc('')
   }, [])
 
-  const handleSaveEdit = useCallback(async () => {
+  const handleEditMetadataSave = useCallback(async () => {
     if (!isManager) return
-    if (!editingId) return
-    const title = editingTitle.trim()
+    if (!editingDocId) return
+    const title = editTitle.trim()
     if (!title) {
       setErrorText('Chybí název přílohy.')
       return
@@ -404,20 +383,20 @@ export default function DetailAttachmentsSection({
     setErrorText(null)
     try {
       await updateAttachmentMetadata({
-        documentId: editingId,
+        documentId: editingDocId,
         title,
-        description: editingDesc.trim() ? editingDesc.trim() : null,
+        description: editDesc.trim() ? editDesc.trim() : null,
       })
-      setEditingId(null)
-      setEditingTitle('')
-      setEditingDesc('')
+      setEditingDocId(null)
+      setEditTitle('')
+      setEditDesc('')
       await loadAttachments()
     } catch (err: any) {
       setErrorText(err?.message ?? 'Nepodařilo se uložit metadata.')
     } finally {
       setEditSaving(false)
     }
-  }, [editingId, editingTitle, editingDesc, loadAttachments, isManager])
+  }, [isManager, editingDocId, editTitle, editDesc, loadAttachments])
 
   if (!canLoad) {
     return (
@@ -441,7 +420,7 @@ export default function DetailAttachmentsSection({
               <input
                 className="detail-form__input"
                 value={filterText}
-                onChange={handleFilterChange}
+                onChange={(e) => setFilterText(e.target.value)}
                 placeholder="Hledat podle názvu, popisu nebo souboru"
               />
             </div>
@@ -449,15 +428,16 @@ export default function DetailAttachmentsSection({
             <div className="detail-attachments__archived">
               <label className="detail-form__label">&nbsp;</label>
               <label className="detail-form__checkbox detail-attachments__checkbox">
-                <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
+                <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
                 <span> Zobrazit archivované</span>
               </label>
             </div>
           </div>
 
           <div className="detail-attachments__toolbar-right">
-            {isManager && (
-              {Object.entries(LOCAL_ACTIONS).map(([id, def]) => (
+            {Object.entries(LOCAL_ACTIONS)
+              .filter(([id]) => (isManager ? true : id === 'refresh'))
+              .map(([id, def]) => (
                 <button
                   key={id}
                   type="button"
@@ -473,7 +453,6 @@ export default function DetailAttachmentsSection({
                   <span className="common-actions__label">{def.label}</span>
                 </button>
               ))}
-            )}
           </div>
         </div>
       </div>
@@ -486,10 +465,6 @@ export default function DetailAttachmentsSection({
         </div>
       )}
 
-      {!loading && !errorText && filteredRows.length === 0 && (
-        <div className="detail-view__placeholder">Zatím žádné přílohy.</div>
-      )}
-
       {/* Panel přidání přílohy (jen manager) */}
       {isManager && panelOpen && (
         <div className="detail-form">
@@ -499,17 +474,17 @@ export default function DetailAttachmentsSection({
             <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-4">
                 <label className="detail-form__label">Název</label>
-                <input className="detail-form__input" value={newTitle} onChange={handleNewTitleChange} />
+                <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
               </div>
 
               <div className="detail-form__field detail-form__field--span-4">
                 <label className="detail-form__label">Popis</label>
-                <input className="detail-form__input" value={newDesc} onChange={handleNewDescChange} />
+                <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
               </div>
 
               <div className="detail-form__field detail-form__field--span-4">
                 <label className="detail-form__label">Soubor</label>
-                <input className="detail-form__input" type="file" onChange={handleNewFileChange} />
+                <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
                 <div className="detail-form__hint">Vytvoří dokument + verzi v001 a nahraje soubor do storage.</div>
               </div>
             </div>
@@ -517,13 +492,51 @@ export default function DetailAttachmentsSection({
         </div>
       )}
 
-      {/* List příloh */}
+      {/* Edit metadat (jen manager) */}
+      {isManager && editingDocId && (
+        <div className="detail-form">
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Upravit metadata</h3>
+
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Název</label>
+                <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Popis</label>
+                <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">&nbsp;</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="common-actions__button" onClick={() => void handleEditMetadataSave()} disabled={editSaving}>
+                    <span className="common-actions__icon" aria-hidden>
+                      {getIcon('save')}
+                    </span>
+                    <span className="common-actions__label">Uložit</span>
+                  </button>
+                  <button type="button" className="common-actions__button" onClick={handleEditMetadataCancel} disabled={editSaving}>
+                    <span className="common-actions__icon" aria-hidden>
+                      {getIcon('close')}
+                    </span>
+                    <span className="common-actions__label">Zrušit</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {!loading && !errorText && filteredRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
+
       {!loading && !errorText && filteredRows.length > 0 && (
         <div className="detail-form">
           <section className="detail-form__section">
-            <h3 className="detail-form__section-title">
-              {isManager ? 'Přílohy' : 'Přílohy (read-only)'}
-            </h3>
+            <h3 className="detail-form__section-title">{isManager ? 'Přílohy' : 'Přílohy (read-only)'}</h3>
 
             <div className="detail-attachments__table" role="table" aria-label="Přílohy">
               <div className="detail-attachments__row detail-attachments__row--head" role="row">
@@ -549,7 +562,9 @@ export default function DetailAttachmentsSection({
 
               {filteredRows.map((r) => {
                 const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
-                const updatedName = resolveName(r.updated_by_name ?? null, r.updated_by ?? null)
+
+                const isExpanded = isManager && expandedDocId === r.id
+                const versions = versionsByDocId[r.id] ?? []
 
                 return (
                   <React.Fragment key={r.id}>
@@ -562,15 +577,7 @@ export default function DetailAttachmentsSection({
                       </div>
 
                       <div className="detail-attachments__cell" role="cell">
-                        {isManager && editingId === r.id ? (
-                          <input
-                            className="detail-form__input"
-                            value={editingDesc}
-                            onChange={(e) => setEditingDesc(e.target.value)}
-                          />
-                        ) : (
-                          <div className="detail-attachments__muted">{r.description ?? '—'}</div>
-                        )}
+                        <div className="detail-attachments__muted">{r.description ?? '—'}</div>
                       </div>
 
                       <div className="detail-attachments__cell" role="cell">
@@ -595,93 +602,80 @@ export default function DetailAttachmentsSection({
                         <div>
                           <div className="detail-attachments__muted">{formatDt(r.version_created_at)}</div>
                           <div className="detail-attachments__muted">kdo: {uploadedName}</div>
-                          <div className="detail-attachments__muted">upravil: {updatedName}</div>
                         </div>
                       </div>
 
                       <div className="detail-attachments__cell" role="cell">
-                        <div className="detail-attachments__actions">
-                          {isManager ? (
-                            <>
-                              <button
-                                type="button"
-                                className="detail-attachments__link"
-                                data-docid={r.id}
-                                onClick={handleToggleVersions}
-                              >
-                                Historie
-                              </button>
+                        {isManager ? (
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              className="detail-attachments__small"
+                              data-docid={r.id}
+                              onClick={handleToggleVersions}
+                              disabled={versionsLoadingId === r.id || saving}
+                              title="Zobrazit/skrýt verze"
+                            >
+                              {isExpanded ? 'Skrýt verze' : 'Verze'}
+                            </button>
 
-                              <button
-                                type="button"
-                                className="detail-attachments__link"
-                                data-docid={r.id}
-                                onClick={handleRequestNewVersion}
-                              >
-                                Přidat verzi
-                              </button>
+                            <button
+                              type="button"
+                              className="detail-attachments__small"
+                              data-docid={r.id}
+                              data-title={r.title ?? ''}
+                              data-desc={r.description ?? ''}
+                              onClick={handleEditMetadataStart}
+                              disabled={saving || editSaving}
+                              title="Upravit metadata"
+                            >
+                              Upravit
+                            </button>
 
-                              <input
-                                ref={(el) => setVersionInputRef(r.id, el)}
-                                type="file"
-                                className="detail-attachments__file-input"
-                                onChange={handleVersionInputChange(r.id)}
-                              />
+                            <button
+                              type="button"
+                              className="detail-attachments__small"
+                              data-docid={r.id}
+                              onClick={handleAddVersionRequest}
+                              disabled={saving}
+                              title="Přidat novou verzi"
+                            >
+                              Nová verze
+                            </button>
 
-                              {editingId === r.id ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="detail-attachments__link"
-                                    disabled={editSaving}
-                                    onClick={handleSaveEdit}
-                                  >
-                                    Uložit
-                                  </button>
-                                  <button type="button" className="detail-attachments__link" onClick={handleCancelEdit}>
-                                    Zrušit
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="detail-attachments__link"
-                                  data-docid={r.id}
-                                  data-title={r.title}
-                                  data-desc={r.description ?? ''}
-                                  onClick={handleStartEdit}
-                                >
-                                  Upravit
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <span className="detail-attachments__muted">—</span>
-                          )}
-                        </div>
+                            <input
+                              ref={(el) => setVersionInputRef(r.id, el)}
+                              data-docid={r.id}
+                              type="file"
+                              style={{ display: 'none' }}
+                              onChange={handleAddVersionPick}
+                            />
+                          </div>
+                        ) : (
+                          <span className="detail-attachments__muted">—</span>
+                        )}
                       </div>
                     </div>
 
-                    {isManager && expandedDocId === r.id && (
-                      <div className="detail-attachments__row detail-attachments__row--versions" role="row">
-                        <div className="detail-attachments__versions" role="cell">
-                          {versionsLoadingId === r.id ? (
-                            <>Načítám verze…</>
-                          ) : (versionsByDocId[r.id] ?? []).length === 0 ? (
-                            <>Žádné verze.</>
-                          ) : (
-                            <div className="detail-attachments__versions-list">
-                              {(versionsByDocId[r.id] ?? []).map((v) => {
-                                const vName = resolveName(null, v.created_by ?? null)
+                    {isExpanded && (
+                      <div className="detail-attachments__row detail-attachments__row--sub" role="row">
+                        <div className="detail-attachments__cell" role="cell" style={{ gridColumn: '1 / -1' }}>
+                          {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
+
+                          {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
+
+                          {!versionsLoadingId && versions.length > 0 && (
+                            <div style={{ display: 'grid', gap: 6 }}>
+                              {versions.map((v) => {
+                                const createdName = resolveName(null, v.created_by ?? null)
                                 return (
-                                  <div key={v.id} className="detail-attachments__version-item">
-                                    <span className="detail-attachments__mono">
-                                      v{String(v.version_number).padStart(3, '0')}
-                                    </span>
-                                    <span className="detail-attachments__version-file">{v.file_name}</span>
-                                    <span className="detail-attachments__muted">
-                                      {formatDt(v.created_at)} • {vName}
-                                    </span>
+                                  <div key={v.id} className="detail-attachments__version">
+                                    <div>
+                                      <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
+                                    </div>
+                                    <div className="detail-attachments__muted">
+                                      {formatDt(v.created_at)} • kdo: {createdName}
+                                    </div>
                                   </div>
                                 )
                               })}
