@@ -2,11 +2,10 @@
 
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { listUsers, type UsersListRow } from '@/app/lib/services/users'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { getUserDetail, listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
 import { fetchPermissionTypes } from '@/app/modules/900-nastaveni/services/permissionTypes'
-
 
 export type InviteMode = 'existing' | 'new'
 
@@ -44,6 +43,9 @@ export default function InviteUserForm({
 }: Props) {
   const [v, setV] = useState<InviteFormValue>(initialValue)
 
+  // guard proti race condition při rychlém přepínání vybraného uživatele
+  const pickSeqRef = useRef(0)
+
   // V detailu uživatele (existingOnly) držíme režim vždy 'existing' a subjectId z preset hodnoty
   useEffect(() => {
     if (variant !== 'existingOnly') return
@@ -70,6 +72,7 @@ export default function InviteUserForm({
 
   const [roles, setRoles] = useState<{ code: string; name: string }[]>([])
   const [loadingRoles, setLoadingRoles] = useState(false)
+
   const [permissions, setPermissions] = useState<{ code: string; name: string }[]>([])
   const [loadingPermissions, setLoadingPermissions] = useState(false)
 
@@ -114,6 +117,8 @@ export default function InviteUserForm({
       cancelled = true
     }
   }, [])
+
+  // load permissions always
   useEffect(() => {
     let cancelled = false
     const run = async () => {
@@ -129,9 +134,11 @@ export default function InviteUserForm({
       }
     }
     void run()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
-  
+
   const mode = variant === 'existingOnly' ? 'existing' : v.mode
 
   const inviteBlockedReason = useMemo(() => {
@@ -184,7 +191,15 @@ export default function InviteUserForm({
                     type="radio"
                     checked={mode === 'new'}
                     onChange={() => {
-                      setV((p) => ({ ...p, mode: 'new', subjectId: null, email: '', displayName: '' }))
+                      setV((p) => ({
+                        ...p,
+                        mode: 'new',
+                        subjectId: null,
+                        email: '',
+                        displayName: '',
+                        roleCode: '',
+                        permissionCode: '',
+                      }))
                       markDirty()
                     }}
                   />
@@ -195,9 +210,10 @@ export default function InviteUserForm({
           </div>
         )}
 
+        {/* Jednosloupcový layout – stejné jako Detail (vše span-4) */}
         <div className="detail-form__grid detail-form__grid--narrow">
           {mode === 'existing' && variant === 'standalone' && (
-            <div className="detail-form__field detail-form__field--span-6">
+            <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">Uživatel</label>
               <select
                 className="detail-form__input"
@@ -206,6 +222,8 @@ export default function InviteUserForm({
                 onChange={(e) => {
                   const nextId = e.target.value || null
                   const picked = users.find((u: any) => u.id === nextId) as any
+
+                  // 1) rychlá aktualizace základních polí (email/jméno)
                   setV((p) => ({
                     ...p,
                     subjectId: nextId,
@@ -213,6 +231,28 @@ export default function InviteUserForm({
                     displayName: picked?.display_name ?? picked?.displayName ?? p.displayName,
                   }))
                   markDirty()
+
+                  // 2) načíst role + permission ze Supabase (1+1) pro vybraného uživatele
+                  const seq = ++pickSeqRef.current
+                  if (!nextId) return
+                  ;(async () => {
+                    try {
+                      const detail = await getUserDetail(nextId)
+                      if (pickSeqRef.current !== seq) return
+
+                      const rc = (detail?.role_code ?? '').trim()
+                      const pc = String((detail?.permissions ?? [])[0] ?? '').trim()
+
+                      setV((p) => ({
+                        ...p,
+                        roleCode: rc || p.roleCode,
+                        permissionCode: pc || p.permissionCode,
+                      }))
+                    } catch (err) {
+                      // necháme uživatele vybrat ručně
+                      console.warn('[InviteUserForm.getUserDetail] WARN', err)
+                    }
+                  })()
                 }}
               >
                 <option value="">{loadingUsers ? 'Načítám…' : '— vyber uživatele —'}</option>
@@ -225,13 +265,12 @@ export default function InviteUserForm({
             </div>
           )}
 
-          {/* Email – užší */}
-          <div className="detail-form__field detail-form__field--span-3">
+          <div className="detail-form__field detail-form__field--span-4">
             <label className="detail-form__label">Email</label>
             <input
               className={'detail-form__input' + (mode === 'existing' && variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
               value={v.email}
-              readOnly={variant === 'existingOnly'} // v detailu existujícího read-only
+              readOnly={variant === 'existingOnly'}
               onChange={(e) => {
                 setV((p) => ({ ...p, email: e.target.value }))
                 markDirty()
@@ -240,8 +279,7 @@ export default function InviteUserForm({
             />
           </div>
 
-          {/* Zobrazované jméno */}
-          <div className="detail-form__field detail-form__field--span-3">
+          <div className="detail-form__field detail-form__field--span-4">
             <label className="detail-form__label">Zobrazované jméno</label>
             <input
               className={'detail-form__input' + (variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
@@ -255,8 +293,7 @@ export default function InviteUserForm({
             />
           </div>
 
-          {/* Role – užší */}
-          <div className="detail-form__field detail-form__field--span-3">
+          <div className="detail-form__field detail-form__field--span-4">
             <label className="detail-form__label">Role</label>
             <select
               className="detail-form__input"
@@ -275,8 +312,8 @@ export default function InviteUserForm({
               ))}
             </select>
           </div>
-          
-          <div className="detail-form__field detail-form__field--span-3">
+
+          <div className="detail-form__field detail-form__field--span-4">
             <label className="detail-form__label">Oprávnění</label>
             <select
               className="detail-form__input"
@@ -296,7 +333,7 @@ export default function InviteUserForm({
             </select>
           </div>
 
-          <div className="detail-form__field detail-form__field--span-6">
+          <div className="detail-form__field detail-form__field--span-4">
             <label className="detail-form__label">Poznámka</label>
             <textarea
               className="detail-form__input"
