@@ -69,7 +69,13 @@ export type DetailViewCtx = {
 }
 
 const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
-  detail: { id: 'detail', label: 'Detail', order: 10, always: true, render: (ctx) => ctx?.detailContent ?? null },
+  detail: {
+    id: 'detail',
+    label: 'Detail',
+    order: 10,
+    always: true,
+    render: (ctx) => ctx?.detailContent ?? null,
+  },
 
   invite: {
     id: 'invite',
@@ -106,18 +112,10 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       // ✅ permission SINGLE (vezmeme jen 1 hodnotu)
       // -----
       const selectedPermFromData = (permissions[0]?.code ?? '') as string
-      const selectedPermCode =
-        (ui?.permissionCode ?? selectedPermFromData ?? '') as string
+      const selectedPermCode = (ui?.permissionCode ?? selectedPermFromData ?? '') as string
 
       // fallback (old multi)
       const selectedPermCodesFallback = ui?.permissionCodes ?? permissions.map((p) => p.code)
-
-      const selectedPermLabel = (() => {
-        const code = (selectedPermCode ?? '').trim()
-        if (!code) return '—'
-        const found = permOptions.find((p) => p.code === code)
-        return found?.name ? `${found.name}` : code
-      })()
 
       return (
         <div className="detail-form">
@@ -126,11 +124,10 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
 
             <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Role</label>
-
                 {(mode === 'edit' || mode === 'create') && canEdit ? (
                   <select
                     className="detail-form__input"
+                    style={{ maxWidth: 420 }}
                     value={selectedRoleCode}
                     onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
                   >
@@ -146,13 +143,10 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
                 ) : (
                   <input
                     className="detail-form__input detail-form__input--readonly"
+                    style={{ maxWidth: 420 }}
                     value={role?.name ?? role?.code ?? '—'}
                     readOnly
                   />
-                )}
-
-                {mode !== 'view' && (
-                  <div className="detail-form__hint">Role je uložena v subject_roles (subject_id + role_code).</div>
                 )}
               </div>
             </div>
@@ -163,14 +157,15 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
 
             <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Oprávnění</label>
-
                 {/* ✅ NOVÝ režim: single select (1 oprávnění) */}
-                {(mode === 'edit' || mode === 'create') && canEdit && typeof ui?.onChangePermissionCode === 'function' ? (
+                {(mode === 'edit' || mode === 'create') &&
+                canEdit &&
+                typeof ui?.onChangePermissionCode === 'function' ? (
                   <div className="detail-form__value">
                     {permOptions.length ? (
                       <select
                         className="detail-form__input"
+                        style={{ maxWidth: 420 }}
                         value={(selectedPermCode ?? '') as string}
                         onChange={(e) => ui?.onChangePermissionCode?.(e.target.value)}
                       >
@@ -179,20 +174,17 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
                         </option>
                         {permOptions.map((p) => (
                           <option key={p.code} value={p.code}>
-                            {p.code}
-                            {p.name ? ` – ${p.name}` : ''}
+                            {p.name ?? p.code}
                           </option>
                         ))}
                       </select>
                     ) : (
                       <span className="detail-form__hint">Žádné typy oprávnění (permission_types) nejsou dostupné.</span>
                     )}
-
-                    <div className="detail-form__hint" style={{ marginTop: 8 }}>
-                      Oprávnění se ukládají do subject_permissions (subject_id + permission_code).
-                    </div>
                   </div>
-                ) : (mode === 'edit' || mode === 'create') && canEdit && typeof ui?.onTogglePermission === 'function' ? (
+                ) : (mode === 'edit' || mode === 'create') &&
+                  canEdit &&
+                  typeof ui?.onTogglePermission === 'function' ? (
                   /* ✅ fallback: starý režim (checkboxy) */
                   <div className="detail-form__value">
                     {permOptions.length ? (
@@ -218,18 +210,15 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
                     ) : (
                       <span className="detail-form__hint">Žádné typy oprávnění (permission_types) nejsou dostupné.</span>
                     )}
-
-                    <div className="detail-form__hint" style={{ marginTop: 8 }}>
-                      Oprávnění se ukládají do subject_permissions (subject_id + permission_code).
-                    </div>
                   </div>
                 ) : (
                   /* VIEW režim: zobraz jen 1 oprávnění */
                   <input
                     className="detail-form__input detail-form__input--readonly"
+                    style={{ maxWidth: 420 }}
                     value={
                       selectedPermCode
-                        ? `${selectedPermCode}${selectedPermLabel && selectedPermLabel !== selectedPermCode ? ` – ${selectedPermLabel}` : ''}`
+                        ? permOptions.find((p) => p.code === selectedPermCode)?.name ?? selectedPermCode
                         : '—'
                     }
                     readOnly
