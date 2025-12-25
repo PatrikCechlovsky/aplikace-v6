@@ -257,7 +257,6 @@ export default function UserDetailFrame({
         content: (
           <UserDetailForm
             user={user}
-            viewMode={viewMode}
             onChange={(next) => {
               markDirtyIfChanged(next)
             }}
