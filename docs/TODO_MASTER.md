@@ -1,11 +1,22 @@
 # TODO MASTER – Aplikace Pronajímatel v6
 
 Tento dokument je:
-- jediný konsolidovaný seznam všech TODO nalezených v projektu
-- vznikl projitím celého ZIPu (kód, moduly, UI, dokumentace)
-- slouží jako kontrolní checklist dokončení a testování
+- jediný konsolidovaný seznam všech TODO v projektu
+- „zdroj pravdy“ pro plánování, dokončování a testování
+- bez programového kódu (žádné TS/JS bloky)
 
-Neobsahuje žádný programový kód.
+Pravidla:
+- Nové úkoly se přidávají výhradně sem.
+- Duplicitní TODO soubory se po konsolidaci smažou.
+- Každý bod má stav:
+  - [ ] nehotovo
+  - [x] hotovo (doporučeno doplnit „otestováno“ do poznámky)
+
+---
+
+## 0. ZDROJE, KTERÉ BYLY SLOUČENÉ DO MASTER
+- `todolist.md` (DetailView/Tabs fáze + kroky) — SLOUČENO, lze smazat
+- `todo_list.md` (široký TODO napříč projektem) — SLOUČENO, lze smazat
 
 ---
 
@@ -13,9 +24,9 @@ Neobsahuje žádný programový kód.
 
 - [ ] Sjednotit životní cyklus všech formulářů (read / edit / create)
 - [ ] Ujasnit, kde vzniká a kde se ruší „dirty state“
-- [ ] Zajistit jednotné chování při opuštění rozpracovaného formuláře
-- [ ] Prověřit, že všechny detaily používají stejný vzor (EntityDetailFrame)
-- [ ] Odstranit dočasná řešení a poznámky typu „TODO later“
+- [ ] Zajistit jednotné chování při opuštění rozpracovaného formuláře (confirm)
+- [ ] Prověřit, že všechny detaily používají stejný vzor (EntityDetailFrame / DetailView)
+- [ ] Odstranit dočasná řešení a poznámky typu „TODO later“ (přepsat na konkrétní úkol)
 
 ---
 
@@ -26,7 +37,7 @@ Neobsahuje žádný programový kód.
   - role
   - oprávnění
   - stavu formuláře
-  - výběru záznamu
+  - výběru záznamu (selection)
 - [ ] Správné přepínání:
   - Detail ↔ Edit
   - Save pouze v editaci
@@ -89,15 +100,6 @@ Neobsahuje žádný programový kód.
 - [ ] Rozlišení read / edit / create
 - [ ] Kontrola archivace
 
-### Pozvánky
-- [ ] Oddělení pozvánky od detailu uživatele
-- [ ] Kontrola již odeslaných pozvánek
-- [ ] Kontrola existujícího uživatele
-- [ ] Stavový model pozvánky (koncept / odeslaná / přijatá / expirovaná)
-- [ ] Tlačítko pro odeslání pozvánky
-- [ ] Zobrazení stavu pozvánky
-
-
 ### Pozvánky (Invite flow)
 - [x] Samostatná obrazovka „Pozvat uživatele“
 - [x] Pozvání existujícího uživatele z detailu
@@ -108,10 +110,14 @@ Neobsahuje žádný programový kód.
 - [ ] Uživatelský text pozvánky (spolupráce / nemovitosti)
 - [ ] Přemapovat akci „Save“ → „Odeslat pozvánku“
 - [ ] Rozhodnout chování po odeslání (zůstat / zavřít)
+- [ ] Audit log pozvánek (minimální verze)
 
 ### Detail uživatele
 - [x] DetailView se sekcemi (detail, role, invite, přílohy, systém)
-- [ ] Přílohy: READ-ONLY tab v detailu entity + 📎 manager tile (upload/verze/historie), včetně edge-cases (archivovaná entita, read-only role, RLS)
+- [ ] Přílohy: READ-ONLY tab v detailu entity + 📎 manager tile (upload/verze/historie), včetně edge-cases:
+  - [ ] archivovaná entita = manager read-only
+  - [ ] read-only role = manager read-only
+  - [ ] RLS / 401 / 403 = srozumitelná chyba, žádné request stormy
 - [x] Invite sekce pouze pro existující uživatele
 - [x] System sekce s invite informacemi
 - [ ] UX doladění sekcí (šířky, copy, pořadí)
@@ -121,25 +127,65 @@ Neobsahuje žádný programový kód.
 - [x] Menu klik = okamžitý přechod (dirty confirm)
 - [ ] Sjednotit chování Home button
 
-### Koncepční
+### Koncepční (010)
 - [ ] Definovat typy pozvánek (spolupráce / plátce)
 - [ ] Role-based invite policy
 - [ ] Expirace pozvánek (cron / job)
-- [ ] Audit log pozvánek
-      
+
 ---
 
-## 8. DALŠÍ MODULY (ZÁKLADY)
+## 8. DETAILVIEW / SEKCE / TABS (konsolidace z todolist.md)
 
-- [ ] Modul 020 – Můj účet (oddělení self-edit a admin logiky)
+### Stav (hotovo)
+- [x] DetailTabs (ouška) + aktivní přepínání sekcí
+- [x] Registry sekcí v DetailView + resolveSections
+- [x] UserDetailFrame jako „konfigurace“ (bez vlastní tab logiky)
+
+### Zbývá dodělat
+- [ ] Nic nemazat: při nahrazování přesouvat staré věci do `docs/archive/` nebo označit jako archive (procesní pravidlo)
+- [ ] Entity detail tile vzhled:
+  - [ ] vytvořit/aktivovat CSS pro rám detailu (`EntityDetailFrame.css`)
+  - [ ] import do AppShell
+  - [ ] zrušit 2-sloupcový layout, odstranit „prázdný sloupec“, sjednotit padding/radius
+- [ ] Naplnit reálný obsah sekcí (ne placeholder):
+  - [ ] `roles` (role, oprávnění, skupiny)
+  - [ ] `attachments` (READ-ONLY tab + manager tile přes 📎)
+  - [ ] `system` (audit: createdAt/updatedAt/archivace + jednotný formát času)
+  - [ ] `accounts`
+  - [ ] `users`
+  - [ ] `equipment`
+
+### Reuse na dalších entitách
+- [ ] Nájemník: sekce `users`, `accounts`
+- [ ] Jednotka: sekce `users`, `equipment`, `accounts`
+- [ ] Subjekt: sekce `accounts`
+
+---
+
+## 9. MODULY (rozšíření – konsolidace z todo_list.md)
+
+- [ ] Modul 020 – Můj účet (oddělit self-edit a admin logiku)
 - [ ] Modul 030 – Pronajímatel (doplnit formuláře)
 - [ ] Modul 040 – Nemovitosti (datový model + UI)
-- [ ] Modul 050 – Nájemníci
-- [ ] Modul 900 – Nastavení jako referenční modul
+- [ ] Modul 050 – Nájemníci (formuláře + vazby)
+- [ ] Modul Smlouvy (datový model, validace období, vazby)
+- [ ] Modul Platby / Finance (platební kalendář, QR, filtry období)
+- [ ] Modul Měřidla (evidence, import odečtů, vyúčtování v2)
+- [ ] Modul Dokumenty (archiv dokumentů, šablony e-mailů, generování PDF)
+- [ ] Modul Komunikace (historie zpráv, štítky, automatizace)
 
 ---
 
-## 9. DATA, IMPORTY A EXPORTY
+## 10. LOGIKA & SERVICES
+
+- [ ] Permission service
+- [ ] DynamicBreadcrumbs builder
+- [ ] FormState manager
+- [ ] Centralizace všech datových validací
+
+---
+
+## 11. DATA, IMPORTY A EXPORTY
 
 - [ ] Návrh jednotného importního mechanismu
 - [ ] Export vzorových šablon
@@ -148,18 +194,18 @@ Neobsahuje žádný programový kód.
 
 ---
 
-## 10. DOKUMENTACE
+## 12. DOKUMENTACE
 
 - [ ] Aktualizovat dokumentaci dle reálného stavu kódu
 - [ ] Doplnit CommonActions v6
 - [ ] Doplnit TopMenu
 - [ ] Doplnit Invite flow
-- [ ] Modulová dokumentace
-- [ ] Označit historické dokumenty
+- [ ] Modulová dokumentace (každý modul)
+- [ ] Označit historické dokumenty (archive)
 
 ---
 
-## 11. TESTOVÁNÍ A STABILITA
+## 13. TESTOVÁNÍ A STABILITA
 
 - [ ] Ruční testy hlavních scénářů
 - [ ] Ověření chování při chybách
@@ -168,13 +214,36 @@ Neobsahuje žádný programový kód.
 
 ---
 
-## 12. UZAVÍRÁNÍ ÚKOLŮ
+## 14. INFRA & TECH (konsolidace z todo_list.md)
+
+- [ ] Optimalizace buildů
+- [ ] CI/CD GitHub Actions
+- [ ] Logování chyb v produkci
+- [ ] Testy (unit + integration)
+
+---
+
+## 15. BUDOUCNOST / PLÁN (informativní)
+
+- [ ] Workflow engine (automatizace procesů)
+- [ ] Napojení na email API (SendGrid / Postmark)
+- [ ] Mobilní aplikace (v2)
+- [ ] Zabezpečení přístupu k modulům (fine-grained)
+- [ ] Externí API rozhraní
+
+---
+
+## 16. UZAVÍRÁNÍ ÚKOLŮ (proces)
 
 - [ ] Každý bod označit jako:
   - hotovo
-  - otestováno
+  - otestováno (doporučeno doplnit do poznámky)
 - [ ] Nehotové body zůstávají v tomto dokumentu
 - [ ] Nové úkoly se přidávají výhradně sem
+
+---
+
+## 17. UX / UI CONSISTENCY – sjednocení datumů a časů
 
 Sjednotit zobrazení datumů a časů v celé aplikaci (UI layer)
 
@@ -182,46 +251,19 @@ Popis:
 V celé aplikaci se aktuálně na některých místech zobrazují databázové hodnoty timestamptz přímo ve formátu ISO
 (např. 2025-12-16T07:47:26.728831+00:00), což není vhodné pro koncového uživatele.
 
-Cílem je:
-
-zobrazovat pouze datum + čas (bez mikrosekund a bez explicitního timezone)
-
-mít jednotný formát napříč celou aplikací
-
-zachovat plnou přesnost v databázi
+Cíle:
+- zobrazovat pouze datum + čas (bez mikrosekund a bez explicitního timezone)
+- mít jednotný formát napříč celou aplikací
+- zachovat plnou přesnost v databázi
 
 Rozsah:
-
-Detail entity → záložka Systém
-
-Přílohy (Nahráno / Změněno)
-
-Pozvánky
-
-Audit / historie změn
-
-Jakékoliv další systémové nebo read-only zobrazení času
-
-Technické řešení:
-
-vytvořit centrální util funkci:
-
-formatDateTime(value?: string | null): string
-
-volitelně formatDate(value?: string | null): string
-
-používat toLocaleString('cs-CZ', { … })
-
-nikdy nezobrazovat ISO timestamp přímo v JSX
+- Detail entity → záložka Systém
+- Přílohy (Nahráno / Změněno)
+- Pozvánky
+- Audit / historie změn
+- Jakékoliv další systémové nebo read-only zobrazení času
 
 Akceptační kritéria:
-
-v UI se nikde nezobrazuje znak T, mikrosekundy ani +00:00
-
-prázdná hodnota → zobrazí se —
-
-databázová struktura zůstává beze změny
-
-Priorita: 🟡 střední
-Typ: UX / UI consistency
-Závislosti: žádné
+- v UI se nikde nezobrazuje znak „T“, mikrosekundy ani „+00:00“
+- prázdná hodnota → zobrazí se „—“
+- databázová struktura zůstává beze změny
