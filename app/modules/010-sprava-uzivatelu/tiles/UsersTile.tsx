@@ -1,22 +1,16 @@
 'use client'
 
 // FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
-// PURPOSE: List + detail uživatelů (010) + pozvánky.
+// PURPOSE: List + detail uživatelů (010) + pozvánky + přílohy.
 // URL state:
 // - t=users-list (list)
 // - t=invite-user (invite screen)
+// - t=attachments-manager (attachments manager screen)
 // - id + vm (detail: read/edit/create)
 //
-// FIX (2025-12-24):
-// - "blikání" po kliknutí na 📎 bylo způsobeno tím, že useSearchParams() vrací často novou instanci,
-//   a náš useEffect měl dependency [searchParams] => efekt běžel na každém renderu => smyčka.
-// - Řešení: pracovat se stabilním stringem searchKey = searchParams.toString()
-//   a useEffect i setUrl stavět nad searchKey.
-//
-// FIX (2025-12-25):
-// - Chrome: net::ERR_INSUFFICIENT_RESOURCES (request storm) => přidány "anti-storm" guardy pro load()
-// - Důležité: NEPOSÍLAT activeSection zpět jako initialSectionId (jinak vznikají zbytečné re-render cykly).
-//   Parent si drží detailActiveSectionId pro CommonActions, ale do DetailView posílá jen detailInitialSectionId.
+// FIX:
+// - useSearchParams() -> searchKey = searchParams.toString() (stabilní) = žádné blikání
+// - anti-storm guards pro load()
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -24,6 +18,7 @@ import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListVi
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetailFrame'
 import InviteUserFrame from '../forms/InviteUserFrame'
+import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
@@ -89,7 +84,7 @@ type UsersTileProps = {
 }
 
 // ✅ lokální režimy
-type LocalViewMode = ViewMode | 'list' | 'invite'
+type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 
 export default function UsersTile({
   onRegisterCommonActions,
@@ -115,7 +110,7 @@ export default function UsersTile({
   const [detailUser, setDetailUser] = useState<UiUser | null>(null)
 
   // ✅ rozlišujeme:
-  // - detailInitialSectionId = jen "počáteční" / vyžádaná sekce (např. z CommonAction 📎)
+  // - detailInitialSectionId = jen "počáteční" / vyžádaná sekce
   // - detailActiveSectionId  = aktuálně aktivní sekce (pro CommonActions logiku)
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [detailActiveSectionId, setDetailActiveSectionId] = useState<any>('detail')
@@ -130,6 +125,9 @@ export default function UsersTile({
 
   // Invite preset
   const [invitePresetSubjectId, setInvitePresetSubjectId] = useState<string | null>(null)
+
+  // Attachments manager target (subject id)
+  const [attachmentsManagerSubjectId, setAttachmentsManagerSubjectId] = useState<string | null>(null)
 
   // -------------------------
   // URL helpers (t, id, vm)
@@ -220,6 +218,7 @@ export default function UsersTile({
       setDetailUser(user)
       setDetailInitialSectionId(initialSection)
       setDetailActiveSectionId(initialSection)
+      setAttachmentsManagerSubjectId(null)
       setViewMode(mode)
       setIsDirty(false)
       submitRef.current = null
@@ -234,6 +233,7 @@ export default function UsersTile({
   const openInvite = useCallback(
     (subjectId: string | null) => {
       setInvitePresetSubjectId(subjectId)
+      setAttachmentsManagerSubjectId(null)
       setViewMode('invite')
       setIsDirty(false)
       submitRef.current = null
@@ -251,6 +251,7 @@ export default function UsersTile({
     setDetailInitialSectionId('detail')
     setDetailActiveSectionId('detail')
     setInvitePresetSubjectId(null)
+    setAttachmentsManagerSubjectId(null)
     submitRef.current = null
     inviteSubmitRef.current = null
     setIsDirty(false)
@@ -265,6 +266,7 @@ export default function UsersTile({
     setDetailInitialSectionId('detail')
     setDetailActiveSectionId('detail')
     setInvitePresetSubjectId(null)
+    setAttachmentsManagerSubjectId(null)
     submitRef.current = null
     inviteSubmitRef.current = null
     setIsDirty(false)
@@ -285,11 +287,12 @@ export default function UsersTile({
 
     // tile state
     if (!t) {
-      // modul root (tile zavřený) -> nevnucujeme nic, necháme list režim (prázdno)
+      // modul root (tile zavřený) -> nevnucujeme nic, necháme list režim
       if (viewMode !== 'list') {
         setViewMode('list')
         setDetailUser(null)
         setInvitePresetSubjectId(null)
+        setAttachmentsManagerSubjectId(null)
         submitRef.current = null
         inviteSubmitRef.current = null
         setIsDirty(false)
@@ -301,10 +304,22 @@ export default function UsersTile({
       if (viewMode !== 'invite') {
         setViewMode('invite')
         setDetailUser(null)
+        setAttachmentsManagerSubjectId(null)
         submitRef.current = null
         inviteSubmitRef.current = null
         setIsDirty(false)
       }
+      return
+    }
+
+    if (t === 'attachments-manager') {
+      if (!id) return
+      if (attachmentsManagerSubjectId !== id) setAttachmentsManagerSubjectId(id)
+      if (viewMode !== 'attachments-manager') {
+        setViewMode('attachments-manager')
+        setIsDirty(false)
+      }
+      if (selectedId !== id) setSelectedId(id)
       return
     }
 
@@ -318,6 +333,7 @@ export default function UsersTile({
           submitRef.current = null
           inviteSubmitRef.current = null
           setInvitePresetSubjectId(null)
+          setAttachmentsManagerSubjectId(null)
           setIsDirty(false)
         }
         return
@@ -331,11 +347,10 @@ export default function UsersTile({
 
       const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
 
-      // ✅ důležité: nepřepisuj detail stav pořád dokola
       if (viewMode !== safeVm || detailUser?.id !== found.id) {
         setDetailUser(found)
+        setAttachmentsManagerSubjectId(null)
 
-        // initial/active sekce nastav jen pokud opravdu není
         if (!detailActiveSectionId) {
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
@@ -349,7 +364,7 @@ export default function UsersTile({
       }
       return
     }
-  }, [searchKey, users, viewMode, detailUser?.id, selectedId]) // ✅ searchKey místo searchParams
+  }, [searchKey, users, viewMode, detailUser?.id, selectedId, attachmentsManagerSubjectId, detailActiveSectionId])
 
   // -------------------------
   // Invite availability for detail
@@ -380,6 +395,7 @@ export default function UsersTile({
 
     if (viewMode === 'list') return LIST
     if (viewMode === 'invite') return INVITE
+    if (viewMode === 'attachments-manager') return ['close']
 
     if (viewMode === 'read') {
       if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
@@ -419,6 +435,20 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
+
+        // attachments manager -> back to user detail (attachments tab)
+        if (viewMode === 'attachments-manager') {
+          const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
+          if (backId) {
+            setDetailInitialSectionId('attachments')
+            setDetailActiveSectionId('attachments')
+            setUrl({ t: 'users-list', id: backId, vm: 'read' }, 'replace')
+          } else {
+            closeToList()
+          }
+          return
+        }
+
         // detail/invite -> list
         if (viewMode === 'invite') {
           closeToList()
@@ -434,7 +464,7 @@ export default function UsersTile({
         return
       }
 
-      // DETAIL: Správa příloh (VARIANTA A)
+      // DETAIL: Správa příloh (Manager screen)
       if (id === 'attachments') {
         if (detailActiveSectionId === 'invite') return
 
@@ -448,9 +478,11 @@ export default function UsersTile({
           return
         }
 
-        // VARIANTA A: bez modalu – jen přepnout záložku na „Přílohy“
-        setDetailInitialSectionId('attachments')
-        setDetailActiveSectionId('attachments')
+        // ✅ otevře samostatný manager screen (ne modal)
+        setAttachmentsManagerSubjectId(detailUser.id)
+        setViewMode('attachments-manager')
+        setIsDirty(false)
+        setUrl({ t: 'attachments-manager', id: detailUser.id, vm: null }, 'push')
         return
       }
 
@@ -468,10 +500,11 @@ export default function UsersTile({
           setDetailUser(blank)
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
+          setInvitePresetSubjectId(null)
+          setAttachmentsManagerSubjectId(null)
           setIsDirty(false)
           submitRef.current = null
           inviteSubmitRef.current = null
-          setInvitePresetSubjectId(null)
 
           setUrl({ t: 'users-list', id: '', vm: 'create' }, 'push')
           return
@@ -586,6 +619,7 @@ export default function UsersTile({
     detailActiveSectionId,
     detailUser,
     setUrl,
+    attachmentsManagerSubjectId,
   ])
 
   // -------------------------
@@ -616,6 +650,18 @@ export default function UsersTile({
     )
   }
 
+  if (viewMode === 'attachments-manager') {
+    const managerId = attachmentsManagerSubjectId ?? ''
+    const managerUser = users.find((u) => u.id === managerId) ?? (detailUser?.id === managerId ? detailUser : null)
+    return (
+      <AttachmentsManagerFrame
+        entityType="subjects"
+        entityId={managerId}
+        entityLabel={managerUser?.displayName ?? null}
+      />
+    )
+  }
+
   if (viewMode === 'invite') {
     return (
       <InviteUserFrame
@@ -633,7 +679,6 @@ export default function UsersTile({
       <UserDetailFrame
         user={detailUser}
         viewMode={viewMode as ViewMode}
-        // ✅ posíláme jen "počáteční/požadovanou" sekci, NE aktuální aktivní (jinak zbytečné cykly)
         initialSectionId={detailInitialSectionId}
         onActiveSectionChange={(id) => setDetailActiveSectionId(id as any)}
         onRegisterInviteSubmit={(fn) => {
