@@ -165,14 +165,16 @@ Vzor:
 
 ### 3. Přílohy
 
-Přílohy používají jednotnou logiku:
+Přílohy jsou jednotné pro všechny moduly, ale jsou rozdělené na 2 režimy:
 
-    - upload dokumentů
-    - náhled
-    - typ dokumentu
-    - archivace přílohy
+- **Záložka „Přílohy“ v detailu entity** = **READ-ONLY přehled**
+  - seznam (latest verze), filtr, „zobrazit archivované“, otevřít soubor
+  - bez uploadu, bez verzí, bez editace metadat, bez archivace
 
-Tato sekce je vždy stejná pro všechny moduly.
+- **📎 v CommonActions** = **samostatný TILE „Správa příloh“**
+  - plná správa: přidat přílohu, nová verze, edit metadat, historie verzí, zavřít
+
+Detailní specifikace: `docs/03-ui/attachments.md`
 
 ---
 
