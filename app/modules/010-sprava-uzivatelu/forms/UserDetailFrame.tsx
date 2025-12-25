@@ -348,14 +348,20 @@ export default function UserDetailFrame({
           return false
         }
 
+        const pc = (permissionCode ?? '').trim()
+        if (!pc) {
+          alert('Chybí oprávnění – nejdřív vyber oprávnění.')
+          return false
+        }
+
         const payload: InviteFormValue = {
           mode: 'existing',
           subjectId: user.id,
           email: user.email,
           displayName: user.displayName ?? '',
-          roleCode: user.roleCode ?? '',
-          permissionCode: '',
-          note: '',
+          roleCode: rc,           // ✅ z UI state
+          permissionCode: pc,     // ✅ z UI state
+          note: 'Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).',
         }
 
         await sendInvite(payload)
@@ -373,7 +379,15 @@ export default function UserDetailFrame({
     }
 
     onRegisterInviteSubmit(inviteSubmitRef.current)
-  }, [onRegisterInviteSubmit, user?.id, user?.email, user?.displayName, canShowInviteTab, roleCode])
+  }, [
+    onRegisterInviteSubmit,
+    user?.id,
+    user?.email,
+    user?.displayName,
+    canShowInviteTab,
+    roleCode,
+    permissionCode, // ✅ DŮLEŽITÉ (jinak se posílají staré hodnoty)
+  ])
 
   // -----------------------------
   // ✅ SUBMIT – ukládá subjects + subject_roles + subject_permissions (single)
@@ -456,7 +470,7 @@ export default function UserDetailFrame({
   // -----------------------------
   const inviteContent = useMemo(() => {
     if (!canShowInviteTab) return null
-  
+
     if (inviteLoading) return <div className="detail-view__placeholder">Načítám pozvánku…</div>
     if (inviteError)
       return (
@@ -464,12 +478,12 @@ export default function UserDetailFrame({
           Chyba: <strong>{inviteError}</strong>
         </div>
       )
-  
+
     return (
       <div className="detail-form">
         <section className="detail-form__section">
           <h3 className="detail-form__section-title">Pozvánka</h3>
-  
+
           <div className="detail-form__grid detail-form__grid--narrow">
             {/* E-MAIL */}
             <div className="detail-form__field detail-form__field--span-4">
@@ -482,7 +496,7 @@ export default function UserDetailFrame({
                 readOnly
               />
             </div>
-  
+
             {/* ROLE */}
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">
@@ -494,7 +508,7 @@ export default function UserDetailFrame({
                 readOnly
               />
             </div>
-  
+
             {/* OPRÁVNĚNÍ */}
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">
