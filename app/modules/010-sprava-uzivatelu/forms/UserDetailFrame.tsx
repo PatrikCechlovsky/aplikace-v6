@@ -455,7 +455,7 @@ export default function UserDetailFrame({
   // -----------------------------
   const inviteContent = useMemo(() => {
     if (!canShowInviteTab) return null
-
+  
     if (inviteLoading) return <div className="detail-view__placeholder">Načítám pozvánku…</div>
     if (inviteError)
       return (
@@ -463,32 +463,122 @@ export default function UserDetailFrame({
           Chyba: <strong>{inviteError}</strong>
         </div>
       )
-
+  
+    // stejné zarovnání labelů jako u "Role a oprávnění"
+    const LABEL_W = 140
+    const FIELD_MAX_W = 420
+  
+    const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `${LABEL_W}px minmax(0, 1fr)`,
+          gap: 12,
+          alignItems: 'center',
+          maxWidth: LABEL_W + 12 + FIELD_MAX_W,
+        }}
+      >
+        <div className="detail-form__label" style={{ margin: 0 }}>
+          {label}
+        </div>
+        <div style={{ maxWidth: FIELD_MAX_W }}>{children}</div>
+      </div>
+    )
+  
+    // data pro role/oprávnění
+    const data: any = rolesData
+    const ui: any = rolesUi
+  
+    const role = data?.role
+    const permissions = data?.permissions ?? []
+    const roleOptions = data?.availableRoles ?? []
+    const permOptions = data?.availablePermissions ?? []
+  
+    const ensuredRoleOptions =
+      role?.code && !roleOptions.some((r: any) => r.code === role.code)
+        ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...roleOptions]
+        : roleOptions
+  
+    const selectedRoleCode = (ui?.roleCode ?? role?.code ?? '') as string
+  
+    // SINGLE permission (1 hodnota)
+    const selectedPermFromData = (permissions[0]?.code ?? '') as string
+    const selectedPermCode = (ui?.permissionCode ?? selectedPermFromData ?? '') as string
+  
+    const canEdit = !!ui?.canEdit
+    const mode = ui?.mode ?? 'view'
+  
+    const roleControl =
+      (mode === 'edit' || mode === 'create') && canEdit ? (
+        <select
+          className="detail-form__input"
+          style={{ maxWidth: FIELD_MAX_W }}
+          value={selectedRoleCode}
+          onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
+        >
+          <option value="" disabled>
+            — vyber roli —
+          </option>
+          {ensuredRoleOptions.map((r: any) => (
+            <option key={r.code} value={r.code}>
+              {r.name ?? r.code}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          className="detail-form__input detail-form__input--readonly"
+          style={{ maxWidth: FIELD_MAX_W }}
+          value={role?.name ?? role?.code ?? '—'}
+          readOnly
+        />
+      )
+  
+    const permControl =
+      (mode === 'edit' || mode === 'create') && canEdit && typeof ui?.onChangePermissionCode === 'function' ? (
+        <select
+          className="detail-form__input"
+          style={{ maxWidth: FIELD_MAX_W }}
+          value={(selectedPermCode ?? '') as string}
+          onChange={(e) => ui?.onChangePermissionCode?.(e.target.value)}
+        >
+          <option value="" disabled>
+            — vyber oprávnění —
+          </option>
+          {permOptions.map((p: any) => (
+            <option key={p.code} value={p.code}>
+              {p.name ?? p.code}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          className="detail-form__input detail-form__input--readonly"
+          style={{ maxWidth: FIELD_MAX_W }}
+          value={selectedPermCode ? permOptions.find((p: any) => p.code === selectedPermCode)?.name ?? selectedPermCode : '—'}
+          readOnly
+        />
+      )
+  
     return (
       <div className="detail-form">
         <section className="detail-form__section">
           <h3 className="detail-form__section-title">Pozvánka</h3>
-
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">E-mail</label>
-              <input className="detail-form__input detail-form__input--readonly" value={user.email ?? '—'} readOnly />
-            </div>
-
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">Role</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={(rolesData as any)?.role?.name ?? '—'}
-                readOnly
-              />
-            </div>
+  
+          <div style={{ display: 'grid', gap: 14 }}>
+            <FieldRow label="E-mail">
+              <input className="detail-form__input detail-form__input--readonly" style={{ maxWidth: FIELD_MAX_W }} value={user.email ?? '—'} readOnly />
+            </FieldRow>
+  
+            <FieldRow label="Role">{roleControl}</FieldRow>
+            <FieldRow label="Oprávnění">{permControl}</FieldRow>
           </div>
         </section>
       </div>
     )
-  }, [canShowInviteTab, inviteLoading, inviteError, user.email, rolesData])
+  }, [canShowInviteTab, inviteLoading, inviteError, user.email, rolesData, rolesUi])
 
+  
   // -----------------------------
   // System blocks (ponecháno)
   // -----------------------------
