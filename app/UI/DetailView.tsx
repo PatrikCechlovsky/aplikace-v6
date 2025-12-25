@@ -238,16 +238,79 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
         <div className="detail-form">
           <section className="detail-form__section">
             <h3 className="detail-form__section-title">Role a oprávnění</h3>
-
-            <div style={{ display: 'grid', gap: 14 }}>
-              <FieldRow label="Role">{roleControl}</FieldRow>
-              <FieldRow label="Oprávnění">{permControl}</FieldRow>
+      
+            <div className="detail-form__grid detail-form__grid--narrow">
+              {/* ROLE */}
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">
+                  Role <span className="detail-form__required">*</span>
+                </label>
+      
+                {(mode === 'edit' || mode === 'create') && canEdit ? (
+                  <select
+                    className="detail-form__input"
+                    value={selectedRoleCode}
+                    onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      — vyber roli —
+                    </option>
+                    {ensuredRoleOptions.map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name ?? r.code}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={role?.name ?? role?.code ?? '—'}
+                    readOnly
+                  />
+                )}
+              </div>
+      
+              {/* OPRÁVNĚNÍ */}
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">
+                  Oprávnění <span className="detail-form__required">*</span>
+                </label>
+      
+                {(mode === 'edit' || mode === 'create') && canEdit && typeof ui?.onChangePermissionCode === 'function' ? (
+                  permOptions.length ? (
+                    <select
+                      className="detail-form__input"
+                      value={(selectedPermCode ?? '') as string}
+                      onChange={(e) => ui?.onChangePermissionCode?.(e.target.value)}
+                    >
+                      <option value="" disabled>
+                        — vyber oprávnění —
+                      </option>
+                      {permOptions.map((p) => (
+                        <option key={p.code} value={p.code}>
+                          {p.name ?? p.code}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="detail-form__hint">Žádné typy oprávnění nejsou dostupné.</span>
+                  )
+                ) : (
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={
+                      selectedPermCode
+                        ? permOptions.find((p) => p.code === selectedPermCode)?.name ?? selectedPermCode
+                        : '—'
+                    }
+                    readOnly
+                  />
+                )}
+              </div>
             </div>
           </section>
         </div>
       )
-    },
-  },
 
   attachments: {
     id: 'attachments',
