@@ -9,6 +9,9 @@ import type { ViewMode } from '@/app/UI/CommonActions'
 import UserDetailForm from './UserDetailForm'
 import { getLatestInviteForSubject } from '@/app/lib/services/invites'
 
+console.log('[UserDetailFrame] ctx', { entityType: 'subjects', entityId: user.id, viewMode })
+
+
 export type UiUser = {
   id: string
   displayName: string
