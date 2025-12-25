@@ -240,7 +240,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
           <h3 className="detail-form__section-title">Role a oprávnění</h3>
 
           <div className="detail-form__grid detail-form__grid--narrow">
-            {/* ROLE */}
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">
                 Role <span className="detail-form__required">*</span>
@@ -248,7 +247,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
               {roleControl}
             </div>
 
-            {/* OPRÁVNĚNÍ */}
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">
                 Oprávnění <span className="detail-form__required">*</span>
@@ -261,6 +259,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     )
   },
 },
+
 
 
   attachments: {
