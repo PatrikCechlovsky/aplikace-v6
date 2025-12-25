@@ -354,7 +354,7 @@ export default function UserDetailFrame({
           email: user.email,
           displayName: user.displayName ?? '',
           roleCode: user.roleCode ?? '',
-          permissionCode: user.permissionCode ?? '',
+          permissionCode: '',
           note: '',
         }
 
