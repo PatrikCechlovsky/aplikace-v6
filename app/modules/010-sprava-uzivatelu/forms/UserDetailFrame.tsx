@@ -352,9 +352,10 @@ export default function UserDetailFrame({
           mode: 'existing',
           subjectId: user.id,
           email: user.email,
-          displayName: user.displayName ?? '',
-          roleCode: rc,
-          note: 'Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).',
+          displayName: user.display_name ?? '',
+          roleCode: invitePresetRoleCode ?? user.role_code ?? '',
+          permissionCode: invitePresetPermissionCode ?? user.permission_code ?? '', // ✅ DOPLNIT
+          note: '',
         }
 
         await sendInvite(payload)
