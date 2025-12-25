@@ -5,6 +5,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
+import { fetchPermissionTypes } from '@/app/modules/900-nastaveni/services/permissionTypes'
+
 
 export type InviteMode = 'existing' | 'new'
 
@@ -13,6 +15,7 @@ export type InviteFormValue = {
   subjectId: string | null
   email: string
   displayName: string
+  permissionCode: string
   roleCode: string
   note: string
 }
@@ -67,6 +70,8 @@ export default function InviteUserForm({
 
   const [roles, setRoles] = useState<{ code: string; name: string }[]>([])
   const [loadingRoles, setLoadingRoles] = useState(false)
+  const [permissions, setPermissions] = useState<{ code: string; name: string }[]>([])
+  const [loadingPermissions, setLoadingPermissions] = useState(false)
 
   // load users only for standalone/existing
   useEffect(() => {
@@ -109,7 +114,24 @@ export default function InviteUserForm({
       cancelled = true
     }
   }, [])
-
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      setLoadingPermissions(true)
+      try {
+        const rows = await fetchPermissionTypes()
+        if (cancelled) return
+        setPermissions((rows ?? []).map((p: any) => ({ code: p.code, name: p.name })))
+      } catch {
+        if (!cancelled) setPermissions([])
+      } finally {
+        if (!cancelled) setLoadingPermissions(false)
+      }
+    }
+    void run()
+    return () => { cancelled = true }
+  }, [])
+  
   const mode = variant === 'existingOnly' ? 'existing' : v.mode
 
   const inviteBlockedReason = useMemo(() => {
@@ -249,6 +271,26 @@ export default function InviteUserForm({
               {roles.map((r) => (
                 <option key={r.code} value={r.code}>
                   {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="detail-form__field detail-form__field--span-3">
+            <label className="detail-form__label">Oprávnění</label>
+            <select
+              className="detail-form__input"
+              value={v.permissionCode}
+              disabled={loadingPermissions}
+              onChange={(e) => {
+                setV((p) => ({ ...p, permissionCode: e.target.value }))
+                markDirty()
+              }}
+            >
+              <option value="">{loadingPermissions ? 'Načítám…' : '— vyber oprávnění —'}</option>
+              {permissions.map((p) => (
+                <option key={p.code} value={p.code}>
+                  {p.name}
                 </option>
               ))}
             </select>
