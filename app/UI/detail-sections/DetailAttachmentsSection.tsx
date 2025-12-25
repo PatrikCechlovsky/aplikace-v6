@@ -9,7 +9,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getIcon, type IconName } from '@/app/UI/icons'
+import { getIcon } from '@/app/UI/icons'
 import {
   addAttachmentVersionWithUpload,
   createAttachmentWithUpload,
@@ -30,6 +30,8 @@ export type DetailAttachmentsSectionProps = {
   mode: 'view' | 'edit' | 'create'
   variant?: 'list' | 'manager'
 }
+
+type IconName = Parameters<typeof getIcon>[0]
 
 type LocalActionId = 'addAttachment' | 'saveAttachment' | 'closePanel' | 'refresh'
 
@@ -510,7 +512,12 @@ export default function DetailAttachmentsSection({
               <div className="detail-form__field detail-form__field--span-4">
                 <label className="detail-form__label">&nbsp;</label>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" className="common-actions__button" onClick={() => void handleEditMetadataSave()} disabled={editSaving}>
+                  <button
+                    type="button"
+                    className="common-actions__button"
+                    onClick={() => void handleEditMetadataSave()}
+                    disabled={editSaving}
+                  >
                     <span className="common-actions__icon" aria-hidden>
                       {getIcon('save')}
                     </span>
