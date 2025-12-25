@@ -15,6 +15,8 @@ import type { ViewMode, CommonActionId } from '@/app/UI/CommonActions'
 import UserDetailForm from './UserDetailForm'
 import { getLatestInviteForSubject, sendInvite } from '@/app/lib/services/invites'
 import type { InviteFormValue } from './InviteUserForm'
+import DetailAttachmentsListSection from '@/app/UI/detail-sections/DetailAttachmentsListSection'
+
 console.log('UsersTile render')
 
 
