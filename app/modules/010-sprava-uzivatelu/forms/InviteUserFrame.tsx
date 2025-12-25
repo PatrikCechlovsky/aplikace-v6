@@ -25,6 +25,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     email: '',
     displayName: '',
     roleCode: '',
+    permissionCode: '',
     note: '',
   })
 
@@ -35,6 +36,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       email: '',
       displayName: '',
       roleCode: '',
+      permissionCode: '',
       note: '',
     }
     setInviteResult(null)
