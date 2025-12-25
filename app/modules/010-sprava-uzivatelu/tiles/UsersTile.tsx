@@ -20,6 +20,7 @@ import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetail
 import InviteUserFrame from '../forms/InviteUserFrame'
 import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
+import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
 
@@ -28,6 +29,7 @@ type UiUser = {
   displayName: string
   email: string
   phone?: string
+  roleCode?: string | null
   roleLabel: string
   twoFactorMethod?: string | null
   createdAt: string
@@ -42,6 +44,10 @@ const COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
+/**
+ * Fallback mapování (ponecháno schválně).
+ * Primárně se role mají brát z 900/role_types.
+ */
 function roleCodeToLabel(code: string | null | undefined): string {
   const c = (code ?? '').trim().toLowerCase()
   if (!c) return '—'
@@ -50,13 +56,30 @@ function roleCodeToLabel(code: string | null | undefined): string {
   return c
 }
 
-function mapRowToUi(row: UsersListRow): UiUser {
+function buildRoleTypeMap(rows: RoleTypeRow[]): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const r of rows ?? []) {
+    const code = String(r.code ?? '').trim().toLowerCase()
+    const name = String(r.name ?? '').trim()
+    if (code) map[code] = name || r.code
+  }
+  return map
+}
+
+function resolveRoleLabel(roleCode: string | null | undefined, map: Record<string, string>): string {
+  const c = String(roleCode ?? '').trim().toLowerCase()
+  if (!c) return '—'
+  return map[c] ?? roleCodeToLabel(c)
+}
+
+function mapRowToUi(row: UsersListRow, roleMap: Record<string, string>): UiUser {
   return {
     id: row.id,
     displayName: (row as any).display_name ?? '',
     email: (row as any).email ?? '',
     phone: (row as any).phone ?? undefined,
-    roleLabel: roleCodeToLabel((row as any).role_code),
+    roleCode: (row as any).role_code ?? null,
+    roleLabel: resolveRoleLabel((row as any).role_code, roleMap),
     twoFactorMethod: (row as any).two_factor_method ?? null,
     createdAt: (row as any).created_at ?? '',
     isArchived: !!(row as any).is_archived,
@@ -109,10 +132,18 @@ export default function UsersTile({
   const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailUser, setDetailUser] = useState<UiUser | null>(null)
 
+  // ✅ rozlišujeme:
+  // - detailInitialSectionId = jen "počáteční" / vyžádaná sekce
+  // - detailActiveSectionId  = aktuálně aktivní sekce (pro CommonActions logiku)
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [detailActiveSectionId, setDetailActiveSectionId] = useState<any>('detail')
 
   const [isDirty, setIsDirty] = useState(false)
+
+  // Role types (900) -> map role_code -> name (použije se pro list i detail)
+  const [roleTypes, setRoleTypes] = useState<RoleTypeRow[]>([])
+  const roleTypeMap = useMemo(() => buildRoleTypeMap(roleTypes), [roleTypes])
+  const roleTypeMapRef = useRef<Record<string, string>>({})
 
   // UserDetail submit
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
@@ -134,6 +165,7 @@ export default function UsersTile({
       next: { t?: string | null; id?: string | null; vm?: string | null },
       mode: 'replace' | 'push' = 'replace'
     ) => {
+      // ✅ pracuj se stabilním searchKey, ne searchParams objektem
       const sp = new URLSearchParams(searchKey)
 
       const setOrDelete = (key: string, val?: string | null) => {
@@ -169,6 +201,7 @@ export default function UsersTile({
   const load = useCallback(async () => {
     const key = `${(filterText ?? '').trim().toLowerCase()}|${showArchived ? '1' : '0'}`
 
+    // Pokud už běží load se stejnými parametry, nevytvářej další requesty.
     if (loadInFlightRef.current && lastLoadKeyRef.current === key) {
       return loadInFlightRef.current
     }
@@ -180,7 +213,7 @@ export default function UsersTile({
       setError(null)
       try {
         const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
-        setUsers(rows.map(mapRowToUi))
+        setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current)))
       } catch (e: any) {
         console.error('[UsersTile.listUsers] ERROR', e)
         setError(e?.message ?? 'Chyba načtení uživatelů')
@@ -194,13 +227,54 @@ export default function UsersTile({
     try {
       await p
     } finally {
+      // uvolni in-flight jen pokud je to stále ten samý promise
       if (loadInFlightRef.current === p) loadInFlightRef.current = null
     }
   }, [filterText, showArchived])
 
+  // -------------------------
+  // Load role types (900) - jednou, bez zásahu do modulu Nastavení
+  // -------------------------
+  const roleTypesInFlightRef = useRef<Promise<void> | null>(null)
+
+  const loadRoleTypes = useCallback(async () => {
+    if (roleTypesInFlightRef.current) return roleTypesInFlightRef.current
+    const p = (async () => {
+      try {
+        const rows = await fetchRoleTypes()
+        setRoleTypes(rows)
+      } catch (e) {
+        console.warn('[UsersTile.fetchRoleTypes] WARN', e)
+        // fallback: roleCodeToLabel()
+      }
+    })()
+    roleTypesInFlightRef.current = p
+    try {
+      await p
+    } finally {
+      if (roleTypesInFlightRef.current === p) roleTypesInFlightRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadRoleTypes()
+  }, [loadRoleTypes])
+
   useEffect(() => {
     void load()
   }, [load])
+
+  // drž aktuální mapu i v ref (aby load() nemusel být závislý na roleTypeMap)
+  useEffect(() => {
+    roleTypeMapRef.current = roleTypeMap
+    // přepočítej labely bez reloadu uživatelů
+    setUsers((prev) =>
+      prev.map((u) => ({
+        ...u,
+        roleLabel: resolveRoleLabel(u.roleCode, roleTypeMap),
+      })),
+    )
+  }, [roleTypeMap])
 
   const rows = useMemo(() => users.map(toRow), [users])
 
@@ -233,6 +307,7 @@ export default function UsersTile({
       submitRef.current = null
       inviteSubmitRef.current = null
 
+      // samostatný screen
       setUrl({ t: 'invite-user', id: null, vm: null }, 'push')
     },
     [setUrl]
@@ -253,6 +328,7 @@ export default function UsersTile({
   }, [setUrl])
 
   const closeListToModule = useCallback(() => {
+    // zavře tile – zůstane modul bez t
     setViewMode('list')
     setDetailUser(null)
     setDetailInitialSectionId('detail')
@@ -270,13 +346,16 @@ export default function UsersTile({
   // URL -> state
   // -------------------------
   useEffect(() => {
+    // ✅ parse z searchKey (stabilní)
     const sp = new URLSearchParams(searchKey)
 
     const t = sp.get('t')?.trim() ?? null
     const id = sp.get('id')?.trim() ?? null
     const vm = (sp.get('vm')?.trim() as ViewMode | null) ?? null
 
+    // tile state
     if (!t) {
+      // modul root (tile zavřený) -> nevnucujeme nic, necháme list režim
       if (viewMode !== 'list') {
         setViewMode('list')
         setDetailUser(null)
@@ -312,8 +391,10 @@ export default function UsersTile({
       return
     }
 
+    // list + detail
     if (t === 'users-list') {
       if (!id) {
+        // list
         if (viewMode !== 'list') {
           setViewMode('list')
           setDetailUser(null)
@@ -326,6 +407,7 @@ export default function UsersTile({
         return
       }
 
+      // detail
       const found = users.find((u) => u.id === id)
       if (!found) return
 
@@ -381,8 +463,6 @@ export default function UsersTile({
 
     if (viewMode === 'list') return LIST
     if (viewMode === 'invite') return INVITE
-
-    // manager screen zatím používá interní toolbar (DetailAttachmentsSection)
     if (viewMode === 'attachments-manager') return ['close']
 
     if (viewMode === 'read') {
@@ -394,6 +474,7 @@ export default function UsersTile({
       return withAttachments(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
     }
 
+    // create
     return withAttachments(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId, canInviteDetail])
 
@@ -416,12 +497,14 @@ export default function UsersTile({
     if (!onRegisterCommonActionHandler) return
 
     const handler = async (id: CommonActionId) => {
+      // ✅ jednotný CLOSE (žádné router.back)
       if (id === 'close') {
         if (isDirty) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
 
+        // attachments manager -> back to user detail (attachments tab)
         if (viewMode === 'attachments-manager') {
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (backId) {
@@ -434,6 +517,7 @@ export default function UsersTile({
           return
         }
 
+        // detail/invite -> list
         if (viewMode === 'invite') {
           closeToList()
           return
@@ -443,6 +527,7 @@ export default function UsersTile({
           return
         }
 
+        // list -> modul root (zavřít tile)
         closeListToModule()
         return
       }
@@ -502,11 +587,13 @@ export default function UsersTile({
         }
 
         if (id === 'invite') {
+          // bez výběru -> nový
           if (!selectedId) {
             openInvite(null)
             return
           }
 
+          // s výběrem -> detail na Pozvánce (pokud se ještě nepřihlásil)
           const user = users.find((u) => u.id === selectedId)
           if (!user) {
             openInvite(null)
@@ -634,18 +721,11 @@ export default function UsersTile({
   if (viewMode === 'attachments-manager') {
     const managerId = attachmentsManagerSubjectId ?? ''
     const managerUser = users.find((u) => u.id === managerId) ?? (detailUser?.id === managerId ? detailUser : null)
-
-    const isArchived = !!managerUser?.isArchived
-    const canManage = !isArchived
-    const readOnlyReason = isArchived ? 'Entita je archivovaná – správa příloh je pouze pro čtení.' : null
-
     return (
       <AttachmentsManagerFrame
         entityType="subjects"
         entityId={managerId}
         entityLabel={managerUser?.displayName ?? null}
-        canManage={canManage}
-        readOnlyReason={readOnlyReason}
       />
     )
   }
@@ -682,3 +762,5 @@ export default function UsersTile({
 
   return null
 }
+
+        
