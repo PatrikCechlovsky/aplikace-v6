@@ -1,36 +1,33 @@
-# /docs/03-ui-system.md
-## Popis: Detailní specifikace UI systému, layoutu, komponent a pravidel vizuálního chování aplikace Pronajímatel v6.
----
-
-# 03 – UI SYSTEM  
-*(Finální konsolidovaná verze)*
+# 03 – UI SYSTEM
+*(Finální konsolidovaná verze – aplikace-v6)*
 
 ---
 
-# 1. ÚVOD
+## 1. Úvod
 
-UI systém aplikace Pronajímatel v6 je založen na:
+UI systém aplikace **Pronajímatel v6** je založen na:
 
-- **jednotném 6-sekčním layoutu**,  
-- **modulárních UI komponentách**,  
-- **dynamickém načítání modulů**,  
-- **konsistentních vzorech interakce**,  
-- **minimální duplikaci UI logiky**.
+- jednotném layoutu aplikace,
+- modulárních UI komponentách,
+- striktním oddělení **list / detail / manager** režimů,
+- centrálních **CommonActions**,
+- minimální duplicitě logiky.
 
-Cílem UI systému je zajistit:
-
-- konzistenci v celé aplikaci  
-- předvídatelné chování pro uživatele  
-- snadné rozšiřování o nové moduly a formuláře  
-- jasně definované odpovědnosti UI prvků  
+Cílem UI systému je:
+- konzistence v celé aplikaci,
+- předvídatelné chování pro uživatele,
+- snadné rozšiřování o nové moduly,
+- jasně definované odpovědnosti UI prvků.
 
 ---
 
-# 2. 6-SEKČNÍ LAYOUT
+## 2. 6-SEKČNÍ LAYOUT
 
-Aplikace je vystavěná na přísném, neměnném layoutu:
+Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šesti částí.
 
-```
+### Schéma layoutu
+
+```text
 ┌───────────────────────────────────────────────────────────────┐
 │ 1–2: Sidebar (HomeButton + dynamické moduly)                  │
 ├──────────────┬───────────────────────────────────────────────┤
@@ -38,746 +35,73 @@ Aplikace je vystavěná na přísném, neměnném layoutu:
 │ Sidebar      │    • Breadcrumbs vlevo                         │
 │ (left)       │    • HomeActions vpravo                        │
 │              ├───────────────────────────────────────────────┤
-│              │ 4: CommonActions — lišta obecných akcí         │
+│              │ 4: CommonActions (globální akce)               │
 │              ├───────────────────────────────────────────────┤
-│              │ 5: Content — přehled / detail / formulář       │
+│              │ 5: Obsah (Tile / Frame)                        │
+│              │    • list nebo detail                          │
+│              │    • záložky                                   │
+│              │    • formuláře / tabulky                       │
+│              ├───────────────────────────────────────────────┤
+│              │ 6: Footer / stavová lišta (volitelně)          │
 └──────────────┴───────────────────────────────────────────────┘
-```
 
-Každá sekce má pevně definované chování.
-
-## 2.1 Sekce 1–2: Sidebar
-
-Sidebar zajišťuje:
-
-- výběr modulu  
-- zobrazení hierarchie modul / sekce / typ / položka  
-- aktivní stav (zvýraznění vybraného modulu nebo sekce)  
-- podporu pro ikony modulů  
-- dynamické načítání obsahu ze `module.config.js`
-
-Sidebar obsahuje tyto prvky:
-
-- **HomeButton** (sekce 1)  
-- **Seznam modulů** (sekce 2)  
-
-Sidebar je responzivní — na mobilních zařízeních může být skrytý.
-
----
-
-## 2.2 Sekce 3: Horní lišta
-
-Horní lišta obsahuje:
-
-- **Breadcrumbs** vlevo  
-- **HomeActions** vpravo  
-
-Horní lišta je statická podle layoutu, ale obsah dynamicky reaguje na:
-
-- vybraný modul  
-- otevřenou dlaždici  
-- otevřený detail  
-- otevřený formulář  
-
----
-
-## 2.3 Sekce 4: CommonActions
-
-**CommonActions** je centrální lišta kontextových akcí umístěná v pevné sekci layoutu.
-Je společná pro všechny moduly a zajišťuje jednotné chování akcí v celé aplikaci.
-
-### Cíle CommonActions
-- nabídnout pouze relevantní akce podle aktuálního stavu UI,
-- zajistit jednotný vzhled a chování napříč moduly,
-- eliminovat duplikaci akčních tlačítek ve formulářích a detailech.
-
-### Aktuální stav (implementováno)
-- centrálně definovaný seznam všech podporovaných akcí,
-- centrální handlery (funkce) ke každé akci,
-- automatické vyhodnocení dostupnosti akcí podle stavu UI:
-  - vybraný záznam (selection),
-  - neuložené změny (dirty state),
-  - globální disabled stav,
-- moduly a tiles pouze vybírají, které akce se mají zobrazit,
-- formuláře žádné akční tlačítko nedefinují.
-
-### Budoucí rozšíření (plán)
-- dynamický výběr akcí podle konfigurace modulu,
-- napojení na role a oprávnění uživatele,
-- jemnější stavové podmínky (např. detail otevřený / readonly),
-- konfigurovatelné akce z `module.config.js`.
-
-CommonActions je jediný povolený mechanismus pro práci s akčními tlačítky
-v hlavním UI aplikace.
-
-# CommonActions v6 – finální koncept, který připravujeme
-
-## Cíl
-Mít **jeden jednotný řádek akcí** (CommonActions), který:
-- renderuje tlačítka v pořadí, které určí modul/tile/form,
-- má **centrální registr definic** tlačítek (ikony, labely, pravidla),
-- umí tlačítka **dynamicky skrývat / zakazovat** dle stavu, režimu a práv,
-- kliky deleguje na aktivní modul/tile (CommonActions není business logika),
-- a **všechny kontextové kliky** v celé aplikaci hlídá přes **dirty guard**.
-
----
-
-## 1) Pořadí tlačítek určuje vždy modul / tile / form
-- V každém view (list/detail/form) se do AppShell posílá jen pole klíčů tlačítek, např.:
-  - `['add','detail','edit','delete']`
-- Pořadí zobrazení je **přesně takové**, jak je uvedeno v poli.
-- CommonActions **nepřerovnává** a **nevymýšlí vlastní pořadí**.
-
----
-
-## 2) Jedna centrální definice všech tlačítek (ikona, label, pravidla)
-- Existuje **jediný registr** definic tlačítek (v CommonActions / UI vrstvě).
-- Každé tlačítko má:
-  - klíč (např. `add`)
-  - ikonu
-  - CZ/EN název
-  - popis (tooltip / help text)
-  - stavové podmínky (např. vyžaduje selection, vyžaduje dirty)
-  - oprávnění (role / permission)
-- Modul/tile už **nedefinuje labely ani ikony**, pouze vybírá klíče.
-
----
-
-## 3) Tlačítka se budou dynamicky skrývat / zobrazovat (nebo disabled)
-CommonActions při renderu vyhodnotí pro každé tlačítko:
-- UI stav:
-  - selection (je vybraná položka?)
-  - dirty (existují neuložené změny?)
-  - detail open / context (jsme v detailu nebo listu?)
-  - mode (list/read/edit/create)
-- roli / oprávnění uživatele
-- stav formuláře (read/edit/create)
-
-Výsledek:
-- některá tlačítka se **skryjí**
-- některá se **zobrazí**
-- některá budou **disabled** (dle pravidel)
-
----
-
-## 4) Přepínání „čtení vs editace“ se řeší automaticky
-### Pravidlo režimů:
-- Když jsem v režimu **read**:
-  - vidím `edit`
-  - nevidím `detail/view` (protože už jsem v detailu / čtení)
-- Když jsem v režimu **edit**:
-  - vidím `detail/view` (= „zpět do čtení“)
-  - nevidím `edit`
-  - navíc vidím `save` a `cancel` (pokud je editace uložitelné)
-
-Důsledek:
-- Nebudeme ručně hlídat „které tlačítko kdy“, řeší to pravidla.
-
----
-
-## 5) Akce (klik) se nedefinují v CommonActions, ale v aktivním modulu
-- CommonActions je **UI + pravidla zobrazení**.
-- Klik na tlačítko vždy volá handler aktivního tile/modulu (přes AppShell).
-- Každý modul si implementuje **co udělá** `add/edit/save/...`,
-  ale tlačítka zůstávají jednotná.
-
----
-
-## 6) Všechny kliky v aplikaci musí hlídat neuloženou práci (dirty guard)
-Zavádíme jednotné pravidlo:
-- Pokud `dirty = true` a uživatel chce udělat akci, která mění kontext
-  (změna modulu, tile, návrat, otevření jiného detailu, zavření editace, přepnutí režimu…),
-  akce se **zastaví** a zobrazí se potvrzení:
-
-  „Máš neuložené změny. Opravdu chceš pokračovat?“
-
-- Dirty guard bude **centrálně v AppShell**, ne v každém tile,
-  aby se to neopakovalo a bylo to konzistentní.
-
----
-
-## Co je hotové (stav projektu)
-- Build běží bez chyb.
-- AppShell umí:
-  - přijmout `actions[]` z tile
-  - přijmout state (selection / dirty)
-  - přijmout `handler(actionId)`
-  - poslat klik do aktivního tile
-
----
-
-## Další krok (implementace)
-1) Rozšířit CommonActions o plný registr tlačítek podle tabulky:
-   - klíče, ikony, CZ/EN, popisy, pravidla
-2) Zavést jednotný `viewMode` (list/read/edit/create) jako součást UI stavu:
-   - posílat do CommonActions
-3) Implementovat pravidla automatického skrývání:
-   - read ↔ edit + save/cancel
-4) Napojit dirty guard na:
-   - změny modulu / tile
-   - přepnutí list ↔ detail
-   - přepnutí read ↔ edit
-   - další navigační kliky
-
----
-
-
----
-
-## 2.4 Sekce 5: Content
-
-Content zobrazuje:
-
-- přehled (overview)  
-- detail položky  
-- formulář  
-- systémové obrazovky (login, 404…)  
-
-Content engine bude řídit:
-
-- refresh modulů  
-- přepínání vnitřních částí modulů  
-- předávání dat Breadcrumbs a CommonActions  
-
----
-
-# 3. KLÍČOVÉ UI KOMPONENTY
-
-## 3.1 HomeButton
-
-Funkce:
-
-- přesměrování na “Dashboard”  
-- deaktivace, pokud není uživatel přihlášen  
-- obsahuje ikonu domů a název aplikace  
-
-## 3.2 Sidebar
-
-Sidebar je plně dynamický:
-
-- načítá moduly z `MODULE_SOURCES`  
-- moduly třídí podle `order`  
-- zobrazuje ikonu + název  
-- rozlišuje aktivní modul  
-
-Budoucí rozšíření:
-
-- více úrovní (sekce → typ → záznam)  
-- rozbalovací skupiny  
-- animace  
-- ikony kategorií  
-
----
-
-## 3.3 Breadcrumbs
-
-Aktuální verze:
-
-- “Domů / Dashboard”
-
-Budoucí inteligentní breadcrumb builder:
-
-- úroveň 1 = modul  
-- úroveň 2 = dlaždice / sekce  
-- úroveň 3 = detail entity  
-- úroveň 4 = formulář / editace  
-
-Breadcrumbs budou generovány na základě:
-
-- aktivního modulu  
-- otevřené dlaždice  
-- kontextového stavu  
-
----
-
-## 3.4 HomeActions
-
-Obsahuje:
-
-- jméno uživatele  
-- ikonu profilu  
-- vyhledávání  
-- notifikace  
-- odhlášení  
-
-Zobrazuje z `session.user_metadata.display_name`.
-
----
-
-## 3.5 CommonActions
-## 3.5.1 CommonActions – centrální definice a handlery (finální pravidlo)
-
-**CommonActions** je jednotná lišta kontextových akcí používaná v celé aplikaci
-(seznamy, hlavní detail entity, formuláře).
-
-### Základní princip
-- Všechny akce jsou definované centrálně v jednom souboru.
-- Žádná akce se nikdy nedefinuje ve formuláři ani v tile.
-- Tile nebo modul pouze vybírá, které akce chce zobrazit.
-
-### Zdroj pravdy
-Existuje jediný soubor **CommonActions**, který obsahuje:
-- seznam všech podporovaných akcí,
-- definice jejich vzhledu (label, ikona),
-- podmínky dostupnosti (např. vyžaduje výběr, vyžaduje neuložené změny),
-- centrální funkce (handlery) ke každé akci.
-
-### Pravidlo bezpečnosti
-- Ke každé akci musí existovat odpovídající funkce.
-- Přidání nové akce bez funkce není možné (chyba při sestavení aplikace).
-- Tím je zajištěno, že žádné tlačítko nemůže existovat bez logiky.
-
-### Chování CommonActions
-- CommonActions samo vyhodnocuje, zda je akce aktivní nebo deaktivovaná:
-  - podle toho, zda je vybraný záznam,
-  - podle dirty stavu formuláře,
-  - podle globálního disabled stavu.
-- Modul ani formulář tuto logiku neřeší.
-
-### Použití v modulech a tiles
-- Modul nebo tile pouze určí seznam akcí, které chce zobrazit.
-- Neřeší onClick logiku ani přepínání stavů.
-- CommonActions automaticky zavolá odpovídající centrální funkci.
-
-### Role formuláře
-- Formulář nikdy neobsahuje akční tlačítka typu Uložit, Zrušit, Upravit.
-- Formulář pouze:
-  - hlásí dirty stav,
-  - reaguje na aktuální režim (read, edit, create).
-
-### Zakázané postupy
-- Definovat tlačítka ve formuláři.
-- Psát vlastní logiku kliknutí na akce v tile nebo detailu.
-- Duplikovat běžné akce (Uložit, Zrušit, Upravit, Smazat) mimo CommonActions.
-
-### Povolené a doporučené
-- Přidání nové akce pouze rozšířením centrálního CommonActions.
-- Výběr akcí na úrovni modulu nebo tile.
-- Budoucí rozšíření o role, oprávnění a konfiguraci z module.config.js.
-
-### Shrnutí
-- CommonActions je jediný zdroj pravdy pro akce v UI.
-- Definice i funkce existují pouze jednou.
-- Chování je jednotné napříč celou aplikací.
-- Architektura je uzavřená a bezpečná proti nekonzistencím.
-
-Toto pravidlo je závazné pro všechny nové i upravované moduly aplikace Pronajímatel v6.
-
-
-
-## 3.6 UI – typy polí formulářů
-
-Aplikace používá standardizované komponenty:
-
-- text input  
-- number input  
-- select  
-- multiselect  
-- checkbox / boolean  
-- date picker  
-- email / phone  
-- JSON editor (v budoucnu)  
-
-Každé pole má definované:
-
-- komponentu  
-- validaci  
-- chování v UI  
-- integraci s formStateManagerem  
-
-# 3.7 ListView – specifikace přehledové obrazovky
-
-**ListView** je hlavní komponenta používaná pro zobrazování přehledů entit  
-(např. seznam subjektů, seznam nemovitostí, seznam nájemníků).  
-Obsahuje uživatelské ovládací prvky (filtr, řazení, archivace, akce)  
-a uvnitř používá komponentu **EntityList** jako tabulku.
-
-ListView tvoří kompletní přehledovou obrazovku.
-
----
-
-## 3.7.1 Filtrace
-- Obsahuje globální fulltextový filtr („Filtrovat…“).
-- Fulltext hledá:
-  - ve všech **viditelných sloupcích**
-  - i v **neviditelných sloupcích** označených jako *searchable*
-- Filtrace se aplikuje okamžitě a kombinuje se s dalšími filtry.
-
----
-
-## 3.7.2 Zobrazit archivované
-- Uživatel může přepnout checkbox „Zobrazit archivované“.
-- Modul si určuje chování:
-  - zobrazit aktivní + archivované
-  - nebo zobrazit pouze archivované
-- Archivované záznamy mohou být vizuálně odlišeny.
-
----
-
-## 3.7.3 Typ entity v prvním sloupci (barevný badge)
-- První sloupec může zobrazovat typ entity jako **barevný štítek** (PO, FO, nájemník…).
-- Barva, název i pořadí badge se načítají z číselníku (např. „Typy subjektů“).
-- Každá změna v číselníku se automaticky projeví v ListView.
-
----
-
-## 3.7.4 Výchozí řazení
-- Při prvním načtení je seznam seřazen podle logiky modulu  
-  (např. podle `subject_type.order`).
-- Toto výchozí řazení se aplikuje, dokud uživatel neklikne na jiný sloupec.
-
----
-
-## 3.7.5 Řazení sloupců
-- Každý viditelný sloupec lze seřadit:
-  - A → Z  
-  - Z → A  
-- Ikona šipky označuje aktivní stav řazení.
-- Konfigurace může podporovat i „reset“ na výchozí řazení.
-
-ListView deleguje vykreslení tabulky na **EntityList**, ale logiku řazení řídí samo.
-
----
-
-## 3.7.6 Vazba na CommonActions
-ListView sdílí s CommonActions informace o:
-
-- aktivním řádku (vybraná entita)
-- prázdném výběru
-
-Díky tomu CommonActions může:
-
-- aktivovat / deaktivovat akce (editace, mazání, archivace…)
-- skrývat akce podle role uživatele
-- reagovat na dirty state (u detailů)
-
----
-
-## 3.7.7 Role a oprávnění
-ListView respektuje oprávnění uživatele:
-
-Tlačítka akcí mohou být:
-- **aktivní**, pokud má uživatel permission
-- **zašedlé**, pokud permission nemá
-- **skrytá**, pokud akce pro danou roli neexistuje
-
----
-
-## 3.7.8 ColumnPicker – volitelné nastavení viditelnosti sloupců
-- Uživatel může zapnout/vypnout viditelnost sloupců.
-- Povinné sloupce lze trvale uzamknout.
-- Nastavení lze ukládat:
-  - lokálně (localStorage)
-  - nebo později do profilu uživatele
-
-ColumnPicker je součástí ListView, nikoli EntityList.
-
----# 3.8 RelationListWithDetail – seznam vazeb + detail vybrané položky
-
-**RelationListWithDetail** je dvoučástová komponenta používaná v záložkách, které zobrazují
-vztahy (vazby) mezi entitami. Umožňuje zároveň:
-
-- nahoře zobrazit **seznam všech souvisejících záznamů**
-- dole zobrazit **detail právě vybraného záznamu**
-
-Slouží pro případy, kdy uživatel otevřel jednu entitu (např. Nemovitost) a v dalších záložkách se chce dívat na záznamy, které k ní patří (Pronajímatel, Jednotky, Nájemníci, Smlouvy, Platby…).
-
-Pořadí záložek (Pronajímatel → Nemovitost → Jednotka → …) je pevné a nejenže se nemění, ale také neurčuje „hlavní detail“. Hlavní detail je pouze ta záložka, která odpovídá typu právě otevřené entity.
-
----
-
-## 3.8.1 Kdy se RelationListWithDetail používá
-
-RelationListWithDetail se používá ve **všech záložkách kromě té, která odpovídá typu aktuálně otevřené entity**.
-
-Příklad – otevřená Nemovitost K1:
-
-- **Záložka 2 – Nemovitost**  
-  → jen **detail nemovitosti K1** (EntityDetailFrame + DetailView)  
-  → *bez RelationListWithDetail*
-
-- **Záložka 1 – Pronajímatel**  
-  → RelationListWithDetail  
-  → nahoře seznam pronajímatelů (u nemovitosti vždy 1 řádek)  
-  → dole detail vybraného pronajímatele
-
-- **Záložka 3 – Jednotka**  
-  → RelationListWithDetail  
-  → nahoře seznam jednotek v nemovitosti  
-  → dole detail vybrané jednotky
-
-Tento vzor pokračuje i pro další záložky.
-
----
-
-## 3.8.2 Struktura komponenty
-
-RelationListWithDetail se skládá ze dvou hlavních částí:
-
-### Horní část – seznam souvisejících záznamů  
-Používá se `EntityList` nebo `ListView`.
-
-Funkce:
-
-- zobrazení všech vazeb k aktuální entitě
-- výběr jednoho záznamu
-- scroll při velkém počtu položek
-- možnost pohybu „Předchozí / Další“
-- volitelné filtrování, řazení, zobrazování archivovaných položek
-
-### Dolní část – detail vybrané položky  
-Používá se `EntityDetailFrame + DetailView`.
-
-Funkce:
-
-- zobrazí detail právě vybraného řádku z horní části
-- obsahuje všechny sekce dané entity (např. Základní údaje, Kontakty, Nájem, Systém…)
-- obvykle je **readonly**, protože plná editace probíhá v hlavní záložce dané entity  
-  (např. plná editace pronajímatele se dělá jen ve „záložce Pronajímatel“, ne v záložce Nemovitost)
-
----
-
-## 3.8.3 Příklad: otevřená Nemovitost K1
-
-### Záložka 2 – Nemovitost (hlavní detail)
-- Zobrazuje **jen detail nemovitosti K1**  
-- Komponenta: `EntityDetailFrame + DetailView`  
-- Plně editovatelný formulář  
-- RelationListWithDetail se zde **nepoužívá**
-
----
-
-### Záložka 1 – Pronajímatel (Nemovitost → Pronajímatel)
-Horní část:
-- `EntityList` se seznamem pronajímatelů této nemovitosti  
-- běžně 1 řádek (jedna nemovitost = jeden pronajímatel)
-
-Dolní část:
-- detail vybraného pronajímatele  
-- komponenta: `EntityDetailFrame + DetailView` pronajímatele  
-- sekce např.:
-  - Základní údaje  
-  - Kontakty  
-  - Bankovní účty  
-
-*(Sekce Finance sem nepatří – je samostatná záložka č. 8.)*
-
----
-
-### Záložka 3 – Jednotka (Nemovitost → Jednotky)
-Horní část:
-- `EntityList` se všemi jednotkami v této nemovitosti  
-- může být 0, 1 nebo mnoho jednotek  
-- scroll při větším počtu položek  
-- možnost přepínání mezi jednotkami
-
-Dolní část:
-- `EntityDetailFrame + DetailView` dané jednotky  
-- sekce např.:
-  - Základní údaje  
-  - Nájem  
-  - Systém  
-
-Kliknutí na jiný řádek v seznamu přepne detail na jinou jednotku.
-
----
-
-## 3.8.4 Obecný vzor chování
-
-Pro každou entitu otevřenou z přehledu platí:
-
-- **její vlastní záložka** (např. Nemovitost u nemovitosti)  
-  → zobrazí čistý detail s možností editace
-
-- **ostatní záložky**  
-  → zobrazují vazby pomocí RelationListWithDetail  
-  → nahoře seznam těchto vazeb  
-  → dole detail vybrané položky
-
-Tím je zajištěno:
-
-- jednotné chování aplikace  
-- přehlednost  
-- minimalizace zbytečného přepínání mezi obrazovkami  
-- možnost postupného procházení vazeb (Pronajímatel → Nemovitost → Jednotka → Nájemník → Smlouva → Platby…)
-
----
-
-## 3.8.5 Chování v horní části seznamu
-
-Horní `EntityList` slouží jako navigátor mezi souvisejícími položkami.
-
-Podporuje:
-- výběr řádku
-- filtrování (pokud je aktivováno ListView)
-- řazení
-- zobrazení archivovaných
-- přepínání „Předchozí / Další“ (uživatelsky pohodlné při velkém množství položek)
-
----
-
-## 3.8.6 Chování detailu v dolní části
-
-Dolní `EntityDetailFrame + DetailView`:
-
-- reaguje na výběr řádku v horní části
-- ukazuje kompletní detail položky včetně všech jejích sekcí
-- obvykle je **readonly**, protože plná editace se provádí v její „hlavní“ záložce  
-  (např. jednotka se plně edituje v záložce Jednotka, ne v záložce Nemovitost)
-
----
-
-## 3.8.7 Oprávnění
-
-RelationListWithDetail respektuje:
-
-- oprávnění uživatele pro zobrazení vazeb
-- oprávnění k editaci nebo jen čtení detailu položek
-- dostupnost akcí v CommonActions (např. přidání, odebrání vazby)
-
-Uživatel vidí vždy jen to, k čemu má roli a oprávnění.
-
-
----
-
-# 3.9 EntityDetailFrame – hlavní rám detailu entity
-
-**EntityDetailFrame** je hlavní kontejner pro zobrazení a úpravu detailu libovolné entity  
-(Pronajímatel, Nemovitost, Jednotka, Nájemník, Smlouva, Platba, …).
-
-Je to „velká detailová karta“, která:
-
-- definuje strukturu detailu (header, akce, záložky, obsah)
-- obsahuje logiku pro editaci, zobrazení, přílohy a systémové informace
-- je použitá jak v hlavním detailu entity, tak jako readonly náhled v RelationListWithDetail
-
----
-
-## 3.9.1 Účel EntityDetailFrame
-
-EntityDetailFrame zajišťuje:
-
-- jednotný vzhled všech detailových obrazovek v aplikaci
-- správu interakcí s detailem entity
-- podporu editace (hlavní detail) nebo jen zobrazení (readonly náhled)
-- předávání stavu do CommonActions (uložit, zrušit…)
-- zobrazení jednotlivých sekcí entity pomocí záložek (tabs)
-- podporu systémových informací a příloh
-
----
-
-## 3.9.2 Struktura EntityDetailFrame
-
-EntityDetailFrame se skládá z těchto částí:
-
-### (1) Header (Hlavička)
-Obsahuje:
-
-- ikonu entity (např. dům, osoba, smlouva…)
-- název entity (např. „Nemovitost K1“)
-- volitelný barevný badge typu entity
-- hlavní stav entity (aktivní, archivovaná…)
-- metadata (např. ID, kód, datum vytvoření)
-
-Chrome hlavičky může být přizpůsobené podle typu entity.
-
----
-
-### (2) CommonActions (Horní tlačítka)
-Zobrazují se **pouze v hlavním detailu entity** (ne při zobrazení v RelationListWithDetail).
-
-Typické akce:
-
-- **Uložit**
-- **Uložit a zavřít**
-- **Zrušit**
-- **Archivovat**
-- **Smazat**
-- **Duplikovat**
-- **Otevřít v samostatném okně**
-
-CommonActions reagují na:
-
-- dirty state (neuložené změny)
-- oprávnění uživatele (některé akce mohou být skryté nebo zašedlé)
-- stav entity (např. archivované entity nelze editovat)
-
----
-
-### (3) Tabs (Záložky)
-Každá entita má definované své sekce:
-
-Příklad Nemovitosti:
-
-- Základní údaje  
-- Adresa  
-- Jednotky (vazba → RelationListWithDetail)  
-- Dokumenty / Přílohy  
-- Systém  
-
-Příklad Pronajímatele:
-
-- Základní údaje  
-- Kontakty  
-- Bankovní účty  
-- Dokumenty / Přílohy  
-- Systém  
-
-Příklad Smlouvy:
-
-- Parametry smlouvy  
-- Platby (vazba → RelationListWithDetail)  
-- Dokumenty / Přílohy  
-- Systém  
-
-V první záložce se typicky zobrazuje hlavní **DetailView** entity.
-
----
-
-### (4) Obsah záložek – DetailView
-Každá záložka obsahuje vlastní **DetailView**:
-
-- formuláře  
-- read-only sekce  
-- tabulky  
-- výběry  
-- specifická logika pro danou entitu  
-
-DetailView zajišťuje:
-
-- validaci polí
-- řízení dirty stavu
-- propojení s databází / API
-- napojení na CommonActions
-
----
+... (soubor pokračuje beze změn až k sekci Přílohy)
 
 ### (5) Sekce Přílohy (povinná součást každého detailu)
 ## 5️⃣ Sekce Přílohy (povinná součást každého detailu)
 
-Sekce **Přílohy** je povinnou součástí každého DetailView v aplikaci.
-Slouží k práci s dokumenty a soubory, které se vztahují ke konkrétní entitě
-(uživatel, nemovitost, smlouva, platba apod.).
+Sekce **Přílohy** je povinnou součástí každého detailu entity v aplikaci, ale její chování je **striktně rozdělené na 2 režimy**:
 
-Cílem řešení je:
-- jednotné chování napříč aplikací
-- zachování historie dokumentů
-- možnost auditu
-- zabránění nevratné ztrátě dat
+1) **Záložka „Přílohy“ v detailu entity** = **READ-ONLY přehled**  
+2) **📎 (sponka) v CommonActions** = **samostatný TILE „Správa příloh“** (plná práce s přílohami)
 
-### 5.1 Základní princip
+Tímto se zabrání nechtěným změnám v detailu entity a zároveň zůstane plná správa dostupná jednotným způsobem napříč aplikací.
+
+> Detailní specifikace je v `docs/03-ui/attachments.md`.
+
+---
+
+### 5.1 Finální dohoda (UX pravidla)
+
+#### A) Detail entity → záložka „Přílohy“ (READ-ONLY)
+Uživatel může:
+- vidět seznam příloh (latest verze),
+- filtrovat (text),
+- zapnout „zobrazit archivované“,
+- otevřít soubor (signed URL).
+
+Uživatel **NEMŮŽE**:
+- nahrávat nové přílohy,
+- přidávat nové verze,
+- editovat metadata,
+- pracovat s historií verzí,
+- archivovat / obnovovat.
+
+#### B) 📎 v CommonActions → „Správa příloh“ (MANAGER TILE)
+Uživatel může:
+- přidat přílohu (vytvoří dokument + verzi v001 + upload),
+- nahrát novou verzi ke stávajícímu dokumentu,
+- editovat metadata (název/popisek),
+- zobrazit historii verzí,
+- zavřít správu a vrátit se do detailu entity.
+
+---
+
+### 5.2 Základní princip (datový model)
 - přílohy jsou řešeny centrálně
 - přílohy se **nikdy fyzicky nemažou**
 - místo mazání se používá **archivace**
 - každá příloha podporuje **verzování**
-- sekce Přílohy má vždy stejné chování i vzhled bez ohledu na typ entity
+- soubory jsou v Supabase Storage, DB obsahuje metadata a cesty
 
-### 5.2 Dokument × verze dokumentu
+---
+
+### 5.3 Dokument × verze dokumentu
 
 **Dokument (logický celek)**  
 Dokument představuje jednu přílohu z pohledu uživatele (např. „Nájemní smlouva“, „Fotodokumentace“, „Revizní zpráva“).
 - má název a popis
-- je navázán na konkrétní entitu
+- je navázán na konkrétní entitu (polymorfní vazba)
 - může být archivovaný
 - neobsahuje samotný soubor
 
@@ -785,12 +109,12 @@ Dokument představuje jednu přílohu z pohledu uživatele (např. „Nájemní 
 Verze dokumentu představuje konkrétní nahraný soubor.
 - má číslo verze (1, 2, 3, …)
 - odkazuje na soubor v úložišti
-- může být archivována samostatně
-- nikdy se fyzicky nemaže
+- starší verze zůstávají zachovány
 - aktuální (nejnovější) verze je považována za platnou
 
-### 5.3 Chování při nahrávání
+---
 
+### 5.4 Chování při nahrávání (probíhá jen ve „Správa příloh“)
 **Nová příloha**
 - vytvoří se nový dokument
 - automaticky se vytvoří verze 1
@@ -798,61 +122,51 @@ Verze dokumentu představuje konkrétní nahraný soubor.
 **Opravený soubor**
 - nevzniká nový dokument
 - přidá se nová verze ke stávajícímu dokumentu
-- starší verze zůstávají zachovány
 
-### 5.4 Archivace
+---
+
+### 5.5 Archivace
 - dokumenty ani jejich verze se nikdy nemažou
 - archivace znamená pouze označení příznakem „archivováno“
-- archivované položky nejsou standardně zobrazovány a lze je zobrazit přepínačem „Zobrazit archivované“
-- archivovat lze celý dokument nebo jednotlivou verzi dokumentu
+- archivované položky nejsou standardně zobrazovány
+- lze je zobrazit přepínačem „Zobrazit archivované“
 
-### 5.5 Uložení souborů (Supabase Storage)
+Pozn.: Archivace/obnova je „write“ operace ⇒ patří do **Správa příloh**, nikoli do read-only záložky v detailu entity.
+
+---
+
+### 5.6 Uložení souborů (Supabase Storage)
 - soubory jsou ukládány do Supabase Storage
 - používá se centrální bucket: `documents`
 
 Struktura uložení souborů (cesta uvnitř bucketu):
-- {typ-entity}/{id-entity}/{id-dokumentu}/v{verze}/{nazev-souboru}
+- `{typ-entity}/{id-entity}/{id-dokumentu}/v{verze}/{nazev-souboru}`
 
 Příklad:
-- contract/abc123/def456/v0003/Najemni_smlouva.pdf
+- `contract/abc123/def456/v0003/Najemni_smlouva.pdf`
 
-Význam:
-- typ-entity: typ entity (např. user, property, contract)
-- id-entity: identifikátor konkrétní entity
-- id-dokumentu: identifikátor dokumentu
-- v{verze}: číslo verze dokumentu
-- nazev-souboru: původní název souboru
+---
 
-Poznámka: Složky se nevytvářejí ručně, vznikají automaticky při nahrávání souboru.
+### 5.7 Jednotné použití v aplikaci (1 komponenta, 2 režimy)
+Používá se jedna core komponenta, která umí 2 režimy:
+- `variant="list"`: read-only přehled v detailu entity
+- `variant="manager"`: plná správa v samostatném manager tile otevřeném přes 📎
 
-### 5.6 Databázová evidence
-V databázi se neukládají samotné soubory, ale pouze metadata:
-- dokumentu
-- verzí dokumentu
-- cesta k souboru v úložišti
+---
 
-Tento přístup umožňuje:
-- bezpečné verzování
-- přejmenování a popisy bez zásahu do souboru
-- audit změn
+### 5.8 Edge-cases (povinné chování)
+- **Entita není uložená** (`entityId` neexistuje / `new`): přílohy nejsou dostupné.
+- **Archivovaná entita**: manager tile se může otevřít, ale je pouze read-only (dohledání souborů).
+- **Read-only role / oprávnění**: manager tile se otevře, ale je pouze read-only.
+- **RLS / 401 / 403**: zobrazit srozumitelnou hlášku, žádné request stormy.
 
-### 5.7 Jednotné použití v aplikaci
-Sekce Přílohy:
-- je součástí každého DetailView
-- má jednotné UI i chování
-- je znovupoužitelná napříč moduly
+---
 
-Uživatel má vždy stejný způsob práce s dokumenty bez ohledu na kontext.
-
-### 5.8 Stav řešení
-- návrh systému příloh: hotovo
-- verzování dokumentů: schváleno
-- archivace místo mazání: schváleno
-- struktura ukládání souborů: definována
-
-Další krok:
-- implementace UI sekce Přílohy
-- napojení na Supabase Storage a databázi
+### 5.9 Stav řešení
+- datový model příloh (documents + versions + view latest): hotovo
+- read-only záložka „Přílohy“ v detailu entity: implementováno (variant `list`)
+- manager tile „Správa příloh“ přes 📎: implementováno (variant `manager`)
+- doplnění oprávnění (canManage) + důvod read-only: doporučeno / rozšiřuje edge-cases
 
 
 ### (6) Sekce Systém (technické metadata)
