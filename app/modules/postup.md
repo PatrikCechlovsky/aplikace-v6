@@ -1,7 +1,7 @@
-# Modul – TODO šablona (pracovní návod pro každý modul)
+# Modul – PLAN šablona (pracovní návod pro každý modul)
 
 > Tento soubor si zkopíruj do složky každého modulu jako  
-> `MODULE-TODO.md` (např. `app/modules/010/poatup.md`)  
+> `MODULE-PLAN.md` (např. `app/modules/010/poatup.md`)  
 > a postupně si v něm odškrtávej, co je hotové.
 
 ---
@@ -265,12 +265,4 @@ Sem piš cokoliv, na co narazíme u tohoto konkrétního modulu:
 
 - co bylo potřeba udělat speciálně
 - jaké vychytávky / omezení jsme zavedli
-- TODO pro druhé kolo (performance, RLS, optimalizace…)
-
-Např.:
-
-- TODO: doplnit automatické filtry podle vlastníka
-- TODO: přidat logiku pro „archivované“ v seznamu
-- TODO: vymyslet zobrazení ikon stavů v seznamu
-
----
+- TODO pro druhé kolo (performance, RLS, optimalizace…) dávat do docs/TODO_MASTER.md
