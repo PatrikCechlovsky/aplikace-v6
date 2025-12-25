@@ -353,8 +353,8 @@ export default function UserDetailFrame({
           subjectId: user.id,
           email: user.email,
           displayName: user.displayName ?? '',
-          roleCode: invitePresetRoleCode ?? user.roleCode ?? '',
-          permissionCode: invitePresetPermissionCode ?? user.permissionCode ?? '',
+          roleCode: user.roleCode ?? '',
+          permissionCode: user.permissionCode ?? '',
           note: '',
         }
 
