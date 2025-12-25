@@ -15,6 +15,8 @@ import type { ViewMode, CommonActionId } from '@/app/UI/CommonActions'
 import UserDetailForm from './UserDetailForm'
 import { getLatestInviteForSubject, sendInvite } from '@/app/lib/services/invites'
 import type { InviteFormValue } from './InviteUserForm'
+console.log('UsersTile render')
+
 
 export type UiUser = {
   id: string
