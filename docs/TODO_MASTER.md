@@ -1,269 +1,122 @@
 # TODO MASTER – Aplikace Pronajímatel v6
 
-Tento dokument je:
-- jediný konsolidovaný seznam všech TODO v projektu
-- „zdroj pravdy“ pro plánování, dokončování a testování
-- bez programového kódu (žádné TS/JS bloky)
+Tento dokument je jediný konsolidovaný seznam úkolů v projektu.
 
 Pravidla:
 - Nové úkoly se přidávají výhradně sem.
-- Duplicitní TODO soubory se po konsolidaci smažou.
-- Každý bod má stav:
-  - [ ] nehotovo
-  - [x] hotovo (doporučeno doplnit „otestováno“ do poznámky)
+- Duplicitní TODO soubory se po sloučení smažou.
+- V TODO dokumentech nepoužívat fenced code blocky (TS/JS). TODO = plán práce.
 
 ---
 
-## 0. ZDROJE, KTERÉ BYLY SLOUČENÉ DO MASTER
-- `todolist.md` (DetailView/Tabs fáze + kroky) — SLOUČENO, lze smazat
-- `todo_list.md` (široký TODO napříč projektem) — SLOUČENO, lze smazat
+## 0) TODO CLEANUP – sjednocení na 1 master
+
+### 0.1 Kde jsme našli duplicitní TODO listy
+Tyto soubory jsou duplicity a po sloučení do tohoto masteru je možné je smazat:
+- `docs/todo_list.md`  → SLOUČENO
+- `docs/03-ui/todolist.md` → SLOUČENO
+
+### 0.2 Kde je ještě slovo TODO mimo todo listy (informativně)
+Tyto soubory nejsou “TODO list”, ale obsahují TODO poznámky / pravidla / šablony:
+- `docs/09-project-rules.md`
+- `docs/08-plan-vyvoje.md`
+- `docs/00-core/POSTUP.md` (šablona)
+- `app/modules/postup.md` (šablona, obsahuje konkrétní TODO body)
+- `app/modules/010-sprava-uzivatelu/MODULE-TODO.md` (implementační plán modulu 010)
+- `app/modules/020-muj-ucet/MODULE-TODO.md` (implementační plán modulu 020)
+
+Poznámka:
+- Pokud chceme „jen jeden TODO“, doporučeno přejmenovat `MODULE-TODO.md` na `MODULE-PLAN.md` (nebo přesunout do docs).
 
 ---
 
-## 1. ZÁKLADNÍ ARCHITEKTURA A STAV APLIKACE
+## 1) Kritické problémy / stabilita
 
-- [ ] Sjednotit životní cyklus všech formulářů (read / edit / create)
-- [ ] Ujasnit, kde vzniká a kde se ruší „dirty state“
-- [ ] Zajistit jednotné chování při opuštění rozpracovaného formuláře (confirm)
-- [ ] Prověřit, že všechny detaily používají stejný vzor (EntityDetailFrame / DetailView)
-- [ ] Odstranit dočasná řešení a poznámky typu „TODO later“ (přepsat na konkrétní úkol)
+- [x] Opravit blikání UI / request stormy (useSearchParams → stabilní klíč přes toString)
+- [ ] Zamezit opakovaným fetchům v dalších modulech (anti-storm pattern jako standard)
+- [ ] Zkontrolovat, že nikde nevzniká loop přes router/query state
 
 ---
 
-## 2. COMMON ACTIONS (globální tlačítka)
+## 2) CommonActions (globální akce)
 
-- [ ] Dokončit centrální engine CommonActions
-- [ ] Řízení viditelnosti tlačítek podle:
-  - role
-  - oprávnění
-  - stavu formuláře
-  - výběru záznamu (selection)
-- [ ] Správné přepínání:
-  - Detail ↔ Edit
-  - Save pouze v editaci
-- [ ] Reset CommonActions při změně tile
-- [ ] Zamezit ztrátě neuložených dat při navigaci
+- [ ] Dokončit jednotná pravidla viditelnosti (mode/selection/permission)
+- [ ] Zamezit ztrátě neuložených dat při navigaci (confirm)
+- [ ] Reset CommonActions při přepnutí tile
 - [ ] Otestovat CommonActions ve všech modulech
 
 ---
 
-## 3. TOP MENU (horní navigace)
+## 3) UI systém – List / Detail / Manager
 
-- [ ] Napojit TopMenu na stejný výběrový model jako Sidebar
-- [ ] Aktivní stav modulu
-- [ ] Aktivní stav sekce
-- [ ] Aktivní stav tile
-- [ ] Reset výběru při přepnutí modulu
-- [ ] Chování modulů bez sekcí
-- [ ] Zavírání podmenu klikem mimo
-- [ ] Konzistence chování se Sidebarem
-- [ ] Otestovat přepínání Sidebar ↔ TopMenu
+- [ ] Sjednotit životní cyklus formulářů (read/edit/create)
+- [ ] Jednotné “dirty” chování (nastavení, reset, confirm při close)
+- [ ] Jednotný vzor pro manager screen (není tab v detailu, je samostatný tile)
 
 ---
 
-## 4. LAYOUT A UI CHOVÁNÍ
+## 4) Přílohy / Dokumenty (globální pravidlo)
 
-- [ ] Správné rozložení `layout__actions` v režimu TopMenu
-- [ ] Oddělení TopMenu a CommonActions do dvou řádků
-- [ ] Konzistence CSS mezi moduly
-- [ ] Sjednocení ListView vzhledu
-- [ ] Odstranění duplicitních nebo konfliktních stylů
-- [ ] Ověřit ikonový vs textový režim
+### 4.1 Detail entity – záložka Přílohy (READ-ONLY)
+- [ ] Zajistit, že v detailu entity nelze nic měnit (UI i guardy)
+- [ ] Filtrace + přepínač archivovaných
+- [ ] Otevření souboru (signed URL)
 
----
+### 4.2 📎 CommonActions – Správa příloh (MANAGER TILE)
+- [ ] Přidat přílohu (document + v001 + upload)
+- [ ] Nová verze (upload další verze)
+- [ ] Edit metadat (název, popis)
+- [ ] Historie verzí
+- [ ] Zavřít a vrátit se do detailu entity na záložku Přílohy
 
-## 5. AUTENTIZACE A UŽIVATEL
-
-- [ ] Editace profilu přihlášeného uživatele (Můj účet)
-- [ ] Avatar uživatele
-- [ ] Prověřit načítání session při startu
-- [ ] Ověřit reakce aplikace na změnu auth stavu
-- [ ] Připravit auditní stopy (základ)
-
----
-
-## 6. ROLE A OPRÁVNĚNÍ
-
-- [ ] Opravit přečíslování rolí (duplicitní order)
-- [ ] Zajistit atomický reorder
-- [ ] Konzistence mezi rolemi a permission types
-- [ ] Ověřit chování archivovaných rolí
-- [ ] Prověřit oprávnění v UI (skrývání akcí)
+### 4.3 Edge-cases (povinné)
+- [ ] Archivovaná entita → manager otevřít, ale read-only + důvod
+- [ ] Read-only role → manager otevřít, ale read-only + důvod
+- [ ] RLS/401/403 → srozumitelná hláška, žádné request stormy
 
 ---
 
-## 7. MODUL 010 – SPRÁVA UŽIVATELŮ
+## 5) Modul 010 – Správa uživatelů
 
-### Uživatel
-- [ ] Kompletní formulář napojený na databázi
-- [ ] Správné mapování DB ↔ UI
-- [ ] Rozlišení read / edit / create
-- [ ] Kontrola archivace
-
-### Pozvánky (Invite flow)
-- [x] Samostatná obrazovka „Pozvat uživatele“
-- [x] Pozvání existujícího uživatele z detailu
-- [x] Pozvání nového uživatele
-- [x] Respektovat can_send_invite + first_login_at
-- [x] Systémová data pozvánky (odeslal, kdy, platnost, status)
-- [ ] UI doladění formuláře pozvánky
-- [ ] Uživatelský text pozvánky (spolupráce / nemovitosti)
-- [ ] Přemapovat akci „Save“ → „Odeslat pozvánku“
-- [ ] Rozhodnout chování po odeslání (zůstat / zavřít)
-- [ ] Audit log pozvánek (minimální verze)
-
-### Detail uživatele
-- [x] DetailView se sekcemi (detail, role, invite, přílohy, systém)
-- [ ] Přílohy: READ-ONLY tab v detailu entity + 📎 manager tile (upload/verze/historie), včetně edge-cases:
-  - [ ] archivovaná entita = manager read-only
-  - [ ] read-only role = manager read-only
-  - [ ] RLS / 401 / 403 = srozumitelná chyba, žádné request stormy
-- [x] Invite sekce pouze pro existující uživatele
-- [x] System sekce s invite informacemi
-- [ ] UX doladění sekcí (šířky, copy, pořadí)
-
-### Navigace / UX
-- [x] Close = krok zpět (list ← detail ← invite)
-- [x] Menu klik = okamžitý přechod (dirty confirm)
-- [ ] Sjednotit chování Home button
-
-### Koncepční (010)
-- [ ] Definovat typy pozvánek (spolupráce / plátce)
-- [ ] Role-based invite policy
-- [ ] Expirace pozvánek (cron / job)
+- [ ] UX doladění detailu (šířky, texty, pořadí sekcí)
+- [ ] Pozvánky – doladit chování po odeslání (zůstat / zavřít)
+- [ ] Zabránit opakovanému posílání pozvánky po first_login_at
+- [ ] Systémová sekce – sjednocený formát datum/čas (bez ISO “T”, bez mikrosekund)
+- [ ] Přílohy u uživatele: read-only tab v detailu + manager tile přes 📎
 
 ---
 
-## 8. DETAILVIEW / SEKCE / TABS (konsolidace z todolist.md)
+## 6) Reorder / přečíslování typů (role, permission, …)
 
-### Stav (hotovo)
-- [x] DetailTabs (ouška) + aktivní přepínání sekcí
-- [x] Registry sekcí v DetailView + resolveSections
-- [x] UserDetailFrame jako „konfigurace“ (bez vlastní tab logiky)
-
-### Zbývá dodělat
-- [ ] Nic nemazat: při nahrazování přesouvat staré věci do `docs/archive/` nebo označit jako archive (procesní pravidlo)
-- [ ] Entity detail tile vzhled:
-  - [ ] vytvořit/aktivovat CSS pro rám detailu (`EntityDetailFrame.css`)
-  - [ ] import do AppShell
-  - [ ] zrušit 2-sloupcový layout, odstranit „prázdný sloupec“, sjednotit padding/radius
-- [ ] Naplnit reálný obsah sekcí (ne placeholder):
-  - [ ] `roles` (role, oprávnění, skupiny)
-  - [ ] `attachments` (READ-ONLY tab + manager tile přes 📎)
-  - [ ] `system` (audit: createdAt/updatedAt/archivace + jednotný formát času)
-  - [ ] `accounts`
-  - [ ] `users`
-  - [ ] `equipment`
-
-### Reuse na dalších entitách
-- [ ] Nájemník: sekce `users`, `accounts`
-- [ ] Jednotka: sekce `users`, `equipment`, `accounts`
-- [ ] Subjekt: sekce `accounts`
+- [ ] Opravit bug s duplicitním pořadím při přesunu (2× stejné číslo)
+- [ ] Zajistit atomický reorder (bez duplicit)
+- [ ] Otestovat na role_types / permission_types a dalších typech
 
 ---
 
-## 9. MODULY (rozšíření – konsolidace z todo_list.md)
+## 7) ListView – “druhé kolo” TODO (z app/modules/postup.md)
 
-- [ ] Modul 020 – Můj účet (oddělit self-edit a admin logiku)
-- [ ] Modul 030 – Pronajímatel (doplnit formuláře)
-- [ ] Modul 040 – Nemovitosti (datový model + UI)
-- [ ] Modul 050 – Nájemníci (formuláře + vazby)
-- [ ] Modul Smlouvy (datový model, validace období, vazby)
-- [ ] Modul Platby / Finance (platební kalendář, QR, filtry období)
-- [ ] Modul Měřidla (evidence, import odečtů, vyúčtování v2)
-- [ ] Modul Dokumenty (archiv dokumentů, šablony e-mailů, generování PDF)
-- [ ] Modul Komunikace (historie zpráv, štítky, automatizace)
+- [ ] Automatické filtry podle vlastníka (owner-based filtering)
+- [ ] Přidat logiku pro “archivované” v seznamu (jednotný pattern)
+- [ ] Vymyslet zobrazení ikon stavů v seznamu (status icons)
+- [ ] Performance optimalizace (po dokončení základního UX)
 
 ---
 
-## 10. LOGIKA & SERVICES
+## 8) Dokumentace
 
-- [ ] Permission service
-- [ ] DynamicBreadcrumbs builder
-- [ ] FormState manager
-- [ ] Centralizace všech datových validací
-
----
-
-## 11. DATA, IMPORTY A EXPORTY
-
-- [ ] Návrh jednotného importního mechanismu
-- [ ] Export vzorových šablon
-- [ ] Validace dat před importem
-- [ ] Přehledné hlášení chyb
+- [ ] Udržovat jen 1 TODO dokument (tento)
+- [ ] Po sloučení smazat:
+  - `docs/todo_list.md`
+  - `docs/03-ui/todolist.md`
+- [ ] Rozhodnout, zda `MODULE-TODO.md` přejmenovat/přesunout (aby neexistovalo více “TODO” názvů)
 
 ---
 
-## 12. DOKUMENTACE
+## 9) Test checklist (minimální)
 
-- [ ] Aktualizovat dokumentaci dle reálného stavu kódu
-- [ ] Doplnit CommonActions v6
-- [ ] Doplnit TopMenu
-- [ ] Doplnit Invite flow
-- [ ] Modulová dokumentace (každý modul)
-- [ ] Označit historické dokumenty (archive)
-
----
-
-## 13. TESTOVÁNÍ A STABILITA
-
-- [ ] Ruční testy hlavních scénářů
-- [ ] Ověření chování při chybách
-- [ ] Kontrola konzole (žádné chyby / warningy)
-- [ ] Stabilita buildu
-
----
-
-## 14. INFRA & TECH (konsolidace z todo_list.md)
-
-- [ ] Optimalizace buildů
-- [ ] CI/CD GitHub Actions
-- [ ] Logování chyb v produkci
-- [ ] Testy (unit + integration)
-
----
-
-## 15. BUDOUCNOST / PLÁN (informativní)
-
-- [ ] Workflow engine (automatizace procesů)
-- [ ] Napojení na email API (SendGrid / Postmark)
-- [ ] Mobilní aplikace (v2)
-- [ ] Zabezpečení přístupu k modulům (fine-grained)
-- [ ] Externí API rozhraní
-
----
-
-## 16. UZAVÍRÁNÍ ÚKOLŮ (proces)
-
-- [ ] Každý bod označit jako:
-  - hotovo
-  - otestováno (doporučeno doplnit do poznámky)
-- [ ] Nehotové body zůstávají v tomto dokumentu
-- [ ] Nové úkoly se přidávají výhradně sem
-
----
-
-## 17. UX / UI CONSISTENCY – sjednocení datumů a časů
-
-Sjednotit zobrazení datumů a časů v celé aplikaci (UI layer)
-
-Popis:
-V celé aplikaci se aktuálně na některých místech zobrazují databázové hodnoty timestamptz přímo ve formátu ISO
-(např. 2025-12-16T07:47:26.728831+00:00), což není vhodné pro koncového uživatele.
-
-Cíle:
-- zobrazovat pouze datum + čas (bez mikrosekund a bez explicitního timezone)
-- mít jednotný formát napříč celou aplikací
-- zachovat plnou přesnost v databázi
-
-Rozsah:
-- Detail entity → záložka Systém
-- Přílohy (Nahráno / Změněno)
-- Pozvánky
-- Audit / historie změn
-- Jakékoliv další systémové nebo read-only zobrazení času
-
-Akceptační kritéria:
-- v UI se nikde nezobrazuje znak „T“, mikrosekundy ani „+00:00“
-- prázdná hodnota → zobrazí se „—“
-- databázová struktura zůstává beze změny
+- [ ] Build na Vercel bez TS chyb
+- [ ] Modul 010: list → detail → attachments manager → zpět
+- [ ] Přílohy: read-only tab v detailu (bez write možností)
+- [ ] Přílohy: manager umí add/edit/version/history
+- [ ] Žádné request stormy při přepínání režimů
