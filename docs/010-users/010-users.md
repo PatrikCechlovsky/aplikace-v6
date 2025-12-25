@@ -79,6 +79,8 @@ Detail uživatele slouží ke správě konkrétní osoby.
 * Role – role a oprávnění,
 * Pozvánka – odeslání pozvánky existujícímu uživateli,
 * Přílohy – systémové dokumenty (read-only),
+  > Pozn.: Záložka **Přílohy** v detailu uživatele je vždy **read-only**.  
+  > Plná správa příloh se otevírá přes **📎 v CommonActions** jako samostatný tile „Správa příloh“.
 * Systém – auditní informace.
 
 ### Chování
