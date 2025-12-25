@@ -30,7 +30,7 @@ export type RolesData = {
   permissions?: { code: string; name: string; description?: string | null }[]
   availableRoles?: { code: string; name: string; description?: string | null }[]
 
-  // ✅ nové (pro checkboxy)
+  // ✅ pro oprávnění checkboxy
   availablePermissions?: { code: string; name: string; description?: string | null }[]
 }
 
@@ -41,7 +41,7 @@ export type RolesUi = {
   roleCode?: string | null
   onChangeRoleCode?: (roleCode: string) => void
 
-  // ✅ nové (pro checkboxy)
+  // ✅ pro oprávnění checkboxy
   permissionCodes?: string[]
   onTogglePermission?: (permissionCode: string, enabled: boolean) => void
 }
@@ -121,7 +121,11 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
                     ))}
                   </select>
                 ) : (
-                  <input className="detail-form__input detail-form__input--readonly" value={role?.name ?? role?.code ?? '—'} readOnly />
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={role?.name ?? role?.code ?? '—'}
+                    readOnly
+                  />
                 )}
 
                 {mode !== 'view' && (
@@ -197,7 +201,12 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 90,
     visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
     render: (ctx: any) => (
-      <DetailAttachmentsSection entityType={ctx.entityType} entityId={ctx.entityId} entityLabel={ctx.entityLabel ?? null} mode={ctx.mode ?? 'view'} />
+      <DetailAttachmentsSection
+        entityType={ctx.entityType}
+        entityId={ctx.entityId}
+        entityLabel={ctx.entityLabel ?? null}
+        mode={ctx.mode ?? 'view'}
+      />
     ),
   },
 
@@ -239,6 +248,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     },
   },
 
+  // placeholders pro jiné entity
   users: { id: 'users', label: 'Uživatelé', order: 30, render: () => null },
   equipment: { id: 'equipment', label: 'Vybavení', order: 40, render: () => null },
   accounts: { id: 'accounts', label: 'Účty', order: 50, render: () => null },
@@ -258,11 +268,10 @@ export default function DetailView({
   ctx: DetailViewCtx
 }) {
   const sections = useMemo(() => {
-    const list = sectionIds
+    return sectionIds
       .map((id) => DETAIL_SECTIONS[id])
       .filter(Boolean)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    return list
   }, [sectionIds])
 
   const tabs: DetailTabItem[] = useMemo(() => {
@@ -271,14 +280,20 @@ export default function DetailView({
       .map((s) => ({ id: s.id, label: s.label }))
   }, [sections, ctx])
 
-  const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? tabs[0]?.id ?? 'detail')
+  // ✅ FIX: tabs[0].id má typ string => cast na DetailSectionId
+  const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'
+
+  const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? firstTabId)
+
   const lastInitialRef = useRef<string>('')
 
   useEffect(() => {
     const key = `${ctx?.entityType ?? ''}:${ctx?.entityId ?? ''}:${initialActiveId ?? ''}`
     if (key === lastInitialRef.current) return
     lastInitialRef.current = key
-    setActiveId(initialActiveId ?? tabs[0]?.id ?? 'detail')
+
+    const next = initialActiveId ?? ((tabs[0]?.id as DetailSectionId | undefined) ?? 'detail')
+    setActiveId(next)
   }, [ctx?.entityType, ctx?.entityId, initialActiveId, tabs])
 
   useEffect(() => {
