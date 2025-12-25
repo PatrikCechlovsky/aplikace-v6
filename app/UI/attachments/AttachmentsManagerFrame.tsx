@@ -7,6 +7,9 @@
  * Samostatná obrazovka (screen/tile) pro plnou správu příloh:
  * - upload nové přílohy, nové verze, historie, edit metadat
  * - používá stejný core jako záložka u entity, ale v režimu "manager"
+ *
+ * EDGE-CASES:
+ * - canManage=false => manager tile se otevře, ale UI je pouze read-only
  */
 
 import React from 'react'
@@ -16,16 +19,25 @@ export type AttachmentsManagerFrameProps = {
   entityType: string
   entityId: string
   entityLabel?: string | null
+
+  canManage?: boolean
+  readOnlyReason?: string | null
 }
 
-export default function AttachmentsManagerFrame({ entityType, entityId, entityLabel = null }: AttachmentsManagerFrameProps) {
+export default function AttachmentsManagerFrame({
+  entityType,
+  entityId,
+  entityLabel = null,
+  canManage = true,
+  readOnlyReason = null,
+}: AttachmentsManagerFrameProps) {
   return (
     <div className="detail-view__section">
       <div className="detail-form">
         <section className="detail-form__section">
           <h2 className="detail-form__section-title">Správa příloh</h2>
           <div className="detail-form__hint">
-            Toto je plná správa příloh (verze, historie, upload, metadata). V detailu entity je záložka Přílohy pouze read-only seznam.
+            Toto je správa příloh (verze, upload, metadata). V detailu entity je záložka Přílohy vždy pouze read-only seznam.
           </div>
         </section>
       </div>
@@ -36,6 +48,8 @@ export default function AttachmentsManagerFrame({ entityType, entityId, entityLa
         entityLabel={entityLabel}
         mode="view"
         variant="manager"
+        canManage={canManage}
+        readOnlyReason={readOnlyReason}
       />
     </div>
   )
