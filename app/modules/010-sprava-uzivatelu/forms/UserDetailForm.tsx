@@ -109,7 +109,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
 
         <div className="detail-form__grid">
           <div className="detail-form__field">
-            <label className="detail-form__label">Zobrazované jméno (display_name)</label>
+            <label className="detail-form__label">
+              Zobrazované jméno / přezdívka <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               value={val.displayName}
@@ -117,13 +119,12 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               onChange={(e) => update({ displayName: e.target.value })}
               placeholder="např. Páťo Admin"
             />
-            <div className="detail-form__hint">
-              Povinné pole (NOT NULL). Může být dopočítané z titulu/jména/příjmení nebo vyplněné ručně.
-            </div>
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">E-mail</label>
+            <label className="detail-form__label">
+              E-mail <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               value={val.email}
@@ -145,7 +146,7 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">Login</label>
+            <label className="detail-form__label">Přihlašovací jméno</label>
             <input
               className="detail-form__input"
               value={val.login}
