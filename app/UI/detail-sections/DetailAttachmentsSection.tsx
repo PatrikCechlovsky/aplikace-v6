@@ -9,7 +9,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getIcon } from '@/app/UI/icons'
+import { getIcon, type IconName } from '@/app/UI/icons'
 import {
   addAttachmentVersionWithUpload,
   createAttachmentWithUpload,
@@ -33,7 +33,7 @@ export type DetailAttachmentsSectionProps = {
 
 type LocalActionId = 'addAttachment' | 'saveAttachment' | 'closePanel' | 'refresh'
 
-const LOCAL_ACTIONS: Record<LocalActionId, { icon: string; label: string; title: string }> = {
+const LOCAL_ACTIONS: Record<LocalActionId, { icon: IconName; label: string; title: string }> = {
   refresh: { icon: 'refresh', label: 'Obnovit', title: 'Obnovit seznam' },
   addAttachment: { icon: 'add', label: 'Přidat přílohu', title: 'Přidat přílohu' },
   saveAttachment: { icon: 'save', label: 'Uložit', title: 'Uložit (bez zavření)' },
@@ -465,7 +465,6 @@ export default function DetailAttachmentsSection({
         </div>
       )}
 
-      {/* Panel přidání přílohy (jen manager) */}
       {isManager && panelOpen && (
         <div className="detail-form">
           <section className="detail-form__section">
@@ -492,7 +491,6 @@ export default function DetailAttachmentsSection({
         </div>
       )}
 
-      {/* Edit metadat (jen manager) */}
       {isManager && editingDocId && (
         <div className="detail-form">
           <section className="detail-form__section">
