@@ -1,7 +1,13 @@
 'use client'
 
-// FILE: app/UI/attachments/AttachmentsManagerFrame.tsx
-// Full attachments manager screen with CommonActions-controlled close + internal UI for versions/history.
+/**
+ * FILE: app/UI/attachments/AttachmentsManagerFrame.tsx
+ *
+ * PURPOSE:
+ * Samostatná obrazovka (screen/tile) pro plnou správu příloh:
+ * - upload nové přílohy, nové verze, historie, edit metadat
+ * - používá stejný core jako záložka u entity, ale v režimu "manager"
+ */
 
 import React from 'react'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
@@ -14,15 +20,23 @@ export type AttachmentsManagerFrameProps = {
 
 export default function AttachmentsManagerFrame({ entityType, entityId, entityLabel = null }: AttachmentsManagerFrameProps) {
   return (
-    <div className="detail-form">
-      <section className="detail-form__section">
-        <h2 className="detail-form__section-title">Správa příloh</h2>
-        <div className="detail-form__hint">
-          Zde je plná správa verzí, historie a metadat. (Záložka u entity je jen read-only seznam.)
-        </div>
-      </section>
+    <div className="detail-view__section">
+      <div className="detail-form">
+        <section className="detail-form__section">
+          <h2 className="detail-form__section-title">Správa příloh</h2>
+          <div className="detail-form__hint">
+            Toto je plná správa příloh (verze, historie, upload, metadata). V detailu entity je záložka Přílohy pouze read-only seznam.
+          </div>
+        </section>
+      </div>
 
-      <DetailAttachmentsSection entityType={entityType} entityId={entityId} entityLabel={entityLabel} mode="view" />
+      <DetailAttachmentsSection
+        entityType={entityType}
+        entityId={entityId}
+        entityLabel={entityLabel}
+        mode="view"
+        variant="manager"
+      />
     </div>
   )
 }
