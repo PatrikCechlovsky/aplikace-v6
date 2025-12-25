@@ -10,12 +10,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailView from '@/app/UI/DetailView'
 import type { DetailSectionId } from '@/app/UI/DetailView'
-import type { ViewMode, CommonActionId } from '@/app/UI/CommonActions'
+import type { ViewMode } from '@/app/UI/CommonActions'
 
 import UserDetailForm from './UserDetailForm'
 import { getLatestInviteForSubject, sendInvite } from '@/app/lib/services/invites'
+import type { InviteFormValue } from './InviteUserForm'
 
-type UiUser = {
+export type UiUser = {
   id: string
   displayName: string
   email: string
@@ -34,11 +35,13 @@ type Props = {
 
   onActiveSectionChange?: (id: DetailSectionId) => void
 
-  // from UsersTile
+  // submit detail (save)
   onRegisterSubmit?: (fn: () => Promise<UiUser | null>) => void
+
+  // submit invite (sendInvite z detailu)
   onRegisterInviteSubmit?: (fn: () => Promise<boolean>) => void
 
-  // dirty propagation up
+  // dirty signal do tile
   onDirtyChange?: (dirty: boolean) => void
 }
 
@@ -51,73 +54,152 @@ export default function UserDetailFrame({
   onRegisterInviteSubmit,
   onDirtyChange,
 }: Props) {
+  // Pozn.: Aktivní záložku řídí DetailView interně.
+  // Parent (UsersTile) může přepnout záložku změnou `initialSectionId`.
+
+  // -----------------------------
+  // Dirty management (fix: nezašpiní hned po otevření)
+  // -----------------------------
   const [isDirty, setIsDirty] = useState(false)
-  const snapshotRef = useRef<string>('')
+  const initialSnapshotRef = useRef<string>('')
+  const firstRenderRef = useRef(true)
 
-  // -----------------------------
-  // Invite state
-  // -----------------------------
-  const [latestInvite, setLatestInvite] = useState<any>(null)
-  const [inviteLoading, setInviteLoading] = useState(false)
-  const [inviteError, setInviteError] = useState<string | null>(null)
-
-  const canShowInviteTab = useMemo(() => {
-    // Pozvánka má smysl jen:
-    // - záznam existuje
-    // - user se ještě nepřihlásil
-    return !!user?.id && !user.firstLoginAt
-  }, [user?.id, user.firstLoginAt])
-
-  // Load latest invite (for tab + system blocks)
   useEffect(() => {
-    let ignore = false
-
-    async function run() {
-      if (!canShowInviteTab || !user?.id) {
-        setLatestInvite(null)
-        return
-      }
-      setInviteLoading(true)
-      setInviteError(null)
-      try {
-        const inv = await getLatestInviteForSubject(user.id)
-        if (ignore) return
-        setLatestInvite(inv)
-      } catch (e: any) {
-        if (ignore) return
-        setInviteError(e?.message ?? 'Chyba načtení pozvánky.')
-      } finally {
-        if (!ignore) setInviteLoading(false)
-      }
-    }
-
-    void run()
-    return () => {
-      ignore = true
-    }
-  }, [canShowInviteTab, user?.id])
-
-  // -----------------------------
-  // Dirty handling
-  // -----------------------------
-  useEffect(() => {
-    snapshotRef.current = JSON.stringify(user ?? {})
+    // reset snapshot při změně user nebo viewMode
+    initialSnapshotRef.current = JSON.stringify(user ?? {})
+    firstRenderRef.current = true
     setIsDirty(false)
     onDirtyChange?.(false)
-  }, [user, onDirtyChange])
+  }, [user?.id, viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function markDirtyIfChanged(next: any) {
-    const nextSnap = JSON.stringify(next ?? {})
-    if (nextSnap !== snapshotRef.current) {
-      if (!isDirty) {
-        setIsDirty(true)
-        onDirtyChange?.(true)
-      }
+  const markDirtyIfChanged = (nextVal: any) => {
+    const snap = JSON.stringify(nextVal ?? {})
+    if (firstRenderRef.current) {
+      // první render nepočítáme jako změnu
+      firstRenderRef.current = false
+      initialSnapshotRef.current = snap
+      return
     }
+    const dirty = snap !== initialSnapshotRef.current
+    setIsDirty(dirty)
+    onDirtyChange?.(dirty)
   }
 
   // -----------------------------
-  // Invite content
+  // Invite tab conditions
+  // -----------------------------
+  const [latestInvite, setLatestInvite] = useState<any | null>(null)
+
+  const canShowInviteTab = useMemo(() => {
+    // pozvánka dává smysl jen pokud:
+    // - user má email
+    // - a zatím nemá first_login_at (nebo jiná logika "už je aktivní")
+    const hasEmail = !!user?.email?.trim()
+    const isActive = !!user?.firstLoginAt // pokud existuje, uživatel už se přihlásil
+    return hasEmail && !isActive
+  }, [user?.email, user?.firstLoginAt])
+
+  useEffect(() => {
+    let mounted = true
+    async function loadInvite() {
+      if (!canShowInviteTab) return
+      try {
+        const inv = await getLatestInviteForSubject(user.id)
+        if (!mounted) return
+        setLatestInvite(inv)
+      } catch (e) {
+        // nechceme shodit detail; jen ignor
+        if (!mounted) return
+        setLatestInvite(null)
+      }
+    }
+    void loadInvite()
+    return () => {
+      mounted = false
+    }
+  }, [user?.id, canShowInviteTab])
+
+  // -----------------------------
+  // RolesData mock (pokud ji už máš z backendu, napoj sem)
+  // -----------------------------
+  // Tady jen počítám, že role už je v user.roleLabel (label) a v reálu máš v ctx.rolesData i code.
+  // Pokud už `UserDetailFrame` dnes roleData načítá jinak, nech to svoje a jen z něj vezmi role.code.
+  const rolesData = useMemo(() => {
+    // placeholder — v tvém projektu to může být už napojené
+    return {
+      role: { code: (user as any).roleCode ?? null, name: user.roleLabel ?? null },
+      permissions: [],
+      availableRoles: (user as any).availableRoles ?? [],
+    }
+  }, [user])
+
+  // -----------------------------
+  // Invite submit for CommonActions: vždy nová pozvánka
+  // -----------------------------
+  const inviteSubmitRef = useRef<null | (() => Promise<boolean>)>(null)
+
+  useEffect(() => {
+    if (!onRegisterInviteSubmit) return
+
+    inviteSubmitRef.current = async () => {
+      try {
+        if (!canShowInviteTab) {
+          alert('Pozvánka nedává smysl: uživatel je aktivní nebo nemá email.')
+          return false
+        }
+
+        // roleCode: vezmeme z rolesData.role.code, fallback: nic -> blok
+        const roleCode = (rolesData as any)?.role?.code ?? null
+        if (!roleCode?.trim()) {
+          alert('Chybí role (role_code) – nelze vytvořit pozvánku.')
+          return false
+        }
+
+        // ✅ FIX: sendInvite vyžaduje celý InviteFormValue (ne jen {subjectId})
+        const payload: InviteFormValue = {
+          mode: 'existing',
+          subjectId: user.id,
+          email: user.email, // není nutné pro existing, ale nevadí
+          displayName: user.displayName ?? '',
+          roleCode,
+          note: 'Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).',
+        }
+
+        await sendInvite(payload)
+
+        // refresh latest invite
+        const refreshed = await getLatestInviteForSubject(user.id)
+        setLatestInvite(refreshed)
+
+        alert('Vytvořena nová pozvánka ✅')
+        return true
+      } catch (e: any) {
+        console.error('[UserDetailFrame.sendInvite] ERROR', e)
+        alert(e?.message ?? 'Chyba při vytváření pozvánky')
+        return false
+      }
+    }
+
+    onRegisterInviteSubmit(inviteSubmitRef.current)
+  }, [onRegisterInviteSubmit, user?.id, user?.email, user?.displayName, canShowInviteTab, rolesData])
+
+  // -----------------------------
+  // Detail submit placeholder (pokud už máš ve svém projektu, nech svoje)
+  // -----------------------------
+  useEffect(() => {
+    if (!onRegisterSubmit) return
+    onRegisterSubmit(async () => {
+      // TODO: napojení na save user (už máš ve svém projektu)
+      // Zde vracíme původního uživatele jako "saved".
+      setIsDirty(false)
+      onDirtyChange?.(false)
+      initialSnapshotRef.current = JSON.stringify(user ?? {})
+      return user
+    })
+  }, [onRegisterSubmit, user, onDirtyChange])
+
+  // -----------------------------
+  // Invite tab content
   // -----------------------------
   const inviteContent = useMemo(() => {
     if (!canShowInviteTab) return null
@@ -127,183 +209,90 @@ export default function UserDetailFrame({
         <section className="detail-form__section">
           <h3 className="detail-form__section-title">Pozvánka</h3>
 
-          {inviteLoading && <div className="detail-view__placeholder">Načítám pozvánku…</div>}
-          {inviteError && (
-            <div className="detail-view__placeholder">
-              Chyba: <strong>{inviteError}</strong>
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Email</label>
+              <input className="detail-form__input" value={user.email ?? ''} readOnly />
             </div>
-          )}
 
-          {!inviteLoading && !inviteError && (
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Stav</label>
-                <div className="detail-form__value">{latestInvite?.status ?? '—'}</div>
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Odesláno</label>
-                <div className="detail-form__value">{latestInvite?.sent_at ?? '—'}</div>
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Vyprší</label>
-                <div className="detail-form__value">{latestInvite?.expires_at ?? '—'}</div>
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Role</label>
+              <input className="detail-form__input" value={user.roleLabel ?? ''} readOnly />
+              <div className="detail-form__hint">
+                Pro změnu role použij „edit“ role v detailu / nebo napoj dropdown z dostupných rolí.
               </div>
             </div>
-          )}
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Poslední pozvánka</label>
+              <div className="detail-form__readonly">
+                {latestInvite ? (
+                  <>
+                    <div>stav: {latestInvite.status ?? '—'}</div>
+                    <div>odesláno: {latestInvite.sent_at ?? '—'}</div>
+                    <div>expiruje: {latestInvite.expires_at ?? '—'}</div>
+                  </>
+                ) : (
+                  '—'
+                )}
+              </div>
+              <div className="detail-form__hint">
+                Odeslání nové pozvánky uděláš přes CommonActions (akce „Pozvat / Odeslat pozvánku“).
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     )
-  }, [canShowInviteTab, inviteLoading, inviteError, latestInvite])
-
-  // Register Invite submit handler (CommonActions: sendInvite)
-  useEffect(() => {
-    if (!onRegisterInviteSubmit) return
-
-    const submit = async () => {
-      if (!user?.id) return false
-      if (user.firstLoginAt) return false
-
-      try {
-        await sendInvite({
-          subjectId: user.id,
-        })
-
-        // refresh latest invite
-        const inv = await getLatestInviteForSubject(user.id)
-        setLatestInvite(inv)
-        return true
-      } catch (e: any) {
-        setInviteError(e?.message ?? 'Nepodařilo se odeslat pozvánku.')
-        return false
-      }
-    }
-
-    onRegisterInviteSubmit(submit)
-  }, [onRegisterInviteSubmit, user?.id, user.firstLoginAt])
-
-  // Register save handler (CommonActions: save)
-  useEffect(() => {
-    if (!onRegisterSubmit) return
-
-    const submit = async () => {
-      // Save logic is inside UserDetailForm (it likely calls supabase and returns saved row).
-      // Here we just provide a hook point; actual fn is provided by the form via onRegisterSubmit.
-      return user
-    }
-
-    onRegisterSubmit(submit)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onRegisterSubmit])
+  }, [canShowInviteTab, user.email, user.roleLabel, latestInvite])
 
   // -----------------------------
-  // System blocks (read-only)
+  // DetailView sections
   // -----------------------------
-  const systemBlocks = useMemo(() => {
-    const userBlock = {
-      id: 'user',
-      title: 'Uživatel',
-      content: (
-        <div className="detail-system__grid">
-          <div>
-            <div className="detail-system__label">Vytvořeno</div>
-            <div className="detail-system__value">{user.createdAt}</div>
-          </div>
-
-          <div>
-            <div className="detail-system__label">Archiv</div>
-            <div className="detail-system__value">{user.isArchived ? 'Ano' : 'Ne'}</div>
-          </div>
-
-          <div>
-            <div className="detail-system__label">První přihlášení</div>
-            <div className="detail-system__value">{user.firstLoginAt ?? '—'}</div>
-          </div>
-        </div>
-      ),
-    }
-
-    const inviteBlock = {
-      id: 'invite',
-      title: 'Pozvánka',
-      content: (
-        <div className="detail-system__grid">
-          <div>
-            <div className="detail-system__label">Stav</div>
-            <div className="detail-system__value">{latestInvite?.status ?? '—'}</div>
-          </div>
-
-          <div>
-            <div className="detail-system__label">Odesláno</div>
-            <div className="detail-system__value">{latestInvite?.sent_at ?? '—'}</div>
-          </div>
-
-          <div>
-            <div className="detail-system__label">Vyprší</div>
-            <div className="detail-system__value">{latestInvite?.expires_at ?? '—'}</div>
-          </div>
-        </div>
-      ),
-    }
-
-    return [userBlock, inviteBlock]
-  }, [user.createdAt, user.firstLoginAt, user.isArchived, latestInvite])
-
-  // -----------------------------
-  // Sections list
-  // -----------------------------
-  const sectionIds = useMemo<DetailSectionId[]>(() => {
-    const base: DetailSectionId[] = ['detail', 'roles', 'attachments', 'system']
-    if (canShowInviteTab) {
-      // Pozvánka jen když dává smysl
-      base.splice(2, 0, 'invite') // vlož po roles
-    }
-    return base
-  }, [canShowInviteTab])
-
-  const detailMode: 'create' | 'edit' | 'view' =
-    viewMode === 'read' ? 'view' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'view'
-
-  return (
-    <DetailView
-      mode={detailMode}
-      sectionIds={sectionIds}
-      // ✅ umožní přepínat záložky i z parentu
-      initialActiveId={initialSectionId ?? 'detail'}
-      onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
-      ctx={{
-        // ✅ entityType musí odpovídat DB (documents.entity_type)
-        entityType: 'subjects',
-        entityId: user.id || undefined,
-        entityLabel: user.displayName ?? null,
-        mode: detailMode,
-
-        detailContent: (
+  const sections = useMemo(() => {
+    const base: { id: DetailSectionId; title: string; content: React.ReactNode }[] = [
+      {
+        id: 'detail' as DetailSectionId,
+        title: 'Detail',
+        content: (
           <UserDetailForm
             user={user}
-            readOnly={viewMode === 'read'}
-            onDirtyChange={(dirty) => {
-              if (dirty) markDirtyIfChanged(user)
-              else {
-                setIsDirty(false)
-                onDirtyChange?.(false)
-              }
-            }}
-            onValueChange={(val: any) => {
-              markDirtyIfChanged(val)
+            viewMode={viewMode}
+            onChange={(next) => {
+              markDirtyIfChanged(next)
             }}
           />
         ),
+      },
+    ]
 
-        rolesData: null,
+    if (canShowInviteTab) {
+      base.push({
+        id: 'invite' as DetailSectionId,
+        title: 'Pozvánka',
+        content: inviteContent,
+      })
+    }
 
-        // ✅ sem se posílá content pro záložku Pozvánka
-        inviteContent,
+    return base
+  }, [user, viewMode, canShowInviteTab, inviteContent])
 
-        // ✅ systémové bloky
-        systemBlocks,
+  return (
+    <DetailView
+      title={user?.displayName ?? 'Uživatel'}
+      mode={viewMode === 'read' ? 'view' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'view'}
+      sectionIds={sections.map((s) => s.id)}
+      initialActiveId={initialSectionId}
+      onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
+      ctx={{
+        isDirty,
       }}
-    />
+    >
+      {sections.map((s) => (
+        <div key={s.id} data-section-id={s.id}>
+          {s.content}
+        </div>
+      ))}
+    </DetailView>
   )
 }
