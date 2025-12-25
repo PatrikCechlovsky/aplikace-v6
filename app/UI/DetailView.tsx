@@ -1,15 +1,8 @@
 'use client'
 
-// FILE: app/UI/DetailView.tsx
-// FIX: Tabs se resetovaly na initialActiveId, protože effect běžel při každé změně `sections`.
-//      To se děje často, protože `ctx` bývá nový objekt -> `sections` se mění -> reset active tab.
-//      Nově initialActiveId aplikujeme jen když se skutečně změnilo (přechod na jiný záznam / deep-link).
-
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
-console.log('DetailView render')
-
 
 export type DetailViewMode = 'create' | 'edit' | 'view'
 
@@ -36,19 +29,26 @@ export type RolesData = {
   role?: { code: string; name: string; description?: string | null }
   permissions?: { code: string; name: string; description?: string | null }[]
   availableRoles?: { code: string; name: string; description?: string | null }[]
+
+  // ✅ nové (pro checkboxy)
+  availablePermissions?: { code: string; name: string; description?: string | null }[]
 }
 
 export type RolesUi = {
   canEdit?: boolean
   mode?: DetailViewMode
+
   roleCode?: string | null
   onChangeRoleCode?: (roleCode: string) => void
+
+  // ✅ nové (pro checkboxy)
+  permissionCodes?: string[]
+  onTogglePermission?: (permissionCode: string, enabled: boolean) => void
 }
 
 export type DetailViewCtx = {
   entityType?: string
   entityId?: string
-  /** Čitelné jméno entity (např. display_name) – používá se pro čitelný storage path */
   entityLabel?: string | null
   mode?: DetailViewMode
 
@@ -62,13 +62,7 @@ export type DetailViewCtx = {
 }
 
 const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
-  detail: {
-    id: 'detail',
-    label: 'Detail',
-    order: 10,
-    always: true,
-    render: (ctx) => ctx?.detailContent ?? null,
-  },
+  detail: { id: 'detail', label: 'Detail', order: 10, always: true, render: (ctx) => ctx?.detailContent ?? null },
 
   invite: {
     id: 'invite',
@@ -91,14 +85,16 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
 
       const role = data?.role
       const permissions = data?.permissions ?? []
-      const options = data?.availableRoles ?? []
+      const roleOptions = data?.availableRoles ?? []
+      const permOptions = data?.availablePermissions ?? []
 
-      const ensuredOptions =
-        role?.code && !options.some((r) => r.code === role.code)
-          ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...options]
-          : options
+      const ensuredRoleOptions =
+        role?.code && !roleOptions.some((r) => r.code === role.code)
+          ? [{ code: role.code, name: role.name ?? role.code, description: role.description }, ...roleOptions]
+          : roleOptions
 
-      const selectedCode = (ui?.roleCode ?? role?.code ?? '') as string
+      const selectedRoleCode = (ui?.roleCode ?? role?.code ?? '') as string
+      const selectedPermCodes = ui?.permissionCodes ?? permissions.map((p) => p.code)
 
       return (
         <div className="detail-form">
@@ -112,24 +108,20 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
                 {(mode === 'edit' || mode === 'create') && canEdit ? (
                   <select
                     className="detail-form__input"
-                    value={selectedCode}
+                    value={selectedRoleCode}
                     onChange={(e) => ui?.onChangeRoleCode?.(e.target.value)}
                   >
                     <option value="" disabled>
                       — vyber roli —
                     </option>
-                    {ensuredOptions.map((r) => (
+                    {ensuredRoleOptions.map((r) => (
                       <option key={r.code} value={r.code}>
                         {r.name ?? r.code}
                       </option>
                     ))}
                   </select>
                 ) : (
-                  <input
-                    className="detail-form__input detail-form__input--readonly"
-                    value={role?.name ?? role?.code ?? '—'}
-                    readOnly
-                  />
+                  <input className="detail-form__input detail-form__input--readonly" value={role?.name ?? role?.code ?? '—'} readOnly />
                 )}
 
                 {mode !== 'view' && (
@@ -145,19 +137,52 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
             <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-4">
                 <label className="detail-form__label">Oprávnění</label>
-                <div className="detail-form__value">
-                  {permissions.length ? (
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                      {permissions.map((p) => (
-                        <li key={p.code}>
-                          <strong>{p.code}</strong> {p.name ? `– ${p.name}` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="detail-form__hint">Žádná oprávnění</span>
-                  )}
-                </div>
+
+                {(mode === 'edit' || mode === 'create') && canEdit ? (
+                  <div className="detail-form__value">
+                    {permOptions.length ? (
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        {permOptions.map((p) => {
+                          const checked = selectedPermCodes.includes(p.code)
+                          return (
+                            <label key={p.code} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => ui?.onTogglePermission?.(p.code, e.target.checked)}
+                              />
+                              <span>
+                                <strong>{p.code}</strong>
+                                {p.name ? ` – ${p.name}` : ''}
+                                {p.description ? <div className="detail-form__hint">{p.description}</div> : null}
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <span className="detail-form__hint">Žádné typy oprávnění (permission_types) nejsou dostupné.</span>
+                    )}
+
+                    <div className="detail-form__hint" style={{ marginTop: 8 }}>
+                      Oprávnění se ukládají do subject_permissions (subject_id + permission_code).
+                    </div>
+                  </div>
+                ) : (
+                  <div className="detail-form__value">
+                    {permissions.length ? (
+                      <ul style={{ margin: 0, paddingLeft: 18 }}>
+                        {permissions.map((p) => (
+                          <li key={p.code}>
+                            <strong>{p.code}</strong> {p.name ? `– ${p.name}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="detail-form__hint">Žádná oprávnění</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -172,12 +197,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 90,
     visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
     render: (ctx: any) => (
-      <DetailAttachmentsSection
-        entityType={ctx.entityType}
-        entityId={ctx.entityId}
-        entityLabel={ctx.entityLabel ?? null}
-        mode={ctx.mode ?? 'view'}
-      />
+      <DetailAttachmentsSection entityType={ctx.entityType} entityId={ctx.entityId} entityLabel={ctx.entityLabel ?? null} mode={ctx.mode ?? 'view'} />
     ),
   },
 
@@ -224,89 +244,53 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   accounts: { id: 'accounts', label: 'Účty', order: 50, render: () => null },
 }
 
-function resolveSections<Ctx>(sectionIds: DetailSectionId[] | undefined, ctx: Ctx) {
-  const picked = new Set<DetailSectionId>(sectionIds ?? [])
-  ;(Object.values(DETAIL_SECTIONS) as DetailViewSection<Ctx>[]).forEach((s) => {
-    if (s.always) picked.add(s.id)
-  })
-
-  return Array.from(picked)
-    .map((id) => DETAIL_SECTIONS[id] as DetailViewSection<Ctx>)
-    .filter(Boolean)
-    .filter((s) => (s.visibleWhen ? s.visibleWhen(ctx) : true))
-    .sort((a, b) => a.order - b.order)
-}
-
-export type DetailViewProps<Ctx = unknown> = {
-  mode: DetailViewMode
-  isDirty?: boolean
-  isSaving?: boolean
-  onSave?: () => void
-  onCancel?: () => void
-  sectionIds?: DetailSectionId[]
-  initialActiveId?: DetailSectionId
-  onActiveSectionChange?: (id: DetailSectionId) => void
-  ctx?: Ctx & DetailViewCtx
-  children?: React.ReactNode
-}
-
-export default function DetailView<Ctx = unknown>({
-  children,
+export default function DetailView({
+  mode,
   sectionIds,
   initialActiveId,
   onActiveSectionChange,
   ctx,
-}: DetailViewProps<Ctx>) {
-  if (!sectionIds && !ctx) return <div className="detail-view">{children}</div>
+}: {
+  mode: DetailViewMode
+  sectionIds: DetailSectionId[]
+  initialActiveId?: DetailSectionId
+  onActiveSectionChange?: (id: DetailSectionId) => void
+  ctx: DetailViewCtx
+}) {
+  const sections = useMemo(() => {
+    const list = sectionIds
+      .map((id) => DETAIL_SECTIONS[id])
+      .filter(Boolean)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    return list
+  }, [sectionIds])
 
-  const safeCtx = (ctx ?? ({} as Ctx)) as Ctx & DetailViewCtx
-  const sections = useMemo(() => resolveSections(sectionIds, safeCtx), [sectionIds, safeCtx])
+  const tabs: DetailTabItem[] = useMemo(() => {
+    return sections
+      .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
+      .map((s) => ({ id: s.id, label: s.label }))
+  }, [sections, ctx])
 
-  const defaultActive =
-    (initialActiveId && sections.some((s) => s.id === initialActiveId) ? initialActiveId : sections[0]?.id) ?? 'detail'
-
-  const [activeId, setActiveId] = useState<DetailSectionId>(defaultActive)
-
-  // ✅ Initial tab apply: jen když se initialActiveId skutečně změnilo (ne při každém přerenderu)
-  const lastInitialAppliedRef = useRef<DetailSectionId | null>(null)
+  const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? tabs[0]?.id ?? 'detail')
+  const lastInitialRef = useRef<string>('')
 
   useEffect(() => {
-    if (!initialActiveId) return
-    if (!sections.some((s) => s.id === initialActiveId)) return
-
-    if (lastInitialAppliedRef.current !== initialActiveId) {
-      lastInitialAppliedRef.current = initialActiveId
-      setActiveId(initialActiveId)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialActiveId]) // ⚠️ záměrně NEzávisíme na `sections`, aby to neresetovalo aktivní tab
-
-  // ✅ Když aktivní záložka přestane existovat (např. zmizí Pozvánka), přepni na první dostupnou
-  useEffect(() => {
-    if (!sections.some((s) => s.id === activeId)) {
-      setActiveId(sections[0]?.id ?? 'detail')
-    }
-  }, [sections, activeId])
+    const key = `${ctx?.entityType ?? ''}:${ctx?.entityId ?? ''}:${initialActiveId ?? ''}`
+    if (key === lastInitialRef.current) return
+    lastInitialRef.current = key
+    setActiveId(initialActiveId ?? tabs[0]?.id ?? 'detail')
+  }, [ctx?.entityType, ctx?.entityId, initialActiveId, tabs])
 
   useEffect(() => {
     onActiveSectionChange?.(activeId)
   }, [activeId, onActiveSectionChange])
 
   const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
-  const tabs: DetailTabItem[] = sections.map((s) => ({ id: s.id, label: s.label }))
 
   return (
     <div className="detail-view">
-      {tabs.length > 1 && (
-        <DetailTabs
-          items={tabs}
-          activeId={activeSection?.id ?? defaultActive}
-          onChange={(id) => setActiveId(id as any)}
-        />
-      )}
-
-      {activeSection && <section id={`detail-section-${activeSection.id}`}>{activeSection.render(safeCtx)}</section>}
-      {(!activeSection && children) || null}
+      <DetailTabs items={tabs} activeId={activeId} onChange={(id) => setActiveId(id as DetailSectionId)} />
+      <div className="detail-view__content">{activeSection?.render({ ...ctx, mode })}</div>
     </div>
   )
 }
