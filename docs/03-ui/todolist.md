@@ -81,7 +81,7 @@ Sekce budou definované **centrálně v DetailView** (registry) a jednotlivé en
 **Cíl:** placeholdery nahradit reálnými komponentami.
 
 - [ ] Sekce `roles`: reálný obsah (role, oprávnění, skupiny)
-- [ ] Sekce `attachments`: komponenta příloh (list + upload)
+- [ ] Sekce `attachments`: komponenta příloh (READ-ONLY tab) + manager tile přes 📎 (upload/verze/historie)
 - [ ] Sekce `system`: audit informace (createdAt, updatedAt, archivace)
 - [ ] Sekce `accounts`: účty subjektu (napojení později)
 - [ ] Sekce `users`: seznam uživatelů jednotky/nájemníka
