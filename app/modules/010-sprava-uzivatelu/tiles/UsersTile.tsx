@@ -109,9 +109,6 @@ export default function UsersTile({
   const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailUser, setDetailUser] = useState<UiUser | null>(null)
 
-  // ✅ rozlišujeme:
-  // - detailInitialSectionId = jen "počáteční" / vyžádaná sekce
-  // - detailActiveSectionId  = aktuálně aktivní sekce (pro CommonActions logiku)
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [detailActiveSectionId, setDetailActiveSectionId] = useState<any>('detail')
 
@@ -137,7 +134,6 @@ export default function UsersTile({
       next: { t?: string | null; id?: string | null; vm?: string | null },
       mode: 'replace' | 'push' = 'replace'
     ) => {
-      // ✅ pracuj se stabilním searchKey, ne searchParams objektem
       const sp = new URLSearchParams(searchKey)
 
       const setOrDelete = (key: string, val?: string | null) => {
@@ -173,7 +169,6 @@ export default function UsersTile({
   const load = useCallback(async () => {
     const key = `${(filterText ?? '').trim().toLowerCase()}|${showArchived ? '1' : '0'}`
 
-    // Pokud už běží load se stejnými parametry, nevytvářej další requesty.
     if (loadInFlightRef.current && lastLoadKeyRef.current === key) {
       return loadInFlightRef.current
     }
@@ -199,7 +194,6 @@ export default function UsersTile({
     try {
       await p
     } finally {
-      // uvolni in-flight jen pokud je to stále ten samý promise
       if (loadInFlightRef.current === p) loadInFlightRef.current = null
     }
   }, [filterText, showArchived])
@@ -239,7 +233,6 @@ export default function UsersTile({
       submitRef.current = null
       inviteSubmitRef.current = null
 
-      // samostatný screen
       setUrl({ t: 'invite-user', id: null, vm: null }, 'push')
     },
     [setUrl]
@@ -260,7 +253,6 @@ export default function UsersTile({
   }, [setUrl])
 
   const closeListToModule = useCallback(() => {
-    // zavře tile – zůstane modul bez t
     setViewMode('list')
     setDetailUser(null)
     setDetailInitialSectionId('detail')
@@ -278,16 +270,13 @@ export default function UsersTile({
   // URL -> state
   // -------------------------
   useEffect(() => {
-    // ✅ parse z searchKey (stabilní)
     const sp = new URLSearchParams(searchKey)
 
     const t = sp.get('t')?.trim() ?? null
     const id = sp.get('id')?.trim() ?? null
     const vm = (sp.get('vm')?.trim() as ViewMode | null) ?? null
 
-    // tile state
     if (!t) {
-      // modul root (tile zavřený) -> nevnucujeme nic, necháme list režim
       if (viewMode !== 'list') {
         setViewMode('list')
         setDetailUser(null)
@@ -323,10 +312,8 @@ export default function UsersTile({
       return
     }
 
-    // list + detail
     if (t === 'users-list') {
       if (!id) {
-        // list
         if (viewMode !== 'list') {
           setViewMode('list')
           setDetailUser(null)
@@ -339,7 +326,6 @@ export default function UsersTile({
         return
       }
 
-      // detail
       const found = users.find((u) => u.id === id)
       if (!found) return
 
@@ -395,6 +381,8 @@ export default function UsersTile({
 
     if (viewMode === 'list') return LIST
     if (viewMode === 'invite') return INVITE
+
+    // manager screen zatím používá interní toolbar (DetailAttachmentsSection)
     if (viewMode === 'attachments-manager') return ['close']
 
     if (viewMode === 'read') {
@@ -406,7 +394,6 @@ export default function UsersTile({
       return withAttachments(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
     }
 
-    // create
     return withAttachments(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId, canInviteDetail])
 
@@ -429,14 +416,12 @@ export default function UsersTile({
     if (!onRegisterCommonActionHandler) return
 
     const handler = async (id: CommonActionId) => {
-      // ✅ jednotný CLOSE (žádné router.back)
       if (id === 'close') {
         if (isDirty) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
 
-        // attachments manager -> back to user detail (attachments tab)
         if (viewMode === 'attachments-manager') {
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (backId) {
@@ -449,7 +434,6 @@ export default function UsersTile({
           return
         }
 
-        // detail/invite -> list
         if (viewMode === 'invite') {
           closeToList()
           return
@@ -459,7 +443,6 @@ export default function UsersTile({
           return
         }
 
-        // list -> modul root (zavřít tile)
         closeListToModule()
         return
       }
@@ -519,13 +502,11 @@ export default function UsersTile({
         }
 
         if (id === 'invite') {
-          // bez výběru -> nový
           if (!selectedId) {
             openInvite(null)
             return
           }
 
-          // s výběrem -> detail na Pozvánce (pokud se ještě nepřihlásil)
           const user = users.find((u) => u.id === selectedId)
           if (!user) {
             openInvite(null)
@@ -653,11 +634,18 @@ export default function UsersTile({
   if (viewMode === 'attachments-manager') {
     const managerId = attachmentsManagerSubjectId ?? ''
     const managerUser = users.find((u) => u.id === managerId) ?? (detailUser?.id === managerId ? detailUser : null)
+
+    const isArchived = !!managerUser?.isArchived
+    const canManage = !isArchived
+    const readOnlyReason = isArchived ? 'Entita je archivovaná – správa příloh je pouze pro čtení.' : null
+
     return (
       <AttachmentsManagerFrame
         entityType="subjects"
         entityId={managerId}
         entityLabel={managerUser?.displayName ?? null}
+        canManage={canManage}
+        readOnlyReason={readOnlyReason}
       />
     )
   }
