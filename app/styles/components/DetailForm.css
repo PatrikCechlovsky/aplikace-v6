@@ -21,13 +21,9 @@
 
 .detail-form__section {
   background: var(--color-surface);
-  border: 1px solid var(--color-border-soft);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px;
-  /* modernější „card“ dojem bez velkých zásahů do layoutu */
-  box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.02),
-    0 8px 20px rgba(0, 0, 0, 0.04);
 }
 
 .detail-form__section-title {
@@ -98,6 +94,13 @@
   color: var(--color-text-muted);
 }
 
+/* Povinné pole označujeme hvězdičkou "*" */
+.detail-form__required {
+  color: var(--color-danger-text);
+  margin-left: 4px;
+  font-weight: 700;
+}
+
 .detail-form__input {
   font-size: 13px;
   padding: 9px 11px;
@@ -120,7 +123,7 @@
   opacity: 0.75;
 }
 
-/* select vypadá konzistentně jako input */
+/* select má vypadat jako input (v detailech entit) */
 select.detail-form__input {
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--color-text-muted) 50%),
@@ -136,7 +139,12 @@ select.detail-form__input {
   background: var(--color-surface);
   color: var(--color-text-muted);
   border-color: var(--color-border-soft);
-  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Jednoduchý hint text pro read-only bloky apod. */
+.detail-form__hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 /* ===== ROZTAŽENÍ POLE (SPAN) ===== */
