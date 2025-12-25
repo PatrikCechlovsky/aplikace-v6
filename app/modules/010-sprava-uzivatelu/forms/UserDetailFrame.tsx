@@ -352,9 +352,9 @@ export default function UserDetailFrame({
           mode: 'existing',
           subjectId: user.id,
           email: user.email,
-          displayName: user.display_name ?? '',
-          roleCode: invitePresetRoleCode ?? user.role_code ?? '',
-          permissionCode: invitePresetPermissionCode ?? user.permission_code ?? '', // ✅ DOPLNIT
+          displayName: user.displayName ?? '',
+          roleCode: invitePresetRoleCode ?? user.roleCode ?? '',
+          permissionCode: invitePresetPermissionCode ?? user.permissionCode ?? '',
           note: '',
         }
 
