@@ -65,6 +65,10 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
         alert('Role je povinná.')
         return false
       }
+      if (!v.permissionCode?.trim()) {
+        alert('Oprávnění je povinné.')
+        return false
+      }
 
       setIsSending(true)
       const res = await sendInvite(v)
