@@ -21,6 +21,8 @@ import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetail
 import InviteUserFrame from '../forms/InviteUserFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 
+console.log('UsersTile render')
+
 const __typecheck_commonaction: CommonActionId = 'attachments'
 
 type UiUser = {
