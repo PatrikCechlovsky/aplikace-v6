@@ -111,6 +111,7 @@ Neobsahuje žádný programový kód.
 
 ### Detail uživatele
 - [x] DetailView se sekcemi (detail, role, invite, přílohy, systém)
+- [ ] Přílohy: READ-ONLY tab v detailu entity + 📎 manager tile (upload/verze/historie), včetně edge-cases (archivovaná entita, read-only role, RLS)
 - [x] Invite sekce pouze pro existující uživatele
 - [x] System sekce s invite informacemi
 - [ ] UX doladění sekcí (šířky, copy, pořadí)
