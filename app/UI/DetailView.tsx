@@ -27,10 +27,13 @@ export type DetailViewSection<Ctx = unknown> = {
 
 export type RolesData = {
   role?: { code: string; name: string; description?: string | null }
+
+  // ponecháno jako list (UI si vezme jen první)
   permissions?: { code: string; name: string; description?: string | null }[]
+
   availableRoles?: { code: string; name: string; description?: string | null }[]
 
-  // ✅ pro oprávnění checkboxy
+  // typy oprávnění (pro výběr)
   availablePermissions?: { code: string; name: string; description?: string | null }[]
 }
 
@@ -41,7 +44,11 @@ export type RolesUi = {
   roleCode?: string | null
   onChangeRoleCode?: (roleCode: string) => void
 
-  // ✅ pro oprávnění checkboxy
+  // ✅ NOVĚ: single permission (1 hodnota)
+  permissionCode?: string | null
+  onChangePermissionCode?: (permissionCode: string) => void
+
+  // ✅ fallback pro starý režim (checkboxy) – když někde ještě existuje
   permissionCodes?: string[]
   onTogglePermission?: (permissionCode: string, enabled: boolean) => void
 }
@@ -94,7 +101,23 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
           : roleOptions
 
       const selectedRoleCode = (ui?.roleCode ?? role?.code ?? '') as string
-      const selectedPermCodes = ui?.permissionCodes ?? permissions.map((p) => p.code)
+
+      // -----
+      // ✅ permission SINGLE (vezmeme jen 1 hodnotu)
+      // -----
+      const selectedPermFromData = (permissions[0]?.code ?? '') as string
+      const selectedPermCode =
+        (ui?.permissionCode ?? selectedPermFromData ?? '') as string
+
+      // fallback (old multi)
+      const selectedPermCodesFallback = ui?.permissionCodes ?? permissions.map((p) => p.code)
+
+      const selectedPermLabel = (() => {
+        const code = (selectedPermCode ?? '').trim()
+        if (!code) return '—'
+        const found = permOptions.find((p) => p.code === code)
+        return found?.name ? `${found.name}` : code
+      })()
 
       return (
         <div className="detail-form">
@@ -142,12 +165,40 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
               <div className="detail-form__field detail-form__field--span-4">
                 <label className="detail-form__label">Oprávnění</label>
 
-                {(mode === 'edit' || mode === 'create') && canEdit ? (
+                {/* ✅ NOVÝ režim: single select (1 oprávnění) */}
+                {(mode === 'edit' || mode === 'create') && canEdit && typeof ui?.onChangePermissionCode === 'function' ? (
+                  <div className="detail-form__value">
+                    {permOptions.length ? (
+                      <select
+                        className="detail-form__input"
+                        value={(selectedPermCode ?? '') as string}
+                        onChange={(e) => ui?.onChangePermissionCode?.(e.target.value)}
+                      >
+                        <option value="" disabled>
+                          — vyber oprávnění —
+                        </option>
+                        {permOptions.map((p) => (
+                          <option key={p.code} value={p.code}>
+                            {p.code}
+                            {p.name ? ` – ${p.name}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="detail-form__hint">Žádné typy oprávnění (permission_types) nejsou dostupné.</span>
+                    )}
+
+                    <div className="detail-form__hint" style={{ marginTop: 8 }}>
+                      Oprávnění se ukládají do subject_permissions (subject_id + permission_code).
+                    </div>
+                  </div>
+                ) : (mode === 'edit' || mode === 'create') && canEdit && typeof ui?.onTogglePermission === 'function' ? (
+                  /* ✅ fallback: starý režim (checkboxy) */
                   <div className="detail-form__value">
                     {permOptions.length ? (
                       <div style={{ display: 'grid', gap: 8 }}>
                         {permOptions.map((p) => {
-                          const checked = selectedPermCodes.includes(p.code)
+                          const checked = selectedPermCodesFallback.includes(p.code)
                           return (
                             <label key={p.code} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                               <input
@@ -173,19 +224,16 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
                     </div>
                   </div>
                 ) : (
-                  <div className="detail-form__value">
-                    {permissions.length ? (
-                      <ul style={{ margin: 0, paddingLeft: 18 }}>
-                        {permissions.map((p) => (
-                          <li key={p.code}>
-                            <strong>{p.code}</strong> {p.name ? `– ${p.name}` : ''}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className="detail-form__hint">Žádná oprávnění</span>
-                    )}
-                  </div>
+                  /* VIEW režim: zobraz jen 1 oprávnění */
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={
+                      selectedPermCode
+                        ? `${selectedPermCode}${selectedPermLabel && selectedPermLabel !== selectedPermCode ? ` – ${selectedPermLabel}` : ''}`
+                        : '—'
+                    }
+                    readOnly
+                  />
                 )}
               </div>
             </div>
