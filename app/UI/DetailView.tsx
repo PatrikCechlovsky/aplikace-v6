@@ -8,6 +8,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
+console.log('DetailView render')
+
 
 export type DetailViewMode = 'create' | 'edit' | 'view'
 
