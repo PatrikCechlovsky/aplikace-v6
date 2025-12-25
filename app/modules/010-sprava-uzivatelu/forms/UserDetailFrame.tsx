@@ -13,8 +13,6 @@ import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/se
 import {
   listPermissionTypes,
   listSubjectPermissionCodes,
-  togglePermissionCode,
-  equalPermissionSets,
   type PermissionTypeRow,
 } from '@/app/lib/services/permissions'
 
@@ -84,10 +82,11 @@ export default function UserDetailFrame({
   const [roleCode, setRoleCode] = useState<string>(() => ((user as any)?.roleCode ?? '').toString())
   const roleCodeInitialRef = useRef<string>('')
 
-  // Permissions
+  // ✅ Permission (SINGLE)
   const [permissionTypes, setPermissionTypes] = useState<PermissionTypeRow[]>([])
-  const [permissionCodes, setPermissionCodes] = useState<string[]>([])
-  const permissionCodesInitialRef = useRef<string[]>([])
+  const [permissionCode, setPermissionCode] = useState<string>('') // '' = žádné
+  const permissionCodeInitialRef = useRef<string>('')
+
   const permTypesInFlightRef = useRef<Promise<void> | null>(null)
 
   useEffect(() => {
@@ -105,15 +104,15 @@ export default function UserDetailFrame({
     onDirtyChange?.(false)
   }, [user?.id, viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const computeDirty = (nextFormSnap?: string, nextRole?: string, nextPerms?: string[]) => {
+  const computeDirty = (nextFormSnap?: string, nextRole?: string, nextPerm?: string) => {
     const formSnap = typeof nextFormSnap === 'string' ? nextFormSnap : JSON.stringify(formValue ?? {})
     const roleNow = typeof nextRole === 'string' ? nextRole : (roleCode ?? '')
-    const permsNow = Array.isArray(nextPerms) ? nextPerms : (permissionCodes ?? [])
+    const permNow = typeof nextPerm === 'string' ? nextPerm : (permissionCode ?? '')
 
     const dirty =
       formSnap !== initialSnapshotRef.current ||
       roleNow !== roleCodeInitialRef.current ||
-      !equalPermissionSets(permsNow, permissionCodesInitialRef.current)
+      permNow !== permissionCodeInitialRef.current
 
     setIsDirty(dirty)
     onDirtyChange?.(dirty)
@@ -197,21 +196,24 @@ export default function UserDetailFrame({
     ;(async () => {
       try {
         if (!user?.id?.trim()) {
-          setPermissionCodes([])
-          permissionCodesInitialRef.current = []
+          setPermissionCode('')
+          permissionCodeInitialRef.current = ''
           return
         }
         const codes = await listSubjectPermissionCodes(user.id)
         if (!mounted) return
-        setPermissionCodes(codes ?? [])
-        permissionCodesInitialRef.current = codes ?? []
-        computeDirty(undefined, undefined, codes ?? [])
+
+        const first = String((codes?.[0] ?? '')).trim()
+        setPermissionCode(first)
+        permissionCodeInitialRef.current = first
+
+        computeDirty(undefined, undefined, first)
       } catch (e) {
         console.warn('[UserDetailFrame.listSubjectPermissionCodes] WARN', e)
         if (!mounted) return
-        setPermissionCodes([])
-        permissionCodesInitialRef.current = []
-        computeDirty(undefined, undefined, [])
+        setPermissionCode('')
+        permissionCodeInitialRef.current = ''
+        computeDirty(undefined, undefined, '')
       }
     })()
     return () => {
@@ -264,21 +266,23 @@ export default function UserDetailFrame({
   }, [user?.id, canShowInviteTab])
 
   // -----------------------------
-  // Roles data (už bez placeholderu permissions)
+  // Roles data (single permission)
   // -----------------------------
   const rolesData = useMemo<RolesData>(() => {
     const currentCode = (roleCode ?? '').trim()
     const currentName =
       (currentCode && roleNameByCode.get(currentCode)) || (user as any)?.roleLabel || (currentCode ? currentCode : '—')
 
-    const selectedPerms = (permissionCodes ?? [])
-      .map((c) => c.trim())
-      .filter(Boolean)
-      .map((c) => ({
-        code: c,
-        name: permNameByCode.get(c)?.name ?? c,
-        description: permNameByCode.get(c)?.description ?? null,
-      }))
+    const pc = (permissionCode ?? '').trim()
+    const selectedPerms = pc
+      ? [
+          {
+            code: pc,
+            name: permNameByCode.get(pc)?.name ?? pc,
+            description: permNameByCode.get(pc)?.description ?? null,
+          },
+        ]
+      : []
 
     const availablePerms = (permissionTypes ?? []).map((p) => ({
       code: String((p as any)?.code ?? '').trim(),
@@ -296,7 +300,7 @@ export default function UserDetailFrame({
       })),
       availablePermissions: availablePerms,
     }
-  }, [roleCode, roleNameByCode, roleTypes, user, permissionCodes, permissionTypes, permNameByCode])
+  }, [roleCode, roleNameByCode, roleTypes, user, permissionCode, permissionTypes, permNameByCode])
 
   const detailMode: DetailViewMode =
     viewMode === 'read' ? 'view' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'view'
@@ -313,14 +317,15 @@ export default function UserDetailFrame({
         computeDirty(undefined, nextCode)
       },
 
-      permissionCodes,
-      onTogglePermission: (code, enabled) => {
-        const nextCodes = togglePermissionCode(permissionCodes ?? [], code, enabled)
-        setPermissionCodes(nextCodes)
-        computeDirty(undefined, undefined, nextCodes)
+      // ✅ SINGLE permission
+      permissionCode: (permissionCode ?? '').trim() || null,
+      onChangePermissionCode: (next) => {
+        const nextCode = String(next ?? '').trim()
+        setPermissionCode(nextCode)
+        computeDirty(undefined, undefined, nextCode)
       },
     }
-  }, [detailMode, roleCode, permissionCodes]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [detailMode, roleCode, permissionCode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // -----------------------------
   // Invite submit (CommonActions)
@@ -370,7 +375,7 @@ export default function UserDetailFrame({
   }, [onRegisterInviteSubmit, user?.id, user?.email, user?.displayName, canShowInviteTab, roleCode])
 
   // -----------------------------
-  // ✅ SUBMIT – ukládá subjects + subject_roles + subject_permissions
+  // ✅ SUBMIT – ukládá subjects + subject_roles + subject_permissions (single)
   // -----------------------------
   useEffect(() => {
     if (!onRegisterSubmit) return
@@ -383,6 +388,8 @@ export default function UserDetailFrame({
           alert('Zobrazované jméno je povinné.')
           return null
         }
+
+        const pc = (permissionCode ?? '').trim()
 
         const savedRow = await saveUser({
           id: user?.id?.trim() ? user.id : 'new',
@@ -400,8 +407,8 @@ export default function UserDetailFrame({
 
           roleCode: (roleCode ?? '').trim() || null,
 
-          // ✅ tady je nově
-          permissionCodes: (permissionCodes ?? []).map((c) => c.trim()).filter(Boolean),
+          // ✅ single => [] nebo [code]
+          permissionCodes: pc ? [pc] : [],
         })
 
         const saved: UiUser = {
@@ -429,7 +436,7 @@ export default function UserDetailFrame({
         firstRenderRef.current = true
 
         roleCodeInitialRef.current = (roleCode ?? '').trim()
-        permissionCodesInitialRef.current = (permissionCodes ?? []).slice()
+        permissionCodeInitialRef.current = (permissionCode ?? '').trim()
 
         setIsDirty(false)
         onDirtyChange?.(false)
@@ -441,7 +448,7 @@ export default function UserDetailFrame({
         return null
       }
     })
-  }, [onRegisterSubmit, formValue, user, roleCode, permissionCodes, onDirtyChange])
+  }, [onRegisterSubmit, formValue, user, roleCode, permissionCode, onDirtyChange])
 
   // -----------------------------
   // Invite tab content (OK)
@@ -470,7 +477,11 @@ export default function UserDetailFrame({
 
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">Role</label>
-              <input className="detail-form__input detail-form__input--readonly" value={(rolesData as any)?.role?.name ?? '—'} readOnly />
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={(rolesData as any)?.role?.name ?? '—'}
+                readOnly
+              />
             </div>
           </div>
         </section>
