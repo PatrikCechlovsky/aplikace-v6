@@ -12,6 +12,11 @@
 //   a náš useEffect měl dependency [searchParams] => efekt běžel na každém renderu => smyčka.
 // - Řešení: pracovat se stabilním stringem searchKey = searchParams.toString()
 //   a useEffect i setUrl stavět nad searchKey.
+//
+// FIX (2025-12-25):
+// - Chrome: net::ERR_INSUFFICIENT_RESOURCES (request storm) => přidány "anti-storm" guardy pro load()
+// - Důležité: NEPOSÍLAT activeSection zpět jako initialSectionId (jinak vznikají zbytečné re-render cykly).
+//   Parent si drží detailActiveSectionId pro CommonActions, ale do DetailView posílá jen detailInitialSectionId.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -20,8 +25,6 @@ import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetailFrame'
 import InviteUserFrame from '../forms/InviteUserFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
-
-console.log('UsersTile render')
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
 
@@ -110,8 +113,13 @@ export default function UsersTile({
 
   const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailUser, setDetailUser] = useState<UiUser | null>(null)
+
+  // ✅ rozlišujeme:
+  // - detailInitialSectionId = jen "počáteční" / vyžádaná sekce (např. z CommonAction 📎)
+  // - detailActiveSectionId  = aktuálně aktivní sekce (pro CommonActions logiku)
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [detailActiveSectionId, setDetailActiveSectionId] = useState<any>('detail')
+
   const [isDirty, setIsDirty] = useState(false)
 
   // UserDetail submit
@@ -156,19 +164,45 @@ export default function UsersTile({
   )
 
   // -------------------------
+  // Load guards (anti-loop / anti-storm)
+  // -------------------------
+  const loadInFlightRef = useRef<Promise<void> | null>(null)
+  const lastLoadKeyRef = useRef<string>('')
+
+  // -------------------------
   // Load
   // -------------------------
   const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    const key = `${(filterText ?? '').trim().toLowerCase()}|${showArchived ? '1' : '0'}`
+
+    // Pokud už běží load se stejnými parametry, nevytvářej další requesty.
+    if (loadInFlightRef.current && lastLoadKeyRef.current === key) {
+      return loadInFlightRef.current
+    }
+
+    lastLoadKeyRef.current = key
+
+    const p = (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
+        setUsers(rows.map(mapRowToUi))
+      } catch (e: any) {
+        console.error('[UsersTile.listUsers] ERROR', e)
+        setError(e?.message ?? 'Chyba načtení uživatelů')
+      } finally {
+        setLoading(false)
+      }
+    })()
+
+    loadInFlightRef.current = p
+
     try {
-      const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
-      setUsers(rows.map(mapRowToUi))
-    } catch (e: any) {
-      console.error('[UsersTile.listUsers] ERROR', e)
-      setError(e?.message ?? 'Chyba načtení uživatelů')
+      await p
     } finally {
-      setLoading(false)
+      // uvolni in-flight jen pokud je to stále ten samý promise
+      if (loadInFlightRef.current === p) loadInFlightRef.current = null
     }
   }, [filterText, showArchived])
 
@@ -293,7 +327,7 @@ export default function UsersTile({
       const found = users.find((u) => u.id === id)
       if (!found) return
 
-      setSelectedId(id)
+      if (selectedId !== id) setSelectedId(id)
 
       const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
 
@@ -315,7 +349,7 @@ export default function UsersTile({
       }
       return
     }
-  }, [searchKey, users, viewMode, detailUser?.id]) // ✅ searchKey místo searchParams
+  }, [searchKey, users, viewMode, detailUser?.id, selectedId]) // ✅ searchKey místo searchParams
 
   // -------------------------
   // Invite availability for detail
@@ -415,6 +449,7 @@ export default function UsersTile({
         }
 
         // VARIANTA A: bez modalu – jen přepnout záložku na „Přílohy“
+        setDetailInitialSectionId('attachments')
         setDetailActiveSectionId('attachments')
         return
       }
@@ -598,7 +633,8 @@ export default function UsersTile({
       <UserDetailFrame
         user={detailUser}
         viewMode={viewMode as ViewMode}
-        initialSectionId={detailActiveSectionId}
+        // ✅ posíláme jen "počáteční/požadovanou" sekci, NE aktuální aktivní (jinak zbytečné cykly)
+        initialSectionId={detailInitialSectionId}
         onActiveSectionChange={(id) => setDetailActiveSectionId(id as any)}
         onRegisterInviteSubmit={(fn) => {
           inviteSubmitRef.current = fn
