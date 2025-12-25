@@ -257,7 +257,8 @@ export default function UserDetailFrame({
         content: (
           <UserDetailForm
             user={user}
-            onChange={(next) => {
+            readOnly={viewMode === 'read'}
+            onValueChange={(next) => {
               markDirtyIfChanged(next)
             }}
           />
