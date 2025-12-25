@@ -6,6 +6,10 @@
  * VARIANTY:
  * - variant="list"    => read-only seznam (tab u entity): filtr + archiv + otevřít soubor
  * - variant="manager" => plná správa (samostatný screen po 📎): upload, verze, historie, metadata
+ *
+ * EDGE-CASES:
+ * - canManage=false => i v manager variantě bude UI pouze read-only (list režim)
+ * - readOnlyReason  => zobrazí se uživateli jako důvod, proč nejde spravovat
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -29,6 +33,12 @@ export type DetailAttachmentsSectionProps = {
   entityLabel?: string | null
   mode: 'view' | 'edit' | 'create'
   variant?: 'list' | 'manager'
+
+  /** Pokud false => i manager je pouze read-only */
+  canManage?: boolean
+
+  /** Volitelný text, proč je správa jen read-only */
+  readOnlyReason?: string | null
 }
 
 type IconName = Parameters<typeof getIcon>[0]
@@ -63,14 +73,26 @@ function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
   return { ...a, ...b }
 }
 
+function normalizeAuthError(msg: string) {
+  const m = (msg ?? '').toLowerCase()
+  if (m.includes('jwt') || m.includes('permission') || m.includes('not allowed') || m.includes('rls') || m.includes('401') || m.includes('403')) {
+    return 'Nemáš oprávnění zobrazit přílohy této entity.'
+  }
+  return msg
+}
+
 export default function DetailAttachmentsSection({
   entityType,
   entityId,
   entityLabel = null,
   mode,
   variant = 'list',
+  canManage = true,
+  readOnlyReason = null,
 }: DetailAttachmentsSectionProps) {
-  const isManager = variant === 'manager'
+  const isManagerRequested = variant === 'manager'
+  const isManager = isManagerRequested && canManage !== false
+
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -144,7 +166,7 @@ export default function DetailAttachmentsSection({
         setRows(data)
         await refreshNamesFromRows(data)
       } catch (e: any) {
-        setErrorText(e?.message ?? 'Chyba načítání příloh.')
+        setErrorText(normalizeAuthError(e?.message ?? 'Chyba načítání příloh.'))
       } finally {
         setLoading(false)
       }
@@ -248,22 +270,11 @@ export default function DetailAttachmentsSection({
       resetPanel()
       await loadAttachments()
     } catch (e: any) {
-      setErrorText(e?.message ?? 'Nepodařilo se přidat přílohu.')
+      setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se přidat přílohu.'))
     } finally {
       setSaving(false)
     }
-  }, [
-    isManager,
-    panelOpen,
-    newTitle,
-    newDesc,
-    newFile,
-    entityType,
-    entityId,
-    entityLabel,
-    resetPanel,
-    loadAttachments,
-  ])
+  }, [isManager, panelOpen, newTitle, newDesc, newFile, entityType, entityId, entityLabel, resetPanel, loadAttachments])
 
   const onToolbarActionClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -298,7 +309,7 @@ export default function DetailAttachmentsSection({
         setVersionsByDocId((prev) => ({ ...prev, [documentId]: items }))
         await refreshNamesFromVersions(items)
       } catch (err: any) {
-        setErrorText(err?.message ?? 'Nepodařilo se načíst verze.')
+        setErrorText(normalizeAuthError(err?.message ?? 'Nepodařilo se načíst verze.'))
       } finally {
         setVersionsLoadingId(null)
       }
@@ -345,7 +356,7 @@ export default function DetailAttachmentsSection({
           return next
         })
       } catch (err: any) {
-        setErrorText(err?.message ?? 'Nepodařilo se přidat verzi.')
+        setErrorText(normalizeAuthError(err?.message ?? 'Nepodařilo se přidat verzi.'))
       } finally {
         setSaving(false)
       }
@@ -394,7 +405,7 @@ export default function DetailAttachmentsSection({
       setEditDesc('')
       await loadAttachments()
     } catch (err: any) {
-      setErrorText(err?.message ?? 'Nepodařilo se uložit metadata.')
+      setErrorText(normalizeAuthError(err?.message ?? 'Nepodařilo se uložit metadata.'))
     } finally {
       setEditSaving(false)
     }
@@ -414,6 +425,15 @@ export default function DetailAttachmentsSection({
 
   return (
     <div className="detail-view__section">
+      {isManagerRequested && !isManager && (
+        <div className="detail-view__placeholder" style={{ marginBottom: 8 }}>
+          <strong>Správa příloh je pouze pro čtení.</strong>
+          <div style={{ marginTop: 6 }}>
+            {readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}
+          </div>
+        </div>
+      )}
+
       <div className="detail-form__section" style={{ marginBottom: 8 }}>
         <div className="detail-attachments__toolbar">
           <div className="detail-attachments__toolbar-left">
@@ -541,28 +561,18 @@ export default function DetailAttachmentsSection({
       {!loading && !errorText && filteredRows.length > 0 && (
         <div className="detail-form">
           <section className="detail-form__section">
-            <h3 className="detail-form__section-title">{isManager ? 'Přílohy' : 'Přílohy (read-only)'}</h3>
+            <h3 className="detail-form__section-title">
+              {isManager ? 'Přílohy' : 'Přílohy (read-only)'}
+            </h3>
 
             <div className="detail-attachments__table" role="table" aria-label="Přílohy">
               <div className="detail-attachments__row detail-attachments__row--head" role="row">
-                <div className="detail-attachments__cell" role="columnheader">
-                  Název
-                </div>
-                <div className="detail-attachments__cell" role="columnheader">
-                  Popis
-                </div>
-                <div className="detail-attachments__cell" role="columnheader">
-                  Soubor (latest)
-                </div>
-                <div className="detail-attachments__cell" role="columnheader">
-                  Verze
-                </div>
-                <div className="detail-attachments__cell" role="columnheader">
-                  Nahráno
-                </div>
-                <div className="detail-attachments__cell" role="columnheader">
-                  Akce
-                </div>
+                <div className="detail-attachments__cell" role="columnheader">Název</div>
+                <div className="detail-attachments__cell" role="columnheader">Popis</div>
+                <div className="detail-attachments__cell" role="columnheader">Soubor (latest)</div>
+                <div className="detail-attachments__cell" role="columnheader">Verze</div>
+                <div className="detail-attachments__cell" role="columnheader">Nahráno</div>
+                <div className="detail-attachments__cell" role="columnheader">Akce</div>
               </div>
 
               {filteredRows.map((r) => {
