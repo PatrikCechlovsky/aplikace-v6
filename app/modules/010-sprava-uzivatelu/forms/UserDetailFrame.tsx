@@ -564,19 +564,43 @@ export default function UserDetailFrame({
       <div className="detail-form">
         <section className="detail-form__section">
           <h3 className="detail-form__section-title">Pozvánka</h3>
-  
-          <div style={{ display: 'grid', gap: 14 }}>
-            <FieldRow label="E-mail">
-              <input className="detail-form__input detail-form__input--readonly" style={{ maxWidth: FIELD_MAX_W }} value={user.email ?? '—'} readOnly />
-            </FieldRow>
-  
-            <FieldRow label="Role">{roleControl}</FieldRow>
-            <FieldRow label="Oprávnění">{permControl}</FieldRow>
+    
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">
+                E-mail <span className="detail-form__required">*</span>
+              </label>
+              <input className="detail-form__input detail-form__input--readonly" value={user.email ?? '—'} readOnly />
+            </div>
+    
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">
+                Role <span className="detail-form__required">*</span>
+              </label>
+              {/* stejný select/readonly jako v Role a oprávnění */}
+              {/* použij hodnoty z rolesData/rolesUi stejně jako dřív */}
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={(rolesData as any)?.role?.name ?? '—'}
+                readOnly
+              />
+            </div>
+    
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">
+                Oprávnění <span className="detail-form__required">*</span>
+              </label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={(rolesData as any)?.permissions?.[0]?.name ?? '—'}
+                readOnly
+              />
+            </div>
           </div>
         </section>
       </div>
     )
-  }, [canShowInviteTab, inviteLoading, inviteError, user.email, rolesData, rolesUi])
+    
 
   
   // -----------------------------
