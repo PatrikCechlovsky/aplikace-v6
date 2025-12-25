@@ -82,6 +82,7 @@ async function expireActiveInvites(params: { subjectId?: string | null; email?: 
 
 export async function sendInvite(v: InviteFormValue): Promise<InviteResult> {
   if (!v.roleCode?.trim()) throw new Error('Role je povinná.')
+  if (!v.permissionCode?.trim()) throw new Error('Oprávnění je povinné.')
 
   const mode = v.mode
   const roleCode = v.roleCode.trim()
