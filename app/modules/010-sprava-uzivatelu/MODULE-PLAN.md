@@ -1,4 +1,4 @@
-# aplikace-v6/app/modules/010-sprava-uzivatelu/MODULE-TODO.md
+# aplikace-v6/app/modules/010-sprava-uzivatelu/MODULE-PLAN.md
 # Modul 010 – Správa uživatelů (Users)
 
 ## Účel dokumentu
@@ -222,24 +222,17 @@ Obnovení:
 ---
 
 # 10. HOTOVO
-Tento MODULE-TODO je závazný podklad pro implementaci modulu 010.
+Tento MODULE-PLAN je závazný podklad pro implementaci modulu 010.
 ---
 
 ## DOPLNĚNÍ (2025-12-12) – Soulad s POSTUP.md
 
 Tento modul je realizován **výhradně dle POSTUP.md**.
 
-### Stav kroků POSTUP.md
-- [x] Krok 1 – Specifikace polí (ENTITY & POLE jsou definovány výše)
-- [x] Krok 2 – Selecty a číselníky
-- [x] Krok 3 – Role a oprávnění
-- [x] Krok 4 – UI struktura (ListView / DetailView)
-- [ ] Krok 5 – ColumnPicker (ověřit při implementaci)
-- [ ] Krok 6 – Implementace v kódu
 
 ### Architektonická poznámka
 - Modul **nesmí měnit layout**
 - Modul **nesmí aplikovat CSS třídy**
 - Modul **respektuje UI config z AppShell**
 
-Tento MODULE-TODO je považován za **závazný plán implementace**.
+Tento MODULE-PLAN je považován za **závazný plán implementace**.
