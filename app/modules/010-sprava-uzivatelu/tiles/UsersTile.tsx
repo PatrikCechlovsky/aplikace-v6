@@ -510,12 +510,12 @@ export default function UsersTile({
     })
   }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty])
 
-    // -------------------------
+  // -------------------------
   // CommonActions handler
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
-
+  
     const handler = async (actionId: CommonActionId) => {
       // =====================
       // CLOSE
@@ -525,9 +525,12 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-
-        // 1) Attachments manager: zavřít správu příloh = zpět do detailu (attachments tab) nebo list
-        if (viewMode === 'attachments-manager') {
+  
+        // 🔑 rozhodujeme PODLE URL, ne podle viewMode
+        const t = currentTile // <- toto už v UsersTile máš (t=users-list / invite-user / attachments-manager)
+  
+        // 1️⃣ ATTACHMENTS MANAGER → zpět do detailu nebo listu
+        if (t === 'attachments-manager') {
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (backId) {
             setDetailInitialSectionId('attachments')
@@ -538,20 +541,23 @@ export default function UsersTile({
           }
           return
         }
-
-        // 2) Samostatný invite screen (t=invite-user / viewMode=invite): CLOSE = zavřít modul 010
-        if (viewMode === 'invite') {
+  
+        // 2️⃣ SAMOSTATNÝ TILE „POZVAT UŽIVATELE“
+        // t=invite-user → CLOSE = ZAVŘÍT MODUL 010
+        if (t === 'invite-user') {
           closeListToModule()
           return
         }
-
-        // 3) Detail: CLOSE = zavřít detail (zpět na seznam)
+  
+        // 3️⃣ DETAIL UŽIVATELE (včetně záložky Pozvánka)
+        // CLOSE = zavřít DETAIL → seznam
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
           closeToList()
           return
         }
-
-        // 4) List: CLOSE = zavřít modul 010
+  
+        // 4️⃣ SEZNAM UŽIVATELŮ
+        // CLOSE = zavřít MODUL 010
         closeListToModule()
         return
       }
@@ -752,18 +758,13 @@ export default function UsersTile({
   }, [
     onRegisterCommonActionHandler,
     viewMode,
-    selectedId,
-    users,
-    openDetail,
-    openInvite,
-    load,
     isDirty,
     closeToList,
     closeListToModule,
-    detailActiveSectionId,
     detailUser,
-    setUrl,
+    detailActiveSectionId,
     attachmentsManagerSubjectId,
+    setUrl,
   ])
   
   // ✅ Po uložení nového usera: počkáme, až bude připraven inviteSubmitRef, a pak pošleme pozvánku.
