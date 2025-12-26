@@ -448,7 +448,7 @@ export default function UsersTile({
   // CommonActions list
   // -------------------------
   const commonActions: CommonActionId[] = useMemo(() => {
-    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
+    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'attachments', 'columnSettings', 'close']
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
 
     const READ_DEFAULT: CommonActionId[] = ['edit', 'close']
@@ -456,25 +456,39 @@ export default function UsersTile({
     const EDIT_DEFAULT: CommonActionId[] = ['save', 'close']
     const CREATE_DEFAULT: CommonActionId[] = ['save', 'close']
 
-    const withAttachments = (base: CommonActionId[]): CommonActionId[] => {
+    const withAttachmentsBeforeClose = (base: CommonActionId[]): CommonActionId[] => {
+      // v invite sekci nechceme attachments tlačítko
       if (detailActiveSectionId === 'invite') return base
-      return base.includes('attachments') ? base : [...base, 'attachments']
+
+      // pokud už tam je, nech tak (ale níže stejně vynutíme pořadí)
+      let out = base.includes('attachments') ? [...base] : [...base, 'attachments']
+
+      // ✅ vynutit pořadí: attachments před close, close poslední
+      const hasClose = out.includes('close')
+      const filtered = out.filter((x) => x !== 'attachments' && x !== 'close')
+
+      if (hasClose) return [...filtered, 'attachments', 'close']
+      return [...filtered, 'attachments']
     }
 
-    if (viewMode === 'list') return LIST
+    // LIST / INVITE / ATTACHMENTS MANAGER
+    if (viewMode === 'list') return withAttachmentsBeforeClose(LIST)
     if (viewMode === 'invite') return INVITE
     if (viewMode === 'attachments-manager') return ['close']
 
+    // READ
     if (viewMode === 'read') {
       if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
-      return withAttachments(READ_DEFAULT)
+      return withAttachmentsBeforeClose(READ_DEFAULT)
     }
 
+    // EDIT
     if (viewMode === 'edit') {
-      return withAttachments(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
+      return withAttachmentsBeforeClose(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
     }
 
-    return withAttachments(CREATE_DEFAULT)
+    // CREATE
+    return withAttachmentsBeforeClose(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId, canInviteDetail])
 
   useEffect(() => {
@@ -485,7 +499,7 @@ export default function UsersTile({
     // ✅ Save tlačítko v CommonActions vyžaduje isDirty=true (requiresDirty)
     // V CREATE chceme "Uložit" vždy aktivní, jinak klik ani nedojde do handleru.
     const uiDirty = viewMode === 'create' ? true : isDirty
-  
+
     onRegisterCommonActionsState?.({
       viewMode: (viewMode as any) as ViewMode,
       hasSelection: !!selectedId,
