@@ -3,7 +3,15 @@
 // FILE: app/modules/010-sprava-uzivatelu/forms/UserDetailForm.tsx
 // PURPOSE: Formulář uživatele pro subjects (010). Umí read/edit/create a posílá ven hodnoty pro DB.
 
+// =====================
+// 1) IMPORTS
+// =====================
+
 import React, { useEffect, useMemo, useState } from 'react'
+
+// =====================
+// 2) TYPES
+// =====================
 
 type UiUser = {
   id: string
@@ -42,14 +50,17 @@ export type UserDetailFormProps = {
   onValueChange?: (val: UserFormValue) => void
 }
 
+// =====================
+// 3) HELPERS
+// =====================
+
 function safe(v: any) {
   return (v ?? '').toString()
 }
 
-function computeDisplayName(titleBefore: string, firstName: string, lastName: string) {
-  const parts = [titleBefore?.trim(), firstName?.trim(), lastName?.trim()].filter(Boolean)
-  return parts.join(' ').trim()
-}
+// =====================
+// 4) DATA LOAD (hooks)
+// =====================
 
 export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueChange }: UserDetailFormProps) {
   const initial = useMemo<UserFormValue>(
@@ -79,17 +90,16 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
     onValueChange?.(initial)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial])
+  // =====================
+  // 5) ACTION HANDLERS
+  // =====================
 
-  const update = (patch: Partial<UserFormValue>, recomputeDisplayName = false) => {
+  const update = (patch: Partial<UserFormValue>) => {
     setVal((prev) => {
       const next = { ...prev, ...patch }
 
-      // Volitelně dopočti displayName z title/first/last (pokud chceš)
-      if (recomputeDisplayName) {
-        const computed = computeDisplayName(next.titleBefore, next.firstName, next.lastName)
-        // display_name je u tebe NOT NULL → když je computed prázdný, nech původní ručně vyplněný
-        if (computed) next.displayName = computed
-      }
+      // ✅ displayName = přezdívka (ručně), NESKLÁDAT z first/last/title
+      // (záměrně zde není žádné recompute)
 
       if (!dirty) {
         setDirty(true)
@@ -100,6 +110,10 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
       return next
     })
   }
+
+  // =====================
+  // 6) RENDER
+  // =====================
 
   return (
     <div className="detail-form">
@@ -157,7 +171,6 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
           </div>
         </div>
       </div>
-
       {/* OSOBA */}
       <div className="detail-form__section">
         <div className="detail-form__section-title">Osoba</div>
@@ -169,7 +182,7 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               className="detail-form__input"
               value={val.titleBefore}
               readOnly={readOnly}
-              onChange={(e) => update({ titleBefore: e.target.value }, true)}
+              onChange={(e) => update({ titleBefore: e.target.value })}
               placeholder="Ing., Bc., ..."
             />
           </div>
@@ -180,7 +193,7 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               className="detail-form__input"
               value={val.firstName}
               readOnly={readOnly}
-              onChange={(e) => update({ firstName: e.target.value }, true)}
+              onChange={(e) => update({ firstName: e.target.value })}
               placeholder="Páťo"
             />
           </div>
@@ -191,7 +204,7 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               className="detail-form__input"
               value={val.lastName}
               readOnly={readOnly}
-              onChange={(e) => update({ lastName: e.target.value }, true)}
+              onChange={(e) => update({ lastName: e.target.value })}
               placeholder="Admin"
             />
           </div>
