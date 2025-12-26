@@ -552,6 +552,7 @@ export default function UsersTile({
         }
 
         // 4) List: CLOSE = zavřít modul 010
+        console.log('[010 UsersTile] calling closeListToModule()')
         closeListToModule()
         return
       }
