@@ -745,20 +745,20 @@ export default function UsersTile({
       setUrl,
       attachmentsManagerSubjectId,
     ])
-    // =====================
-    // INVITE screen
-    // =====================
-    if (viewMode === 'invite') {
-      if (actionId === 'sendInvite') {
-        if (!inviteSubmitRef.current) return
-        const ok = await inviteSubmitRef.current()
-        if (!ok) return
-        setIsDirty(false)
-        await load()
-        return
-      }
+  // =====================
+  // INVITE screen
+  // =====================
+  if (viewMode === 'invite') {
+    if (actionId === 'sendInvite') {
+      if (!inviteSubmitRef.current) return
+      const ok = await inviteSubmitRef.current()
+      if (!ok) return
+      setIsDirty(false)
+      await load()
       return
     }
+    return
+  }
   // -------------------------
   // Render
   // -------------------------
