@@ -509,19 +509,17 @@ export default function UsersTile({
       isDirty: uiDirty,
     })
   }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty])
-  // -------------------------
+
+    // -------------------------
   // CommonActions handler
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
-    console.log('[010 UsersTile] register common action handler')
 
     const handler = async (actionId: CommonActionId) => {
       // =====================
       // CLOSE
       // =====================
-      console.log('[010 UsersTile] action click:', actionId, { viewMode, isDirty })
-
       if (actionId === 'close') {
         if (isDirty) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
@@ -543,7 +541,7 @@ export default function UsersTile({
 
         // 2) Samostatný invite screen (t=invite-user / viewMode=invite): CLOSE = zavřít modul 010
         if (viewMode === 'invite') {
-          closeToList()
+          closeListToModule()
           return
         }
 
@@ -554,41 +552,54 @@ export default function UsersTile({
         }
 
         // 4) List: CLOSE = zavřít modul 010
-        console.log('[010 UsersTile] calling closeListToModule()')
         closeListToModule()
         return
       }
-  
+
       // =====================
       // ATTACHMENTS
       // =====================
       if (actionId === 'attachments') {
+        // LIST: otevřít správu příloh pro vybraného uživatele
+        if (viewMode === 'list') {
+          if (!selectedId) {
+            alert('Nejdřív vyber uživatele v seznamu.')
+            return
+          }
+          setAttachmentsManagerSubjectId(selectedId)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          setUrl({ t: 'attachments-manager', id: selectedId, vm: null }, 'push')
+          return
+        }
+
+        // DETAIL: attachments tlačítko nechceme na invite záložce
         if (detailActiveSectionId === 'invite') return
-  
+
         if (isDirty) {
           alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
           return
         }
-  
+
         if (!detailUser?.id || !detailUser.id.trim() || detailUser.id === 'new') {
           alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
           return
         }
-  
+
         setAttachmentsManagerSubjectId(detailUser.id)
         setViewMode('attachments-manager')
         setIsDirty(false)
         setUrl({ t: 'attachments-manager', id: detailUser.id, vm: null }, 'push')
         return
       }
-  
+
       // =====================
       // LIST
       // =====================
       if (viewMode === 'list') {
         if (actionId === 'add') {
           setViewMode('create')
-  
+
           const blank: UiUser = {
             id: 'new',
             displayName: '',
@@ -596,7 +607,7 @@ export default function UsersTile({
             roleLabel: '',
             createdAt: new Date().toISOString(),
           }
-  
+
           setDetailUser(blank)
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
@@ -605,11 +616,11 @@ export default function UsersTile({
           setIsDirty(false)
           submitRef.current = null
           inviteSubmitRef.current = null
-  
+
           setUrl({ t: 'users-list', id: 'new', vm: 'create' }, 'push')
           return
         }
-  
+
         if (actionId === 'view' || actionId === 'edit') {
           if (!selectedId) return
           const u = users.find((x) => x.id === selectedId)
@@ -617,31 +628,31 @@ export default function UsersTile({
           openDetail(u, actionId === 'edit' ? 'edit' : 'read', 'detail')
           return
         }
-  
+
         if (actionId === 'invite') {
           if (!selectedId) {
             openInvite(null)
             return
           }
-  
+
           const u = users.find((x) => x.id === selectedId)
           if (!u) {
             openInvite(null)
             return
           }
-  
+
           if (u.firstLoginAt) {
             alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
             return
           }
-  
+
           openDetail(u, 'read', 'invite')
           return
         }
-  
+
         return
       }
-  
+
       // =====================
       // INVITE SCREEN
       // =====================
@@ -656,7 +667,7 @@ export default function UsersTile({
         }
         return
       }
-  
+
       // =====================
       // READ
       // =====================
@@ -677,7 +688,7 @@ export default function UsersTile({
         }
         return
       }
-  
+
       // =====================
       // EDIT / CREATE
       // =====================
@@ -687,40 +698,40 @@ export default function UsersTile({
             alert('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
             return
           }
-  
+
           if (!detailUser?.id?.trim() || detailUser.id === 'new') {
             alert('Nejdřív ulož záznam, aby šla poslat pozvánka.')
             return
           }
-  
+
           if ((detailUser as any)?.firstLoginAt) {
             alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
             return
           }
-  
+
           openInvite(detailUser.id)
           return
         }
-  
+
         // ✅ SAVE: vždy uložit; po CREATE se zeptat na pozvánku
         if (actionId === 'save') {
           if (!submitRef.current) {
             alert('Chybí submit handler (submitRef).')
             return
           }
-  
+
           const savedUser = await submitRef.current()
           if (!savedUser) return
-  
+
           const wasCreate = viewMode === 'create' || detailUser?.id === 'new'
-  
+
           setDetailUser(savedUser)
           setIsDirty(false)
           await load()
-  
+
           setViewMode('read')
           setUrl({ t: 'users-list', id: savedUser.id, vm: 'read' }, 'replace')
-  
+
           if (wasCreate) {
             const ask = confirm('Uživatel uložen. Chceš teď odeslat pozvánku?')
             if (ask) {
@@ -729,14 +740,14 @@ export default function UsersTile({
               setPendingSendInviteAfterCreate(true)
             }
           }
-  
+
           return
         }
-  
+
         return
       }
     }
-  
+
     onRegisterCommonActionHandler(handler)
   }, [
     onRegisterCommonActionHandler,
@@ -754,9 +765,7 @@ export default function UsersTile({
     setUrl,
     attachmentsManagerSubjectId,
   ])
-
   
-  // [PART PENDING INVITE EFFECT START]
   // ✅ Po uložení nového usera: počkáme, až bude připraven inviteSubmitRef, a pak pošleme pozvánku.
   useEffect(() => {
     if (!pendingSendInviteAfterCreate) return
