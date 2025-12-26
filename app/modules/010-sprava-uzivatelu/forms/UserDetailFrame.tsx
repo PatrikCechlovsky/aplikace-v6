@@ -1,5 +1,9 @@
 'use client'
 
+// =====================
+// 1) IMPORTS
+// =====================
+
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailView, { type DetailSectionId, type DetailViewMode, type RolesData, type RolesUi } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
@@ -7,14 +11,13 @@ import type { ViewMode } from '@/app/UI/CommonActions'
 import UserDetailForm, { type UserFormValue } from './UserDetailForm'
 import { getLatestInviteForSubject, sendInvite } from '@/app/lib/services/invites'
 import type { InviteFormValue } from './InviteUserForm'
-import { saveUser } from '@/app/lib/services/users'
+import { getUserDetail, saveUser } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
+import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/permissions'
 
-import {
-  listPermissionTypes,
-  listSubjectPermissionCodes,
-  type PermissionTypeRow,
-} from '@/app/lib/services/permissions'
+// =====================
+// 2) TYPES
+// =====================
 
 export type UiUser = {
   id: string
@@ -45,6 +48,10 @@ type Props = {
   onDirtyChange?: (dirty: boolean) => void
 }
 
+// =====================
+// 3) HELPERS
+// =====================
+
 function buildInitialFormValue(u: UiUser): UserFormValue {
   return {
     displayName: (u.displayName ?? '').toString(),
@@ -60,6 +67,15 @@ function buildInitialFormValue(u: UiUser): UserFormValue {
   }
 }
 
+function isNewId(id: string | null | undefined) {
+  const s = String(id ?? '').trim()
+  return !s || s === 'new'
+}
+
+// =====================
+// 4) DATA LOAD (hooks)
+// =====================
+
 export default function UserDetailFrame({
   user,
   viewMode,
@@ -69,9 +85,11 @@ export default function UserDetailFrame({
   onRegisterInviteSubmit,
   onDirtyChange,
 }: Props) {
-  // -----------------------------
+  // DB truth (subjects + role + permissions)
+  const [resolvedUser, setResolvedUser] = useState<UiUser>(user)
+  const resolveSeqRef = useRef(0)
+
   // Dirty
-  // -----------------------------
   const [isDirty, setIsDirty] = useState(false)
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
@@ -82,27 +100,131 @@ export default function UserDetailFrame({
   const [roleCode, setRoleCode] = useState<string>(() => ((user as any)?.roleCode ?? '').toString())
   const roleCodeInitialRef = useRef<string>('')
 
-  // ✅ Permission (SINGLE)
+  // Permission (SINGLE)
   const [permissionTypes, setPermissionTypes] = useState<PermissionTypeRow[]>([])
-  const [permissionCode, setPermissionCode] = useState<string>('') // '' = žádné
+  const [permissionCode, setPermissionCode] = useState<string>('')
   const permissionCodeInitialRef = useRef<string>('')
-
   const permTypesInFlightRef = useRef<Promise<void> | null>(null)
+  // role types (900)
+  const [roleTypes, setRoleTypes] = useState<RoleTypeRow[]>([])
+  const roleTypesInFlightRef = useRef<Promise<void> | null>(null)
 
+  // 4a) Resolve DB truth on open / user change
   useEffect(() => {
-    const init = buildInitialFormValue(user)
-    setFormValue(init)
+    // fast: show whatever we already have
+    setResolvedUser(user)
 
-    const rc = ((user as any)?.roleCode ?? '').toString()
-    setRoleCode(rc)
-    roleCodeInitialRef.current = rc
+    // create/new => no DB resolve
+    if (viewMode === 'create' || isNewId(user?.id)) {
+      const init = buildInitialFormValue(user)
+      setFormValue(init)
 
-    initialSnapshotRef.current = JSON.stringify(init)
-    firstRenderRef.current = true
+      const rc = String((user as any)?.roleCode ?? '').trim()
+      setRoleCode(rc)
+      roleCodeInitialRef.current = rc
 
-    setIsDirty(false)
-    onDirtyChange?.(false)
+      setPermissionCode('')
+      permissionCodeInitialRef.current = ''
+
+      initialSnapshotRef.current = JSON.stringify(init)
+      firstRenderRef.current = true
+
+      setIsDirty(false)
+      onDirtyChange?.(false)
+      return
+    }
+
+    // read/edit => resolve from Supabase
+    const subjectId = String(user?.id ?? '').trim()
+    const mySeq = ++resolveSeqRef.current
+    let mounted = true
+
+    ;(async () => {
+      try {
+        const detail = await getUserDetail(subjectId)
+        if (!mounted) return
+        if (mySeq !== resolveSeqRef.current) return
+
+        const s: any = (detail as any)?.subject ?? {}
+        const nextRole = String((detail as any)?.role_code ?? '').trim()
+        const nextPerm = String(((detail as any)?.permissions?.[0] ?? '')).trim()
+
+        const nextUser: UiUser = {
+          ...user,
+          id: String(s.id ?? subjectId),
+          displayName: String(s.display_name ?? user.displayName ?? ''),
+          email: String(s.email ?? user.email ?? ''),
+          phone: (s.phone ?? user.phone ?? undefined) as any,
+          isArchived: !!(s.is_archived ?? user.isArchived),
+          createdAt: String(s.created_at ?? user.createdAt ?? ''),
+          firstLoginAt: (s.first_login_at ?? user.firstLoginAt ?? null) as any,
+
+          titleBefore: (s.title_before ?? (user as any).titleBefore ?? null) as any,
+          firstName: (s.first_name ?? (user as any).firstName ?? null) as any,
+          lastName: (s.last_name ?? (user as any).lastName ?? null) as any,
+          login: (s.login ?? (user as any).login ?? null) as any,
+
+          roleCode: nextRole || null,
+        }
+
+        setResolvedUser(nextUser)
+
+        const init = buildInitialFormValue(nextUser)
+        setFormValue(init)
+
+        setRoleCode(nextRole)
+        roleCodeInitialRef.current = nextRole
+
+        setPermissionCode(nextPerm)
+        permissionCodeInitialRef.current = nextPerm
+
+        initialSnapshotRef.current = JSON.stringify(init)
+        firstRenderRef.current = true
+
+        setIsDirty(false)
+        onDirtyChange?.(false)
+      } catch (e) {
+        console.warn('[UserDetailFrame.getUserDetail] WARN', e)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
   }, [user?.id, viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 4b) role types (900)
+  useEffect(() => {
+    if (roleTypesInFlightRef.current) return
+    const p = (async () => {
+      try {
+        const rows = await fetchRoleTypes()
+        setRoleTypes(rows ?? [])
+      } catch (e) {
+        console.warn('[UserDetailFrame.fetchRoleTypes] WARN', e)
+        setRoleTypes([])
+      }
+    })()
+    roleTypesInFlightRef.current = p
+  }, [])
+  // 4c) permission types (900)
+  useEffect(() => {
+    if (permTypesInFlightRef.current) return
+    const p = (async () => {
+      try {
+        const rows = await listPermissionTypes({ includeInactive: false })
+        setPermissionTypes(rows ?? [])
+      } catch (e) {
+        console.warn('[UserDetailFrame.listPermissionTypes] WARN', e)
+        setPermissionTypes([])
+      }
+    })()
+    permTypesInFlightRef.current = p
+  }, [])
+
+  // =====================
+  // 5) ACTION HANDLERS
+  // =====================
 
   const computeDirty = (nextFormSnap?: string, nextRole?: string, nextPerm?: string) => {
     const formSnap = typeof nextFormSnap === 'string' ? nextFormSnap : JSON.stringify(formValue ?? {})
@@ -130,25 +252,9 @@ export default function UserDetailFrame({
     computeDirty(snap)
   }
 
-  // -----------------------------
-  // Role types (900)
-  // -----------------------------
-  const [roleTypes, setRoleTypes] = useState<RoleTypeRow[]>([])
-  const roleTypesInFlightRef = useRef<Promise<void> | null>(null)
-
-  useEffect(() => {
-    if (roleTypesInFlightRef.current) return
-    const p = (async () => {
-      try {
-        const rows = await fetchRoleTypes()
-        setRoleTypes(rows ?? [])
-      } catch (e) {
-        console.warn('[UserDetailFrame.fetchRoleTypes] WARN', e)
-        setRoleTypes([])
-      }
-    })()
-    roleTypesInFlightRef.current = p
-  }, [])
+  // =====================
+  // 6) RENDER
+  // =====================
 
   const roleNameByCode = useMemo(() => {
     const map = new Map<string, string>()
@@ -159,23 +265,6 @@ export default function UserDetailFrame({
     }
     return map
   }, [roleTypes])
-
-  // -----------------------------
-  // Permission types (900) – load once
-  // -----------------------------
-  useEffect(() => {
-    if (permTypesInFlightRef.current) return
-    const p = (async () => {
-      try {
-        const rows = await listPermissionTypes({ includeInactive: false })
-        setPermissionTypes(rows ?? [])
-      } catch (e) {
-        console.warn('[UserDetailFrame.listPermissionTypes] WARN', e)
-        setPermissionTypes([])
-      }
-    })()
-    permTypesInFlightRef.current = p
-  }, [])
 
   const permNameByCode = useMemo(() => {
     const map = new Map<string, { name: string; description?: string | null }>()
@@ -188,91 +277,12 @@ export default function UserDetailFrame({
     return map
   }, [permissionTypes])
 
-  // -----------------------------
-  // Subject permissions (010) – reload on user change
-  // -----------------------------
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        if (!user?.id?.trim()) {
-          setPermissionCode('')
-          permissionCodeInitialRef.current = ''
-          return
-        }
-        const codes = await listSubjectPermissionCodes(user.id)
-        if (!mounted) return
-
-        const first = String((codes?.[0] ?? '')).trim()
-        setPermissionCode(first)
-        permissionCodeInitialRef.current = first
-
-        computeDirty(undefined, undefined, first)
-      } catch (e) {
-        console.warn('[UserDetailFrame.listSubjectPermissionCodes] WARN', e)
-        if (!mounted) return
-        setPermissionCode('')
-        permissionCodeInitialRef.current = ''
-        computeDirty(undefined, undefined, '')
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // -----------------------------
-  // Invite state (latest invite)
-  // -----------------------------
-  const [latestInvite, setLatestInvite] = useState<any>(null)
-  const [inviteLoading, setInviteLoading] = useState(false)
-  const [inviteError, setInviteError] = useState<string | null>(null)
-
-  const canShowInviteTab = useMemo(() => {
-    if (!user?.id?.trim()) return false
-    if (user.firstLoginAt) return false
-    if (!user.email?.trim()) return false
-    return true
-  }, [user?.id, user?.firstLoginAt, user?.email])
-
-  useEffect(() => {
-    let mounted = true
-    async function loadInvite() {
-      if (!user?.id?.trim()) return
-      if (!canShowInviteTab) {
-        setLatestInvite(null)
-        setInviteError(null)
-        setInviteLoading(false)
-        return
-      }
-      try {
-        setInviteLoading(true)
-        setInviteError(null)
-        const res = await getLatestInviteForSubject(user.id)
-        if (!mounted) return
-        setLatestInvite(res)
-      } catch (e: any) {
-        if (!mounted) return
-        setInviteError(e?.message ?? 'Chyba načtení pozvánky')
-      } finally {
-        if (!mounted) return
-        setInviteLoading(false)
-      }
-    }
-    void loadInvite()
-    return () => {
-      mounted = false
-    }
-  }, [user?.id, canShowInviteTab])
-
-  // -----------------------------
-  // Roles data (single permission)
-  // -----------------------------
   const rolesData = useMemo<RolesData>(() => {
     const currentCode = (roleCode ?? '').trim()
     const currentName =
-      (currentCode && roleNameByCode.get(currentCode)) || (user as any)?.roleLabel || (currentCode ? currentCode : '—')
-
+      (currentCode && roleNameByCode.get(currentCode)) ||
+      (resolvedUser as any)?.roleLabel ||
+      (currentCode ? currentCode : '—')
     const pc = (permissionCode ?? '').trim()
     const selectedPerms = pc
       ? [
@@ -300,7 +310,7 @@ export default function UserDetailFrame({
       })),
       availablePermissions: availablePerms,
     }
-  }, [roleCode, roleNameByCode, roleTypes, user, permissionCode, permissionTypes, permNameByCode])
+  }, [permissionCode, permissionTypes, permNameByCode, resolvedUser, roleCode, roleNameByCode, roleTypes])
 
   const detailMode: DetailViewMode =
     viewMode === 'read' ? 'view' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'view'
@@ -317,7 +327,6 @@ export default function UserDetailFrame({
         computeDirty(undefined, nextCode)
       },
 
-      // ✅ SINGLE permission
       permissionCode: (permissionCode ?? '').trim() || null,
       onChangePermissionCode: (next) => {
         const nextCode = String(next ?? '').trim()
@@ -325,11 +334,50 @@ export default function UserDetailFrame({
         computeDirty(undefined, undefined, nextCode)
       },
     }
-  }, [detailMode, roleCode, permissionCode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [detailMode, permissionCode, roleCode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // -----------------------------
-  // Invite submit (CommonActions)
-  // -----------------------------
+  const canShowInviteTab = useMemo(() => {
+    if (!resolvedUser?.id?.trim()) return false
+    if (resolvedUser.firstLoginAt) return false
+    if (!resolvedUser.email?.trim()) return false
+    return true
+  }, [resolvedUser?.id, resolvedUser?.firstLoginAt, resolvedUser?.email])
+
+  // invite state
+  const [latestInvite, setLatestInvite] = useState<any>(null)
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  useEffect(() => {
+    let mounted = true
+    async function loadInvite() {
+      if (!resolvedUser?.id?.trim()) return
+      if (!canShowInviteTab) {
+        setLatestInvite(null)
+        setInviteError(null)
+        setInviteLoading(false)
+        return
+      }
+      try {
+        setInviteLoading(true)
+        setInviteError(null)
+        const res = await getLatestInviteForSubject(resolvedUser.id)
+        if (!mounted) return
+        setLatestInvite(res)
+      } catch (e: any) {
+        if (!mounted) return
+        setInviteError(e?.message ?? 'Chyba načtení pozvánky')
+      } finally {
+        if (!mounted) return
+        setInviteLoading(false)
+      }
+    }
+    void loadInvite()
+    return () => {
+      mounted = false
+    }
+  }, [resolvedUser?.id, canShowInviteTab])
+
+  // Register invite submit
   const inviteSubmitRef = useRef<null | (() => Promise<boolean>)>(null)
 
   useEffect(() => {
@@ -356,17 +404,17 @@ export default function UserDetailFrame({
 
         const payload: InviteFormValue = {
           mode: 'existing',
-          subjectId: user.id,
-          email: user.email,
-          displayName: user.displayName ?? '',
-          roleCode: rc,           // ✅ z UI state
-          permissionCode: pc,     // ✅ z UI state
+          subjectId: resolvedUser.id,
+          email: resolvedUser.email,
+          displayName: resolvedUser.displayName ?? '',
+          roleCode: rc,
+          permissionCode: pc,
           note: 'Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).',
         }
 
         await sendInvite(payload)
 
-        const refreshed = await getLatestInviteForSubject(user.id)
+        const refreshed = await getLatestInviteForSubject(resolvedUser.id)
         setLatestInvite(refreshed)
 
         alert('Vytvořena nová pozvánka ✅')
@@ -381,23 +429,20 @@ export default function UserDetailFrame({
     onRegisterInviteSubmit(inviteSubmitRef.current)
   }, [
     onRegisterInviteSubmit,
-    user?.id,
-    user?.email,
-    user?.displayName,
     canShowInviteTab,
+    permissionCode,
+    resolvedUser?.displayName,
+    resolvedUser?.email,
+    resolvedUser?.id,
     roleCode,
-    permissionCode, // ✅ DŮLEŽITÉ (jinak se posílají staré hodnoty)
   ])
-
-  // -----------------------------
-  // ✅ SUBMIT – ukládá subjects + subject_roles + subject_permissions (single)
-  // -----------------------------
+  // Register save submit
   useEffect(() => {
     if (!onRegisterSubmit) return
 
     onRegisterSubmit(async () => {
       try {
-        const v = formValue ?? buildInitialFormValue(user)
+        const v = formValue ?? buildInitialFormValue(resolvedUser)
 
         if (!v.displayName?.trim()) {
           alert('Zobrazované jméno je povinné.')
@@ -407,7 +452,7 @@ export default function UserDetailFrame({
         const pc = (permissionCode ?? '').trim()
 
         const savedRow = await saveUser({
-          id: user?.id?.trim() ? user.id : 'new',
+          id: resolvedUser?.id?.trim() ? resolvedUser.id : 'new',
           subjectType: 'osoba',
 
           displayName: v.displayName,
@@ -421,30 +466,29 @@ export default function UserDetailFrame({
           login: v.login,
 
           roleCode: (roleCode ?? '').trim() || null,
-
-          // ✅ single => [] nebo [code]
           permissionCodes: pc ? [pc] : [],
         })
 
         const saved: UiUser = {
-          ...user,
-          id: (savedRow as any).id ?? user.id,
+          ...resolvedUser,
+          id: (savedRow as any).id ?? resolvedUser.id,
           displayName: (savedRow as any).display_name ?? v.displayName,
           email: (savedRow as any).email ?? v.email,
           phone: (savedRow as any).phone ?? v.phone,
           isArchived: !!(savedRow as any).is_archived,
-          createdAt: (savedRow as any).created_at ?? user.createdAt,
-          firstLoginAt: (savedRow as any).first_login_at ?? user.firstLoginAt ?? null,
+          createdAt: (savedRow as any).created_at ?? resolvedUser.createdAt,
+          firstLoginAt: (savedRow as any).first_login_at ?? resolvedUser.firstLoginAt ?? null,
 
-          titleBefore: (savedRow as any).title_before ?? (user as any).titleBefore ?? null,
-          firstName: (savedRow as any).first_name ?? (user as any).firstName ?? null,
-          lastName: (savedRow as any).last_name ?? (user as any).lastName ?? null,
-          login: (savedRow as any).login ?? (user as any).login ?? null,
+          titleBefore: (savedRow as any).title_before ?? (resolvedUser as any).titleBefore ?? null,
+          firstName: (savedRow as any).first_name ?? (resolvedUser as any).firstName ?? null,
+          lastName: (savedRow as any).last_name ?? (resolvedUser as any).lastName ?? null,
+          login: (savedRow as any).login ?? (resolvedUser as any).login ?? null,
 
           roleCode: (roleCode ?? '').trim() || null,
         }
 
-        // reset dirty snapshot
+        setResolvedUser(saved)
+
         const nextForm = buildInitialFormValue(saved)
         setFormValue(nextForm)
         initialSnapshotRef.current = JSON.stringify(nextForm)
@@ -463,11 +507,8 @@ export default function UserDetailFrame({
         return null
       }
     })
-  }, [onRegisterSubmit, formValue, user, roleCode, permissionCode, onDirtyChange])
+  }, [onRegisterSubmit, formValue, resolvedUser, roleCode, permissionCode, onDirtyChange])
 
-  // -----------------------------
-  // Invite tab content (OK)
-  // -----------------------------
   const inviteContent = useMemo(() => {
     if (!canShowInviteTab) return null
 
@@ -479,37 +520,27 @@ export default function UserDetailFrame({
         </div>
       )
 
+    void latestInvite // zatím jen držíme v paměti
+
     return (
       <div className="detail-form">
         <section className="detail-form__section">
           <h3 className="detail-form__section-title">Pozvánka</h3>
 
           <div className="detail-form__grid detail-form__grid--narrow">
-            {/* E-MAIL */}
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">
                 E-mail <span className="detail-form__required">*</span>
               </label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={user.email ?? '—'}
-                readOnly
-              />
+              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.email ?? '—'} readOnly />
             </div>
 
-            {/* ROLE */}
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">
                 Role <span className="detail-form__required">*</span>
               </label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={(rolesData as any)?.role?.name ?? '—'}
-                readOnly
-              />
+              <input className="detail-form__input detail-form__input--readonly" value={(rolesData as any)?.role?.name ?? '—'} readOnly />
             </div>
-
-            {/* OPRÁVNĚNÍ */}
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">
                 Oprávnění <span className="detail-form__required">*</span>
@@ -524,11 +555,8 @@ export default function UserDetailFrame({
         </section>
       </div>
     )
-  }, [canShowInviteTab, inviteLoading, inviteError, user.email, rolesData])
+  }, [canShowInviteTab, inviteError, inviteLoading, latestInvite, resolvedUser.email, rolesData])
 
-  // -----------------------------
-  // System blocks (ponecháno)
-  // -----------------------------
   const systemBlocks = useMemo(() => {
     return [
       {
@@ -537,23 +565,22 @@ export default function UserDetailFrame({
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">Vytvořeno</label>
-              <input className="detail-form__input detail-form__input--readonly" value={user.createdAt ?? '—'} readOnly />
+              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.createdAt ?? '—'} readOnly />
             </div>
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">První přihlášení</label>
-              <input className="detail-form__input detail-form__input--readonly" value={user.firstLoginAt ?? '—'} readOnly />
+              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.firstLoginAt ?? '—'} readOnly />
             </div>
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">Archivován</label>
-              <input className="detail-form__input detail-form__input--readonly" value={user.isArchived ? 'Ano' : 'Ne'} readOnly />
+              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.isArchived ? 'Ano' : 'Ne'} readOnly />
             </div>
           </div>
         ),
       },
     ]
-  }, [user.createdAt, user.firstLoginAt, user.isArchived])
+  }, [resolvedUser.createdAt, resolvedUser.firstLoginAt, resolvedUser.isArchived])
 
-  // Sections
   const sectionIds = useMemo<DetailSectionId[]>(() => {
     const base: DetailSectionId[] = ['detail', 'roles', 'attachments', 'system']
     if (canShowInviteTab) base.splice(2, 0, 'invite')
@@ -568,13 +595,13 @@ export default function UserDetailFrame({
       onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
       ctx={{
         entityType: 'subjects',
-        entityId: user.id || undefined,
-        entityLabel: user.displayName ?? null,
+        entityId: resolvedUser.id || undefined,
+        entityLabel: resolvedUser.displayName ?? null,
         mode: detailMode,
 
         detailContent: (
           <UserDetailForm
-            user={user}
+            user={resolvedUser}
             readOnly={viewMode === 'read'}
             onDirtyChange={(dirty) => {
               if (!dirty) computeDirty()
