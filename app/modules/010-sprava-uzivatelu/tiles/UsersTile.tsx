@@ -259,6 +259,7 @@ export default function UsersTile({
   }, [roleTypeMap])
 
   const rows = useMemo(() => users.map(toRow), [users])
+
   // -------------------------
   // Open/Close
   // -------------------------
@@ -307,6 +308,7 @@ export default function UsersTile({
     setUrl({ t: 'users-list', id: null, vm: null }, 'replace')
   }, [setUrl])
 
+  // ✅ Zavřít modul 010 = odchod z tile (t=null)
   const closeListToModule = useCallback(() => {
     setViewMode('list')
     setDetailUser(null)
