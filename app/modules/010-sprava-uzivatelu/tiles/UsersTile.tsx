@@ -541,15 +541,15 @@ export default function UsersTile({
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
-
-    const handler = async (id: CommonActionId) => {
+  
+    const handler = async (actionId: CommonActionId) => {
       // ✅ jednotný CLOSE (žádné router.back)
-      if (id === 'close') {
+      if (actionId === 'close') {
         if (isDirty) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-
+  
         // attachments manager -> back to user detail (attachments tab)
         if (viewMode === 'attachments-manager') {
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
@@ -562,48 +562,52 @@ export default function UsersTile({
           }
           return
         }
-
-        // detail/invite -> list
+  
+        // invite screen -> list
         if (viewMode === 'invite') {
           closeToList()
           return
         }
+  
+        // detail -> list
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
           closeToList()
           return
         }
-
+  
         // list -> modul root (zavřít tile)
         closeListToModule()
         return
       }
-
+  
       // DETAIL: Správa příloh (Manager screen)
-      if (id === 'attachments') {
+      if (actionId === 'attachments') {
         if (detailActiveSectionId === 'invite') return
-
+  
         if (isDirty) {
           alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
           return
         }
-
-        if (!detailUser?.id || !detailUser.id.trim()) {
+  
+        if (!detailUser?.id || !detailUser.id.trim() || detailUser.id === 'new') {
           alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
           return
         }
-
-        // ✅ otevře samostatný manager screen (ne modal)
+  
         setAttachmentsManagerSubjectId(detailUser.id)
         setViewMode('attachments-manager')
         setIsDirty(false)
         setUrl({ t: 'attachments-manager', id: detailUser.id, vm: null }, 'push')
         return
       }
-
+  
+      // =====================
       // LIST
+      // =====================
       if (viewMode === 'list') {
-        if (id === 'add') {
+        if (actionId === 'add') {
           setViewMode('create')
+  
           const blank: UiUser = {
             id: 'new',
             displayName: '',
@@ -611,6 +615,7 @@ export default function UsersTile({
             roleLabel: '',
             createdAt: new Date().toISOString(),
           }
+  
           setDetailUser(blank)
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
@@ -619,131 +624,141 @@ export default function UsersTile({
           setIsDirty(false)
           submitRef.current = null
           inviteSubmitRef.current = null
-
+  
           setUrl({ t: 'users-list', id: 'new', vm: 'create' }, 'push')
           return
         }
-        if (id === 'view' || id === 'edit') {
+  
+        if (actionId === 'view' || actionId === 'edit') {
           if (!selectedId) return
-          const user = users.find((u) => u.id === selectedId)
-          if (!user) return
-          openDetail(user, id === 'edit' ? 'edit' : 'read', 'detail')
+          const u = users.find((x) => x.id === selectedId)
+          if (!u) return
+          openDetail(u, actionId === 'edit' ? 'edit' : 'read', 'detail')
           return
         }
-
-        if (id === 'invite') {
-          // bez výběru -> nový
+  
+        if (actionId === 'invite') {
+          // bez výběru -> invite screen (nový)
           if (!selectedId) {
             openInvite(null)
             return
           }
-
+  
           // s výběrem -> detail na Pozvánce (pokud se ještě nepřihlásil)
-          const user = users.find((u) => u.id === selectedId)
-          if (!user) {
+          const u = users.find((x) => x.id === selectedId)
+          if (!u) {
             openInvite(null)
             return
           }
-          if (user.firstLoginAt) {
+          if ((u as any).firstLoginAt) {
             alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
             return
           }
-          openDetail(user, 'read', 'invite')
+          openDetail(u, 'read', 'invite')
           return
         }
-
+  
         return
       }
-
-      // INVITE screen
-      if (viewMode === 'invite') {
-        if (id === 'sendInvite') {
-          if (!inviteSubmitRef.current) return
-          const ok = await inviteSubmitRef.current()
-          if (!ok) return
-          setIsDirty(false)
-          await load()
+        // =====================
+        // READ
+        // =====================
+        if (viewMode === 'read') {
+          // v záložce Pozvánka
+          if (detailActiveSectionId === 'invite') {
+            if (actionId === 'sendInvite') {
+              if (!inviteSubmitRef.current) return
+              const ok = await inviteSubmitRef.current()
+              if (!ok) return
+              setIsDirty(false)
+              await load()
+            }
+            return
+          }
+    
+          if (actionId === 'edit') {
+            setViewMode('edit')
+          }
           return
         }
-        return
-      }
-
-      // READ
-      if (viewMode === 'read') {
-        if (detailActiveSectionId === 'invite') {
-          if (id === 'sendInvite') {
-            if (!inviteSubmitRef.current) return
-            const ok = await inviteSubmitRef.current()
-            if (!ok) return
+    
+        // =====================
+        // EDIT / CREATE
+        // =====================
+        if (viewMode === 'edit' || viewMode === 'create') {
+          if (actionId === 'invite') {
+            if (isDirty) {
+              alert('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
+              return
+            }
+            if (!detailUser?.id?.trim() || detailUser.id === 'new') {
+              alert('Nejdřív ulož záznam, aby šla poslat pozvánka.')
+              return
+            }
+            if ((detailUser as any)?.firstLoginAt) {
+              alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+              return
+            }
+            openInvite(detailUser.id)
+            return
+          }
+    
+          if (actionId === 'save') {
+            if (!submitRef.current) return
+            const savedUser = await submitRef.current()
+            if (!savedUser) return
+    
+            const wasCreate = viewMode === 'create' || detailUser?.id === 'new'
+    
+            setDetailUser(savedUser)
             setIsDirty(false)
             await load()
+    
+            if (wasCreate) {
+              setDetailInitialSectionId('invite')
+              setDetailActiveSectionId('invite')
+            }
+    
+            setViewMode('read')
+            setUrl({ t: 'users-list', id: savedUser.id, vm: 'read' }, 'replace')
+            return
           }
+    
           return
         }
-
-        if (id === 'edit') setViewMode('edit')
+      }
+    
+      onRegisterCommonActionHandler(handler)
+    }, [
+      onRegisterCommonActionHandler,
+      viewMode,
+      selectedId,
+      users,
+      openDetail,
+      openInvite,
+      load,
+      isDirty,
+      closeToList,
+      closeListToModule,
+      detailActiveSectionId,
+      detailUser,
+      setUrl,
+      attachmentsManagerSubjectId,
+    ])
+    // =====================
+    // INVITE screen
+    // =====================
+    if (viewMode === 'invite') {
+      if (actionId === 'sendInvite') {
+        if (!inviteSubmitRef.current) return
+        const ok = await inviteSubmitRef.current()
+        if (!ok) return
+        setIsDirty(false)
+        await load()
         return
       }
-
-      // EDIT / CREATE
-      if (viewMode === 'edit' || viewMode === 'create') {
-        if (id === 'invite') {
-          if (isDirty) {
-            alert('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
-            return
-          }
-          if (!detailUser?.id?.trim()) return
-          if ((detailUser as any)?.firstLoginAt) {
-            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
-            return
-          }
-          openInvite(detailUser.id)
-          return
-        }
-
-        if (id === 'save') {
-          if (!submitRef.current) return
-          const saved = await submitRef.current()
-          if (!saved) return
-
-          const wasCreate = viewMode === 'create' || detailUser?.id === 'new'
-          
-          setDetailUser(saved)
-          setIsDirty(false)
-          await load()
-          if (wasCreate) {
-            setDetailInitialSectionId('invite')
-            setDetailActiveSectionId('invite')
-          }
-         setViewMode('read')
-         setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
-         return
-      }
-        
-          setViewMode('read')
-            setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
-            return
-      }
+      return
     }
-
-    onRegisterCommonActionHandler(handler)
-  }, [
-    onRegisterCommonActionHandler,
-    viewMode,
-    selectedId,
-    users,
-    openDetail,
-    openInvite,
-    load,
-    isDirty,
-    closeToList,
-    closeListToModule,
-    detailActiveSectionId,
-    detailUser,
-    setUrl,
-    attachmentsManagerSubjectId,
-  ])
-
   // -------------------------
   // Render
   // -------------------------
