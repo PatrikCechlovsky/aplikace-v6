@@ -266,15 +266,13 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     id: 'attachments',
     label: 'Přílohy',
     order: 90,
-    visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
-    render: (ctx: any) => (
+    visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId,
+    render: (ctx) => (
       <DetailAttachmentsSection
         entityType={ctx.entityType}
         entityId={ctx.entityId}
         entityLabel={ctx.entityLabel ?? null}
         mode={ctx.mode ?? 'view'}
-        variant="list"
-        canManage={false}
       />
     ),
   },
