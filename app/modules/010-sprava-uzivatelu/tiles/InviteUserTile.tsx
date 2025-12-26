@@ -3,11 +3,17 @@
 // FILE: app/modules/010-sprava-uzivatelu/tiles/InviteUserTile.tsx
 // PURPOSE: Samostatný tile pro pozvání uživatele (010) – napojený na CommonActions (sendInvite/close).
 
+// =========================
+// 1) IMPORTS
+// =========================
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import InviteUserFrame from '../forms/InviteUserFrame'
 
+// =========================
+// 2) TYPES
+// =========================
 type InviteUserTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: {
@@ -16,12 +22,32 @@ type InviteUserTileProps = {
     isDirty: boolean
   }) => void
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+
+  // ✅ zavře celý modul 010 (dashboard / mimo tile)
+  onCloseModule?: () => void
 }
 
+// =========================
+// 3) HELPERS
+// =========================
+const confirmCloseIfDirty = (isDirty: boolean): boolean => {
+  if (!isDirty) return true
+  return confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+}
+
+// =========================
+// 4) DATA LOAD
+// =========================
+// (none)
+
+// =========================
+// 5) ACTION HANDLERS
+// =========================
 export default function InviteUserTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
+  onCloseModule,
 }: InviteUserTileProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -38,7 +64,9 @@ export default function InviteUserTile({
     return id ? id : null
   }, [searchParams])
 
-  // CommonActions pro invite obrazovku
+  // -------------------------
+  // CommonActions list
+  // -------------------------
   const commonActions = useMemo<CommonActionId[]>(() => {
     return ['sendInvite', 'close']
   }, [])
@@ -56,29 +84,50 @@ export default function InviteUserTile({
     })
   }, [onRegisterCommonActionsState, isDirty])
 
+  // -------------------------
+  // CommonActions handler
+  // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
 
     const handler = async (id: CommonActionId) => {
+      // =====================
+      // CLOSE
+      // =====================
       if (id === 'close') {
-        // dirty guard řeší AppShell (confirmIfDirty) – stejně jako jinde
+        const ok = confirmCloseIfDirty(isDirty)
+        if (!ok) return
+
+        // ✅ jednotně: zavřít modul 010 (ne router.back)
+        if (onCloseModule) {
+          onCloseModule()
+          return
+        }
+
+        // fallback – kdyby nebyl callback zapojený
         router.back()
         return
       }
 
+      // =====================
+      // SEND INVITE
+      // =====================
       if (id === 'sendInvite') {
         if (!submitRef.current) return
         const ok = await submitRef.current()
         if (!ok) return
         setIsDirty(false)
-        // po odeslání zůstáváme (InviteUserFrame přepne na 'Systém')
+        // po odeslání zůstáváme (InviteUserFrame může přepnout na 'Systém')
         return
       }
     }
 
     onRegisterCommonActionHandler(handler)
-  }, [onRegisterCommonActionHandler, router])
+  }, [onRegisterCommonActionHandler, router, onCloseModule, isDirty])
 
+  // =========================
+  // 6) RENDER
+  // =========================
   return (
     <InviteUserFrame
       presetSubjectId={presetSubjectId}
