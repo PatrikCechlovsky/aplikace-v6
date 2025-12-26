@@ -636,20 +636,43 @@ export default function UsersTile({
       // READ
       // =====================
       if (viewMode === 'read') {
-        if (detailActiveSectionId === 'invite' && actionId === 'sendInvite') {
-          if (!inviteSubmitRef.current) return
-          const ok = await inviteSubmitRef.current()
-          if (!ok) return
-          setIsDirty(false)
-          await load()
-          return
-        }
-  
+        ...
         if (actionId === 'edit') {
           setViewMode('edit')
         }
         return
       }
+      ``` :contentReference[oaicite:1]{index=1}
+      
+      ### 2) Kde se to okamžitě vrátí na „read“
+      V `useEffect` **URL -> state** (to je ten velký efekt), v části `t === 'users-list'` a následně `// DETAIL`:
+      
+      - načte `vm` z URL → `safeVm`
+      - a pak má podmínku:
+      
+      ```ts
+      if (viewMode !== safeVm || detailUser?.id !== found.id) {
+        ...
+        setViewMode(safeVm)
+        ...
+      }
+      ``` :contentReference[oaicite:2]{index=2}
+      
+      Protože v URL pořád zůstává `vm=read`, `safeVm` je `read` a efekt ti po kliknutí ✏️ udělá **setViewMode('read')** → takže to vypadá, že „pastelka nefunguje“.
+      
+      ---
+      
+      ## Co přesně opravit (minimální fix)
+      V tom READ handleru u `actionId === 'edit'` musíš **změnit i URL vm na edit** (nebo udělat guard, aby URL efekt nepřepisoval edit).
+      
+      Nejjednodušší: doplnit:
+      
+      ```ts
+      if (actionId === 'edit') {
+        setViewMode('edit')
+        setUrl({ t: 'users-list', id: detailUser?.id ?? null, vm: 'edit' }, 'replace')
+      }
+
   
       // =====================
       // EDIT / CREATE
