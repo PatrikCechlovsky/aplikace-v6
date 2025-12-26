@@ -360,18 +360,19 @@ export default function UsersTile({
 
     setUrl({ t: null, id: null, vm: null }, 'replace')
   }, [setUrl])
-
+  
+  // [PART URL->STATE START]
   // -------------------------
   // URL -> state
   // -------------------------
   useEffect(() => {
     // ✅ parse z searchKey (stabilní)
     const sp = new URLSearchParams(searchKey)
-
+  
     const t = sp.get('t')?.trim() ?? null
     const id = sp.get('id')?.trim() ?? null
     const vm = (sp.get('vm')?.trim() as ViewMode | null) ?? null
-
+  
     // tile state
     if (!t) {
       // modul root (tile zavřený) -> nevnucujeme nic, necháme list režim
@@ -386,7 +387,7 @@ export default function UsersTile({
       }
       return
     }
-
+  
     if (t === 'invite-user') {
       if (viewMode !== 'invite') {
         setViewMode('invite')
@@ -398,7 +399,7 @@ export default function UsersTile({
       }
       return
     }
-
+  
     if (t === 'attachments-manager') {
       if (!id) return
       if (attachmentsManagerSubjectId !== id) setAttachmentsManagerSubjectId(id)
@@ -409,10 +410,38 @@ export default function UsersTile({
       if (selectedId !== id) setSelectedId(id)
       return
     }
+  
     // list + detail
     if (t === 'users-list') {
+      const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
+  
+      // ✅ CREATE route: id=new (nebo id prázdné) -> otevři create detail i bez záznamu v users[]
+      if (safeVm === 'create' && (id === 'new' || !id)) {
+        if (viewMode !== 'create') setViewMode('create')
+  
+        if (!detailUser || detailUser.id !== 'new') {
+          const blank: UiUser = {
+            id: 'new',
+            displayName: '',
+            email: '',
+            roleLabel: '',
+            createdAt: new Date().toISOString(),
+          }
+          setDetailUser(blank)
+        }
+  
+        setDetailInitialSectionId('detail')
+        setDetailActiveSectionId('detail')
+        setInvitePresetSubjectId(null)
+        setAttachmentsManagerSubjectId(null)
+        submitRef.current = null
+        inviteSubmitRef.current = null
+        setIsDirty(false)
+        return
+      }
+  
+      // LIST
       if (!id) {
-        // list
         if (viewMode !== 'list') {
           setViewMode('list')
           setDetailUser(null)
@@ -424,24 +453,22 @@ export default function UsersTile({
         }
         return
       }
-
-      // detail
+  
+      // DETAIL
       const found = users.find((u) => u.id === id)
       if (!found) return
-
+  
       if (selectedId !== id) setSelectedId(id)
-
-      const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
-
+  
       if (viewMode !== safeVm || detailUser?.id !== found.id) {
         setDetailUser(found)
         setAttachmentsManagerSubjectId(null)
-
+  
         if (!detailActiveSectionId) {
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
         }
-
+  
         setViewMode(safeVm)
         setIsDirty(false)
         submitRef.current = null
@@ -451,6 +478,8 @@ export default function UsersTile({
       return
     }
   }, [searchKey, users, viewMode, detailUser?.id, selectedId, attachmentsManagerSubjectId, detailActiveSectionId])
+  // [PART URL->STATE END]
+  
 
   // -------------------------
   // Invite availability for detail
@@ -576,7 +605,7 @@ export default function UsersTile({
         if (id === 'add') {
           setViewMode('create')
           const blank: UiUser = {
-            id: '',
+            id: 'new',
             displayName: '',
             email: '',
             roleLabel: '',
@@ -591,7 +620,7 @@ export default function UsersTile({
           submitRef.current = null
           inviteSubmitRef.current = null
 
-          setUrl({ t: 'users-list', id: '', vm: 'create' }, 'push')
+          setUrl({ t: 'users-list', id: 'new', vm: 'create' }, 'push')
           return
         }
         if (id === 'view' || id === 'edit') {
@@ -676,15 +705,23 @@ export default function UsersTile({
           if (!submitRef.current) return
           const saved = await submitRef.current()
           if (!saved) return
+
+          const wasCreate = viewMode === 'create' || detailUser?.id === 'new'
+          
           setDetailUser(saved)
           setIsDirty(false)
           await load()
+          if (wasCreate) {
+            setDetailInitialSectionId('invite')
+            setDetailActiveSectionId('invite')
+            setViewMode('read')
+            setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
+            return
+      }
+        
           setViewMode('read')
-
-          setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
-          return
-        }
-        return
+            setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
+            return
       }
     }
 
