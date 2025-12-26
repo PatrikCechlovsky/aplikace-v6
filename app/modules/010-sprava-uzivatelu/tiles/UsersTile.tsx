@@ -170,23 +170,30 @@ export default function UsersTile({
   // URL helpers (t, id, vm)
   // -------------------------
   const setUrl = useCallback(
-    (next: { t?: string | null; id?: string | null; vm?: string | null }, mode: 'replace' | 'push' = 'replace') => {
+    (
+      next: { t?: string | null; id?: string | null; vm?: string | null },
+      mode: 'replace' | 'push' = 'replace'
+    ) => {
       const sp = new URLSearchParams(searchKey)
 
-      const setOrDelete = (key: string, val?: string | null) => {
-        if (val && String(val).trim()) sp.set(key, String(val).trim())
+      const setOrDelete = (key: string, val: string | null | undefined) => {
+        const v = (val ?? '').toString().trim()
+        if (v) sp.set(key, v)
         else sp.delete(key)
       }
 
-      setOrDelete('t', next.t ?? (sp.get('t') ?? null))
-      setOrDelete('id', next.id ?? null)
-      setOrDelete('vm', next.vm ?? null)
+      // ✅ DŮLEŽITÉ: rozliš "klíč není v next" vs "klíč je v next a je null"
+      // - pokud klíč v next existuje → nastav/smaž podle jeho hodnoty
+      // - pokud klíč v next neexistuje → ponech původní URL hodnotu
+      if (Object.prototype.hasOwnProperty.call(next, 't')) setOrDelete('t', next.t)
+      if (Object.prototype.hasOwnProperty.call(next, 'id')) setOrDelete('id', next.id)
+      if (Object.prototype.hasOwnProperty.call(next, 'vm')) setOrDelete('vm', next.vm)
 
       const qs = sp.toString()
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
 
-      dbg('setUrl()', {
+      console.log('[010 UsersTile] setUrl()', {
         mode,
         next,
         searchKey,
@@ -202,6 +209,7 @@ export default function UsersTile({
     },
     [pathname, router, searchKey]
   )
+
 
   // -------------------------
   // Load guards (anti-loop / anti-storm)
