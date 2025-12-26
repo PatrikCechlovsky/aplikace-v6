@@ -114,13 +114,13 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
   // =====================
   // 6) RENDER
   // =====================
-
+  
   return (
     <div className="detail-form">
       {/* ZÁKLAD */}
       <div className="detail-form__section">
         <div className="detail-form__section-title">Základ</div>
-
+  
         <div className="detail-form__grid">
           <div className="detail-form__field">
             <label className="detail-form__label">
@@ -131,10 +131,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.displayName}
               readOnly={readOnly}
               onChange={(e) => update({ displayName: e.target.value })}
-              placeholder="např. Páťo Admin"
             />
           </div>
-
+  
           <div className="detail-form__field">
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
@@ -144,10 +143,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.email}
               readOnly={readOnly}
               onChange={(e) => update({ email: e.target.value })}
-              placeholder="např. admin@local.test"
             />
           </div>
-
+  
           <div className="detail-form__field">
             <label className="detail-form__label">Telefon</label>
             <input
@@ -155,10 +153,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.phone}
               readOnly={readOnly}
               onChange={(e) => update({ phone: e.target.value })}
-              placeholder="+420..."
             />
           </div>
-
+  
           <div className="detail-form__field">
             <label className="detail-form__label">Přihlašovací jméno</label>
             <input
@@ -166,15 +163,15 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.login}
               readOnly={readOnly}
               onChange={(e) => update({ login: e.target.value })}
-              placeholder="např. pato.admin"
             />
           </div>
         </div>
       </div>
+  
       {/* OSOBA */}
       <div className="detail-form__section">
         <div className="detail-form__section-title">Osoba</div>
-
+  
         <div className="detail-form__grid">
           <div className="detail-form__field">
             <label className="detail-form__label">Titul před</label>
@@ -183,10 +180,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.titleBefore}
               readOnly={readOnly}
               onChange={(e) => update({ titleBefore: e.target.value })}
-              placeholder="Ing., Bc., ..."
             />
           </div>
-
+  
           <div className="detail-form__field">
             <label className="detail-form__label">Jméno</label>
             <input
@@ -194,10 +190,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.firstName}
               readOnly={readOnly}
               onChange={(e) => update({ firstName: e.target.value })}
-              placeholder="Páťo"
             />
           </div>
-
+  
           <div className="detail-form__field">
             <label className="detail-form__label">Příjmení</label>
             <input
@@ -205,10 +200,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.lastName}
               readOnly={readOnly}
               onChange={(e) => update({ lastName: e.target.value })}
-              placeholder="Admin"
             />
           </div>
-
+  
           <div className="detail-form__field">
             <label className="detail-form__label">Archivováno</label>
             <input
@@ -222,4 +216,4 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
       </div>
     </div>
   )
-}
+  
