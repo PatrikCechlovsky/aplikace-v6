@@ -482,10 +482,14 @@ export default function UsersTile({
   }, [onRegisterCommonActions, commonActions])
 
   useEffect(() => {
+    // ✅ Save tlačítko v CommonActions vyžaduje isDirty=true (requiresDirty)
+    // V CREATE chceme "Uložit" vždy aktivní, jinak klik ani nedojde do handleru.
+    const uiDirty = viewMode === 'create' ? true : isDirty
+  
     onRegisterCommonActionsState?.({
       viewMode: (viewMode as any) as ViewMode,
       hasSelection: !!selectedId,
-      isDirty,
+      isDirty: uiDirty,
     })
   }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty])
   // -------------------------
