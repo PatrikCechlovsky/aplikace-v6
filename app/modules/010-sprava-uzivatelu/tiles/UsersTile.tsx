@@ -57,6 +57,8 @@ type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 // 3) HELPERS
 // =====================
 
+// [PART 3 HELPERS START]
+
 const COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%' },
   { key: 'displayName', label: 'Jméno' },
@@ -64,7 +66,6 @@ const COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
-// [PART HELPERS-ROLE START]
 /**
  * Fallback mapování (ponecháno schválně).
  * Primárně se role mají brát z 900/role_types.
@@ -80,17 +81,19 @@ function roleCodeToLabel(code: string | null | undefined): string {
   return c
 }
 
+function buildRoleTypeMap(rows: RoleTypeRow[]): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const r of rows ?? []) {
+    const code = String((r as any).code ?? '').trim().toLowerCase()
+    const name = String((r as any).name ?? '').trim()
+    if (code) map[code] = name || String((r as any).code ?? code)
+  }
+  return map
+}
+
 function resolveRoleLabel(roleCode: string | null | undefined, map: Record<string, string>): string {
   const c = String(roleCode ?? '').trim().toLowerCase()
   if (!c) return ''
-  return map[c] ?? roleCodeToLabel(c)
-}
-// [PART HELPERS-ROLE END]
-
-
-function resolveRoleLabel(roleCode: string | null | undefined, map: Record<string, string>): string {
-  const c = String(roleCode ?? '').trim().toLowerCase()
-  if (!c) return '—'
   return map[c] ?? roleCodeToLabel(c)
 }
 
@@ -121,6 +124,9 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
     raw: u,
   }
 }
+
+// [PART 3 HELPERS END]
+
 // =====================
 // 4) DATA LOAD (hooks)
 // =====================
