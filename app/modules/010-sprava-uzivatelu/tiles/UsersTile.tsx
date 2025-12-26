@@ -8,9 +8,9 @@
 // - t=attachments-manager (attachments manager screen)
 // - id + vm (detail: read/edit/create)
 //
-// FIX:
-// - useSearchParams() -> searchKey = searchParams.toString() (stabilní) = žádné blikání
-// - anti-storm guards pro load()
+// DEBUG:
+// - zapni/vypni přes DEBUG konstantu níže
+// - logujeme: clicky, close větve, setUrl compare, URL->state sync
 
 // =====================
 // 1) IMPORTS
@@ -57,6 +57,13 @@ type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 // =====================
 // 3) HELPERS
 // =====================
+
+const DEBUG = true
+const dbg = (...args: any[]) => {
+  if (!DEBUG) return
+  // eslint-disable-next-line no-console
+  console.log('[010 UsersTile]', ...args)
+}
 
 const COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%' },
@@ -116,6 +123,7 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
     raw: u,
   }
 }
+
 // =====================
 // 4) DATA LOAD (hooks)
 // =====================
@@ -177,6 +185,16 @@ export default function UsersTile({
       const qs = sp.toString()
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
+
+      dbg('setUrl()', {
+        mode,
+        next,
+        searchKey,
+        currentUrl,
+        nextUrl,
+        willNavigate: nextUrl !== currentUrl,
+      })
+
       if (nextUrl === currentUrl) return
 
       if (mode === 'push') router.push(nextUrl)
@@ -265,6 +283,8 @@ export default function UsersTile({
   // -------------------------
   const openDetail = useCallback(
     (user: UiUser, mode: ViewMode, initialSection: any = 'detail') => {
+      dbg('openDetail()', { id: user.id, mode, initialSection })
+
       setDetailUser(user)
       setDetailInitialSectionId(initialSection)
       setDetailActiveSectionId(initialSection)
@@ -282,6 +302,8 @@ export default function UsersTile({
 
   const openInvite = useCallback(
     (subjectId: string | null) => {
+      dbg('openInvite()', { subjectId })
+
       setInvitePresetSubjectId(subjectId)
       setAttachmentsManagerSubjectId(null)
       setViewMode('invite')
@@ -295,6 +317,8 @@ export default function UsersTile({
   )
 
   const closeToList = useCallback(() => {
+    dbg('closeToList()')
+
     setViewMode('list')
     setDetailUser(null)
     setDetailInitialSectionId('detail')
@@ -310,6 +334,8 @@ export default function UsersTile({
 
   // ✅ Zavřít modul 010 = odchod z tile (t=null)
   const closeListToModule = useCallback(() => {
+    dbg('closeListToModule()')
+
     setViewMode('list')
     setDetailUser(null)
     setDetailInitialSectionId('detail')
@@ -331,6 +357,8 @@ export default function UsersTile({
     const t = sp.get('t')?.trim() ?? null
     const id = sp.get('id')?.trim() ?? null
     const vm = (sp.get('vm')?.trim() as ViewMode | null) ?? null
+
+    dbg('URL->state', { searchKey, t, id, vm, viewMode, selectedId, detailUserId: detailUser?.id ?? null })
 
     if (!t) {
       if (viewMode !== 'list') {
@@ -462,7 +490,6 @@ export default function UsersTile({
       // v invite sekci nechceme attachments tlačítko
       if (detailActiveSectionId === 'invite') return base
 
-      // pokud už tam je, nech tak (ale níže stejně vynutíme pořadí)
       const out: CommonActionId[] = base.includes('attachments') ? [...base] : [...base, 'attachments']
 
       // ✅ vynutit pořadí: attachments před close, close poslední
@@ -472,7 +499,6 @@ export default function UsersTile({
       if (hasClose) return [...filtered, 'attachments', 'close'] as CommonActionId[]
       return [...filtered, 'attachments'] as CommonActionId[]
     }
-
 
     // LIST / INVITE / ATTACHMENTS MANAGER
     if (viewMode === 'list') return withAttachmentsBeforeClose(LIST)
@@ -495,19 +521,19 @@ export default function UsersTile({
   }, [viewMode, detailActiveSectionId, canInviteDetail])
 
   useEffect(() => {
+    dbg('register commonActions', commonActions)
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
 
   useEffect(() => {
-    // ✅ Save tlačítko v CommonActions vyžaduje isDirty=true (requiresDirty)
-    // V CREATE chceme "Uložit" vždy aktivní, jinak klik ani nedojde do handleru.
     const uiDirty = viewMode === 'create' ? true : isDirty
-
-    onRegisterCommonActionsState?.({
+    const state = {
       viewMode: (viewMode as any) as ViewMode,
       hasSelection: !!selectedId,
       isDirty: uiDirty,
-    })
+    }
+    dbg('register commonActionsState', state)
+    onRegisterCommonActionsState?.(state)
   }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty])
 
   // -------------------------
@@ -516,7 +542,11 @@ export default function UsersTile({
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
 
+    dbg('register common action handler')
+
     const handler = async (actionId: CommonActionId) => {
+      dbg('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
+
       // =====================
       // CLOSE
       // =====================
@@ -525,13 +555,17 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-      
-        // ✅ Rozlišení podle URL parametru t (invite-user vs users-list)
+
         const sp = new URLSearchParams(searchKey)
         const t = sp.get('t')?.trim() ?? null
-      
+        const id = sp.get('id')?.trim() ?? null
+        const vm = sp.get('vm')?.trim() ?? null
+
+        dbg('close branch start', { t, id, vm, viewMode })
+
         // 1) Attachments manager: zavřít správu příloh = zpět do detailu (attachments tab) nebo list
         if (viewMode === 'attachments-manager') {
+          dbg('close -> attachments-manager back')
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (backId) {
             setDetailInitialSectionId('attachments')
@@ -542,31 +576,33 @@ export default function UsersTile({
           }
           return
         }
-      
+
         // 2) Samostatný tile "Pozvat uživatele" (t=invite-user): CLOSE = zavřít modul 010
         if (t === 'invite-user') {
+          dbg('close -> closeListToModule (t=invite-user)')
           closeListToModule()
           return
         }
-      
+
         // 3) Detail: CLOSE = zavřít detail (zpět na seznam)
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
+          dbg('close -> closeToList (detail)')
           closeToList()
           return
         }
-      
+
         // 4) List: CLOSE = zavřít modul 010
+        dbg('close -> closeListToModule (list)')
         closeListToModule()
         return
       }
-
 
       // =====================
       // ATTACHMENTS
       // =====================
       if (actionId === 'attachments') {
-        // ✅ LIST: otevřít přílohy pro vybraného uživatele
         if (viewMode === 'list') {
+          dbg('attachments -> list', { selectedId })
           if (!selectedId) {
             alert('Nejdřív vyber uživatele v seznamu.')
             return
@@ -579,7 +615,6 @@ export default function UsersTile({
           return
         }
 
-        // DETAIL: attachments tlačítko nechceme na invite záložce
         if (detailActiveSectionId === 'invite') return
 
         if (isDirty) {
@@ -771,28 +806,26 @@ export default function UsersTile({
     attachmentsManagerSubjectId,
   ])
 
-  
   // ✅ Po uložení nového usera: počkáme, až bude připraven inviteSubmitRef, a pak pošleme pozvánku.
   useEffect(() => {
     if (!pendingSendInviteAfterCreate) return
     if (viewMode !== 'read') return
     if (detailActiveSectionId !== 'invite') return
     if (!inviteSubmitRef.current) return
-  
+
     const run = async () => {
       const ok = await inviteSubmitRef.current?.()
       setPendingSendInviteAfterCreate(false)
-  
+
       if (ok) {
         setIsDirty(false)
         await load()
         alert('Pozvánka odeslána ✅')
       }
     }
-  
+
     void run()
   }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load])
-  // [PART PENDING INVITE EFFECT END]
 
   // -------------------------
   // Render
