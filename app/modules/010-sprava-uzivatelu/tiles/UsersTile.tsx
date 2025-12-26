@@ -522,7 +522,8 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-  
+
+        // 1) Attachments manager: zavřít správu příloh = zpět do detailu (attachments tab) nebo list
         if (viewMode === 'attachments-manager') {
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (backId) {
@@ -534,17 +535,20 @@ export default function UsersTile({
           }
           return
         }
-  
+
+        // 2) Samostatný invite screen (t=invite-user / viewMode=invite): CLOSE = zavřít modul 010
         if (viewMode === 'invite') {
-          closeToList()
+          closeListToModule()
           return
         }
-  
+
+        // 3) Detail: CLOSE = zavřít detail (zpět na seznam)
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
           closeToList()
           return
         }
-  
+
+        // 4) List: CLOSE = zavřít modul 010
         closeListToModule()
         return
       }
