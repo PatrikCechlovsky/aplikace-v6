@@ -512,11 +512,14 @@ export default function UsersTile({
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
-  
+    console.log('[010 UsersTile] register common action handler')
+
     const handler = async (actionId: CommonActionId) => {
       // =====================
       // CLOSE
       // =====================
+      console.log('[010 UsersTile] action click:', actionId, { viewMode, isDirty })
+
       if (actionId === 'close') {
         if (isDirty) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
