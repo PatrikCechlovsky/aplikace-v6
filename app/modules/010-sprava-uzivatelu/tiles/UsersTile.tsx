@@ -64,27 +64,29 @@ const COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center' },
 ]
 
+// [PART HELPERS-ROLE START]
 /**
  * Fallback mapování (ponecháno schválně).
  * Primárně se role mají brát z 900/role_types.
+ *
+ * ✅ Placeholder "—" rušíme:
+ * - když role není, vracíme prázdný string
  */
 function roleCodeToLabel(code: string | null | undefined): string {
   const c = (code ?? '').trim().toLowerCase()
-  if (!c) return '—'
+  if (!c) return ''
   if (c === 'admin') return 'Admin'
   if (c === 'user') return 'Uživatel'
   return c
 }
 
-function buildRoleTypeMap(rows: RoleTypeRow[]): Record<string, string> {
-  const map: Record<string, string> = {}
-  for (const r of rows ?? []) {
-    const code = String(r.code ?? '').trim().toLowerCase()
-    const name = String(r.name ?? '').trim()
-    if (code) map[code] = name || r.code
-  }
-  return map
+function resolveRoleLabel(roleCode: string | null | undefined, map: Record<string, string>): string {
+  const c = String(roleCode ?? '').trim().toLowerCase()
+  if (!c) return ''
+  return map[c] ?? roleCodeToLabel(c)
 }
+// [PART HELPERS-ROLE END]
+
 
 function resolveRoleLabel(roleCode: string | null | undefined, map: Record<string, string>): string {
   const c = String(roleCode ?? '').trim().toLowerCase()
@@ -571,7 +573,7 @@ export default function UsersTile({
             id: '',
             displayName: '',
             email: '',
-            roleLabel: '—',
+            roleLabel: '',
             createdAt: new Date().toISOString(),
           }
           setDetailUser(blank)
