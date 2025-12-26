@@ -538,7 +538,7 @@ export default function UsersTile({
 
         // 2) Samostatný invite screen (t=invite-user / viewMode=invite): CLOSE = zavřít modul 010
         if (viewMode === 'invite') {
-          closeListToModule()
+          closeToList()
           return
         }
 
