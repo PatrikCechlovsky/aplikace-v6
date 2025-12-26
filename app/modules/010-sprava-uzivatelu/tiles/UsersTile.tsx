@@ -515,7 +515,7 @@ export default function UsersTile({
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
-  
+
     const handler = async (actionId: CommonActionId) => {
       // =====================
       // CLOSE
@@ -525,12 +525,13 @@ export default function UsersTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-  
-        // 🔑 rozhodujeme PODLE URL, ne podle viewMode
-        const t = currentTile // <- toto už v UsersTile máš (t=users-list / invite-user / attachments-manager)
-  
-        // 1️⃣ ATTACHMENTS MANAGER → zpět do detailu nebo listu
-        if (t === 'attachments-manager') {
+      
+        // ✅ Rozlišení podle URL parametru t (invite-user vs users-list)
+        const sp = new URLSearchParams(searchKey)
+        const t = sp.get('t')?.trim() ?? null
+      
+        // 1) Attachments manager: zavřít správu příloh = zpět do detailu (attachments tab) nebo list
+        if (viewMode === 'attachments-manager') {
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (backId) {
             setDetailInitialSectionId('attachments')
@@ -541,37 +542,36 @@ export default function UsersTile({
           }
           return
         }
-  
-        // 2️⃣ SAMOSTATNÝ TILE „POZVAT UŽIVATELE“
-        // t=invite-user → CLOSE = ZAVŘÍT MODUL 010
+      
+        // 2) Samostatný tile "Pozvat uživatele" (t=invite-user): CLOSE = zavřít modul 010
         if (t === 'invite-user') {
           closeListToModule()
           return
         }
-  
-        // 3️⃣ DETAIL UŽIVATELE (včetně záložky Pozvánka)
-        // CLOSE = zavřít DETAIL → seznam
+      
+        // 3) Detail: CLOSE = zavřít detail (zpět na seznam)
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
           closeToList()
           return
         }
-  
-        // 4️⃣ SEZNAM UŽIVATELŮ
-        // CLOSE = zavřít MODUL 010
+      
+        // 4) List: CLOSE = zavřít modul 010
         closeListToModule()
         return
       }
+
 
       // =====================
       // ATTACHMENTS
       // =====================
       if (actionId === 'attachments') {
-        // LIST: otevřít správu příloh pro vybraného uživatele
+        // ✅ LIST: otevřít přílohy pro vybraného uživatele
         if (viewMode === 'list') {
           if (!selectedId) {
             alert('Nejdřív vyber uživatele v seznamu.')
             return
           }
+
           setAttachmentsManagerSubjectId(selectedId)
           setViewMode('attachments-manager')
           setIsDirty(false)
@@ -689,7 +689,6 @@ export default function UsersTile({
 
         if (actionId === 'edit') {
           setViewMode('edit')
-          // ✅ důležité: aktualizovat URL vm, jinak URL->state efekt přepíše zpět na 'read'
           setUrl({ t: 'users-list', id: detailUser?.id ?? selectedId ?? null, vm: 'edit' }, 'replace')
         }
         return
@@ -719,7 +718,6 @@ export default function UsersTile({
           return
         }
 
-        // ✅ SAVE: vždy uložit; po CREATE se zeptat na pozvánku
         if (actionId === 'save') {
           if (!submitRef.current) {
             alert('Chybí submit handler (submitRef).')
@@ -757,15 +755,22 @@ export default function UsersTile({
     onRegisterCommonActionHandler(handler)
   }, [
     onRegisterCommonActionHandler,
+    searchKey,
     viewMode,
+    selectedId,
+    users,
+    openDetail,
+    openInvite,
+    load,
     isDirty,
     closeToList,
     closeListToModule,
-    detailUser,
     detailActiveSectionId,
-    attachmentsManagerSubjectId,
+    detailUser,
     setUrl,
+    attachmentsManagerSubjectId,
   ])
+
   
   // ✅ Po uložení nového usera: počkáme, až bude připraven inviteSubmitRef, a pak pošleme pozvánku.
   useEffect(() => {
