@@ -255,91 +255,95 @@ export default function UserDetailFrame({
   // SUBMIT (REGISTERED ONCE)
   // -----------------------------
   
-  // [PART SUBMIT START]
-  const submit = React.useCallback(async (): Promise<UiUser | null> => {
-    try {
-      const v = formValue ?? buildInitialFormValue(resolvedUser)
-  
-      if (!v.displayName?.trim()) {
-        alert('Zobrazované jméno je povinné.')
-        return null
-      }
-  
-      const pc = (permissionCode ?? '').trim()
-  
-      const savedRow = await saveUser({
-        id: resolvedUser?.id?.trim() ? resolvedUser.id : 'new',
-        subjectType: 'osoba',
-  
-        displayName: v.displayName,
-        email: v.email,
-        phone: v.phone,
-        isArchived: v.isArchived,
-  
-        titleBefore: v.titleBefore,
-        firstName: v.firstName,
-        lastName: v.lastName,
-        login: v.login,
-  
-        roleCode: (roleCode ?? '').trim() || null,
-        permissionCodes: pc ? [pc] : [],
-      })
-  
-      const saved: UiUser = {
-        ...resolvedUser,
-        id: (savedRow as any).id ?? resolvedUser.id,
-        displayName: (savedRow as any).display_name ?? v.displayName,
-        email: (savedRow as any).email ?? v.email,
-        phone: (savedRow as any).phone ?? v.phone,
-        isArchived: !!(savedRow as any).is_archived,
-        createdAt: (savedRow as any).created_at ?? resolvedUser.createdAt,
-        firstLoginAt: (savedRow as any).first_login_at ?? resolvedUser.firstLoginAt ?? null,
-  
-        titleBefore: (savedRow as any).title_before ?? (resolvedUser as any).titleBefore ?? null,
-        firstName: (savedRow as any).first_name ?? (resolvedUser as any).firstName ?? null,
-        lastName: (savedRow as any).last_name ?? (resolvedUser as any).lastName ?? null,
-        login: (savedRow as any).login ?? (resolvedUser as any).login ?? null,
-  
-        roleCode: (roleCode ?? '').trim() || null,
-      }
-  
-      setResolvedUser(saved)
-  
-      const nextForm = buildInitialFormValue(saved)
-      setFormValue(nextForm)
-      initialSnapshotRef.current = JSON.stringify(nextForm)
-      firstRenderRef.current = true
-  
-      roleCodeInitialRef.current = (roleCode ?? '').trim()
-      permissionCodeInitialRef.current = (permissionCode ?? '').trim()
-  
-      setIsDirty(false)
-      onDirtyChange?.(false)
-  
-      return saved
-    } catch (e: any) {
-      console.error('[UserDetailFrame.save] ERROR', e)
-      alert(e?.message ?? 'Chyba uložení uživatele')
-      return null
-    }
-  }, [
-    formValue,
-    resolvedUser,
-    roleCode,
-    permissionCode,
-    onDirtyChange,
-  ])
-  
+  // Register save submit
   useEffect(() => {
     if (!onRegisterSubmit) return
   
-    onRegisterSubmit(submit)
+    onRegisterSubmit(async () => {
+      try {
+        const v = formValue ?? buildInitialFormValue(resolvedUser)
   
-    return () => {
-      // při unmountu odregistruj
-      onRegisterSubmit(() => Promise.resolve(null))
-    }
-  }, [onRegisterSubmit, submit])
+        if (!v.displayName?.trim()) {
+          alert('Zobrazované jméno je povinné.')
+          return null
+        }
+  
+        // ✅ nově: role + permission povinné pro SAVE
+        const rc = (roleCode ?? '').trim()
+        if (!rc) {
+          alert('Chybí role – vyber roli a pak ulož.')
+          return null
+        }
+  
+        const pc = (permissionCode ?? '').trim()
+        if (!pc) {
+          alert('Chybí oprávnění – vyber oprávnění a pak ulož.')
+          return null
+        }
+  
+        const savedRow = await saveUser({
+          id: resolvedUser?.id?.trim() ? resolvedUser.id : 'new',
+          subjectType: 'osoba',
+  
+          displayName: v.displayName,
+          email: v.email,
+          phone: v.phone,
+          isArchived: v.isArchived,
+  
+          titleBefore: v.titleBefore,
+          firstName: v.firstName,
+          lastName: v.lastName,
+          login: v.login,
+  
+          roleCode: rc,
+          // ✅ pošli jen když je vybrané (a tady je vždy)
+          permissionCodes: [pc],
+        })
+  
+        const saved: UiUser = {
+          ...resolvedUser,
+          id: (savedRow as any).id ?? resolvedUser.id,
+          displayName: (savedRow as any).display_name ?? v.displayName,
+          email: (savedRow as any).email ?? v.email,
+          phone: (savedRow as any).phone ?? v.phone,
+          isArchived: !!(savedRow as any).is_archived,
+          createdAt: (savedRow as any).created_at ?? resolvedUser.createdAt,
+          firstLoginAt: (savedRow as any).first_login_at ?? resolvedUser.firstLoginAt ?? null,
+  
+          titleBefore: (savedRow as any).title_before ?? (resolvedUser as any).titleBefore ?? null,
+          firstName: (savedRow as any).first_name ?? (resolvedUser as any).firstName ?? null,
+          lastName: (savedRow as any).last_name ?? (resolvedUser as any).lastName ?? null,
+          login: (savedRow as any).login ?? (resolvedUser as any).login ?? null,
+  
+          roleCode: rc,
+        }
+  
+        setResolvedUser(saved)
+  
+        const nextForm = buildInitialFormValue(saved)
+        setFormValue(nextForm)
+        initialSnapshotRef.current = JSON.stringify(nextForm)
+        firstRenderRef.current = true
+  
+        roleCodeInitialRef.current = rc
+        permissionCodeInitialRef.current = pc
+  
+        setIsDirty(false)
+        onDirtyChange?.(false)
+  
+        alert('Uživatel uložen ✅')
+        return saved
+      } catch (e: any) {
+        console.error('[UserDetailFrame.save] ERROR', e)
+        alert(e?.message ?? 'Chyba uložení uživatele')
+        return null
+      }
+    })
+  }, [onRegisterSubmit, formValue, resolvedUser, roleCode, permissionCode, onDirtyChange])
+
+
+
+  
   // [PART SUBMIT END]  // =====================
   // 6) RENDER
   // =====================
