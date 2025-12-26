@@ -461,15 +461,16 @@ export default function UsersTile({
       if (detailActiveSectionId === 'invite') return base
 
       // pokud už tam je, nech tak (ale níže stejně vynutíme pořadí)
-      let out = base.includes('attachments') ? [...base] : [...base, 'attachments']
+      const out: CommonActionId[] = base.includes('attachments') ? [...base] : [...base, 'attachments']
 
       // ✅ vynutit pořadí: attachments před close, close poslední
       const hasClose = out.includes('close')
-      const filtered = out.filter((x) => x !== 'attachments' && x !== 'close')
+      const filtered: CommonActionId[] = out.filter((x) => x !== 'attachments' && x !== 'close') as CommonActionId[]
 
-      if (hasClose) return [...filtered, 'attachments', 'close']
-      return [...filtered, 'attachments']
+      if (hasClose) return [...filtered, 'attachments', 'close'] as CommonActionId[]
+      return [...filtered, 'attachments'] as CommonActionId[]
     }
+
 
     // LIST / INVITE / ATTACHMENTS MANAGER
     if (viewMode === 'list') return withAttachmentsBeforeClose(LIST)
