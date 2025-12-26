@@ -714,9 +714,10 @@ export default function UsersTile({
           if (wasCreate) {
             setDetailInitialSectionId('invite')
             setDetailActiveSectionId('invite')
-            setViewMode('read')
-            setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
-            return
+          }
+         setViewMode('read')
+         setUrl({ t: 'users-list', id: saved.id, vm: 'read' }, 'replace')
+         return
       }
         
           setViewMode('read')
