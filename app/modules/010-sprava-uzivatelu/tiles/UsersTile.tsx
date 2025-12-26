@@ -12,6 +12,10 @@
 // - useSearchParams() -> searchKey = searchParams.toString() (stabilní) = žádné blikání
 // - anti-storm guards pro load()
 
+// =====================
+// 1) IMPORTS
+// =====================
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
@@ -23,6 +27,10 @@ import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
+
+// =====================
+// 2) TYPES
+// =====================
 
 type UiUser = {
   id: string
@@ -36,6 +44,18 @@ type UiUser = {
   isArchived?: boolean
   firstLoginAt?: string | null
 }
+
+type UsersTileProps = {
+  onRegisterCommonActions?: (actions: CommonActionId[]) => void
+  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+}
+
+// ✅ lokální režimy
+type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
+// =====================
+// 3) HELPERS
+// =====================
 
 const COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%' },
@@ -99,15 +119,9 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
     raw: u,
   }
 }
-
-type UsersTileProps = {
-  onRegisterCommonActions?: (actions: CommonActionId[]) => void
-  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
-  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
-}
-
-// ✅ lokální režimy
-type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
+// =====================
+// 4) DATA LOAD (hooks)
+// =====================
 
 export default function UsersTile({
   onRegisterCommonActions,
@@ -156,7 +170,6 @@ export default function UsersTile({
 
   // Attachments manager target (subject id)
   const [attachmentsManagerSubjectId, setAttachmentsManagerSubjectId] = useState<string | null>(null)
-
   // -------------------------
   // URL helpers (t, id, vm)
   // -------------------------
@@ -231,7 +244,6 @@ export default function UsersTile({
       if (loadInFlightRef.current === p) loadInFlightRef.current = null
     }
   }, [filterText, showArchived])
-
   // -------------------------
   // Load role types (900) - jednou, bez zásahu do modulu Nastavení
   // -------------------------
@@ -272,7 +284,7 @@ export default function UsersTile({
       prev.map((u) => ({
         ...u,
         roleLabel: resolveRoleLabel(u.roleCode, roleTypeMap),
-      })),
+      }))
     )
   }, [roleTypeMap])
 
@@ -297,7 +309,6 @@ export default function UsersTile({
     },
     [setUrl]
   )
-
   const openInvite = useCallback(
     (subjectId: string | null) => {
       setInvitePresetSubjectId(subjectId)
@@ -390,7 +401,6 @@ export default function UsersTile({
       if (selectedId !== id) setSelectedId(id)
       return
     }
-
     // list + detail
     if (t === 'users-list') {
       if (!id) {
@@ -464,7 +474,6 @@ export default function UsersTile({
     if (viewMode === 'list') return LIST
     if (viewMode === 'invite') return INVITE
     if (viewMode === 'attachments-manager') return ['close']
-
     if (viewMode === 'read') {
       if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
       return withAttachments(READ_DEFAULT)
@@ -577,7 +586,6 @@ export default function UsersTile({
           setUrl({ t: 'users-list', id: '', vm: 'create' }, 'push')
           return
         }
-
         if (id === 'view' || id === 'edit') {
           if (!selectedId) return
           const user = users.find((u) => u.id === selectedId)
@@ -721,13 +729,7 @@ export default function UsersTile({
   if (viewMode === 'attachments-manager') {
     const managerId = attachmentsManagerSubjectId ?? ''
     const managerUser = users.find((u) => u.id === managerId) ?? (detailUser?.id === managerId ? detailUser : null)
-    return (
-      <AttachmentsManagerFrame
-        entityType="subjects"
-        entityId={managerId}
-        entityLabel={managerUser?.displayName ?? null}
-      />
-    )
+    return <AttachmentsManagerFrame entityType="subjects" entityId={managerId} entityLabel={managerUser?.displayName ?? null} />
   }
 
   if (viewMode === 'invite') {
@@ -762,5 +764,3 @@ export default function UsersTile({
 
   return null
 }
-
-        
