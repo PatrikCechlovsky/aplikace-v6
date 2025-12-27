@@ -589,8 +589,15 @@ export default function DetailAttachmentsSection({
             <h3 className="detail-form__section-title">{isManager ? 'Přílohy' : 'Přílohy (read-only)'}</h3>
 
             {/* Scroll wrapper: X pro šířku, Y pro hodně dokumentů */}
-            <div className="detail-attachments__table-wrap" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 420 }}>
-              <div className="detail-attachments__table" role="table" aria-label="Přílohy" style={{ minWidth: 920 }}>
+            <div className="detail-attachments__table-wrap" role="region" aria-label="Přílohy">
+              <div
+                className={
+                  'detail-attachments__table ' +
+                  (isManager ? 'detail-attachments__table--manager' : 'detail-attachments__table--list')
+                }
+                role="table"
+                aria-label="Přílohy"
+              >
                 <div className="detail-attachments__row detail-attachments__row--head" role="row">
                   <div className="detail-attachments__cell" role="columnheader">Název</div>
                   <div className="detail-attachments__cell" role="columnheader">Popis</div>
