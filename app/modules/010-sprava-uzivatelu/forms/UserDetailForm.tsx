@@ -119,19 +119,37 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
     <div className="detail-form">
       {/* ZÁKLAD */}
       <div className="detail-form__section">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
           <div className="detail-form__section-title">Základ</div>
         
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-            <span className="detail-form__label" style={{ margin: 0 }}>Archivováno</span>
+          <label
+            className="detail-form__label"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              margin: 0,
+              whiteSpace: 'nowrap',
+              cursor: readOnly ? 'default' : 'pointer',
+            }}
+          >
             <input
               type="checkbox"
               checked={val.isArchived}
               disabled={readOnly}
               onChange={(e) => update({ isArchived: e.target.checked })}
             />
+            <span>Archivováno</span>
           </label>
         </div>
+  
   
         <div className="detail-form__grid">
           <div className="detail-form__field">
