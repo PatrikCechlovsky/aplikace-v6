@@ -591,10 +591,6 @@ export default function UserDetailFrame({
               <label className="detail-form__label">První přihlášení</label>
               <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.firstLoginAt ?? '—'} readOnly />
             </div>
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">Archivován</label>
-              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.isArchived ? 'Ano' : 'Ne'} readOnly />
-            </div>
           </div>
         ),
       },
