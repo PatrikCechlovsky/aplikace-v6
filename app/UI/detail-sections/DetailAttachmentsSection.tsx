@@ -205,10 +205,19 @@ export default function DetailAttachmentsSection({
     [nameById]
   )
 
-  const openFileByPath = useCallback(async (filePath: string) => {
+    const openFileByPath = useCallback(async (filePath: string) => {
     const url = await getAttachmentSignedUrl({ filePath, expiresInSeconds: 60 })
     window.open(url, '_blank', 'noopener,noreferrer')
   }, [])
+
+  const handleArchivedToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setIncludeArchived(e.target.checked)
+  }, [])
+
+  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilterText(e.target.value)
+  }, [])
+
 
   const handleOpenLatest = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>) => {
