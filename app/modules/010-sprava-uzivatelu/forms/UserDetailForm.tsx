@@ -165,6 +165,15 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               onChange={(e) => update({ login: e.target.value })}
             />
           </div>
+          <div className="detail-form__field detail-form__field--checkbox">
+            <label className="detail-form__label">Archivováno</label>
+            <input
+              type="checkbox"
+              checked={val.isArchived}
+              disabled={readOnly}
+              onChange={(e) => update({ isArchived: e.target.checked })}
+            />
+          </div>
         </div>
       </div>
   
@@ -200,16 +209,6 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               value={val.lastName}
               readOnly={readOnly}
               onChange={(e) => update({ lastName: e.target.value })}
-            />
-          </div>
-  
-          <div className="detail-form__field">
-            <label className="detail-form__label">Archivováno</label>
-            <input
-              type="checkbox"
-              checked={val.isArchived}
-              disabled={readOnly}
-              onChange={(e) => update({ isArchived: e.target.checked })}
             />
           </div>
         </div>
