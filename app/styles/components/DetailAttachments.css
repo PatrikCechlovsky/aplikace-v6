@@ -1,4 +1,23 @@
-// app/styles/components/DetailAttachments.css
+/* app/styles/components/DetailAttachments.css */
+
+/* ==========================================================================
+   1) IMPORTS
+   ========================================================================== */
+/* (none) */
+
+/* ==========================================================================
+   2) TYPES
+   ========================================================================== */
+/* (none) */
+
+/* ==========================================================================
+   3) HELPERS
+   ========================================================================== */
+/* (none) */
+
+/* ==========================================================================
+   4) DATA LOAD  (layout / base styles)
+   ========================================================================== */
 
 .detail-attachments__toolbar {
   display: flex;
@@ -8,6 +27,13 @@
 }
 
 .detail-attachments__toolbar-left {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.detail-attachments__toolbar-right {
   display: flex;
   gap: 12px;
   align-items: flex-end;
@@ -30,14 +56,42 @@
   margin-top: 10px;
 }
 
+/* Scroll wrapper:
+   - X: když je tabulka širší než container
+   - Y: když je více dokumentů
+*/
+.detail-attachments__table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 420px;
+  padding-bottom: 2px;
+}
+
+/* ==========================================================================
+   5) ACTION HANDLERS  (table rows + cells)
+   ========================================================================== */
+
 .detail-attachments__table {
   display: grid;
   gap: 6px;
+  /* aby se tabulka nerozsypala a měl smysl horizontální scroll */
+  min-width: 920px;
+}
+
+/* List vs Manager mají jiné sloupce:
+   - list: bez "Akce"
+   - manager: s "Akce"
+*/
+.detail-attachments__table--list .detail-attachments__row {
+  grid-template-columns: 1.2fr 1.6fr 1.8fr 0.6fr 1.4fr;
+}
+
+.detail-attachments__table--manager .detail-attachments__row {
+  grid-template-columns: 1.2fr 1.6fr 1.6fr 0.6fr 1.1fr 1.8fr;
 }
 
 .detail-attachments__row {
   display: grid;
-  grid-template-columns: 1.2fr 1.6fr 1.6fr 0.6fr 1.1fr 1.1fr 1.2fr;
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid var(--color-border-soft);
@@ -50,13 +104,20 @@
   font-weight: 600;
 }
 
-.detail-attachments__row--versions {
-  grid-template-columns: 1fr;
+/* řádek "sub" pro verze/historii */
+.detail-attachments__row--sub {
   background: var(--color-surface-subtle);
 }
 
 .detail-attachments__cell {
   min-width: 0;
+}
+
+/* 1 řádek / bez zalamování v buňkách (důležité pro požadavek "jednořádkové") */
+.detail-attachments__ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-attachments__title {
@@ -102,17 +163,32 @@
   text-decoration: underline;
 }
 
-.detail-attachments__actions {
+.detail-attachments__row-actions {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-.detail-attachments__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.detail-attachments__small {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.detail-attachments__small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.detail-attachments__meta-line {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .detail-attachments__muted {
@@ -127,28 +203,42 @@
   display: none;
 }
 
-.detail-attachments__versions {
+/* subrow: verze/historie */
+.detail-attachments__cell--span {
   grid-column: 1 / -1;
 }
 
-.detail-attachments__versions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.detail-attachments__versions-grid {
+  display: grid;
+  gap: 6px;
 }
 
-.detail-attachments__version-item {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
+.detail-attachments__version {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 12px;
+  background: var(--color-surface);
 }
+
+/* ==========================================================================
+   6) RENDER  (responsive)
+   ========================================================================== */
 
 @media (max-width: 980px) {
+  /* na mobilu přepneme na 1 sloupec, hlavičku schováme */
   .detail-attachments__row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
+
   .detail-attachments__row--head {
     display: none;
+  }
+
+  .detail-attachments__table {
+    min-width: 0;
+  }
+
+  .detail-attachments__table-wrap {
+    max-height: none;
   }
 }
