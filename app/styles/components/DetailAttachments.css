@@ -99,6 +99,15 @@
   background: var(--color-surface);
 }
 
+/* List vs Manager sloupce */
+.detail-attachments__table--list .detail-attachments__row {
+  grid-template-columns: 1.2fr 1.6fr 1.8fr 0.6fr 1.4fr;
+}
+
+.detail-attachments__table--manager .detail-attachments__row {
+  grid-template-columns: 1.2fr 1.6fr 1.6fr 0.6fr 1.1fr 1.8fr;
+}
+
 .detail-attachments__row--head {
   background: var(--color-surface-subtle);
   font-weight: 600;
@@ -220,6 +229,15 @@
   background: var(--color-surface);
 }
 
+/* wrapper má vyplnit dostupnou výšku okna */
+.detail-attachments__table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+
+  /* přizpůsobení oknu – odečítáme horní UI (breadcrumbs + tabs + toolbar) */
+  max-height: calc(100vh - 260px);
+}
 /* ==========================================================================
    6) RENDER  (responsive)
    ========================================================================== */
