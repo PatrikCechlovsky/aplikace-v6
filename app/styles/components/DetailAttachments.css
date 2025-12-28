@@ -78,7 +78,9 @@
 .detail-attachments__panel {
   margin-top: 10px;
 }
-
+.detail-attachments__archived-label {
+  user-select: none;
+}
 /* ==========================================================================
    5) ACTION HANDLERS (table rows + cells)
    ========================================================================== */
