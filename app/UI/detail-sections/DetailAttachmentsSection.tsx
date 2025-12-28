@@ -436,7 +436,6 @@ export default function DetailAttachmentsSection({
       setEditSaving(false)
     }
   }, [isManager, editingDocId, editTitle, editDesc, loadAttachments])
-
 // ============================================================================
 // 6) RENDER
 // ============================================================================
@@ -452,6 +451,8 @@ export default function DetailAttachmentsSection({
     )
   }
 
+  const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
+
   return (
     <div className="detail-view__section">
       {isManagerRequested && !isManager && (
@@ -463,282 +464,288 @@ export default function DetailAttachmentsSection({
         </div>
       )}
 
-      {/* Toolbar: vlevo filtr, vpravo archiv + (jen manager) akce */}
-      <div className="detail-form__section" style={{ marginBottom: 8 }}>
-        <div className="detail-attachments__toolbar">
-          <div className="detail-attachments__toolbar-left">
-            <div className="detail-attachments__filter">
-              <label className="detail-form__label detail-attachments__label-hidden">Filtr</label>
-              <input
-                className="generic-type__filter-input detail-attachments__filter-input"
-                placeholder="Hledat podle názvu, popisu nebo souboru"
-                value={filterText}
-                onChange={handleFilterChange}
-              />
+      {/* =========================
+          HLAVNÍ SEKCE: Title + Toolbar + obsah
+         ========================= */}
+      <div className="detail-form">
+        <section className="detail-form__section">
+          {/* Title + Toolbar v jednom bloku (odstraní mezeru mezi toolbar a tabulkou) */}
+          <div className="detail-attachments__section-head">
+            <h3 className="detail-form__section-title detail-attachments__title-h3">{sectionTitle}</h3>
+
+            <div className="detail-attachments__toolbar">
+              <div className="detail-attachments__toolbar-left">
+                <div className="detail-attachments__filter">
+                  <label className="detail-form__label detail-attachments__label-hidden">Filtr</label>
+                  <input
+                    className="generic-type__filter-input detail-attachments__filter-input"
+                    placeholder="Hledat podle názvu, popisu nebo souboru"
+                    value={filterText}
+                    onChange={handleFilterChange}
+                  />
+                </div>
+              </div>
+
+              <div className="detail-attachments__toolbar-right">
+                <div className="detail-attachments__archived">
+                  <label className="generic-type__checkbox-label detail-attachments__archived-label">
+                    <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
+                    <span>Zobrazit archivované</span>
+                  </label>
+                </div>
+
+                {isManager &&
+                  Object.entries(LOCAL_ACTIONS).map(([id, def]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className="common-actions__button"
+                      data-action={id}
+                      onClick={onToolbarActionClick}
+                      title={def.title}
+                      disabled={saving || editSaving}
+                    >
+                      <span className="common-actions__icon" aria-hidden>
+                        {getIcon(def.icon)}
+                      </span>
+                      <span className="common-actions__label">{def.label}</span>
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
 
-          <div className="detail-attachments__toolbar-right">
-            <div className="detail-attachments__archived">
-              <label className="generic-type__checkbox-label detail-attachments__archived-label">
-                <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
-                <span>Zobrazit archivované</span>
-              </label>
-            </div>
+          {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
 
-            {isManager &&
-              Object.entries(LOCAL_ACTIONS).map(([id, def]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className="common-actions__button"
-                  data-action={id}
-                  onClick={onToolbarActionClick}
-                  title={def.title}
-                  disabled={saving || editSaving}
+          {!loading && errorText && (
+            <div className="detail-view__placeholder">
+              Chyba: <strong>{errorText}</strong>
+            </div>
+          )}
+
+          {/* Manager panely necháváme zvlášť (toto jsou formuláře) */}
+          {isManager && panelOpen && (
+            <div className="detail-form">
+              <section className="detail-form__section">
+                <h3 className="detail-form__section-title">Nová příloha</h3>
+
+                <div className="detail-form__grid detail-form__grid--narrow">
+                  <div className="detail-form__field detail-form__field--span-4">
+                    <label className="detail-form__label">Název</label>
+                    <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+                  </div>
+
+                  <div className="detail-form__field detail-form__field--span-4">
+                    <label className="detail-form__label">Popis</label>
+                    <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+                  </div>
+
+                  <div className="detail-form__field detail-form__field--span-4">
+                    <label className="detail-form__label">Soubor</label>
+                    <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
+                    <div className="detail-form__hint">Vytvoří dokument + verzi v001 a nahraje soubor do storage.</div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {isManager && editingDocId && (
+            <div className="detail-form">
+              <section className="detail-form__section">
+                <h3 className="detail-form__section-title">Upravit metadata</h3>
+
+                <div className="detail-form__grid detail-form__grid--narrow">
+                  <div className="detail-form__field detail-form__field--span-4">
+                    <label className="detail-form__label">Název</label>
+                    <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                  </div>
+
+                  <div className="detail-form__field detail-form__field--span-4">
+                    <label className="detail-form__label">Popis</label>
+                    <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+                  </div>
+
+                  <div className="detail-form__field detail-form__field--span-4">
+                    <label className="detail-form__label">&nbsp;</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" className="common-actions__button" onClick={() => void handleEditMetadataSave()} disabled={editSaving}>
+                        <span className="common-actions__icon" aria-hidden>
+                          {getIcon('save')}
+                        </span>
+                        <span className="common-actions__label">Uložit</span>
+                      </button>
+
+                      <button type="button" className="common-actions__button" onClick={handleEditMetadataCancel} disabled={editSaving}>
+                        <span className="common-actions__icon" aria-hidden>
+                          {getIcon('close')}
+                        </span>
+                        <span className="common-actions__label">Zrušit</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {!loading && !errorText && filteredRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
+
+          {!loading && !errorText && filteredRows.length > 0 && (
+            <>
+              {/* Scroll wrapper: X pro šířku, Y pro hodně dokumentů */}
+              <div className="detail-attachments__table-wrap" role="region" aria-label="Přílohy">
+                <div
+                  className={
+                    'detail-attachments__table ' +
+                    (isManager ? 'detail-attachments__table--manager' : 'detail-attachments__table--list')
+                  }
+                  role="table"
+                  aria-label="Přílohy"
                 >
-                  <span className="common-actions__icon" aria-hidden>
-                    {getIcon(def.icon)}
-                  </span>
-                  <span className="common-actions__label">{def.label}</span>
-                </button>
-              ))}
-          </div>
-        </div>
-      </div>
+                  <div className="detail-attachments__row detail-attachments__row--head" role="row">
+                    <div className="detail-attachments__cell" role="columnheader">Název</div>
+                    <div className="detail-attachments__cell" role="columnheader">Popis</div>
+                    <div className="detail-attachments__cell" role="columnheader">Soubor (latest)</div>
+                    <div className="detail-attachments__cell" role="columnheader">Verze</div>
+                    <div className="detail-attachments__cell" role="columnheader">Nahráno</div>
+                    {isManager ? <div className="detail-attachments__cell" role="columnheader">Akce</div> : null}
+                  </div>
 
-      {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
+                  {filteredRows.map((r) => {
+                    const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
+                    const isExpanded = isManager && expandedDocId === r.id
+                    const versions = versionsByDocId[r.id] ?? []
 
-      {!loading && errorText && (
-        <div className="detail-view__placeholder">
-          Chyba: <strong>{errorText}</strong>
-        </div>
-      )}
-
-      {isManager && panelOpen && (
-        <div className="detail-form">
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Nová příloha</h3>
-
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Název</label>
-                <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Popis</label>
-                <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Soubor</label>
-                <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
-                <div className="detail-form__hint">Vytvoří dokument + verzi v001 a nahraje soubor do storage.</div>
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {isManager && editingDocId && (
-        <div className="detail-form">
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Upravit metadata</h3>
-
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Název</label>
-                <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Popis</label>
-                <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
-              </div>
-
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">&nbsp;</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" className="common-actions__button" onClick={() => void handleEditMetadataSave()} disabled={editSaving}>
-                    <span className="common-actions__icon" aria-hidden>
-                      {getIcon('save')}
-                    </span>
-                    <span className="common-actions__label">Uložit</span>
-                  </button>
-
-                  <button type="button" className="common-actions__button" onClick={handleEditMetadataCancel} disabled={editSaving}>
-                    <span className="common-actions__icon" aria-hidden>
-                      {getIcon('close')}
-                    </span>
-                    <span className="common-actions__label">Zrušit</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {!loading && !errorText && filteredRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
-
-      {!loading && !errorText && filteredRows.length > 0 && (
-        <div className="detail-form">
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">{isManager ? 'Přílohy' : 'Přílohy (read-only)'}</h3>
-
-            {/* Scroll wrapper: X pro šířku, Y pro hodně dokumentů */}
-            <div className="detail-attachments__table-wrap" role="region" aria-label="Přílohy">
-              <div
-                className={
-                  'detail-attachments__table ' +
-                  (isManager ? 'detail-attachments__table--manager' : 'detail-attachments__table--list')
-                }
-                role="table"
-                aria-label="Přílohy"
-              >
-                <div className="detail-attachments__row detail-attachments__row--head" role="row">
-                  <div className="detail-attachments__cell" role="columnheader">Název</div>
-                  <div className="detail-attachments__cell" role="columnheader">Popis</div>
-                  <div className="detail-attachments__cell" role="columnheader">Soubor (latest)</div>
-                  <div className="detail-attachments__cell" role="columnheader">Verze</div>
-                  <div className="detail-attachments__cell" role="columnheader">Nahráno</div>
-                  {isManager ? <div className="detail-attachments__cell" role="columnheader">Akce</div> : null}
-                </div>
-
-                {filteredRows.map((r) => {
-                  const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
-                  const isExpanded = isManager && expandedDocId === r.id
-                  const versions = versionsByDocId[r.id] ?? []
-
-                  return (
-                    <React.Fragment key={r.id}>
-                      <div className="detail-attachments__row" role="row">
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {r.title}
-                            {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-                          </div>
-                        </div>
-
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {r.description ?? '—'}
-                          </div>
-                        </div>
-
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__file" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            <button
-                              type="button"
-                              className="detail-attachments__link"
-                              data-path={r.file_path}
-                              onClick={handleOpenLatest}
-                              title="Otevřít soubor"
-                              style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 360 }}
-                            >
-                              {r.file_name}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
-                            v{String(r.version_number).padStart(3, '0')}
-                          </div>
-                        </div>
-
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
-                            {formatDt(r.version_created_at)} • kdo: {uploadedName}
-                          </div>
-                        </div>
-
-                        {isManager ? (
+                    return (
+                      <React.Fragment key={r.id}>
+                        <div className="detail-attachments__row" role="row">
                           <div className="detail-attachments__cell" role="cell">
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button
-                                type="button"
-                                className="detail-attachments__small"
-                                data-docid={r.id}
-                                onClick={handleToggleVersions}
-                                disabled={versionsLoadingId === r.id || saving}
-                                title="Zobrazit/skrýt verze"
-                              >
-                                {isExpanded ? 'Skrýt verze' : 'Verze'}
-                              </button>
-
-                              <button
-                                type="button"
-                                className="detail-attachments__small"
-                                data-docid={r.id}
-                                data-title={r.title ?? ''}
-                                data-desc={r.description ?? ''}
-                                onClick={handleEditMetadataStart}
-                                disabled={saving || editSaving}
-                                title="Upravit metadata"
-                              >
-                                Upravit
-                              </button>
-
-                              <button
-                                type="button"
-                                className="detail-attachments__small"
-                                data-docid={r.id}
-                                onClick={handleAddVersionRequest}
-                                disabled={saving}
-                                title="Přidat novou verzi"
-                              >
-                                Nová verze
-                              </button>
-
-                              <input
-                                ref={(el) => setVersionInputRef(r.id, el)}
-                                data-docid={r.id}
-                                type="file"
-                                style={{ display: 'none' }}
-                                onChange={handleAddVersionPick}
-                              />
+                            <div className="detail-attachments__title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {r.title}
+                              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
                             </div>
                           </div>
-                        ) : null}
-                      </div>
 
-                      {isExpanded && (
-                        <div className="detail-attachments__row detail-attachments__row--sub" role="row">
-                          <div className="detail-attachments__cell" role="cell" style={{ gridColumn: '1 / -1' }}>
-                            {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
-
-                            {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
-
-                            {!versionsLoadingId && versions.length > 0 && (
-                              <div style={{ display: 'grid', gap: 6 }}>
-                                {versions.map((v) => {
-                                  const createdName = resolveName(null, v.created_by ?? null)
-                                  return (
-                                    <div key={v.id} className="detail-attachments__version">
-                                      <div>
-                                        <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
-                                      </div>
-                                      <div className="detail-attachments__muted">
-                                        {formatDt(v.created_at)} • kdo: {createdName}
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
+                          <div className="detail-attachments__cell" role="cell">
+                            <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {r.description ?? '—'}
+                            </div>
                           </div>
+
+                          <div className="detail-attachments__cell" role="cell">
+                            <div className="detail-attachments__file" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <button
+                                type="button"
+                                className="detail-attachments__link"
+                                data-path={r.file_path}
+                                onClick={handleOpenLatest}
+                                title="Otevřít soubor"
+                                style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 360 }}
+                              >
+                                {r.file_name}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="detail-attachments__cell" role="cell">
+                            <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
+                              v{String(r.version_number).padStart(3, '0')}
+                            </div>
+                          </div>
+
+                          <div className="detail-attachments__cell" role="cell">
+                            <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
+                              {formatDt(r.version_created_at)} • kdo: {uploadedName}
+                            </div>
+                          </div>
+
+                          {isManager ? (
+                            <div className="detail-attachments__cell" role="cell">
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <button
+                                  type="button"
+                                  className="detail-attachments__small"
+                                  data-docid={r.id}
+                                  onClick={handleToggleVersions}
+                                  disabled={versionsLoadingId === r.id || saving}
+                                  title="Zobrazit/skrýt verze"
+                                >
+                                  {isExpanded ? 'Skrýt verze' : 'Verze'}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="detail-attachments__small"
+                                  data-docid={r.id}
+                                  data-title={r.title ?? ''}
+                                  data-desc={r.description ?? ''}
+                                  onClick={handleEditMetadataStart}
+                                  disabled={saving || editSaving}
+                                  title="Upravit metadata"
+                                >
+                                  Upravit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="detail-attachments__small"
+                                  data-docid={r.id}
+                                  onClick={handleAddVersionRequest}
+                                  disabled={saving}
+                                  title="Přidat novou verzi"
+                                >
+                                  Nová verze
+                                </button>
+
+                                <input
+                                  ref={(el) => setVersionInputRef(r.id, el)}
+                                  data-docid={r.id}
+                                  type="file"
+                                  style={{ display: 'none' }}
+                                  onChange={handleAddVersionPick}
+                                />
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
-                      )}
-                    </React.Fragment>
-                  )
-                })}
+
+                        {isExpanded && (
+                          <div className="detail-attachments__row detail-attachments__row--sub" role="row">
+                            <div className="detail-attachments__cell" role="cell" style={{ gridColumn: '1 / -1' }}>
+                              {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
+
+                              {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
+
+                              {!versionsLoadingId && versions.length > 0 && (
+                                <div style={{ display: 'grid', gap: 6 }}>
+                                  {versions.map((v) => {
+                                    const createdName = resolveName(null, v.created_by ?? null)
+                                    return (
+                                      <div key={v.id} className="detail-attachments__version">
+                                        <div>
+                                          <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
+                                        </div>
+                                        <div className="detail-attachments__muted">
+                                          {formatDt(v.created_at)} • kdo: {createdName}
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
-      )}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   )
 }
