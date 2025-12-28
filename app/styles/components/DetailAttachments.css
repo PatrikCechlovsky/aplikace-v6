@@ -65,6 +65,7 @@
 .detail-attachments__table {
   display: grid;
   gap: 6px;
+  font-size: 12px;
   min-width: 920px; /* aby měl smysl horizontální scroll */
 }
 
@@ -79,8 +80,8 @@
 
 .detail-attachments__row {
   display: grid;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border-soft);
   border-radius: 12px;
   background: var(--color-surface);
@@ -88,7 +89,7 @@
 
 .detail-attachments__row--head {
   background: var(--color-surface-subtle);
-  font-weight: inherit;
+  font-weight: 500;
 }
 
 .detail-attachments__row--sub {
@@ -110,7 +111,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: inherit;
+  font-weight: 500;
 }
 
 .detail-attachments__archived-badge {
