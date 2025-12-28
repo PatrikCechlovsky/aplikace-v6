@@ -480,7 +480,6 @@ export default function DetailAttachmentsSection({
 
           <div className="detail-attachments__toolbar-right">
             <div className="detail-attachments__archived">
-              <label className="detail-form__label">&nbsp;</label>
               <label className="generic-type__checkbox-label detail-attachments__archived-label">
                 <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
                 <span>Zobrazit archivované</span>
