@@ -18,7 +18,17 @@
 /* ==========================================================================
    4) DATA LOAD (layout + TYPO sjednocení)
    ========================================================================== */
+/* ✅ hlavička sekce: title + toolbar v jednom bloku (bez mezery) */
+.detail-attachments__section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
 
+.detail-attachments__title-h3 {
+  margin: 0;
+}
 /* ✅ TYPO: všechno v přílohách má dědit stejné písmo jako zbytek formuláře/listů */
 .detail-attachments__table,
 .detail-attachments__row,
