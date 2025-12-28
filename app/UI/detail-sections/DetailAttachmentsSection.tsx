@@ -583,154 +583,142 @@ export default function DetailAttachmentsSection({
           {!loading && !errorText && filteredRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
 
           {!loading && !errorText && filteredRows.length > 0 && (
-            <div className="detail-attachments__table-wrap" role="region" aria-label="Přílohy">
-              <div
-                className={'detail-attachments__table ' + (isManager ? 'detail-attachments__table--manager' : 'detail-attachments__table--list')}
-                role="table"
-                aria-label="Přílohy"
-              >
-                <div className="detail-attachments__row detail-attachments__row--head" role="row">
-                  <div className="detail-attachments__cell" role="columnheader">Název</div>
-                  <div className="detail-attachments__cell" role="columnheader">Popis</div>
-                  <div className="detail-attachments__cell" role="columnheader">Soubor (latest)</div>
-                  <div className="detail-attachments__cell" role="columnheader">Verze</div>
-                  <div className="detail-attachments__cell" role="columnheader">Nahráno</div>
-                  {isManager ? <div className="detail-attachments__cell" role="columnheader">Akce</div> : null}
-                </div>
+  <div className="generic-type__table-wrapper detail-attachments__table-wrapper" role="region" aria-label="Přílohy">
+    <table className="generic-type__table detail-attachments__table" role="table" aria-label="Přílohy">
+      <thead>
+        <tr>
+          <th className="generic-type__cell" scope="col">Název</th>
+          <th className="generic-type__cell" scope="col">Popis</th>
+          <th className="generic-type__cell" scope="col">Soubor (latest)</th>
+          <th className="generic-type__cell" scope="col">Verze</th>
+          <th className="generic-type__cell" scope="col">Nahráno</th>
+          {isManager ? <th className="generic-type__cell" scope="col">Akce</th> : null}
+        </tr>
+      </thead>
 
-                {filteredRows.map((r) => {
-                  const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
-                  const isExpanded = isManager && expandedDocId === r.id
-                  const versions = versionsByDocId[r.id] ?? []
+      <tbody>
+        {filteredRows.map((r) => {
+          const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
+          const isExpanded = isManager && expandedDocId === r.id
+          const versions = versionsByDocId[r.id] ?? []
 
-                  return (
-                    <React.Fragment key={r.id}>
-                      <div className="detail-attachments__row" role="row">
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {r.title}
-                            {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-                          </div>
-                        </div>
+          return (
+            <React.Fragment key={r.id}>
+              <tr className="listview__row">
+                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                  <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                    <strong style={{ fontWeight: 500 }}>{r.title}</strong>
+                    {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+                  </span>
+                </td>
 
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {r.description ?? '—'}
-                          </div>
-                        </div>
+                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                  <span className="detail-attachments__muted">{r.description ?? '—'}</span>
+                </td>
 
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__file" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            <button
-                              type="button"
-                              className="detail-attachments__link"
-                              data-path={r.file_path}
-                              onClick={handleOpenLatest}
-                              title="Otevřít soubor"
-                              style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 360 }}
-                            >
-                              {r.file_name}
-                            </button>
-                          </div>
-                        </div>
+                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                  <button
+                    type="button"
+                    className="detail-attachments__link"
+                    data-path={r.file_path}
+                    onClick={handleOpenLatest}
+                    title="Otevřít soubor"
+                  >
+                    {r.file_name}
+                  </button>
+                </td>
 
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
-                            v{String(r.version_number).padStart(3, '0')}
-                          </div>
-                        </div>
+                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                  <span className="detail-attachments__muted">v{String(r.version_number).padStart(3, '0')}</span>
+                </td>
 
-                        <div className="detail-attachments__cell" role="cell">
-                          <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
-                            {formatDt(r.version_created_at)} • kdo: {uploadedName}
-                          </div>
-                        </div>
+                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                  <span className="detail-attachments__muted">
+                    {formatDt(r.version_created_at)} • kdo: {uploadedName}
+                  </span>
+                </td>
 
-                        {isManager ? (
-                          <div className="detail-attachments__cell" role="cell">
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button
-                                type="button"
-                                className="detail-attachments__small"
-                                data-docid={r.id}
-                                onClick={handleToggleVersions}
-                                disabled={versionsLoadingId === r.id || saving}
-                                title="Zobrazit/skrýt verze"
-                              >
-                                {isExpanded ? 'Skrýt verze' : 'Verze'}
-                              </button>
+                {isManager ? (
+                  <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="detail-attachments__small"
+                        data-docid={r.id}
+                        onClick={handleToggleVersions}
+                        disabled={versionsLoadingId === r.id || saving}
+                        title="Zobrazit/skrýt verze"
+                      >
+                        {isExpanded ? 'Skrýt verze' : 'Verze'}
+                      </button>
 
-                              <button
-                                type="button"
-                                className="detail-attachments__small"
-                                data-docid={r.id}
-                                data-title={r.title ?? ''}
-                                data-desc={r.description ?? ''}
-                                onClick={handleEditMetadataStart}
-                                disabled={saving || editSaving}
-                                title="Upravit metadata"
-                              >
-                                Upravit
-                              </button>
+                      <button
+                        type="button"
+                        className="detail-attachments__small"
+                        data-docid={r.id}
+                        data-title={r.title ?? ''}
+                        data-desc={r.description ?? ''}
+                        onClick={handleEditMetadataStart}
+                        disabled={saving || editSaving}
+                        title="Upravit metadata"
+                      >
+                        Upravit
+                      </button>
 
-                              <button
-                                type="button"
-                                className="detail-attachments__small"
-                                data-docid={r.id}
-                                onClick={handleAddVersionRequest}
-                                disabled={saving}
-                                title="Přidat novou verzi"
-                              >
-                                Nová verze
-                              </button>
+                      <button
+                        type="button"
+                        className="detail-attachments__small"
+                        data-docid={r.id}
+                        onClick={handleAddVersionRequest}
+                        disabled={saving}
+                        title="Přidat novou verzi"
+                      >
+                        Nová verze
+                      </button>
 
-                              <input
-                                ref={(el) => setVersionInputRef(r.id, el)}
-                                data-docid={r.id}
-                                type="file"
-                                style={{ display: 'none' }}
-                                onChange={handleAddVersionPick}
-                              />
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
+                      <input
+                        ref={(el) => setVersionInputRef(r.id, el)}
+                        data-docid={r.id}
+                        type="file"
+                        style={{ display: 'none' }}
+                        onChange={handleAddVersionPick}
+                      />
+                    </div>
+                  </td>
+                ) : null}
+              </tr>
 
-                      {isExpanded && (
-                        <div className="detail-attachments__row detail-attachments__row--sub" role="row">
-                          <div className="detail-attachments__cell" role="cell" style={{ gridColumn: '1 / -1' }}>
-                            {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
+              {isExpanded && (
+                <tr className="listview__row">
+                  <td className="generic-type__cell" colSpan={isManager ? 6 : 5}>
+                    {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
 
-                            {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
+                    {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
 
-                            {!versionsLoadingId && versions.length > 0 && (
-                              <div style={{ display: 'grid', gap: 6 }}>
-                                {versions.map((v) => {
-                                  const createdName = resolveName(null, v.created_by ?? null)
-                                  return (
-                                    <div key={v.id} className="detail-attachments__version">
-                                      <div>
-                                        <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
-                                      </div>
-                                      <div className="detail-attachments__muted">
-                                        {formatDt(v.created_at)} • kdo: {createdName}
-                                      </div>
-                                    </div>
-                                  )
-                                })}
+                    {!versionsLoadingId && versions.length > 0 && (
+                      <div style={{ display: 'grid', gap: 6 }}>
+                        {versions.map((v) => {
+                          const createdName = resolveName(null, v.created_by ?? null)
+                          return (
+                            <div key={v.id} className="detail-attachments__version">
+                              <div>
+                                <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </React.Fragment>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  )
-}
+                              <div className="detail-attachments__muted">
+                                {formatDt(v.created_at)} • kdo: {createdName}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          )
+        })}
+      </tbody>
+    </table>
+  </div>
+)}
