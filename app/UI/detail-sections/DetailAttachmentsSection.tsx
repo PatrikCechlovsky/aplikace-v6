@@ -467,33 +467,30 @@ export default function DetailAttachmentsSection({
       {/* =========================
           HLAVNÍ SEKCE: Title + Toolbar + obsah
          ========================= */}
+
       <div className="detail-form">
         <section className="detail-form__section">
           {/* Title + Toolbar v jednom bloku (odstraní mezeru mezi toolbar a tabulkou) */}
           <div className="detail-attachments__section-head">
             <h3 className="detail-form__section-title detail-attachments__title-h3">{sectionTitle}</h3>
-
-            <div className="detail-attachments__toolbar">
-              <div className="detail-attachments__toolbar-left">
-                <div className="detail-attachments__filter">
-                  <label className="detail-form__label detail-attachments__label-hidden">Filtr</label>
-                  <input
-                    className="generic-type__filter-input detail-attachments__filter-input"
-                    placeholder="Hledat podle názvu, popisu nebo souboru"
-                    value={filterText}
-                    onChange={handleFilterChange}
-                  />
-                </div>
+      
+            {/* ✅ Toolbar sjednocený s GenericType / ListView */}
+            <div className="generic-type__list-toolbar">
+              <div className="generic-type__list-toolbar-left">
+                <input
+                  className="generic-type__filter-input"
+                  placeholder="Hledat podle názvu, popisu nebo souboru"
+                  value={filterText}
+                  onChange={handleFilterChange}
+                />
               </div>
-
-              <div className="detail-attachments__toolbar-right">
-                <div className="detail-attachments__archived">
-                  <label className="generic-type__checkbox-label detail-attachments__archived-label">
-                    <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
-                    <span>Zobrazit archivované</span>
-                  </label>
-                </div>
-
+      
+              <div className="generic-type__list-toolbar-right">
+                <label className="generic-type__checkbox-label">
+                  <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
+                  <span>Zobrazit archivované</span>
+                </label>
+      
                 {isManager &&
                   Object.entries(LOCAL_ACTIONS).map(([id, def]) => (
                     <button
@@ -514,32 +511,32 @@ export default function DetailAttachmentsSection({
               </div>
             </div>
           </div>
-
+      
           {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
-
+      
           {!loading && errorText && (
             <div className="detail-view__placeholder">
               Chyba: <strong>{errorText}</strong>
             </div>
           )}
-
+      
           {/* Manager panely necháváme zvlášť (toto jsou formuláře) */}
           {isManager && panelOpen && (
             <div className="detail-form">
               <section className="detail-form__section">
                 <h3 className="detail-form__section-title">Nová příloha</h3>
-
+      
                 <div className="detail-form__grid detail-form__grid--narrow">
                   <div className="detail-form__field detail-form__field--span-4">
                     <label className="detail-form__label">Název</label>
                     <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
                   </div>
-
+      
                   <div className="detail-form__field detail-form__field--span-4">
                     <label className="detail-form__label">Popis</label>
                     <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
                   </div>
-
+      
                   <div className="detail-form__field detail-form__field--span-4">
                     <label className="detail-form__label">Soubor</label>
                     <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
@@ -549,23 +546,23 @@ export default function DetailAttachmentsSection({
               </section>
             </div>
           )}
-
+      
           {isManager && editingDocId && (
             <div className="detail-form">
               <section className="detail-form__section">
                 <h3 className="detail-form__section-title">Upravit metadata</h3>
-
+      
                 <div className="detail-form__grid detail-form__grid--narrow">
                   <div className="detail-form__field detail-form__field--span-4">
                     <label className="detail-form__label">Název</label>
                     <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
                   </div>
-
+      
                   <div className="detail-form__field detail-form__field--span-4">
                     <label className="detail-form__label">Popis</label>
                     <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
                   </div>
-
+      
                   <div className="detail-form__field detail-form__field--span-4">
                     <label className="detail-form__label">&nbsp;</label>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -575,7 +572,7 @@ export default function DetailAttachmentsSection({
                         </span>
                         <span className="common-actions__label">Uložit</span>
                       </button>
-
+      
                       <button type="button" className="common-actions__button" onClick={handleEditMetadataCancel} disabled={editSaving}>
                         <span className="common-actions__icon" aria-hidden>
                           {getIcon('close')}
@@ -588,9 +585,9 @@ export default function DetailAttachmentsSection({
               </section>
             </div>
           )}
-
+      
           {!loading && !errorText && filteredRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
-
+      
           {!loading && !errorText && filteredRows.length > 0 && (
             <>
               {/* Scroll wrapper: X pro šířku, Y pro hodně dokumentů */}
@@ -611,12 +608,12 @@ export default function DetailAttachmentsSection({
                     <div className="detail-attachments__cell" role="columnheader">Nahráno</div>
                     {isManager ? <div className="detail-attachments__cell" role="columnheader">Akce</div> : null}
                   </div>
-
+      
                   {filteredRows.map((r) => {
                     const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
                     const isExpanded = isManager && expandedDocId === r.id
                     const versions = versionsByDocId[r.id] ?? []
-
+      
                     return (
                       <React.Fragment key={r.id}>
                         <div className="detail-attachments__row" role="row">
@@ -626,13 +623,13 @@ export default function DetailAttachmentsSection({
                               {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
                             </div>
                           </div>
-
+      
                           <div className="detail-attachments__cell" role="cell">
                             <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {r.description ?? '—'}
                             </div>
                           </div>
-
+      
                           <div className="detail-attachments__cell" role="cell">
                             <div className="detail-attachments__file" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               <button
@@ -647,19 +644,19 @@ export default function DetailAttachmentsSection({
                               </button>
                             </div>
                           </div>
-
+      
                           <div className="detail-attachments__cell" role="cell">
                             <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
                               v{String(r.version_number).padStart(3, '0')}
                             </div>
                           </div>
-
+      
                           <div className="detail-attachments__cell" role="cell">
                             <div className="detail-attachments__muted" style={{ whiteSpace: 'nowrap' }}>
                               {formatDt(r.version_created_at)} • kdo: {uploadedName}
                             </div>
                           </div>
-
+      
                           {isManager ? (
                             <div className="detail-attachments__cell" role="cell">
                               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -673,7 +670,7 @@ export default function DetailAttachmentsSection({
                                 >
                                   {isExpanded ? 'Skrýt verze' : 'Verze'}
                                 </button>
-
+      
                                 <button
                                   type="button"
                                   className="detail-attachments__small"
@@ -686,7 +683,7 @@ export default function DetailAttachmentsSection({
                                 >
                                   Upravit
                                 </button>
-
+      
                                 <button
                                   type="button"
                                   className="detail-attachments__small"
@@ -697,7 +694,7 @@ export default function DetailAttachmentsSection({
                                 >
                                   Nová verze
                                 </button>
-
+      
                                 <input
                                   ref={(el) => setVersionInputRef(r.id, el)}
                                   data-docid={r.id}
@@ -709,14 +706,14 @@ export default function DetailAttachmentsSection({
                             </div>
                           ) : null}
                         </div>
-
+      
                         {isExpanded && (
                           <div className="detail-attachments__row detail-attachments__row--sub" role="row">
                             <div className="detail-attachments__cell" role="cell" style={{ gridColumn: '1 / -1' }}>
                               {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
-
+      
                               {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
-
+      
                               {!versionsLoadingId && versions.length > 0 && (
                                 <div style={{ display: 'grid', gap: 6 }}>
                                   {versions.map((v) => {
@@ -746,6 +743,3 @@ export default function DetailAttachmentsSection({
           )}
         </section>
       </div>
-    </div>
-  )
-}
