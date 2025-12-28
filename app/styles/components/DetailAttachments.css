@@ -211,6 +211,14 @@
   border-radius: 12px;
   background: var(--color-surface);
 }
+.detail-attachments__table-wrapper {
+  max-height: calc(100vh - 260px);
+  overflow: auto;
+}
+
+.detail-attachments__table {
+  min-width: 920px; /* aby měl X scroll smysl */
+}
 
 /* ==========================================================================
    6) RENDER (responsive)
