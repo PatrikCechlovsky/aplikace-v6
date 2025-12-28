@@ -81,6 +81,9 @@
 .detail-attachments__archived-label {
   user-select: none;
 }
+.detail-attachments__filter-input {
+  width: 100%;
+}
 /* ==========================================================================
    5) ACTION HANDLERS (table rows + cells)
    ========================================================================== */
