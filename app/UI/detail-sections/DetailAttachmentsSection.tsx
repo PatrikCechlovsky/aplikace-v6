@@ -470,10 +470,10 @@ export default function DetailAttachmentsSection({
             <div className="detail-attachments__filter">
               <label className="detail-form__label detail-attachments__label-hidden">Filtr</label>
               <input
-                className="detail-form__input"
+                className="generic-type__filter-input detail-attachments__filter-input"
+                placeholder="Hledat podle názvu, popisu nebo souboru"
                 value={filterText}
                 onChange={handleFilterChange}
-                placeholder="Hledat podle názvu, popisu nebo souboru"
               />
             </div>
           </div>
