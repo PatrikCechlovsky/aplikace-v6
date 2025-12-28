@@ -18,6 +18,7 @@
 /* ==========================================================================
    4) DATA LOAD (layout + TYPO sjednocení)
    ========================================================================== */
+
 /* ✅ hlavička sekce: title + toolbar v jednom bloku (bez mezery) */
 .detail-attachments__section-head {
   display: flex;
@@ -29,7 +30,21 @@
 .detail-attachments__title-h3 {
   margin: 0;
 }
-/* ✅ TYPO: všechno v přílohách má dědit stejné písmo jako zbytek formuláře/listů */
+
+/* ✅ Scroll wrapper: vyplní šířku a omezuje výšku */
+.detail-attachments__table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  padding-bottom: 2px;
+}
+
+.detail-attachments__panel {
+  margin-top: 10px;
+}
+
+/* ✅ TYPO: všechno v přílohách má dědit stejné písmo jako zbytek listů */
 .detail-attachments__table,
 .detail-attachments__row,
 .detail-attachments__cell,
@@ -43,57 +58,6 @@
   letter-spacing: inherit;
 }
 
-.detail-attachments__toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.detail-attachments__toolbar-left {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.detail-attachments__toolbar-right {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.detail-attachments__filter {
-  min-width: 280px;
-}
-
-.detail-attachments__label-hidden {
-  display: none;
-}
-
-.detail-attachments__checkbox {
-  margin-top: 6px;
-}
-
-/* Scroll wrapper: vyplní šířku a omezuje výšku (dolaď podle headeru) */
-.detail-attachments__table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(100vh - 260px);
-  padding-bottom: 2px;
-}
-
-.detail-attachments__panel {
-  margin-top: 10px;
-}
-.detail-attachments__archived-label {
-  user-select: none;
-}
-.detail-attachments__filter-input {
-  width: 100%;
-}
 /* ==========================================================================
    5) ACTION HANDLERS (table rows + cells)
    ========================================================================== */
@@ -101,8 +65,7 @@
 .detail-attachments__table {
   display: grid;
   gap: 6px;
-  /* aby měl smysl horizontální scroll */
-  min-width: 920px;
+  min-width: 920px; /* aby měl smysl horizontální scroll */
 }
 
 /* List vs Manager sloupce */
@@ -125,7 +88,7 @@
 
 .detail-attachments__row--head {
   background: var(--color-surface-subtle);
-  font-weight: 600; /* hlavička jako v jiných tabulkách */
+  font-weight: 600;
 }
 
 .detail-attachments__row--sub {
@@ -147,11 +110,11 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 600; /* název jako primární hodnota v listu */
+  font-weight: 600;
 }
 
 .detail-attachments__archived-badge {
-  font-size: 0.85em; /* ✅ relativně k okolnímu fontu */
+  font-size: 0.85em;
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
@@ -173,14 +136,14 @@
   max-width: 320px;
 }
 
-/* ✅ LINK: bez extra font-weight, jen barva + underline on hover */
+/* ✅ link: bez extra font-weight */
 .detail-attachments__link {
   border: 0;
   background: transparent;
   padding: 0;
   color: var(--color-primary);
   cursor: pointer;
-  font: inherit;    
+  font: inherit;
   font-weight: inherit;
 }
 
@@ -216,14 +179,13 @@
   white-space: nowrap;
 }
 
-/* ✅ muted pouze barva, ne velikost */
 .detail-attachments__muted {
   color: var(--color-text-muted);
   font-size: inherit;
   line-height: inherit;
 }
 
-/* ✅ mono vypneme (ať to sedí s ostatními seznamy) */
+/* ✅ mono vypneme */
 .detail-attachments__mono {
   font-family: inherit;
 }
@@ -253,7 +215,8 @@
    6) RENDER (responsive)
    ========================================================================== */
 
-@media (max-width: 980px) {
+/* ✅ breakpoint posunut – aby desktop s DevTools nezmizel head */
+@media (max-width: 640px) {
   .detail-attachments__row {
     grid-template-columns: 1fr !important;
   }
