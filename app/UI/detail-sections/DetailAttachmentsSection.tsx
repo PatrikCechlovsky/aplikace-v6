@@ -515,7 +515,6 @@ export default function DetailAttachmentsSection({
             </div>
           )}
 
-          // NOTE: Manager panely necháváme jako formuláře (mimo “list” styl)
           {isManager && panelOpen && (
             <div className="detail-form">
               <section className="detail-form__section">
