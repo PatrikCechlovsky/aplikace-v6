@@ -1,5 +1,3 @@
-'use client'
-
 // FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
 // PURPOSE: List + detail uživatelů (010) + pozvánky + přílohy.
 // URL state:
@@ -11,6 +9,8 @@
 // DEBUG:
 // - zapni/vypni přes DEBUG konstantu níže
 // - logujeme: clicky, close větve, setUrl compare, URL->state sync
+
+'use client'
 
 // =====================
 // 1) IMPORTS
@@ -123,7 +123,6 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
     raw: u,
   }
 }
-
 // =====================
 // 4) DATA LOAD (hooks)
 // =====================
@@ -215,6 +214,7 @@ export default function UsersTile({
     },
     [pathname, router, searchKey]
   )
+
   // -------------------------
   // Load guards (anti-loop / anti-storm)
   // -------------------------
@@ -283,7 +283,6 @@ export default function UsersTile({
   }, [load])
 
   const rows: ListViewRow<UiUser>[] = useMemo(() => users.map(toRow), [users])
-
   // -------------------------
   // Navigation helpers
   // -------------------------
@@ -376,6 +375,34 @@ export default function UsersTile({
     return withAttachmentsBeforeClose(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId])
 
+  // ✅ REGISTER: CommonActions actions
+  useEffect(() => {
+    onRegisterCommonActions?.(commonActions)
+  }, [onRegisterCommonActions, commonActions])
+
+  // ✅ REGISTER: CommonActions UI state (selection/dirty)
+  useEffect(() => {
+    const mappedViewMode: ViewMode =
+      viewMode === 'list'
+        ? 'list'
+        : viewMode === 'edit'
+          ? 'edit'
+          : viewMode === 'create'
+            ? 'create'
+            : 'read' // invite + attachments-manager + read => map to read
+
+    const mappedHasSelection =
+      viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
+
+    const mappedIsDirty =
+      viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
+
+    onRegisterCommonActionsState?.({
+      viewMode: mappedViewMode,
+      hasSelection: mappedHasSelection,
+      isDirty: mappedIsDirty,
+    })
+  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi])
   // -------------------------
   // CommonActions handler
   // -------------------------
@@ -675,7 +702,6 @@ export default function UsersTile({
     attachmentsManagerSubjectId,
     attachmentsManagerUi,
   ])
-
   // ✅ Po uložení nového usera: počkáme, až bude připraven inviteSubmitRef, a pak pošleme pozvánku.
   useEffect(() => {
     if (!pendingSendInviteAfterCreate) return
@@ -696,8 +722,9 @@ export default function UsersTile({
 
     void run()
   }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load])
+
   // -------------------------
-  // Render
+  // 6) RENDER
   // -------------------------
   if (viewMode === 'list') {
     return (
