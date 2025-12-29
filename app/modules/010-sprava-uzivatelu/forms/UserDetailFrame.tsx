@@ -585,7 +585,7 @@ export default function UserDetailFrame({
     )
   }, [canShowInviteTab, inviteError, inviteLoading, latestInvite, resolvedUser.email, rolesData])
 
-    const systemBlocks = useMemo(() => {
+  const systemBlocks = useMemo(() => {
     const isActive = !!resolvedUser.firstLoginAt
     const hasEmail = !!resolvedUser.email?.trim()
 
@@ -619,7 +619,6 @@ export default function UserDetailFrame({
         ),
       },
 
-      // ✅ Přehled pozvánky (read-only) v Systému
       {
         title: 'Pozvánka',
         content: (
@@ -717,4 +716,3 @@ export default function UserDetailFrame({
     />
   )
 }
-
