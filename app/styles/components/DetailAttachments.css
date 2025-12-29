@@ -1,18 +1,10 @@
 /* app/styles/components/DetailAttachments.css */
 
-
-
-/* wrapper aby ListView v detailu nevypadal “jinak” a držel šířku */
-.detail-attachments__listwrap {
-  width: 100%;
-}
-
-/* žádné tučné v řádcích – ListView hlavička může být tučná, data ne */
 .detail-attachments__cell-title {
-  font-weight: 400;
   display: inline-flex;
-  gap: 8px;
   align-items: center;
+  gap: 8px;
+  font-weight: 400; /* žádné tučné v datech */
   white-space: nowrap;
 }
 
@@ -21,14 +13,20 @@
   white-space: nowrap;
 }
 
+/* link na soubor – bez tučného */
 .detail-attachments__link {
-  background: none;
-  border: none;
+  border: 0;
+  background: transparent;
   padding: 0;
+  color: var(--color-primary);
   cursor: pointer;
-  color: var(--color-link, #2b6cb0);
+  font-weight: 400;
   text-decoration: underline;
   white-space: nowrap;
+}
+
+.detail-attachments__link:hover {
+  text-decoration: underline;
 }
 
 .detail-attachments__link:disabled {
@@ -38,11 +36,10 @@
 }
 
 .detail-attachments__archived-badge {
-  font-size: 11px;
-  line-height: 1;
-  padding: 2px 6px;
+  font-size: 0.75rem;
+  padding: 2px 8px;
   border-radius: 999px;
-  background: var(--color-surface-subtle);
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
 }
