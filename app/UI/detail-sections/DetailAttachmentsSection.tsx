@@ -712,8 +712,15 @@ export default function DetailAttachmentsSection({
   const renderToolbarButton = (id: LocalActionId) => {
     const a = LOCAL_ACTIONS[id]
     return (
-      <button key={id} type="button" className="detail-attachments__toolbar-btn" data-action={id} onClick={onToolbarActionClick} title={a.title}>
-        {getIcon(a.icon, { size: 16 })}
+      <button
+        key={id}
+        type="button"
+        className="detail-attachments__toolbar-btn"
+        data-action={id}
+        onClick={onToolbarActionClick}
+        title={a.title}
+      >
+        {getIcon(a.icon, 'detail-attachments__toolbar-icon')}
         <span>{a.label}</span>
       </button>
     )
