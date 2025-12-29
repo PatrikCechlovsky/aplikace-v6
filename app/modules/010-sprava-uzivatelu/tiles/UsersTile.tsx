@@ -20,15 +20,14 @@ import type { CommonActionId } from '@/app/UI/CommonActions'
 import ListView, { type ListViewRow } from '@/app/UI/ListView'
 
 import { supabase } from '@/app/lib/supabaseClient'
-
-
 import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 
-import InviteUserFrame from '../frames/InviteUserFrame'
-import UserDetailFrame from '../frames/UserDetailFrame'
+// ✅ FIX: frames -> forms (frames složka v projektu není)
+import InviteUserFrame from '../forms/InviteUserFrame'
+import UserDetailFrame from '../forms/UserDetailFrame'
 
+// ✅ FIX: helpers/roles neexistuje -> řešíme lokálně
 import type { ViewMode } from '../types'
-import { resolveRoleLabel } from '../helpers/roles'
 
 // ============================================================================
 // 2) TYPES
@@ -73,6 +72,19 @@ function dbg(...args: any[]) {
   console.log('[010 UsersTile]', ...args)
 }
 
+// ✅ FIX: chybějící normalizeSupabaseError (dřív se volalo, ale nebylo nikde)
+function normalizeSupabaseError(e: any): string {
+  if (!e) return 'Neznámá chyba'
+  if (typeof e === 'string') return e
+  if (typeof e?.message === 'string' && e.message.trim()) return e.message
+  if (typeof e?.error_description === 'string' && e.error_description.trim()) return e.error_description
+  try {
+    return JSON.stringify(e)
+  } catch {
+    return String(e)
+  }
+}
+
 function buildSearchKey(args: SetUrlArgs): string {
   const sp = new URLSearchParams()
   sp.set('m', '010-sprava-uzivatelu')
@@ -80,6 +92,13 @@ function buildSearchKey(args: SetUrlArgs): string {
   if (args.id) sp.set('id', args.id)
   if (args.vm) sp.set('vm', args.vm)
   return sp.toString()
+}
+
+// ✅ FIX: role label lokálně (místo ../helpers/roles)
+function resolveRoleLabel(roleCode: string | null | undefined, roleMap: Record<string, string>): string {
+  const c = String(roleCode ?? '').trim()
+  if (!c) return ''
+  return roleMap[c] ?? c
 }
 
 function toUiUser(row: any, roleMap: Record<string, string>): UiUser {
@@ -109,7 +128,6 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
     raw: u,
   }
 }
-
 // ============================================================================
 // 4) DATA LOAD
 // ============================================================================
@@ -257,9 +275,9 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
     setAttachmentsManagerSubjectId(null)
   }, [attachmentsManagerSubjectId, detailUser, searchKey, selectedId, users, viewMode])
 
-// ============================================================================
-// 5) ACTION HANDLERS
-// ============================================================================
+    // ============================================================================
+  // 5) ACTION HANDLERS
+  // ============================================================================
   // 5.1) CommonActions list
   const commonActions = useMemo((): CommonActionId[] => {
     const LIST: CommonActionId[] = ['add', 'edit', 'invite', 'attachments', 'close']
@@ -521,9 +539,9 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
     ]
   )
 
-// ============================================================================
-// 6) RENDER
-// ============================================================================
+  // ============================================================================
+  // 6) RENDER
+  // ============================================================================
   // 6.1) list view data
   const listColumns = useMemo(
     () => [
@@ -635,3 +653,5 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
     </div>
   )
 }
+
+
