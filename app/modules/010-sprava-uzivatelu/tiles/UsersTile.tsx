@@ -331,15 +331,13 @@ export default function UsersTile({
   // -------------------------
   // CommonActions list
   // -------------------------
-  const commonActions = useMemo(() => {
+
+  const commonActions = useMemo<CommonActionId[]>(() => {
     const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'close']
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
     const READ_DEFAULT: CommonActionId[] = ['edit', 'invite', 'close']
     const EDIT_DEFAULT: CommonActionId[] = ['save', 'invite', 'close']
-    const EDIT_DEFAULT_WITH_INVITE: CommonActionId[] = ['save', 'invite', 'close']
     const CREATE_DEFAULT: CommonActionId[] = ['save', 'close']
-
-    const canInviteDetail = detailActiveSectionId !== 'invite'
 
     const withAttachmentsBeforeClose = (base: CommonActionId[]): CommonActionId[] => {
       // v invite sekci nechceme attachments tlačítko
@@ -351,8 +349,7 @@ export default function UsersTile({
       const hasClose = out.includes('close')
       const filtered: CommonActionId[] = out.filter((x) => x !== 'attachments' && x !== 'close') as CommonActionId[]
 
-      if (hasClose) return [...filtered, 'attachments', 'close'] as CommonActionId[]
-      return [...filtered, 'attachments'] as CommonActionId[]
+      return hasClose ? ([...filtered, 'attachments', 'close'] as CommonActionId[]) : ([...filtered, 'attachments'] as CommonActionId[])
     }
 
     // LIST / INVITE
@@ -360,51 +357,25 @@ export default function UsersTile({
     if (viewMode === 'invite') return INVITE
 
     // ✅ ATTACHMENTS MANAGER (jen CommonActions, žádné lokální toolbary)
-    if (viewMode === 'attachments-manager')
+    if (viewMode === 'attachments-manager') {
       return ['attachmentsAdd', 'attachmentsEdit', 'attachmentsSave', 'attachmentsNewVersion', 'attachmentsHistory', 'close']
+    }
 
     // READ
     if (viewMode === 'read') {
-      if (detailActiveSectionId === 'invite') return canInviteDetail ? INVITE : (['close'] as CommonActionId[])
+      if (detailActiveSectionId === 'invite') return INVITE
       return withAttachmentsBeforeClose(READ_DEFAULT)
     }
 
     // EDIT
     if (viewMode === 'edit') {
-      return withAttachmentsBeforeClose(canInviteDetail ? EDIT_DEFAULT_WITH_INVITE : EDIT_DEFAULT)
+      return withAttachmentsBeforeClose(EDIT_DEFAULT)
     }
 
     // CREATE
     return withAttachmentsBeforeClose(CREATE_DEFAULT)
   }, [viewMode, detailActiveSectionId])
 
-  useEffect(() => {
-    dbg('register commonActions', commonActions)
-    onRegisterCommonActions?.(commonActions)
-  }, [onRegisterCommonActions, commonActions])
-
-  useEffect(() => {
-    // ✅ CommonActionsState musí reflektovat i manager příloh (selection/dirty uvnitř listu příloh)
-    if (viewMode === 'attachments-manager') {
-      const state = {
-        viewMode: 'read' as ViewMode,
-        hasSelection: !!attachmentsManagerUi.hasSelection,
-        isDirty: !!attachmentsManagerUi.isDirty,
-      }
-      dbg('register commonActionsState (attachments-manager)', state)
-      onRegisterCommonActionsState?.(state)
-      return
-    }
-
-    const uiDirty = viewMode === 'create' ? true : isDirty
-    const state = {
-      viewMode: (viewMode as any) as ViewMode,
-      hasSelection: !!selectedId,
-      isDirty: uiDirty,
-    }
-    dbg('register commonActionsState', state)
-    onRegisterCommonActionsState?.(state)
-  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi])
   // -------------------------
   // CommonActions handler
   // -------------------------
