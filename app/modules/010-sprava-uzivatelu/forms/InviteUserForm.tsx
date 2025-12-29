@@ -232,7 +232,7 @@ export default function InviteUserForm({
                 disabled={loadingUsers}
                 onChange={(e) => {
                   const nextId = e.target.value || null
-                  const picked = users.find((u: any) => u.id === nextId) as any
+                  const picked = selectableUsers.find((u: any) => u.id === nextId) as any
 
                   // 1) rychlá aktualizace základních polí (email/jméno)
                   setV((p) => ({
