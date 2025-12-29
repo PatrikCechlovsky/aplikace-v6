@@ -106,7 +106,7 @@ export default function ListView<TData = any>({
             <div style={{ width: 180, height: 20 }} />
           )}
         </div> 
-      
+      </div>
       {/* Vlastní tabulka */}
       <div className="listview__table-wrapper">
         <table className="generic-type__table">
