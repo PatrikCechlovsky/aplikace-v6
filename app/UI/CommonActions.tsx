@@ -42,6 +42,12 @@ export type CommonActionId =
   | 'import'
   | 'export'
   | 'reject'
+  // ✅ Attachments Manager (ONLY) – akce jsou jen přes CommonActions
+  | 'attachmentsAdd'
+  | 'attachmentsEdit'
+  | 'attachmentsSave'
+  | 'attachmentsNewVersion'
+  | 'attachmentsHistory'
 
 export type ViewMode = 'list' | 'read' | 'edit' | 'create'
 export type Locale = 'cs' | 'en'
@@ -125,6 +131,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zrušit editaci / vytvoření.', en: 'Cancel edit / create.' },
     hideWhen: ['list'],
   },
+
   close: {
     id: 'close',
     icon: 'close',
@@ -132,6 +139,7 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zavřít a vrátit se zpět.', en: 'Close and go back.' },
     hideWhen: [],
   },
+
   delete: {
     id: 'delete',
     icon: 'delete',
@@ -218,6 +226,49 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zamítnout vybraný záznam.', en: 'Reject selected record.' },
     requiresSelection: true,
   },
+
+  // =========================================================================
+  // ✅ Attachments Manager actions (jen pro správu příloh, žádné jiné moduly)
+  // =========================================================================
+
+  attachmentsAdd: {
+    id: 'attachmentsAdd',
+    icon: 'add',
+    label: { cs: 'Přidat', en: 'Add' },
+    description: { cs: 'Přidat novou přílohu.', en: 'Add attachment.' },
+  },
+
+  attachmentsEdit: {
+    id: 'attachmentsEdit',
+    icon: 'edit',
+    label: { cs: 'Upravit', en: 'Edit' },
+    description: { cs: 'Upravit název / popis.', en: 'Edit title / description.' },
+    requiresSelection: true,
+  },
+
+  attachmentsSave: {
+    id: 'attachmentsSave',
+    icon: 'save',
+    label: { cs: 'Uložit', en: 'Save' },
+    description: { cs: 'Uložit změny (metadata / nová příloha).', en: 'Save changes.' },
+    requiresDirty: true,
+  },
+
+  attachmentsNewVersion: {
+    id: 'attachmentsNewVersion',
+    icon: 'upload',
+    label: { cs: 'Nová verze', en: 'New version' },
+    description: { cs: 'Nahrát novou verzi vybrané přílohy.', en: 'Upload new version.' },
+    requiresSelection: true,
+  },
+
+  attachmentsHistory: {
+    id: 'attachmentsHistory',
+    icon: 'history',
+    label: { cs: 'Historie', en: 'History' },
+    description: { cs: 'Zobrazit historii verzí.', en: 'Show version history.' },
+    requiresSelection: true,
+  },
 }
 
 /* =========================================================
@@ -232,7 +283,6 @@ type Props = {
   auth?: CommonActionsAuth
   onActionClick: (id: CommonActionId) => void
 }
-
 function hasAnyRole(auth: CommonActionsAuth | undefined, roles: string[] | undefined) {
   if (!roles || roles.length === 0) return true
   const userRoles = new Set((auth?.roles ?? []).map((r) => r.toLowerCase()))
