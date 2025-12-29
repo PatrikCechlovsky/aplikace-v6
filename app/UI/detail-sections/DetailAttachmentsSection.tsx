@@ -728,4 +728,3 @@ export default function DetailAttachmentsSection({
   )
 }
 
-export default DetailAttachmentsSection
