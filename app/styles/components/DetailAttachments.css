@@ -1,44 +1,44 @@
 /* app/styles/components/DetailAttachments.css */
 
-/* wrapper: ať se to přizpůsobí oknu a v případě potřeby má X/Y scroll */
-.detail-attachments__listview-wrap {
+/* ==========================================================================
+   1) IMPORTS
+   ========================================================================== */
+/* (none) */
+
+/* ==========================================================================
+   2) TYPES
+   ========================================================================== */
+/* (none) */
+
+/* ==========================================================================
+   3) HELPERS
+   ========================================================================== */
+/* (none) */
+
+/* ==========================================================================
+   4) DATA LOAD
+   ========================================================================== */
+
+/* wrapper, aby se obsah přizpůsobil oknu a uvnitř byl scroll (Y i X) */
+.detail-attachments__list-wrap {
   width: 100%;
   overflow: auto;
-  max-height: calc(100vh - 260px);
+  max-height: calc(100vh - 260px); /* když bude potřeba doladíme dle layoutu */
 }
 
-/* v buňce nechceme tučný text */
-.detail-attachments__title {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  font-weight: 400;
-}
+/* ==========================================================================
+   5) ACTION HANDLERS
+   ========================================================================== */
 
-/* badge OK (malé, nenásilné) */
-.detail-attachments__archived-badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  background: var(--color-surface-subtle);
-}
-
-/* odkaz na soubor: netučný, jako ve zbytku listů */
 .detail-attachments__link {
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--color-primary);
   cursor: pointer;
-  font-weight: 400;
+  color: var(--color-primary);
+  font: inherit;
 }
 
 .detail-attachments__link:hover {
   text-decoration: underline;
-}
-
-.detail-attachments__muted {
-  color: var(--color-text-muted);
 }
