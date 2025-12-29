@@ -220,3 +220,28 @@
   max-height: 30vh;
   overflow-y: auto;
 }
+/* === History: sjednocení wrapperu ListView s horní tabulkou === */
+/* Horní ListView má padding+border. Dole ho vynutíme stejně. */
+
+.detail-attachments__history-body .listview {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+}
+
+/* V historii nechceme dvojitý border kolem celé sticky karty */
+.detail-attachments__history-sticky {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Hlavička historie – lehká, bez “karty” */
+.detail-attachments__history-head {
+  padding: 6px 2px;
+  border-bottom: 0;
+  background: transparent;
+}
