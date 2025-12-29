@@ -524,6 +524,7 @@ export default function DetailAttachmentsSection({
       }
     })
   }, [filteredRows, resolveName, handleOpenLatestByPath])
+
   // READ-ONLY UI (nebo manager bez práv)
   if (!isManager) {
     return (
@@ -567,7 +568,6 @@ export default function DetailAttachmentsSection({
       </div>
     )
   }
-
   // ==========================================================================
   // MANAGER (ListView + toolbar + panel + verze/historie)
   // ==========================================================================
@@ -664,9 +664,103 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [filteredRows, resolveName, expandedDocId, editingDocId, handleOpenLatestByPath, onRowActionClick, setVersionInputRef, handleNewVersionSelected])
+  }, [
+    filteredRows,
+    resolveName,
+    expandedDocId,
+    editingDocId,
+    handleOpenLatestByPath,
+    onRowActionClick,
+    setVersionInputRef,
+    handleNewVersionSelected,
+  ])
 
   const expandedVersions = expandedDocId ? versionsByDocId[expandedDocId] ?? [] : []
+  const versionColumns: ListViewColumn[] = useMemo(
+    () => [
+      { key: 'ver', label: 'Verze', width: '90px' },
+      { key: 'file', label: 'Soubor' },
+      { key: 'created', label: 'Nahráno' },
+    ],
+    []
+  )
+
+  const versionRows: ListViewRow<AttachmentVersionRow>[] = useMemo(() => {
+    if (!expandedDocId) return []
+    return expandedVersions.map((v) => {
+      const who = resolveName(null, v.created_by)
+      return {
+        id: v.id,
+        raw: v,
+        data: {
+          ver: <span className="detail-attachments__muted">v{String(v.version_number ?? 0).padStart(3, '0')}</span>,
+          file: (
+            <button type="button" className="detail-attachments__link" onClick={() => void openFileByPath(v.file_path)} title="Otevřít verzi">
+              {v.file_name ?? '—'}
+            </button>
+          ),
+          created: (
+            <span className="detail-attachments__muted">
+              {formatDt(v.created_at)} • kdo: {who}
+            </span>
+          ),
+        },
+      }
+    })
+  }, [expandedDocId, expandedVersions, resolveName, openFileByPath])
+
+  const renderToolbarButton = (id: LocalActionId) => {
+    const a = LOCAL_ACTIONS[id]
+    return (
+      <button key={id} type="button" className="detail-attachments__toolbar-btn" data-action={id} onClick={onToolbarActionClick} title={a.title}>
+        {getIcon(a.icon, { size: 16 })}
+        <span>{a.label}</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="detail-view__section">
+      <div className="detail-form">
+        <section className="detail-form__section">
+          <h3 className="detail-form__section-title">{sectionTitle}</h3>
+
+          <div className="detail-attachments__toolbar">
+            {renderToolbarButton('refresh')}
+            {renderToolbarButton('addAttachment')}
+            {panelOpen ? renderToolbarButton('saveAttachment') : null}
+            {panelOpen ? renderToolbarButton('closePanel') : null}
+          </div>
+
+          {errorText && (
+            <div className="detail-view__placeholder" style={{ marginTop: 8 }}>
+              Chyba: <strong>{errorText}</strong>
+            </div>
+          )}
+
+          {panelOpen && (
+            <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
+              <div className="detail-attachments__panel-grid">
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Název</label>
+                  <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Název přílohy" />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Popis</label>
+                  <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="(volitelné)" />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Soubor</label>
+                  <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
+                  {newFile && <div className="detail-form__hint">Vybráno: {newFile.name}</div>}
+                </div>
+              </div>
+
+              {saving && <div className="detail-form__hint">Ukládám…</div>}
+            </div>
+          )}
           {editingDocId && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
               <div className="detail-form__hint" style={{ marginBottom: 8 }}>
