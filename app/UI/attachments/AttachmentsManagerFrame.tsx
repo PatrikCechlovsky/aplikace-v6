@@ -18,6 +18,9 @@ import DetailAttachmentsSection, {
   type AttachmentsManagerUiState,
 } from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
+// ✅ re-export typů pro pohodlný import z UsersTile
+export type { AttachmentsManagerApi, AttachmentsManagerUiState }
+
 export type AttachmentsManagerFrameProps = {
   entityType: string
   entityId: string
