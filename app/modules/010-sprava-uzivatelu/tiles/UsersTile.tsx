@@ -275,7 +275,7 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
     setAttachmentsManagerSubjectId(null)
   }, [attachmentsManagerSubjectId, detailUser, searchKey, selectedId, users, viewMode])
 
-    // ============================================================================
+  // ============================================================================
   // 5) ACTION HANDLERS
   // ============================================================================
   // 5.1) CommonActions list
@@ -521,7 +521,12 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
           setIsDirty(false)
           return
         }
+
+        return
       }
+
+      // ✅ fallback – nic neuděláme, ale handler vždy skončí čitelně
+      return
     },
     [
       attachmentsManagerSubjectId,
@@ -653,5 +658,3 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
     </div>
   )
 }
-
-
