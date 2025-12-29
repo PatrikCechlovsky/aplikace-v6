@@ -120,3 +120,184 @@ Poznámka:
 - [ ] Přílohy: read-only tab v detailu (bez write možností)
 - [ ] Přílohy: manager umí add/edit/version/history
 - [ ] Žádné request stormy při přepínání režimů
+
+
+# TODO – Globální audit log (celá aplikace)
+
+## Cíl
+Zavést jednotný **audit log** pro celou aplikaci (business události), aby bylo dohledatelné:
+- kdo provedl změnu
+- kdy
+- na jaké entitě
+- co se změnilo (whitelist diff)
+- odkud změna přišla (modul / tile / akce)
+
+Audit log je oddělený od:
+- verzování souborů (document_versions)
+- technických logů (console, server errors)
+
+---
+
+## 1) DB – tabulka public.audit_log
+
+### Účel
+Jedna centrální tabulka pro audit celé aplikace  
+(logují se pouze smysluplné business události)
+
+### Struktura sloupců
+
+### Core
+- id uuid (PK)
+- created_at timestamptz DEFAULT now()
+
+### Actor (kdo)
+- actor_user_id uuid NULL (auth.users.id)
+- actor_subject_id uuid NULL (subjects.id)
+- actor_name text NULL (denormalizace pro čitelnost)
+- actor_email text NULL (denormalizace)
+
+### Context (odkud)
+- origin_module text NULL (např. 010)
+- origin_tile text NULL (např. UsersTile)
+- origin_action text NULL (např. attachmentsSave, saveUser)
+- request_id text NULL (pro spojení více logů jedné akce)
+- ip inet NULL
+- user_agent text NULL
+
+### Target (co)
+- entity_type text NOT NULL (subjects, documents, contracts…)
+- entity_id uuid NULL
+- entity_label text NULL (denormalizace – jméno / název)
+
+### Event
+- action text NOT NULL
+- severity text NOT NULL DEFAULT info (info | warning | error)
+- success boolean NOT NULL DEFAULT true
+- message text NULL (krátké lidské shrnutí)
+
+### Data
+- diff jsonb NULL (whitelist změn / event payload)
+- meta jsonb NULL (technický kontext)
+
+### Indexy
+- created_at DESC
+- entity_type + entity_id + created_at DESC
+- actor_subject_id + created_at DESC
+- origin_module + created_at DESC
+
+---
+
+## 2) RLS a práva
+
+### MVP nastavení
+- INSERT: pouze server / service role
+- SELECT: pouze admin
+
+Později rozšířit podle oprávnění k entitám.
+
+---
+
+## 3) Konvence – action slovník
+
+Používat stabilní stringy (ne UI názvy).
+
+### Základní
+- create
+- update
+- archive
+- restore
+- delete
+
+### Aplikační
+- invite_create
+- invite_send
+- doc_create
+- doc_meta_change
+- doc_new_version
+- role_change
+- permission_change
+
+---
+
+## 4) Pravidla pro diff (whitelist)
+
+### Ukládat
+- title
+- description
+- tags
+- is_archived
+- role / permission kódy
+- document: version_number, file_name, mime, size
+
+### Neukládat
+- hesla
+- tokeny
+- invite tokeny
+- secrets
+- velké payloady
+- citlivé PII
+
+### Formáty diff
+
+Změny polí:
+- type: fields
+- fields: { field: { from, to } }
+
+Event:
+- type: event
+- event: { version_number, file_name, size }
+
+Bulk:
+- type: bulk
+- bulk: { count, ids_sample }
+
+---
+
+## 5) Aplikační vrstva – helper logAuditEvent
+
+### Umístění
+- společná service vrstva (např. app/lib/services/audit.ts)
+
+### Vstupy
+- actor (user / subject + jméno + email)
+- entity (type / id / label)
+- action
+- message
+- diff
+- meta
+- origin_module
+- origin_tile
+- origin_action
+- request_id (volitelné)
+
+### Pravidla
+- logovat pouze v services
+- nikdy v UI
+- nikdy v CommonActions
+
+---
+
+## 6) MVP scope – co logovat jako první
+
+### Priorita 1
+- Users / Subjects: create, update, archive, restore
+- Invites: invite_create, invite_send
+- Documents / Attachments:
+  - doc_create
+  - doc_meta_change
+  - doc_new_version
+
+### Priorita 2 (později)
+- import / export
+- finance / platby
+- globální admin timeline
+- retention / export / GDPR
+
+---
+
+## 7) UI (později)
+- Detail dokumentu / příloh: Historie
+  - Verze souborů (document_versions)
+  - Změny metadat + audit (audit_log)
+- Admin část:
+  - globální filtr auditů podle entity / modulu / aktéra
