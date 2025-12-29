@@ -601,30 +601,20 @@ export default function DetailAttachmentsSection({
                     const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
                     const isExpanded = isManager && expandedDocId === r.id
                     const versions = versionsByDocId[r.id] ?? []
-                    const colSpan = isManager ? 6 : 5
                 
                     return (
                       <React.Fragment key={r.id}>
-                        {/* 1) HLAVIČKA dokumentu – název (nad vším) */}
+                        {/* 1 ROW = 1 DOKUMENT */}
                         <tr className="listview__row">
-                          <td className="generic-type__cell" colSpan={colSpan} style={{ paddingTop: 12, paddingBottom: 6 }}>
-                            <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                              <strong style={{ fontWeight: 600 }}>{r.title}</strong>
+                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                            <span className="detail-attachments__title">
+                              {r.title}
                               {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-                              {r.description ? <span className="detail-attachments__muted">— {r.description}</span> : null}
                             </span>
                           </td>
-                        </tr>
-                
-                        {/* 2) DETAIL řádek – soubor / verze / nahráno (+ akce u managera) */}
-                        <tr className="listview__row">
-                          {/* Název už je v hlavičce, necháme 1. sloupec prázdný/„—“ pro zachování tabulky */}
-                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                            —
-                          </td>
                 
                           <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                            <span className="detail-attachments__muted">—</span>
+                            <span className="detail-attachments__muted">{r.description ?? '—'}</span>
                           </td>
                 
                           <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
@@ -699,12 +689,11 @@ export default function DetailAttachmentsSection({
                           ) : null}
                         </tr>
                 
-                        {/* 3) Expand verze (manager) */}
+                        {/* EXPAND VERZE (jen manager) */}
                         {isExpanded && (
                           <tr className="listview__row">
-                            <td className="generic-type__cell" colSpan={colSpan}>
+                            <td className="generic-type__cell" colSpan={isManager ? 6 : 5}>
                               {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
-                
                               {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
                 
                               {!versionsLoadingId && versions.length > 0 && (
@@ -714,7 +703,7 @@ export default function DetailAttachmentsSection({
                                     return (
                                       <div key={v.id} className="detail-attachments__version">
                                         <div>
-                                          <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
+                                          v{String(v.version_number).padStart(3, '0')} – {v.file_name}
                                         </div>
                                         <div className="detail-attachments__muted">
                                           {formatDt(v.created_at)} • kdo: {createdName}
