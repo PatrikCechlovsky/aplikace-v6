@@ -125,6 +125,9 @@ export default function DetailAttachmentsSection({
   const [includeArchived, setIncludeArchived] = useState(false)
   const [filterText, setFilterText] = useState('')
 
+  // history filter (v panelu dole)
+  const [historyFilterText, setHistoryFilterText] = useState('')
+
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rows, setRows] = useState<AttachmentRow[]>([])
@@ -195,7 +198,6 @@ export default function DetailAttachmentsSection({
     const map = await loadUserDisplayNames(ids)
     setNameById((prev) => mergeNameMaps(prev, map))
   }, [])
-
   const loadAttachments = useCallback(async () => {
     const key = `${entityType}:${entityId}:${includeArchived ? '1' : '0'}`
 
@@ -254,6 +256,7 @@ export default function DetailAttachmentsSection({
     },
     [nameById]
   )
+
 // ============================================================================
 // 5) ACTION HANDLERS
 // ============================================================================
@@ -517,7 +520,6 @@ export default function DetailAttachmentsSection({
     handleActionSaveNew,
     handleSaveEditMeta,
   ])
-
 // ============================================================================
 // 6) RENDER
 // ============================================================================
@@ -535,13 +537,18 @@ export default function DetailAttachmentsSection({
 
   const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
 
-  const listColumns: ListViewColumn[] = useMemo(
+  /**
+   * ✅ JEDEN ZDROJ PRAVDY PRO ŠÍŘKY SLOUPCŮ
+   * Později tohle nahradíme uživatelským nastavením (pořadí/viditelnost),
+   * ale teď to zajistí 1:1 vzhled mezi seznamem a historií.
+   */
+  const sharedColumns: ListViewColumn[] = useMemo(
     () => [
-      { key: 'title', label: 'Název' },
-      { key: 'description', label: 'Popis' },
+      { key: 'title', label: 'Název', width: '180px' },
+      { key: 'description', label: 'Popis', width: '220px' },
       { key: 'file', label: 'Soubor (latest)' },
       { key: 'ver', label: 'Verze', width: '90px' },
-      { key: 'uploaded', label: 'Nahráno' },
+      { key: 'uploaded', label: 'Nahráno', width: '240px' },
     ],
     []
   )
@@ -581,6 +588,7 @@ export default function DetailAttachmentsSection({
       }
     })
   }, [filteredRows, resolveName, handleOpenLatestByPath])
+
   // READ-ONLY UI (nebo manager bez práv)
   if (!isManager) {
     return (
@@ -608,7 +616,7 @@ export default function DetailAttachmentsSection({
 
             {!loading && !errorText && listRows.length > 0 && (
               <ListView
-                columns={listColumns}
+                columns={sharedColumns}
                 rows={listRows}
                 filterValue={filterText}
                 onFilterChange={setFilterText}
@@ -626,82 +634,40 @@ export default function DetailAttachmentsSection({
   }
 
   // ==========================================================================
-  // MANAGER (ListView + sticky historie dole) – bez lokálních tlačítek
+  // MANAGER (ListView + panel + verze/historie) – bez lokálních tlačítek
   // ==========================================================================
-  const managerColumns: ListViewColumn[] = useMemo(
-    () => [
-      { key: 'title', label: 'Název' },
-      { key: 'description', label: 'Popis' },
-      { key: 'file', label: 'Soubor (latest)' },
-      { key: 'ver', label: 'Verze', width: '90px' },
-      { key: 'uploaded', label: 'Nahráno' },
-    ],
-    []
-  )
-
-  const managerRows: ListViewRow<AttachmentRow>[] = useMemo(() => {
-    return filteredRows.map((r) => {
-      const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
-      return {
-        id: r.id,
-        raw: r,
-        data: {
-          title: (
-            <span className="detail-attachments__cell-title">
-              {r.title ?? '—'}
-              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-            </span>
-          ),
-          description: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
-          file: (
-            <button
-              type="button"
-              className="detail-attachments__link"
-              onClick={() => void handleOpenLatestByPath(r.file_path)}
-              disabled={!r.file_path}
-              title="Otevřít soubor"
-            >
-              {r.file_name ?? '—'}
-            </button>
-          ),
-          ver: <span className="detail-attachments__muted">v{String(r.version_number ?? 0).padStart(3, '0')}</span>,
-          uploaded: (
-            <span className="detail-attachments__muted">
-              {formatDt(r.version_created_at)} • kdo: {uploadedName}
-            </span>
-          ),
-        },
-      }
-    })
-  }, [filteredRows, resolveName, handleOpenLatestByPath])
+  const managerRows: ListViewRow<AttachmentRow>[] = listRows
 
   const expandedVersions = expandedDocId ? versionsByDocId[expandedDocId] ?? [] : []
 
-  // ✅ Sloupce historie = stejné jako hlavní seznam (copy), aby to bylo opakovatelné
-  const historyColumns: ListViewColumn[] = managerColumns
+  // history rows (sloupce stejné jako nahoře)
+  const filteredVersions = useMemo(() => {
+    const t = historyFilterText.trim().toLowerCase()
+    if (!t) return expandedVersions
+    return expandedVersions.filter((v) => {
+      const a = (selectedRow?.title ?? '').toLowerCase()
+      const b = (selectedRow?.description ?? '').toLowerCase()
+      const c = (v.file_name ?? '').toLowerCase()
+      const d = `v${String(v.version_number ?? 0).padStart(3, '0')}`.toLowerCase()
+      return a.includes(t) || b.includes(t) || c.includes(t) || d.includes(t)
+    })
+  }, [expandedVersions, historyFilterText, selectedRow])
 
   const historyRows: ListViewRow<AttachmentVersionRow>[] = useMemo(() => {
     if (!expandedDocId) return []
-
-    // parent meta (copy do všech řádků – zatím pro jednotné sloupce)
-    const t = (selectedRow?.title ?? '—') as any
-    const d = (selectedRow?.description ?? '—') as any
-    const titleNode = (
-      <span className="detail-attachments__cell-title">
-        {String(t) || '—'}
-        {selectedRow?.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-      </span>
-    )
-    const descNode = <span className="detail-attachments__muted">{String(d) || '—'}</span>
-
-    return expandedVersions.map((v) => {
+    return filteredVersions.map((v) => {
       const who = resolveName(null, v.created_by)
       return {
         id: v.id,
         raw: v,
         data: {
-          title: titleNode,
-          description: descNode,
+          title: (
+            <span className="detail-attachments__cell-title">
+              {selectedRow?.title ?? '—'}
+              {selectedRow?.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+            </span>
+          ),
+          description: <span className="detail-attachments__muted">{selectedRow?.description ?? '—'}</span>,
           file: (
             <button type="button" className="detail-attachments__link" onClick={() => void openFileByPath(v.file_path)} title="Otevřít verzi">
               {v.file_name ?? '—'}
@@ -716,10 +682,9 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [expandedDocId, expandedVersions, resolveName, openFileByPath, selectedRow])
+  }, [expandedDocId, filteredVersions, resolveName, openFileByPath, selectedRow])
 
-  const historyTitle = selectedRow?.title?.trim() ? selectedRow.title : '—'
-  const showHistoryPlaceholder = !expandedDocId
+  const selectedTitle = selectedRow?.title?.trim() ? selectedRow.title : '—'
 
   return (
     <div className="detail-view__section">
@@ -733,127 +698,113 @@ export default function DetailAttachmentsSection({
             </div>
           )}
 
-          <div className="detail-attachments__manager-layout">
-            {/* TOP (panely, hints) */}
-            <div className="detail-attachments__manager-top">
-              {/* PANEL: NOVÁ PŘÍLOHA (otevírá CommonActions → attachmentsAdd) */}
-              {panelOpen && (
-                <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
-                  <div className="detail-attachments__panel-grid">
-                    <div className="detail-form__field detail-form__field--span-6">
-                      <label className="detail-form__label">Název</label>
-                      <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Název přílohy" />
-                    </div>
-
-                    <div className="detail-form__field detail-form__field--span-6">
-                      <label className="detail-form__label">Popis</label>
-                      <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="(volitelné)" />
-                    </div>
-
-                    <div className="detail-form__field detail-form__field--span-6">
-                      <label className="detail-form__label">Soubor</label>
-                      <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
-                      {newFile && <div className="detail-form__hint">Vybráno: {newFile.name}</div>}
-                    </div>
-                  </div>
-
-                  {saving && <div className="detail-form__hint" style={{ marginTop: 10 }}>Ukládám…</div>}
-                  <div className="detail-form__hint" style={{ marginTop: 6 }}>
-                    Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
-                  </div>
+          {/* PANEL: NOVÁ PŘÍLOHA (otevírá CommonActions → attachmentsAdd) */}
+          {panelOpen && (
+            <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
+              <div className="detail-attachments__panel-grid">
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Název</label>
+                  <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Název přílohy" />
                 </div>
-              )}
 
-              {/* PANEL: EDIT METADATA (otevírá CommonActions → attachmentsEdit) */}
-              {editingDocId && (
-                <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
-                  <div className="detail-form__hint" style={{ marginBottom: 8 }}>Úprava metadat (název / popis)</div>
-
-                  <div className="detail-attachments__panel-grid">
-                    <div className="detail-form__field detail-form__field--span-6">
-                      <label className="detail-form__label">Název</label>
-                      <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-                    </div>
-
-                    <div className="detail-form__field detail-form__field--span-6">
-                      <label className="detail-form__label">Popis</label>
-                      <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
-                    </div>
-                  </div>
-
-                  {editSaving && <div className="detail-form__hint">Ukládám…</div>}
-                  <div className="detail-form__hint" style={{ marginTop: 6 }}>
-                    Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
-                  </div>
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Popis</label>
+                  <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="(volitelné)" />
                 </div>
-              )}
 
-              {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
-              {!loading && managerRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Soubor</label>
+                  <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
+                  {newFile && <div className="detail-form__hint">Vybráno: {newFile.name}</div>}
+                </div>
+              </div>
+
+              {saving && <div className="detail-form__hint" style={{ marginTop: 10 }}>Ukládám…</div>}
+              <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
+              </div>
             </div>
+          )}
 
-            {/* LIST (scroll) */}
-            <div className="detail-attachments__list-scroll">
-              {!loading && managerRows.length > 0 && (
-                <ListView
-                  columns={managerColumns}
-                  rows={managerRows}
-                  filterValue={filterText}
-                  onFilterChange={setFilterText}
-                  filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                  showArchived={includeArchived}
-                  onShowArchivedChange={setIncludeArchived}
-                  showArchivedLabel="Zobrazit archivované"
-                  selectedId={selectedDocId}
-                  onRowClick={(row) => setSelectedDocId(String(row.id))}
-                  onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                />
-              )}
+          {/* PANEL: EDIT METADATA (otevírá CommonActions → attachmentsEdit) */}
+          {editingDocId && (
+            <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
+              <div className="detail-form__hint" style={{ marginBottom: 8 }}>Úprava metadat (název / popis)</div>
+
+              <div className="detail-attachments__panel-grid">
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Název</label>
+                  <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Popis</label>
+                  <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+                </div>
+              </div>
+
+              {editSaving && <div className="detail-form__hint">Ukládám…</div>}
+              <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
+              </div>
             </div>
+          )}
 
-            {/* hidden inputs for new version (neviditelné, neovlivňují layout) */}
-            <div style={{ display: 'none' }}>
-              {filteredRows.map((r) => (
-                <input
-                  key={r.id}
-                  ref={(el) => setVersionInputRef(r.id, el)}
-                  type="file"
-                  className="detail-attachments__file-input"
-                  onChange={(e) => void handleNewVersionSelected(r.id, e.target.files?.[0] ?? null)}
-                />
-              ))}
-            </div>
+          {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
 
-            {/* HISTORY (sticky panel dole, vlastní scroll) */}
-            <div className="detail-attachments__history-sticky">
-              <div className="detail-attachments__history-header">
+          {!loading && managerRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
+
+          {/* LIST */}
+          {!loading && managerRows.length > 0 && (
+            <ListView
+              columns={sharedColumns}
+              rows={managerRows}
+              filterValue={filterText}
+              onFilterChange={setFilterText}
+              filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+              showArchived={includeArchived}
+              onShowArchivedChange={setIncludeArchived}
+              showArchivedLabel="Zobrazit archivované"
+              selectedId={selectedDocId}
+              onRowClick={(row) => setSelectedDocId(String(row.id))}
+              onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+            />
+          )}
+
+          {/* hidden inputs for new version */}
+          {filteredRows.map((r) => (
+            <input
+              key={r.id}
+              ref={(el) => setVersionInputRef(r.id, el)}
+              type="file"
+              className="detail-attachments__file-input"
+              onChange={(e) => void handleNewVersionSelected(r.id, e.target.files?.[0] ?? null)}
+            />
+          ))}
+
+          {/* HISTORY (otevírá CommonActions → attachmentsHistory) */}
+          {expandedDocId && (
+            <div className="detail-attachments__history" style={{ marginTop: 12 }}>
+              <div className="detail-attachments__history-head">
                 <div className="detail-attachments__history-title">Historie verzí</div>
-                <div className="detail-attachments__history-subtitle">{historyTitle}</div>
+                <div className="detail-attachments__history-selected">{selectedTitle}</div>
               </div>
 
-              <div className="detail-attachments__history-body">
-                {!selectedDocId && <div className="detail-view__placeholder">Vyber přílohu v seznamu, aby šla zobrazit historie verzí.</div>}
+              {versionsLoadingId === expandedDocId && <div className="detail-view__placeholder">Načítám historii…</div>}
 
-                {selectedDocId && showHistoryPlaceholder && (
-                  <div className="detail-view__placeholder">
-                    Historie není otevřená. Vyber řádek a použij CommonActions akci <strong>Historie</strong>.
-                  </div>
-                )}
+              {versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
 
-                {selectedDocId && !showHistoryPlaceholder && versionsLoadingId === expandedDocId && (
-                  <div className="detail-view__placeholder">Načítám historii…</div>
-                )}
-
-                {selectedDocId && !showHistoryPlaceholder && versionsLoadingId !== expandedDocId && historyRows.length === 0 && (
-                  <div className="detail-view__placeholder">Žádná historie.</div>
-                )}
-
-                {selectedDocId && !showHistoryPlaceholder && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                  <ListView columns={historyColumns} rows={historyRows} filterValue="" onFilterChange={() => {}} />
-                )}
-              </div>
+              {versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
+                <ListView
+                  columns={sharedColumns}
+                  rows={historyRows}
+                  filterValue={historyFilterText}
+                  onFilterChange={setHistoryFilterText}
+                  filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                />
+              )}
             </div>
-          </div>
+          )}
         </section>
       </div>
     </div>
