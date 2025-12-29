@@ -267,7 +267,8 @@ export default function InviteUserForm({
                 }}
               >
                 <option value="">{loadingUsers ? 'Načítám…' : '— vyber uživatele —'}</option>
-                {users.map((u: any) => (
+               
+                {selectableUsers.map((u: any) => (
                   <option key={u.id} value={u.id}>
                     {(u.display_name ?? u.displayName ?? 'Uživatel') + (u.email ? ` (${u.email})` : '')}
                   </option>
