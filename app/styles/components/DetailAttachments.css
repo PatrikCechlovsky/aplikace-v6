@@ -1,121 +1,23 @@
 /* app/styles/components/DetailAttachments.css */
 
-/* ==========================================================================
-   1) IMPORTS
-   ========================================================================== */
-/* (none) */
-
-/* ==========================================================================
-   2) TYPES
-   ========================================================================== */
-/* (none) */
-
-/* ==========================================================================
-   3) HELPERS
-   ========================================================================== */
-/* (none) */
-
-/* ==========================================================================
-   4) DATA LOAD (layout + TYPO sjednocení)
-   ========================================================================== */
-
-/* ✅ hlavička sekce: title + toolbar v jednom bloku (bez mezery) */
-.detail-attachments__section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.detail-attachments__title-h3 {
-  margin: 0;
-}
-
-/* ✅ Scroll wrapper: vyplní šířku a omezuje výšku */
-.detail-attachments__table-wrap {
+/* wrapper: ať se to přizpůsobí oknu a v případě potřeby má X/Y scroll */
+.detail-attachments__listview-wrap {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto;
   max-height: calc(100vh - 260px);
-  padding-bottom: 2px;
 }
 
-.detail-attachments__panel {
-  margin-top: 10px;
-}
-
-/* ✅ TYPO: všechno v přílohách má dědit stejné písmo jako zbytek listů */
-.detail-attachments__table,
-.detail-attachments__row,
-.detail-attachments__cell,
-.detail-attachments__title,
-.detail-attachments__muted,
-.detail-attachments__link,
-.detail-attachments__small,
-.detail-attachments__meta-line {
-  font: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-}
-
-/* ==========================================================================
-   5) ACTION HANDLERS (table rows + cells)
-   ========================================================================== */
-
-.detail-attachments__table {
-  display: grid;
-  gap: 6px;
-  font-size: 12px;
-  min-width: 920px; /* aby měl smysl horizontální scroll */
-}
-
-/* List vs Manager sloupce */
-.detail-attachments__table--list .detail-attachments__row {
-  grid-template-columns: 1.2fr 1.6fr 1.8fr 0.6fr 1.4fr;
-}
-
-.detail-attachments__table--manager .detail-attachments__row {
-  grid-template-columns: 1.2fr 1.6fr 1.6fr 0.6fr 1.1fr 1.8fr;
-}
-
-.detail-attachments__row {
-  display: grid;
-  gap: 6px;
-  padding: 6px 10px;
-  border: 1px solid var(--color-border-soft);
-  border-radius: 12px;
-  background: var(--color-surface);
-}
-
-.detail-attachments__row--head {
-  background: var(--color-surface-subtle);
-  font-weight: 500;
-}
-
-.detail-attachments__row--sub {
-  background: var(--color-surface-subtle);
-}
-
-.detail-attachments__cell {
-  min-width: 0;
-}
-
-/* 1 řádek / bez zalamování */
-.detail-attachments__ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* v buňce nechceme tučný text */
 .detail-attachments__title {
   display: inline-flex;
-  align-items: center;
   gap: 8px;
-  font-weight: 500;
+  align-items: center;
+  font-weight: 400;
 }
 
+/* badge OK (malé, nenásilné) */
 .detail-attachments__archived-badge {
-  font-size: 0.85em;
+  font-size: 0.75rem;
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
@@ -123,121 +25,20 @@
   background: var(--color-surface-subtle);
 }
 
-.detail-attachments__file {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.detail-attachments__file-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 320px;
-}
-
-/* ✅ link: bez extra font-weight */
+/* odkaz na soubor: netučný, jako ve zbytku listů */
 .detail-attachments__link {
   border: 0;
   background: transparent;
   padding: 0;
   color: var(--color-primary);
   cursor: pointer;
-  font: inherit;
-  font-weight: inherit;
+  font-weight: 400;
 }
 
 .detail-attachments__link:hover {
   text-decoration: underline;
 }
 
-.detail-attachments__row-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.detail-attachments__small {
-  border: 1px solid var(--color-border-soft);
-  background: var(--color-surface);
-  border-radius: 10px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.detail-attachments__small:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.detail-attachments__meta-line {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-}
-
 .detail-attachments__muted {
   color: var(--color-text-muted);
-  font-size: inherit;
-  line-height: inherit;
-}
-
-/* ✅ mono vypneme */
-.detail-attachments__mono {
-  font-family: inherit;
-}
-
-.detail-attachments__file-input {
-  display: none;
-}
-
-/* subrow: verze/historie */
-.detail-attachments__cell--span {
-  grid-column: 1 / -1;
-}
-
-.detail-attachments__versions-grid {
-  display: grid;
-  gap: 6px;
-}
-
-.detail-attachments__version {
-  padding: 8px 10px;
-  border: 1px solid var(--color-border-soft);
-  border-radius: 12px;
-  background: var(--color-surface);
-}
-.detail-attachments__table-wrapper {
-  max-height: calc(100vh - 260px);
-  overflow: auto;
-}
-
-.detail-attachments__table {
-  min-width: 920px; /* aby měl X scroll smysl */
-}
-
-/* ==========================================================================
-   6) RENDER (responsive)
-   ========================================================================== */
-
-@media (max-width: 640px) {
-  .detail-attachments__row {
-    grid-template-columns: 1fr !important;
-  }
-
-  .detail-attachments__row--head {
-    display: none;
-  }
-
-  .detail-attachments__table {
-    min-width: 0;
-  }
-
-  .detail-attachments__table-wrap {
-    max-height: none;
-  }
 }
