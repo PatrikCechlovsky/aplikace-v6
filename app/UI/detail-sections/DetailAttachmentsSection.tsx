@@ -595,7 +595,7 @@ export default function DetailAttachmentsSection({
                     {isManager ? <th className="generic-type__cell" scope="col">Akce</th> : null}
                   </tr>
                 </thead>
-
+                
                 <tbody>
                   {filteredRows.map((r) => {
                     const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
@@ -604,8 +604,7 @@ export default function DetailAttachmentsSection({
                 
                     return (
                       <React.Fragment key={r.id}>
-                        {/* 1 ROW = 1 DOKUMENT */}
-                        <tr className="listview__row">
+                        <tr className="generic-type__row">
                           <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
                             <span className="detail-attachments__title">
                               {r.title}
@@ -641,14 +640,13 @@ export default function DetailAttachmentsSection({
                 
                           {isManager ? (
                             <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <div className="detail-attachments__row-actions">
                                 <button
                                   type="button"
                                   className="detail-attachments__small"
                                   data-docid={r.id}
                                   onClick={handleToggleVersions}
                                   disabled={versionsLoadingId === r.id || saving}
-                                  title="Zobrazit/skrýt verze"
                                 >
                                   {isExpanded ? 'Skrýt verze' : 'Verze'}
                                 </button>
@@ -661,7 +659,6 @@ export default function DetailAttachmentsSection({
                                   data-desc={r.description ?? ''}
                                   onClick={handleEditMetadataStart}
                                   disabled={saving || editSaving}
-                                  title="Upravit metadata"
                                 >
                                   Upravit
                                 </button>
@@ -672,7 +669,6 @@ export default function DetailAttachmentsSection({
                                   data-docid={r.id}
                                   onClick={handleAddVersionRequest}
                                   disabled={saving}
-                                  title="Přidat novou verzi"
                                 >
                                   Nová verze
                                 </button>
@@ -681,7 +677,7 @@ export default function DetailAttachmentsSection({
                                   ref={(el) => setVersionInputRef(r.id, el)}
                                   data-docid={r.id}
                                   type="file"
-                                  style={{ display: 'none' }}
+                                  className="detail-attachments__file-input"
                                   onChange={handleAddVersionPick}
                                 />
                               </div>
@@ -689,15 +685,15 @@ export default function DetailAttachmentsSection({
                           ) : null}
                         </tr>
                 
-                        {/* EXPAND VERZE (jen manager) */}
                         {isExpanded && (
-                          <tr className="listview__row">
+                          <tr className="generic-type__row">
                             <td className="generic-type__cell" colSpan={isManager ? 6 : 5}>
                               {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
+                
                               {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
                 
                               {!versionsLoadingId && versions.length > 0 && (
-                                <div style={{ display: 'grid', gap: 6 }}>
+                                <div className="detail-attachments__versions-grid">
                                   {versions.map((v) => {
                                     const createdName = resolveName(null, v.created_by ?? null)
                                     return (
