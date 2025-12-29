@@ -1,209 +1,290 @@
-/* app/styles/components/DetailAttachments.css */
+// ============================================================================
+// 6) RENDER
+// ============================================================================
+  if (!canLoad) {
+    return (
+      <div className="detail-view__section">
+        <div className="detail-view__placeholder">
+          Přílohy budou dostupné po uložení záznamu.
+          <br />
+          Režim: <strong>{mode}</strong>
+        </div>
+      </div>
+    )
+  }
 
-.detail-attachments__cell-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 400; /* žádné tučné v datech */
-  white-space: nowrap;
-}
+  const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
 
-.detail-attachments__muted {
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
+  /**
+   * ✅ JEDEN ZDROJ PRAVDY PRO ŠÍŘKY SLOUPCŮ
+   * Později tohle nahradíme uživatelským nastavením (pořadí/viditelnost),
+   * ale teď to zajistí 1:1 vzhled mezi seznamem a historií.
+   */
+  const sharedColumns: ListViewColumn[] = useMemo(
+    () => [
+      { key: 'title', label: 'Název', width: '180px' },
+      { key: 'description', label: 'Popis', width: '220px' },
+      { key: 'file', label: 'Soubor (latest)' },
+      { key: 'ver', label: 'Verze', width: '90px' },
+      { key: 'uploaded', label: 'Nahráno', width: '240px' },
+    ],
+    []
+  )
 
-/* link na soubor – bez tučného */
-.detail-attachments__link {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: var(--color-primary);
-  cursor: pointer;
-  font-weight: 400;
-  text-decoration: underline;
-  white-space: nowrap;
-}
+  const listRows: ListViewRow<AttachmentRow>[] = useMemo(() => {
+    return filteredRows.map((r) => {
+      const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
+      return {
+        id: r.id,
+        raw: r,
+        data: {
+          title: (
+            <span className="detail-attachments__cell-title">
+              {r.title ?? '—'}
+              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+            </span>
+          ),
+          description: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
+          file: (
+            <button
+              type="button"
+              className="detail-attachments__link"
+              onClick={() => void handleOpenLatestByPath(r.file_path)}
+              disabled={!r.file_path}
+              title="Otevřít soubor"
+            >
+              {r.file_name ?? '—'}
+            </button>
+          ),
+          ver: <span className="detail-attachments__muted">v{String(r.version_number ?? 0).padStart(3, '0')}</span>,
+          uploaded: (
+            <span className="detail-attachments__muted">
+              {formatDt(r.version_created_at)} • kdo: {uploadedName}
+            </span>
+          ),
+        },
+      }
+    })
+  }, [filteredRows, resolveName, handleOpenLatestByPath])
 
-.detail-attachments__link:hover {
-  text-decoration: underline;
-}
+  // READ-ONLY UI (nebo manager bez práv)
+  if (!isManager) {
+    return (
+      <div className="detail-view__section">
+        {isManagerRequested && (
+          <div className="detail-view__placeholder" style={{ marginBottom: 8 }}>
+            <strong>Správa příloh je pouze pro čtení.</strong>
+            <div style={{ marginTop: 6 }}>{readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}</div>
+          </div>
+        )}
 
-.detail-attachments__link:disabled {
-  cursor: default;
-  opacity: 0.6;
-  text-decoration: none;
-}
+        <div className="detail-form">
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">{sectionTitle}</h3>
 
-.detail-attachments__archived-badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  background: var(--color-surface-subtle);
-}
+            {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
 
-/* =============================
-   Manager UI
-   ============================= */
+            {!loading && errorText && (
+              <div className="detail-view__placeholder">
+                Chyba: <strong>{errorText}</strong>
+              </div>
+            )}
 
-.detail-attachments__toolbar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
+            {!loading && !errorText && listRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
 
-.detail-attachments__toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-}
+            {!loading && !errorText && listRows.length > 0 && (
+              <ListView
+                columns={sharedColumns}
+                rows={listRows}
+                filterValue={filterText}
+                onFilterChange={setFilterText}
+                filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                showArchived={includeArchived}
+                onShowArchivedChange={setIncludeArchived}
+                showArchivedLabel="Zobrazit archivované"
+                onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+              />
+            )}
+          </section>
+        </div>
+      </div>
+    )
+  }
 
-.detail-attachments__toolbar-btn:hover {
-  background: var(--color-surface-subtle);
-}
+  // ==========================================================================
+  // MANAGER (ListView + panel + verze/historie) – bez lokálních tlačítek
+  // ==========================================================================
+  const managerRows: ListViewRow<AttachmentRow>[] = listRows
 
-.detail-attachments__panel {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 12px;
-  background: var(--color-surface);
-}
+  const expandedVersions = expandedDocId ? versionsByDocId[expandedDocId] ?? [] : []
 
-.detail-attachments__panel-grid {
-  display: grid;
-  gap: 10px;
-}
+  // history rows (sloupce stejné jako nahoře)
+  const filteredVersions = useMemo(() => {
+    const t = historyFilterText.trim().toLowerCase()
+    if (!t) return expandedVersions
+    return expandedVersions.filter((v) => {
+      const a = (selectedRow?.title ?? '').toLowerCase()
+      const b = (selectedRow?.description ?? '').toLowerCase()
+      const c = (v.file_name ?? '').toLowerCase()
+      const d = `v${String(v.version_number ?? 0).padStart(3, '0')}`.toLowerCase()
+      return a.includes(t) || b.includes(t) || c.includes(t) || d.includes(t)
+    })
+  }, [expandedVersions, historyFilterText, selectedRow])
 
-.detail-attachments__meta-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
+  const historyRows: ListViewRow<AttachmentVersionRow>[] = useMemo(() => {
+    if (!expandedDocId) return []
+    return filteredVersions.map((v) => {
+      const who = resolveName(null, v.created_by)
+      return {
+        id: v.id,
+        raw: v,
+        data: {
+          title: (
+            <span className="detail-attachments__cell-title">
+              {selectedRow?.title ?? '—'}
+              {selectedRow?.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+            </span>
+          ),
+          description: <span className="detail-attachments__muted">{selectedRow?.description ?? '—'}</span>,
+          file: (
+            <button type="button" className="detail-attachments__link" onClick={() => void openFileByPath(v.file_path)} title="Otevřít verzi">
+              {v.file_name ?? '—'}
+            </button>
+          ),
+          ver: <span className="detail-attachments__muted">v{String(v.version_number ?? 0).padStart(3, '0')}</span>,
+          uploaded: (
+            <span className="detail-attachments__muted">
+              {formatDt(v.created_at)} • kdo: {who}
+            </span>
+          ),
+        },
+      }
+    })
+  }, [expandedDocId, filteredVersions, resolveName, openFileByPath, selectedRow])
 
-.detail-attachments__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-}
+  const selectedTitle = selectedRow?.title?.trim() ? selectedRow.title : '—'
 
-.detail-attachments__btn:hover {
-  background: var(--color-surface-subtle);
-}
+  return (
+    <div className="detail-view__section">
+      <div className="detail-form">
+        <section className="detail-form__section">
+          <h3 className="detail-form__section-title">{sectionTitle}</h3>
 
-.detail-attachments__btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
+          {errorText && (
+            <div className="detail-view__placeholder" style={{ marginTop: 8 }}>
+              Chyba: <strong>{errorText}</strong>
+            </div>
+          )}
 
-.detail-attachments__row-actions {
-  display: inline-flex;
-  gap: 8px;
-  justify-content: flex-end;
-  width: 100%;
-}
+          {/* PANEL: NOVÁ PŘÍLOHA (otevírá CommonActions → attachmentsAdd) */}
+          {panelOpen && (
+            <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
+              <div className="detail-attachments__panel-grid">
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Název</label>
+                  <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Název přílohy" />
+                </div>
 
-.detail-attachments__file-input {
-  display: none;
-}
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Popis</label>
+                  <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="(volitelné)" />
+                </div>
 
-/* =============================
-   NEW: Manager layout (scroll list + sticky history)
-   Opakovatelné pro další moduly
-   ============================= */
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Soubor</label>
+                  <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
+                  {newFile && <div className="detail-form__hint">Vybráno: {newFile.name}</div>}
+                </div>
+              </div>
 
-/**
- * Layout je udělaný tak, aby:
- * - horní část (panely) byla nad listem
- * - list měl vlastní scroll, když je dlouhý
- * - historie byla sticky dole a měla vlastní scroll
- *
- * Výšku manageru lze případně později sjednotit globálně přes CSS proměnnou:
- * --attachments-manager-height
- */
-.detail-attachments__manager-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+              {saving && <div className="detail-form__hint" style={{ marginTop: 10 }}>Ukládám…</div>}
+              <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
+              </div>
+            </div>
+          )}
 
-  /* adaptivní pro PC/okno */
-  height: var(--attachments-manager-height, 70vh);
-  min-height: 420px;
-}
+          {/* PANEL: EDIT METADATA (otevírá CommonActions → attachmentsEdit) */}
+          {editingDocId && (
+            <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
+              <div className="detail-form__hint" style={{ marginBottom: 8 }}>Úprava metadat (název / popis)</div>
 
-.detail-attachments__manager-top {
-  flex: 0 0 auto;
-}
+              <div className="detail-attachments__panel-grid">
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Název</label>
+                  <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                </div>
 
-.detail-attachments__list-scroll {
-  flex: 1 1 auto;
-  min-height: 160px;
+                <div className="detail-form__field detail-form__field--span-6">
+                  <label className="detail-form__label">Popis</label>
+                  <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+                </div>
+              </div>
 
-  /* seznam scrolluje sám */
-  overflow: auto;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-}
+              {editSaving && <div className="detail-form__hint">Ukládám…</div>}
+              <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
+              </div>
+            </div>
+          )}
 
-/* Sticky historie dole */
-.detail-attachments__history-sticky {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
+          {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
 
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
+          {!loading && managerRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
 
-  /* lehký "panel" efekt, aby bylo jasné, že je to přilepené */
-  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
-}
+          {/* LIST */}
+          {!loading && managerRows.length > 0 && (
+            <ListView
+              columns={sharedColumns}
+              rows={managerRows}
+              filterValue={filterText}
+              onFilterChange={setFilterText}
+              filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+              showArchived={includeArchived}
+              onShowArchivedChange={setIncludeArchived}
+              showArchivedLabel="Zobrazit archivované"
+              selectedId={selectedDocId}
+              onRowClick={(row) => setSelectedDocId(String(row.id))}
+              onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+            />
+          )}
 
-.detail-attachments__history-header {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+          {/* hidden inputs for new version */}
+          {filteredRows.map((r) => (
+            <input
+              key={r.id}
+              ref={(el) => setVersionInputRef(r.id, el)}
+              type="file"
+              className="detail-attachments__file-input"
+              onChange={(e) => void handleNewVersionSelected(r.id, e.target.files?.[0] ?? null)}
+            />
+          ))}
 
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
+          {/* HISTORY (otevírá CommonActions → attachmentsHistory) */}
+          {expandedDocId && (
+            <div className="detail-attachments__history" style={{ marginTop: 12 }}>
+              <div className="detail-attachments__history-head">
+                <div className="detail-attachments__history-title">Historie verzí</div>
+                <div className="detail-attachments__history-selected">{selectedTitle}</div>
+              </div>
 
-.detail-attachments__history-title {
-  font-weight: 600;
-}
+              {versionsLoadingId === expandedDocId && <div className="detail-view__placeholder">Načítám historii…</div>}
 
-.detail-attachments__history-subtitle {
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 60%;
-}
+              {versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
 
-/* Tělo historie má vlastní scroll a ukazuje cca 3–5 řádků */
-.detail-attachments__history-body {
-  padding: 10px 12px;
-
-  max-height: 30vh;
-  min-height: 160px;
-  overflow: auto;
+              {versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
+                <ListView
+                  columns={sharedColumns}
+                  rows={historyRows}
+                  filterValue={historyFilterText}
+                  onFilterChange={setHistoryFilterText}
+                  filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                />
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  )
 }
