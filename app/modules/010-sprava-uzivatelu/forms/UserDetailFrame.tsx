@@ -14,6 +14,7 @@ import type { InviteFormValue } from './InviteUserForm'
 import { getUserDetail, saveUser } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/permissions'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 
 // =====================
 // 2) TYPES
@@ -609,11 +610,20 @@ export default function UserDetailFrame({
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">Vytvořeno</label>
-              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.createdAt ?? '—'} readOnly />
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={formatDateTime(resolvedUser.createdAt)}
+                readOnly
+              />
             </div>
+      
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">První přihlášení</label>
-              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.firstLoginAt ?? '—'} readOnly />
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={formatDateTime(resolvedUser.firstLoginAt)}
+                readOnly
+              />
             </div>
           </div>
         ),
