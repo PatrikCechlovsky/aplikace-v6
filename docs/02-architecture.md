@@ -245,7 +245,19 @@ Plánované služby:
 - dirty/clean status  
 
 ---
+### Datum a čas v UI
 
+- Všechna data a časy se v UI zobrazují výhradně pomocí utilit z `app/lib/formatters`
+- Pro datum + čas se používá:
+  - `formatDateTime(value)`
+- Formát:
+  - `dd.mm.rrrr hh:mm`
+- V komponentách je zakázáno:
+  - ruční formátování
+  - `toLocaleString`
+  - `substring`, `split`
+
+---
 # 8. BEZPEČNOST A RLS
 
 RLS je klíčová, protože:
