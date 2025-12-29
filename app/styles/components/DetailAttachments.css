@@ -181,3 +181,42 @@
   max-height: 30vh;
   overflow-y: auto;
 }
+/* === Sticky history: sjednocení vzhledu s ListView kartou === */
+
+.detail-attachments__history-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+
+  /* stejné jako ostatní karty */
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+
+  /* důležité: žádný padding, aby sloupce začínaly stejně jako nahoře */
+  padding: 0;
+  margin-top: 12px;
+
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.detail-attachments__history-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 10px 12px; /* stejné vnitřní odsazení hlavičky jako běžné karty */
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.detail-attachments__history-body {
+  /* tady NESMÍ být padding, jinak se posunou sloupce */
+  padding: 0;
+
+  max-height: 30vh;
+  overflow-y: auto;
+}
