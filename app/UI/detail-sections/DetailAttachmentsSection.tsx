@@ -828,7 +828,13 @@ export default function DetailAttachmentsSection({
               {versionsLoadingId !== expandedDocId && versionRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
 
               {versionsLoadingId !== expandedDocId && versionRows.length > 0 && (
-                <ListView columns={versionColumns} rows={versionRows} />
+                {versionsLoadingId !== expandedDocId && versionRows.length > 0 && (
+                <ListView
+                  columns={versionColumns}
+                  rows={versionRows}
+                  filterValue=""
+                  onFilterChange={() => {}}
+                />
               )}
             </div>
           )}
