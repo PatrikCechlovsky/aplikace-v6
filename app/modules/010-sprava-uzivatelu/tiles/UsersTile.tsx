@@ -19,8 +19,8 @@ import CommonActions from '@/app/UI/CommonActions'
 import type { CommonActionId } from '@/app/UI/CommonActions'
 import ListView, { type ListViewRow } from '@/app/UI/ListView'
 
-import { supabase } from '@/app/lib/supabase'
-import { normalizeSupabaseError } from '@/app/lib/normalizeSupabaseError'
+import { supabase } from '@/app/lib/supabaseClient'
+
 
 import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 
