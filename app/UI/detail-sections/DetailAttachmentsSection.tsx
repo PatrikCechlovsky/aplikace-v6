@@ -806,7 +806,6 @@ export default function DetailAttachmentsSection({
             <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
                 <div className="detail-attachments__history-title">Historie verzí</div>
-                <div className="detail-attachments__history-selected">{selectedTitle}</div>
               </div>
 
               <div className="detail-attachments__history-body">
