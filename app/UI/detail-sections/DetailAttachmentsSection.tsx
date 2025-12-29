@@ -7,16 +7,15 @@
  * - variant="list"    => read-only seznam (tab u entity): filtr + archiv + otevřít soubor
  * - variant="manager" => plná správa (samostatný screen po 📎): upload, verze, historie, metadata
  *
- * EDGE-CASES:
- * - canManage=false => i v manager variantě bude UI pouze read-only (list režim)
- * - readOnlyReason  => zobrazí se uživateli jako důvod, proč nejde spravovat
+ * PRAVIDLO:
+ * - V manager variantě nejsou žádné lokální toolbary / tlačítkové panely.
+ * - Všechny akce se volají přes CommonActions (nahoře) a jdou sem přes API.
  */
 
 // ============================================================================
 // 1) IMPORTS
 // ============================================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getIcon } from '@/app/UI/icons'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import {
   addAttachmentVersionWithUpload,
@@ -34,6 +33,24 @@ import {
 // ============================================================================
 // 2) TYPES
 // ============================================================================
+export type AttachmentsManagerUiState = {
+  hasSelection: boolean
+  isDirty: boolean
+}
+
+export type AttachmentsManagerApi = {
+  // state
+  hasSelection: () => boolean
+  isDirty: () => boolean
+
+  // actions
+  add: () => void
+  editMeta: () => void
+  save: () => Promise<void>
+  newVersion: () => void
+  history: () => void
+}
+
 export type DetailAttachmentsSectionProps = {
   entityType: string
   entityId: string
@@ -46,27 +63,12 @@ export type DetailAttachmentsSectionProps = {
 
   /** Volitelný text, proč je správa jen read-only */
   readOnlyReason?: string | null
-}
 
-type IconName = Parameters<typeof getIcon>[0]
+  /** Manager: API pro rodiče (UsersTile/CommonActions) */
+  onRegisterManagerApi?: (api: AttachmentsManagerApi | null) => void
 
-type ManagerActionId =
-  | 'addAttachment'
-  | 'editMeta'
-  | 'saveMeta'
-  | 'cancelMeta'
-  | 'newVersion'
-  | 'history'
-  | 'exit'
-
-const MANAGER_ACTIONS: Record<ManagerActionId, { icon: IconName; title: string }> = {
-  addAttachment: { icon: 'add', title: 'Přidat přílohu' },
-  editMeta: { icon: 'edit', title: 'Upravit název / popis' },
-  saveMeta: { icon: 'save', title: 'Uložit' },
-  cancelMeta: { icon: 'close', title: 'Zrušit úpravy' },
-  newVersion: { icon: 'upload', title: 'Nová verze' },
-  history: { icon: 'history', title: 'Historie verzí' },
-  exit: { icon: 'close', title: 'Odejít' },
+  /** Manager: hlášení state změn (aby se přepínal Save apod.) */
+  onManagerStateChange?: (s: AttachmentsManagerUiState) => void
 }
 
 // ============================================================================
@@ -95,18 +97,12 @@ function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
 
 function normalizeAuthError(msg: string) {
   const m = (msg ?? '').toLowerCase()
-  if (
-    m.includes('jwt') ||
-    m.includes('permission') ||
-    m.includes('not allowed') ||
-    m.includes('rls') ||
-    m.includes('401') ||
-    m.includes('403')
-  ) {
+  if (m.includes('jwt') || m.includes('permission') || m.includes('not allowed') || m.includes('rls') || m.includes('401') || m.includes('403')) {
     return 'Nemáš oprávnění zobrazit přílohy této entity.'
   }
   return msg
 }
+
 // ============================================================================
 // 4) DATA LOAD
 // ============================================================================
@@ -118,6 +114,8 @@ export default function DetailAttachmentsSection({
   variant = 'list',
   canManage = true,
   readOnlyReason = null,
+  onRegisterManagerApi,
+  onManagerStateChange,
 }: DetailAttachmentsSectionProps) {
   const isManagerRequested = variant === 'manager'
   const isManager = isManagerRequested && canManage !== false
@@ -264,19 +262,16 @@ export default function DetailAttachmentsSection({
     window.open(url, '_blank', 'noopener,noreferrer')
   }, [])
 
-  const handleOpenLatestByPath = useCallback(
-    async (filePath: string | null | undefined) => {
-      if (!filePath) return
-      setErrorText(null)
-      try {
-        const url = await getAttachmentSignedUrl({ filePath, expiresInSeconds: 60 })
-        window.open(url, '_blank', 'noopener,noreferrer')
-      } catch (err: any) {
-        setErrorText(err?.message ?? 'Nepodařilo se otevřít přílohu.')
-      }
-    },
-    []
-  )
+  const handleOpenLatestByPath = useCallback(async (filePath: string | null | undefined) => {
+    if (!filePath) return
+    setErrorText(null)
+    try {
+      const url = await getAttachmentSignedUrl({ filePath, expiresInSeconds: 60 })
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (err: any) {
+      setErrorText(err?.message ?? 'Nepodařilo se otevřít přílohu.')
+    }
+  }, [])
 
   const resetPanel = useCallback(() => {
     setNewTitle('')
@@ -284,22 +279,39 @@ export default function DetailAttachmentsSection({
     setNewFile(null)
   }, [])
 
+  const managerUiState: AttachmentsManagerUiState = useMemo(
+    () => ({
+      hasSelection: !!selectedDocId,
+      isDirty: !!panelDirty || !!metaDirty,
+    }),
+    [selectedDocId, panelDirty, metaDirty]
+  )
+
+  // ✅ hlášení stavu nahoru (kvůli Save/disabled v CommonActions)
+  useEffect(() => {
+    if (!isManager) return
+    onManagerStateChange?.(managerUiState)
+  }, [isManager, managerUiState, onManagerStateChange])
+
+  const ensureSelected = useCallback(() => {
+    if (!isManager) return null
+    if (!selectedDocId) {
+      setErrorText('Nejdřív vyber řádek přílohy v seznamu.')
+      return null
+    }
+    const r = rows.find((x) => x.id === selectedDocId) ?? null
+    if (!r) {
+      setErrorText('Vybraný řádek už neexistuje.')
+      return null
+    }
+    return r
+  }, [isManager, rows, selectedDocId])
+
   const handleActionAdd = useCallback(() => {
     if (!isManager) return
     setErrorText(null)
     setPanelOpen(true)
   }, [isManager])
-
-  const handleActionClosePanel = useCallback(() => {
-    if (!isManager) return
-    setErrorText(null)
-    if (panelOpen && panelDirty) {
-      const ok = confirm('Zavřít bez uložení? Rozpracovaná příloha bude ztracena.')
-      if (!ok) return
-    }
-    setPanelOpen(false)
-    resetPanel()
-  }, [isManager, panelOpen, panelDirty, resetPanel])
 
   const handleActionSaveNew = useCallback(async () => {
     if (!isManager) return
@@ -330,36 +342,6 @@ export default function DetailAttachmentsSection({
     }
   }, [isManager, panelOpen, newTitle, newDesc, newFile, entityType, entityId, entityLabel, resetPanel, loadAttachments])
 
-  const handleToggleHistory = useCallback(
-    async (documentId: string) => {
-      if (!isManager) return
-      setErrorText(null)
-
-      // close
-      if (expandedDocId === documentId) {
-        setExpandedDocId(null)
-        return
-      }
-
-      setExpandedDocId(documentId)
-
-      // already loaded
-      if (versionsByDocId[documentId]) return
-
-      setVersionsLoadingId(documentId)
-      try {
-        const versions = await listAttachmentVersions({ documentId, includeArchived: true })
-        setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
-        await refreshNamesFromVersions(versions)
-      } catch (e: any) {
-        setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se načíst historii.'))
-      } finally {
-        setVersionsLoadingId(null)
-      }
-    },
-    [isManager, expandedDocId, versionsByDocId, refreshNamesFromVersions]
-  )
-
   const handleStartEditMeta = useCallback(
     (r: AttachmentRow) => {
       if (!isManager) return
@@ -370,12 +352,6 @@ export default function DetailAttachmentsSection({
     },
     [isManager]
   )
-
-  const handleCancelEditMeta = useCallback(() => {
-    setEditingDocId(null)
-    setEditTitle('')
-    setEditDesc('')
-  }, [])
 
   const handleSaveEditMeta = useCallback(async () => {
     if (!isManager) return
@@ -432,7 +408,7 @@ export default function DetailAttachmentsSection({
 
         await loadAttachments()
 
-        // refresh versions if panel open
+        // refresh versions if history open
         if (expandedDocId === documentId) {
           const versions = await listAttachmentVersions({ documentId, includeArchived: true })
           setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
@@ -445,66 +421,102 @@ export default function DetailAttachmentsSection({
     [isManager, entityType, entityId, entityLabel, loadAttachments, expandedDocId, refreshNamesFromVersions]
   )
 
-  const handleExit = useCallback(() => {
-    window.history.back()
-  }, [])
-
-  const ensureSelected = useCallback(() => {
-    if (!isManager) return null
-    if (!selectedDocId) {
-      setErrorText('Nejdřív vyber řádek přílohy v seznamu.')
-      return null
-    }
-    const r = rows.find((x) => x.id === selectedDocId) ?? null
-    if (!r) {
-      setErrorText('Vybraný řádek už neexistuje.')
-      return null
-    }
-    return r
-  }, [isManager, rows, selectedDocId])
-
-  const onManagerActionClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      const id = e.currentTarget.dataset.action as ManagerActionId | undefined
-      if (!id) return
+  const handleToggleHistory = useCallback(
+    async (documentId: string) => {
+      if (!isManager) return
       setErrorText(null)
 
-      if (id === 'exit') return handleExit()
-
-      if (id === 'addAttachment') return handleActionAdd()
-
-      if (id === 'editMeta') {
-        const r = ensureSelected()
-        if (!r) return
-        return handleStartEditMeta(r)
+      // close
+      if (expandedDocId === documentId) {
+        setExpandedDocId(null)
+        return
       }
 
-      if (id === 'saveMeta') return void handleSaveEditMeta()
-      if (id === 'cancelMeta') return handleCancelEditMeta()
+      setExpandedDocId(documentId)
 
-      if (id === 'newVersion') {
-        const r = ensureSelected()
-        if (!r) return
-        return handlePickNewVersion(r.id)
-      }
+      // already loaded
+      if (versionsByDocId[documentId]) return
 
-      if (id === 'history') {
-        const r = ensureSelected()
-        if (!r) return
-        return void handleToggleHistory(r.id)
+      setVersionsLoadingId(documentId)
+      try {
+        const versions = await listAttachmentVersions({ documentId, includeArchived: true })
+        setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
+        await refreshNamesFromVersions(versions)
+      } catch (e: any) {
+        setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se načíst historii.'))
+      } finally {
+        setVersionsLoadingId(null)
       }
     },
-    [
-      ensureSelected,
-      handleActionAdd,
-      handleCancelEditMeta,
-      handleExit,
-      handlePickNewVersion,
-      handleSaveEditMeta,
-      handleStartEditMeta,
-      handleToggleHistory,
-    ]
+    [isManager, expandedDocId, versionsByDocId, refreshNamesFromVersions]
   )
+
+  // ✅ API pro CommonActions (přes rodiče)
+  useEffect(() => {
+    if (!onRegisterManagerApi) return
+    if (!isManager) {
+      onRegisterManagerApi(null)
+      return
+    }
+
+    const api: AttachmentsManagerApi = {
+      hasSelection: () => !!selectedDocId,
+      isDirty: () => !!panelDirty || !!metaDirty,
+
+      add: () => {
+        handleActionAdd()
+      },
+
+      editMeta: () => {
+        const r = ensureSelected()
+        if (!r) return
+        handleStartEditMeta(r)
+      },
+
+      save: async () => {
+        // save je kontextové: pokud je otevřen panel nové přílohy → uložit novou
+        // jinak pokud editujeme metadata → uložit metadata
+        if (panelOpen) {
+          await handleActionSaveNew()
+          return
+        }
+        if (editingDocId) {
+          await handleSaveEditMeta()
+          return
+        }
+      },
+
+      newVersion: () => {
+        const r = ensureSelected()
+        if (!r) return
+        handlePickNewVersion(r.id)
+      },
+
+      history: () => {
+        const r = ensureSelected()
+        if (!r) return
+        void handleToggleHistory(r.id)
+      },
+    }
+
+    onRegisterManagerApi(api)
+    return () => onRegisterManagerApi(null)
+  }, [
+    onRegisterManagerApi,
+    isManager,
+    selectedDocId,
+    panelDirty,
+    metaDirty,
+    panelOpen,
+    editingDocId,
+    ensureSelected,
+    handleActionAdd,
+    handleStartEditMeta,
+    handlePickNewVersion,
+    handleToggleHistory,
+    handleActionSaveNew,
+    handleSaveEditMeta,
+  ])
 // ============================================================================
 // 6) RENDER
 // ============================================================================
@@ -614,7 +626,7 @@ export default function DetailAttachmentsSection({
   }
 
   // ==========================================================================
-  // MANAGER (ListView + action-bar + panel + verze/historie)
+  // MANAGER (ListView + panel + verze/historie) – bez lokálních tlačítek
   // ==========================================================================
   const managerColumns: ListViewColumn[] = useMemo(
     () => [
@@ -703,98 +715,13 @@ export default function DetailAttachmentsSection({
         <section className="detail-form__section">
           <h3 className="detail-form__section-title">{sectionTitle}</h3>
 
-          {/* ACTION BAR (jedno místo, ikony; text jen na hover přes title) */}
-          <div className="detail-attachments__toolbar">
-            <button
-              type="button"
-              className="detail-attachments__toolbar-btn"
-              data-action="addAttachment"
-              onClick={onManagerActionClick}
-              title={MANAGER_ACTIONS.addAttachment.title}
-              disabled={panelOpen || !!editingDocId}
-            >
-              {getIcon(MANAGER_ACTIONS.addAttachment.icon, 'detail-attachments__toolbar-icon')}
-            </button>
-
-            <button
-              type="button"
-              className="detail-attachments__toolbar-btn"
-              data-action="editMeta"
-              onClick={onManagerActionClick}
-              title={MANAGER_ACTIONS.editMeta.title}
-              disabled={!selectedDocId || panelOpen || (!!editingDocId && editingDocId !== selectedDocId)}
-            >
-              {getIcon(MANAGER_ACTIONS.editMeta.icon, 'detail-attachments__toolbar-icon')}
-            </button>
-
-            {editingDocId && metaDirty ? (
-              <button
-                type="button"
-                className="detail-attachments__toolbar-btn"
-                data-action="saveMeta"
-                onClick={onManagerActionClick}
-                title={MANAGER_ACTIONS.saveMeta.title}
-                disabled={editSaving}
-              >
-                {getIcon(MANAGER_ACTIONS.saveMeta.icon, 'detail-attachments__toolbar-icon')}
-              </button>
-            ) : null}
-
-            {editingDocId ? (
-              <button
-                type="button"
-                className="detail-attachments__toolbar-btn"
-                data-action="cancelMeta"
-                onClick={onManagerActionClick}
-                title={MANAGER_ACTIONS.cancelMeta.title}
-                disabled={editSaving}
-              >
-                {getIcon(MANAGER_ACTIONS.cancelMeta.icon, 'detail-attachments__toolbar-icon')}
-              </button>
-            ) : null}
-
-            <button
-              type="button"
-              className="detail-attachments__toolbar-btn"
-              data-action="newVersion"
-              onClick={onManagerActionClick}
-              title={MANAGER_ACTIONS.newVersion.title}
-              disabled={!selectedDocId || panelOpen || !!editingDocId}
-            >
-              {getIcon(MANAGER_ACTIONS.newVersion.icon, 'detail-attachments__toolbar-icon')}
-            </button>
-
-            <button
-              type="button"
-              className="detail-attachments__toolbar-btn"
-              data-action="history"
-              onClick={onManagerActionClick}
-              title={MANAGER_ACTIONS.history.title}
-              disabled={!selectedDocId || panelOpen || !!editingDocId}
-            >
-              {getIcon(MANAGER_ACTIONS.history.icon, 'detail-attachments__toolbar-icon')}
-            </button>
-
-            <div style={{ flex: 1 }} />
-
-            <button
-              type="button"
-              className="detail-attachments__toolbar-btn"
-              data-action="exit"
-              onClick={onManagerActionClick}
-              title={MANAGER_ACTIONS.exit.title}
-            >
-              {getIcon(MANAGER_ACTIONS.exit.icon, 'detail-attachments__toolbar-icon')}
-            </button>
-          </div>
-
           {errorText && (
             <div className="detail-view__placeholder" style={{ marginTop: 8 }}>
               Chyba: <strong>{errorText}</strong>
             </div>
           )}
 
-          {/* PANEL: NOVÁ PŘÍLOHA */}
+          {/* PANEL: NOVÁ PŘÍLOHA (otevírá CommonActions → attachmentsAdd) */}
           {panelOpen && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
               <div className="detail-attachments__panel-grid">
@@ -815,20 +742,14 @@ export default function DetailAttachmentsSection({
                 </div>
               </div>
 
-              <div className="detail-form__hint" style={{ marginTop: 10 }}>
-                <button type="button" className="detail-attachments__btn" onClick={() => void handleActionSaveNew()} disabled={saving}>
-                  Uložit novou přílohu
-                </button>
-                <button type="button" className="detail-attachments__btn" onClick={handleActionClosePanel} disabled={saving} style={{ marginLeft: 8 }}>
-                  Zavřít
-                </button>
+              {saving && <div className="detail-form__hint" style={{ marginTop: 10 }}>Ukládám…</div>}
+              <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
               </div>
-
-              {saving && <div className="detail-form__hint">Ukládám…</div>}
             </div>
           )}
 
-          {/* PANEL: EDIT METADATA */}
+          {/* PANEL: EDIT METADATA (otevírá CommonActions → attachmentsEdit) */}
           {editingDocId && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
               <div className="detail-form__hint" style={{ marginBottom: 8 }}>Úprava metadat (název / popis)</div>
@@ -846,6 +767,9 @@ export default function DetailAttachmentsSection({
               </div>
 
               {editSaving && <div className="detail-form__hint">Ukládám…</div>}
+              <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
+              </div>
             </div>
           )}
 
@@ -881,7 +805,7 @@ export default function DetailAttachmentsSection({
             />
           ))}
 
-          {/* HISTORY */}
+          {/* HISTORY (otevírá CommonActions → attachmentsHistory) */}
           {expandedDocId && (
             <div className="detail-attachments__history" style={{ marginTop: 12 }}>
               <div className="detail-form__hint" style={{ marginBottom: 8 }}>
