@@ -459,7 +459,6 @@ export default function DetailAttachmentsSection({
     },
     [rows, handleToggleHistory, handlePickNewVersion, handleStartEditMeta, handleCancelEditMeta, handleSaveEditMeta]
   )
-
 // ============================================================================
 // 6) RENDER
 // ============================================================================
@@ -664,18 +663,10 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [
-    filteredRows,
-    resolveName,
-    expandedDocId,
-    editingDocId,
-    handleOpenLatestByPath,
-    onRowActionClick,
-    setVersionInputRef,
-    handleNewVersionSelected,
-  ])
+  }, [filteredRows, resolveName, expandedDocId, editingDocId, handleOpenLatestByPath, onRowActionClick, setVersionInputRef, handleNewVersionSelected])
 
   const expandedVersions = expandedDocId ? versionsByDocId[expandedDocId] ?? [] : []
+
   const versionColumns: ListViewColumn[] = useMemo(
     () => [
       { key: 'ver', label: 'Verze', width: '90px' },
@@ -695,7 +686,12 @@ export default function DetailAttachmentsSection({
         data: {
           ver: <span className="detail-attachments__muted">v{String(v.version_number ?? 0).padStart(3, '0')}</span>,
           file: (
-            <button type="button" className="detail-attachments__link" onClick={() => void openFileByPath(v.file_path)} title="Otevřít verzi">
+            <button
+              type="button"
+              className="detail-attachments__link"
+              onClick={() => void openFileByPath(v.file_path)}
+              title="Otevřít verzi"
+            >
               {v.file_name ?? '—'}
             </button>
           ),
@@ -708,7 +704,6 @@ export default function DetailAttachmentsSection({
       }
     })
   }, [expandedDocId, expandedVersions, resolveName, openFileByPath])
-
   const renderToolbarButton = (id: LocalActionId) => {
     const a = LOCAL_ACTIONS[id]
     return (
@@ -828,13 +823,7 @@ export default function DetailAttachmentsSection({
               {versionsLoadingId !== expandedDocId && versionRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
 
               {versionsLoadingId !== expandedDocId && versionRows.length > 0 && (
-                {versionsLoadingId !== expandedDocId && versionRows.length > 0 && (
-                <ListView
-                  columns={versionColumns}
-                  rows={versionRows}
-                  filterValue=""
-                  onFilterChange={() => {}}
-                />
+                <ListView columns={versionColumns} rows={versionRows} filterValue="" onFilterChange={() => {}} />
               )}
             </div>
           )}
@@ -843,3 +832,4 @@ export default function DetailAttachmentsSection({
     </div>
   )
 }
+
