@@ -439,35 +439,43 @@ export default function UserDetailFrame({
   const [latestInvite, setLatestInvite] = useState<any>(null)
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
+
   useEffect(() => {
     let mounted = true
+
     async function loadInvite() {
+      // only for persisted users
       if (!resolvedUser?.id?.trim()) return
-      if (!canShowInviteTab) {
+      if (viewMode === 'create' || isNewId(resolvedUser?.id)) {
         setLatestInvite(null)
         setInviteError(null)
         setInviteLoading(false)
         return
       }
+
       try {
         setInviteLoading(true)
         setInviteError(null)
+
+        // načteme poslední pozvánku vždy (kvůli System tab)
         const res = await getLatestInviteForSubject(resolvedUser.id)
         if (!mounted) return
         setLatestInvite(res)
       } catch (e: any) {
         if (!mounted) return
         setInviteError(e?.message ?? 'Chyba načtení pozvánky')
+        setLatestInvite(null)
       } finally {
         if (!mounted) return
         setInviteLoading(false)
       }
     }
+
     void loadInvite()
     return () => {
       mounted = false
     }
-  }, [resolvedUser?.id, canShowInviteTab])
+  }, [resolvedUser?.id, viewMode])
 
   // Register invite submit
   const inviteSubmitRef = useRef<null | (() => Promise<boolean>)>(null)
@@ -577,64 +585,4 @@ export default function UserDetailFrame({
     )
   }, [canShowInviteTab, inviteError, inviteLoading, latestInvite, resolvedUser.email, rolesData])
 
-  const systemBlocks = useMemo(() => {
-    return [
-      {
-        title: 'Systém uživatele',
-        content: (
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">Vytvořeno</label>
-              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.createdAt ?? '—'} readOnly />
-            </div>
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">První přihlášení</label>
-              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.firstLoginAt ?? '—'} readOnly />
-            </div>
-          </div>
-        ),
-      },
-    ]
-  }, [resolvedUser.createdAt, resolvedUser.firstLoginAt, resolvedUser.isArchived])
-
-  const sectionIds = useMemo<DetailSectionId[]>(() => {
-    const base: DetailSectionId[] = ['detail', 'roles', 'attachments', 'system']
-    if (canShowInviteTab) base.splice(2, 0, 'invite')
-    return base
-  }, [canShowInviteTab])
-
-  return (
-    <DetailView
-      mode={detailMode}
-      sectionIds={sectionIds}
-      initialActiveId={initialSectionId ?? 'detail'}
-      onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
-      ctx={{
-        entityType: 'subjects',
-        entityId: resolvedUser.id || undefined,
-        entityLabel: resolvedUser.displayName ?? null,
-        mode: detailMode,
-
-        detailContent: (
-          <UserDetailForm
-            user={resolvedUser}
-            readOnly={viewMode === 'read'}
-            onDirtyChange={(dirty) => {
-              if (!dirty) computeDirty()
-            }}
-            onValueChange={(val: any) => {
-              setFormValue(val as UserFormValue)
-              markDirtyIfChanged(val)
-            }}
-          />
-        ),
-
-        rolesData,
-        rolesUi,
-
-        inviteContent,
-        systemBlocks,
-      }}
-    />
-  )
-}
+  
