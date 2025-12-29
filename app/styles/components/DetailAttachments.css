@@ -152,7 +152,7 @@
   max-width: 60%;
 }
 /* =============================
-   Manager layout (STICKY HISTORY)
+   Manager layout (STICKY HISTORY) – FINÁL (bez duplicit)
    ============================= */
 
 .detail-attachments__manager-layout {
@@ -167,81 +167,44 @@
   padding-bottom: 12px;
 }
 
-/* sticky panel dole */
-.detail-attachments__history-sticky {
-  position: sticky;
-  bottom: 0;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  padding-top: 8px;
-}
-
-/* vlastní scroll historie */
-.detail-attachments__history-body {
-  max-height: 30vh;
-  overflow-y: auto;
-}
-/* === Sticky history: sjednocení vzhledu s ListView kartou === */
-
+/* Sticky kontejner historie = “karta” */
 .detail-attachments__history-sticky {
   position: sticky;
   bottom: 0;
   z-index: 2;
 
-  /* stejné jako ostatní karty */
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
 
-  /* důležité: žádný padding, aby sloupce začínaly stejně jako nahoře */
-  padding: 0;
   margin-top: 12px;
-
   box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
 }
 
+/* Hlavička historie */
 .detail-attachments__history-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
 
-  padding: 10px 12px; /* stejné vnitřní odsazení hlavičky jako běžné karty */
+  padding: 10px 12px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
 }
 
-.detail-attachments__history-body {
-  /* tady NESMÍ být padding, jinak se posunou sloupce */
-  padding: 0;
+.detail-attachments__history-title {
+  font-weight: 600;
+}
 
+/* Tělo historie (scroll) */
+.detail-attachments__history-body {
   max-height: 30vh;
   overflow-y: auto;
-}
-/* === History: sjednocení wrapperu ListView s horní tabulkou === */
-/* Horní ListView má padding+border. Dole ho vynutíme stejně. */
 
-.detail-attachments__history-body .listview {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: var(--color-surface);
-}
-
-/* V historii nechceme dvojitý border kolem celé sticky karty */
-.detail-attachments__history-sticky {
-  border: 0;
-  border-radius: 0;
+  /* DŮLEŽITÉ: žádný padding, ať se sloupce zarovnají stejně jako nahoře */
   padding: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-/* Hlavička historie – lehká, bez “karty” */
-.detail-attachments__history-head {
-  padding: 6px 2px;
-  border-bottom: 0;
-  background: transparent;
 }
