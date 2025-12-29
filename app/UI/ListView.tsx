@@ -78,7 +78,7 @@ export default function ListView<TData = any>({
   onRowClick,
   onRowDoubleClick,
 }: ListViewProps<TData>) {
-  const hasCheckbox = typeof onShowArchivedChange === 'function'
+  const hasCheckbox = true
 
   return (
     <div className="listview">
@@ -93,15 +93,20 @@ export default function ListView<TData = any>({
         />
 
         <div className="generic-type__list-toolbar-right">
-          {hasCheckbox && (
-            <label className="generic-type__checkbox-label">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => onShowArchivedChange?.(e.target.checked)}
-              />
-              <span>{showArchivedLabel}</span>
-            </label>
+          <label
+            className="generic-type__checkbox-label"
+            style={{
+              visibility: typeof onShowArchivedChange === 'function' ? 'visible' : 'hidden',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showArchived}
+              disabled={typeof onShowArchivedChange !== 'function'}
+              onChange={(e) => onShowArchivedChange?.(e.target.checked)}
+            />
+            <span>{showArchivedLabel}</span>
+          </label>
           )}
         </div>
       </div>
