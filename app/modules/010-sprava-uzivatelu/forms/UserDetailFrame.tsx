@@ -606,25 +606,27 @@ export default function UserDetailFrame({
 
     return [
       {
-        title: 'Systém uživatele',
+        title: 'Systém',
         content: (
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Entity</label>
+              <input className="detail-form__input detail-form__input--readonly" value="subjects" readOnly />
+            </div>
+      
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">ID</label>
+              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.id ?? '—'} readOnly />
+            </div>
+      
+            <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">Vytvořeno</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={formatDateTime(resolvedUser.createdAt)}
-                readOnly
-              />
+              <input className="detail-form__input detail-form__input--readonly" value={formatDateTime(resolvedUser.createdAt)} readOnly />
             </div>
       
             <div className="detail-form__field detail-form__field--span-4">
               <label className="detail-form__label">První přihlášení</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={formatDateTime(resolvedUser.firstLoginAt)}
-                readOnly
-              />
+              <input className="detail-form__input detail-form__input--readonly" value={formatDateTime(resolvedUser.firstLoginAt)} readOnly />
             </div>
           </div>
         ),
@@ -702,6 +704,7 @@ export default function UserDetailFrame({
         entityType: 'subjects',
         entityId: resolvedUser.id || undefined,
         entityLabel: resolvedUser.displayName ?? null,
+        showSystemEntityHeader: false,
         mode: detailMode,
 
         detailContent: (
