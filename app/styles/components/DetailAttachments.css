@@ -43,3 +43,80 @@
   color: var(--color-text-muted);
   background: var(--color-surface-subtle);
 }
+
+/* =============================
+   Manager UI
+   ============================= */
+
+.detail-attachments__toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.detail-attachments__toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.detail-attachments__toolbar-btn:hover {
+  background: var(--color-surface-subtle);
+}
+
+.detail-attachments__panel {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--color-surface);
+}
+
+.detail-attachments__panel-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-attachments__meta-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.detail-attachments__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.detail-attachments__btn:hover {
+  background: var(--color-surface-subtle);
+}
+
+.detail-attachments__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.detail-attachments__row-actions {
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.detail-attachments__file-input {
+  display: none;
+}
