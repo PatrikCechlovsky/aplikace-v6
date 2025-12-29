@@ -4,16 +4,19 @@
  * FILE: app/UI/attachments/AttachmentsManagerFrame.tsx
  *
  * PURPOSE:
- * Samostatná obrazovka (screen/tile) pro plnou správu příloh:
- * - upload nové přílohy, nové verze, historie, edit metadat
- * - používá stejný core jako záložka u entity, ale v režimu "manager"
+ * Samostatná obrazovka (screen/tile) pro plnou správu příloh.
  *
- * EDGE-CASES:
- * - canManage=false => manager tile se otevře, ale UI je pouze read-only
+ * PRAVIDLO:
+ * - AttachmentsManagerFrame je pouze obal / screen.
+ * - Všechny akce jsou přes CommonActions (nahoře v AppShell).
+ * - Skutečný render a logika je v DetailAttachmentsSection (variant="manager").
  */
 
 import React from 'react'
-import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
+import DetailAttachmentsSection, {
+  type AttachmentsManagerApi,
+  type AttachmentsManagerUiState,
+} from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 export type AttachmentsManagerFrameProps = {
   entityType: string
@@ -22,6 +25,10 @@ export type AttachmentsManagerFrameProps = {
 
   canManage?: boolean
   readOnlyReason?: string | null
+
+  // ✅ bridge do UsersTile (CommonActions)
+  onRegisterManagerApi?: (api: AttachmentsManagerApi | null) => void
+  onManagerStateChange?: (s: AttachmentsManagerUiState) => void
 }
 
 export default function AttachmentsManagerFrame({
@@ -30,6 +37,8 @@ export default function AttachmentsManagerFrame({
   entityLabel = null,
   canManage = true,
   readOnlyReason = null,
+  onRegisterManagerApi,
+  onManagerStateChange,
 }: AttachmentsManagerFrameProps) {
   return (
     <div className="detail-view__section">
@@ -50,6 +59,8 @@ export default function AttachmentsManagerFrame({
         variant="manager"
         canManage={canManage}
         readOnlyReason={readOnlyReason}
+        onRegisterManagerApi={onRegisterManagerApi}
+        onManagerStateChange={onManagerStateChange}
       />
     </div>
   )
