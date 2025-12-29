@@ -121,36 +121,7 @@
   display: none;
 }
 
-/* =============================
-   History block (manager)
-   ============================= */
 
-.detail-attachments__history {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-  padding: 12px;
-}
-
-.detail-attachments__history-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.detail-attachments__history-title {
-  font-weight: 600;
-}
-
-.detail-attachments__history-selected {
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 60%;
-}
 /* =============================
    Manager layout (STICKY HISTORY) – FINÁL (bez duplicit)
    ============================= */
