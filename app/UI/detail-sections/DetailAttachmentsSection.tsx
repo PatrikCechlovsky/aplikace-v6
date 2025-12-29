@@ -1,80 +1,68 @@
 // ============================================================================
 // 1) IMPORTS
 // ============================================================================
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { ListViewColumn, ListViewRow } from '@/app/UI/ListView'
-import { ListView } from '@/app/UI/ListView'
+import { ListView } from '../ListView'
+import type { ListViewColumn, ListViewRow } from '../ListView'
 
 import {
-  addAttachmentVersionWithUpload,
-  createAttachmentWithUpload,
   getAttachmentSignedUrl,
-  listAttachmentLatest,
-  listAttachmentVersions,
-  updateAttachmentMetadata,
-} from '@/app/supabase/attachments'
-
-import { getIcon } from '@/app/UI/icons'
-import { normalizeAuthError } from '@/app/utils/normalizeAuthError'
-
-// Styles
-import '@/app/styles/components/DetailAttachments.css'
+  listEntityAttachmentsLatest,
+} from '@/app/lib/attachments'
 
 // ============================================================================
 // 2) TYPES
 // ============================================================================
-type DetailMode = 'view' | 'edit' | 'create'
-type Variant = 'list' | 'manager'
-
-type LocalActionId = 'refresh' | 'addAttachment' | 'saveAttachment' | 'closePanel'
-
 type Props = {
-  mode: DetailMode
-  variant?: Variant
-
   entityType: string
   entityId: string | null
-  entityLabel: string
+  entityLabel?: string | null
+  mode: 'create' | 'edit' | 'view'
+}
 
-  canManage?: boolean
-  isEntityArchived?: boolean
+// Data coming from your "latest attachments" view
+type AttachmentLatestRow = {
+  id: string
+  title: string | null
+  description: string | null
+  file_path: string | null
+  file_name: string | null
+  version_number: number | null
+  version_created_at: string | null
+  version_created_by: string | null
+  version_created_by_name: string | null
+  is_archived: boolean
 }
 
 // ============================================================================
 // 3) HELPERS
 // ============================================================================
-function formatDt(dt: string | null | undefined): string {
-  if (!dt) return '—'
-  const d = new Date(dt)
-  if (Number.isNaN(d.getTime())) return String(dt)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+const safe = (v: any, fallback = '—') => (v === null || v === undefined || v === '' ? fallback : String(v))
+
+const fmtVersion = (n: number | null) => {
+  if (!n && n !== 0) return '—'
+  return `v${String(n).padStart(3, '0')}`
 }
 
-function resolveName(preResolved: string | null, fallback: string | null): string {
-  if (preResolved?.trim()) return preResolved.trim()
-  if (fallback?.trim()) return fallback.trim()
-  return '—'
+const fmtDt = (iso: string | null) => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  // CZ: datum + čas, bez dalších nesmyslů
+  return d.toLocaleString('cs-CZ', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
+
+const resolveName = (name: string | null, fallbackId: string | null) => {
+  const n = (name ?? '').trim()
+  if (n) return n
+  return safe(fallbackId, '—')
+}
+
 // ============================================================================
 // 4) DATA LOAD
 // ============================================================================
-export function DetailAttachmentsSection(props: Props) {
-  const {
-    mode,
-    variant = 'list',
-    entityType,
-    entityId,
-    entityLabel,
-    canManage = false,
-    isEntityArchived = false,
-  } = props
-
-  const isManagerRequested = variant === 'manager'
-  const isManager = isManagerRequested && canManage && !isEntityArchived && mode !== 'view'
-
-  const canLoad = Boolean(entityId)
+export default function DetailAttachmentsSection(props: Props) {
+  const { entityType, entityId, entityLabel, mode } = props
 
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -82,63 +70,32 @@ export function DetailAttachmentsSection(props: Props) {
   const [includeArchived, setIncludeArchived] = useState(false)
   const [filterText, setFilterText] = useState('')
 
-  // rows from v_document_latest_version
-  const [rows, setRows] = useState<any[]>([])
+  const [rows, setRows] = useState<AttachmentLatestRow[]>([])
 
-  // names cache (optional; in your view it is already version_created_by_name)
-  const [namesById, setNamesById] = useState<Record<string, string>>({})
-
-  // manager panel state
-  const [panelOpen, setPanelOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [newDesc, setNewDesc] = useState('')
-  const [newFile, setNewFile] = useState<File | null>(null)
-
-  // manager edit metadata
-  const [editingDocId, setEditingDocId] = useState<string | null>(null)
-  const [editTitle, setEditTitle] = useState('')
-  const [editDesc, setEditDesc] = useState('')
-  const [editSaving, setEditSaving] = useState(false)
-
-  // manager versions expand
-  const versionInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
-  const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
-  const [versionsLoadingId, setVersionsLoadingId] = useState<string | null>(null)
-  const [versionsByDocId, setVersionsByDocId] = useState<Record<string, any[]>>({})
-
-  const LOCAL_ACTIONS: Record<LocalActionId, { icon: string; label: string; title: string }> = useMemo(
-    () => ({
-      refresh: { icon: 'refresh', label: 'Obnovit', title: 'Načíst znovu' },
-      addAttachment: { icon: 'add', label: 'Nová', title: 'Přidat přílohu' },
-      saveAttachment: { icon: 'save', label: 'Uložit', title: 'Uložit přílohu' },
-      closePanel: { icon: 'close', label: 'Zavřít', title: 'Zavřít panel' },
-    }),
-    []
-  )
+  const canLoad = !!entityId && (mode === 'edit' || mode === 'view')
 
   const loadAttachments = useCallback(async () => {
-    if (!entityId) return
+    if (!canLoad || !entityId) return
     setLoading(true)
     setErrorText(null)
     try {
-      const items = await listAttachmentLatest({
+      const data = await listEntityAttachmentsLatest({
         entityType,
         entityId,
         includeArchived,
       })
-      setRows(items ?? [])
+      setRows((data ?? []) as AttachmentLatestRow[])
     } catch (e: any) {
-      setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se načíst přílohy.'))
+      setErrorText(e?.message ?? 'Nepodařilo se načíst přílohy.')
     } finally {
       setLoading(false)
     }
-  }, [entityId, entityType, includeArchived])
+  }, [canLoad, entityId, entityType, includeArchived])
 
   useEffect(() => {
-    if (!canLoad) return
     void loadAttachments()
-  }, [canLoad, loadAttachments])
+  }, [loadAttachments])
+
 // ============================================================================
 // 5) ACTION HANDLERS
 // ============================================================================
@@ -147,17 +104,8 @@ export function DetailAttachmentsSection(props: Props) {
     window.open(url, '_blank', 'noopener,noreferrer')
   }, [])
 
-  const handleArchivedToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setIncludeArchived(e.target.checked)
-  }, [])
-
-  const handleFilterChange = useCallback((v: string) => {
-    setFilterText(v)
-  }, [])
-
   const handleOpenLatest = useCallback(
-    async (e: React.MouseEvent<HTMLButtonElement>) => {
-      const filePath = e.currentTarget.dataset.path
+    async (filePath: string | null) => {
       if (!filePath) return
       setErrorText(null)
       try {
@@ -169,225 +117,36 @@ export function DetailAttachmentsSection(props: Props) {
     [openFileByPath]
   )
 
-  const setVersionInputRef = useCallback((docId: string, el: HTMLInputElement | null) => {
-    versionInputRefs.current[docId] = el
+  const handleArchivedToggle = useCallback((next: boolean) => {
+    setIncludeArchived(next)
   }, [])
 
-  const resetPanel = useCallback(() => {
-    setNewTitle('')
-    setNewDesc('')
-    setNewFile(null)
+  const handleFilterChange = useCallback((v: string) => {
+    setFilterText(v)
   }, [])
-
-  const handleActionAdd = useCallback(() => {
-    if (!isManager) return
-    setErrorText(null)
-    setPanelOpen(true)
-  }, [isManager])
-
-  const handleActionClose = useCallback(() => {
-    if (!isManager) return
-    setErrorText(null)
-    setPanelOpen(false)
-    resetPanel()
-  }, [isManager, resetPanel])
-
-  const handleActionSave = useCallback(async () => {
-    if (!isManager) return
-    setErrorText(null)
-    if (!panelOpen) return
-
-    const title = newTitle.trim()
-    if (!title) return setErrorText('Chybí název přílohy.')
-    if (!newFile) return setErrorText('Vyber soubor.')
-
-    setSaving(true)
-    try {
-      await createAttachmentWithUpload({
-        entityType,
-        entityId: entityId ?? '',
-        entityLabel,
-        title,
-        description: newDesc.trim() ? newDesc.trim() : null,
-        file: newFile,
-      })
-      setPanelOpen(false)
-      resetPanel()
-      await loadAttachments()
-    } catch (e: any) {
-      setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se přidat přílohu.'))
-    } finally {
-      setSaving(false)
-    }
-  }, [isManager, panelOpen, newTitle, newDesc, newFile, entityType, entityId, entityLabel, resetPanel, loadAttachments])
-
-  const onToolbarActionClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      const id = e.currentTarget.dataset.action as LocalActionId | undefined
-      if (!id) return
-      if (id === 'refresh') return void loadAttachments()
-      if (id === 'addAttachment') return handleActionAdd()
-      if (id === 'saveAttachment') return void handleActionSave()
-      if (id === 'closePanel') return handleActionClose()
-    },
-    [loadAttachments, handleActionAdd, handleActionSave, handleActionClose]
-  )
-
-  const handleToggleVersions = useCallback(
-    async (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!isManager) return
-      const documentId = e.currentTarget.dataset.docid
-      if (!documentId) return
-
-      if (expandedDocId === documentId) {
-        setExpandedDocId(null)
-        return
-      }
-
-      setExpandedDocId(documentId)
-      if (versionsByDocId[documentId]) return
-
-      setVersionsLoadingId(documentId)
-      try {
-        const items = await listAttachmentVersions({ documentId, includeArchived: true })
-        setVersionsByDocId((prev) => ({ ...prev, [documentId]: items }))
-      } catch (err: any) {
-        setErrorText(normalizeAuthError(err?.message ?? 'Nepodařilo se načíst verze.'))
-      } finally {
-        setVersionsLoadingId(null)
-      }
-    },
-    [isManager, expandedDocId, versionsByDocId]
-  )
-
-  const handleAddVersionRequest = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!isManager) return
-      const docId = e.currentTarget.dataset.docid
-      if (!docId) return
-      const ok = confirm('Vytvořit novou verzi souboru?')
-      if (!ok) return
-      versionInputRefs.current[docId]?.click()
-    },
-    [isManager]
-  )
-
-  const handleAddVersionPick = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!isManager) return
-      const docId = e.currentTarget.dataset.docid
-      if (!docId) return
-      const file = e.target.files?.[0]
-      if (!file) return
-
-      setErrorText(null)
-      setSaving(true)
-      try {
-        await addAttachmentVersionWithUpload({
-          documentId: docId,
-          entityType,
-          entityId: entityId ?? '',
-          entityLabel,
-          file,
-        })
-        e.target.value = ''
-        await loadAttachments()
-        setExpandedDocId(docId)
-        setVersionsByDocId((prev) => {
-          const next = { ...prev }
-          delete next[docId]
-          return next
-        })
-      } catch (err: any) {
-        setErrorText(normalizeAuthError(err?.message ?? 'Nepodařilo se přidat verzi.'))
-      } finally {
-        setSaving(false)
-      }
-    },
-    [isManager, entityType, entityId, entityLabel, loadAttachments]
-  )
-
-  const handleEditMetadataStart = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!isManager) return
-      const docId = e.currentTarget.dataset.docid
-      const title = e.currentTarget.dataset.title ?? ''
-      const desc = e.currentTarget.dataset.desc ?? ''
-      if (!docId) return
-      setEditingDocId(docId)
-      setEditTitle(title)
-      setEditDesc(desc === 'null' ? '' : desc)
-    },
-    [isManager]
-  )
-
-  const handleEditMetadataCancel = useCallback(() => {
-    setEditingDocId(null)
-    setEditTitle('')
-    setEditDesc('')
-  }, [])
-
-  const handleEditMetadataSave = useCallback(async () => {
-    if (!isManager) return
-    if (!editingDocId) return
-
-    const title = editTitle.trim()
-    if (!title) return setErrorText('Chybí název přílohy.')
-
-    setEditSaving(true)
-    setErrorText(null)
-    try {
-      await updateAttachmentMetadata({
-        documentId: editingDocId,
-        title,
-        description: editDesc.trim() ? editDesc.trim() : null,
-      })
-      setEditingDocId(null)
-      setEditTitle('')
-      setEditDesc('')
-      await loadAttachments()
-    } catch (err: any) {
-      setErrorText(normalizeAuthError(err?.message ?? 'Nepodařilo se uložit metadata.'))
-    } finally {
-      setEditSaving(false)
-    }
-  }, [isManager, editingDocId, editTitle, editDesc, loadAttachments])
 // ============================================================================
 // 6) RENDER
 // ============================================================================
-  if (!canLoad) {
-    return (
-      <div className="detail-view__section">
-        <div className="detail-view__placeholder">
-          Přílohy budou dostupné po uložení záznamu.
-          <br />
-          Režim: <strong>{mode}</strong>
-        </div>
-      </div>
-    )
-  }
-
-  const sectionTitle = isManagerRequested ? 'Přílohy' : 'Přílohy (read-only)'
-
   const filteredRows = useMemo(() => {
     const q = filterText.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter((r) => {
-      const a = String(r.title ?? '').toLowerCase()
-      const b = String(r.description ?? '').toLowerCase()
-      const c = String(r.file_name ?? '').toLowerCase()
-      return a.includes(q) || b.includes(q) || c.includes(q)
+    const base = includeArchived ? rows : rows.filter((r) => !r.is_archived)
+    if (!q) return base
+    return base.filter((r) => {
+      return (
+        (r.title ?? '').toLowerCase().includes(q) ||
+        (r.description ?? '').toLowerCase().includes(q) ||
+        (r.file_name ?? '').toLowerCase().includes(q)
+      )
     })
-  }, [rows, filterText])
+  }, [rows, includeArchived, filterText])
 
-  // READ-ONLY ListView (stejný styl jako Users list)
-  const listColumns: ListViewColumn[] = useMemo(
+  const columns: ListViewColumn[] = useMemo(
     () => [
       { id: 'title', label: 'Název', width: 180 },
-      { id: 'desc', label: 'Popis', width: 200 },
+      { id: 'desc', label: 'Popis', width: 220 },
       { id: 'file', label: 'Soubor (latest)', width: 280 },
       { id: 'ver', label: 'Verze', width: 90 },
-      { id: 'uploaded', label: 'Nahráno', width: 240 },
+      { id: 'uploaded', label: 'Nahráno', width: 260 },
     ],
     []
   )
@@ -395,52 +154,48 @@ export function DetailAttachmentsSection(props: Props) {
   const listRows: ListViewRow[] = useMemo(() => {
     return filteredRows.map((r) => {
       const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
-      const ver = `v${String(r.version_number ?? 0).padStart(3, '0')}`
 
       return {
-        id: String(r.id),
+        id: r.id,
+        isArchived: r.is_archived,
         cells: {
-          title: (
-            <span className="detail-attachments__title">
-              {r.title ?? '—'}
-              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-            </span>
-          ),
-          desc: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
+          title: safe(r.title),
+          desc: safe(r.description),
           file: (
             <button
               type="button"
               className="detail-attachments__link"
-              data-path={r.file_path}
-              onClick={handleOpenLatest}
+              onClick={() => void handleOpenLatest(r.file_path)}
               title="Otevřít soubor"
             >
-              {r.file_name ?? '—'}
+              {safe(r.file_name)}
             </button>
           ),
-          ver: <span className="detail-attachments__muted">{ver}</span>,
-          uploaded: (
-            <span className="detail-attachments__muted">
-              {formatDt(r.version_created_at)} • kdo: {uploadedName}
-            </span>
-          ),
+          ver: fmtVersion(r.version_number ?? null),
+          uploaded: `${fmtDt(r.version_created_at ?? null)} • kdo: ${uploadedName}`,
         },
       }
     })
   }, [filteredRows, handleOpenLatest])
 
+  if (!canLoad) {
+    return (
+      <div className="detail-view__section">
+        <div className="detail-view__placeholder">
+          Přílohy budou dostupné po uložení záznamu.
+          <br />
+          Režim: <strong>{mode}</strong>
+          {entityLabel ? <div style={{ marginTop: 6 }}>Entita: {entityLabel}</div> : null}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="detail-view__section">
-      {isManagerRequested && !isManager && (
-        <div className="detail-view__placeholder" style={{ marginBottom: 8 }}>
-          <strong>Správa příloh je pouze pro čtení.</strong>
-          <div style={{ marginTop: 6 }}>Nemáš oprávnění měnit přílohy nebo je entita archivovaná.</div>
-        </div>
-      )}
-
       <div className="detail-form">
         <section className="detail-form__section">
-          <h3 className="detail-form__section-title">{sectionTitle}</h3>
+          <h3 className="detail-form__section-title">Přílohy (read-only)</h3>
 
           {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
 
@@ -450,28 +205,19 @@ export function DetailAttachmentsSection(props: Props) {
             </div>
           )}
 
-          {!loading && !errorText && listRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
-
-          {!loading && !errorText && !isManagerRequested && listRows.length > 0 && (
-            <div className="detail-attachments__listview-wrap" role="region" aria-label="Přílohy">
+          {!loading && !errorText && (
+            <div className="detail-attachments__list-wrap">
               <ListView
-                columns={listColumns}
+                columns={columns}
                 rows={listRows}
                 loading={false}
                 error={null}
                 filterText={filterText}
-                onFilterTextChange={setFilterText}
-                showArchivedToggle
-                archivedChecked={includeArchived}
-                onArchivedToggleChange={(v) => setIncludeArchived(v)}
+                onFilterTextChange={handleFilterChange}
+                filterPlaceholder="Hledat podle názvu, popisu nebo souboru"
+                showArchived={includeArchived}
+                onShowArchivedChange={handleArchivedToggle}
               />
-            </div>
-          )}
-
-          {/* Manager UI necháme na další krok (teď sjednocujeme read-only) */}
-          {isManagerRequested && (
-            <div className="detail-view__placeholder" style={{ marginTop: 8 }}>
-              Manager režim budeme řešit hned jako další krok (formuláře + ListView s akcemi).
             </div>
           )}
         </section>
