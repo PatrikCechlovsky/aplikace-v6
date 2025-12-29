@@ -636,6 +636,7 @@ export default function DetailAttachmentsSection({
   // ==========================================================================
   // MANAGER (ListView + panel + verze/historie) – bez lokálních tlačítek
   // ==========================================================================
+
   const managerRows: ListViewRow<AttachmentRow>[] = listRows
 
   const expandedVersions = expandedDocId ? versionsByDocId[expandedDocId] ?? [] : []
@@ -704,12 +705,22 @@ export default function DetailAttachmentsSection({
               <div className="detail-attachments__panel-grid">
                 <div className="detail-form__field detail-form__field--span-6">
                   <label className="detail-form__label">Název</label>
-                  <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Název přílohy" />
+                  <input
+                    className="detail-form__input"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Název přílohy"
+                  />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-6">
                   <label className="detail-form__label">Popis</label>
-                  <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="(volitelné)" />
+                  <input
+                    className="detail-form__input"
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="(volitelné)"
+                  />
                 </div>
 
                 <div className="detail-form__field detail-form__field--span-6">
@@ -729,7 +740,9 @@ export default function DetailAttachmentsSection({
           {/* PANEL: EDIT METADATA (otevírá CommonActions → attachmentsEdit) */}
           {editingDocId && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
-              <div className="detail-form__hint" style={{ marginBottom: 8 }}>Úprava metadat (název / popis)</div>
+              <div className="detail-form__hint" style={{ marginBottom: 8 }}>
+                Úprava metadat (název / popis)
+              </div>
 
               <div className="detail-attachments__panel-grid">
                 <div className="detail-form__field detail-form__field--span-6">
@@ -751,60 +764,78 @@ export default function DetailAttachmentsSection({
           )}
 
           {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
-
           {!loading && managerRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
 
-          {/* LIST */}
-          {!loading && managerRows.length > 0 && (
-            <ListView
-              columns={sharedColumns}
-              rows={managerRows}
-              filterValue={filterText}
-              onFilterChange={setFilterText}
-              filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-              showArchived={includeArchived}
-              onShowArchivedChange={setIncludeArchived}
-              showArchivedLabel="Zobrazit archivované"
-              selectedId={selectedDocId}
-              onRowClick={(row) => setSelectedDocId(String(row.id))}
-              onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-            />
-          )}
+          {/* ========================= */}
+          {/* MANAGER LAYOUT (scroll + sticky historie) */}
+          {/* ========================= */}
+          <div className="detail-attachments__manager-layout" style={{ marginTop: 12 }}>
+            {/* LIST – scrolluje */}
+            <div className="detail-attachments__list-scroll">
+              {!loading && managerRows.length > 0 && (
+                <ListView
+                  columns={sharedColumns}
+                  rows={managerRows}
+                  filterValue={filterText}
+                  onFilterChange={setFilterText}
+                  filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                  showArchived={includeArchived}
+                  onShowArchivedChange={setIncludeArchived}
+                  showArchivedLabel="Zobrazit archivované"
+                  selectedId={selectedDocId}
+                  onRowClick={(row) => setSelectedDocId(String(row.id))}
+                  onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                />
+              )}
 
-          {/* hidden inputs for new version */}
-          {filteredRows.map((r) => (
-            <input
-              key={r.id}
-              ref={(el) => setVersionInputRef(r.id, el)}
-              type="file"
-              className="detail-attachments__file-input"
-              onChange={(e) => void handleNewVersionSelected(r.id, e.target.files?.[0] ?? null)}
-            />
-          ))}
+              {/* hidden inputs for new version */}
+              <div style={{ display: 'none' }}>
+                {filteredRows.map((r) => (
+                  <input
+                    key={r.id}
+                    ref={(el) => setVersionInputRef(r.id, el)}
+                    type="file"
+                    className="detail-attachments__file-input"
+                    onChange={(e) => void handleNewVersionSelected(r.id, e.target.files?.[0] ?? null)}
+                  />
+                ))}
+              </div>
+            </div>
 
-          {/* HISTORY (otevírá CommonActions → attachmentsHistory) */}
-          {expandedDocId && (
-            <div className="detail-attachments__history" style={{ marginTop: 12 }}>
+            {/* HISTORIE – sticky dole (panel je vždy vidět) */}
+            <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
                 <div className="detail-attachments__history-title">Historie verzí</div>
                 <div className="detail-attachments__history-selected">{selectedTitle}</div>
               </div>
 
-              {versionsLoadingId === expandedDocId && <div className="detail-view__placeholder">Načítám historii…</div>}
+              <div className="detail-attachments__history-body">
+                {!expandedDocId && (
+                  <div className="detail-view__placeholder">
+                    Vyber přílohu a klikni na <strong>Historie</strong> v CommonActions.
+                  </div>
+                )}
 
-              {versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
+                {expandedDocId && versionsLoadingId === expandedDocId && (
+                  <div className="detail-view__placeholder">Načítám historii…</div>
+                )}
 
-              {versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                <ListView
-                  columns={sharedColumns}
-                  rows={historyRows}
-                  filterValue={historyFilterText}
-                  onFilterChange={setHistoryFilterText}
-                  filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                />
-              )}
+                {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && (
+                  <div className="detail-view__placeholder">Žádná historie.</div>
+                )}
+
+                {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
+                  <ListView
+                    columns={sharedColumns}
+                    rows={historyRows}
+                    filterValue={historyFilterText}
+                    onFilterChange={setHistoryFilterText}
+                    filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                  />
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </section>
       </div>
     </div>
