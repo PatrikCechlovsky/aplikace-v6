@@ -565,7 +565,7 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
   if (viewMode === 'list') {
     return (
       <div style={{ display: 'grid', gap: 10 }}>
-        <CommonActions actions={commonActions} onActionClick={handleCommonAction} />
+        <CommonActions ui={{} as any} actions={commonActions} onActionClick={handleCommonAction} />
 
         {loading && <div className="detail-view__placeholder">Načítám…</div>}
         {!loading && errorText && (
@@ -597,7 +597,7 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
     if (!managerId) {
       return (
         <div className="detail-view__section">
-          <CommonActions actions={commonActions} onActionClick={handleCommonAction} />
+          <CommonActions ui={{} as any} actions={commonActions} onActionClick={handleCommonAction} />
           <div className="detail-view__placeholder">Chybí ID pro správu příloh.</div>
         </div>
       )
@@ -605,7 +605,7 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
 
     return (
       <div style={{ display: 'grid', gap: 10 }}>
-        <CommonActions actions={commonActions} onActionClick={handleCommonAction} />
+        <CommonActions ui={{} as any} actions={commonActions} onActionClick={handleCommonAction} />
 
         <AttachmentsManagerFrame
           entityType="subjects"
@@ -653,7 +653,8 @@ export default function UsersTile({ searchKey, onSetUrl, onCloseModule }: UsersT
   // fallback
   return (
     <div className="detail-view__section">
-      <CommonActions actions={commonActions} onActionClick={handleCommonAction} />
+      <CommonActions ui={{} as any} actions={commonActions} onActionClick={handleCommonAction} />
+
       <div className="detail-view__placeholder">Neznámý stav: {String(viewMode)}</div>
     </div>
   )
