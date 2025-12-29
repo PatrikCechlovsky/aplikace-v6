@@ -562,6 +562,7 @@ export default function UserDetailFrame({
                 E-mail <span className="detail-form__required">*</span>
               </label>
               <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.email ?? '—'} readOnly />
+              
             </div>
 
             <div className="detail-form__field detail-form__field--span-4">
