@@ -225,36 +225,30 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   },
 
   roles: {
-  id: 'roles',
-  label: 'Role a oprávnění',
-  order: 20,
-  visibleWhen: (ctx) => !!(ctx as any)?.rolesData,
-  render: (ctx: any) => {
-    const data = ctx?.rolesData as RolesData | undefined
-    const ui = ctx?.rolesUi as RolesUi | undefined
+    id: 'roles',
+    label: 'Role a oprávnění',
+    order: 20,
+    visibleWhen: (ctx) => !!(ctx as any)?.rolesData,
+    render: (ctx: any) => {
+      const data = ctx?.rolesData as RolesData | undefined
+      const ui = ctx?.rolesUi as RolesUi | undefined
 
-    const { roleControl, permControl } = renderRoleAndPermissionControls(data, ui)
+      const { roleControl, permControl } = renderRoleAndPermissionControls(data, ui)
 
-    return (
-      <div className="detail-form">
-        {ctx.showSystemEntityHeader !== false && (
+      return (
+        <div className="detail-form">
           <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Systém</h3>
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Entity</label>
-                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityType ?? '—'} readOnly />
-              </div>
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">ID</label>
-                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityId ?? '—'} readOnly />
-              </div>
+            <h3 className="detail-form__section-title">Role a oprávnění</h3>
+
+            <div style={{ display: 'grid', gap: 14 }}>
+              <FieldRow label="Role">{roleControl}</FieldRow>
+              <FieldRow label="Oprávnění">{permControl}</FieldRow>
             </div>
           </section>
-      </div>
-    )
+        </div>
+      )
+    },
   },
-},
 
 
 
@@ -284,19 +278,21 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
 
       return (
         <div className="detail-form">
-          <section className="detail-form__section">
-            <h3 className="detail-form__section-title">Systém</h3>
-            <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">Entity</label>
-                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityType ?? '—'} readOnly />
+          {ctx.showSystemEntityHeader !== false && (
+            <section className="detail-form__section">
+              <h3 className="detail-form__section-title">Systém</h3>
+              <div className="detail-form__grid detail-form__grid--narrow">
+                <div className="detail-form__field detail-form__field--span-4">
+                  <label className="detail-form__label">Entity</label>
+                  <input className="detail-form__input detail-form__input--readonly" value={ctx.entityType ?? '—'} readOnly />
+                </div>
+                <div className="detail-form__field detail-form__field--span-4">
+                  <label className="detail-form__label">ID</label>
+                  <input className="detail-form__input detail-form__input--readonly" value={ctx.entityId ?? '—'} readOnly />
+                </div>
               </div>
-              <div className="detail-form__field detail-form__field--span-4">
-                <label className="detail-form__label">ID</label>
-                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityId ?? '—'} readOnly />
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {ctx?.systemContent ?? null}
 
