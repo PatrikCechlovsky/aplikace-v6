@@ -166,32 +166,31 @@ export default function UsersTile({
   const [attachmentsManagerSubjectId, setAttachmentsManagerSubjectId] = useState<string | null>(null)
 
   // -------------------------
-  // URL helpers (t, id, vm)
+  // URL helpers (t, id, vm, am)
   // -------------------------
   const setUrl = useCallback(
     (
-      next: { t?: string | null; id?: string | null; vm?: string | null },
+      next: { t?: string | null; id?: string | null; vm?: string | null; am?: string | null },
       mode: 'replace' | 'push' = 'replace'
     ) => {
       const sp = new URLSearchParams(searchKey)
-
+  
       const setOrDelete = (key: string, val: string | null | undefined) => {
         const v = (val ?? '').toString().trim()
         if (v) sp.set(key, v)
         else sp.delete(key)
       }
-
+  
       // ✅ DŮLEŽITÉ: rozliš "klíč není v next" vs "klíč je v next a je null"
-      // - pokud klíč v next existuje → nastav/smaž podle jeho hodnoty
-      // - pokud klíč v next neexistuje → ponech původní URL hodnotu
       if (Object.prototype.hasOwnProperty.call(next, 't')) setOrDelete('t', next.t)
       if (Object.prototype.hasOwnProperty.call(next, 'id')) setOrDelete('id', next.id)
       if (Object.prototype.hasOwnProperty.call(next, 'vm')) setOrDelete('vm', next.vm)
-
+      if (Object.prototype.hasOwnProperty.call(next, 'am')) setOrDelete('am', next.am)
+  
       const qs = sp.toString()
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
-
+  
       console.log('[010 UsersTile] setUrl()', {
         mode,
         next,
@@ -200,9 +199,9 @@ export default function UsersTile({
         nextUrl,
         willNavigate: nextUrl !== currentUrl,
       })
-
+  
       if (nextUrl === currentUrl) return
-
+  
       if (mode === 'push') router.push(nextUrl)
       else router.replace(nextUrl)
     },
@@ -361,9 +360,10 @@ export default function UsersTile({
     const t = sp.get('t')?.trim() ?? null
     const id = sp.get('id')?.trim() ?? null
     const vm = (sp.get('vm')?.trim() as ViewMode | null) ?? null
-
-    dbg('URL->state', { searchKey, t, id, vm, viewMode, selectedId, detailUserId: detailUser?.id ?? null })
-
+    const am = sp.get('am')?.trim() === '1'
+  
+    dbg('URL->state', { searchKey, t, id, vm, am, viewMode, selectedId, detailUserId: detailUser?.id ?? null })
+  
     if (!t) {
       if (viewMode !== 'list') {
         setViewMode('list')
@@ -376,7 +376,7 @@ export default function UsersTile({
       }
       return
     }
-
+  
     if (t === 'invite-user') {
       if (viewMode !== 'invite') {
         setViewMode('invite')
@@ -388,25 +388,33 @@ export default function UsersTile({
       }
       return
     }
-
+  
+    // ✅ backward compatibility: staré URL t=attachments-manager přemapuj na t=users-list&am=1
     if (t === 'attachments-manager') {
       if (!id) return
-      if (attachmentsManagerSubjectId !== id) setAttachmentsManagerSubjectId(id)
-      if (viewMode !== 'attachments-manager') {
-        setViewMode('attachments-manager')
-        setIsDirty(false)
-      }
-      if (selectedId !== id) setSelectedId(id)
+      setUrl({ t: 'users-list', id, vm: 'read', am: '1' }, 'replace')
       return
     }
-
+  
     if (t === 'users-list') {
+      // ✅ attachments manager je "am=1" v rámci users-list tile
+      if (am) {
+        if (!id) return
+        if (attachmentsManagerSubjectId !== id) setAttachmentsManagerSubjectId(id)
+        if (viewMode !== 'attachments-manager') {
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+        }
+        if (selectedId !== id) setSelectedId(id)
+        return
+      }
+  
       const safeVm: ViewMode = vm === 'edit' || vm === 'create' || vm === 'read' ? vm : 'read'
-
+  
       // ✅ CREATE route: id=new (nebo bez id)
       if (safeVm === 'create' && (id === 'new' || !id)) {
         if (viewMode !== 'create') setViewMode('create')
-
+  
         if (!detailUser || detailUser.id !== 'new') {
           const blank: UiUser = {
             id: 'new',
@@ -417,7 +425,7 @@ export default function UsersTile({
           }
           setDetailUser(blank)
         }
-
+  
         setDetailInitialSectionId('detail')
         setDetailActiveSectionId('detail')
         setInvitePresetSubjectId(null)
@@ -427,7 +435,7 @@ export default function UsersTile({
         setIsDirty(false)
         return
       }
-
+  
       // LIST
       if (!id) {
         if (viewMode !== 'list') {
@@ -441,22 +449,22 @@ export default function UsersTile({
         }
         return
       }
-
+  
       // DETAIL
       const found = users.find((u) => u.id === id)
       if (!found) return
-
+  
       if (selectedId !== id) setSelectedId(id)
-
+  
       if (viewMode !== safeVm || detailUser?.id !== found.id) {
         setDetailUser(found)
         setAttachmentsManagerSubjectId(null)
-
+  
         if (!detailActiveSectionId) {
           setDetailInitialSectionId('detail')
           setDetailActiveSectionId('detail')
         }
-
+  
         setViewMode(safeVm)
         setIsDirty(false)
         submitRef.current = null
@@ -465,7 +473,8 @@ export default function UsersTile({
       }
       return
     }
-  }, [searchKey, users, viewMode, detailUser?.id, selectedId, attachmentsManagerSubjectId, detailActiveSectionId])
+  }, [searchKey, users, viewMode, detailUser?.id, selectedId, attachmentsManagerSubjectId, detailActiveSectionId, setUrl])
+
   // -------------------------
   // Invite availability for detail
   // -------------------------
@@ -572,7 +581,7 @@ export default function UsersTile({
           if (backId) {
             setDetailInitialSectionId('attachments')
             setDetailActiveSectionId('attachments')
-            setUrl({ t: 'users-list', id: backId, vm: 'read' }, 'replace')
+            setUrl({ t: 'users-list', id: backId, vm: 'read', am: null }, 'replace')
           } else {
             closeToList()
           }
@@ -612,7 +621,7 @@ export default function UsersTile({
           setAttachmentsManagerSubjectId(selectedId)
           setViewMode('attachments-manager')
           setIsDirty(false)
-          setUrl({ t: 'attachments-manager', id: selectedId, vm: null }, 'push')
+          setUrl({ t: 'users-list', id: selectedId, vm: null, am: '1' }, 'push')
           return
         }
 
@@ -631,7 +640,8 @@ export default function UsersTile({
         setAttachmentsManagerSubjectId(detailUser.id)
         setViewMode('attachments-manager')
         setIsDirty(false)
-        setUrl({ t: 'attachments-manager', id: detailUser.id, vm: null }, 'push')
+        setUrl({ t: 'users-list', id: detailUser.id, vm: null, am: '1' }, 'push')
+
         return
       }
 
