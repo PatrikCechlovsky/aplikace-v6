@@ -55,8 +55,8 @@ export type DetailViewCtx = {
   entityType?: string
   entityId?: string
   entityLabel?: string | null
-  showSystemEntityHeader?: boolean
   mode?: DetailViewMode
+  showSystemEntityHeader?: boolean
 
   detailContent?: React.ReactNode
 
