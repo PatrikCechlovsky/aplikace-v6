@@ -162,7 +162,18 @@ export default function InviteUserForm({
       return true
     })
   }, [users])
+  
+  useEffect(() => {
+    if (variant !== 'standalone') return
+    if (mode !== 'existing') return
+    if (!v.subjectId) return
 
+    const ok = selectableUsers.some((u: any) => u.id === v.subjectId)
+    if (!ok) {
+      setV((p) => ({ ...p, subjectId: null }))
+    }
+  }, [mode, selectableUsers, v.subjectId, variant])
+  
   return (
     <div className="detail-form">
       <section className="detail-form__section">
