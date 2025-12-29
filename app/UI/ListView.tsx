@@ -107,7 +107,6 @@ export default function ListView<TData = any>({
             />
             <span>{showArchivedLabel}</span>
           </label>
-          )}
         </div>
       </div>
 
