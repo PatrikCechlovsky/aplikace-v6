@@ -151,6 +151,17 @@ export default function InviteUserForm({
   function markDirty() {
     onDirtyChange?.(true)
   }
+  const selectableUsers = useMemo(() => {
+    // Aktivní user = má first_login_at (nebo firstLoginAt). Ty nechceme nabízet k pozvánce.
+    return (users ?? []).filter((u: any) => {
+      const firstLogin = u?.first_login_at ?? u?.firstLoginAt ?? null
+      if (firstLogin) return false
+      // pozvánka bez emailu nedává smysl
+      const email = String(u?.email ?? '').trim()
+      if (!email) return false
+      return true
+    })
+  }, [users])
 
   return (
     <div className="detail-form">
