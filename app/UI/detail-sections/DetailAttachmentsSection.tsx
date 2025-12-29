@@ -726,3 +726,6 @@ export default function DetailAttachmentsSection({
       </div>
     </div>
   )
+}
+
+export default DetailAttachmentsSection
