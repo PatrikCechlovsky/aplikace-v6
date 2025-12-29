@@ -93,23 +93,20 @@ export default function ListView<TData = any>({
         />
 
         <div className="generic-type__list-toolbar-right">
-          <label
-            className="generic-type__checkbox-label"
-            style={{
-              visibility: typeof onShowArchivedChange === 'function' ? 'visible' : 'hidden',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={showArchived}
-              disabled={typeof onShowArchivedChange !== 'function'}
-              onChange={(e) => onShowArchivedChange?.(e.target.checked)}
-            />
-            <span>{showArchivedLabel}</span>
-          </label>
-        </div>
-      </div>
-
+          {typeof onShowArchivedChange === 'function' ? (
+            <label className="generic-type__checkbox-label">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => onShowArchivedChange?.(e.target.checked)}
+              />
+              <span>{showArchivedLabel}</span>
+            </label>
+          ) : (
+            <div style={{ width: 180, height: 20 }} />
+          )}
+        </div> 
+      
       {/* Vlastní tabulka */}
       <div className="listview__table-wrapper">
         <table className="generic-type__table">
