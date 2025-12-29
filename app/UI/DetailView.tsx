@@ -55,6 +55,7 @@ export type DetailViewCtx = {
   entityType?: string
   entityId?: string
   entityLabel?: string | null
+  showSystemEntityHeader?: boolean
   mode?: DetailViewMode
 
   detailContent?: React.ReactNode
@@ -236,25 +237,20 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
 
     return (
       <div className="detail-form">
-        <section className="detail-form__section">
-          <h3 className="detail-form__section-title">Role a oprávnění</h3>
-
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">
-                Role <span className="detail-form__required">*</span>
-              </label>
-              {roleControl}
+        {ctx.showSystemEntityHeader !== false && (
+          <section className="detail-form__section">
+            <h3 className="detail-form__section-title">Systém</h3>
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">Entity</label>
+                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityType ?? '—'} readOnly />
+              </div>
+              <div className="detail-form__field detail-form__field--span-4">
+                <label className="detail-form__label">ID</label>
+                <input className="detail-form__input detail-form__input--readonly" value={ctx.entityId ?? '—'} readOnly />
+              </div>
             </div>
-
-            <div className="detail-form__field detail-form__field--span-4">
-              <label className="detail-form__label">
-                Oprávnění <span className="detail-form__required">*</span>
-              </label>
-              {permControl}
-            </div>
-          </div>
-        </section>
+          </section>
       </div>
     )
   },
