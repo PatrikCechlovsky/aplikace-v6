@@ -585,4 +585,136 @@ export default function UserDetailFrame({
     )
   }, [canShowInviteTab, inviteError, inviteLoading, latestInvite, resolvedUser.email, rolesData])
 
-  
+    const systemBlocks = useMemo(() => {
+    const isActive = !!resolvedUser.firstLoginAt
+    const hasEmail = !!resolvedUser.email?.trim()
+
+    const canSendInvite = !isActive && hasEmail
+    const inviteReason = isActive
+      ? 'Uživatel je aktivní (už se přihlásil) – pozvánka se znovu neposílá.'
+      : !hasEmail
+        ? 'Chybí e-mail – pozvánku nelze odeslat.'
+        : 'Uživatel ještě není aktivní – pozvánku lze odeslat / obnovit.'
+
+    const inv: any = latestInvite ?? null
+    const invStatus = inv?.status ?? '—'
+    const invCreatedAt = inv?.created_at ?? '—'
+    const invSentAt = inv?.sent_at ?? '—'
+    const invExpiresAt = inv?.expires_at ?? inv?.valid_until ?? '—'
+
+    return [
+      {
+        title: 'Systém uživatele',
+        content: (
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Vytvořeno</label>
+              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.createdAt ?? '—'} readOnly />
+            </div>
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">První přihlášení</label>
+              <input className="detail-form__input detail-form__input--readonly" value={resolvedUser.firstLoginAt ?? '—'} readOnly />
+            </div>
+          </div>
+        ),
+      },
+
+      // ✅ Přehled pozvánky (read-only) v Systému
+      {
+        title: 'Pozvánka',
+        content: (
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Stav uživatele</label>
+              <input className="detail-form__input detail-form__input--readonly" value={isActive ? 'Aktivní' : 'Neaktivní'} readOnly />
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Lze odeslat pozvánku</label>
+              <input className="detail-form__input detail-form__input--readonly" value={canSendInvite ? 'Ano' : 'Ne'} readOnly />
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Poznámka</label>
+              <input className="detail-form__input detail-form__input--readonly" value={inviteReason} readOnly />
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Poslední pozvánka – status</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={inviteLoading ? 'Načítám…' : inviteError ? `Chyba: ${inviteError}` : String(invStatus)}
+                readOnly
+              />
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Vytvořeno</label>
+              <input className="detail-form__input detail-form__input--readonly" value={String(invCreatedAt)} readOnly />
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Odesláno</label>
+              <input className="detail-form__input detail-form__input--readonly" value={String(invSentAt)} readOnly />
+            </div>
+
+            <div className="detail-form__field detail-form__field--span-4">
+              <label className="detail-form__label">Platí do</label>
+              <input className="detail-form__input detail-form__input--readonly" value={String(invExpiresAt)} readOnly />
+            </div>
+          </div>
+        ),
+      },
+    ]
+  }, [
+    inviteError,
+    inviteLoading,
+    latestInvite,
+    resolvedUser.createdAt,
+    resolvedUser.email,
+    resolvedUser.firstLoginAt,
+    resolvedUser.isArchived,
+  ])
+
+  const sectionIds = useMemo<DetailSectionId[]>(() => {
+    const base: DetailSectionId[] = ['detail', 'roles', 'attachments', 'system']
+    if (canShowInviteTab) base.splice(2, 0, 'invite')
+    return base
+  }, [canShowInviteTab])
+
+  return (
+    <DetailView
+      mode={detailMode}
+      sectionIds={sectionIds}
+      initialActiveId={initialSectionId ?? 'detail'}
+      onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
+      ctx={{
+        entityType: 'subjects',
+        entityId: resolvedUser.id || undefined,
+        entityLabel: resolvedUser.displayName ?? null,
+        mode: detailMode,
+
+        detailContent: (
+          <UserDetailForm
+            user={resolvedUser}
+            readOnly={viewMode === 'read'}
+            onDirtyChange={(dirty) => {
+              if (!dirty) computeDirty()
+            }}
+            onValueChange={(val: any) => {
+              setFormValue(val as UserFormValue)
+              markDirtyIfChanged(val)
+            }}
+          />
+        ),
+
+        rolesData,
+        rolesUi,
+
+        inviteContent,
+        systemBlocks,
+      }}
+    />
+  )
+}
+
