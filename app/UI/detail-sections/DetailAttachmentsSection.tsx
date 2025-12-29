@@ -583,142 +583,146 @@ export default function DetailAttachmentsSection({
           {!loading && !errorText && filteredRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
 
           {!loading && !errorText && filteredRows.length > 0 && (
-  <div className="generic-type__table-wrapper detail-attachments__table-wrapper" role="region" aria-label="Přílohy">
-    <table className="generic-type__table detail-attachments__table" role="table" aria-label="Přílohy">
-      <thead>
-        <tr>
-          <th className="generic-type__cell" scope="col">Název</th>
-          <th className="generic-type__cell" scope="col">Popis</th>
-          <th className="generic-type__cell" scope="col">Soubor (latest)</th>
-          <th className="generic-type__cell" scope="col">Verze</th>
-          <th className="generic-type__cell" scope="col">Nahráno</th>
-          {isManager ? <th className="generic-type__cell" scope="col">Akce</th> : null}
-        </tr>
-      </thead>
+            <div className="generic-type__table-wrapper detail-attachments__table-wrapper" role="region" aria-label="Přílohy">
+              <table className="generic-type__table detail-attachments__table" role="table" aria-label="Přílohy">
+                <thead>
+                  <tr>
+                    <th className="generic-type__cell" scope="col">Název</th>
+                    <th className="generic-type__cell" scope="col">Popis</th>
+                    <th className="generic-type__cell" scope="col">Soubor (latest)</th>
+                    <th className="generic-type__cell" scope="col">Verze</th>
+                    <th className="generic-type__cell" scope="col">Nahráno</th>
+                    {isManager ? <th className="generic-type__cell" scope="col">Akce</th> : null}
+                  </tr>
+                </thead>
 
-      <tbody>
-        {filteredRows.map((r) => {
-          const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
-          const isExpanded = isManager && expandedDocId === r.id
-          const versions = versionsByDocId[r.id] ?? []
+                <tbody>
+                  {filteredRows.map((r) => {
+                    const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
+                    const isExpanded = isManager && expandedDocId === r.id
+                    const versions = versionsByDocId[r.id] ?? []
 
-          return (
-            <React.Fragment key={r.id}>
-              <tr className="listview__row">
-                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                  <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                    <strong style={{ fontWeight: 500 }}>{r.title}</strong>
-                    {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-                  </span>
-                </td>
+                    return (
+                      <React.Fragment key={r.id}>
+                        <tr className="listview__row">
+                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                            <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                              <strong style={{ fontWeight: 500 }}>{r.title}</strong>
+                              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+                            </span>
+                          </td>
 
-                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                  <span className="detail-attachments__muted">{r.description ?? '—'}</span>
-                </td>
+                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                            <span className="detail-attachments__muted">{r.description ?? '—'}</span>
+                          </td>
 
-                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                  <button
-                    type="button"
-                    className="detail-attachments__link"
-                    data-path={r.file_path}
-                    onClick={handleOpenLatest}
-                    title="Otevřít soubor"
-                  >
-                    {r.file_name}
-                  </button>
-                </td>
+                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                            <button
+                              type="button"
+                              className="detail-attachments__link"
+                              data-path={r.file_path}
+                              onClick={handleOpenLatest}
+                              title="Otevřít soubor"
+                            >
+                              {r.file_name}
+                            </button>
+                          </td>
 
-                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                  <span className="detail-attachments__muted">v{String(r.version_number).padStart(3, '0')}</span>
-                </td>
+                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                            <span className="detail-attachments__muted">v{String(r.version_number).padStart(3, '0')}</span>
+                          </td>
 
-                <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                  <span className="detail-attachments__muted">
-                    {formatDt(r.version_created_at)} • kdo: {uploadedName}
-                  </span>
-                </td>
+                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                            <span className="detail-attachments__muted">
+                              {formatDt(r.version_created_at)} • kdo: {uploadedName}
+                            </span>
+                          </td>
 
-                {isManager ? (
-                  <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        className="detail-attachments__small"
-                        data-docid={r.id}
-                        onClick={handleToggleVersions}
-                        disabled={versionsLoadingId === r.id || saving}
-                        title="Zobrazit/skrýt verze"
-                      >
-                        {isExpanded ? 'Skrýt verze' : 'Verze'}
-                      </button>
+                          {isManager ? (
+                            <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <button
+                                  type="button"
+                                  className="detail-attachments__small"
+                                  data-docid={r.id}
+                                  onClick={handleToggleVersions}
+                                  disabled={versionsLoadingId === r.id || saving}
+                                  title="Zobrazit/skrýt verze"
+                                >
+                                  {isExpanded ? 'Skrýt verze' : 'Verze'}
+                                </button>
 
-                      <button
-                        type="button"
-                        className="detail-attachments__small"
-                        data-docid={r.id}
-                        data-title={r.title ?? ''}
-                        data-desc={r.description ?? ''}
-                        onClick={handleEditMetadataStart}
-                        disabled={saving || editSaving}
-                        title="Upravit metadata"
-                      >
-                        Upravit
-                      </button>
+                                <button
+                                  type="button"
+                                  className="detail-attachments__small"
+                                  data-docid={r.id}
+                                  data-title={r.title ?? ''}
+                                  data-desc={r.description ?? ''}
+                                  onClick={handleEditMetadataStart}
+                                  disabled={saving || editSaving}
+                                  title="Upravit metadata"
+                                >
+                                  Upravit
+                                </button>
 
-                      <button
-                        type="button"
-                        className="detail-attachments__small"
-                        data-docid={r.id}
-                        onClick={handleAddVersionRequest}
-                        disabled={saving}
-                        title="Přidat novou verzi"
-                      >
-                        Nová verze
-                      </button>
+                                <button
+                                  type="button"
+                                  className="detail-attachments__small"
+                                  data-docid={r.id}
+                                  onClick={handleAddVersionRequest}
+                                  disabled={saving}
+                                  title="Přidat novou verzi"
+                                >
+                                  Nová verze
+                                </button>
 
-                      <input
-                        ref={(el) => setVersionInputRef(r.id, el)}
-                        data-docid={r.id}
-                        type="file"
-                        style={{ display: 'none' }}
-                        onChange={handleAddVersionPick}
-                      />
-                    </div>
-                  </td>
-                ) : null}
-              </tr>
-
-              {isExpanded && (
-                <tr className="listview__row">
-                  <td className="generic-type__cell" colSpan={isManager ? 6 : 5}>
-                    {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
-
-                    {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
-
-                    {!versionsLoadingId && versions.length > 0 && (
-                      <div style={{ display: 'grid', gap: 6 }}>
-                        {versions.map((v) => {
-                          const createdName = resolveName(null, v.created_by ?? null)
-                          return (
-                            <div key={v.id} className="detail-attachments__version">
-                              <div>
-                                <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
+                                <input
+                                  ref={(el) => setVersionInputRef(r.id, el)}
+                                  data-docid={r.id}
+                                  type="file"
+                                  style={{ display: 'none' }}
+                                  onChange={handleAddVersionPick}
+                                />
                               </div>
-                              <div className="detail-attachments__muted">
-                                {formatDt(v.created_at)} • kdo: {createdName}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              )}
-            </React.Fragment>
-          )
-        })}
-      </tbody>
-    </table>
-  </div>
-)}
+                            </td>
+                          ) : null}
+                        </tr>
+
+                        {isExpanded && (
+                          <tr className="listview__row">
+                            <td className="generic-type__cell" colSpan={isManager ? 6 : 5}>
+                              {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
+
+                              {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
+
+                              {!versionsLoadingId && versions.length > 0 && (
+                                <div style={{ display: 'grid', gap: 6 }}>
+                                  {versions.map((v) => {
+                                    const createdName = resolveName(null, v.created_by ?? null)
+                                    return (
+                                      <div key={v.id} className="detail-attachments__version">
+                                        <div>
+                                          <strong>v{String(v.version_number).padStart(3, '0')}</strong> – {v.file_name}
+                                        </div>
+                                        <div className="detail-attachments__muted">
+                                          {formatDt(v.created_at)} • kdo: {createdName}
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  )
