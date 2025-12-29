@@ -16,7 +16,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import CommonActions from '@/app/UI/CommonActions'
-import type { CommonActionId } from '@/app/UI/CommonActions'
+import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
+
 import ListView, { type ListViewRow } from '@/app/UI/ListView'
 
 import { supabase } from '@/app/lib/supabaseClient'
@@ -26,8 +27,7 @@ import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFram
 import InviteUserFrame from '../forms/InviteUserFrame'
 import UserDetailFrame from '../forms/UserDetailFrame'
 
-// ✅ FIX: helpers/roles neexistuje -> řešíme lokálně
-import type { ViewMode } from '../types'
+
 
 // ============================================================================
 // 2) TYPES
