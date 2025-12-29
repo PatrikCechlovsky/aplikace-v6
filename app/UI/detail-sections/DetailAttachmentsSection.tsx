@@ -1,223 +1,144 @@
-// app/UI/detail-sections/DetailAttachmentsSection.tsx
-
-'use client'
-
-/**
- * FILE: app/UI/detail-sections/DetailAttachmentsSection.tsx
- *
- * VARIANTY:
- * - variant="list"    => read-only seznam (tab u entity): filtr + archiv + otevřít soubor
- * - variant="manager" => plná správa (samostatný screen po 📎): upload, verze, historie, metadata
- *
- * EDGE-CASES:
- * - canManage=false => i v manager variantě bude UI pouze read-only (list režim)
- * - readOnlyReason  => zobrazí se uživateli jako důvod, proč nejde spravovat
- */
-
 // ============================================================================
 // 1) IMPORTS
 // ============================================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getIcon } from '@/app/UI/icons'
+
+import type { ListViewColumn, ListViewRow } from '@/app/UI/ListView'
+import { ListView } from '@/app/UI/ListView'
+
 import {
   addAttachmentVersionWithUpload,
   createAttachmentWithUpload,
   getAttachmentSignedUrl,
-  listAttachments,
+  listAttachmentLatest,
   listAttachmentVersions,
-  loadUserDisplayNames,
   updateAttachmentMetadata,
-  type AttachmentRow,
-  type AttachmentVersionRow,
-  type UserNameMap,
-} from '@/app/lib/attachments'
+} from '@/app/supabase/attachments'
+
+import { getIcon } from '@/app/UI/icons'
+import { normalizeAuthError } from '@/app/utils/normalizeAuthError'
+
+// Styles
+import '@/app/styles/components/DetailAttachments.css'
 
 // ============================================================================
 // 2) TYPES
 // ============================================================================
-export type DetailAttachmentsSectionProps = {
+type DetailMode = 'view' | 'edit' | 'create'
+type Variant = 'list' | 'manager'
+
+type LocalActionId = 'refresh' | 'addAttachment' | 'saveAttachment' | 'closePanel'
+
+type Props = {
+  mode: DetailMode
+  variant?: Variant
+
   entityType: string
-  entityId: string
-  entityLabel?: string | null
-  mode: 'view' | 'edit' | 'create'
-  variant?: 'list' | 'manager'
+  entityId: string | null
+  entityLabel: string
 
-  /** Pokud false => i manager je pouze read-only */
   canManage?: boolean
-
-  /** Volitelný text, proč je správa jen read-only */
-  readOnlyReason?: string | null
-}
-
-type IconName = Parameters<typeof getIcon>[0]
-type LocalActionId = 'addAttachment' | 'saveAttachment' | 'closePanel' | 'refresh'
-
-const LOCAL_ACTIONS: Record<LocalActionId, { icon: IconName; label: string; title: string }> = {
-  refresh: { icon: 'refresh', label: 'Obnovit', title: 'Obnovit seznam' },
-  addAttachment: { icon: 'add', label: 'Přidat přílohu', title: 'Přidat přílohu' },
-  saveAttachment: { icon: 'save', label: 'Uložit', title: 'Uložit (bez zavření)' },
-  closePanel: { icon: 'close', label: 'Zavřít', title: 'Zavřít bez uložení' },
+  isEntityArchived?: boolean
 }
 
 // ============================================================================
 // 3) HELPERS
 // ============================================================================
-function formatDt(s?: string | null) {
-  if (!s) return '—'
-  try {
-    const d = new Date(s)
-    if (Number.isNaN(d.getTime())) return s
-    return d.toLocaleString('cs-CZ', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return s
-  }
+function formatDt(dt: string | null | undefined): string {
+  if (!dt) return '—'
+  const d = new Date(dt)
+  if (Number.isNaN(d.getTime())) return String(dt)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
-  return { ...a, ...b }
+function resolveName(preResolved: string | null, fallback: string | null): string {
+  if (preResolved?.trim()) return preResolved.trim()
+  if (fallback?.trim()) return fallback.trim()
+  return '—'
 }
-
-function normalizeAuthError(msg: string) {
-  const m = (msg ?? '').toLowerCase()
-  if (m.includes('jwt') || m.includes('permission') || m.includes('not allowed') || m.includes('rls') || m.includes('401') || m.includes('403')) {
-    return 'Nemáš oprávnění zobrazit přílohy této entity.'
-  }
-  return msg
-}
-
 // ============================================================================
 // 4) DATA LOAD
 // ============================================================================
-export default function DetailAttachmentsSection({
-  entityType,
-  entityId,
-  entityLabel = null,
-  mode,
-  variant = 'list',
-  canManage = true,
-  readOnlyReason = null,
-}: DetailAttachmentsSectionProps) {
-  const isManagerRequested = variant === 'manager'
-  const isManager = isManagerRequested && canManage !== false
+export function DetailAttachmentsSection(props: Props) {
+  const {
+    mode,
+    variant = 'list',
+    entityType,
+    entityId,
+    entityLabel,
+    canManage = false,
+    isEntityArchived = false,
+  } = props
 
-  const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
+  const isManagerRequested = variant === 'manager'
+  const isManager = isManagerRequested && canManage && !isEntityArchived && mode !== 'view'
+
+  const canLoad = Boolean(entityId)
+
+  const [loading, setLoading] = useState(false)
+  const [errorText, setErrorText] = useState<string | null>(null)
 
   const [includeArchived, setIncludeArchived] = useState(false)
   const [filterText, setFilterText] = useState('')
 
-  const [loading, setLoading] = useState(false)
-  const [errorText, setErrorText] = useState<string | null>(null)
-  const [rows, setRows] = useState<AttachmentRow[]>([])
+  // rows from v_document_latest_version
+  const [rows, setRows] = useState<any[]>([])
 
-  // fallback userId -> display_name
-  const [nameById, setNameById] = useState<UserNameMap>({})
+  // names cache (optional; in your view it is already version_created_by_name)
+  const [namesById, setNamesById] = useState<Record<string, string>>({})
 
-  // versions (manager only UI, but hooks must exist)
-  const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
-  const [versionsByDocId, setVersionsByDocId] = useState<Record<string, AttachmentVersionRow[]>>({})
-  const [versionsLoadingId, setVersionsLoadingId] = useState<string | null>(null)
-
-  // anti-storm load guards
-  const loadInFlightRef = useRef<Promise<void> | null>(null)
-  const lastLoadKeyRef = useRef<string>('')
-
-  // new attachment panel (manager)
+  // manager panel state
   const [panelOpen, setPanelOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [newFile, setNewFile] = useState<File | null>(null)
-  const [saving, setSaving] = useState(false)
 
-  const panelDirty = useMemo(() => !!newTitle.trim() || !!newDesc.trim() || !!newFile, [newTitle, newDesc, newFile])
-
-  // edit metadata (manager)
+  // manager edit metadata
   const [editingDocId, setEditingDocId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [editSaving, setEditSaving] = useState(false)
 
-  // file inputs for "new version" (manager)
+  // manager versions expand
   const versionInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
-  const setVersionInputRef = useCallback((documentId: string, el: HTMLInputElement | null) => {
-    versionInputRefs.current[documentId] = el
-  }, [])
+  const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
+  const [versionsLoadingId, setVersionsLoadingId] = useState<string | null>(null)
+  const [versionsByDocId, setVersionsByDocId] = useState<Record<string, any[]>>({})
 
-  const refreshNamesFromRows = useCallback(async (items: AttachmentRow[]) => {
-    const ids: (string | null | undefined)[] = []
-    for (const r of items) {
-      ids.push(r.updated_by ?? null)
-      ids.push(r.version_created_by ?? null)
-      ids.push(r.created_by ?? null)
-    }
-    const map = await loadUserDisplayNames(ids)
-    setNameById((prev) => mergeNameMaps(prev, map))
-  }, [])
-
-  const refreshNamesFromVersions = useCallback(async (items: AttachmentVersionRow[]) => {
-    const ids = items.map((v) => v.created_by)
-    const map = await loadUserDisplayNames(ids)
-    setNameById((prev) => mergeNameMaps(prev, map))
-  }, [])
+  const LOCAL_ACTIONS: Record<LocalActionId, { icon: string; label: string; title: string }> = useMemo(
+    () => ({
+      refresh: { icon: 'refresh', label: 'Obnovit', title: 'Načíst znovu' },
+      addAttachment: { icon: 'add', label: 'Nová', title: 'Přidat přílohu' },
+      saveAttachment: { icon: 'save', label: 'Uložit', title: 'Uložit přílohu' },
+      closePanel: { icon: 'close', label: 'Zavřít', title: 'Zavřít panel' },
+    }),
+    []
+  )
 
   const loadAttachments = useCallback(async () => {
-    const key = `${entityType}:${entityId}:${includeArchived ? '1' : '0'}`
-
-    if (loadInFlightRef.current && lastLoadKeyRef.current === key) return loadInFlightRef.current
-    lastLoadKeyRef.current = key
-
-    const p = (async () => {
-      setLoading(true)
-      setErrorText(null)
-      try {
-        const data = await listAttachments({ entityType, entityId, includeArchived })
-        setRows(data)
-        await refreshNamesFromRows(data)
-      } catch (e: any) {
-        setErrorText(normalizeAuthError(e?.message ?? 'Chyba načítání příloh.'))
-      } finally {
-        setLoading(false)
-      }
-    })()
-
-    loadInFlightRef.current = p
+    if (!entityId) return
+    setLoading(true)
+    setErrorText(null)
     try {
-      await p
+      const items = await listAttachmentLatest({
+        entityType,
+        entityId,
+        includeArchived,
+      })
+      setRows(items ?? [])
+    } catch (e: any) {
+      setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se načíst přílohy.'))
     } finally {
-      if (loadInFlightRef.current === p) loadInFlightRef.current = null
+      setLoading(false)
     }
-  }, [entityType, entityId, includeArchived, refreshNamesFromRows])
+  }, [entityId, entityType, includeArchived])
 
   useEffect(() => {
     if (!canLoad) return
     void loadAttachments()
   }, [canLoad, loadAttachments])
-
-  const filteredRows = useMemo(() => {
-    const t = filterText.trim().toLowerCase()
-    if (!t) return rows
-    return rows.filter((r) => {
-      const a = (r.title ?? '').toLowerCase()
-      const b = (r.description ?? '').toLowerCase()
-      const c = (r.file_name ?? '').toLowerCase()
-      return a.includes(t) || b.includes(t) || c.includes(t)
-    })
-  }, [rows, filterText])
-
-  const resolveName = useCallback(
-    (nameFromView: string | null | undefined, userId: string | null | undefined) => {
-      if (nameFromView && nameFromView.trim()) return nameFromView
-      if (userId && nameById[userId]) return nameById[userId]
-      return '—'
-    },
-    [nameById]
-  )
-
 // ============================================================================
 // 5) ACTION HANDLERS
 // ============================================================================
@@ -230,8 +151,8 @@ export default function DetailAttachmentsSection({
     setIncludeArchived(e.target.checked)
   }, [])
 
-  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilterText(e.target.value)
+  const handleFilterChange = useCallback((v: string) => {
+    setFilterText(v)
   }, [])
 
   const handleOpenLatest = useCallback(
@@ -248,6 +169,10 @@ export default function DetailAttachmentsSection({
     [openFileByPath]
   )
 
+  const setVersionInputRef = useCallback((docId: string, el: HTMLInputElement | null) => {
+    versionInputRefs.current[docId] = el
+  }, [])
+
   const resetPanel = useCallback(() => {
     setNewTitle('')
     setNewDesc('')
@@ -263,13 +188,9 @@ export default function DetailAttachmentsSection({
   const handleActionClose = useCallback(() => {
     if (!isManager) return
     setErrorText(null)
-    if (panelOpen && panelDirty) {
-      const ok = confirm('Zavřít bez uložení? Rozpracovaná příloha bude ztracena.')
-      if (!ok) return
-    }
     setPanelOpen(false)
     resetPanel()
-  }, [isManager, panelOpen, panelDirty, resetPanel])
+  }, [isManager, resetPanel])
 
   const handleActionSave = useCallback(async () => {
     if (!isManager) return
@@ -284,7 +205,7 @@ export default function DetailAttachmentsSection({
     try {
       await createAttachmentWithUpload({
         entityType,
-        entityId,
+        entityId: entityId ?? '',
         entityLabel,
         title,
         description: newDesc.trim() ? newDesc.trim() : null,
@@ -324,21 +245,19 @@ export default function DetailAttachmentsSection({
       }
 
       setExpandedDocId(documentId)
-
       if (versionsByDocId[documentId]) return
 
       setVersionsLoadingId(documentId)
       try {
         const items = await listAttachmentVersions({ documentId, includeArchived: true })
         setVersionsByDocId((prev) => ({ ...prev, [documentId]: items }))
-        await refreshNamesFromVersions(items)
       } catch (err: any) {
         setErrorText(normalizeAuthError(err?.message ?? 'Nepodařilo se načíst verze.'))
       } finally {
         setVersionsLoadingId(null)
       }
     },
-    [isManager, expandedDocId, versionsByDocId, refreshNamesFromVersions]
+    [isManager, expandedDocId, versionsByDocId]
   )
 
   const handleAddVersionRequest = useCallback(
@@ -367,7 +286,7 @@ export default function DetailAttachmentsSection({
         await addAttachmentVersionWithUpload({
           documentId: docId,
           entityType,
-          entityId,
+          entityId: entityId ?? '',
           entityLabel,
           file,
         })
@@ -413,10 +332,7 @@ export default function DetailAttachmentsSection({
     if (!editingDocId) return
 
     const title = editTitle.trim()
-    if (!title) {
-      setErrorText('Chybí název přílohy.')
-      return
-    }
+    if (!title) return setErrorText('Chybí název přílohy.')
 
     setEditSaving(true)
     setErrorText(null)
@@ -451,61 +367,80 @@ export default function DetailAttachmentsSection({
     )
   }
 
-  const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
+  const sectionTitle = isManagerRequested ? 'Přílohy' : 'Přílohy (read-only)'
+
+  const filteredRows = useMemo(() => {
+    const q = filterText.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter((r) => {
+      const a = String(r.title ?? '').toLowerCase()
+      const b = String(r.description ?? '').toLowerCase()
+      const c = String(r.file_name ?? '').toLowerCase()
+      return a.includes(q) || b.includes(q) || c.includes(q)
+    })
+  }, [rows, filterText])
+
+  // READ-ONLY ListView (stejný styl jako Users list)
+  const listColumns: ListViewColumn[] = useMemo(
+    () => [
+      { id: 'title', label: 'Název', width: 180 },
+      { id: 'desc', label: 'Popis', width: 200 },
+      { id: 'file', label: 'Soubor (latest)', width: 280 },
+      { id: 'ver', label: 'Verze', width: 90 },
+      { id: 'uploaded', label: 'Nahráno', width: 240 },
+    ],
+    []
+  )
+
+  const listRows: ListViewRow[] = useMemo(() => {
+    return filteredRows.map((r) => {
+      const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
+      const ver = `v${String(r.version_number ?? 0).padStart(3, '0')}`
+
+      return {
+        id: String(r.id),
+        cells: {
+          title: (
+            <span className="detail-attachments__title">
+              {r.title ?? '—'}
+              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+            </span>
+          ),
+          desc: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
+          file: (
+            <button
+              type="button"
+              className="detail-attachments__link"
+              data-path={r.file_path}
+              onClick={handleOpenLatest}
+              title="Otevřít soubor"
+            >
+              {r.file_name ?? '—'}
+            </button>
+          ),
+          ver: <span className="detail-attachments__muted">{ver}</span>,
+          uploaded: (
+            <span className="detail-attachments__muted">
+              {formatDt(r.version_created_at)} • kdo: {uploadedName}
+            </span>
+          ),
+        },
+      }
+    })
+  }, [filteredRows, handleOpenLatest])
 
   return (
     <div className="detail-view__section">
       {isManagerRequested && !isManager && (
         <div className="detail-view__placeholder" style={{ marginBottom: 8 }}>
           <strong>Správa příloh je pouze pro čtení.</strong>
-          <div style={{ marginTop: 6 }}>
-            {readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}
-          </div>
+          <div style={{ marginTop: 6 }}>Nemáš oprávnění měnit přílohy nebo je entita archivovaná.</div>
         </div>
       )}
 
       <div className="detail-form">
         <section className="detail-form__section">
-          <div className="detail-attachments__section-head">
-            <h3 className="detail-form__section-title detail-attachments__title-h3">{sectionTitle}</h3>
-
-            {/* Toolbar sjednocený s GenericType / ListView */}
-            <div className="generic-type__list-toolbar">
-              <div className="generic-type__list-toolbar-left">
-                <input
-                  className="generic-type__filter-input"
-                  placeholder="Hledat podle názvu, popisu nebo souboru"
-                  value={filterText}
-                  onChange={handleFilterChange}
-                />
-              </div>
-
-              <div className="generic-type__list-toolbar-right">
-                <label className="generic-type__checkbox-label">
-                  <input type="checkbox" checked={includeArchived} onChange={handleArchivedToggle} />
-                  <span>Zobrazit archivované</span>
-                </label>
-
-                {isManager &&
-                  Object.entries(LOCAL_ACTIONS).map(([id, def]) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className="common-actions__button"
-                      data-action={id}
-                      onClick={onToolbarActionClick}
-                      title={def.title}
-                      disabled={saving || editSaving}
-                    >
-                      <span className="common-actions__icon" aria-hidden>
-                        {getIcon(def.icon)}
-                      </span>
-                      <span className="common-actions__label">{def.label}</span>
-                    </button>
-                  ))}
-              </div>
-            </div>
-          </div>
+          <h3 className="detail-form__section-title">{sectionTitle}</h3>
 
           {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
 
@@ -515,208 +450,28 @@ export default function DetailAttachmentsSection({
             </div>
           )}
 
-          {isManager && panelOpen && (
-            <div className="detail-form">
-              <section className="detail-form__section">
-                <h3 className="detail-form__section-title">Nová příloha</h3>
+          {!loading && !errorText && listRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
 
-                <div className="detail-form__grid detail-form__grid--narrow">
-                  <div className="detail-form__field detail-form__field--span-4">
-                    <label className="detail-form__label">Název</label>
-                    <input className="detail-form__input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
-                  </div>
-
-                  <div className="detail-form__field detail-form__field--span-4">
-                    <label className="detail-form__label">Popis</label>
-                    <input className="detail-form__input" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
-                  </div>
-
-                  <div className="detail-form__field detail-form__field--span-4">
-                    <label className="detail-form__label">Soubor</label>
-                    <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
-                    <div className="detail-form__hint">Vytvoří dokument + verzi v001 a nahraje soubor do storage.</div>
-                  </div>
-                </div>
-              </section>
+          {!loading && !errorText && !isManagerRequested && listRows.length > 0 && (
+            <div className="detail-attachments__listview-wrap" role="region" aria-label="Přílohy">
+              <ListView
+                columns={listColumns}
+                rows={listRows}
+                loading={false}
+                error={null}
+                filterText={filterText}
+                onFilterTextChange={setFilterText}
+                showArchivedToggle
+                archivedChecked={includeArchived}
+                onArchivedToggleChange={(v) => setIncludeArchived(v)}
+              />
             </div>
           )}
 
-          {isManager && editingDocId && (
-            <div className="detail-form">
-              <section className="detail-form__section">
-                <h3 className="detail-form__section-title">Upravit metadata</h3>
-
-                <div className="detail-form__grid detail-form__grid--narrow">
-                  <div className="detail-form__field detail-form__field--span-4">
-                    <label className="detail-form__label">Název</label>
-                    <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-                  </div>
-
-                  <div className="detail-form__field detail-form__field--span-4">
-                    <label className="detail-form__label">Popis</label>
-                    <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
-                  </div>
-
-                  <div className="detail-form__field detail-form__field--span-4">
-                    <label className="detail-form__label">&nbsp;</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button type="button" className="common-actions__button" onClick={() => void handleEditMetadataSave()} disabled={editSaving}>
-                        <span className="common-actions__icon" aria-hidden>
-                          {getIcon('save')}
-                        </span>
-                        <span className="common-actions__label">Uložit</span>
-                      </button>
-
-                      <button type="button" className="common-actions__button" onClick={handleEditMetadataCancel} disabled={editSaving}>
-                        <span className="common-actions__icon" aria-hidden>
-                          {getIcon('close')}
-                        </span>
-                        <span className="common-actions__label">Zrušit</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
-
-          {!loading && !errorText && filteredRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
-
-          {!loading && !errorText && filteredRows.length > 0 && (
-            <div className="generic-type__table-wrapper detail-attachments__table-wrapper" role="region" aria-label="Přílohy">
-              <table className="generic-type__table detail-attachments__table" role="table" aria-label="Přílohy">
-                <thead>
-                  <tr>
-                    <th className="generic-type__cell" scope="col">Název</th>
-                    <th className="generic-type__cell" scope="col">Popis</th>
-                    <th className="generic-type__cell" scope="col">Soubor (latest)</th>
-                    <th className="generic-type__cell" scope="col">Verze</th>
-                    <th className="generic-type__cell" scope="col">Nahráno</th>
-                    {isManager ? <th className="generic-type__cell" scope="col">Akce</th> : null}
-                  </tr>
-                </thead>
-                
-                <tbody>
-                  {filteredRows.map((r) => {
-                    const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
-                    const isExpanded = isManager && expandedDocId === r.id
-                    const versions = versionsByDocId[r.id] ?? []
-                
-                    return (
-                      <React.Fragment key={r.id}>
-                        <tr className="generic-type__row">
-                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                            <span className="detail-attachments__title">
-                              {r.title}
-                              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-                            </span>
-                          </td>
-                
-                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                            <span className="detail-attachments__muted">{r.description ?? '—'}</span>
-                          </td>
-                
-                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                            <button
-                              type="button"
-                              className="detail-attachments__link"
-                              data-path={r.file_path}
-                              onClick={handleOpenLatest}
-                              title="Otevřít soubor"
-                            >
-                              {r.file_name}
-                            </button>
-                          </td>
-                
-                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                            <span className="detail-attachments__muted">v{String(r.version_number).padStart(3, '0')}</span>
-                          </td>
-                
-                          <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                            <span className="detail-attachments__muted">
-                              {formatDt(r.version_created_at)} • kdo: {uploadedName}
-                            </span>
-                          </td>
-                
-                          {isManager ? (
-                            <td className="generic-type__cell" style={{ whiteSpace: 'nowrap' }}>
-                              <div className="detail-attachments__row-actions">
-                                <button
-                                  type="button"
-                                  className="detail-attachments__small"
-                                  data-docid={r.id}
-                                  onClick={handleToggleVersions}
-                                  disabled={versionsLoadingId === r.id || saving}
-                                >
-                                  {isExpanded ? 'Skrýt verze' : 'Verze'}
-                                </button>
-                
-                                <button
-                                  type="button"
-                                  className="detail-attachments__small"
-                                  data-docid={r.id}
-                                  data-title={r.title ?? ''}
-                                  data-desc={r.description ?? ''}
-                                  onClick={handleEditMetadataStart}
-                                  disabled={saving || editSaving}
-                                >
-                                  Upravit
-                                </button>
-                
-                                <button
-                                  type="button"
-                                  className="detail-attachments__small"
-                                  data-docid={r.id}
-                                  onClick={handleAddVersionRequest}
-                                  disabled={saving}
-                                >
-                                  Nová verze
-                                </button>
-                
-                                <input
-                                  ref={(el) => setVersionInputRef(r.id, el)}
-                                  data-docid={r.id}
-                                  type="file"
-                                  className="detail-attachments__file-input"
-                                  onChange={handleAddVersionPick}
-                                />
-                              </div>
-                            </td>
-                          ) : null}
-                        </tr>
-                
-                        {isExpanded && (
-                          <tr className="generic-type__row">
-                            <td className="generic-type__cell" colSpan={isManager ? 6 : 5}>
-                              {versionsLoadingId === r.id && <div className="detail-attachments__muted">Načítám verze…</div>}
-                
-                              {!versionsLoadingId && versions.length === 0 && <div className="detail-attachments__muted">Žádné verze.</div>}
-                
-                              {!versionsLoadingId && versions.length > 0 && (
-                                <div className="detail-attachments__versions-grid">
-                                  {versions.map((v) => {
-                                    const createdName = resolveName(null, v.created_by ?? null)
-                                    return (
-                                      <div key={v.id} className="detail-attachments__version">
-                                        <div>
-                                          v{String(v.version_number).padStart(3, '0')} – {v.file_name}
-                                        </div>
-                                        <div className="detail-attachments__muted">
-                                          {formatDt(v.created_at)} • kdo: {createdName}
-                                        </div>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    )
-                  })}
-                </tbody>
-              </table>
+          {/* Manager UI necháme na další krok (teď sjednocujeme read-only) */}
+          {isManagerRequested && (
+            <div className="detail-view__placeholder" style={{ marginTop: 8 }}>
+              Manager režim budeme řešit hned jako další krok (formuláře + ListView s akcemi).
             </div>
           )}
         </section>
@@ -724,4 +479,3 @@ export default function DetailAttachmentsSection({
     </div>
   )
 }
-
