@@ -30,6 +30,7 @@
 .generic-type__table {
   border-collapse: collapse;
   width: 100%;
+  table-layout: fixed;
 }
 
 /* Hlavička */
@@ -43,6 +44,9 @@
 .generic-type__cell {
   padding: 6px 8px;
   border-bottom: 1px solid var(--color-border-subtle);
+  verflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Hover řádek */
