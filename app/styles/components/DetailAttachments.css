@@ -179,3 +179,19 @@
   /* DŮLEŽITÉ: žádný padding, ať se sloupce zarovnají stejně jako nahoře */
   padding: 0;
 }
+/* společný wrapper pro oba ListView (horní i historie) */
+.detail-attachments__lv-shell {
+  /* sjednocený „card“ look (stejné jako ListView) */
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  padding: 10px 12px;
+
+  /* důležité: vždy rezervuj místo pro vertikální scrollbar */
+  scrollbar-gutter: stable;
+}
+
+/* vnitřní scroll area (aby scrollbar byl ve stejném místě) */
+.detail-attachments__lv-scroll {
+  overflow-y: auto;
+}
