@@ -573,7 +573,8 @@ export default function DetailAttachmentsSection({
               className="detail-attachments__link"
               onClick={() => void handleOpenLatestByPath(r.file_path)}
               disabled={!r.file_path}
-              title="Otevřít soubor"
+              title={r.file_name ?? ''}              // ⬅️ celý název do tooltipu
+              aria-label={r.file_name ?? 'Otevřít soubor'}
             >
               {r.file_name ?? '—'}
             </button>
@@ -670,7 +671,14 @@ export default function DetailAttachmentsSection({
           ),
           description: <span className="detail-attachments__muted">{selectedRow?.description ?? '—'}</span>,
           file: (
-            <button type="button" className="detail-attachments__link" onClick={() => void openFileByPath(v.file_path)} title="Otevřít verzi">
+            <button
+              type="button"
+              className="detail-attachments__link"
+              onClick={() => void openFileByPath(v.file_path)}
+              disabled={!v.file_path}
+              title={v.file_name ?? ''}                 // ⬅️ celý název do tooltipu
+              aria-label={v.file_name ?? 'Otevřít verzi'}
+            >
               {v.file_name ?? '—'}
             </button>
           ),
