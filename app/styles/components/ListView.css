@@ -24,6 +24,8 @@
 /* Tabulka wrapper */
 .listview__table-wrapper {
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Jemnější tabulka (méně “krabic”) */
