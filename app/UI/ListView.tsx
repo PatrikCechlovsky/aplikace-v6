@@ -15,11 +15,16 @@
 import React from 'react'
 import '@/app/styles/components/ListView.css'
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
 export type ListViewColumn = {
   key: string
   label: string
   align?: 'left' | 'center' | 'right'
-  width?: string
+  /** Šířka sloupce (doporučeno číslo v px, nebo string "180px") */
+  width?: number | string
 }
 
 export type ListViewRow<TData = any> = {
@@ -64,6 +69,25 @@ export type ListViewProps<TData = any> = {
   onRowDoubleClick?: (row: ListViewRow<TData>) => void
 }
 
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function getAlignClass(align?: 'left' | 'center' | 'right') {
+  return align === 'center' ? 'generic-type__cell--center' : align === 'right' ? 'generic-type__cell--right' : ''
+}
+
+function getColStyle(w?: number | string): React.CSSProperties | undefined {
+  if (w === undefined || w === null || w === '') return undefined
+  // pokud přijde číslo, bereme to jako px
+  const widthValue = typeof w === 'number' ? `${w}px` : w
+  return { width: widthValue, minWidth: widthValue, maxWidth: widthValue }
+}
+
+// ============================================================================
+// RENDER
+// ============================================================================
+
 export default function ListView<TData = any>({
   columns,
   rows,
@@ -78,8 +102,6 @@ export default function ListView<TData = any>({
   onRowClick,
   onRowDoubleClick,
 }: ListViewProps<TData>) {
-  const hasCheckbox = true
-
   return (
     <div className="listview">
       {/* Horní lišta: filtr + zobrazit archivované */}
@@ -95,37 +117,27 @@ export default function ListView<TData = any>({
         <div className="generic-type__list-toolbar-right">
           {typeof onShowArchivedChange === 'function' ? (
             <label className="generic-type__checkbox-label">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => onShowArchivedChange?.(e.target.checked)}
-              />
+              <input type="checkbox" checked={showArchived} onChange={(e) => onShowArchivedChange?.(e.target.checked)} />
               <span>{showArchivedLabel}</span>
             </label>
           ) : (
             <div style={{ width: 180, height: 20 }} />
           )}
-        </div> 
+        </div>
       </div>
+
       {/* Vlastní tabulka */}
       <div className="listview__table-wrapper">
-        <table className="generic-type__table">
+        <table className="generic-type__table" style={{ tableLayout: 'fixed', width: '100%' }}>
           <thead>
             <tr>
               {columns.map((col) => {
-                const alignClass =
-                  col.align === 'center'
-                    ? 'generic-type__cell--center'
-                    : col.align === 'right'
-                    ? 'generic-type__cell--right'
-                    : ''
+                const alignClass = getAlignClass(col.align)
                 return (
                   <th
                     key={col.key}
-                    className={['generic-type__cell', alignClass]
-                      .filter(Boolean)
-                      .join(' ')}
-                    style={col.width ? { width: col.width } : undefined}
+                    className={['generic-type__cell', alignClass].filter(Boolean).join(' ')}
+                    style={getColStyle(col.width)}
                   >
                     {col.label}
                   </th>
@@ -145,36 +157,21 @@ export default function ListView<TData = any>({
               rows.map((row) => {
                 const isSelected = selectedId !== null && row.id === selectedId
 
-                const rowClassNames = [
-                  'generic-type__row',
-                  isSelected ? 'generic-type__row--selected' : '',
-                  row.className ?? '',
-                ]
+                const rowClassNames = ['generic-type__row', isSelected ? 'generic-type__row--selected' : '', row.className ?? '']
                   .filter(Boolean)
                   .join(' ')
 
                 return (
-                  <tr
-                    key={row.id}
-                    className={rowClassNames}
-                    onClick={() => onRowClick?.(row)}
-                    onDoubleClick={() => onRowDoubleClick?.(row)}
-                  >
+                  <tr key={row.id} className={rowClassNames} onClick={() => onRowClick?.(row)} onDoubleClick={() => onRowDoubleClick?.(row)}>
                     {columns.map((col) => {
-                      const alignClass =
-                        col.align === 'center'
-                          ? 'generic-type__cell--center'
-                          : col.align === 'right'
-                          ? 'generic-type__cell--right'
-                          : ''
+                      const alignClass = getAlignClass(col.align)
                       return (
                         <td
                           key={col.key}
-                          className={['generic-type__cell', alignClass]
-                            .filter(Boolean)
-                            .join(' ')}
+                          className={['generic-type__cell', alignClass].filter(Boolean).join(' ')}
+                          style={getColStyle(col.width)}
                         >
-                          {row.data[col.key]}
+                          {row.data[col.key] ?? null}
                         </td>
                       )
                     })}
