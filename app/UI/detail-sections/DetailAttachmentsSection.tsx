@@ -837,9 +837,10 @@ export default function DetailAttachmentsSection({
                         filterValue={historyFilterText}
                         onFilterChange={setHistoryFilterText}
                         filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                  />
+                      />
+                    </div>
+                  </div>
                 )}
-              </div>
             </div>
           </div>
         </section>
