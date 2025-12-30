@@ -53,3 +53,14 @@
 .listview__row:not(.listview__row--selected):hover > td {
   background: var(--color-surface-hover);
 }
+
+/* Odkazy a tlačítka v buňkách se chovají stejně */
+.generic-type__cell a,
+.generic-type__cell button {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
