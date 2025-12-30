@@ -773,19 +773,23 @@ export default function DetailAttachmentsSection({
             {/* LIST – scrolluje */}
             <div className="detail-attachments__list-scroll">
               {!loading && managerRows.length > 0 && (
-                <ListView
-                  columns={sharedColumns}
-                  rows={managerRows}
-                  filterValue={filterText}
-                  onFilterChange={setFilterText}
-                  filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                  showArchived={includeArchived}
-                  onShowArchivedChange={setIncludeArchived}
-                  showArchivedLabel="Zobrazit archivované"
-                  selectedId={selectedDocId}
-                  onRowClick={(row) => setSelectedDocId(String(row.id))}
-                  onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                />
+                <div className="detail-attachments__lv-shell">
+                  <div className="detail-attachments__lv-scroll">
+                    <ListView
+                      columns={sharedColumns}
+                      rows={managerRows}
+                      filterValue={filterText}
+                      onFilterChange={setFilterText}
+                      filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                      showArchived={includeArchived}
+                      onShowArchivedChange={setIncludeArchived}
+                      showArchivedLabel="Zobrazit archivované"
+                      selectedId={selectedDocId}
+                      onRowClick={(row) => setSelectedDocId(String(row.id))}
+                      onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                    />
+                  </div>
+                </div>
               )}
 
               {/* hidden inputs for new version */}
@@ -808,6 +812,7 @@ export default function DetailAttachmentsSection({
                 <div className="detail-attachments__history-title">Historie verzí</div>
               </div>
 
+              {/* Pozor: history-body už nedělá scroll. Scroll dělá lv-scroll (kvůli sjednocení šířky / scrollbaru). */}
               <div className="detail-attachments__history-body">
                 {!expandedDocId && (
                   <div className="detail-view__placeholder">
@@ -824,12 +829,14 @@ export default function DetailAttachmentsSection({
                 )}
 
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                  <ListView
-                    columns={sharedColumns}
-                    rows={historyRows}
-                    filterValue={historyFilterText}
-                    onFilterChange={setHistoryFilterText}
-                    filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                  <div className="detail-attachments__lv-shell">
+                    <div className="detail-attachments__lv-scroll" style={{ maxHeight: '30vh' }}>
+                      <ListView
+                        columns={sharedColumns}
+                        rows={historyRows}
+                        filterValue={historyFilterText}
+                        onFilterChange={setHistoryFilterText}
+                        filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
                   />
                 )}
               </div>
