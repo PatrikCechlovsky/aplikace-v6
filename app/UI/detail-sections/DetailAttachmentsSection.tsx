@@ -841,6 +841,7 @@ export default function DetailAttachmentsSection({
                     </div>
                   </div>
                 )}
+              </div>
             </div>
           </div>
         </section>
