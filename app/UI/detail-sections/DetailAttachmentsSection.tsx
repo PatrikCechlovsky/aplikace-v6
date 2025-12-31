@@ -692,11 +692,10 @@ export default function DetailAttachmentsSection({
                 onSortChange={handleSortChange}
                 filterValue={filterText}
                 onFilterChange={setFilterText}
-                showArchived={showArchived}
-                onShowArchivedChange={setShowArchived}
+                filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                showArchived={includeArchived}
+                onShowArchivedChange={setIncludeArchived}
                 showArchivedLabel="Zobrazit archivované"
-                selectedId={selectedId ?? null}
-                onRowClick={(row) => setSelectedId(String(row.id))}
                 onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
               />
             )}
