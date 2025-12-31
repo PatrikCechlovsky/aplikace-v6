@@ -231,3 +231,81 @@ Tento dokument slouží jako:
 
 Detailní implementace bude probíhat po dokončení modulů a datového modelu.
 
+## Autentizace a autorizace – základní principy
+
+- Autentizace a autorizace jsou v aplikaci striktně oddělené pojmy.
+- Autentizace řeší identitu uživatele.
+- Autorizace řeší oprávnění k provádění akcí.
+
+---
+
+## Stav uživatele
+
+- Stav uživatele je určen systémovými daty.
+- Aktivní uživatel je ten, který se alespoň jednou přihlásil.
+- Neaktivní uživatel je uživatel bez prvního přihlášení.
+
+- Stav uživatele není ručně editovatelný.
+- UI se vždy řídí aktuálním stavem uživatele.
+
+---
+
+## Pozvánky uživatelů
+
+- Pozvánka je samostatný proces.
+- Pozvánky se používají pouze pro neaktivní uživatele.
+- Aktivní uživatel nemůže být znovu pozván.
+
+- Proces pozvání je oddělen od správy profilu.
+- Pozvánka nesmí měnit existující data uživatele.
+
+---
+
+## Role a oprávnění
+
+- Role a oprávnění jsou řízeny centrálně.
+- Role určuje obecný rámec přístupu.
+- Oprávnění určují konkrétní akce.
+
+- Role a oprávnění se přiřazují explicitně.
+- Neexistují implicitní nebo automatická oprávnění.
+
+---
+
+## RLS (Row Level Security)
+
+- RLS je primární ochranný mechanismus dat.
+- UI nikdy nesmí obcházet RLS pravidla.
+- RLS pravidla jsou považována za zdroj pravdy.
+
+- Každá změna dat musí projít RLS kontrolou.
+- Chyba RLS je považována za chybu návrhu nebo konfigurace.
+
+---
+
+## Vztah UI a RLS
+
+- UI nesmí předpokládat oprávnění.
+- Dostupnost akcí v UI se řídí:
+  - rolí uživatele,
+  - explicitními oprávněními,
+  - RLS pravidly.
+
+- Skrytí akce v UI nenahrazuje RLS ochranu.
+- RLS ochrana je vždy nadřazená UI logice.
+
+---
+
+## Audit a dohledatelnost
+
+- Všechny bezpečnostně významné operace musí být dohledatelné.
+- Historie změn nesmí být zpětně měněna.
+- Auditní data jsou považována za neměnná.
+
+---
+
+## Závaznost
+
+- Tato pravidla jsou závazná pro celý projekt.
+- Platí pro všechny moduly a entity.
+- Porušení těchto pravidel je považováno za kritickou chybu.
