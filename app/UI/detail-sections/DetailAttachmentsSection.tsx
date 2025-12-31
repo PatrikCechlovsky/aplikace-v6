@@ -918,7 +918,7 @@ export default function DetailAttachmentsSection({
                       showArchived={includeArchived}
                       onShowArchivedChange={setIncludeArchived}
                       showArchivedLabel="Zobrazit archivované"
-                      onRowDoubleClick={(row) => void handleOpenHistoryByPath(row.raw?.file_path)}
+                      onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
                     />
                   </div>
                 )}
