@@ -1625,3 +1625,42 @@ Pozvání uživatele je administrátorská akce:
 - Oddělení správy profilu a pozvání.
 - Audit a dohledatelnost.
 - Konzistentní chování s UI systémem aplikace.
+
+## Kontextové režimy UI (READ-ONLY vs MANAGER)
+
+- UI aplikace pracuje s jasně oddělenými kontextovými režimy.
+- Režim určuje, zda obrazovka pouze zobrazuje data, nebo umožňuje měnit stav systému.
+
+### READ-ONLY režim
+
+- Slouží výhradně k náhledu dat.
+- Neumožňuje žádné změny systémového stavu.
+- Neobsahuje editovatelné formuláře ani akční prvky.
+- Používá se v detailech entit a přehledových obrazovkách.
+- Minimalizuje riziko nechtěných změn.
+
+### MANAGER režim
+
+- Umožňuje aktivní práci s daty.
+- Obsahuje formuláře, akce a správcovské operace.
+- Změny provedené v tomto režimu se zapisují do systému.
+- Používá se ve správcovských obrazovkách a akcích vyvolaných z CommonActions.
+
+### Oddělení režimů
+
+- READ-ONLY a MANAGER režimy se nikdy nekombinují na jedné obrazovce.
+- Detail entity je vždy v READ-ONLY režimu.
+- Změny dat jsou povoleny pouze v MANAGER režimu.
+- Přechod mezi režimy musí být pro uživatele zřetelný.
+
+### Vztah k CommonActions
+
+- CommonActions slouží jako vstupní bod do MANAGER režimu.
+- Akce v CommonActions nikdy nemění data přímo v detailu entity.
+- Správa dat je vždy oddělena do samostatného kontextu.
+
+### Závaznost
+
+- Pravidla platí pro všechny moduly a entity aplikace.
+- Jsou závazná i pro budoucí rozšiřování UI systému.
+- Porušení těchto zásad je považováno za chybu návrhu UI.
