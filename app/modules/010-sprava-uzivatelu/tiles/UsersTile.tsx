@@ -412,7 +412,30 @@ export default function UsersTile({
   const listRows = useMemo<ListViewRow<UiUser>[]>(() => {
     return sortedUsers.map((u) => toRow(u))
   }, [sortedUsers])
-  
+
+    // ✅ DEFAULT sort pro tento list (když sort === null)
+  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'roleLabel', dir: 'asc' }), [])
+
+  // ✅ sort, který se ukazuje v UI (šipka v hlavičce)
+  const uiSort: ListViewSortState = sort ?? DEFAULT_SORT
+
+  // ✅ uživatelská změna sortu:
+  // - když klikem vyjde přesně DEFAULT (roleLabel asc), uložíme null (= návrat na výchozí)
+  const handleSortChange = useCallback(
+    (next: ListViewSortState) => {
+      if (!next) {
+        setSort(null)
+        return
+      }
+      if (next.key === DEFAULT_SORT.key && next.dir === DEFAULT_SORT.dir) {
+        setSort(null)
+        return
+      }
+      setSort(next)
+    },
+    [DEFAULT_SORT]
+  )
+
   // -------------------------
   // Navigation helpers
   // -------------------------
@@ -810,7 +833,7 @@ export default function UsersTile({
             openDetail(user, 'read', 'detail')
           }}
           sort={sort}
-          onSortChange={setSort}
+          onSortChange={handleSortChange}
         />
       </div>
     )
