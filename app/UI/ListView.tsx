@@ -81,6 +81,7 @@ function getColStyle(w?: number | string): React.CSSProperties | undefined {
   if (w === undefined || w === null || w === '') return undefined
   // pokud přijde číslo, bereme to jako px
   const widthValue = typeof w === 'number' ? `${w}px` : w
+  // drží sloupec pevně (fixed layout + pevné width/min/max)
   return { width: widthValue, minWidth: widthValue, maxWidth: widthValue }
 }
 
@@ -126,7 +127,7 @@ export default function ListView<TData = any>({
         </div>
       </div>
 
-      {/* Vlastní tabulka */}
+      {/* Vlastní tabulka (scroll = tady, aby sticky header fungoval) */}
       <div className="listview__table-wrapper">
         <table className="generic-type__table" style={{ tableLayout: 'fixed', width: '100%' }}>
           <thead>
@@ -162,7 +163,12 @@ export default function ListView<TData = any>({
                   .join(' ')
 
                 return (
-                  <tr key={row.id} className={rowClassNames} onClick={() => onRowClick?.(row)} onDoubleClick={() => onRowDoubleClick?.(row)}>
+                  <tr
+                    key={row.id}
+                    className={rowClassNames}
+                    onClick={() => onRowClick?.(row)}
+                    onDoubleClick={() => onRowDoubleClick?.(row)}
+                  >
                     {columns.map((col) => {
                       const alignClass = getAlignClass(col.align)
                       return (
