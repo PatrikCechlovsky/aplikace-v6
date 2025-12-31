@@ -831,7 +831,7 @@ export default function DetailAttachmentsSection({
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
           
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                  <div className="detail-attachments__lv-shell" style={{ ['--listview-max-height' as any]: '26vh' }}>
+                  <div className="detail-attachments__lv-shell detail-attachments__history-compact">
                     <ListView
                       columns={sharedColumns}
                       rows={historyRows}
