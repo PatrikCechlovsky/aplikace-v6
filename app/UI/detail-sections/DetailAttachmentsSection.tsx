@@ -107,6 +107,45 @@ function normalizeAuthError(msg: string) {
   }
   return msg
 }
+// ============================================================================
+// SORT HELPERS (ListView)
+// ============================================================================
+
+function normalizeString(v: any): string {
+  return String(v ?? '')
+    .trim()
+    .toLowerCase()
+}
+
+function numberOrZero(v: any): number {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function dateToTs(v: any): number {
+  const t = new Date(v ?? 0).getTime()
+  return Number.isFinite(t) ? t : 0
+}
+
+function getAttachmentSortValue(row: any, key: string): string | number {
+  // klíče: title, description, file, ver, uploaded (odpovídá sharedColumns)
+  if (key === 'title') return normalizeString(row?.title)
+  if (key === 'description') return normalizeString(row?.description)
+  if (key === 'file') return normalizeString(row?.file_name)
+  if (key === 'ver') return numberOrZero(row?.version_number)
+  if (key === 'uploaded') return dateToTs(row?.version_created_at)
+  return normalizeString(row?.[key])
+}
+
+function getHistorySortValue(row: any, key: string): string | number {
+  // pro historii je datum obvykle created_at (verze), ne version_created_at
+  if (key === 'title') return normalizeString(row?.title)
+  if (key === 'description') return normalizeString(row?.description)
+  if (key === 'file') return normalizeString(row?.file_name)
+  if (key === 'ver') return numberOrZero(row?.version_number)
+  if (key === 'uploaded') return dateToTs(row?.created_at)
+  return normalizeString(row?.[key])
+}
 
 // ============================================================================
 // 4) DATA LOAD
