@@ -859,16 +859,17 @@ export default function DetailAttachmentsSection({
                   <ListView
                     columns={sharedColumns}
                     rows={managerRows}
+                    sort={sort}
+                    onSortChange={handleSortChange}
                     filterValue={filterText}
                     onFilterChange={setFilterText}
-                    filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                    filterPlaceholder="Hledat podle názvu, popisu nebo souboru."
                     showArchived={includeArchived}
                     onShowArchivedChange={setIncludeArchived}
                     showArchivedLabel="Zobrazit archivované"
                     selectedId={selectedDocId}
                     onRowClick={(row) => setSelectedDocId(String(row.id))}
                     onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                    onFilterChange={setFilterText}
                   />
                 </div>
               )}
