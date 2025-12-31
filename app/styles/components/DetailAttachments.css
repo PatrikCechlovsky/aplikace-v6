@@ -130,12 +130,15 @@
   display: flex;
   flex-direction: column;
   height: 70vh; /* přizpůsobeno oknu */
+  gap: 12px;
 }
 
+/* Horní část = pouze layout. NESMÍ scrollovat. */
 .detail-attachments__list-scroll {
   flex: 1 1 auto;
-  overflow-y: auto;
-  padding-bottom: 12px;
+  overflow: hidden;          /* ✅ důležité: žádný druhý scrollbar */
+  padding-bottom: 0;
+  min-height: 0;             /* ✅ umožní, aby vnitřní ListView mohl scrollovat */
 }
 
 /* Sticky kontejner historie = “karta” */
@@ -148,7 +151,6 @@
   border-radius: 12px;
   background: var(--color-surface);
 
-  margin-top: 12px;
   box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
 }
 
@@ -171,27 +173,29 @@
   font-weight: 500;
 }
 
-/* Tělo historie (scroll) */
+/* Tělo historie = pouze layout. NESMÍ scrollovat. */
 .detail-attachments__history-body {
-  max-height: 30vh;
-  overflow-y: auto;
-
-  /* DŮLEŽITÉ: žádný padding, ať se sloupce zarovnají stejně jako nahoře */
-  padding: 0;
+  overflow: hidden;          /* ✅ důležité: žádný druhý scrollbar */
+  padding: 0;                /* zarovnání sloupců */
+  min-height: 0;
 }
+
 /* společný wrapper pro oba ListView (horní i historie) */
 .detail-attachments__lv-shell {
-  /* sjednocený „card“ look (stejné jako ListView) */
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-surface);
   padding: 10px 12px;
-
-  /* důležité: vždy rezervuj místo pro vertikální scrollbar */
   scrollbar-gutter: stable;
+
+  min-height: 0;             /* ✅ */
 }
 
-/* vnitřní scroll area (aby scrollbar byl ve stejném místě) */
+/* !!! DŮLEŽITÉ:
+   Tohle dřív vytvářelo další scrollbar.
+   Necháme jen jako "passthrough" bez overflow.
+*/
 .detail-attachments__lv-scroll {
-  overflow-y: auto;
+  overflow: hidden;          /* ✅ žádný extra scroll */
+  min-height: 0;
 }
