@@ -191,6 +191,11 @@
   min-height: 0;             /* ✅ */
 }
 
+/* Historie = kompaktní výška (cca 3 řádky + hlavička tabulky) */
+.detail-attachments__history-compact {
+  --listview-max-height: 170px;
+}
+
 /* !!! DŮLEŽITÉ:
    Tohle dřív vytvářelo další scrollbar.
    Necháme jen jako "passthrough" bez overflow.
