@@ -815,13 +815,15 @@ export default function DetailAttachmentsSection({
             {/* HISTORIE – sticky dole (wrapper NESMÍ scrollovat) */}
             <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
-                <div className="detail-attachments__history-title">Historie verzí</div>
-                <div className="detail-attachments__history-subtitle">{expandedDocId ? selectedTitle : '—'}</div>
+                <div className="detail-attachments__history-titleline">
+                  <span className="detail-attachments__history-titletext">Historie verzí přílohy:</span>{' '}
+                  <span className="detail-attachments__history-filename">{selectedTitle}</span>
+                </div>
               </div>
-          
+            
               <div className="detail-attachments__history-body">
                 {!expandedDocId && (
-                  <div className="detail-view__placeholder">
+                  <div className="detail-attachments__history-placeholder">
                     Vyber přílohu a klikni na <strong>Historie</strong> v CommonActions.
                   </div>
                 )}
