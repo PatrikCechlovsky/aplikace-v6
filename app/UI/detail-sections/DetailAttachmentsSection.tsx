@@ -908,12 +908,17 @@ export default function DetailAttachmentsSection({
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
                   <div className="detail-attachments__lv-shell detail-attachments__history-compact">
                     <ListView
-                      columns={sharedColumns}
+                      columns={historyColumns}
                       rows={historyRows}
+                      sort={sort}
+                      onSortChange={handleSortChange}
                       filterValue={historyFilterText}
                       onFilterChange={setHistoryFilterText}
                       filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                      onFilterChange={setFilterText}
+                      showArchived={includeArchived}
+                      onShowArchivedChange={setIncludeArchived}
+                      showArchivedLabel="Zobrazit archivované"
+                      onRowDoubleClick={(row) => void handleOpenHistoryByPath(row.raw?.file_path)}
                     />
                   </div>
                 )}
