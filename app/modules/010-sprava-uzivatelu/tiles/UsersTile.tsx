@@ -1,5 +1,10 @@
 // FILE: app/modules/010-sprava-uzivatelu/tiles/UsersTile.tsx
 // PURPOSE: List + detail uživatelů (010) + pozvánky + přílohy.
+// URL state:
+// - t=users-list (list + detail)
+// - t=invite-user (invite screen)
+// - t=attachments-manager (attachments manager screen)
+// - id + vm (detail: read/edit/create)
 
 'use client'
 
@@ -18,7 +23,6 @@ import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
-
 // =====================
 // 2) TYPES
 // =====================
@@ -42,6 +46,7 @@ type UsersTileProps = {
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
 }
 
+// ✅ lokální režimy
 type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 // =====================
 // 3) HELPERS
@@ -149,7 +154,6 @@ export default function UsersTile({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
   const searchKey = searchParams?.toString() ?? ''
 
   const [users, setUsers] = useState<UiUser[]>([])
@@ -179,15 +183,14 @@ export default function UsersTile({
   const [pendingSendInviteAfterCreate, setPendingSendInviteAfterCreate] = useState(false)
   const [attachmentsManagerSubjectId, setAttachmentsManagerSubjectId] = useState<string | null>(null)
 
+  // ✅ Attachments manager bridge (API + UI state)
   const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
   const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
     hasSelection: false,
     isDirty: false,
   })
 
-  // ✅ tri-state sorting:
-  // - null = DEFAULT (původní pořadí z backendu / preference uživatele)
-  // - {key,dir} = ASC/DESC
+  // ✅ tri-state sort: null = DEFAULT (původní pořadí), jinak { key, dir }
   const [sort, setSort] = useState<ListViewSortState>(null)
 
   // -------------------------
@@ -215,14 +218,7 @@ export default function UsersTile({
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
 
-      console.log('[010 UsersTile] setUrl()', {
-        mode,
-        next,
-        searchKey,
-        currentUrl,
-        nextUrl,
-        willNavigate: nextUrl !== currentUrl,
-      })
+      console.log('[010 UsersTile] setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
 
       if (nextUrl === currentUrl) return
 
@@ -241,9 +237,7 @@ export default function UsersTile({
   const load = useCallback(async () => {
     const key = `${(filterText ?? '').trim().toLowerCase()}|${showArchived ? '1' : '0'}`
 
-    if (loadInFlightRef.current && lastLoadKeyRef.current === key) {
-      return loadInFlightRef.current
-    }
+    if (loadInFlightRef.current && lastLoadKeyRef.current === key) return loadInFlightRef.current
     lastLoadKeyRef.current = key
 
     const p = (async () => {
@@ -306,7 +300,7 @@ export default function UsersTile({
     return m
   }, [users])
 
-  // ✅ sortedUsers: DEFAULT(null) = původní pořadí, jinak ASC/DESC dle sort.dir
+  // ✅ sortedUsers: null = původní pořadí, jinak ASC/DESC dle sort.dir
   const sortedUsers = useMemo(() => {
     if (!sort) return users
 
@@ -328,7 +322,6 @@ export default function UsersTile({
         if (as > bs) return 1 * dir
       }
 
-      // stable fallback na původní pořadí
       return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
     })
 
@@ -336,11 +329,6 @@ export default function UsersTile({
   }, [users, sort, baseOrderIndex])
 
   const rows: ListViewRow<UiUser>[] = useMemo(() => sortedUsers.map(toRow), [sortedUsers])
-  // -------------------------
-  // 5) ACTION HANDLERS
-  // -------------------------
-  // ⚠️ Zbytek action handlerů ponechán (stejně jako v UsersTile (18).tsx)
-
   // -------------------------
   // Navigation helpers
   // -------------------------
@@ -384,8 +372,336 @@ export default function UsersTile({
     [setUrl]
   )
 
-  // ... sem patří zbytek tvých existujících handlerů a useEffectů z (18) beze změn ...
+  // -------------------------
+  // CommonActions list
+  // -------------------------
+  const commonActions = useMemo<CommonActionId[]>(() => {
+    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'close']
+    const INVITE: CommonActionId[] = ['sendInvite', 'close']
+    const READ_DEFAULT: CommonActionId[] = ['edit', 'invite', 'close']
+    const EDIT_DEFAULT: CommonActionId[] = ['save', 'invite', 'close']
+    const CREATE_DEFAULT: CommonActionId[] = ['save', 'close']
 
+    const withAttachmentsBeforeClose = (base: CommonActionId[]): CommonActionId[] => {
+      if (detailActiveSectionId === 'invite') return base
+
+      const out: CommonActionId[] = base.includes('attachments') ? [...base] : [...base, 'attachments']
+      const hasClose = out.includes('close')
+      const filtered: CommonActionId[] = out.filter((x) => x !== 'attachments' && x !== 'close') as CommonActionId[]
+
+      return hasClose ? ([...filtered, 'attachments', 'close'] as CommonActionId[]) : ([...filtered, 'attachments'] as CommonActionId[])
+    }
+
+    if (viewMode === 'list') return withAttachmentsBeforeClose(LIST)
+    if (viewMode === 'invite') return INVITE
+
+    if (viewMode === 'attachments-manager') {
+      return ['attachmentsAdd', 'attachmentsEdit', 'attachmentsSave', 'attachmentsNewVersion', 'attachmentsHistory', 'close']
+    }
+
+    if (viewMode === 'read') {
+      if (detailActiveSectionId === 'invite') return INVITE
+      return withAttachmentsBeforeClose(READ_DEFAULT)
+    }
+
+    if (viewMode === 'edit') return withAttachmentsBeforeClose(EDIT_DEFAULT)
+    return withAttachmentsBeforeClose(CREATE_DEFAULT)
+  }, [viewMode, detailActiveSectionId])
+
+  useEffect(() => {
+    onRegisterCommonActions?.(commonActions)
+  }, [onRegisterCommonActions, commonActions])
+
+  useEffect(() => {
+    const mappedViewMode: ViewMode =
+      viewMode === 'list' ? 'list' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'read'
+
+    const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
+    const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
+
+    onRegisterCommonActionsState?.({ viewMode: mappedViewMode, hasSelection: mappedHasSelection, isDirty: mappedIsDirty })
+  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi])
+
+  // -------------------------
+  // CommonActions handler (z (19), beze změn)
+  // -------------------------
+  useEffect(() => {
+    if (!onRegisterCommonActionHandler) return
+    dbg('register common action handler')
+
+    const handler = async (actionId: CommonActionId) => {
+      dbg('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
+
+      // ATTACHMENTS MANAGER ACTIONS
+      if (viewMode === 'attachments-manager') {
+        const api = attachmentsManagerApiRef.current
+        if (actionId === 'attachmentsAdd') return void api?.add()
+        if (actionId === 'attachmentsEdit') return void api?.editMeta()
+        if (actionId === 'attachmentsSave') return void (await api?.save())
+        if (actionId === 'attachmentsNewVersion') return void api?.newVersion()
+        if (actionId === 'attachmentsHistory') return void api?.history()
+      }
+
+      // CLOSE
+      if (actionId === 'close') {
+        const dirtyNow = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
+        if (dirtyNow) {
+          const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+          if (!ok) return
+        }
+
+        const sp = new URLSearchParams(searchKey)
+        const t = sp.get('t')?.trim() ?? null
+
+        dbg('close branch start', { t, viewMode })
+
+        if (viewMode === 'attachments-manager') {
+          dbg('close -> attachments-manager back')
+          const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
+          if (backId) {
+            setDetailInitialSectionId('attachments')
+            setDetailActiveSectionId('attachments')
+            setUrl({ t: 'users-list', id: backId, vm: 'read', am: null }, 'replace')
+            setViewMode('read')
+          } else {
+            closeToList()
+          }
+          return
+        }
+
+        if (t === 'invite-user') {
+          dbg('close -> closeListToModule (t=invite-user)')
+          closeListToModule()
+          return
+        }
+
+        if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
+          dbg('close -> closeToList (detail)')
+          closeToList()
+          return
+        }
+
+        dbg('close -> closeListToModule (list)')
+        closeListToModule()
+        return
+      }
+
+      // ATTACHMENTS open manager
+      if (actionId === 'attachments') {
+        if (viewMode === 'list') {
+          dbg('attachments -> list', { selectedId })
+          if (!selectedId) {
+            alert('Nejdřív vyber uživatele v seznamu.')
+            return
+          }
+          setAttachmentsManagerSubjectId(selectedId)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          setUrl({ t: 'users-list', id: selectedId, vm: null, am: '1' }, 'push')
+          return
+        }
+
+        if (detailActiveSectionId === 'invite') return
+        if (isDirty) {
+          alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+          return
+        }
+        if (!detailUser?.id || !detailUser.id.trim() || detailUser.id === 'new') {
+          alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+          return
+        }
+
+        setAttachmentsManagerSubjectId(detailUser.id)
+        setViewMode('attachments-manager')
+        setIsDirty(false)
+        setUrl({ t: 'users-list', id: detailUser.id, vm: null, am: '1' }, 'push')
+        return
+      }
+
+      // LIST actions
+      if (viewMode === 'list') {
+        if (actionId === 'add') {
+          setViewMode('create')
+
+          const blank: UiUser = {
+            id: 'new',
+            displayName: '',
+            email: '',
+            roleLabel: '',
+            createdAt: new Date().toISOString(),
+          }
+
+          setDetailUser(blank)
+          setDetailInitialSectionId('detail')
+          setDetailActiveSectionId('detail')
+          setInvitePresetSubjectId(null)
+          setAttachmentsManagerSubjectId(null)
+          setIsDirty(false)
+          submitRef.current = null
+          inviteSubmitRef.current = null
+
+          setUrl({ t: 'users-list', id: 'new', vm: 'create', am: null }, 'push')
+          return
+        }
+
+        if (actionId === 'view' || actionId === 'edit') {
+          if (!selectedId) return
+          const u = users.find((x) => x.id === selectedId)
+          if (!u) return
+          openDetail(u, actionId === 'edit' ? 'edit' : 'read', 'detail')
+          return
+        }
+
+        if (actionId === 'invite') {
+          if (!selectedId) {
+            openInvite(null)
+            return
+          }
+
+          const u = users.find((x) => x.id === selectedId)
+          if (!u) {
+            openInvite(null)
+            return
+          }
+
+          if (u.firstLoginAt) {
+            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+            return
+          }
+
+          openDetail(u, 'read', 'invite')
+          return
+        }
+
+        return
+      }
+
+      // INVITE screen
+      if (viewMode === 'invite') {
+        if (actionId === 'sendInvite') {
+          if (!inviteSubmitRef.current) return
+          const ok = await inviteSubmitRef.current()
+          if (!ok) return
+          setIsDirty(false)
+          await load()
+          return
+        }
+        return
+      }
+
+      // READ
+      if (viewMode === 'read') {
+        if (detailActiveSectionId === 'invite' && actionId === 'sendInvite') {
+          if (!inviteSubmitRef.current) return
+          const ok = await inviteSubmitRef.current()
+          if (!ok) return
+          setIsDirty(false)
+          await load()
+          return
+        }
+
+        if (actionId === 'edit') {
+          setViewMode('edit')
+          setUrl({ t: 'users-list', id: detailUser?.id ?? selectedId ?? null, vm: 'edit', am: null }, 'replace')
+        }
+        return
+      }
+
+      // EDIT / CREATE
+      if (viewMode === 'edit' || viewMode === 'create') {
+        if (actionId === 'invite') {
+          if (isDirty) {
+            alert('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
+            return
+          }
+
+          if (!detailUser?.id?.trim() || detailUser.id === 'new') {
+            alert('Nejdřív ulož záznam, aby šla poslat pozvánka.')
+            return
+          }
+
+          if ((detailUser as any)?.firstLoginAt) {
+            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+            return
+          }
+
+          openInvite(detailUser.id)
+          return
+        }
+
+        if (actionId === 'save') {
+          if (!submitRef.current) {
+            alert('Chybí submit handler (submitRef).')
+            return
+          }
+
+          const savedUser = await submitRef.current()
+          if (!savedUser) return
+
+          const wasCreate = viewMode === 'create' || detailUser?.id === 'new'
+
+          setDetailUser(savedUser)
+          setIsDirty(false)
+          await load()
+
+          setViewMode('read')
+          setUrl({ t: 'users-list', id: savedUser.id, vm: 'read', am: null }, 'replace')
+
+          if (wasCreate) {
+            const ask = confirm('Uživatel uložen. Chceš teď odeslat pozvánku?')
+            if (ask) {
+              setDetailInitialSectionId('invite')
+              setDetailActiveSectionId('invite')
+              setPendingSendInviteAfterCreate(true)
+            }
+          }
+
+          return
+        }
+
+        return
+      }
+    }
+
+    onRegisterCommonActionHandler(handler)
+  }, [
+    onRegisterCommonActionHandler,
+    searchKey,
+    viewMode,
+    selectedId,
+    users,
+    openDetail,
+    openInvite,
+    load,
+    isDirty,
+    closeToList,
+    closeListToModule,
+    detailActiveSectionId,
+    detailUser,
+    setUrl,
+    attachmentsManagerSubjectId,
+    attachmentsManagerUi,
+  ])
+
+  useEffect(() => {
+    if (!pendingSendInviteAfterCreate) return
+    if (viewMode !== 'read') return
+    if (detailActiveSectionId !== 'invite') return
+    if (!inviteSubmitRef.current) return
+
+    const run = async () => {
+      const ok = await inviteSubmitRef.current?.()
+      setPendingSendInviteAfterCreate(false)
+
+      if (ok) {
+        setIsDirty(false)
+        await load()
+        alert('Pozvánka odeslána ✅')
+      }
+    }
+
+    void run()
+  }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load])
   // -------------------------
   // 6) RENDER
   // -------------------------
