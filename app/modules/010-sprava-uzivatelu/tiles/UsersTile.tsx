@@ -223,28 +223,45 @@ export default function UsersTile({
     isDirty: false,
   })
 
-  // ✅ tri-state sort: null = DEFAULT (původní pořadí), jinak { key, dir }
-  const [sort, setSort] = useState<ListViewSortState>(null)
+    // ✅ DEFAULT sort pro Users (Role -> order_index)
+  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'roleLabel', dir: 'asc' }), [])
 
-  // ✅ ListView prefs (persisted) – MVP ukládáme pouze sort
+  // ✅ v UI vždy držíme konkrétní sort (nikdy null)
+  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
+
+  // ✅ ListView prefs (persisted) – ukládáme sort, ale DEFAULT ukládáme jako null
   const prefsLoadedRef = useRef(false)
   const saveTimerRef = useRef<any>(null)
 
   useEffect(() => {
     void (async () => {
       const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null })
-      setSort((prefs.sort as ViewPrefsSortState) ?? null)
+      const loaded = (prefs.sort as ViewPrefsSortState) ?? null
+      setSort(loaded ? loaded : DEFAULT_SORT)
       prefsLoadedRef.current = true
     })()
-  }, [])
+  }, [DEFAULT_SORT])
 
   useEffect(() => {
     if (!prefsLoadedRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+
+    const persist: ViewPrefsSortState =
+      sort && sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
+
     saveTimerRef.current = setTimeout(() => {
-      void saveViewPrefs(VIEW_KEY, { v: 1, sort })
+      void saveViewPrefs(VIEW_KEY, { v: 1, sort: persist })
     }, 500)
-  }, [sort])
+  }, [sort, DEFAULT_SORT])
+
+  // ✅ ListView může poslat null (třetí klik) = návrat na default
+  const handleSortChange = useCallback(
+    (next: ListViewSortState) => {
+      setSort(next ?? DEFAULT_SORT)
+    },
+    [DEFAULT_SORT]
+  )
+
 
   // -------------------------
   // URL helpers (t, id, vm, am)
@@ -364,17 +381,15 @@ const uiSort: ListViewSortState = sort ?? DEFAULT_SORT
 // - sort=null => DEFAULT (roleLabel asc) + stabilní fallback
 // - sort!=null => ASC/DESC dle sort.dir
 const sortedUsers = useMemo(() => {
-  const s: ListViewSortState = sort ?? DEFAULT_SORT
-  const key = String((s as any)?.key ?? '').trim()
+  const key = String((sort as any)?.key ?? '').trim()
   if (!key) return users
 
-  const dir = (s as any)?.dir === 'desc' ? -1 : 1
+  const dir = (sort as any)?.dir === 'desc' ? -1 : 1
   const arr = [...users]
 
-  arr.sort((a, b) => {
-    // speciální výchozí řazení (držme stejné jako UI default)
-    if (sort == null && key === 'roleLabel') {
-      // roleOrderIndex ASC (pokud ho máš v UiUser), pak email ASC, pak stabilní pořadí
+  // ✅ DEFAULT chování: roleOrderIndex ASC, email ASC, stabilní fallback
+  if (key === 'roleLabel' && dir === 1) {
+    arr.sort((a, b) => {
       const ra = (a as any).roleOrderIndex ?? 999999
       const rb = (b as any).roleOrderIndex ?? 999999
       if (ra < rb) return -1
@@ -386,9 +401,12 @@ const sortedUsers = useMemo(() => {
       if (ea > eb) return 1
 
       return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
-    }
+    })
+    return arr
+  }
 
-    // obecné řazení dle sort key
+  // ✅ Obecné řazení dle sort key
+  arr.sort((a, b) => {
     const av = getSortValue(a, key)
     const bv = getSortValue(b, key)
 
@@ -406,7 +424,8 @@ const sortedUsers = useMemo(() => {
   })
 
   return arr
-}, [users, sort, DEFAULT_SORT, baseOrderIndex])
+}, [users, sort, baseOrderIndex])
+
 
 const listRows = useMemo<ListViewRow<UiUser>[]>(() => {
   return sortedUsers.map((u) => toRow(u))
