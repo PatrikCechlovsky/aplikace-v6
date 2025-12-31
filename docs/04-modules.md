@@ -769,3 +769,77 @@ Pokud se změna v Nastavení neprojeví:
 3. ověř třídy na `.layout`
 4. ověř, že CSS reaguje na danou třídu
 5. ověř, že renderer menu modul 900 nezakrývá
+
+## Modulové chování – obecné zásady
+
+- Každý modul je odpovědný pouze za svou doménu.
+- Sdílené funkce (např. přílohy, akce, historie) se neimplementují duplicitně v modulech.
+- Modul nikdy neobchází centrální pravidla UI a správy dat.
+
+---
+
+## Vztah modulů k přílohám
+
+- Moduly přílohy pouze zobrazují nebo na ně odkazují.
+- Modul nikdy neimplementuje vlastní logiku správy příloh.
+- Modul respektuje kontextové režimy UI.
+
+### Detail entity v modulu
+
+- Detail entity je vždy v READ-ONLY režimu.
+- Záložka „Přílohy“ slouží pouze k informativnímu přehledu.
+- Modul neumožňuje:
+  - nahrávání příloh,
+  - verzování,
+  - editaci metadat,
+  - archivaci.
+
+### Přechod na správu příloh
+
+- Plná správa příloh je dostupná pouze přes CommonActions.
+- Modul pouze zprostředkovává přechod do MANAGER režimu.
+- Změny dat se nikdy neprovádějí přímo v kontextu modulu.
+
+---
+
+## Modul 010 – Správa uživatelů
+
+- Správa uživatelů je rozdělena na:
+  - správu profilu,
+  - správu rolí a oprávnění,
+  - proces pozvání uživatele.
+
+### Pozvánka uživatele
+
+- Pozvánka je samostatný proces oddělený od editace profilu.
+- Pozvánka se používá pouze pro neaktivní uživatele.
+- Aktivní uživatel nemůže být znovu pozván.
+
+### Stav uživatele
+
+- Stav uživatele je odvozen od systémových dat.
+- Aktivní uživatel je ten, který se alespoň jednou přihlásil.
+- UI reaguje na stav uživatele kontextově.
+
+---
+
+## Konzistence modulů
+
+- Všechny moduly:
+  - používají stejné UI principy,
+  - respektují centrální akce,
+  - sdílejí jednotné chování detailů a správy.
+
+- Modulová logika nesmí porušovat:
+  - projektová pravidla,
+  - UI systém,
+  - pravidla práce s daty.
+
+---
+
+## Závaznost
+
+- Tato pravidla platí pro všechny současné i budoucí moduly.
+- Odchylky musí být výslovně zdokumentovány.
+- Nezdokumentovaná výjimka je považována za chybu návrhu.
+
