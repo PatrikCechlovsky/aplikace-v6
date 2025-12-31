@@ -208,21 +208,26 @@ export async function listAttachmentVersions(args: ListAttachmentVersionsArgs): 
  * Fallback map userId -> display_name (pokud view nemá *_by_name).
  * Pokud ve vašem projektu používáte jinou tabulku/view, uprav jen zde.
  */
+
 export async function loadUserDisplayNames(ids: (string | null | undefined)[]): Promise<UserNameMap> {
   const uniq = Array.from(new Set(ids.filter(Boolean).map((x) => String(x))))
   if (uniq.length === 0) return {}
 
-  const { data, error } = await supabase.from('profiles').select('id, display_name').in('id', uniq)
+  // ✅ V tomto projektu jsou jména v `subjects` (uživatel = subject s auth_user_id)
+  const { data, error } = await supabase
+    .from('subjects')
+    .select('auth_user_id, display_name')
+    .in('auth_user_id', uniq)
+
   if (error) return {}
 
   const map: UserNameMap = {}
   for (const r of data ?? []) {
-    const id = (r as any)?.id
+    const id = (r as any)?.auth_user_id
     const dn = (r as any)?.display_name
     if (id && dn) map[String(id)] = String(dn)
   }
   return map
-}
 
 // ==================================================
 // 5) ACTION HANDLERS
