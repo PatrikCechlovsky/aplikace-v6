@@ -213,33 +213,38 @@ export async function loadUserDisplayNames(ids: (string | null | undefined)[]): 
   const uniq = Array.from(new Set(ids.filter(Boolean).map((x) => String(x))))
   if (uniq.length === 0) return {}
 
-  // 1) Nejprve zkusit subjects.id (u tebe to odpovídá created_by ve verzích)
+  const map: UserNameMap = {}
+
+  // 1) subjects.id (u tebe to odpovídá created_by v document_versions)
   const { data: byId, error: e1 } = await supabase
     .from('subjects')
     .select('id, display_name')
     .in('id', uniq)
 
-  if (e1) throw new Error(`loadUserDisplayNames(subjects.id) failed: ${e1.message}`)
-
-  const map: UserNameMap = {}
-  for (const r of byId ?? []) {
-    const id = (r as any)?.id
-    const dn = (r as any)?.display_name
-    if (id && dn) map[String(id)] = String(dn)
+  if (e1) {
+    console.warn('loadUserDisplayNames: subjects.id denied/failed:', e1.message)
+  } else {
+    for (const r of byId ?? []) {
+      const id = (r as any)?.id
+      const dn = (r as any)?.display_name
+      if (id && dn) map[String(id)] = String(dn)
+    }
   }
 
-  // 2) Bonus: pro jistotu doplnit i mapping přes auth_user_id (pokud někde používáš auth uid)
+  // 2) subjects.auth_user_id (fallback)
   const { data: byAuth, error: e2 } = await supabase
     .from('subjects')
     .select('auth_user_id, display_name')
     .in('auth_user_id', uniq)
 
-  if (e2) throw new Error(`loadUserDisplayNames(subjects.auth_user_id) failed: ${e2.message}`)
-
-  for (const r of byAuth ?? []) {
-    const id = (r as any)?.auth_user_id
-    const dn = (r as any)?.display_name
-    if (id && dn) map[String(id)] = String(dn)
+  if (e2) {
+    console.warn('loadUserDisplayNames: subjects.auth_user_id denied/failed:', e2.message)
+  } else {
+    for (const r of byAuth ?? []) {
+      const id = (r as any)?.auth_user_id
+      const dn = (r as any)?.display_name
+      if (id && dn) map[String(id)] = String(dn)
+    }
   }
 
   return map
