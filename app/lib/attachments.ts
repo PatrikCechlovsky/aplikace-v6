@@ -66,6 +66,8 @@ export type AttachmentVersionRow = {
   created_at: string | null
   created_by: string | null
   is_archived: boolean
+  title: string | null
+  description: string | null
 }
 
 export type UserNameMap = Record<string, string>
