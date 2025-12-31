@@ -373,6 +373,30 @@ UI nastavení (vzhled a rozložení) se řídí jednotným tokem:
   - výslovně označené.
 
 ---
+## Jednotné formátování dat a času
+
+- Zobrazení data a času je v aplikaci sjednocené.
+- Používá se jednotný formát napříč celým UI.
+
+- Standardní formát:
+  - datum: dd.mm.rrrr
+  - datum a čas: dd.mm.rrrr hh:mm
+
+- Formátování se neprovádí lokálně v komponentách.
+- Používá se centrální formatter.
+
+- Přímé zobrazování surových datových hodnot je zakázáno.
+- Nekonzistentní formát je považován za chybu UI.
+
+---
+
+## Závaznost formátování
+
+- Pravidla platí pro všechny moduly a entity.
+- Platí i pro budoucí rozšiřování aplikace.
+- Výjimky musí být výslovně zdokumentovány.
+
+---
 
 ## Závaznost pravidel
 
