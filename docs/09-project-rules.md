@@ -296,3 +296,86 @@ UI nastavení (vzhled a rozložení) se řídí jednotným tokem:
 ### Shrnutí pravidla
 > TODO dokumenty = **plán práce**, ne technická specifikace.  
 > Žádné fenced code blocky, žádné rozbíjení struktury.
+
+## Struktura zdrojových souborů
+
+- Každý zdrojový soubor má pevně danou strukturu sekcí.
+- Struktura je závazná pro všechny moduly a komponenty.
+- Cílem je čitelnost, rychlá orientace a snadná údržba.
+
+### Povinné pořadí sekcí
+
+- 1) IMPORTS
+- 2) TYPES
+- 3) HELPERS
+- 4) DATA LOAD
+- 5) ACTION HANDLERS
+- 6) RENDER
+
+- Sekce se nepřeskakují ani neslučují.
+- Pokud sekce není potřeba, zůstává prázdná nebo je výslovně vynechána s komentářem.
+
+---
+
+## Dělení souborů na kratší části
+
+- Dlouhé soubory se povinně dělí na menší logické celky.
+- Jedna část má maximálně přibližně 100 řádků.
+- Cílem je snadná práce, revize a kopírování částí kódu.
+
+### Způsob dělení
+
+- Používá se číslování částí:
+  - (1/3), (2/3), (3/3)
+- Při jemnějším dělení:
+  - 3a, 3b, 3c
+
+- Každá část musí být samostatně čitelná.
+- Části se nesmí překrývat významově.
+
+---
+
+## Pravidla pro úpravy kódu
+
+- Úpravy se provádějí vždy po celých blocích nebo sekcích.
+- Neprovádějí se „jednokouskové“ změny bez kontextu.
+- Pokud se mění logika, mění se celý související blok.
+
+- Cílem je:
+  - minimalizovat regresní chyby,
+  - zachovat čitelnost historie změn,
+  - usnadnit code review.
+
+---
+
+## Pravidla pro kopírování a sdílení kódu
+
+- Kód musí být strukturován tak, aby šel kopírovat po logických blocích.
+- Každý blok musí mít jasný začátek a konec.
+- Kód nesmí být závislý na skrytém kontextu mimo blok.
+
+- Pokud kód nelze bezpečně zkopírovat, je struktura považována za chybnou.
+
+---
+
+## Konzistence napříč projektem
+
+- Stejná pravidla platí pro:
+  - frontend,
+  - backend,
+  - utility,
+  - skripty,
+  - testy.
+
+- Výjimky musí být:
+  - odůvodněné,
+  - zdokumentované,
+  - výslovně označené.
+
+---
+
+## Závaznost pravidel
+
+- Tato pravidla jsou závazná pro celý projekt.
+- Platí pro veškerý nový i upravovaný kód.
+- Porušení pravidel je považováno za chybu návrhu nebo implementace.
