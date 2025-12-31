@@ -173,6 +173,31 @@
   font-weight: 500;
 }
 
+/* HLAVIČKA historie – sladění s "Správa příloh" (typografie) */
+.detail-attachments__history-titleline {
+  /* stejné "řádkové" chování jako nadpisy v detailu */
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.detail-attachments__history-titletext {
+  font-weight: 600;
+}
+
+.detail-attachments__history-filename {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Placeholder v historii – stejné jako běžný popis nahoře (ne jako velký placeholder) */
+.detail-attachments__history-placeholder {
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+}
+
 /* Tělo historie = pouze layout. NESMÍ scrollovat. */
 .detail-attachments__history-body {
   overflow: hidden;          /* ✅ důležité: žádný druhý scrollbar */
