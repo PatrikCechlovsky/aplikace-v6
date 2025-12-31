@@ -274,7 +274,7 @@ export default function DetailAttachmentsSection({
       const c = (r.file_name ?? '').toLowerCase()
       return a.includes(t) || b.includes(t) || c.includes(t)
     })
-  }, [rows, filterText])
+  }, [rows, filterText, sort])
 
   // ============================================================================
   // SORTED ROWS (Attachments)
