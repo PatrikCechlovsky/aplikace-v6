@@ -199,3 +199,6 @@
   overflow: hidden;          /* ✅ žádný extra scroll */
   min-height: 0;
 }
+.detail-attachments__history-compact {
+  --listview-max-height: 170px; /* cca 3 řádky + hlavička tabulky */
+}
