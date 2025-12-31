@@ -434,7 +434,7 @@ const handleSortChange = useCallback(
   // -------------------------
   const closeListToModule = useCallback(() => {
     setUrl({ t: null, id: null, vm: null, am: null }, 'replace')
-    router.push('/dashboard')
+    router.push('/')
   }, [router, setUrl])
 
   const closeToList = useCallback(() => {
