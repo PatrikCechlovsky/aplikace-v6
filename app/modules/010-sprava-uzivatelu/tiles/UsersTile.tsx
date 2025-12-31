@@ -64,6 +64,8 @@ const dbg = (...args: any[]) => {
   console.log('[010 UsersTile]', ...args)
 }
 
+const VIEW_KEY = '010.users.list'
+
 const COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%', sortable: true },
   { key: 'displayName', label: 'Jméno', sortable: true },
@@ -161,8 +163,6 @@ function numberOrZero(v: any): number {
 function getSortValue(u: UiUser, key: string): string | number {
   switch (key) {
     case 'roleLabel':
-      // ✅ preferujeme řazení podle order_index z modulu 090
-      // (fallback na label, pokud order_index není vyplněn)
       return u.roleOrderIndex ?? 999999
     case 'displayName':
       return normalizeString(u.displayName)
@@ -206,8 +206,8 @@ export default function UsersTile({
   const [isDirty, setIsDirty] = useState(false)
 
   const [roleTypes, setRoleTypes] = useState<RoleTypeRow[]>([])
-  const roleTypeMap = useMemo(() => buildRoleTypeMap(roleTypes), [roleTypes])
-  const roleTypeMapRef = useRef<Record<string, string>>({})
+  const roleTypeMap = useMemo(() => buildRoleMetaMap(roleTypes), [roleTypes])
+  const roleTypeMapRef = useRef<Record<string, RoleMeta>>({})
 
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
   const inviteSubmitRef = useRef<null | (() => Promise<boolean>)>(null)
@@ -408,6 +408,10 @@ export default function UsersTile({
 
     return arr
   }, [users, sort, baseOrderIndex])
+  
+  const listRows = useMemo<ListViewRow<UiUser>[]>(() => {
+    return sortedUsers.map((u) => toRow(u))
+  }, [sortedUsers])
   
   // -------------------------
   // Navigation helpers
@@ -793,7 +797,7 @@ export default function UsersTile({
 
         <ListView<UiUser>
           columns={COLUMNS}
-          rows={rows}
+          rows={listRows}
           filterValue={filterText}
           onFilterChange={setFilterText}
           showArchived={showArchived}
