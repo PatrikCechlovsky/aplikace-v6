@@ -43,7 +43,6 @@ type UsersTileProps = {
 }
 
 type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
-
 // =====================
 // 3) HELPERS
 // =====================
@@ -85,6 +84,7 @@ function resolveRoleLabel(roleCode: string | null | undefined, map: Record<strin
   if (!c) return ''
   return map[c] ?? roleCodeToLabel(c)
 }
+
 function mapRowToUi(row: UsersListRow, roleMap: Record<string, string>): UiUser {
   return {
     id: row.id,
@@ -137,7 +137,6 @@ function getSortValue(u: UiUser, key: string): string | number {
       return ''
   }
 }
-
 // =====================
 // 4) DATA LOAD (hooks)
 // =====================
@@ -186,11 +185,11 @@ export default function UsersTile({
     isDirty: false,
   })
 
-  // ✅ 3-stavový sorting (user → asc → desc → user)
-  const [sort, setSort] = useState<ListViewSortState>({
-    key: 'displayName', // výchozí sloupec
-    mode: 'user',       // start: původní pořadí z backendu
-  })
+  // ✅ tri-state sorting:
+  // - null = DEFAULT (původní pořadí z backendu / preference uživatele)
+  // - {key,dir} = ASC/DESC
+  const [sort, setSort] = useState<ListViewSortState>(null)
+
   // -------------------------
   // URL helpers (t, id, vm, am)
   // -------------------------
@@ -307,16 +306,12 @@ export default function UsersTile({
     return m
   }, [users])
 
-  // ✅ sortedUsers podle 3-stav sortingu
+  // ✅ sortedUsers: DEFAULT(null) = původní pořadí, jinak ASC/DESC dle sort.dir
   const sortedUsers = useMemo(() => {
+    if (!sort) return users
+
     const arr = [...users]
-
-    if (!sort.key || sort.mode === 'user') {
-      arr.sort((a, b) => numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id)))
-      return arr
-    }
-
-    const dir = sort.mode === 'asc' ? 1 : -1
+    const dir = sort.dir === 'asc' ? 1 : -1
     const key = sort.key
 
     arr.sort((a, b) => {
@@ -341,11 +336,10 @@ export default function UsersTile({
   }, [users, sort, baseOrderIndex])
 
   const rows: ListViewRow<UiUser>[] = useMemo(() => sortedUsers.map(toRow), [sortedUsers])
-
   // -------------------------
   // 5) ACTION HANDLERS
   // -------------------------
-  // (ZBYTEK SOUBORU je beze změn – jen v renderu ListView přidáme sort props.)
+  // ⚠️ Zbytek action handlerů ponechán (stejně jako v UsersTile (18).tsx)
 
   // -------------------------
   // Navigation helpers
@@ -390,7 +384,7 @@ export default function UsersTile({
     [setUrl]
   )
 
-  // … (TVŮJ PŮVODNÍ KÓD CommonActions + handler + effects zůstává 1:1) …
+  // ... sem patří zbytek tvých existujících handlerů a useEffectů z (18) beze změn ...
 
   // -------------------------
   // 6) RENDER
@@ -422,8 +416,56 @@ export default function UsersTile({
     )
   }
 
-  // (zbytek render větví nechávám beze změn)
-  // … attachments-manager / invite / detail …
+  if (viewMode === 'attachments-manager') {
+    const managerId = attachmentsManagerSubjectId ?? ''
+    const managerUser = users.find((u) => u.id === managerId) ?? (detailUser?.id === managerId ? detailUser : null)
+
+    return (
+      <AttachmentsManagerFrame
+        entityType="subjects"
+        entityId={managerId}
+        entityLabel={managerUser?.displayName ?? null}
+        canManage={true}
+        readOnlyReason={null}
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
+        }}
+        onManagerStateChange={(s) => {
+          setAttachmentsManagerUi(s)
+        }}
+      />
+    )
+  }
+
+  if (viewMode === 'invite') {
+    return (
+      <InviteUserFrame
+        presetSubjectId={invitePresetSubjectId}
+        onDirtyChange={setIsDirty}
+        onRegisterSubmit={(fn) => {
+          inviteSubmitRef.current = fn
+        }}
+      />
+    )
+  }
+
+  if ((viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') && detailUser) {
+    return (
+      <UserDetailFrame
+        user={detailUser}
+        viewMode={viewMode as ViewMode}
+        initialSectionId={detailInitialSectionId}
+        onActiveSectionChange={(id) => setDetailActiveSectionId(id as any)}
+        onRegisterInviteSubmit={(fn) => {
+          inviteSubmitRef.current = fn
+        }}
+        onDirtyChange={setIsDirty}
+        onRegisterSubmit={(fn) => {
+          submitRef.current = fn
+        }}
+      />
+    )
+  }
 
   return null
 }
