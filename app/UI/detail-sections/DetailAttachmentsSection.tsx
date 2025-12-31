@@ -781,7 +781,7 @@ export default function DetailAttachmentsSection({
             {/* LIST – NESMÍ scrollovat wrapper, scrolluje jen ListView */}
             <div className="detail-attachments__list-scroll">
               {!loading && managerRows.length > 0 && (
-                <div className="detail-attachments__lv-shell" style={{ ['--listview-max-height' as any]: '42vh' }}>
+                <div className="detail-attachments__lv-shell detail-attachments__history-compact">
                   <ListView
                     columns={sharedColumns}
                     rows={managerRows}
