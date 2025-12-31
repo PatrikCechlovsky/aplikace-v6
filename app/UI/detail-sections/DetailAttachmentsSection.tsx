@@ -198,6 +198,7 @@ export default function DetailAttachmentsSection({
     const map = await loadUserDisplayNames(ids)
     setNameById((prev) => mergeNameMaps(prev, map))
   }, [])
+
   const loadAttachments = useCallback(async () => {
     const key = `${entityType}:${entityId}:${includeArchived ? '1' : '0'}`
 
@@ -477,8 +478,6 @@ export default function DetailAttachmentsSection({
       },
 
       save: async () => {
-        // save je kontextové: pokud je otevřen panel nové přílohy → uložit novou
-        // jinak pokud editujeme metadata → uložit metadata
         if (panelOpen) {
           await handleActionSaveNew()
           return
@@ -520,6 +519,7 @@ export default function DetailAttachmentsSection({
     handleActionSaveNew,
     handleSaveEditMeta,
   ])
+
 // ============================================================================
 // 6) RENDER
 // ============================================================================
@@ -537,11 +537,6 @@ export default function DetailAttachmentsSection({
 
   const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
 
-  /**
-   * ✅ JEDEN ZDROJ PRAVDY PRO ŠÍŘKY SLOUPCŮ
-   * Později tohle nahradíme uživatelským nastavením (pořadí/viditelnost),
-   * ale teď to zajistí 1:1 vzhled mezi seznamem a historií.
-   */
   const sharedColumns: ListViewColumn[] = useMemo(
     () => [
       { key: 'title', label: 'Název', width: '180px' },
@@ -573,7 +568,7 @@ export default function DetailAttachmentsSection({
               className="detail-attachments__link"
               onClick={() => void handleOpenLatestByPath(r.file_path)}
               disabled={!r.file_path}
-              title={r.file_name ?? ''}              // ⬅️ celý název do tooltipu
+              title={r.file_name ?? ''}
               aria-label={r.file_name ?? 'Otevřít soubor'}
             >
               {r.file_name ?? '—'}
@@ -637,9 +632,7 @@ export default function DetailAttachmentsSection({
   // ==========================================================================
   // MANAGER (ListView + panel + verze/historie) – bez lokálních tlačítek
   // ==========================================================================
-
   const managerRows: ListViewRow<AttachmentRow>[] = listRows
-
   const expandedVersions = expandedDocId ? versionsByDocId[expandedDocId] ?? [] : []
 
   // history rows (sloupce stejné jako nahoře)
@@ -647,11 +640,12 @@ export default function DetailAttachmentsSection({
     const t = historyFilterText.trim().toLowerCase()
     if (!t) return expandedVersions
     return expandedVersions.filter((v) => {
-      const a = (selectedRow?.title ?? '').toLowerCase()
-      const b = (selectedRow?.description ?? '').toLowerCase()
-      const c = (v.file_name ?? '').toLowerCase()
-      const d = `v${String(v.version_number ?? 0).padStart(3, '0')}`.toLowerCase()
-      return a.includes(t) || b.includes(t) || c.includes(t) || d.includes(t)
+      // ✅ filtrujeme podle snapshot metadat verze (fallback na selectedRow pro staré řádky bez snapshotu)
+      const vt = ((v.title ?? selectedRow?.title) ?? '').toLowerCase()
+      const vd = ((v.description ?? selectedRow?.description) ?? '').toLowerCase()
+      const fn = (v.file_name ?? '').toLowerCase()
+      const ver = `v${String(v.version_number ?? 0).padStart(3, '0')}`.toLowerCase()
+      return vt.includes(t) || vd.includes(t) || fn.includes(t) || ver.includes(t)
     })
   }, [expandedVersions, historyFilterText, selectedRow])
 
@@ -659,24 +653,29 @@ export default function DetailAttachmentsSection({
     if (!expandedDocId) return []
     return filteredVersions.map((v) => {
       const who = resolveName(null, v.created_by)
+
+      // ✅ snapshot metadat pro konkrétní verzi (fallback pro staré řádky)
+      const vTitle = (v.title ?? selectedRow?.title) ?? '—'
+      const vDesc = (v.description ?? selectedRow?.description) ?? '—'
+
       return {
         id: v.id,
         raw: v,
         data: {
           title: (
             <span className="detail-attachments__cell-title">
-              {selectedRow?.title ?? '—'}
-              {selectedRow?.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+              {vTitle}
+              {v.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
             </span>
           ),
-          description: <span className="detail-attachments__muted">{selectedRow?.description ?? '—'}</span>,
+          description: <span className="detail-attachments__muted">{vDesc}</span>,
           file: (
             <button
               type="button"
               className="detail-attachments__link"
               onClick={() => void openFileByPath(v.file_path)}
               disabled={!v.file_path}
-              title={v.file_name ?? ''}                 // ⬅️ celý název do tooltipu
+              title={v.file_name ?? ''}
               aria-label={v.file_name ?? 'Otevřít verzi'}
             >
               {v.file_name ?? '—'}
@@ -778,7 +777,6 @@ export default function DetailAttachmentsSection({
           {/* MANAGER LAYOUT (scroll + sticky historie) */}
           {/* ========================= */}
           <div className="detail-attachments__manager-layout" style={{ marginTop: 12 }}>
-            {/* LIST – NESMÍ scrollovat wrapper, scrolluje jen ListView */}
             <div className="detail-attachments__list-scroll">
               {!loading && managerRows.length > 0 && (
                 <div className="detail-attachments__lv-shell detail-attachments__history-compact">
@@ -797,8 +795,7 @@ export default function DetailAttachmentsSection({
                   />
                 </div>
               )}
-          
-              {/* hidden inputs for new version */}
+
               <div style={{ display: 'none' }}>
                 {filteredRows.map((r) => (
                   <input
@@ -811,26 +808,25 @@ export default function DetailAttachmentsSection({
                 ))}
               </div>
             </div>
-          
-            {/* HISTORIE – sticky dole (wrapper NESMÍ scrollovat) */}
+
             <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
                 <h3 className="detail-form__section-title detail-attachments__history-titleline">
                   Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
-                </h3>                
+                </h3>
               </div>
-            
+
               <div className="detail-attachments__history-body">
                 {!expandedDocId && (
                   <div className="detail-attachments__history-placeholder">
                     Vyber přílohu a klikni na <strong>Historie</strong> v CommonActions.
                   </div>
                 )}
-          
+
                 {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-view__placeholder">Načítám historii…</div>}
-          
+
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
-          
+
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
                   <div className="detail-attachments__lv-shell detail-attachments__history-compact">
                     <ListView
