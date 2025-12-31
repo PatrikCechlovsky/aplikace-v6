@@ -132,6 +132,28 @@ export default function DetailAttachmentsSection({
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rows, setRows] = useState<AttachmentRow[]>([])
 
+  // ============================================================================
+  // SORT (Attachments – společný pro list + manager + history)
+  // ============================================================================
+  
+  // ✅ default: nejnovější nahoře
+  const DEFAULT_SORT: ListViewSortState = useMemo(
+    () => ({ key: 'uploaded', dir: 'desc' }),
+    []
+  )
+  
+  // ✅ UI sort (nikdy null)
+  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
+  
+  // klik na hlavičku (ASC / DESC / návrat na default)
+  const handleSortChange = useCallback(
+    (next: ListViewSortState) => {
+      setSort(next ?? DEFAULT_SORT)
+    },
+    [DEFAULT_SORT]
+  )
+
+  
   // selection (manager)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const selectedRow = useMemo(() => {
@@ -248,6 +270,53 @@ export default function DetailAttachmentsSection({
       return a.includes(t) || b.includes(t) || c.includes(t)
     })
   }, [rows, filterText])
+
+  // ============================================================================
+  // SORTED ROWS (Attachments)
+  // ============================================================================
+  const sortedRows = useMemo(() => {
+    const key = String(sort?.key ?? '').trim()
+    const dir = sort?.dir === 'asc' ? 1 : -1
+    const arr = [...filteredRows]
+  
+    if (!key) return arr
+  
+    arr.sort((a, b) => {
+      let av: any
+      let bv: any
+  
+      switch (key) {
+        case 'title':
+          av = a.title ?? ''
+          bv = b.title ?? ''
+          break
+  
+        case 'file':
+          av = a.file_name ?? ''
+          bv = b.file_name ?? ''
+          break
+  
+        case 'ver':
+          av = a.version_number ?? 0
+          bv = b.version_number ?? 0
+          break
+  
+        case 'uploaded':
+          av = a.version_created_at ?? ''
+          bv = b.version_created_at ?? ''
+          break
+  
+        default:
+          return 0
+      }
+  
+      if (av < bv) return -1 * dir
+      if (av > bv) return 1 * dir
+      return 0
+    })
+  
+    return arr
+  }, [filteredRows, sort])
 
   const resolveName = useCallback(
     (nameFromView: string | null | undefined, userId: string | null | undefined) => {
@@ -539,17 +608,17 @@ export default function DetailAttachmentsSection({
 
   const sharedColumns: ListViewColumn[] = useMemo(
     () => [
-      { key: 'title', label: 'Název', width: '180px' },
+      { key: 'title', label: 'Název', width: '180px', sortable: true },
       { key: 'description', label: 'Popis', width: '220px' },
-      { key: 'file', label: 'Soubor (latest)' },
-      { key: 'ver', label: 'Verze', width: '90px' },
-      { key: 'uploaded', label: 'Nahráno', width: '240px' },
+      { key: 'file', label: 'Soubor (latest)', sortable: true },
+      { key: 'ver', label: 'Verze', width: '90px', sortable: true },
+      { key: 'uploaded', label: 'Nahráno', width: '240px', sortable: true },
     ],
     []
   )
 
   const listRows: ListViewRow<AttachmentRow>[] = useMemo(() => {
-    return filteredRows.map((r) => {
+    return sortedRows.map((r) => {
       const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
       return {
         id: r.id,
@@ -621,6 +690,7 @@ export default function DetailAttachmentsSection({
                 onShowArchivedChange={setIncludeArchived}
                 showArchivedLabel="Zobrazit archivované"
                 onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                onFilterChange={setFilterText}
               />
             )}
           </section>
@@ -792,6 +862,7 @@ export default function DetailAttachmentsSection({
                     selectedId={selectedDocId}
                     onRowClick={(row) => setSelectedDocId(String(row.id))}
                     onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                    onFilterChange={setFilterText}
                   />
                 </div>
               )}
@@ -835,6 +906,7 @@ export default function DetailAttachmentsSection({
                       filterValue={historyFilterText}
                       onFilterChange={setHistoryFilterText}
                       filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
+                      onFilterChange={setFilterText}
                     />
                   </div>
                 )}
