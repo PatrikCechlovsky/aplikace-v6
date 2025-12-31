@@ -359,8 +359,8 @@ export default function UsersTile({
   const sortedUsers = useMemo(() => {
     const arr = [...users]
 
-    // DEFAULT
-    if (!sort) {
+    // DEFAULT = role(order_index) ASC + email ASC
+    if (sort.key === 'roleLabel' && sort.dir === 'asc') {
       arr.sort((a, b) => {
         const ao = a.roleOrderIndex ?? 999999
         const bo = b.roleOrderIndex ?? 999999
