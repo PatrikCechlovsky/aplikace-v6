@@ -908,7 +908,7 @@ export default function DetailAttachmentsSection({
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
                   <div className="detail-attachments__lv-shell detail-attachments__history-compact">
                     <ListView
-                      columns={historyColumns}
+                      columns={sharedColumns}
                       rows={historyRows}
                       sort={sort}
                       onSortChange={handleSortChange}
