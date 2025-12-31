@@ -16,7 +16,12 @@
 // 1) IMPORTS
 // ============================================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
+import ListView, {
+  type ListViewColumn,
+  type ListViewRow,
+  type ListViewSortState,
+} from '@/app/UI/ListView'
+
 import {
   addAttachmentVersionWithUpload,
   createAttachmentWithUpload,
