@@ -66,6 +66,8 @@ export type AttachmentVersionRow = {
   created_at: string | null
   created_by: string | null
   is_archived: boolean
+
+  // ✅ snapshot metadat pro konkrétní verzi
   title: string | null
   description: string | null
 }
@@ -148,6 +150,26 @@ function buildStoragePath(params: {
   // stabilní a čitelné
   return `${et}/${params.entityId}/${params.documentId}/v${vn}_${fn}`
 }
+
+async function uploadToStorage(filePath: string, file: File) {
+  const { error } = await supabase.storage.from(DOCS_BUCKET).upload(filePath, file, { upsert: true })
+  if (error) throw new Error(error.message)
+}
+
+/**
+ * ✅ Načte aktuální metadata z documents
+ * (použijeme jako snapshot do document_versions při vytvoření nové verze)
+ */
+async function loadDocumentMeta(documentId: string): Promise<{ title: string | null; description: string | null; is_archived?: boolean | null }> {
+  const { data, error } = await supabase.from('documents').select('title, description, is_archived').eq('id', documentId).maybeSingle()
+  if (error) throw new Error(normalizeAuthError(error.message))
+  return {
+    title: (data as any)?.title ?? null,
+    description: (data as any)?.description ?? null,
+    is_archived: (data as any)?.is_archived ?? null,
+  }
+}
+
 // ==================================================
 // 4) DATA LOAD
 // ==================================================
@@ -212,10 +234,6 @@ export async function getAttachmentSignedUrl({ filePath, expiresInSeconds = 60 }
   return data.signedUrl
 }
 
-async function uploadToStorage(filePath: string, file: File) {
-  const { error } = await supabase.storage.from(DOCS_BUCKET).upload(filePath, file, { upsert: true })
-  if (error) throw new Error(error.message)
-}
 export async function createAttachmentWithUpload(args: CreateAttachmentWithUploadArgs): Promise<{ documentId: string }> {
   const entityType = normalizeEntityType(args.entityType)
 
@@ -229,12 +247,16 @@ export async function createAttachmentWithUpload(args: CreateAttachmentWithUploa
       description: args.description ?? null,
       is_archived: false,
     })
-    .select('id')
+    .select('id, title, description')
     .single()
 
   if (docErr) throw new Error(normalizeAuthError(docErr.message))
   const documentId = (doc as any)?.id as string
   if (!documentId) throw new Error('Nepodařilo se vytvořit dokument.')
+
+  // ✅ snapshot metadat pro verzi 1
+  const snapTitle = (doc as any)?.title ?? args.title ?? null
+  const snapDesc = (doc as any)?.description ?? args.description ?? null
 
   // 2) upload file
   const versionNumber = 1
@@ -248,7 +270,7 @@ export async function createAttachmentWithUpload(args: CreateAttachmentWithUploa
 
   await uploadToStorage(filePath, args.file)
 
-  // 3) insert version row
+  // 3) insert version row (včetně snapshot metadat)
   const { error: verErr } = await supabase.from('document_versions').insert({
     document_id: documentId,
     version_number: versionNumber,
@@ -257,6 +279,10 @@ export async function createAttachmentWithUpload(args: CreateAttachmentWithUploa
     mime_type: args.file.type ?? null,
     file_size: args.file.size ?? null,
     is_archived: false,
+
+    // ✅ snapshot
+    title: snapTitle,
+    description: snapDesc,
   })
 
   if (verErr) throw new Error(normalizeAuthError(verErr.message))
@@ -279,7 +305,10 @@ export async function addAttachmentVersionWithUpload(args: AddAttachmentVersionW
   const nextVersion = ((maxRow as any)?.version_number ?? 0) + 1
   const entityType = normalizeEntityType(args.entityType)
 
-  // 2) upload file
+  // ✅ 2) načti aktuální metadata dokumentu a ulož je jako snapshot do nové verze
+  const meta = await loadDocumentMeta(args.documentId)
+
+  // 3) upload file
   const filePath = buildStoragePath({
     entityType,
     entityId: args.entityId,
@@ -290,7 +319,7 @@ export async function addAttachmentVersionWithUpload(args: AddAttachmentVersionW
 
   await uploadToStorage(filePath, args.file)
 
-  // 3) insert version row
+  // 4) insert version row (včetně snapshot metadat)
   const { error: verErr } = await supabase.from('document_versions').insert({
     document_id: args.documentId,
     version_number: nextVersion,
@@ -299,12 +328,17 @@ export async function addAttachmentVersionWithUpload(args: AddAttachmentVersionW
     mime_type: args.file.type ?? null,
     file_size: args.file.size ?? null,
     is_archived: false,
+
+    // ✅ snapshot
+    title: meta.title ?? null,
+    description: meta.description ?? null,
   })
 
   if (verErr) throw new Error(normalizeAuthError(verErr.message))
 }
 
 export async function updateAttachmentMetadata(args: UpdateAttachmentMetadataArgs): Promise<void> {
+  // ✅ aktualizujeme pouze documents (historie verzí zůstává beze změny)
   const { error } = await supabase
     .from('documents')
     .update({
