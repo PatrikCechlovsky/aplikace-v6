@@ -21,8 +21,10 @@ import InviteUserFrame from '../forms/InviteUserFrame'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
+import { loadViewPrefs, saveViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
+
 // =====================
 // 2) TYPES
 // =====================
@@ -34,6 +36,8 @@ type UiUser = {
   phone?: string
   roleCode?: string | null
   roleLabel: string
+  roleOrderIndex?: number | null
+  roleColor?: string | null
   twoFactorMethod?: string | null
   createdAt: string
   isArchived?: boolean
@@ -48,6 +52,7 @@ type UsersTileProps = {
 
 // ✅ lokální režimy
 type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
+
 // =====================
 // 3) HELPERS
 // =====================
@@ -74,30 +79,49 @@ function roleCodeToLabel(code: string | null | undefined): string {
   return c
 }
 
-function buildRoleTypeMap(rows: RoleTypeRow[]): Record<string, string> {
-  const map: Record<string, string> = {}
+type RoleMeta = {
+  label: string
+  color: string | null
+  orderIndex: number | null
+}
+
+function buildRoleMetaMap(rows: RoleTypeRow[]): Record<string, RoleMeta> {
+  const map: Record<string, RoleMeta> = {}
   for (const r of rows ?? []) {
     const code = String((r as any).code ?? '').trim().toLowerCase()
+    if (!code) continue
+
     const name = String((r as any).name ?? '').trim()
-    if (code) map[code] = name || String((r as any).code ?? code)
+    const color = ((r as any).color ?? null) as string | null
+    const orderIndexRaw = (r as any).order_index
+    const orderIndex = typeof orderIndexRaw === 'number' && Number.isFinite(orderIndexRaw) ? orderIndexRaw : null
+
+    map[code] = {
+      label: name || String((r as any).code ?? code),
+      color: color && String(color).trim() ? String(color).trim() : null,
+      orderIndex,
+    }
   }
   return map
 }
 
-function resolveRoleLabel(roleCode: string | null | undefined, map: Record<string, string>): string {
+function resolveRoleMeta(roleCode: string | null | undefined, map: Record<string, RoleMeta>): RoleMeta {
   const c = String(roleCode ?? '').trim().toLowerCase()
-  if (!c) return ''
-  return map[c] ?? roleCodeToLabel(c)
+  if (!c) return { label: '', color: null, orderIndex: null }
+  return map[c] ?? { label: roleCodeToLabel(c), color: null, orderIndex: null }
 }
 
-function mapRowToUi(row: UsersListRow, roleMap: Record<string, string>): UiUser {
+function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUser {
+  const meta = resolveRoleMeta((row as any).role_code, roleMap)
   return {
     id: row.id,
     displayName: (row as any).display_name ?? '',
     email: (row as any).email ?? '',
     phone: (row as any).phone ?? undefined,
     roleCode: (row as any).role_code ?? null,
-    roleLabel: resolveRoleLabel((row as any).role_code, roleMap),
+    roleLabel: meta.label,
+    roleOrderIndex: meta.orderIndex,
+    roleColor: meta.color,
     twoFactorMethod: (row as any).two_factor_method ?? null,
     createdAt: (row as any).created_at ?? '',
     isArchived: !!(row as any).is_archived,
@@ -109,7 +133,13 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
   return {
     id: u.id,
     data: {
-      roleLabel: u.roleLabel,
+      roleLabel: u.roleColor ? (
+        <span className="generic-type__name-badge" style={{ backgroundColor: u.roleColor }}>
+          {u.roleLabel || '—'}
+        </span>
+      ) : (
+        <span className="generic-type__name-main">{u.roleLabel || '—'}</span>
+      ),
       displayName: u.displayName,
       email: u.email,
       isArchived: u.isArchived ? 'Ano' : '',
@@ -131,7 +161,9 @@ function numberOrZero(v: any): number {
 function getSortValue(u: UiUser, key: string): string | number {
   switch (key) {
     case 'roleLabel':
-      return normalizeString(u.roleLabel)
+      // ✅ preferujeme řazení podle order_index z modulu 090
+      // (fallback na label, pokud order_index není vyplněn)
+      return u.roleOrderIndex ?? 999999
     case 'displayName':
       return normalizeString(u.displayName)
     case 'email':
@@ -142,6 +174,7 @@ function getSortValue(u: UiUser, key: string): string | number {
       return ''
   }
 }
+
 // =====================
 // 4) DATA LOAD (hooks)
 // =====================
@@ -192,6 +225,26 @@ export default function UsersTile({
 
   // ✅ tri-state sort: null = DEFAULT (původní pořadí), jinak { key, dir }
   const [sort, setSort] = useState<ListViewSortState>(null)
+
+  // ✅ ListView prefs (persisted) – MVP ukládáme pouze sort
+  const prefsLoadedRef = useRef(false)
+  const saveTimerRef = useRef<any>(null)
+
+  useEffect(() => {
+    void (async () => {
+      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null })
+      setSort((prefs.sort as ViewPrefsSortState) ?? null)
+      prefsLoadedRef.current = true
+    })()
+  }, [])
+
+  useEffect(() => {
+    if (!prefsLoadedRef.current) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      void saveViewPrefs(VIEW_KEY, { v: 1, sort })
+    }, 500)
+  }, [sort])
 
   // -------------------------
   // URL helpers (t, id, vm, am)
@@ -293,18 +346,37 @@ export default function UsersTile({
     void load()
   }, [load])
 
-  // ✅ mapa původního pořadí (jak přišlo z backendu)
+    // ✅ mapa původního pořadí (jak přišlo z backendu)
   const baseOrderIndex = useMemo(() => {
     const m = new Map<string, number>()
     users.forEach((u, i) => m.set(u.id, i))
     return m
   }, [users])
 
-  // ✅ sortedUsers: null = původní pořadí, jinak ASC/DESC dle sort.dir
+  // ✅ sortedUsers:
+  // - sort=null => DEFAULT (role.order_index ASC, email ASC)
+  // - sort!=null => ASC/DESC dle sort.dir
   const sortedUsers = useMemo(() => {
-    if (!sort) return users
-
     const arr = [...users]
+
+    // DEFAULT
+    if (!sort) {
+      arr.sort((a, b) => {
+        const ao = a.roleOrderIndex ?? 999999
+        const bo = b.roleOrderIndex ?? 999999
+        if (ao < bo) return -1
+        if (ao > bo) return 1
+
+        const ae = normalizeString(a.email)
+        const be = normalizeString(b.email)
+        if (ae < be) return -1
+        if (ae > be) return 1
+
+        return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
+      })
+      return arr
+    }
+
     const dir = sort.dir === 'asc' ? 1 : -1
     const key = sort.key
 
@@ -312,9 +384,18 @@ export default function UsersTile({
       const av = getSortValue(a, key)
       const bv = getSortValue(b, key)
 
+      // numeric
       if (typeof av === 'number' && typeof bv === 'number') {
         if (av < bv) return -1 * dir
         if (av > bv) return 1 * dir
+
+        // ✅ při řazení podle role necháváme stabilní sekundární klíč: email
+        if (key === 'roleLabel') {
+          const ae = normalizeString(a.email)
+          const be = normalizeString(b.email)
+          if (ae < be) return -1 * dir
+          if (ae > be) return 1 * dir
+        }
       } else {
         const as = String(av)
         const bs = String(bv)
@@ -327,8 +408,7 @@ export default function UsersTile({
 
     return arr
   }, [users, sort, baseOrderIndex])
-
-  const rows: ListViewRow<UiUser>[] = useMemo(() => sortedUsers.map(toRow), [sortedUsers])
+  
   // -------------------------
   // Navigation helpers
   // -------------------------
