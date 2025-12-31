@@ -363,6 +363,25 @@ export default function UsersTile({
   useEffect(() => {
     void load()
   }, [load])
+  
+  // ✅ když se načtou roleTypes (barvy + order), přepočítej již načtené users
+  useEffect(() => {
+    if (!roleTypeMap || Object.keys(roleTypeMap).length === 0) return
+  
+    setUsers((prev) => {
+      if (!prev?.length) return prev
+  
+      return prev.map((u) => {
+        const meta = resolveRoleMeta(u.roleCode ?? null, roleTypeMap)
+        return {
+          ...u,
+          roleLabel: meta.label,
+          roleOrderIndex: meta.orderIndex,
+          roleColor: meta.color,
+        }
+      })
+    })
+  }, [roleTypeMap])
 
   // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
   const baseOrderIndex = useMemo(() => {
