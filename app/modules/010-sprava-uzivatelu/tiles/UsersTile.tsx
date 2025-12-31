@@ -176,7 +176,7 @@ function getSortValue(u: UiUser, key: string): string | number {
 }
 
 // =====================
-// 4) DATA LOAD (hooks)
+// 4) DATA LOAD
 // =====================
 
 export default function UsersTile({
@@ -223,7 +223,7 @@ export default function UsersTile({
     isDirty: false,
   })
 
-    // ✅ DEFAULT sort pro Users (Role -> order_index)
+  // ✅ DEFAULT sort pro Users (Role -> order_index)
   const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'roleLabel', dir: 'asc' }), [])
 
   // ✅ v UI vždy držíme konkrétní sort (nikdy null)
@@ -247,7 +247,7 @@ export default function UsersTile({
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
 
     const persist: ViewPrefsSortState =
-      sort && sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
+      sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
 
     saveTimerRef.current = setTimeout(() => {
       void saveViewPrefs(VIEW_KEY, { v: 1, sort: persist })
@@ -261,7 +261,6 @@ export default function UsersTile({
     },
     [DEFAULT_SORT]
   )
-
 
   // -------------------------
   // URL helpers (t, id, vm, am)
@@ -288,7 +287,7 @@ export default function UsersTile({
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
 
-      console.log('[010 UsersTile] setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
+      dbg('setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
 
       if (nextUrl === currentUrl) return
 
@@ -299,158 +298,132 @@ export default function UsersTile({
   )
 
   // -------------------------
-// Load guards (anti-loop / anti-storm)
-// -------------------------
-const loadInFlightRef = useRef<Promise<void> | null>(null)
-const lastLoadKeyRef = useRef<string>('')
+  // Load guards (anti-loop / anti-storm)
+  // -------------------------
+  const loadInFlightRef = useRef<Promise<void> | null>(null)
+  const lastLoadKeyRef = useRef<string>('')
 
-const load = useCallback(async () => {
-  const key = `${(filterText ?? '').trim().toLowerCase()}|${showArchived ? '1' : '0'}`
+  const load = useCallback(async () => {
+    const key = `${(filterText ?? '').trim().toLowerCase()}|${showArchived ? '1' : '0'}`
 
-  // stejný load už běží pro stejný key => vrať existující promise
-  if (loadInFlightRef.current && lastLoadKeyRef.current === key) return loadInFlightRef.current
-  lastLoadKeyRef.current = key
+    if (loadInFlightRef.current && lastLoadKeyRef.current === key) return loadInFlightRef.current
+    lastLoadKeyRef.current = key
 
-  const p = (async () => {
-    setLoading(true)
-    setError(null)
+    const p = (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
+        setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current)))
+      } catch (e: any) {
+        // eslint-disable-next-line no-console
+        console.error('[UsersTile.listUsers] ERROR', e)
+        setError(e?.message ?? 'Chyba načtení uživatelů')
+      } finally {
+        setLoading(false)
+      }
+    })()
+
+    loadInFlightRef.current = p
     try {
-      const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
-      setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current)))
-    } catch (e: any) {
-      console.error('[UsersTile.listUsers] ERROR', e)
-      setError(e?.message ?? 'Chyba načtení uživatelů')
+      await p
     } finally {
-      setLoading(false)
+      if (loadInFlightRef.current === p) loadInFlightRef.current = null
     }
-  })()
+  }, [filterText, showArchived])
 
-  loadInFlightRef.current = p
-  try {
-    await p
-  } finally {
-    if (loadInFlightRef.current === p) loadInFlightRef.current = null
-  }
-}, [filterText, showArchived])
-
-const roleTypesInFlightRef = useRef<Promise<void> | null>(null)
-const loadRoleTypes = useCallback(async () => {
-  if (roleTypesInFlightRef.current) return roleTypesInFlightRef.current
-  const p = (async () => {
+  const roleTypesInFlightRef = useRef<Promise<void> | null>(null)
+  const loadRoleTypes = useCallback(async () => {
+    if (roleTypesInFlightRef.current) return roleTypesInFlightRef.current
+    const p = (async () => {
+      try {
+        const rows = await fetchRoleTypes()
+        setRoleTypes(rows)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[UsersTile.fetchRoleTypes] WARN', e)
+      }
+    })()
+    roleTypesInFlightRef.current = p
     try {
-      const rows = await fetchRoleTypes()
-      setRoleTypes(rows)
-    } catch (e) {
-      console.warn('[UsersTile.fetchRoleTypes] WARN', e)
+      await p
+    } finally {
+      if (roleTypesInFlightRef.current === p) roleTypesInFlightRef.current = null
     }
-  })()
-  roleTypesInFlightRef.current = p
-  try {
-    await p
-  } finally {
-    if (roleTypesInFlightRef.current === p) roleTypesInFlightRef.current = null
-  }
-}, [])
+  }, [])
 
-useEffect(() => {
-  roleTypeMapRef.current = roleTypeMap
-}, [roleTypeMap])
+  useEffect(() => {
+    roleTypeMapRef.current = roleTypeMap
+  }, [roleTypeMap])
 
-useEffect(() => {
-  void loadRoleTypes()
-}, [loadRoleTypes])
+  useEffect(() => {
+    void loadRoleTypes()
+  }, [loadRoleTypes])
 
-useEffect(() => {
-  void load()
-}, [load])
+  useEffect(() => {
+    void load()
+  }, [load])
 
-// ✅ mapa původního pořadí (jak přišlo z backendu)
-const baseOrderIndex = useMemo(() => {
-  const m = new Map<string, number>()
-  users.forEach((u, i) => m.set(u.id, i))
-  return m
-}, [users])
+  // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
+  const baseOrderIndex = useMemo(() => {
+    const m = new Map<string, number>()
+    users.forEach((u, i) => m.set(u.id, i))
+    return m
+  }, [users])
 
-// ✅ DEFAULT sort pro tento list (když sort === null)
-const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'roleLabel', dir: 'asc' }), [])
+  // ✅ sortedUsers (DEFAULT = roleOrderIndex ASC, email ASC)
+  const sortedUsers = useMemo(() => {
+    const key = String(sort.key ?? '').trim()
+    const dir = sort.dir === 'desc' ? -1 : 1
+    const arr = [...users]
 
-// ✅ sort, který se ukazuje v UI (šipka v hlavičce)
-const uiSort: ListViewSortState = sort ?? DEFAULT_SORT
+    // DEFAULT (role asc) má vlastní pravidla: order_index + email
+    if (key === 'roleLabel' && dir === 1) {
+      arr.sort((a, b) => {
+        const ao = a.roleOrderIndex ?? 999999
+        const bo = b.roleOrderIndex ?? 999999
+        if (ao < bo) return -1
+        if (ao > bo) return 1
 
-// ✅ sortedUsers:
-// - sort=null => DEFAULT (roleLabel asc) + stabilní fallback
-// - sort!=null => ASC/DESC dle sort.dir
-const sortedUsers = useMemo(() => {
-  const key = String((sort as any)?.key ?? '').trim()
-  if (!key) return users
+        const ae = normalizeString(a.email)
+        const be = normalizeString(b.email)
+        if (ae < be) return -1
+        if (ae > be) return 1
 
-  const dir = (sort as any)?.dir === 'desc' ? -1 : 1
-  const arr = [...users]
+        return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
+      })
+      return arr
+    }
 
-  // ✅ DEFAULT chování: roleOrderIndex ASC, email ASC, stabilní fallback
-  if (key === 'roleLabel' && dir === 1) {
+    // Obecné řazení dle klíče
     arr.sort((a, b) => {
-      const ra = (a as any).roleOrderIndex ?? 999999
-      const rb = (b as any).roleOrderIndex ?? 999999
-      if (ra < rb) return -1
-      if (ra > rb) return 1
+      const av = getSortValue(a, key)
+      const bv = getSortValue(b, key)
 
-      const ea = normalizeString((a as any).email)
-      const eb = normalizeString((b as any).email)
-      if (ea < eb) return -1
-      if (ea > eb) return 1
+      if (typeof av === 'number' && typeof bv === 'number') {
+        if (av < bv) return -1 * dir
+        if (av > bv) return 1 * dir
+      } else {
+        const as = String(av ?? '')
+        const bs = String(bv ?? '')
+        if (as < bs) return -1 * dir
+        if (as > bs) return 1 * dir
+      }
 
       return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
     })
+
     return arr
-  }
+  }, [users, sort, baseOrderIndex])
 
-  // ✅ Obecné řazení dle sort key
-  arr.sort((a, b) => {
-    const av = getSortValue(a, key)
-    const bv = getSortValue(b, key)
+  const listRows = useMemo<ListViewRow<UiUser>[]>(() => {
+    return sortedUsers.map((u) => toRow(u))
+  }, [sortedUsers])
 
-    if (typeof av === 'number' && typeof bv === 'number') {
-      if (av < bv) return -1 * dir
-      if (av > bv) return 1 * dir
-    } else {
-      const as = String(av ?? '')
-      const bs = String(bv ?? '')
-      if (as < bs) return -1 * dir
-      if (as > bs) return 1 * dir
-    }
+  // =====================
+  // 5) ACTION HANDLERS
+  // =====================
 
-    return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
-  })
-
-  return arr
-}, [users, sort, baseOrderIndex])
-
-
-const listRows = useMemo<ListViewRow<UiUser>[]>(() => {
-  return sortedUsers.map((u) => toRow(u))
-}, [sortedUsers])
-
-// ✅ uživatelská změna sortu:
-// - když klikem vyjde přesně DEFAULT (roleLabel asc), uložíme null (= návrat na výchozí)
-const handleSortChange = useCallback(
-  (next: ListViewSortState) => {
-    if (!next) {
-      setSort(null)
-      return
-    }
-    if (next.key === DEFAULT_SORT.key && next.dir === DEFAULT_SORT.dir) {
-      setSort(null)
-      return
-    }
-    setSort(next)
-  },
-  [DEFAULT_SORT]
-)
-
-  // -------------------------
-  // Navigation helpers
-  // -------------------------
   const closeListToModule = useCallback(() => {
     setUrl({ t: null, id: null, vm: null, am: null }, 'replace')
     router.push('/')
@@ -542,7 +515,7 @@ const handleSortChange = useCallback(
   }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi])
 
   // -------------------------
-  // CommonActions handler (z (19), beze změn)
+  // CommonActions handler
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
@@ -821,9 +794,11 @@ const handleSortChange = useCallback(
 
     void run()
   }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load])
-  // -------------------------
+
+  // =====================
   // 6) RENDER
-  // -------------------------
+  // =====================
+
   if (viewMode === 'list') {
     return (
       <div>
