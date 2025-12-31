@@ -356,7 +356,7 @@ export default function UsersTile({
   // ✅ sortedUsers:
   // - sort=null => DEFAULT (role.order_index ASC, email ASC)
   // - sort!=null => ASC/DESC dle sort.dir
-  sortedUsers  
+   
   const listRows = useMemo<ListViewRow<UiUser>[]>(() => {
     return sortedUsers.map((u) => toRow(u))
   }, [sortedUsers])
