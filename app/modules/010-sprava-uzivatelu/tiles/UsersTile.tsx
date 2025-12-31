@@ -356,59 +356,7 @@ export default function UsersTile({
   // ✅ sortedUsers:
   // - sort=null => DEFAULT (role.order_index ASC, email ASC)
   // - sort!=null => ASC/DESC dle sort.dir
-  const sortedUsers = useMemo(() => {
-    const arr = [...users]
-
-    // DEFAULT = role(order_index) ASC + email ASC
-    if (sort.key === 'roleLabel' && sort.dir === 'asc') {
-      arr.sort((a, b) => {
-        const ao = a.roleOrderIndex ?? 999999
-        const bo = b.roleOrderIndex ?? 999999
-        if (ao < bo) return -1
-        if (ao > bo) return 1
-
-        const ae = normalizeString(a.email)
-        const be = normalizeString(b.email)
-        if (ae < be) return -1
-        if (ae > be) return 1
-
-        return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
-      })
-      return arr
-    }
-
-    const dir = sort.dir === 'asc' ? 1 : -1
-    const key = sort.key
-
-    arr.sort((a, b) => {
-      const av = getSortValue(a, key)
-      const bv = getSortValue(b, key)
-
-      // numeric
-      if (typeof av === 'number' && typeof bv === 'number') {
-        if (av < bv) return -1 * dir
-        if (av > bv) return 1 * dir
-
-        // ✅ při řazení podle role necháváme stabilní sekundární klíč: email
-        if (key === 'roleLabel') {
-          const ae = normalizeString(a.email)
-          const be = normalizeString(b.email)
-          if (ae < be) return -1 * dir
-          if (ae > be) return 1 * dir
-        }
-      } else {
-        const as = String(av)
-        const bs = String(bv)
-        if (as < bs) return -1 * dir
-        if (as > bs) return 1 * dir
-      }
-
-      return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
-    })
-
-    return arr
-  }, [users, sort, baseOrderIndex])
-  
+  sortedUsers  
   const listRows = useMemo<ListViewRow<UiUser>[]>(() => {
     return sortedUsers.map((u) => toRow(u))
   }, [sortedUsers])
