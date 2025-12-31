@@ -389,6 +389,69 @@ Všechny budoucí moduly a funkce budou na tento model navazovat.
 
 ---
 
+## Základní principy datového modelu
+
+- Datový model je navržen s důrazem na auditovatelnost a historii.
+- Data se nikdy nepřepisují tak, aby se ztratila informace o minulém stavu.
+- Historická data jsou považována za neměnná.
+
+---
+
+## Neměnnost historických záznamů (Immutable data)
+
+- Jakmile je záznam vytvořen, jeho historická podoba se nemění.
+- Změny se vždy řeší vytvořením nové verze nebo nového záznamu.
+- Přepis historických dat je zakázán.
+
+- Tento princip platí zejména pro:
+  - verze dokumentů a příloh,
+  - auditní záznamy,
+  - bezpečnostní události.
+
+---
+
+## Verzování dat
+
+- Verzování se používá tam, kde je potřeba sledovat vývoj v čase.
+- Každá verze představuje samostatný historický stav.
+
+- Verze obsahuje:
+  - vlastní metadata,
+  - informaci o autorovi,
+  - datum vytvoření.
+
+- Metadata verze se po vytvoření nemění.
+
+---
+
+## Archivace vs mazání
+
+- Archivace je preferovaný způsob „odebrání“ dat z aktivního používání.
+- Archivovaný záznam:
+  - zůstává uložen,
+  - je dohledatelný,
+  - není implicitně zobrazován.
+
+- Mazání dat je výjimečné a musí být odůvodněné.
+- Mazáním nesmí dojít ke ztrátě auditní stopy.
+
+---
+
+## Vztah datového modelu a UI
+
+- UI respektuje stav dat v databázi.
+- UI nikdy nesimuluje stav, který neodpovídá datům.
+- Viditelnost a dostupnost dat se řídí jejich stavem a kontextem.
+
+---
+
+## Závaznost
+
+- Tyto principy platí pro celý datový model aplikace.
+- Jsou závazné pro nové i upravované tabulky.
+- Porušení těchto pravidel je považováno za chybu návrhu dat.
+
+---
 # 📜 Historické části dokumentu – DATOVÝ MODEL  
 *(zachováno, ale označeno jako zastaralé — NESMÍ SE MAZAT)*
 
