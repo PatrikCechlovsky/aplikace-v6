@@ -815,10 +815,9 @@ export default function DetailAttachmentsSection({
             {/* HISTORIE – sticky dole (wrapper NESMÍ scrollovat) */}
             <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
-                <div className="detail-attachments__history-titleline">
-                  <span className="detail-attachments__history-titletext">Historie verzí přílohy:</span>{' '}
-                  <span className="detail-attachments__history-filename">{selectedTitle}</span>
-                </div>
+                <h3 className="detail-form__section-title detail-attachments__history-titleline">
+                  Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
+                </h3>                
               </div>
             
               <div className="detail-attachments__history-body">
