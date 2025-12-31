@@ -6,20 +6,22 @@
  *          - filtr (input)
  *          - zaškrtávátko „Zobrazit archivované“
  *          - tabulka se záhlavím a řádky
- *          - (NEW) tri-state řazení přes klik na hlavičku
+ *          - ✅ tri-state řazení v hlavičce (ASC -> DESC -> DEFAULT)
  *
  * POZNÁMKA:
- * - Vizuální "panel" (rámeček okolo celého listu) je řešen přes .listview (ListView.css).
- * - generic-type__* třídy zůstávají pro tabulku/buňky, aby se držel jednotný styl v app.
+ * - ListView pouze drží UI (klik na hlavičku + šipka).
+ * - Skutečné řazení dat dělá rodič (tile), aby DEFAULT = původní pořadí z backendu / preference uživatele.
  */
 
+//
+// 1) IMPORTS
+//
 import React from 'react'
 import '@/app/styles/components/ListView.css'
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
+//
+// 2) TYPES
+//
 export type ListViewSortDir = 'asc' | 'desc'
 export type ListViewSortState = { key: string; dir: ListViewSortDir } | null
 
@@ -29,7 +31,7 @@ export type ListViewColumn = {
   align?: 'left' | 'center' | 'right'
   /** Šířka sloupce (doporučeno číslo v px, nebo string "180px") */
   width?: number | string
-  /** (NEW) povolit řazení klikem na hlavičku */
+  /** ✅ Povolit řazení klikem na hlavičku */
   sortable?: boolean
 }
 
@@ -74,15 +76,15 @@ export type ListViewProps<TData = any> = {
   /** Dvojklik na řádek – typicky pro otevření detailu (celostránkově) */
   onRowDoubleClick?: (row: ListViewRow<TData>) => void
 
-  /** (NEW) aktuální stav řazení (drží rodič) */
+  /** ✅ stav řazení (drží rodič) */
   sort?: ListViewSortState
-  /** (NEW) změna řazení (tri-state: asc -> desc -> null) */
+  /** ✅ změna řazení (tri-state: asc -> desc -> null) */
   onSortChange?: (next: ListViewSortState) => void
 }
-// ============================================================================
-// HELPERS
-// ============================================================================
 
+//
+// 3) HELPERS
+//
 function getAlignClass(align?: 'left' | 'center' | 'right') {
   return align === 'center' ? 'generic-type__cell--center' : align === 'right' ? 'generic-type__cell--right' : ''
 }
@@ -94,20 +96,20 @@ function getColStyle(w?: number | string): React.CSSProperties | undefined {
 }
 
 function nextSort(current: ListViewSortState, colKey: string): ListViewSortState {
+  // klik na jiný sloupec => ASC
   if (!current || current.key !== colKey) return { key: colKey, dir: 'asc' }
+  // klik na stejný => ASC -> DESC -> DEFAULT(null)
   if (current.dir === 'asc') return { key: colKey, dir: 'desc' }
-  return null // zpět na původní pořadí (default od rodiče)
+  return null
 }
 
 function sortArrow(sort: ListViewSortState, colKey: string): string {
   if (!sort || sort.key !== colKey) return ''
   return sort.dir === 'asc' ? '▲' : '▼'
 }
-
-// ============================================================================
-// RENDER
-// ============================================================================
-
+//
+// 6) RENDER
+//
 export default function ListView<TData = any>({
   columns,
   rows,
@@ -162,7 +164,11 @@ export default function ListView<TData = any>({
                   <th
                     key={col.key}
                     className={['generic-type__cell', alignClass].filter(Boolean).join(' ')}
-                    style={{ ...getColStyle(col.width), cursor: canSort ? 'pointer' : undefined, userSelect: 'none' }}
+                    style={{
+                      ...getColStyle(col.width),
+                      cursor: canSort ? 'pointer' : undefined,
+                      userSelect: 'none',
+                    }}
                     onClick={() => {
                       if (!canSort) return
                       onSortChange?.(nextSort(sort, col.key))
