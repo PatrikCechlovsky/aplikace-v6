@@ -181,21 +181,19 @@ export default function DetailAttachmentsSection({
   // ============================================================================
   
   // ✅ default: nejnovější nahoře
-  const DEFAULT_SORT: ListViewSortState = useMemo(
-    () => ({ key: 'uploaded', dir: 'desc' }),
-    []
-  )
+  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'uploaded', dir: 'desc' }), [])
   
-  // ✅ UI sort (nikdy null)
-  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
+  // ✅ sort může být null = 3. klik (reset na default)
+  const [sort, setSort] = useState<ListViewSortState | null>(DEFAULT_SORT)
   
-  // klik na hlavičku (ASC / DESC / návrat na default)
-  const handleSortChange = useCallback(
-    (next: ListViewSortState) => {
-      setSort(next ?? DEFAULT_SORT)
-    },
-    [DEFAULT_SORT]
-  )
+  // ✅ do UI posíláme vždy konkrétní sort, aby šipka byla vidět
+  const uiSort = useMemo<ListViewSortState>(() => sort ?? DEFAULT_SORT, [sort, DEFAULT_SORT])
+  
+  // ✅ ListView posílá cyklus: asc -> desc -> null
+  const handleSortChange = useCallback((next: ListViewSortState | null) => {
+    setSort(next)
+  }, [])
+
 
   
   // selection (manager)
@@ -357,7 +355,7 @@ export default function DetailAttachmentsSection({
     })
   
     return arr
-  }, [filteredRows, sort])
+  }, [filteredRows, uisort])
 
 
   const resolveName = useCallback(
@@ -730,7 +728,7 @@ export default function DetailAttachmentsSection({
               <ListView
                 columns={sharedColumns}
                 rows={listRows}
-                sort={sort}
+                sort={uisort}
                 onSortChange={handleSortChange}
                 filterValue={filterText}
                 onFilterChange={setFilterText}
@@ -901,7 +899,7 @@ export default function DetailAttachmentsSection({
                   <ListView
                     columns={sharedColumns}
                     rows={managerRows}
-                    sort={sort}
+                    sort={uisort}
                     onSortChange={handleSortChange}
                     filterValue={filterText}
                     onFilterChange={setFilterText}
@@ -952,7 +950,7 @@ export default function DetailAttachmentsSection({
                     <ListView
                       columns={sharedColumns}
                       rows={historyRows}
-                      sort={sort}
+                      sort={uisort}
                       onSortChange={handleSortChange}
                       filterValue={historyFilterText}
                       onFilterChange={setHistoryFilterText}
