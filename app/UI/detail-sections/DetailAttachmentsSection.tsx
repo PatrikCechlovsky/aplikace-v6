@@ -355,7 +355,7 @@ export default function DetailAttachmentsSection({
     })
   
     return arr
-  }, [filteredRows, uisort])
+  }, [filteredRows, uiSort])
 
 
   const resolveName = useCallback(
