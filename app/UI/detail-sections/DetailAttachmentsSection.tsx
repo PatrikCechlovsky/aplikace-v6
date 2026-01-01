@@ -180,19 +180,22 @@ export default function DetailAttachmentsSection({
   // SORT (Attachments – společný pro list + manager + history)
   // ============================================================================
   
-  // ✅ default: nejnovější nahoře
-  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'uploaded', dir: 'desc' }), [])
+  // default: nejnovější nahoře
+  const DEFAULT_SORT: ListViewSortState = useMemo(
+    () => ({ key: 'uploaded', dir: 'desc' }),
+    []
+  )
   
-  // ✅ sort může být null = 3. klik (reset na default)
-  const [sort, setSort] = useState<ListViewSortState | null>(DEFAULT_SORT)
+  // sort nikdy není null
+  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
   
-  // ✅ do UI posíláme vždy konkrétní sort, aby šipka byla vidět
-  const uiSort = useMemo<ListViewSortState>(() => sort ?? DEFAULT_SORT, [sort, DEFAULT_SORT])
-  
-  // ✅ ListView posílá cyklus: asc -> desc -> null
-  const handleSortChange = useCallback((next: ListViewSortState | null) => {
-    setSort(next)
-  }, [])
+  // klik na hlavičku: ASC → DESC → DEFAULT → …
+  const handleSortChange = useCallback(
+    (next: ListViewSortState | null) => {
+      setSort(next ?? DEFAULT_SORT)
+    },
+    [DEFAULT_SORT]
+  )
 
 
   
