@@ -358,7 +358,7 @@ export default function DetailAttachmentsSection({
     })
   
     return arr
-  }, [filteredRows, uiSort])
+  }, [filteredRows, sort])
 
 
   const resolveName = useCallback(
@@ -731,7 +731,7 @@ export default function DetailAttachmentsSection({
               <ListView
                 columns={sharedColumns}
                 rows={listRows}
-                sort={uiSort}
+                sort={sort}
                 onSortChange={handleSortChange}
                 filterValue={filterText}
                 onFilterChange={setFilterText}
@@ -902,7 +902,7 @@ export default function DetailAttachmentsSection({
                   <ListView
                     columns={sharedColumns}
                     rows={managerRows}
-                    sort={uiSort}
+                    sort={sort}
                     onSortChange={handleSortChange}
                     filterValue={filterText}
                     onFilterChange={setFilterText}
@@ -953,7 +953,7 @@ export default function DetailAttachmentsSection({
                     <ListView
                       columns={sharedColumns}
                       rows={historyRows}
-                      sort={uiSort}
+                      sort={sort}
                       onSortChange={handleSortChange}
                       filterValue={historyFilterText}
                       onFilterChange={setHistoryFilterText}
