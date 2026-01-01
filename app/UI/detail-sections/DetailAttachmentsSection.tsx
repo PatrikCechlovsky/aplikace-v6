@@ -307,18 +307,19 @@ export default function DetailAttachmentsSection({
   const filteredRows = useMemo(() => {
     const t = filterText.trim().toLowerCase()
     if (!t) return rows
+  
     return rows.filter((r) => {
       const a = (r.title ?? '').toLowerCase()
       const b = (r.description ?? '').toLowerCase()
       const c = (r.file_name ?? '').toLowerCase()
       return a.includes(t) || b.includes(t) || c.includes(t)
     })
-  }, [rows, filterText, includeArchived, sort])
+  }, [rows, filterText])
 
   // ============================================================================
   // SORTED ROWS (Attachments)
   // ============================================================================
-  const sortedRows = useMemo(() => {
+  const viewRows = useMemo(() => {
     const key = String(sort?.key ?? '').trim()
     const dir = sort?.dir === 'asc' ? 1 : -1
     const arr = [...filteredRows]
@@ -334,22 +335,18 @@ export default function DetailAttachmentsSection({
           av = a.title ?? ''
           bv = b.title ?? ''
           break
-  
         case 'file':
           av = a.file_name ?? ''
           bv = b.file_name ?? ''
           break
-  
         case 'ver':
           av = a.version_number ?? 0
           bv = b.version_number ?? 0
           break
-  
         case 'uploaded':
           av = a.version_created_at ?? ''
           bv = b.version_created_at ?? ''
           break
-  
         default:
           return 0
       }
@@ -361,6 +358,7 @@ export default function DetailAttachmentsSection({
   
     return arr
   }, [filteredRows, sort])
+
 
   const resolveName = useCallback(
     (nameFromView: string | null | undefined, userId: string | null | undefined) => {
@@ -662,8 +660,12 @@ export default function DetailAttachmentsSection({
   )
 
   const listRows: ListViewRow<AttachmentRow>[] = useMemo(() => {
-    return sortedRows.map((r) => {
-      const uploadedName = resolveName(r.version_created_by_name ?? null, r.version_created_by ?? null)
+    return viewRows.map((r) => {
+      const uploadedName = resolveName(
+        r.version_created_by_name ?? null,
+        r.version_created_by ?? null
+      )
+  
       return {
         id: r.id,
         raw: r,
@@ -671,7 +673,9 @@ export default function DetailAttachmentsSection({
           title: (
             <span className="detail-attachments__cell-title">
               {r.title ?? '—'}
-              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+              {r.is_archived ? (
+                <span className="detail-attachments__archived-badge">archiv</span>
+              ) : null}
             </span>
           ),
           description: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
@@ -681,8 +685,6 @@ export default function DetailAttachmentsSection({
               className="detail-attachments__link"
               onClick={() => void handleOpenLatestByPath(r.file_path)}
               disabled={!r.file_path}
-              title={r.file_name ?? ''}
-              aria-label={r.file_name ?? 'Otevřít soubor'}
             >
               {r.file_name ?? '—'}
             </button>
@@ -696,7 +698,8 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [filteredRows, resolveName, handleOpenLatestByPath])
+  }, [viewRows, resolveName, handleOpenLatestByPath])
+
 
   // READ-ONLY UI (nebo manager bez práv)
   if (!isManager) {
