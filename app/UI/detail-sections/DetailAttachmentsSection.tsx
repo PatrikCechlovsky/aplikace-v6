@@ -998,7 +998,6 @@ const sharedColumns = useMemo(() => {
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
                   <div
                     className="detail-attachments__lv-shell detail-attachments__history-compact"
-                    style={{ ['--listview-max-height' as any]: '160px' }} // ≈ 3 řádky + hlavička ListView
                   >
                     <ListView
                       columns={sharedColumns}
