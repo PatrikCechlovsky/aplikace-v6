@@ -132,7 +132,8 @@
 .detail-attachments__manager-layout {
   display: flex;
   flex-direction: column;
-  height: 70vh; /* přizpůsobeno oknu (můžeš změnit na max-height dle potřeby) */
+  height: calc(100vh - 260px);
+  min-height: 420px;
   gap: 12px;
   min-height: 0; /* ✅ umožní scroll uvnitř */
 }
@@ -147,6 +148,7 @@
 
 /* Sticky kontejner historie = “karta” dole */
 .detail-attachments__history-sticky {
+  margin-top: auto; /* ✅ dotlačí historii úplně dolů */
   position: sticky;
   bottom: 0;
   z-index: 2;
