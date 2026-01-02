@@ -207,7 +207,7 @@
 
 /* Historie = kompaktní výška (cca 3 řádky + hlavička tabulky) */
 .detail-attachments__history-compact {
-  --listview-max-height: 170px;
+  --listview-max-height: 150px;
 }
 
 /* Passthrough wrapper (dřív tu býval overflow a dělal další scrollbar) */
