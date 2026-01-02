@@ -289,6 +289,10 @@ export default function UsersTile({
     [DEFAULT_SORT]
   )
 
+  // ✅ Column resize (šířky sloupců)
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+  }, [])
   // -------------------------
   // URL helpers (t, id, vm, am)
   // -------------------------
@@ -867,6 +871,7 @@ export default function UsersTile({
           }}
           sort={sort}
           onSortChange={handleSortChange}
+          onColumnResize={handleColumnResize}
         />
       </div>
     )
