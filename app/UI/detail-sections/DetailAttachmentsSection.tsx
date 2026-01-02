@@ -939,8 +939,8 @@ const sharedColumns = useMemo(() => {
           {/* MANAGER LAYOUT (hlavní tabulka + pevná historie) */}
           {/* ========================= */}
           <div className="detail-attachments__manager-layout" style={{ marginTop: 12 }}>
-            {/* Hlavní tabulka: zabere zbytek prostoru a když je málo místa, bude scrollovat */}
-            <div className="detail-attachments__list-area">
+            {/* Hlavní tabulka: flex 1 + scroll uvnitř ListView */}
+            <div className="detail-attachments__list-scroll">
               {!loading && managerRows.length > 0 && (
                 <div className="detail-attachments__lv-shell">
                   <ListView
@@ -962,7 +962,7 @@ const sharedColumns = useMemo(() => {
                 </div>
               )}
           
-              {/* hidden inputs pro newVersion (beze změny) */}
+              {/* hidden inputs pro newVersion */}
               <div style={{ display: 'none' }}>
                 {filteredRows.map((r) => (
                   <input
@@ -976,7 +976,7 @@ const sharedColumns = useMemo(() => {
               </div>
             </div>
           
-            {/* Historie: pevná výška (cca 3 řádky) a vlastní scroll */}
+            {/* Historie: sticky karta dole, scroll jen uvnitř ListView */}
             <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
                 <h3 className="detail-form__section-title detail-attachments__history-titleline">
@@ -996,9 +996,7 @@ const sharedColumns = useMemo(() => {
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
           
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                  <div
-                    className="detail-attachments__lv-shell detail-attachments__history-compact"
-                  >
+                  <div className="detail-attachments__lv-shell detail-attachments__history-compact">
                     <ListView
                       columns={sharedColumns}
                       rows={historyRows}
