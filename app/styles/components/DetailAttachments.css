@@ -176,6 +176,13 @@
   font-weight: 600;
   color: var(--color-text);
 }
+/* Placeholder v historii – stejný styl jako popisek nahoře */
+.detail-attachments__history-placeholder {
+  padding: 8px 12px;
+  font-size: 0.85rem;         /* ✅ sjednocená velikost */
+  line-height: 1.3;
+  color: var(--color-text-muted);
+}
 
 /* tělo karty nesmí scrollovat – scrolluje ListView uvnitř */
 .detail-attachments__history-body {
