@@ -190,8 +190,10 @@
 
 /* Tělo historie = pouze layout. NESMÍ scrollovat samo; scroll má ListView uvnitř. */
 .detail-attachments__history-body {
-  overflow: hidden; /* ✅ žádný druhý scrollbar */
-  padding: 0; /* zarovnání sloupců */
+  max-height: 180px;     /* pevná výška historie (≈ 3 řádky). doladíš 160–190 */
+  overflow-y: auto;      /* ✅ VRÁTÍ scrollbar */
+  overflow-x: hidden;
+  padding: 0;
   min-height: 0;
 }
 
@@ -212,7 +214,7 @@
 
 /* Passthrough wrapper (dřív tu býval overflow a dělal další scrollbar) */
 .detail-attachments__lv-scroll {
-  overflow: hidden; /* ✅ žádný extra scroll */
+  overflow: auto; /* VRÁTÍ scroll tam, kde má být */
   min-height: 0;
 }
 
