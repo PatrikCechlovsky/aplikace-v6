@@ -28,10 +28,22 @@
 .listview__table-wrapper {
   overflow: auto;
   scrollbar-gutter: stable;
+   
 
   /* výška je řízená parentem přes CSS proměnnou:
      nastavíš si ji v manageru/history panelu dle potřeby */
   max-height: var(--listview-max-height, 260px);
+}
+
+.listview__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.listview__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Jemnější tabulka (méně “krabic”) */
