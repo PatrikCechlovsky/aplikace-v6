@@ -191,7 +191,11 @@ export default function DetailAttachmentsSection({
     colOrder: [],
     colHidden: [],
   })
-
+  
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+  }, [])
+  
   // ✅ prefs load/save
   const prefsLoadedRef = useRef(false)
   const saveTimerRef = useRef<any>(null)
@@ -777,6 +781,7 @@ const sharedColumns = useMemo(() => {
                 onShowArchivedChange={setIncludeArchived}
                 showArchivedLabel="Zobrazit archivované"
                 onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                onColumnResize={handleColumnResize}
               />
             )}
           </section>
@@ -950,6 +955,7 @@ const sharedColumns = useMemo(() => {
                     selectedId={selectedDocId}
                     onRowClick={(row) => setSelectedDocId(String(row.id))}
                     onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                    onColumnResize={handleColumnResize}
                   />
                 </div>
               )}
@@ -999,6 +1005,7 @@ const sharedColumns = useMemo(() => {
                       onShowArchivedChange={setIncludeArchived}
                       showArchivedLabel="Zobrazit archivované"
                       onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                      onColumnResize={handleColumnResize}
                     />
                   </div>
                 )}
