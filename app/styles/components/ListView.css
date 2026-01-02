@@ -1,8 +1,6 @@
 /* app/styles/components/ListView.css */
 /* =========================================
    LISTVIEW – jednotný panel pro všechny přehledy
-   CÍL: jediný scroll container je .listview__table-wrapper
-        sticky header je na thead th
    ========================================= */
 
 .listview {
@@ -13,99 +11,59 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 0; /* důležité pro flex rodiče */
+  min-height: 0;
 }
 
-/* Horní lišta (filtry / actions) */
+/* Horní lišta */
 .listview__toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
-.listview__toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.listview__toolbar-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* Inputy / malé prvky */
-.listview__input {
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-.listview__checkbox {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  user-select: none;
-  color: var(--color-text);
-}
-
-/* -------------------------
-   TABLE WRAPPER (JEDINÝ SCROLL CONTAINER)
-   ------------------------- */
+/* Tabulka wrapper
+   - JEDINÝ scroll container (X i Y)
+   - sticky header funguje pouze pokud scrolluje tento element
+*/
 .listview__table-wrapper {
-  overflow-y: auto; /* ✅ musí být auto */
+  width: 100%;
+  position: relative; /* ✅ stabilní z-index pro sticky hlavičku */
   overflow-x: auto;
-  max-height: var(--listview-max-height, 520px);
-  min-height: 0; /* ✅ nutné, když je uvnitř flex layoutu */
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  max-height: var(--listview-max-height, 260px);
+  min-height: 0;
 }
 
-/* Tabulka uvnitř wrapperu */
+/* Jemnější tabulka (méně “krabic”) */
 .generic-type__table {
+  border-collapse: separate;
+  border-spacing: 0;
+
   width: 100%;
   min-width: 100%;
   table-layout: fixed;
-
-  /* ✅ sticky header je stabilnější bez collapse */
-  border-collapse: separate;
-  border-spacing: 0;
 }
 
-/* Hlavička – sticky */
+/* Sticky hlavička při scrollu (BETON: lepíme na TH) */
 .generic-type__table thead th {
   position: sticky;
   top: 0;
   z-index: 20;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  text-align: left;
+  box-shadow: 0 1px 0 var(--color-border);
   font-weight: 600;
 }
 
 /* Buňky */
-.generic-type__cell,
-.generic-type__table thead th {
-  padding: 10px 10px;
-  color: var(--color-text);
-  white-space: nowrap;
+.generic-type__cell {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border-subtle);
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Řádky */
-.generic-type__row > td {
-  border-bottom: 1px solid var(--color-border-subtle, var(--color-border));
-  background: var(--color-surface);
+  white-space: nowrap;
 }
 
 /* Hover řádek */
@@ -113,12 +71,7 @@
   background: var(--color-surface-hover);
 }
 
-/* Selected řádek */
-.generic-type__row--selected > td {
-  background: var(--color-surface-selected, var(--color-surface-hover));
-}
-
-/* Odkazy a tlačítka v buňkách – stejné chování */
+/* Odkazy a tlačítka v buňkách se chovají stejně */
 .generic-type__cell a,
 .generic-type__cell button,
 .generic-type__cell span {
