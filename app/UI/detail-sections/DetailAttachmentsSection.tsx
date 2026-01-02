@@ -580,34 +580,33 @@ export default function DetailAttachmentsSection({
   )
 
   const handleToggleHistory = useCallback(
-    const handleToggleHistory = useCallback(
-      async (documentId: string) => {
-        if (!isManager) return
-        setErrorText(null)
-    
-        // close
-        if (expandedDocId === documentId) {
-          setExpandedDocId(null)
-          return
-        }
-    
-        // open
-        setExpandedDocId(documentId)
-    
-        // ✅ vždy reload (ať se neukazuje stará zkrácená cache)
-        setVersionsLoadingId(documentId)
-        try {
-          const versions = await listAttachmentVersions({ documentId, includeArchived: true })
-          setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
-          await refreshNamesFromVersions(versions)
-        } catch (e: any) {
-          setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se načíst historii.'))
-        } finally {
-          setVersionsLoadingId(null)
-        }
-      },
-      [isManager, expandedDocId, refreshNamesFromVersions]
-    )
+    async (documentId: string) => {
+      if (!isManager) return
+      setErrorText(null)
+  
+      // close
+      if (expandedDocId === documentId) {
+        setExpandedDocId(null)
+        return
+      }
+  
+      // open
+      setExpandedDocId(documentId)
+  
+      // ✅ vždy reload (ať se neukazuje stará zkrácená cache)
+      setVersionsLoadingId(documentId)
+      try {
+        const versions = await listAttachmentVersions({ documentId, includeArchived: true })
+        setVersionsByDocId((prev) => ({ ...prev, [documentId]: versions }))
+        await refreshNamesFromVersions(versions)
+      } catch (e: any) {
+        setErrorText(normalizeAuthError(e?.message ?? 'Nepodařilo se načíst historii.'))
+      } finally {
+        setVersionsLoadingId(null)
+      }
+    },
+    [isManager, expandedDocId, refreshNamesFromVersions]
+  )
 
 
   // ✅ API pro CommonActions (přes rodiče)
