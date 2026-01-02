@@ -32,6 +32,7 @@ import {
 } from '@/app/lib/attachments'
 
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import { ATTACHMENTS_VIEW_KEY, getAttachmentsColumns } from '@/app/UI/attachments/attachmentsColumns'
 
 // ============================================================================
 // 2) TYPES
