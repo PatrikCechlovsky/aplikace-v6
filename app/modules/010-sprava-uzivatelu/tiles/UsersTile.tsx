@@ -17,11 +17,11 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetailFrame'
-import InviteUserFrame from '../forms/InviteUserFrame'
+import InviteUserFrame from './forms/InviteUserFrame'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
-import { loadViewPrefs, saveViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
 
@@ -56,7 +56,6 @@ type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 // =====================
 // 3) HELPERS
 // =====================
-
 const DEBUG = true
 const dbg = (...args: any[]) => {
   if (!DEBUG) return
@@ -66,12 +65,13 @@ const dbg = (...args: any[]) => {
 
 const VIEW_KEY = '010.users.list'
 
-const COLUMNS: ListViewColumn[] = [
+const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%', sortable: true },
   { key: 'displayName', label: 'Jméno', sortable: true },
   { key: 'email', label: 'E-mail', sortable: true },
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center', sortable: true },
 ]
+
 
 function roleCodeToLabel(code: string | null | undefined): string {
   const c = (code ?? '').trim().toLowerCase()
@@ -229,15 +229,34 @@ export default function UsersTile({
   // ✅ v UI vždy držíme konkrétní sort (nikdy null)
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
 
-  // ✅ ListView prefs (persisted) – ukládáme sort, ale DEFAULT ukládáme jako null
+  // ✅ Column prefs (šířky/pořadí/viditelnost)
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+
+  const columns = useMemo(() => {
+    return applyColumnPrefs(BASE_COLUMNS, colPrefs)
+  }, [colPrefs])
+
+  // ✅ ListView prefs (persisted)
   const prefsLoadedRef = useRef(false)
   const saveTimerRef = useRef<any>(null)
 
   useEffect(() => {
     void (async () => {
-      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null })
-      const loaded = (prefs.sort as ViewPrefsSortState) ?? null
-      setSort(loaded ? loaded : DEFAULT_SORT)
+      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+
+      const loadedSort = (prefs.sort as ViewPrefsSortState) ?? null
+      setSort(loadedSort ? loadedSort : DEFAULT_SORT)
+
+      setColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+
       prefsLoadedRef.current = true
     })()
   }, [DEFAULT_SORT])
@@ -246,13 +265,21 @@ export default function UsersTile({
     if (!prefsLoadedRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
 
-    const persist: ViewPrefsSortState =
+    const persistSort: ViewPrefsSortState =
       sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
 
+    const payload: ViewPrefs = {
+      v: 1,
+      sort: persistSort,
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
+    }
+
     saveTimerRef.current = setTimeout(() => {
-      void saveViewPrefs(VIEW_KEY, { v: 1, sort: persist })
+      void saveViewPrefs(VIEW_KEY, payload)
     }, 500)
-  }, [sort, DEFAULT_SORT])
+  }, [sort, DEFAULT_SORT, colPrefs])
 
   // ✅ ListView může poslat null (třetí klik) = návrat na default
   const handleSortChange = useCallback(
@@ -825,7 +852,7 @@ export default function UsersTile({
         {loading && <div style={{ padding: 8 }}>Načítám…</div>}
 
         <ListView<UiUser>
-          columns={COLUMNS}
+          columns={columns}
           rows={listRows}
           filterValue={filterText}
           onFilterChange={setFilterText}
