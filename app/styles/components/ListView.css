@@ -26,24 +26,11 @@
    - sticky header funguje pouze pokud scrolluje tento element
 */
 .listview__table-wrapper {
-  overflow: auto;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;          /* ✅ MUSÍ být auto / scroll */
   scrollbar-gutter: stable;
-   
-
-  /* výška je řízená parentem přes CSS proměnnou:
-     nastavíš si ji v manageru/history panelu dle potřeby */
-  max-height: var(--listview-max-height, 260px);
-}
-
-.listview__table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-.listview__table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
+  max-height: var(--listview-max-height, 260px); 
 }
 
 /* Jemnější tabulka (méně “krabic”) */
