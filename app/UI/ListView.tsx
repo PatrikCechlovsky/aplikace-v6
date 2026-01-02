@@ -9,7 +9,7 @@
  *          - (NEW) 3-stavové řazení přes klik na hlavičku sloupce
  */
 
-import React from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import '@/app/styles/components/ListView.css'
 
 // ============================================================================
@@ -17,11 +17,6 @@ import '@/app/styles/components/ListView.css'
 // ============================================================================
 
 export type ListViewSortDir = 'asc' | 'desc'
-
-/**
- * null = bez řazení (ponecháš “původní pořadí” – typicky backend / uživatel)
- * jinak řadíš podle key + dir
- */
 export type ListViewSortState = { key: string; dir: ListViewSortDir } | null
 
 export type ListViewColumn = {
@@ -32,16 +27,19 @@ export type ListViewColumn = {
   width?: number | string
   /** Je sloupec řaditelný klikem v hlavičce */
   sortable?: boolean
+
+  /** (NEW) lze měnit šířku myší? default = true */
+  resizable?: boolean
+  /** (NEW) minimální šířka v px (default 80) */
+  minWidthPx?: number
+  /** (NEW) maximální šířka v px (default 1200) */
+  maxWidthPx?: number
 }
 
 export type ListViewRow<TData = any> = {
-  /** Unikátní identifikátor řádku (pro výběr, klíč v Reactu…) */
   id: string | number
-  /** Data pro jednotlivé buňky – klíče odpovídají columns[].key */
   data: Record<string, React.ReactNode>
-  /** Volitelná extra CSS class pro řádek */
   className?: string
-  /** Původní raw data – rodič si je může předat dál (např. do detailu) */
   raw?: TData
 }
 
@@ -49,36 +47,25 @@ export type ListViewProps<TData = any> = {
   columns: ListViewColumn[]
   rows: ListViewRow<TData>[]
 
-  /** Text ve filtru */
   filterValue: string
-  /** Změna filtru */
   onFilterChange: (value: string) => void
-  /** Placeholder filtru */
   filterPlaceholder?: string
 
-  /** Stav přepínače „Zobrazit archivované“ */
   showArchived?: boolean
-  /** Změna přepínače „Zobrazit archivované“ */
   onShowArchivedChange?: (value: boolean) => void
-  /** Popisek vedle checkboxu */
   showArchivedLabel?: string
 
-  /** Text, pokud nejsou žádné záznamy */
   emptyText?: string
 
-  /** ID aktuálně vybraného řádku – pro podbarvení */
   selectedId?: string | number | null
-
-  /** Klik na řádek – typicky pro nastavení selectedId v rodiči */
   onRowClick?: (row: ListViewRow<TData>) => void
-
-  /** Dvojklik na řádek – typicky pro otevření detailu (celostránkově) */
   onRowDoubleClick?: (row: ListViewRow<TData>) => void
 
-  /** (NEW) stav řazení */
   sort?: ListViewSortState
-  /** (NEW) změna řazení */
   onSortChange?: (next: ListViewSortState) => void
+
+  /** (NEW) když uživatel potáhne okraj sloupce */
+  onColumnResize?: (columnKey: string, widthPx: number) => void
 }
 
 // ============================================================================
@@ -124,10 +111,51 @@ export default function ListView<TData = any>({
   onRowDoubleClick,
   sort = null,
   onSortChange,
+  onColumnResize,
 }: ListViewProps<TData>) {
+  const dragRef = useRef<{
+    key: string
+    startX: number
+    startW: number
+    minW: number
+    maxW: number
+  } | null>(null)
+
+  const stopDrag = useCallback(() => {
+    dragRef.current = null
+  }, [])
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current) return
+      e.preventDefault()
+
+      const d = dragRef.current
+      const dx = e.clientX - d.startX
+      let w = d.startW + dx
+      if (!Number.isFinite(w)) return
+
+      if (w < d.minW) w = d.minW
+      if (w > d.maxW) w = d.maxW
+
+      onColumnResize?.(d.key, Math.round(w))
+    }
+
+    const onUp = () => {
+      if (!dragRef.current) return
+      stopDrag()
+    }
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [onColumnResize, stopDrag])
+
   return (
     <div className="listview">
-      {/* Horní lišta: filtr + zobrazit archivované */}
       <div className="listview__toolbar">
         <input
           type="text"
@@ -149,7 +177,6 @@ export default function ListView<TData = any>({
         </div>
       </div>
 
-      {/* Vlastní tabulka (scroll = tady, aby sticky header fungoval) */}
       <div className="listview__table-wrapper">
         <table className="generic-type__table" style={{ tableLayout: 'fixed', width: '100%' }}>
           <thead>
@@ -158,6 +185,7 @@ export default function ListView<TData = any>({
                 const alignClass = getAlignClass(col.align)
                 const canSort = !!col.sortable && typeof onSortChange === 'function'
                 const indicator = canSort ? sortIndicator(sort ?? undefined, col.key) : ''
+                const canResize = typeof onColumnResize === 'function' && (col.resizable ?? true)
 
                 return (
                   <th
@@ -167,6 +195,7 @@ export default function ListView<TData = any>({
                       ...getColStyle(col.width),
                       cursor: canSort ? 'pointer' : undefined,
                       userSelect: canSort ? 'none' : undefined,
+                      position: 'relative', // nutné pro resizer
                     }}
                     onClick={() => {
                       if (!canSort) return
@@ -178,6 +207,45 @@ export default function ListView<TData = any>({
                       <span>{col.label}</span>
                       {indicator ? <span aria-hidden="true">{indicator}</span> : null}
                     </span>
+
+                    {/* RESIZE úchyt (tahání šířky) */}
+                    {canResize ? (
+                      <span
+                        role="separator"
+                        aria-orientation="vertical"
+                        onMouseDown={(e) => {
+                          // ať to nespustí sort klik
+                          e.preventDefault()
+                          e.stopPropagation()
+
+                          const th = e.currentTarget.parentElement as HTMLElement | null
+                          if (!th) return
+                          const rect = th.getBoundingClientRect()
+                          const startW = rect.width
+
+                          const minW = col.minWidthPx ?? 80
+                          const maxW = col.maxWidthPx ?? 1200
+
+                          dragRef.current = {
+                            key: col.key,
+                            startX: e.clientX,
+                            startW,
+                            minW,
+                            maxW,
+                          }
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: 10,
+                          height: '100%',
+                          cursor: 'col-resize',
+                          userSelect: 'none',
+                        }}
+                        title="Táhni pro změnu šířky"
+                      />
+                    ) : null}
                   </th>
                 )
               })}
@@ -194,7 +262,6 @@ export default function ListView<TData = any>({
             ) : (
               rows.map((row) => {
                 const isSelected = selectedId !== null && row.id === selectedId
-
                 const rowClassNames = ['generic-type__row', isSelected ? 'generic-type__row--selected' : '', row.className ?? '']
                   .filter(Boolean)
                   .join(' ')
@@ -209,11 +276,7 @@ export default function ListView<TData = any>({
                     {columns.map((col) => {
                       const alignClass = getAlignClass(col.align)
                       return (
-                        <td
-                          key={col.key}
-                          className={['generic-type__cell', alignClass].filter(Boolean).join(' ')}
-                          style={getColStyle(col.width)}
-                        >
+                        <td key={col.key} className={['generic-type__cell', alignClass].filter(Boolean).join(' ')} style={getColStyle(col.width)}>
                           {row.data[col.key] ?? null}
                         </td>
                       )
