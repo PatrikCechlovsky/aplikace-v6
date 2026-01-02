@@ -179,27 +179,37 @@ export default function DetailAttachmentsSection({
   // ============================================================================
   // SORT (Attachments – společný pro list + manager + history)
   // ============================================================================
+  const DEFAULT_SORT: NonNullable<ListViewSortState> = useMemo(
+    () => ({ key: 'uploaded', dir: 'desc' }),
+    []
+  )
+  
+  // ✅ v UI vždy držíme konkrétní sort (nikdy null)
+  const [sort, setSort] = useState<NonNullable<ListViewSortState>>(DEFAULT_SORT)
+  
+  // ✅ ListView posílá 3-stav: ASC → DESC → null
+  // - null normálně znamená „reset“
+  // - ale protože náš default je uploaded DESC, reset by byl IDENTICKÝ se stavem po 2. kliku
+  //   => zamrzne to na „DESC → null → DESC → null …“
+  // - proto: pokud přijde null a jsme na DEFAULT (uploaded desc), přepneme na uploaded asc
   const handleSortChange = useCallback(
     (next: ListViewSortState) => {
       setSort((prev) => {
         if (next) return next
   
-        // next === null (třetí klik)
-        const isDefault =
-          prev?.key === DEFAULT_SORT.key && prev?.dir === DEFAULT_SORT.dir
+        const isDefault = prev.key === DEFAULT_SORT.key && prev.dir === DEFAULT_SORT.dir
   
-        // Speciálně pro default DESC (uploaded): pokračuj v cyklu na ASC
+        // speciálně pro default uploaded DESC: „reset“ pošli na ASC, ať cyklus pokračuje
         if (isDefault && DEFAULT_SORT.key === 'uploaded' && DEFAULT_SORT.dir === 'desc') {
           return { key: 'uploaded', dir: 'asc' }
         }
   
-        // ostatní případy: návrat na default
+        // jinak reset na default (Users pattern)
         return DEFAULT_SORT
       })
     },
     [DEFAULT_SORT]
   )
-
 
   
   // selection (manager)
@@ -324,39 +334,24 @@ export default function DetailAttachmentsSection({
   // SORTED ROWS (Attachments)
   // ============================================================================
   const viewRows = useMemo(() => {
-    const key = String(sort?.key ?? '').trim()
-    const dir = sort?.dir === 'asc' ? 1 : -1
+    const key = String(sort.key ?? '').trim()
+    const dir = sort.dir === 'asc' ? 1 : -1
     const arr = [...filteredRows]
   
-    if (!key) return arr
-  
     arr.sort((a, b) => {
-      let av: any
-      let bv: any
+      const av = getAttachmentSortValue(a, key)
+      const bv = getAttachmentSortValue(b, key)
   
-      switch (key) {
-        case 'title':
-          av = a.title ?? ''
-          bv = b.title ?? ''
-          break
-        case 'file':
-          av = a.file_name ?? ''
-          bv = b.file_name ?? ''
-          break
-        case 'ver':
-          av = a.version_number ?? 0
-          bv = b.version_number ?? 0
-          break
-        case 'uploaded':
-          av = a.version_created_at ?? ''
-          bv = b.version_created_at ?? ''
-          break
-        default:
-          return 0
+      if (typeof av === 'number' && typeof bv === 'number') {
+        if (av < bv) return -1 * dir
+        if (av > bv) return 1 * dir
+        return 0
       }
   
-      if (av < bv) return -1 * dir
-      if (av > bv) return 1 * dir
+      const as = String(av ?? '')
+      const bs = String(bv ?? '')
+      if (as < bs) return -1 * dir
+      if (as > bs) return 1 * dir
       return 0
     })
   
