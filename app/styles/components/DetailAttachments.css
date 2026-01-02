@@ -1,12 +1,4 @@
 /* app/styles/components/DetailAttachments.css */
-/* =========================================
-   DETAIL ATTACHMENTS – manager + historie
-   CÍL:
-   - Manager layout je flex sloupec s pevnou výškou (ne scroll celé stránky)
-   - Horní tabulka příloh je větší (flex:1)
-   - Spodní panel historie je dole (flex:0) a kompaktní
-   - Scroll má jen ListView (.listview__table-wrapper), ne wrappery
-   ========================================= */
 
 /* =============================
    Cells + Links
@@ -22,19 +14,19 @@
 
 .detail-attachments__muted {
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
+/* link na soubor – bez tučného */
 .detail-attachments__link {
-  background: none;
   border: 0;
+  background: transparent;
   padding: 0;
-  color: var(--color-link, var(--color-text));
+  color: var(--color-primary);
   cursor: pointer;
-  text-decoration: none;
-  max-width: 100%;
+  font-weight: 400;
+  text-decoration: underline;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .detail-attachments__link:hover {
@@ -47,25 +39,15 @@
   text-decoration: none;
 }
 
-.detail-attachments__badge {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 10px;
+.detail-attachments__archived-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
   background: var(--color-surface-subtle);
-  white-space: nowrap;
 }
 
-/* Placeholder v historii (sjednocená typografie) */
-.detail-attachments__history-placeholder {
-  padding: 10px 12px;
-  color: var(--color-text-muted);
-  font-size: inherit;
-  line-height: 1.4;
-}
 /* =============================
    Manager UI
    ============================= */
@@ -74,108 +56,175 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  align-items: center;
+  margin-top: 10px;
 }
 
-.detail-attachments__toolbar-left {
+.detail-attachments__toolbar-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
 }
 
-.detail-attachments__toolbar-right {
-  margin-left: auto;
+.detail-attachments__toolbar-btn:hover {
+  background: var(--color-surface-subtle);
+}
+
+.detail-attachments__panel {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--color-surface);
+}
+
+.detail-attachments__panel-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-attachments__meta-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.detail-attachments__btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.detail-attachments__btn:hover {
+  background: var(--color-surface-subtle);
+}
+
+.detail-attachments__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.detail-attachments__row-actions {
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.detail-attachments__file-input {
+  display: none;
 }
 
 /* =============================
-   Manager Layout – TOP list + BOTTOM history
+   Manager layout (STICKY HISTORY) – FINÁL
    ============================= */
 
-/* Celý manager panel: sloupec, bez vlastního scrollu */
+/* Celý manager panel: sloupec.
+   ❗NEpoužívej default 100vh (to ti udělalo obr.2), jen když si to někde nastavíš přes var. */
 .detail-attachments__manager-layout {
   display: flex;
   flex-direction: column;
   gap: 12px;
 
-  overflow: hidden; /* ✅ nesmí scrollovat celý panel */
+  /* ❗Safari: overflow hidden na rodiči často rozbije sticky (karta i table head) */
+  overflow: visible;
   min-height: 0;
 
-  /* ✅ aby flex dotlačil historii dolů */
-  height: var(--attachments-manager-height, calc(100vh - 260px));
-  max-height: var(--attachments-manager-height, calc(100vh - 260px));
+  /* volitelně můžeš v konkrétním screen nastavit:
+     --attachments-manager-height: calc(100vh - XXXpx); */
+  height: var(--attachments-manager-height, auto);
+  max-height: var(--attachments-manager-height, none);
 }
 
-/* Horní část (přílohy) – zabere zbytek */
-.detail-attachments__list-scroll {
+/* Horní část musí umět "sežrat" zbytek výšky */
+.detail-attachments__list-scroll,
+.detail-attachments__list-area {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden; /* ✅ nesmí scrollovat wrapper */
-  display: flex;
-  flex-direction: column;
+  overflow: hidden; /* ✅ žádný scroll tady */
 }
 
-/* Spodní panel (historie) – vždy dole */
-.detail-attachments__history {
-  flex: 0 0 auto;
-  min-height: 0;
-  overflow: hidden; /* ✅ nesmí scrollovat karta */
-}
-
-/* Body historie musí být flex kontejner, jinak se výšky “neroznesou” */
-.detail-attachments__history-body {
-  display: flex; /* ✅ klíčový fix */
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-  min-height: 0;
-}
-
-/* Společná “shell” obálka pro ListView */
+/* Shell okolo ListView */
 .detail-attachments__lv-shell {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden; /* ✅ shell nesmí scrollovat */
+  overflow: hidden; /* ✅ nikdy nescrolluje shell */
 }
 
-/* Shell pro hlavní list (přílohy) */
-.detail-attachments__list-shell {
-  flex: 1 1 auto;
+/* ✅ HORNÍ tabulka: max-height vypočti tak, aby zbyl prostor pro historii
+   (tím donutíš scrollovat .listview__table-wrapper uvnitř ListView)
+   Pozn.: tohle je “jemné” a můžeš si doladit. */
+.detail-attachments__list-scroll .detail-attachments__lv-shell {
+  --listview-max-height: calc(100vh - 430px);
+}
+
+/* Sticky karta historie dole */
+.detail-attachments__history-sticky {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* Hlavička historie vždy vidět */
+.detail-attachments__history-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+/* ✅ KLÍČ: history-body musí být flex kontejner (jinak se výšky nepřenášejí a sticky header mizí) */
+.detail-attachments__history-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* ✅ body nescrolluje */
+  padding: 0;
   min-height: 0;
-  height: 100%;
 }
 
-/* Shell pro historii (kompaktní) */
+/* Placeholder */
+.detail-attachments__history-placeholder {
+  padding: 10px 12px;
+  color: var(--color-text-muted);
+  font-size: inherit;
+  line-height: 1.4;
+}
+
+/* Historie: kompaktní výška (cca 3 řádky) + správný flex/height řetězec */
 .detail-attachments__history-compact {
-  display: flex; /* ✅ klíčové */
+  display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%; /* ✅ klíčové */
-  --listview-max-height: 120px; /* výška scrollu v historii */
+  height: 100%;
+  --listview-max-height: 120px;
 }
 
-/* Drobné zhutnění tabulky v historii (volitelné, ale příjemné) */
-.detail-attachments__history-compact .generic-type__cell,
-.detail-attachments__history-compact .generic-type__table thead th {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-/* =============================
-   Mobile tuning
-   ============================= */
-
+/* Mobil */
 @media (max-width: 720px) {
-  .detail-attachments__manager-layout {
-    height: var(--attachments-manager-height, calc(100vh - 230px));
-    max-height: var(--attachments-manager-height, calc(100vh - 230px));
-  }
-
-  /* Horní seznam – trochu menší max-height (podle toho, co máš nad tím) */
   .detail-attachments__list-scroll .detail-attachments__lv-shell {
     --listview-max-height: calc(100vh - 380px);
   }
