@@ -16,11 +16,7 @@
 // 1) IMPORTS
 // ============================================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ListView, {
-  type ListViewColumn,
-  type ListViewRow,
-  type ListViewSortState,
-} from '@/app/UI/ListView'
+import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 
 import {
   addAttachmentVersionWithUpload,
@@ -34,6 +30,8 @@ import {
   type AttachmentVersionRow,
   type UserNameMap,
 } from '@/app/lib/attachments'
+
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 
 // ============================================================================
 // 2) TYPES
@@ -150,6 +148,7 @@ function getHistorySortValue(row: any, key: string): string | number {
 // ============================================================================
 // 4) DATA LOAD
 // ============================================================================
+
 export default function DetailAttachmentsSection({
   entityType,
   entityId,
@@ -164,12 +163,13 @@ export default function DetailAttachmentsSection({
   const isManagerRequested = variant === 'manager'
   const isManager = isManagerRequested && canManage !== false
 
+  // ✅ viewKey per-variant (list vs manager)
+  const VIEW_KEY = isManagerRequested ? '010.attachments.manager' : '010.attachments.list'
+
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
   const [filterText, setFilterText] = useState('')
-
-  // history filter (v panelu dole)
   const [historyFilterText, setHistoryFilterText] = useState('')
 
   const [loading, setLoading] = useState(false)
@@ -179,39 +179,76 @@ export default function DetailAttachmentsSection({
   // ============================================================================
   // SORT (Attachments – společný pro list + manager + history)
   // ============================================================================
-  const DEFAULT_SORT: NonNullable<ListViewSortState> = useMemo(
-    () => ({ key: 'uploaded', dir: 'desc' }),
-    []
-  )
-  
-  // ✅ v UI vždy držíme konkrétní sort (nikdy null)
+  const DEFAULT_SORT: NonNullable<ListViewSortState> = useMemo(() => ({ key: 'uploaded', dir: 'desc' }), [])
   const [sort, setSort] = useState<NonNullable<ListViewSortState>>(DEFAULT_SORT)
-  
-  // ✅ ListView posílá 3-stav: ASC → DESC → null
-  // - null normálně znamená „reset“
-  // - ale protože náš default je uploaded DESC, reset by byl IDENTICKÝ se stavem po 2. kliku
-  //   => zamrzne to na „DESC → null → DESC → null …“
-  // - proto: pokud přijde null a jsme na DEFAULT (uploaded desc), přepneme na uploaded asc
+
+  // ✅ Column prefs
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+
+  // ✅ prefs load/save
+  const prefsLoadedRef = useRef(false)
+  const saveTimerRef = useRef<any>(null)
+
+  useEffect(() => {
+    void (async () => {
+      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+
+      const loadedSort = (prefs.sort as ViewPrefsSortState) ?? null
+      setSort((loadedSort ? loadedSort : DEFAULT_SORT) as NonNullable<ListViewSortState>)
+
+      setColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+
+      prefsLoadedRef.current = true
+    })()
+  }, [VIEW_KEY, DEFAULT_SORT])
+
+  useEffect(() => {
+    if (!prefsLoadedRef.current) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+
+    const persistSort: ViewPrefsSortState =
+      sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
+
+    const payload: ViewPrefs = {
+      v: 1,
+      sort: persistSort,
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
+    }
+
+    saveTimerRef.current = setTimeout(() => {
+      void saveViewPrefs(VIEW_KEY, payload)
+    }, 500)
+  }, [VIEW_KEY, sort, DEFAULT_SORT, colPrefs])
+
+  // ✅ Sort handler (plus tvoje special-case logika pro uploaded reset může zůstat – tady držím Users pattern)
   const handleSortChange = useCallback(
     (next: ListViewSortState) => {
       setSort((prev) => {
         if (next) return next
-  
+
         const isDefault = prev.key === DEFAULT_SORT.key && prev.dir === DEFAULT_SORT.dir
-  
-        // speciálně pro default uploaded DESC: „reset“ pošli na ASC, ať cyklus pokračuje
+
+        // aby se to nezamklo na uploaded DESC (reset == default)
         if (isDefault && DEFAULT_SORT.key === 'uploaded' && DEFAULT_SORT.dir === 'desc') {
           return { key: 'uploaded', dir: 'asc' }
         }
-  
-        // jinak reset na default (Users pattern)
+
         return DEFAULT_SORT
       })
     },
     [DEFAULT_SORT]
   )
 
-  
   // selection (manager)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const selectedRow = useMemo(() => {
@@ -647,7 +684,7 @@ export default function DetailAttachmentsSection({
 
   const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
 
-  const sharedColumns: ListViewColumn[] = useMemo(
+  const sharedColumnsBase: ListViewColumn[] = useMemo(
     () => [
       { key: 'title', label: 'Název', width: '180px', sortable: true },
       { key: 'description', label: 'Popis', width: '220px' },
@@ -657,6 +694,10 @@ export default function DetailAttachmentsSection({
     ],
     []
   )
+
+  const sharedColumns: ListViewColumn[] = useMemo(() => {
+    return applyColumnPrefs(sharedColumnsBase, colPrefs)
+  }, [sharedColumnsBase, colPrefs])
 
   const listRows: ListViewRow<AttachmentRow>[] = useMemo(() => {
     return viewRows.map((r) => {
