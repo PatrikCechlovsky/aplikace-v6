@@ -178,7 +178,7 @@ export default function ListView<TData = any>({
       </div>
 
       <div className="listview__table-wrapper">
-        <table className="generic-type__table" style={{ tableLayout: 'fixed', width: '100%' }}>
+        <table className="generic-type__table" style={{ tableLayout: 'fixed' }}>
           <thead>
             <tr>
               {columns.map((col) => {
