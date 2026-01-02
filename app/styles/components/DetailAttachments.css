@@ -1,5 +1,9 @@
 /* app/styles/components/DetailAttachments.css */
 
+/* =============================
+   Cells + Links
+   ============================= */
+
 .detail-attachments__cell-title {
   display: inline-flex;
   align-items: center;
@@ -120,28 +124,28 @@
 .detail-attachments__file-input {
   display: none;
 }
-
-
 /* =============================
    Manager layout (STICKY HISTORY) – FINÁL (bez duplicit)
    ============================= */
 
+/* Celý manager panel: horní tabulka + sticky historie dole */
 .detail-attachments__manager-layout {
   display: flex;
   flex-direction: column;
-  height: 70vh; /* přizpůsobeno oknu */
+  height: 70vh; /* přizpůsobeno oknu (můžeš změnit na max-height dle potřeby) */
   gap: 12px;
+  min-height: 0; /* ✅ umožní scroll uvnitř */
 }
 
-/* Horní část = pouze layout. NESMÍ scrollovat. */
+/* Horní část = pouze layout. NESMÍ scrollovat sama; scroll má ListView uvnitř. */
 .detail-attachments__list-scroll {
   flex: 1 1 auto;
-  overflow: hidden;          /* ✅ důležité: žádný druhý scrollbar */
+  overflow: hidden; /* ✅ žádný druhý scrollbar */
   padding-bottom: 0;
-  min-height: 0;             /* ✅ umožní, aby vnitřní ListView mohl scrollovat */
+  min-height: 0; /* ✅ umožní, aby vnitřní ListView mohl scrollovat */
 }
 
-/* Sticky kontejner historie = “karta” */
+/* Sticky kontejner historie = “karta” dole */
 .detail-attachments__history-sticky {
   position: sticky;
   bottom: 0;
@@ -169,14 +173,12 @@
   border-top-right-radius: 12px;
 }
 
-/* HLAVIČKA historie – sladění s "Správa příloh" (typografie) */
-
 .detail-attachments__history-filename {
   font-weight: 600;
   color: var(--color-text);
 }
 
-/* Placeholder v historii – stejné jako běžný popis nahoře (ne jako velký placeholder) */
+/* Placeholder v historii – kompaktní text */
 .detail-attachments__history-placeholder {
   padding: 8px 12px;
   font-size: 0.85rem;
@@ -184,22 +186,21 @@
   color: var(--color-text-muted);
 }
 
-/* Tělo historie = pouze layout. NESMÍ scrollovat. */
+/* Tělo historie = pouze layout. NESMÍ scrollovat samo; scroll má ListView uvnitř. */
 .detail-attachments__history-body {
-  overflow: hidden;          /* ✅ důležité: žádný druhý scrollbar */
-  padding: 0;                /* zarovnání sloupců */
+  overflow: hidden; /* ✅ žádný druhý scrollbar */
+  padding: 0; /* zarovnání sloupců */
   min-height: 0;
 }
 
-/* společný wrapper pro oba ListView (horní i historie) */
+/* Společný wrapper pro oba ListView (horní i historie) */
 .detail-attachments__lv-shell {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-surface);
   padding: 10px 12px;
   scrollbar-gutter: stable;
-
-  min-height: 0;             /* ✅ */
+  min-height: 0; /* ✅ */
 }
 
 /* Historie = kompaktní výška (cca 3 řádky + hlavička tabulky) */
@@ -207,18 +208,11 @@
   --listview-max-height: 170px;
 }
 
-/* !!! DŮLEŽITÉ:
-   Tohle dřív vytvářelo další scrollbar.
-   Necháme jen jako "passthrough" bez overflow.
-*/
+/* Passthrough wrapper (dřív tu býval overflow a dělal další scrollbar) */
 .detail-attachments__lv-scroll {
-  overflow: hidden;          /* ✅ žádný extra scroll */
+  overflow: hidden; /* ✅ žádný extra scroll */
   min-height: 0;
 }
-.detail-attachments__history-compact {
-  --listview-max-height: 170px; /* cca 3 řádky + hlavička tabulky */
-}
-
 
 /* Mobil: historie menší, ať nesežere obrazovku */
 @media (max-width: 720px) {
@@ -227,6 +221,6 @@
   }
 
   .detail-attachments__history-compact {
-    --listview-max-height: 130px; /* menší než desktop */
+    --listview-max-height: 130px;
   }
 }
