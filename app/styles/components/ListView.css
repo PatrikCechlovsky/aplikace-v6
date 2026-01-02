@@ -36,11 +36,13 @@
 
 /* Jemnější tabulka (méně “krabic”) */
 .generic-type__table {
-  border-collapse: collapse;
-  width: max-content;   /* ⬅️ změna */
-  min-width: 100%;      /* ⬅️ důležité */
-  table-layout: fixed;
-}
+  /* ❗sticky + thead th je stabilnější bez border-collapse: collapse */
+  border-collapse: separate;
+  border-spacing: 0;
+
+  width: 100%;        /* místo width: max-content */
+  min-width: 100%;
+  table-layout: fixed;}
 
 /* Sticky hlavička při scrollu (BETON: lepíme na TH) */
 .generic-type__table thead th {
