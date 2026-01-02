@@ -137,6 +137,8 @@
   /* ✅ NEscrolluje celý panel */
   overflow: hidden;
   min-height: 0;
+  height: var(--attachments-manager-height, calc(100vh - 260px));
+  max-height: var(--attachments-manager-height, calc(100vh - 260px));
 }
 
 /* Horní část musí umět "sežrat" zbytek výšky */
@@ -202,6 +204,11 @@
 
 /* Mobil */
 @media (max-width: 720px) {
+  .detail-attachments__manager-layout {
+    height: var(--attachments-manager-height, calc(100vh - 230px));
+    max-height: var(--attachments-manager-height, calc(100vh - 230px));
+  }
+
   .detail-attachments__list-scroll .detail-attachments__lv-shell {
     --listview-max-height: calc(100vh - 380px);
   }
