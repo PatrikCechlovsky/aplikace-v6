@@ -934,13 +934,15 @@ const sharedColumns = useMemo(() => {
           {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
           {!loading && managerRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
 
+
           {/* ========================= */}
-          {/* MANAGER LAYOUT (scroll + sticky historie) */}
+          {/* MANAGER LAYOUT (hlavní tabulka + pevná historie) */}
           {/* ========================= */}
           <div className="detail-attachments__manager-layout" style={{ marginTop: 12 }}>
-            <div className="detail-attachments__list-scroll">
+            {/* Hlavní tabulka: zabere zbytek prostoru a když je málo místa, bude scrollovat */}
+            <div className="detail-attachments__list-area">
               {!loading && managerRows.length > 0 && (
-                <div className="detail-attachments__lv-shell detail-attachments__history-compact">
+                <div className="detail-attachments__lv-shell" style={{ ['--listview-max-height' as any]: '100%' }}>
                   <ListView
                     columns={sharedColumns}
                     rows={managerRows}
@@ -959,7 +961,8 @@ const sharedColumns = useMemo(() => {
                   />
                 </div>
               )}
-
+          
+              {/* hidden inputs pro newVersion (beze změny) */}
               <div style={{ display: 'none' }}>
                 {filteredRows.map((r) => (
                   <input
@@ -972,27 +975,31 @@ const sharedColumns = useMemo(() => {
                 ))}
               </div>
             </div>
-
+          
+            {/* Historie: pevná výška (cca 3 řádky) a vlastní scroll */}
             <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
                 <h3 className="detail-form__section-title detail-attachments__history-titleline">
                   Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
                 </h3>
               </div>
-
+          
               <div className="detail-attachments__history-body">
                 {!expandedDocId && (
                   <div className="detail-attachments__history-placeholder">
                     Vyber přílohu a klikni na <strong>Historie</strong> v CommonActions.
                   </div>
                 )}
-
+          
                 {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-view__placeholder">Načítám historii…</div>}
-
+          
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
-
+          
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                  <div className="detail-attachments__lv-shell detail-attachments__history-compact">
+                  <div
+                    className="detail-attachments__lv-shell detail-attachments__history-compact"
+                    style={{ ['--listview-max-height' as any]: '160px' }} // ≈ 3 řádky + hlavička ListView
+                  >
                     <ListView
                       columns={sharedColumns}
                       rows={historyRows}
