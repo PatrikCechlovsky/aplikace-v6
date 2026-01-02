@@ -942,7 +942,7 @@ const sharedColumns = useMemo(() => {
             {/* Hlavní tabulka: zabere zbytek prostoru a když je málo místa, bude scrollovat */}
             <div className="detail-attachments__list-area">
               {!loading && managerRows.length > 0 && (
-                <div className="detail-attachments__lv-shell" style={{ ['--listview-max-height' as any]: '100%' }}>
+                <div className="detail-attachments__lv-shell">
                   <ListView
                     columns={sharedColumns}
                     rows={managerRows}
