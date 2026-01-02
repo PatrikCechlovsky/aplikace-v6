@@ -218,32 +218,7 @@
 .detail-attachments__history-compact {
   --listview-max-height: 170px; /* cca 3 řádky + hlavička tabulky */
 }
-/* ============================================================
-   Manager layout: horní tabulka + pevná historie dole
-   ============================================================ */
 
-.detail-attachments__manager-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0; /* DŮLEŽITÉ: umožní scroll uvnitř */
-}
-
-/* Horní část zabere zbytek prostoru */
-.detail-attachments__list-area {
-  flex: 1 1 auto;
-  min-height: 0; /* DŮLEŽITÉ: bez toho se scroll často “ztratí” */
-}
-
-/* Historie – pevná, nesmí se roztahovat */
-.detail-attachments__history-sticky {
-  flex: 0 0 auto;
-}
-
-/* Tělo historie může scrollovat, když je tam placeholder/texty */
-.detail-attachments__history-body {
-  min-height: 0;
-}
 
 /* Mobil: historie menší, ať nesežere obrazovku */
 @media (max-width: 720px) {
