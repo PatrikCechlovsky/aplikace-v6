@@ -199,7 +199,7 @@
 
 /* kompaktní historie: TADY se řídí výška listview scrollu */
 .detail-attachments__history-compact {
-  --listview-max-height: 180px;
+  --listview-max-height: 120px;
 }
 
 /* žádný extra wrapper scroll */
