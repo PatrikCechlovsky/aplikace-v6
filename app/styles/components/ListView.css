@@ -27,8 +27,9 @@
 */
 .listview__table-wrapper {
   width: 100%;
+  position: relative;         /* ✅ stabilní z-index pro sticky hlavičku */
   overflow-x: auto;
-  overflow-y: auto;          /* ✅ MUSÍ být auto / scroll */
+  overflow-y: auto;
   scrollbar-gutter: stable;
   max-height: var(--listview-max-height, 260px); 
 }
@@ -45,13 +46,12 @@
 .generic-type__table thead th {
   position: sticky;
   top: 0;
-  z-index: 3;
-
-  font-weight: 600;
-  border-bottom: 1px solid var(--color-border);
+  z-index: 10;                /* ✅ víc než řádky */
   background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 0 var(--color-border); /* ✅ vizuálně vidět, že je nahoře */
+  font-weight: 600;
 }
-
 
 /* Buňky */
 .generic-type__cell {
