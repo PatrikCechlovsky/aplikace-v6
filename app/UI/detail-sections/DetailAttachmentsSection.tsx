@@ -938,7 +938,14 @@ const sharedColumns = useMemo(() => {
           {/* ========================= */}
           {/* MANAGER LAYOUT (hlavní tabulka + pevná historie) */}
           {/* ========================= */}
-          <div className="detail-attachments__manager-layout" style={{ marginTop: 12 }}>
+          <div 
+            className="detail-attachments__manager-layout" 
+            style={{ 
+              marginTop: 12,
+              height: 'calc(100vh - 260px)',
+              maxHeight: 'calc(100vh - 260px)',
+            }}
+          >
             {/* Hlavní tabulka: flex 1 + scroll uvnitř ListView */}
             <div className="detail-attachments__list-scroll">
               {!loading && managerRows.length > 0 && (
