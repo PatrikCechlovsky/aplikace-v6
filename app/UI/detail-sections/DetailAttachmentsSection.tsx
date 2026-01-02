@@ -165,7 +165,8 @@ export default function DetailAttachmentsSection({
   const isManager = isManagerRequested && canManage !== false
 
   // ✅ viewKey per-variant (list vs manager)
-  const VIEW_KEY = isManagerRequested ? '010.attachments.manager' : '010.attachments.list'
+  const VIEW_KEY = ATTACHMENTS_VIEW_KEY
+  
 
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
@@ -176,6 +177,7 @@ export default function DetailAttachmentsSection({
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rows, setRows] = useState<AttachmentRow[]>([])
+  
 
   // ============================================================================
   // SORT (Attachments – společný pro list + manager + history)
@@ -685,20 +687,15 @@ export default function DetailAttachmentsSection({
 
   const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
 
-  const sharedColumnsBase: ListViewColumn[] = useMemo(
-    () => [
-      { key: 'title', label: 'Název', width: '180px', sortable: true },
-      { key: 'description', label: 'Popis', width: '220px' },
-      { key: 'file', label: 'Soubor (latest)', sortable: true },
-      { key: 'ver', label: 'Verze', width: '90px', sortable: true },
-      { key: 'uploaded', label: 'Nahráno', width: '240px', sortable: true },
-    ],
-    []
-  )
 
-  const sharedColumns: ListViewColumn[] = useMemo(() => {
-    return applyColumnPrefs(sharedColumnsBase, colPrefs)
-  }, [sharedColumnsBase, colPrefs])
+  const sharedColumnsBase = useMemo(() => {
+  return getAttachmentsColumns({ variant: isManager ? 'manager' : 'list' })
+}, [isManager])
+
+const sharedColumns = useMemo(() => {
+  return applyColumnPrefs(sharedColumnsBase, colPrefs)
+}, [sharedColumnsBase, colPrefs])
+
 
   const listRows: ListViewRow<AttachmentRow>[] = useMemo(() => {
     return viewRows.map((r) => {
