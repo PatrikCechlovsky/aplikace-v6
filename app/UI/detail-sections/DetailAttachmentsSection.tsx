@@ -993,7 +993,7 @@ const sharedColumns = useMemo(() => {
           
               <div className="detail-attachments__history-body">
                 {!expandedDocId && (
-                  <div className="detail-form__hint">
+                  <div className="detail-form__hint detail-form__hint--single">
                     Vyber přílohu a klikni na <strong>Historie</strong> v CommonActions.
                   </div>
                 )}
