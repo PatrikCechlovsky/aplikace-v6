@@ -263,7 +263,23 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     el.classList.toggle('layout--table', s.viewMode !== 'cards')
   
     el.classList.toggle('layout--excel', s.uiStyle === 'excel')
-    el.classList.toggle('layout--compact', s.density === 'compact')
+    el.classList.remove(
+      'layout--density-comfortable',
+      'layout--density-compact',
+      'layout--density-mini'
+    )
+    // a pak nasadíme jednu správnou
+    switch (s.density) {
+      case 'mini':
+        el.classList.add('layout--density-mini')
+        break
+      case 'compact':
+        el.classList.add('layout--density-compact')
+        break
+      default:
+        el.classList.add('layout--density-comfortable')
+        break
+    }
   }
   
   useEffect(() => {
