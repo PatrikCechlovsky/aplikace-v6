@@ -22,6 +22,7 @@ import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsMa
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 
 const __typecheck_commonaction: CommonActionId = 'attachments'
 
