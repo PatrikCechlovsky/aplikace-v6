@@ -82,3 +82,10 @@
   white-space: nowrap;
   vertical-align: bottom;
 }
+/* FORCE sticky – přebije i inline style position:relative */
+.listview .generic-type__table thead th.generic-type__cell {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  background: var(--color-surface) !important;
+}
