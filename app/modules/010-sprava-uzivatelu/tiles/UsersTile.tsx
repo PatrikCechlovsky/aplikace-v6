@@ -624,7 +624,7 @@ export default function UsersTile({
   // CommonActions list
   // -------------------------
   const commonActions = useMemo<CommonActionId[]>(() => {
-    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'close']
+    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
     const READ_DEFAULT: CommonActionId[] = ['edit', 'invite', 'close']
     const EDIT_DEFAULT: CommonActionId[] = ['save', 'invite', 'close']
