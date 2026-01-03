@@ -7,6 +7,7 @@
   --row-h: 44px;
   --cell-py: 10px;
   --cell-px: 12px;
+  --table-font: 14px; 
 }
 
 /* =========================
@@ -16,6 +17,7 @@
   --row-h: 30px;
   --cell-py: 5px;
   --cell-px: 10px;
+  --table-font: 13px;
 }
 
 /* =========================
@@ -25,6 +27,7 @@
   --row-h: 26px;
   --cell-py: 3px;
   --cell-px: 8px;
+  --table-font: 12px;
 }
 
 /* =========================
@@ -44,6 +47,7 @@
   padding: var(--cell-py) var(--cell-px);
   height: var(--row-h);
   vertical-align: middle;
+  font-size: var(--table-font);
 }
 
 .layout.layout--excel table thead th {
