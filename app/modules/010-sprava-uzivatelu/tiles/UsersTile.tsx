@@ -89,6 +89,13 @@ const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center', sortable: true },
 ]
 
+function normalizeString(v: any): string {
+  return String(v ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
 
 function roleCodeToLabel(code: string | null | undefined): string {
   const c = (code ?? '').trim().toLowerCase()
