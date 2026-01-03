@@ -17,6 +17,7 @@
 // ============================================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 
 import {
   addAttachmentVersionWithUpload,
@@ -53,6 +54,9 @@ export type AttachmentsManagerApi = {
   save: () => Promise<void>
   newVersion: () => void
   history: () => void
+
+  // columns
+  columnSettings: () => void
 }
 
 export type DetailAttachmentsSectionProps = {
@@ -191,7 +195,10 @@ export default function DetailAttachmentsSection({
     colOrder: [],
     colHidden: [],
   })
-  
+
+  // ✅ Columns drawer (Sloupce)
+  const [colsOpen, setColsOpen] = useState(false)
+
   const handleColumnResize = useCallback((key: string, px: number) => {
     setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
   }, [])
@@ -653,6 +660,10 @@ export default function DetailAttachmentsSection({
         if (!r) return
         void handleToggleHistory(r.id)
       },
+
+      columnSettings: () => {
+        setColsOpen(true)
+      },
     }
 
     onRegisterManagerApi(api)
@@ -693,12 +704,16 @@ export default function DetailAttachmentsSection({
 
 
   const sharedColumnsBase = useMemo(() => {
-  return getAttachmentsColumns({ variant: isManager ? 'manager' : 'list' })
-}, [isManager])
+    return getAttachmentsColumns({ variant: isManager ? 'manager' : 'list' })
+  }, [isManager])
 
-const sharedColumns = useMemo(() => {
-  return applyColumnPrefs(sharedColumnsBase, colPrefs)
-}, [sharedColumnsBase, colPrefs])
+  const sharedColumns = useMemo(() => {
+    return applyColumnPrefs(sharedColumnsBase, colPrefs)
+  }, [sharedColumnsBase, colPrefs])
+
+  // ✅ Drawer rules (bezpečně – nic nevymýšlíme mimo columns)
+  const fixedFirstKey = sharedColumnsBase?.[0]?.key ?? ''
+  const requiredKeys = fixedFirstKey ? [fixedFirstKey] : []
 
 
   const listRows: ListViewRow<AttachmentRow>[] = useMemo(() => {
