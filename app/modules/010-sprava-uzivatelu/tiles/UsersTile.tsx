@@ -751,7 +751,12 @@ export default function UsersTile({
           setDetailActiveSectionId('attachments')
         
           // ✅ jdi přes stejnou cestu jako ostatní přechody do detailu
-          openDetail({ id: backId } as any, 'read', 'detail')
+          const backUser = users.find((u) => u.id === backId) ?? (detailUser?.id === backId ? detailUser : null)
+          if (backUser) {
+            openDetail(backUser, 'read', 'attachments')
+          } else {
+            closeToList()
+          }
           return
         }
 
