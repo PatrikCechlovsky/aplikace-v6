@@ -730,7 +730,7 @@ export default function UsersTile({
 
         dbg('close branch start', { t, viewMode })
 
-        if (viewMode === 'attachments-manager') {
+        if (String(viewMode) === 'attachments-manager') {
           dbg('close -> attachments-manager back')
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (backId) {
