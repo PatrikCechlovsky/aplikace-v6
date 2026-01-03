@@ -851,6 +851,24 @@ export default function UsersTile({
   // =====================
 
   if (viewMode === 'list') {
+    // ✅ Columns Drawer state + pravidla
+    const [colsOpen, setColsOpen] = useState(false)
+
+    // První sloupec = pevný (aplikace)
+    const fixedFirstKey = BASE_COLUMNS[0]?.key ?? 'roleLabel'
+
+    // Povinné sloupce: nejdou skrýt, ale mohou být kdekoliv (mimo první)
+    const requiredKeys = useMemo(() => ['displayName'], [])
+
+    const handleResetColumns = useCallback(() => {
+      setColPrefs((p) => ({
+        ...p,
+        colOrder: [],
+        colHidden: [],
+        // colWidths necháváme (šířky jsou separátní preference)
+      }))
+    }, [])
+
     return (
       <div>
         {error && <div style={{ padding: 8, color: 'crimson' }}>{error}</div>}
@@ -873,6 +891,33 @@ export default function UsersTile({
           sort={sort}
           onSortChange={handleSortChange}
           onColumnResize={handleColumnResize}
+          toolbarRight={
+            <button
+              type="button"
+              className="detail-attachments__btn"
+              onClick={() => setColsOpen(true)}
+              style={{ marginRight: 10 }}
+              title="Nastavit pořadí a viditelnost sloupců"
+            >
+              Sloupce
+            </button>
+          }
+        />
+
+        <ListViewColumnsDrawer
+          open={colsOpen}
+          columns={BASE_COLUMNS}
+          fixedFirstKey={fixedFirstKey}
+          requiredKeys={requiredKeys}
+          value={{
+            order: colPrefs.colOrder ?? [],
+            hidden: colPrefs.colHidden ?? [],
+          }}
+          onClose={() => setColsOpen(false)}
+          onReset={handleResetColumns}
+          onChange={(next) => {
+            setColPrefs((p) => ({ ...p, colOrder: next.order, colHidden: next.hidden }))
+          }}
         />
       </div>
     )
