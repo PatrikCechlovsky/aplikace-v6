@@ -203,30 +203,43 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
 }
 
 function getSortValue(u: UiUser, key: string): string | number {
+  const norm = (v: any) => String(v ?? '').trim().toLowerCase()
+
   switch (key) {
     case 'roleLabel':
       return u.roleOrderIndex ?? 999999
+
     case 'displayName':
-      return normalizeString(u.displayName)
+      return norm(u.displayName)
     case 'email':
-      return normalizeString(u.email)
+      return norm(u.email)
+
     case 'lastName':
-      return normalizeString(u.lastName)
+      return norm(u.lastName)
     case 'firstName':
-      return normalizeString(u.firstName)
+      return norm(u.firstName)
     case 'titleBefore':
-      return normalizeString(u.titleBefore)
+      return norm(u.titleBefore)
+
     case 'lastLoginAt':
-      return dateSortValue(u.lastLoginAt)
+      // řazení podle času (ISO)
+      return (() => {
+        const s = String(u.lastLoginAt ?? '').trim()
+        if (!s) return 0
+        const t = Date.parse(s)
+        return Number.isFinite(t) ? t : 0
+      })()
+
     case 'lastInviteStatus':
-      return normalizeString(u.lastInviteStatus)
+      return norm(u.lastInviteStatus)
+
     case 'isArchived':
       return u.isArchived ? 1 : 0
+
     default:
       return ''
   }
 }
-
 
 // =====================
 // 4) DATA LOAD
