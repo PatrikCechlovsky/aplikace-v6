@@ -1,0 +1,79 @@
+/* app/styles/components/ExcelMode.css */
+/* PURPOSE: Excel-like gridlines + density tweaks controlled by .layout classes */
+
+.layout {
+  /* výchozí “řádková” metrika – můžeš ladit podle potřeby */
+  --row-h: 44px;
+  --cell-py: 10px;
+  --cell-px: 12px;
+}
+
+/* Kompaktní režim – jemně sníží výšky */
+.layout.layout--compact {
+  --row-h: 38px;
+  --cell-py: 8px;
+}
+
+/* Excel režim – “mřížka” (jemné linky) + ostřejší hranice */
+.layout.layout--excel {
+  --excel-grid: var(--color-border);
+  --excel-grid-soft: var(--color-border-soft);
+}
+
+/* =========================
+   1) Seznamy / tabulky (obecně)
+   - funguje pro <table> i pro div “řádky”, pokud používají border/background
+   ========================= */
+
+/* Klasické tabulky v UI (preview v 900, a další tabulky) */
+.layout.layout--excel table {
+  border-collapse: collapse;
+}
+
+.layout.layout--excel table th,
+.layout.layout--excel table td {
+  border: 1px solid var(--excel-grid);
+  padding: var(--cell-py) var(--cell-px);
+  height: var(--row-h);
+  vertical-align: middle;
+}
+
+/* Header a “selected row” necháváme existujícím theme tokenům */
+.layout.layout--excel table thead th {
+  background: var(--color-surface-subtle);
+}
+
+/* =========================
+   2) Menu – Sidebar a TopMenu
+   - cílem je “buňkový” dojem bez velkých layout změn
+   ========================= */
+
+/* Sidebar kontejner – jemné orámování */
+.layout.layout--excel .sidebar {
+  border-right: 1px solid var(--excel-grid);
+}
+
+/* Topbar / menu pás – mřížka jako v Excelu */
+.layout.layout--excel .layout__topbar {
+  border-bottom: 1px solid var(--excel-grid);
+  background: var(--color-topbar-bg);
+}
+
+/* Položky menu – společně: linky mezi položkami */
+.layout.layout--excel .sidebar__item,
+.layout.layout--excel .topmenu__item {
+  border-bottom: 1px solid var(--excel-grid-soft);
+}
+
+/* Když máš v topmenu položky vedle sebe, přidej i svislé oddělení */
+.layout.layout--excel .topmenu__item {
+  border-right: 1px solid var(--excel-grid-soft);
+}
+
+/* =========================
+   3) Jemné sjednocení “pocitu buněk” v obsahových blocích
+   ========================= */
+.layout.layout--excel .content {
+  /* lehce “ostřejší” dojem */
+}
+
