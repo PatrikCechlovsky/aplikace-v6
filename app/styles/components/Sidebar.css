@@ -138,3 +138,83 @@
 .sidebar__subitem--active .sidebar__sublink {
   background: var(--color-selected-row-bg);
 }
+/* =========================================================
+   Excel / Compact sidebar sizing
+   - navazuje na tvoje .sidebar__row / section-row / sublink
+   ========================================================= */
+
+.layout.layout--excel {
+  /* default Excel sidebar metriky */
+  --sb-row-py: 4px;
+  --sb-row-px: 6px;
+
+  --sb-section-py: 4px;
+  --sb-section-pr: 8px;
+  --sb-section-pl: 22px;
+
+  --sb-sub-py: 3px;
+  --sb-sub-pr: 8px;
+  --sb-sub-pl: 38px;
+
+  --sb-font: 13px;
+  --sb-icon: 15px;
+  --sb-toggle: 15px;
+
+  /* gutter na “šipku” – tvoje je 18px, v excel režimu může být menší */
+  --sb-gutter: 16px;
+}
+
+/* ještě menší v compact */
+.layout.layout--excel.layout--compact {
+  --sb-row-py: 3px;
+  --sb-row-px: 5px;
+
+  --sb-section-py: 3px;
+  --sb-section-pr: 7px;
+  --sb-section-pl: 20px;
+
+  --sb-sub-py: 2px;
+  --sb-sub-pr: 7px;
+  --sb-sub-pl: 34px;
+
+  --sb-font: 12px;
+  --sb-icon: 14px;
+  --sb-toggle: 14px;
+
+  --sb-gutter: 14px;
+}
+
+/* Aplikace metrik na Level 1/2/3 */
+.layout.layout--excel .sidebar__row {
+  padding: var(--sb-row-py) var(--sb-row-px);
+}
+
+.layout.layout--excel .sidebar__section-row {
+  padding: var(--sb-section-py) var(--sb-section-pr) var(--sb-section-py) var(--sb-section-pl);
+}
+
+.layout.layout--excel .sidebar__sublink {
+  padding: var(--sb-sub-py) var(--sb-sub-pr) var(--sb-sub-py) var(--sb-sub-pl);
+}
+
+.layout.layout--excel .sidebar__label {
+  font-size: var(--sb-font);
+}
+
+.layout.layout--excel .sidebar__icon {
+  font-size: var(--sb-icon);
+}
+
+.layout.layout--excel .sidebar__toggle,
+.layout.layout--excel .sidebar__section-toggle {
+  font-size: var(--sb-toggle);
+  width: var(--sb-gutter);
+  flex: 0 0 var(--sb-gutter);
+}
+
+/* Jemná “excel” mřížka mezi řádky (nepřepisuje active bg) */
+.layout.layout--excel .sidebar__row,
+.layout.layout--excel .sidebar__section-row,
+.layout.layout--excel .sidebar__sublink {
+  border-bottom: 1px solid var(--color-border-soft);
+}
