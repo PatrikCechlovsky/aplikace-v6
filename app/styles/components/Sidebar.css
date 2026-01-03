@@ -1,4 +1,4 @@
-/* app/styles/components/Sidebar.css */
+// app/styles/components/Sidebar.css
 
 .layout__sidebar,
 .sidebar {
@@ -109,114 +109,73 @@
   width: var(--sb-gutter);
   flex: 0 0 var(--sb-gutter);
 }
-/* app/styles/components/Sidebar.css */
 
-.layout__sidebar,
-.sidebar {
-  grid-row: 1 / span 3;
-  grid-column: 1;
-  background: var(--color-sidebar-bg);
-  border-right: 1px solid var(--color-border);
-}
-
-/* více ke kraji (ať sidebar nesežere content) */
-.layout__sidebar {
-  padding: 8px;            /* bylo 12px */
-  display: flex;
-  flex-direction: column;
-  gap: 10px;               /* bylo 12px */
-}
-
-.sidebar__inner {
-  padding: 8px 6px;        /* bylo 12px 8px */
-}
-
-/* listy bez odrážek */
-.sidebar__list,
-.sidebar__sectionlist,
-.sidebar__sublist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* ---------- společné tokeny ---------- */
-:root {
-  --sb-gutter: 18px;        /* falešné místo na šipku */
-  --sb-gap: 4px;            /* šipka ↔ ikona ↔ text */
-}
-
-/* ---------- Level 1 ---------- */
-.sidebar__row {
+/* ---------- Level 2 ---------- */
+.sidebar__section-row {
   display: flex;
   align-items: center;
   gap: var(--sb-gap);
-  padding: 4px 4px;         /* můžeš klidně 6px 6px pokud chceš ještě víc ke kraji */
-  border-radius: 10px;
+  padding: 6px 8px 6px 24px;   /* bylo 32px -> méně doprava */
   cursor: pointer;
+  border-radius: 8px;
 }
 
-.sidebar__row--active {
+.sidebar__section-item--active .sidebar__section-row {
   background: var(--color-selected-row-bg);
 }
 
-.sidebar__row--disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Pozn.: i když v některých místech není <a>, tenhle blok neublíží;
-   pokud máš někde <div class="sidebar__link">, je to OK. */
-.sidebar__link {
+/* ---------- Level 3 ---------- */
+.sidebar__sublink {
   display: flex;
   align-items: center;
   gap: var(--sb-gap);
+  padding: 4px 8px 4px 40px;   /* bylo 32px -> level 3 víc než level 2 */
+  border-radius: 8px;
   text-decoration: none;
   color: inherit;
-  flex: 1;
 }
 
-.sidebar__icon {
-  font-size: 16px;
+.sidebar__subitem--active .sidebar__sublink {
+  background: var(--color-selected-row-bg);
+}
+/* =========================================================
+   SAFE OVERRIDES (NEBOŘÍ nic)
+   ========================================================= */
+
+/* pojistka proti default modrým <a> (když se někde objeví link mimo .sidebar__link/.sidebar__sublink) */
+.sidebar a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.sidebar__label {
-  font-size: 14px;
-  white-space: nowrap;
+/* Compact: pouze menší metriky (žádná změna struktury) */
+.layout.layout--compact {
+  --sb-gutter: 16px;
+  --sb-gap: 4px;
 }
 
-/* ---------- Toggles (šipky) ---------- */
-/* šipka má pevnou šířku = náš "gutter" */
-.sidebar__toggle,
-.sidebar__section-toggle {
-  border: none;
-  background: transparent;
-  padding: 0;
-  font-size: 16px;
-  width: var(--sb-gutter);
-  flex: 0 0 var(--sb-gutter);
-  text-align: center;
-  transition: transform 0.15s ease;
-  cursor: pointer;
-  color: var(--color-text);
+.layout.layout--compact .sidebar__icon {
+  font-size: 15px;
 }
 
-.sidebar__toggle--open,
-.sidebar__section-toggle--open {
-  transform: rotate(90deg);
+.layout.layout--compact .sidebar__label {
+  font-size: 12px;
 }
 
-.sidebar__toggle:hover,
-.sidebar__section-toggle:hover {
-  color: var(--color-primary-strong);
+.layout.layout--compact .sidebar__toggle,
+.layout.layout--compact .sidebar__section-toggle {
+  font-size: 15px;
 }
 
-/* ✅ JEDNO PRAVIDLO: když toggle v řádku NENÍ, uděláme falešné místo 24px
-   Platí pro 1., 2. i 3. úroveň (pro row + section-row + sublink). */
-.sidebar__row:not(:has(> .sidebar__toggle))::before,
-.sidebar__section-row:not(:has(> .sidebar__section-toggle))::before,
-.sidebar__sublink:not(:has(> .sidebar__toggle))::before {
-  content: '';
-  width: var(--sb-gutter);
-  flex: 0 0 var(--sb-gutter);
+.layout.layout--compact .sidebar__row {
+  padding: 3px 4px;
+  border-radius: 9px;
+}
+
+.layout.layout--compact .sidebar__section-row {
+  padding: 4px 8px 4px 22px;
+}
+
+.layout.layout--compact .sidebar__sublink {
+  padding: 3px 8px 3px 36px;
 }
