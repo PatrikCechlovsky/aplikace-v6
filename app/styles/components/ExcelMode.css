@@ -53,3 +53,24 @@
 .layout.layout--excel table thead th {
   background: var(--color-surface-subtle);
 }
+/* =========================================================
+   Density → font-size pro tabulky (GenericType table)
+   ========================================================= */
+
+/* pohodlná – výchozí (jen pojistka) */
+.layout.layout--density-comfortable .generic-type__cell,
+.layout.layout--density-comfortable .generic-type__table th {
+  font-size: 13px;
+}
+
+/* kompaktní – o chlup menší */
+.layout.layout--density-compact .generic-type__cell,
+.layout.layout--density-compact .generic-type__table th {
+  font-size: 12px;
+}
+
+/* mini – ještě o chlup menší */
+.layout.layout--density-mini .generic-type__cell,
+.layout.layout--density-mini .generic-type__table th {
+  font-size: 11px;
+}
