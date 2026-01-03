@@ -15,7 +15,7 @@ import React, { useEffect, useState } from 'react'
 type ViewMode = 'table' | 'cards'
 type MenuLayout = 'sidebar' | 'top'
 type UiStyle = 'default' | 'excel'
-type Density = 'comfortable' | 'compact'
+type Density = 'comfortable' | 'compact' | 'mini'
 
 interface AppViewSettings {
   viewMode: ViewMode
@@ -195,6 +195,16 @@ const AppViewSettingsTile: React.FC = () => {
                 />
                 <span>Kompaktní (nižší řádky)</span>
               </label>
+               
+              <label className="generic-type__radio">
+                 <input
+                   type="radio"
+                   name="density"
+                   checked={settings.density === 'mini'}
+                   onChange={() => updateSettings({ density: 'mini' })}
+                 />
+                 <span>Mini</span>
+               </label> 
             </div>
           </div>
         </div>
