@@ -1,92 +1,46 @@
-/* app/styles/components/DensityTypography.css */
-/* PURPOSE: sjednocení základní typografie napříč obrazovkami podle hustoty */
+/* app/styles/components/ExcelMode.css */
+/* PURPOSE: Excel-like gridlines ONLY for list tables.
+   IMPORTANT:
+   - Density values (row height / paddings / fonts) live in DensityTypography.css
+   - This file ONLY applies excel gridlines + uses tokens:
+     --table-row-h, --table-cell-px, --table-cell-py, --table-font
+     --table-header-h, --table-header-font
+*/
 
-.layout {
-  --h1: 22px;
-  --h2: 16px;
-  --text: 14px;
-  --text-sm: 13px;
-
-  /* Entity detail title */
-  --entity-title-font: 22px;
-
-  /* Tables / lists (comfortable) */
-  --table-font: 14px;
-  --table-header-font: 13px;
-  --table-row-h: 44px;
-  --table-header-h: 34px;
-  --table-cell-px: 12px;
-  --table-cell-py: 10px;
-
-  /* Badge (e.g. role pill in lists) */
-  --badge-font: 12px;
-  --badge-px: 10px;
-  --badge-py: 3px;
-
-  --tab-h: 34px;
-  --tab-font: 13px;
-
-  --radio-font: 14px;
+.layout.layout--excel {
+  --excel-grid: var(--color-border);
 }
 
-.layout.layout--density-compact {
-  --h1: 20px;
-  --h2: 15px;
-  --text: 13px;
-  --text-sm: 12px;
-
-  --entity-title-font: 20px;
-
-  /* Tables / lists (compact) */
-  --table-font: 13.5px;
-  --table-header-font: 12.5px;
-  --table-row-h: 34px;
-  --table-header-h: 32px;
-  --table-cell-px: 10px;
-  --table-cell-py: 7px;
-
-  --badge-font: 12.5px;
-  --badge-px: 11px;
-  --badge-py: 4px;
-
-  --tab-h: 32px;
-  --tab-font: 12px;
-
-  --radio-font: 13px;
+.layout.layout--excel table {
+  border-collapse: collapse;
+  width: 100%;
 }
 
-.layout.layout--density-mini {
-  --h1: 18px;
-  --h2: 14px;
-  --text: 12px;
-  --text-sm: 11px;
-
-  --entity-title-font: 18px;
-
-  /* Tables / lists (mini) */
-  --table-font: 12px;
-  --table-header-font: 11px;
-  --table-row-h: 28px;
-  --table-header-h: 30px;
-  --table-cell-px: 8px;
-  --table-cell-py: 5px;
-
-  --badge-font: 11.5px;
-  --badge-px: 9px;
-  --badge-py: 3px;
-
-  --tab-h: 30px;
-  --tab-font: 11px;
-
-  --radio-font: 12px;
+/* Gridlines + density tokens applied */
+.layout.layout--excel table th,
+.layout.layout--excel table td {
+  border: 1px solid var(--excel-grid);
+  padding: var(--table-cell-py) var(--table-cell-px);
+  height: var(--table-row-h);
+  vertical-align: middle;
+  font-size: var(--table-font);
 }
 
-/* Nadpisy sekcí – pokud používáš obecné h1/h2 v obsahu */
-.layout .content h1 {
-  font-size: var(--h1);
+/* Header styling */
+.layout.layout--excel table thead th {
+  height: var(--table-header-h);
+  font-size: var(--table-header-font);
+  background: var(--color-surface-subtle);
+  font-weight: 600;
 }
 
-.layout .content h2,
-.layout .content h3 {
-  font-size: var(--h2);
+/* Optional: keep header readable on scroll (if your tables use sticky headers elsewhere) */
+.layout.layout--excel table thead th {
+  /* no sticky here by default; keep table component responsible */
 }
+
+/* Optional: slightly softer inner grid on subtle backgrounds (uncomment if needed)
+.layout.layout--excel {
+  --excel-grid: var(--color-border-subtle);
+}
+*/
