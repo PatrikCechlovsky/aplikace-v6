@@ -230,3 +230,27 @@ select.detail-form__input {
     grid-column: span 4;
   }
 }
+/* =========================================================
+   Density → Invite "Režim" radio row (SAFE)
+   - cílíme jen na radio skupinu uvnitř .detail-form__field
+   ========================================================= */
+
+/* Kompaktní */
+.layout.layout--density-compact .detail-form__field label.detail-form__label + div {
+  gap: 10px !important;
+  padding-top: 6px !important;
+}
+
+.layout.layout--density-compact .detail-form__field label.detail-form__label + div label {
+  font-size: 13px;
+}
+
+/* Mini */
+.layout.layout--density-mini .detail-form__field label.detail-form__label + div {
+  gap: 8px !important;
+  padding-top: 4px !important;
+}
+
+.layout.layout--density-mini .detail-form__field label.detail-form__label + div label {
+  font-size: 12px;
+}
