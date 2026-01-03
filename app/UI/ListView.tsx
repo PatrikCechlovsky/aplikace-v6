@@ -23,16 +23,10 @@ export type ListViewColumn = {
   key: string
   label: string
   align?: 'left' | 'center' | 'right'
-  /** Šířka sloupce (doporučeno číslo v px, nebo string "180px") */
   width?: number | string
-  /** Je sloupec řaditelný klikem v hlavičce */
   sortable?: boolean
-
-  /** lze měnit šířku myší? default = true */
   resizable?: boolean
-  /** minimální šířka v px (default 80) */
   minWidthPx?: number
-  /** maximální šířka v px (default 1200) */
   maxWidthPx?: number
 }
 
@@ -64,8 +58,10 @@ export type ListViewProps<TData = any> = {
   sort?: ListViewSortState
   onSortChange?: (next: ListViewSortState) => void
 
-  /** když uživatel potáhne okraj sloupce */
   onColumnResize?: (columnKey: string, widthPx: number) => void
+
+  /** extra akce napravo v toolbaru (např. Sloupce) */
+  toolbarRight?: React.ReactNode
 }
 
 // ============================================================================
@@ -122,6 +118,7 @@ export default function ListView<TData = any>({
   sort = null,
   onSortChange,
   onColumnResize,
+  toolbarRight,
 }: ListViewProps<TData>) {
   const dragRef = useRef<{
     key: string
@@ -176,6 +173,8 @@ export default function ListView<TData = any>({
         />
 
         <div className="generic-type__list-toolbar-right">
+          {toolbarRight}
+          
           {typeof onShowArchivedChange === 'function' ? (
             <label className="generic-type__checkbox-label">
               <input type="checkbox" checked={showArchived} onChange={(e) => onShowArchivedChange?.(e.target.checked)} />
