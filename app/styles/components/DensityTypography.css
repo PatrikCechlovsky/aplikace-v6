@@ -7,6 +7,22 @@
   --text: 14px;
   --text-sm: 13px;
 
+  /* Entity detail title */
+  --entity-title-font: 22px;
+
+  /* Tables / lists (comfortable) */
+  --table-font: 14px;
+  --table-header-font: 13px;
+  --table-row-h: 44px;
+  --table-header-h: 34px;
+  --table-cell-px: 12px;
+  --table-cell-py: 10px;
+
+  /* Badge (e.g. role pill in lists) */
+  --badge-font: 12px;
+  --badge-px: 10px;
+  --badge-py: 3px;
+
   --tab-h: 34px;
   --tab-font: 13px;
 
@@ -19,6 +35,20 @@
   --text: 13px;
   --text-sm: 12px;
 
+  --entity-title-font: 20px;
+
+  /* Tables / lists (compact) */
+  --table-font: 13.5px;
+  --table-header-font: 12.5px;
+  --table-row-h: 34px;
+  --table-header-h: 32px;
+  --table-cell-px: 10px;
+  --table-cell-py: 7px;
+
+  --badge-font: 12.5px;
+  --badge-px: 11px;
+  --badge-py: 4px;
+
   --tab-h: 32px;
   --tab-font: 12px;
 
@@ -30,6 +60,20 @@
   --h2: 14px;
   --text: 12px;
   --text-sm: 11px;
+
+  --entity-title-font: 18px;
+
+  /* Tables / lists (mini) */
+  --table-font: 12px;
+  --table-header-font: 11px;
+  --table-row-h: 28px;
+  --table-header-h: 30px;
+  --table-cell-px: 8px;
+  --table-cell-py: 5px;
+
+  --badge-font: 11.5px;
+  --badge-px: 9px;
+  --badge-py: 3px;
 
   --tab-h: 30px;
   --tab-font: 11px;
