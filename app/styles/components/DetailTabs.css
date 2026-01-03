@@ -106,19 +106,22 @@
    Density → Entity detail main title ("Pozvat uživatele")
    ========================================================= */
 
-/* Pohodlná (výchozí) */
-.layout .entity-detail__title {
+/* Pohodlná */
+.layout .entity-detail__header .entity-detail__title {
   font-size: 22px;
   line-height: 1.3;
 }
 
 /* Kompaktní */
-.layout.layout--density-compact .entity-detail__title {
+.layout.layout--density-compact
+  .entity-detail__header
+  .entity-detail__title {
   font-size: 20px;
 }
 
 /* Mini */
-.layout.layout--density-mini .entity-detail__title {
+.layout.layout--density-mini
+  .entity-detail__header
+  .entity-detail__title {
   font-size: 18px;
 }
-
