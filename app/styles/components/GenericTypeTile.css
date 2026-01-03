@@ -156,13 +156,13 @@
 }
 
 .generic-type__name-badge {
-  display: block;
-  width: 100%;
-  padding: var(--badge-py) var(--badge-px);
-  border-radius: 8px;
-  color: #ffffff;
-  font-weight: 500;
+  display: inline-block;
   font-size: var(--badge-font);
+  padding: var(--badge-py) var(--badge-px);
+  border-radius: 999px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .generic-type__name-main {
