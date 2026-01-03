@@ -206,12 +206,28 @@
   min-height: 0;
 }
 
-/* Placeholder */
-.detail-attachments__history-placeholder {
+.detail-view__placeholder {
   padding: 10px 12px;
+  margin-bottom: 8px;
+
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+
+  background: var(--color-surface-subtle);
   color: var(--color-text-muted);
-  font-size: inherit;
+
+  font-size: 0.9rem;
   line-height: 1.4;
+}
+
+.detail-view__placeholder strong {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.detail-view__placeholder-sub {
+  margin-top: 6px;
 }
 
 /* Historie: kompaktní výška (cca 3 řádky) + správný flex/height řetězec */
@@ -231,5 +247,12 @@
 
   .detail-attachments__history-compact {
     --listview-max-height: 110px;
+  }
+}
+/* Mobil – ať to není “přehuštěné” */
+@media (max-width: 720px) {
+  .detail-view__placeholder {
+    padding: 8px 10px;
+    font-size: 0.85rem;
   }
 }
