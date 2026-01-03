@@ -1,91 +1,92 @@
-/* app/styles/components/ExcelMode.css */
-/* PURPOSE: Excel-like gridlines ONLY for list tables + density tweaks.
-   IMPORTANT: Do NOT style sidebar/topmenu here (sidebar has its own CSS). */
+/* app/styles/components/DensityTypography.css */
+/* PURPOSE: sjednocení základní typografie napříč obrazovkami podle hustoty */
 
 .layout {
-  /* tabulka / “buňky” – pohodlná */
-  --row-h: 44px;
-  --cell-py: 10px;
-  --cell-px: 12px;
-  --table-font: 14px; 
-}
+  --h1: 22px;
+  --h2: 16px;
+  --text: 14px;
+  --text-sm: 13px;
 
-/* =========================
-   Hustota: KOMPAKTNÍ
-   ========================= */
-.layout.layout--density-compact {
-  --row-h: 30px;
-  --cell-py: 5px;
-  --cell-px: 10px;
-  --table-font: 13px;
-}
-
-/* =========================
-   Hustota: MINI
-   ========================= */
-.layout.layout--density-mini {
-  --row-h: 26px;
-  --cell-py: 3px;
-  --cell-px: 8px;
-  --table-font: 12px;
-}
-
-/* =========================
-   Excel režim (jen tabulky)
-   ========================= */
-.layout.layout--excel {
-  --excel-grid: var(--color-border);
-}
-
-.layout.layout--excel table {
-  border-collapse: collapse;
-}
-
-.layout.layout--excel table th,
-.layout.layout--excel table td {
-  border: 1px solid var(--excel-grid);
-  padding: var(--cell-py) var(--cell-px);
-  height: var(--row-h);
-  vertical-align: middle;
-  font-size: var(--table-font);
-}
-
-.layout.layout--excel table thead th {
-  background: var(--color-surface-subtle);
-}
-/* =========================================================
-   Density → font-size pro tabulky (GenericType table)
-   ========================================================= */
-
-/* pohodlná – výchozí (jen pojistka) */
-.layout.layout--density-comfortable .generic-type__cell,
-.layout.layout--density-comfortable .generic-type__table th {
-  font-size: 13px;
-}
-
-/* kompaktní – o chlup menší */
-.layout.layout--density-compact .generic-type__cell,
-.layout.layout--density-compact .generic-type__table th {
-  font-size: 12px;
-}
-
-/* mini – ještě o chlup menší */
-.layout.layout--density-mini .generic-type__cell,
-.layout.layout--density-mini .generic-type__table th {
-  font-size: 11px;
-}
-/* =========================================
-   Density → EntityDetailFrame title
-   ========================================= */
-
-.layout {
+  /* Entity detail title */
   --entity-title-font: 22px;
+
+  /* Tables / lists (comfortable) */
+  --table-font: 14px;
+  --table-header-font: 13px;
+  --table-row-h: 44px;
+  --table-header-h: 34px;
+  --table-cell-px: 12px;
+  --table-cell-py: 10px;
+
+  /* Badge (e.g. role pill in lists) */
+  --badge-font: 12px;
+  --badge-px: 10px;
+  --badge-py: 3px;
+
+  --tab-h: 34px;
+  --tab-font: 13px;
+
+  --radio-font: 14px;
 }
 
 .layout.layout--density-compact {
+  --h1: 20px;
+  --h2: 15px;
+  --text: 13px;
+  --text-sm: 12px;
+
   --entity-title-font: 20px;
+
+  /* Tables / lists (compact) */
+  --table-font: 13.5px;
+  --table-header-font: 12.5px;
+  --table-row-h: 34px;
+  --table-header-h: 32px;
+  --table-cell-px: 10px;
+  --table-cell-py: 7px;
+
+  --badge-font: 12.5px;
+  --badge-px: 11px;
+  --badge-py: 4px;
+
+  --tab-h: 32px;
+  --tab-font: 12px;
+
+  --radio-font: 13px;
 }
 
 .layout.layout--density-mini {
+  --h1: 18px;
+  --h2: 14px;
+  --text: 12px;
+  --text-sm: 11px;
+
   --entity-title-font: 18px;
+
+  /* Tables / lists (mini) */
+  --table-font: 12px;
+  --table-header-font: 11px;
+  --table-row-h: 28px;
+  --table-header-h: 30px;
+  --table-cell-px: 8px;
+  --table-cell-py: 5px;
+
+  --badge-font: 11.5px;
+  --badge-px: 9px;
+  --badge-py: 3px;
+
+  --tab-h: 30px;
+  --tab-font: 11px;
+
+  --radio-font: 12px;
+}
+
+/* Nadpisy sekcí – pokud používáš obecné h1/h2 v obsahu */
+.layout .content h1 {
+  font-size: var(--h1);
+}
+
+.layout .content h2,
+.layout .content h3 {
+  font-size: var(--h2);
 }
