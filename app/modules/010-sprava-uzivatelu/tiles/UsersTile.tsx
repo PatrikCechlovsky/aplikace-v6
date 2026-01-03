@@ -78,15 +78,15 @@ const dbg = (...args: any[]) => {
 const VIEW_KEY = '010.users.list'
 
 const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'roleLabel', label: 'Role', width: '18%', sortable: true },
-  { key: 'displayName', label: 'Zobrazované jméno', sortable: true },
-  { key: 'lastName', label: 'Příjmení', sortable: true },
-  { key: 'firstName', label: 'Jméno', sortable: true },
-  { key: 'titleBefore', label: 'Titul', width: '10%', sortable: true },
-  { key: 'email', label: 'E-mail', sortable: true },
-  { key: 'lastLoginAt', label: 'Poslední přihlášení', width: '14%', sortable: true },
-  { key: 'lastInviteStatus', label: 'Pozvánka', width: '10%', sortable: true },
-  { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center', sortable: true },
+  { key: 'roleLabel', label: 'Role', width: 160, sortable: true },
+  { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
+  { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
+  { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
+  { key: 'titleBefore', label: 'Titul', width: 100, sortable: true },
+  { key: 'email', label: 'E-mail', width: 260, sortable: true },
+  { key: 'lastLoginAt', label: 'Poslední přihlášení', width: 180, sortable: true },
+  { key: 'lastInviteStatus', label: 'Pozvánka', width: 140, sortable: true },
+  { key: 'isArchived', label: 'Archivován', width: 120, align: 'center', sortable: true },
 ]
 
 function normalizeString(v: any): string {
