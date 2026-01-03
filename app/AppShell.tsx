@@ -234,7 +234,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   // -------------------------
   type AppViewMode = 'table' | 'cards'
   type UiStyle = 'default' | 'excel'
-  type Density = 'comfortable' | 'compact'
+  type Density = 'comfortable' | 'compact' | 'mini'
   
   function readAppViewSettings(): { viewMode: AppViewMode; uiStyle: UiStyle; density: Density; menuLayout?: 'sidebar' | 'top' } {
     if (typeof window === 'undefined') return { viewMode: 'table', uiStyle: 'default', density: 'comfortable' }
@@ -244,7 +244,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       return {
         viewMode: parsed.viewMode === 'cards' ? 'cards' : 'table',
         uiStyle: parsed.uiStyle === 'excel' ? 'excel' : 'default',
-        density: parsed.density === 'compact' ? 'compact' : 'comfortable',
+        density: parsed.density === 'mini' ? 'mini' : parsed.density === 'compact' ? 'compact' : 'comfortable',
         menuLayout: parsed.menuLayout === 'top' ? 'top' : parsed.menuLayout === 'sidebar' ? 'sidebar' : undefined,
       }
     } catch {
