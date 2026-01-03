@@ -90,7 +90,7 @@ export default function EntityDetailFrame({
         }
 
         .entity-detail__title {
-          font-size: 1.1rem;
+          font-size: var(--entity-title-font, 1.1rem);
           font-weight: 600;
         }
 
