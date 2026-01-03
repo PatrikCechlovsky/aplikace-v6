@@ -11,8 +11,8 @@
 
 .layout.layout--compact {
   /* menší řádky v tabulkách */
-  --row-h: 32px;
-  --cell-py: 6px;
+  --row-h: 30px;
+  --cell-py: 5px;
   --cell-px: 10px;
 }
 
