@@ -147,18 +147,20 @@ select.detail-form__input {
   font-size: 12px;
   line-height: 15px;
   color: var(--color-text-muted);
+  min-width: 0; /* důležité ve flex kontejnerech */
 }
 
-/* Silnější první řádek */
-.detail-form__hint strong {
-  display: block;
+/* 🔒 JEDEN ŘÁDEK – bez zalamování */
+.detail-form__hint--single {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* zvýraznění slova */
+.detail-form__hint--single strong {
   font-weight: 600;
   color: var(--color-text);
-}
-
-/* Druhý řádek / vysvětlení */
-.detail-form__hint-sub {
-  margin-top: 6px; /* ⬅️ přesně to, co jsi měl inline */
 }
 
 /* ===== ROZTAŽENÍ POLE (SPAN) ===== */
