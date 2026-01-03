@@ -13,7 +13,7 @@ import React, { useCallback, useEffect, useRef } from 'react'
 import '@/app/styles/components/ListView.css'
 
 // ============================================================================
-// TYPES
+// 2) TYPES
 // ============================================================================
 
 export type ListViewSortDir = 'asc' | 'desc'
@@ -28,11 +28,11 @@ export type ListViewColumn = {
   /** Je sloupec řaditelný klikem v hlavičce */
   sortable?: boolean
 
-  /** (NEW) lze měnit šířku myší? default = true */
+  /** lze měnit šířku myší? default = true */
   resizable?: boolean
-  /** (NEW) minimální šířka v px (default 80) */
+  /** minimální šířka v px (default 80) */
   minWidthPx?: number
-  /** (NEW) maximální šířka v px (default 1200) */
+  /** maximální šířka v px (default 1200) */
   maxWidthPx?: number
 }
 
@@ -64,12 +64,12 @@ export type ListViewProps<TData = any> = {
   sort?: ListViewSortState
   onSortChange?: (next: ListViewSortState) => void
 
-  /** (NEW) když uživatel potáhne okraj sloupce */
+  /** když uživatel potáhne okraj sloupce */
   onColumnResize?: (columnKey: string, widthPx: number) => void
 }
 
 // ============================================================================
-// HELPERS
+// 3) HELPERS
 // ============================================================================
 
 function getAlignClass(align?: 'left' | 'center' | 'right') {
@@ -93,7 +93,17 @@ function sortIndicator(current: ListViewSortState | undefined, key: string): str
   return current.dir === 'asc' ? '▲' : '▼'
 }
 // ============================================================================
-// RENDER
+// 4) DATA LOAD
+// ============================================================================
+// (none)
+
+// ============================================================================
+// 5) ACTION HANDLERS
+// ============================================================================
+// (inline + hooks)
+
+// ============================================================================
+// 6) RENDER
 // ============================================================================
 
 export default function ListView<TData = any>({
@@ -195,7 +205,8 @@ export default function ListView<TData = any>({
                       ...getColStyle(col.width),
                       cursor: canSort ? 'pointer' : undefined,
                       userSelect: canSort ? 'none' : undefined,
-                      position: 'relative', // nutné pro resizer
+                      // ❗DŮLEŽITÉ: už NENÍ inline `position: relative`
+                      // sticky se řídí CSS (thead th { position: sticky })
                     }}
                     onClick={() => {
                       if (!canSort) return
@@ -214,7 +225,6 @@ export default function ListView<TData = any>({
                         role="separator"
                         aria-orientation="vertical"
                         onMouseDown={(e) => {
-                          // ať to nespustí sort klik
                           e.preventDefault()
                           e.stopPropagation()
 
@@ -267,12 +277,7 @@ export default function ListView<TData = any>({
                   .join(' ')
 
                 return (
-                  <tr
-                    key={row.id}
-                    className={rowClassNames}
-                    onClick={() => onRowClick?.(row)}
-                    onDoubleClick={() => onRowDoubleClick?.(row)}
-                  >
+                  <tr key={row.id} className={rowClassNames} onClick={() => onRowClick?.(row)} onDoubleClick={() => onRowDoubleClick?.(row)}>
                     {columns.map((col) => {
                       const alignClass = getAlignClass(col.align)
                       return (
