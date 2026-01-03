@@ -959,7 +959,6 @@ export default function UsersTile({
   // =====================
   // 6) RENDER
   // =====================
-
   if (viewMode === 'list') {
     return (
       <div>
@@ -983,7 +982,6 @@ export default function UsersTile({
           sort={sort}
           onSortChange={handleSortChange}
           onColumnResize={handleColumnResize}
-          }
         />
 
         <ListViewColumnsDrawer
@@ -1014,6 +1012,7 @@ export default function UsersTile({
       </div>
     )
   }
+
 
 
   if (viewMode === 'attachments-manager') {
