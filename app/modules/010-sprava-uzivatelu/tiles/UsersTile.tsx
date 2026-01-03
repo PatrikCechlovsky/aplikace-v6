@@ -681,41 +681,49 @@ export default function UsersTile({
       dbg('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
 
       // ATTACHMENTS MANAGER ACTIONS
-      
+      // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
-        const api = attachmentsManagerApiRef.current
-        if (!api) return
+        // ✅ Close NECHCEME sežrat tady – musí propadnout níž do společného CLOSE bloku
+        if (actionId === 'close') {
+          // žádný return
+        } else {
+          const api = attachmentsManagerApiRef.current
+          if (!api) return
       
-        if (actionId === 'attachmentsAdd') {
-          api.add()
-          return
-        }
+          if (actionId === 'attachmentsAdd') {
+            api.add()
+            return
+          }
       
-        if (actionId === 'attachmentsEdit') {
-          api.editMeta()
-          return
-        }
+          if (actionId === 'attachmentsEdit') {
+            api.editMeta()
+            return
+          }
       
-        if (actionId === 'attachmentsSave') {
-          await api.save()
-          return
-        }
+          if (actionId === 'attachmentsSave') {
+            await api.save()
+            return
+          }
       
-        if (actionId === 'attachmentsNewVersion') {
-          api.newVersion()
-          return
-        }
+          if (actionId === 'attachmentsNewVersion') {
+            api.newVersion()
+            return
+          }
       
-        if (actionId === 'attachmentsHistory') {
-          api.history()
+          if (actionId === 'attachmentsHistory') {
+            api.history()
+            return
+          }
+      
+          if (actionId === 'columnSettings') {
+            api.columnSettings()
+            return
+          }
+      
           return
         }
-        if (actionId === 'columnSettings') {
-          api.columnSettings()
-          return
-        }
-        return
       }
+
 
       // CLOSE
       if (actionId === 'close') {
