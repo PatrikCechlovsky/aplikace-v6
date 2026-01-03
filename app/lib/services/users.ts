@@ -6,9 +6,7 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 
-/* =========================
-   LIST
-   ========================= */
+
 /* =========================
    LIST
    ========================= */
@@ -29,7 +27,12 @@ export type UsersListRow = {
   is_archived: boolean | null
   created_at: string | null
 
-  // login/invite (existuje ve v_users_list)
+  // ✅ person fields (pro list)
+  title_before?: string | null
+  first_name?: string | null
+  last_name?: string | null
+
+  // login/invite
   first_login_at?: string | null
   last_login_at?: string | null
   last_invite_sent_at?: string | null
@@ -54,6 +57,11 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
         role_code,
         is_archived,
         created_at,
+
+        title_before,
+        first_name,
+        last_name,
+
         first_login_at,
         last_login_at,
         last_invite_sent_at,
@@ -61,7 +69,7 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
         last_invite_status
       `
     )
-    .order('display_name', { ascending: true, nullsFirst: false })
+    .order('display_name', { ascending: true })
     .limit(limit)
 
   if (!includeArchived) {
@@ -70,14 +78,14 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
 
   if (search) {
     const s = `%${search}%`
-    // rozšířeno i o systémová pole (když budeš chtít vyhledávat i podle nich)
     q = q.or(
       [
         `display_name.ilike.${s}`,
         `email.ilike.${s}`,
         `phone.ilike.${s}`,
-        `role_code.ilike.${s}`,
-        `last_invite_status.ilike.${s}`,
+        `first_name.ilike.${s}`,
+        `last_name.ilike.${s}`,
+        `title_before.ilike.${s}`,
       ].join(',')
     )
   }
