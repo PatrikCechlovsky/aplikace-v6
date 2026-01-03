@@ -16,13 +16,13 @@
   --table-row-h: 44px;
   --table-header-h: 34px;
   --table-cell-px: 12px;
-  --table-cell-py: 10px;
+  --table-cell-py: 8px;
 
   /* Badge (e.g. role pill in lists) */
   --badge-font: 12px;
-  --badge-px: 10px;
+  --badge-px: 12px;
   --badge-py: 3px;
-
+  
   --tab-h: 34px;
   --tab-font: 13px;
 
@@ -46,7 +46,7 @@
   --table-cell-py: 7px;
 
   --badge-font: 12.5px;
-  --badge-px: 11px;
+  --badge-px: 12px;
   --badge-py: 4px;
 
   --tab-h: 32px;
@@ -72,7 +72,7 @@
   --table-cell-py: 5px;
 
   --badge-font: 11.5px;
-  --badge-px: 9px;
+  --badge-px: 10px;
   --badge-py: 3px;
 
   --tab-h: 30px;
