@@ -1,38 +1,41 @@
 // FILE: app/modules/900-nastaveni/tiles/AppViewSettingsTile.tsx
-// PURPOSE: Uživatelská nastavení vzhledu → výchozí zobrazení seznamů + rozložení hlavního menu
-// Poznámka: Toto nastavení je per-user (uloženo v localStorage), aplikace-v6 standard.
+// PURPOSE: Uživatelská nastavení vzhledu → výchozí zobrazení seznamů + rozložení menu + Excel režim + hustota řádků
+// Poznámka: Per-user (localStorage). Tile pouze ukládá, AppShell aplikuje třídy na .layout.
 
 'use client'
 
+/* =========================
+   1) IMPORTS
+   ========================= */
 import React, { useEffect, useState } from 'react'
 
-/* -------------------------------------------------------
-   Typy nastavení – pouze to, co je povoleno v tomto tile.
--------------------------------------------------------- */
+/* =========================
+   2) TYPES
+   ========================= */
 type ViewMode = 'table' | 'cards'
 type MenuLayout = 'sidebar' | 'top'
+type UiStyle = 'default' | 'excel'
+type Density = 'comfortable' | 'compact'
 
 interface AppViewSettings {
   viewMode: ViewMode
   menuLayout: MenuLayout
+  uiStyle: UiStyle
+  density: Density
 }
 
-/* -------------------------------------------------------
-   Klíč pro localStorage – per-user preference
--------------------------------------------------------- */
+/* =========================
+   3) HELPERS
+   ========================= */
 const STORAGE_KEY = 'app-view-settings'
 
-/* -------------------------------------------------------
-   Výchozí hodnoty (použije se při prvním spuštění)
--------------------------------------------------------- */
 const DEFAULT_SETTINGS: AppViewSettings = {
   viewMode: 'table',
   menuLayout: 'sidebar',
+  uiStyle: 'default',
+  density: 'comfortable',
 }
 
-/* -------------------------------------------------------
-   Načtení nastavení z localStorage (bezpečné)
--------------------------------------------------------- */
 function loadSettings(): AppViewSettings {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS
   try {
@@ -45,9 +48,6 @@ function loadSettings(): AppViewSettings {
   }
 }
 
-/* -------------------------------------------------------
-   Uložení nastavení do localStorage
--------------------------------------------------------- */
 function saveSettings(settings: AppViewSettings) {
   if (typeof window === 'undefined') return
   try {
@@ -57,43 +57,44 @@ function saveSettings(settings: AppViewSettings) {
   }
 }
 
-/* -------------------------------------------------------
-   TILE: Vzhled a zobrazení (pouze 2 volby + náhled tabulky)
--------------------------------------------------------- */
+function notifySettingsChanged() {
+  if (typeof window === 'undefined') return
+  // AppShell si na to může poslouchat a okamžitě přepnout třídy
+  window.dispatchEvent(new CustomEvent('app-view-settings-changed'))
+}
+
+/* =========================
+   6) RENDER
+   ========================= */
 const AppViewSettingsTile: React.FC = () => {
   const [settings, setSettings] = useState<AppViewSettings>(DEFAULT_SETTINGS)
 
-  // První načtení – jen klient
   useEffect(() => {
     setSettings(loadSettings())
   }, [])
 
-  // Aktualizace jedné části nastavení
   function updateSettings(partial: Partial<AppViewSettings>) {
     const next = { ...settings, ...partial }
     setSettings(next)
     saveSettings(next)
-    // zde bude napojení na globální UIConfig (fáze 2)
+    notifySettingsChanged()
   }
 
   return (
     <section className="generic-type">
-      {/* Hlavička tile */}
       <header className="generic-type__header">
         <h1 className="generic-type__title">Vzhled a zobrazení</h1>
         <p className="generic-type__description">
-          Nastavení výchozího zobrazení seznamů a umístění hlavního menu.
-          Nastavení je uloženo pro každého uživatele samostatně.
+          Nastavení výchozího zobrazení seznamů, umístění menu a Excel stylu (mřížka).
+          Uloženo pro každého uživatele samostatně.
         </p>
       </header>
 
       <div className="generic-type__body">
-
-        {/* PANEL: Nastavení výchozích pohledů */}
         <div className="generic-type__panel">
           <h2 className="generic-type__panel-title">Preferované rozložení</h2>
 
-          {/* Výchozí zobrazení seznamů */}
+          {/* Zobrazení seznamů */}
           <div className="generic-type__field-group">
             <label className="generic-type__label">Zobrazení seznamů</label>
             <div className="generic-type__radio-row">
@@ -119,11 +120,10 @@ const AppViewSettingsTile: React.FC = () => {
             </div>
           </div>
 
-          {/* Rozložení hlavního menu */}
+          {/* Rozložení menu */}
           <div className="generic-type__field-group">
             <label className="generic-type__label">Umístění hlavního menu</label>
             <div className="generic-type__radio-row">
-
               <label className="generic-type__radio">
                 <input
                   type="radio"
@@ -143,17 +143,67 @@ const AppViewSettingsTile: React.FC = () => {
                 />
                 <span>Horní lišta (Excel styl)</span>
               </label>
+            </div>
+          </div>
 
+          {/* Excel styl / mřížka */}
+          <div className="generic-type__field-group">
+            <label className="generic-type__label">Styl aplikace</label>
+            <div className="generic-type__radio-row">
+              <label className="generic-type__radio">
+                <input
+                  type="radio"
+                  name="uiStyle"
+                  checked={settings.uiStyle === 'default'}
+                  onChange={() => updateSettings({ uiStyle: 'default' })}
+                />
+                <span>Standardní (moderní)</span>
+              </label>
+
+              <label className="generic-type__radio">
+                <input
+                  type="radio"
+                  name="uiStyle"
+                  checked={settings.uiStyle === 'excel'}
+                  onChange={() => updateSettings({ uiStyle: 'excel' })}
+                />
+                <span>Excel (mřížka + ohraničení)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Hustota řádků */}
+          <div className="generic-type__field-group">
+            <label className="generic-type__label">Hustota</label>
+            <div className="generic-type__radio-row">
+              <label className="generic-type__radio">
+                <input
+                  type="radio"
+                  name="density"
+                  checked={settings.density === 'comfortable'}
+                  onChange={() => updateSettings({ density: 'comfortable' })}
+                />
+                <span>Pohodlná</span>
+              </label>
+
+              <label className="generic-type__radio">
+                <input
+                  type="radio"
+                  name="density"
+                  checked={settings.density === 'compact'}
+                  onChange={() => updateSettings({ density: 'compact' })}
+                />
+                <span>Kompaktní (nižší řádky)</span>
+              </label>
             </div>
           </div>
         </div>
 
-        {/* PANEL: Náhled tabulky */}
+        {/* Náhled tabulky */}
         <div className="generic-type__panel">
           <h2 className="generic-type__panel-title">Náhled tabulkového zobrazení</h2>
           <p className="generic-type__panel-description">
-            Tato ukázka používá stejné styly jako skutečné seznamy v aplikaci.
-            Náhled se automaticky přizpůsobuje podle vybraného barevného vzhledu.
+            Náhled používá stejné styly jako seznamy. Excel styl přidá mřížku a kompaktní režim sníží výšku řádků.
           </p>
 
           <div className="generic-type__table-wrapper">
@@ -189,7 +239,6 @@ const AppViewSettingsTile: React.FC = () => {
             </table>
           </div>
         </div>
-
       </div>
     </section>
   )
