@@ -62,7 +62,7 @@ type UsersTileProps = {
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
 }
 
-// ✅ lokální režimy
+// ✅ lokální režimy (rozšiřujeme CommonActions ViewMode)
 type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 
 // =====================
@@ -681,7 +681,7 @@ export default function UsersTile({
       dbg('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
 
       // ATTACHMENTS MANAGER ACTIONS
-      // ATTACHMENTS MANAGER ACTIONS
+      
       if (viewMode === 'attachments-manager') {
         const api = attachmentsManagerApiRef.current
         if (!api) return
