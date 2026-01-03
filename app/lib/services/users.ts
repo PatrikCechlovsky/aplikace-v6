@@ -9,6 +9,9 @@ import { supabase } from '@/app/lib/supabaseClient'
 /* =========================
    LIST
    ========================= */
+/* =========================
+   LIST
+   ========================= */
 
 export type UsersListParams = {
   searchText?: string
@@ -26,12 +29,7 @@ export type UsersListRow = {
   is_archived: boolean | null
   created_at: string | null
 
-  // ✅ person fields (pro list)
-  title_before?: string | null
-  first_name?: string | null
-  last_name?: string | null
-
-  // login/invite
+  // login/invite (existuje ve v_users_list)
   first_login_at?: string | null
   last_login_at?: string | null
   last_invite_sent_at?: string | null
@@ -52,15 +50,18 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
         display_name,
         email,
         phone,
+        subject_type,
         role_code,
         is_archived,
         created_at,
         first_login_at,
+        last_login_at,
         last_invite_sent_at,
-        last_invite_expires_at
+        last_invite_expires_at,
+        last_invite_status
       `
     )
-    .order('display_name', { ascending: true })
+    .order('display_name', { ascending: true, nullsFirst: false })
     .limit(limit)
 
   if (!includeArchived) {
@@ -69,7 +70,16 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
 
   if (search) {
     const s = `%${search}%`
-    q = q.or(`display_name.ilike.${s},email.ilike.${s},phone.ilike.${s}`)
+    // rozšířeno i o systémová pole (když budeš chtít vyhledávat i podle nich)
+    q = q.or(
+      [
+        `display_name.ilike.${s}`,
+        `email.ilike.${s}`,
+        `phone.ilike.${s}`,
+        `role_code.ilike.${s}`,
+        `last_invite_status.ilike.${s}`,
+      ].join(',')
+    )
   }
 
   const { data, error } = await q
@@ -77,7 +87,6 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
 
   return (data ?? []) as unknown as UsersListRow[]
 }
-
 /* =========================
    DETAIL SHAPE
    ========================= */
