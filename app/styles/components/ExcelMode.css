@@ -1,48 +1,27 @@
 /* app/styles/components/ExcelMode.css */
-/* PURPOSE: Excel-like gridlines + density tweaks controlled by .layout classes */
+/* PURPOSE: Excel-like gridlines ONLY for list tables + density tweaks.
+   IMPORTANT: Do NOT style sidebar/topmenu here (sidebar has its own CSS). */
 
-/* =========================================================
-   0) Globální metriky (default) – upravuješ jen proměnné
-   ========================================================= */
 .layout {
-  /* Tabulka / “buňky” */
+  /* tabulka / “buňky” */
   --row-h: 44px;
   --cell-py: 10px;
   --cell-px: 12px;
-
-  /* Sidebar položky (oddělené od tabulek) */
-  --sidebar-item-h: 38px;
-  --sidebar-item-py: 8px;
-  --sidebar-item-px: 10px;
-  --sidebar-font-size: 13px;
 }
 
-/* =========================================================
-   1) Hustota (compact) – menší řádky v celé appce
-   ========================================================= */
 .layout.layout--compact {
-  /* Tabulky / buňky – znatelně menší */
+  /* menší řádky v tabulkách */
   --row-h: 32px;
   --cell-py: 6px;
   --cell-px: 10px;
-
-  /* Sidebar ještě o chlup menší než tabulky */
-  --sidebar-item-h: 28px;
-  --sidebar-item-py: 5px;
-  --sidebar-item-px: 8px;
-  --sidebar-font-size: 12px;
 }
 
-/* =========================================================
-   2) Excel režim – definice “mřížky”
-   ========================================================= */
 .layout.layout--excel {
   --excel-grid: var(--color-border);
-  --excel-grid-soft: var(--color-border-soft);
 }
 
 /* =========================
-   3) Seznamy / tabulky (obecně)
+   Excel grid: TABLES ONLY
    ========================= */
 .layout.layout--excel table {
   border-collapse: collapse;
@@ -58,58 +37,4 @@
 
 .layout.layout--excel table thead th {
   background: var(--color-surface-subtle);
-}
-
-/* =========================
-   4) Menu – Sidebar a TopMenu
-   ========================= */
-
-/* Sidebar kontejner – jemné orámování */
-.layout.layout--excel .sidebar {
-  border-right: 1px solid var(--excel-grid);
-}
-
-/* Topbar / menu pás – mřížka jako v Excelu */
-.layout.layout--excel .layout__topbar {
-  border-bottom: 1px solid var(--excel-grid);
-  background: var(--color-topbar-bg);
-}
-
-/* Položky menu – společně: linky mezi položkami */
-.layout.layout--excel .sidebar__item,
-.layout.layout--excel .topmenu__item {
-  border-bottom: 1px solid var(--excel-grid-soft);
-}
-
-/* Když máš v topmenu položky vedle sebe, přidej i svislé oddělení */
-.layout.layout--excel .topmenu__item {
-  border-right: 1px solid var(--excel-grid-soft);
-}
-
-/* =========================
-   5) Sidebar “kompaktní řádky” – hlavní část
-   (pokud máš jiné classNames než .sidebar__item, řekni a přepíšu selektory)
-   ========================= */
-.layout.layout--excel .sidebar__item {
-  min-height: var(--sidebar-item-h);
-  padding: var(--sidebar-item-py) var(--sidebar-item-px);
-  display: flex;
-  align-items: center;
-  line-height: 1.15;
-  font-size: var(--sidebar-font-size);
-}
-
-/* Když je uvnitř <a> / <button>, tak aby nenafukovaly výšku dalším paddingem */
-.layout.layout--excel .sidebar__item a,
-.layout.layout--excel .sidebar__item button {
-  padding: 0;
-  line-height: 1.15;
-  font-size: inherit;
-}
-
-/* =========================
-   6) Jemné sjednocení “pocitu buněk” v obsahových blocích
-   ========================= */
-.layout.layout--excel .content {
-  /* zatím schválně prázdné – můžeš přidat později */
 }
