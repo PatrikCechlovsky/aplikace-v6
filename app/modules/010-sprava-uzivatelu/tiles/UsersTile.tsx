@@ -731,16 +731,19 @@ export default function UsersTile({
         dbg('close branch start', { t, viewMode })
 
         if (String(viewMode) === 'attachments-manager') {
-          dbg('close -> attachments-manager back')
+          dbg('close -> attachments-manager back to detail')
+        
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
-          if (backId) {
-            setDetailInitialSectionId('attachments')
-            setDetailActiveSectionId('attachments')
-            setUrl({ t: 'users-list', id: backId, vm: 'read', am: null }, 'replace')
-            setViewMode('read')
-          } else {
+          if (!backId) {
             closeToList()
+            return
           }
+        
+          setDetailInitialSectionId('attachments')
+          setDetailActiveSectionId('attachments')
+        
+          // ✅ jdi přes stejnou cestu jako ostatní přechody do detailu
+          openDetail({ id: backId } as any, 'read', 'detail')
           return
         }
 
