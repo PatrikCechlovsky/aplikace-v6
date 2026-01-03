@@ -1,0 +1,110 @@
+// app/styles/components/ListViewColumnsDrawer.css
+
+.lvcols__overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.25);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.lvcols__panel{
+  width: 420px;
+  max-width: 92vw;
+  height: 100%;
+  background: var(--color-surface, #fff);
+  border-left: 1px solid var(--color-border, #e5e5e5);
+  display: flex;
+  flex-direction: column;
+}
+
+.lvcols__header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--color-border, #e5e5e5);
+}
+.lvcols__title{ font-weight: 700; }
+.lvcols__close{
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: .7;
+}
+
+.lvcols__search{ padding: 12px 14px; }
+.lvcols__search input{
+  width: 100%;
+  padding: 10px 10px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 10px;
+  background: transparent;
+}
+
+.lvcols__list{
+  padding: 8px 10px 10px;
+  overflow: auto;
+  flex: 1;
+}
+
+.lvcols__item{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 10px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 12px;
+  background: transparent;
+  margin-bottom: 10px;
+}
+
+.lvcols__item.is-fixed{ opacity: .85; }
+.lvcols__item.is-drag{ opacity: .6; }
+
+.lvcols__drag{
+  width: 18px;
+  text-align: center;
+  opacity: .6;
+  user-select: none;
+}
+
+.lvcols__label{ flex: 1; min-width: 0; }
+.lvcols__name{ font-weight: 600; }
+.lvcols__key{ font-size: 12px; opacity: .65; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.lvcols__toggle{
+  border: 1px solid var(--color-border, #e5e5e5);
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.lvcols__toggle:disabled{
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.lvcols__footer{
+  display:flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--color-border, #e5e5e5);
+}
+
+.lvcols__btn{
+  border: 1px solid var(--color-border, #e5e5e5);
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.lvcols__btn--primary{
+  border-color: transparent;
+  background: var(--color-primary, #111);
+  color: white;
+}
