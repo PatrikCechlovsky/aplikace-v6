@@ -74,3 +74,18 @@
 .layout.layout--density-mini .generic-type__table th {
   font-size: 11px;
 }
+/* =========================================
+   Density → EntityDetailFrame title
+   ========================================= */
+
+.layout {
+  --entity-title-font: 22px;
+}
+
+.layout.layout--density-compact {
+  --entity-title-font: 20px;
+}
+
+.layout.layout--density-mini {
+  --entity-title-font: 18px;
+}
