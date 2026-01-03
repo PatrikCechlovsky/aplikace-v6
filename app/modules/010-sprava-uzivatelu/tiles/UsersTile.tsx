@@ -226,17 +226,17 @@ export default function UsersTile({
 
   // ✅ DEFAULT sort pro Users (Role -> order_index)
   const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'roleLabel', dir: 'asc' }), [])
-
+  
   // ✅ v UI vždy držíme konkrétní sort (nikdy null)
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
-
+  
   // ✅ Column prefs (šířky/pořadí/viditelnost)
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
     colOrder: [],
     colHidden: [],
   })
-
+  
   const columns = useMemo(() => {
     return applyColumnPrefs(BASE_COLUMNS, colPrefs)
   }, [colPrefs])
@@ -244,34 +244,58 @@ export default function UsersTile({
   // ✅ Columns drawer / dialog (UI state)
   const [colsOpen, setColsOpen] = useState(false)
   
+  // ✅ Columns dialog constraints (Role první + Email povinný)
+  const fixedFirstKey = 'roleLabel'
+  const requiredKeys = ['email']
+  
   // ✅ ListView prefs (persisted)
   const prefsLoadedRef = useRef(false)
   const saveTimerRef = useRef<any>(null)
-
+  
+  // ✅ Enforce: roleLabel vždy první + nikdy hidden (i když prefs přijdou rozbité)
+  useEffect(() => {
+    setColPrefs((prev) => {
+      const order = Array.isArray(prev.colOrder) ? prev.colOrder : []
+      const hidden = Array.isArray(prev.colHidden) ? prev.colHidden : []
+  
+      const nextOrder = [fixedFirstKey, ...order.filter((k) => k && k !== fixedFirstKey)]
+      const nextHidden = hidden.filter((k) => k !== fixedFirstKey)
+  
+      const changed = nextOrder.join('|') !== order.join('|') || nextHidden.join('|') !== hidden.join('|')
+      if (!changed) return prev
+  
+      return {
+        ...prev,
+        colOrder: nextOrder,
+        colHidden: nextHidden,
+      }
+    })
+  }, [])
+  
   useEffect(() => {
     void (async () => {
       const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
-
+  
       const loadedSort = (prefs.sort as ViewPrefsSortState) ?? null
       setSort(loadedSort ? loadedSort : DEFAULT_SORT)
-
+  
       setColPrefs({
         colWidths: prefs.colWidths ?? {},
         colOrder: prefs.colOrder ?? [],
         colHidden: prefs.colHidden ?? [],
       })
-
+  
       prefsLoadedRef.current = true
     })()
   }, [DEFAULT_SORT])
-
+  
   useEffect(() => {
     if (!prefsLoadedRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-
+  
     const persistSort: ViewPrefsSortState =
       sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
-
+  
     const payload: ViewPrefs = {
       v: 1,
       sort: persistSort,
@@ -279,12 +303,12 @@ export default function UsersTile({
       colOrder: colPrefs.colOrder ?? [],
       colHidden: colPrefs.colHidden ?? [],
     }
-
+  
     saveTimerRef.current = setTimeout(() => {
       void saveViewPrefs(VIEW_KEY, payload)
     }, 500)
   }, [sort, DEFAULT_SORT, colPrefs])
-
+  
   // ✅ ListView může poslat null (třetí klik) = návrat na default
   const handleSortChange = useCallback(
     (next: ListViewSortState) => {
@@ -292,11 +316,12 @@ export default function UsersTile({
     },
     [DEFAULT_SORT]
   )
-
+  
   // ✅ Column resize (šířky sloupců)
   const handleColumnResize = useCallback((key: string, px: number) => {
     setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
   }, [])
+
   // -------------------------
   // URL helpers (t, id, vm, am)
   // -------------------------
@@ -899,11 +924,21 @@ export default function UsersTile({
             order: colPrefs.colOrder ?? [],
             hidden: colPrefs.colHidden ?? [],
           }}
-          onClose={() => setColsOpen(false)}
-          onReset={handleResetColumns}
           onChange={(next) => {
-            setColPrefs((p) => ({ ...p, colOrder: next.order, colHidden: next.hidden }))
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: next.order,
+              colHidden: next.hidden,
+            }))
           }}
+          onReset={() => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: [],
+              colHidden: [],
+            }))
+          }}
+          onClose={() => setColsOpen(false)}
         />
       </div>
     )
