@@ -35,20 +35,25 @@ type UiUser = {
   displayName: string
   email: string
   phone?: string
+
+  titleBefore?: string | null
+  firstName?: string | null
+  lastName?: string | null
+
   roleCode?: string | null
   roleLabel: string
   roleOrderIndex?: number | null
   roleColor?: string | null
-  twoFactorMethod?: string | null
+
   createdAt: string
   isArchived?: boolean
-  firstLoginAt?: string | null
 
-  // ✅ systémové sloupce (existují ve v_users_list)
+  firstLoginAt?: string | null
   lastLoginAt?: string | null
+
+  lastInviteStatus?: string | null
   lastInviteSentAt?: string | null
   lastInviteExpiresAt?: string | null
-  lastInviteStatus?: string | null
 }
 
 type UsersTileProps = {
@@ -74,13 +79,13 @@ const VIEW_KEY = '010.users.list'
 
 const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%', sortable: true },
-  { key: 'displayName', label: 'Jméno', sortable: true },
+  { key: 'displayName', label: 'Zobrazované jméno', sortable: true },
+  { key: 'lastName', label: 'Příjmení', sortable: true },
+  { key: 'firstName', label: 'Jméno', sortable: true },
+  { key: 'titleBefore', label: 'Titul', width: '10%', sortable: true },
   { key: 'email', label: 'E-mail', sortable: true },
-
-  // ✅ nové systémové sloupce
-  { key: 'lastLoginAt', label: 'Poslední přihlášení', width: '16%', sortable: true },
-  { key: 'lastInviteStatus', label: 'Stav pozvánky', width: '14%', sortable: true },
-
+  { key: 'lastLoginAt', label: 'Poslední přihlášení', width: '14%', sortable: true },
+  { key: 'lastInviteStatus', label: 'Pozvánka', width: '10%', sortable: true },
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center', sortable: true },
 ]
 
@@ -125,6 +130,21 @@ function resolveRoleMeta(roleCode: string | null | undefined, map: Record<string
   return map[c] ?? { label: roleCodeToLabel(c), color: null, orderIndex: null }
 }
 
+function formatDateShort(v: any): string {
+  const s = String(v ?? '').trim()
+  if (!s) return ''
+  // ISO -> YYYY-MM-DD (rychlé, bez nových importů)
+  if (s.length >= 10) return s.slice(0, 10)
+  return s
+}
+
+function dateSortValue(v: any): number {
+  const s = String(v ?? '').trim()
+  if (!s) return 0
+  const t = Date.parse(s)
+  return Number.isFinite(t) ? t : 0
+}
+
 function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUser {
   const meta = resolveRoleMeta((row as any).role_code, roleMap)
   return {
@@ -132,20 +152,25 @@ function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUse
     displayName: (row as any).display_name ?? '',
     email: (row as any).email ?? '',
     phone: (row as any).phone ?? undefined,
+
+    titleBefore: (row as any).title_before ?? null,
+    firstName: (row as any).first_name ?? null,
+    lastName: (row as any).last_name ?? null,
+
     roleCode: (row as any).role_code ?? null,
     roleLabel: meta.label,
     roleOrderIndex: meta.orderIndex,
     roleColor: meta.color,
-    twoFactorMethod: (row as any).two_factor_method ?? null,
+
     createdAt: (row as any).created_at ?? '',
     isArchived: !!(row as any).is_archived,
-    firstLoginAt: (row as any).first_login_at ?? null,
 
-    // ✅ nové systémové hodnoty
+    firstLoginAt: (row as any).first_login_at ?? null,
     lastLoginAt: (row as any).last_login_at ?? null,
+
+    lastInviteStatus: (row as any).last_invite_status ?? null,
     lastInviteSentAt: (row as any).last_invite_sent_at ?? null,
     lastInviteExpiresAt: (row as any).last_invite_expires_at ?? null,
-    lastInviteStatus: (row as any).last_invite_status ?? null,
   }
 }
 
@@ -160,27 +185,21 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
       ) : (
         <span className="generic-type__name-main">{u.roleLabel || '—'}</span>
       ),
+
       displayName: u.displayName,
+      lastName: u.lastName ?? '',
+      firstName: u.firstName ?? '',
+      titleBefore: u.titleBefore ?? '',
+
       email: u.email,
 
-      // ✅ nové sloupce (zatím bez formátování datumu – ať nic nevymýšlíme)
-      lastLoginAt: u.lastLoginAt ?? '',
+      lastLoginAt: u.lastLoginAt ? formatDateShort(u.lastLoginAt) : '',
       lastInviteStatus: u.lastInviteStatus ?? '',
 
       isArchived: u.isArchived ? 'Ano' : '',
     },
     raw: u,
   }
-}
-
-function normalizeString(v: any): string {
-  return String(v ?? '').trim().toLowerCase()
-}
-
-function numberOrZero(v: any): number {
-  if (v === null || v === undefined) return 0
-  const n = Number(v)
-  return Number.isFinite(n) ? n : 0
 }
 
 function getSortValue(u: UiUser, key: string): string | number {
@@ -191,17 +210,23 @@ function getSortValue(u: UiUser, key: string): string | number {
       return normalizeString(u.displayName)
     case 'email':
       return normalizeString(u.email)
+    case 'lastName':
+      return normalizeString(u.lastName)
+    case 'firstName':
+      return normalizeString(u.firstName)
+    case 'titleBefore':
+      return normalizeString(u.titleBefore)
     case 'lastLoginAt':
-      // ISO timestamp -> string sort funguje
-      return String(u.lastLoginAt ?? '')
+      return dateSortValue(u.lastLoginAt)
     case 'lastInviteStatus':
-      return normalizeString(u.lastInviteStatus ?? '')
+      return normalizeString(u.lastInviteStatus)
     case 'isArchived':
       return u.isArchived ? 1 : 0
     default:
       return ''
   }
 }
+
 
 // =====================
 // 4) DATA LOAD
