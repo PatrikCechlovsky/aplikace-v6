@@ -11,7 +11,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   overflow: hidden;
-  font-size: 13px;
+  font-size: var(--table-font);
 }
 
 .entity-list__header-row,
@@ -25,6 +25,7 @@
   background: var(--color-surface-subtle);
   border-bottom: 1px solid var(--color-border);
   font-weight: 600;
+  min-height: var(--table-header-h);
 }
 
 .entity-list__row {
@@ -37,14 +38,15 @@
 }
 
 .entity-list__cell {
-  padding: 6px 8px;
+  padding: var(--table-cell-py) var(--table-cell-px);
+  min-height: var(--table-row-h);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .entity-list__cell--header {
-  font-size: 12px;
+  font-size: var(--table-header-font);
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
@@ -103,8 +105,8 @@
 }
 
 .relation-pane__item-badge {
-  font-size: 11px;
-  padding: 2px 6px;
+  font-size: var(--badge-font);
+  padding: var(--badge-py) var(--badge-px);
   border-radius: 999px;
   background: #e5f0ff;
   color: #1d4ed8;
