@@ -28,7 +28,7 @@
 */
 .listview__table-wrapper {
   width: 100%;
-  position: relative; /* ✅ stabilní z-index pro sticky hlavičku */
+  position: relative;
   overflow-x: auto;
   overflow-y: auto;
   scrollbar-gutter: stable;
@@ -46,7 +46,7 @@
   table-layout: fixed;
 }
 
-/* Sticky hlavička při scrollu (BETON: lepíme na TH) */
+/* Sticky hlavička při scrollu */
 .generic-type__table thead th {
   position: sticky;
   top: 0;
@@ -81,11 +81,4 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: bottom;
-}
-/* FORCE sticky – přebije i inline style position:relative */
-.listview .generic-type__table thead th.generic-type__cell {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 50 !important;
-  background: var(--color-surface) !important;
 }
