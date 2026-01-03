@@ -97,6 +97,11 @@ function normalizeString(v: any): string {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
+function numberOrZero(v: any): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
 function roleCodeToLabel(code: string | null | undefined): string {
   const c = (code ?? '').trim().toLowerCase()
   if (!c) return ''
