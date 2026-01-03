@@ -57,3 +57,22 @@
   align-items: center;
   margin-right: 4px;
 }
+/* =========================================================
+   Density → Detail tabs (SAFE)
+   ========================================================= */
+.layout.layout--density-compact .detail-tabs {
+  --dt-tab-font: 12px;
+  --dt-tab-h: 32px;
+}
+
+.layout.layout--density-mini .detail-tabs {
+  --dt-tab-font: 11px;
+  --dt-tab-h: 30px;
+}
+
+/* fallback když proměnné nejsou */
+.detail-tabs a,
+.detail-tabs button {
+  font-size: var(--dt-tab-font, 13px);
+  min-height: var(--dt-tab-h, 34px);
+}
