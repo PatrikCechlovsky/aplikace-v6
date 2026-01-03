@@ -1,0 +1,48 @@
+/* app/styles/components/DensityTypography.css */
+/* PURPOSE: sjednocení základní typografie napříč obrazovkami podle hustoty */
+
+.layout {
+  --h1: 22px;
+  --h2: 16px;
+  --text: 14px;
+  --text-sm: 13px;
+
+  --tab-h: 34px;
+  --tab-font: 13px;
+
+  --radio-font: 14px;
+}
+
+.layout.layout--density-compact {
+  --h1: 20px;
+  --h2: 15px;
+  --text: 13px;
+  --text-sm: 12px;
+
+  --tab-h: 32px;
+  --tab-font: 12px;
+
+  --radio-font: 13px;
+}
+
+.layout.layout--density-mini {
+  --h1: 18px;
+  --h2: 14px;
+  --text: 12px;
+  --text-sm: 11px;
+
+  --tab-h: 30px;
+  --tab-font: 11px;
+
+  --radio-font: 12px;
+}
+
+/* Nadpisy sekcí – pokud používáš obecné h1/h2 v obsahu */
+.layout .content h1 {
+  font-size: var(--h1);
+}
+
+.layout .content h2,
+.layout .content h3 {
+  font-size: var(--h2);
+}
