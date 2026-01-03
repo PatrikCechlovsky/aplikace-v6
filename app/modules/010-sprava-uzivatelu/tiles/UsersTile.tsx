@@ -240,7 +240,10 @@ export default function UsersTile({
   const columns = useMemo(() => {
     return applyColumnPrefs(BASE_COLUMNS, colPrefs)
   }, [colPrefs])
-
+  
+  // ✅ Columns drawer / dialog (UI state)
+  const [colsOpen, setColsOpen] = useState(false)
+  
   // ✅ ListView prefs (persisted)
   const prefsLoadedRef = useRef(false)
   const saveTimerRef = useRef<any>(null)
