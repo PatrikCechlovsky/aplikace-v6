@@ -11,9 +11,15 @@
 
 .layout.layout--compact {
   /* menší řádky v tabulkách */
-  --row-h: 28px;
-  --cell-py: 4px;
-  --cell-px: 9px;
+  --row-h: 30px;
+  --cell-py: 5px;
+  --cell-px: 10px;
+}
+
+.layout.layout--density-mini {
+  --row-h: 26px;
+  --cell-py: 3px;
+  --cell-px: 8px;
 }
 
 .layout.layout--excel {
