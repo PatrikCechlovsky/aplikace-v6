@@ -680,7 +680,7 @@ export default function DetailAttachmentsSection({
   if (!canLoad) {
     return (
       <div className="detail-view__section">
-        <div className="detail-view__placeholder">
+        <div className="detail-form__hint">
           Přílohy budou dostupné po uložení záznamu.
           <br />
           Režim: <strong>{mode}</strong>
@@ -748,9 +748,9 @@ const sharedColumns = useMemo(() => {
     return (
       <div className="detail-view__section">
         {isManagerRequested && (
-          <div className="detail-view__placeholder">
+          <div className="detail-form__hint">
             <strong>Správa příloh je pouze pro čtení.</strong>
-            <div style={{ marginTop: 6 }}>{readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}</div>
+            <div className="detail-form__hint-sub">{readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}</div>
           </div>
         )}
 
@@ -758,15 +758,15 @@ const sharedColumns = useMemo(() => {
           <section className="detail-form__section">
             <h3 className="detail-form__section-title">{sectionTitle}</h3>
 
-            {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
+            {loading && <div className="detail-form__hint">Načítám přílohy…</div>}
 
             {!loading && errorText && (
-              <div className="detail-view__placeholder">
+              <div className="detail-form__hint">
                 Chyba: <strong>{errorText}</strong>
               </div>
             )}
 
-            {!loading && !errorText && listRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
+            {!loading && !errorText && listRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
 
             {!loading && !errorText && listRows.length > 0 && (
               <ListView
@@ -931,8 +931,8 @@ const sharedColumns = useMemo(() => {
             </div>
           )}
 
-          {loading && <div className="detail-view__placeholder">Načítám přílohy…</div>}
-          {!loading && managerRows.length === 0 && <div className="detail-view__placeholder">Zatím žádné přílohy.</div>}
+          {loading && <div className="detail-form__hint">Načítám přílohy…</div>}
+          {!loading && managerRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
 
 
           {/* ========================= */}
@@ -993,14 +993,14 @@ const sharedColumns = useMemo(() => {
           
               <div className="detail-attachments__history-body">
                 {!expandedDocId && (
-                  <div className="detail-attachments__history-placeholder">
+                  <div className="detail-form__hint">
                     Vyber přílohu a klikni na <strong>Historie</strong> v CommonActions.
                   </div>
                 )}
           
-                {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-view__placeholder">Načítám historii…</div>}
+                {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-form__hint">Načítám historii…</div>}
           
-                {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-view__placeholder">Žádná historie.</div>}
+                {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-form__hint">Žádná historie.</div>}
           
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
                   <div className="detail-attachments__lv-shell detail-attachments__history-compact">
