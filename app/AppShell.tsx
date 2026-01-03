@@ -17,6 +17,7 @@ import './styles/components/DetailForm.css'
 import './styles/components/EntityDetailFrame.css'
 import './styles/components/DetailAttachments.css'
 import './styles/components/ExcelMode.css'
+import './styles/components/DensityTypography.css'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
