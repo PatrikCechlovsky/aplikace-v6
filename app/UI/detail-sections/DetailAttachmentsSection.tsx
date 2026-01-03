@@ -748,7 +748,7 @@ const sharedColumns = useMemo(() => {
     return (
       <div className="detail-view__section">
         {isManagerRequested && (
-          <div className="detail-view__placeholder" style={{ marginBottom: 8 }}>
+          <div className="detail-view__placeholder">
             <strong>Správa příloh je pouze pro čtení.</strong>
             <div style={{ marginTop: 6 }}>{readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}</div>
           </div>
@@ -862,7 +862,7 @@ const sharedColumns = useMemo(() => {
           <h3 className="detail-form__section-title">{sectionTitle}</h3>
 
           {errorText && (
-            <div className="detail-view__placeholder" style={{ marginTop: 8 }}>
+            <div className="detail-view__placeholder">
               Chyba: <strong>{errorText}</strong>
             </div>
           )}
