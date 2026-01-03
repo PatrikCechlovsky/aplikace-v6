@@ -644,7 +644,7 @@ export default function UsersTile({
     if (viewMode === 'invite') return INVITE
 
     if (viewMode === 'attachments-manager') {
-      return ['attachmentsAdd', 'attachmentsEdit', 'attachmentsSave', 'attachmentsNewVersion', 'attachmentsHistory', 'close']
+      return ['attachmentsAdd', 'attachmentsEdit', 'attachmentsSave', 'attachmentsNewVersion', 'attachmentsHistory', 'columnSettings', 'close']
     }
 
     if (viewMode === 'read') {
@@ -681,13 +681,40 @@ export default function UsersTile({
       dbg('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
 
       // ATTACHMENTS MANAGER ACTIONS
+      // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
         const api = attachmentsManagerApiRef.current
-        if (actionId === 'attachmentsAdd') return void api?.add()
-        if (actionId === 'attachmentsEdit') return void api?.editMeta()
-        if (actionId === 'attachmentsSave') return void (await api?.save())
-        if (actionId === 'attachmentsNewVersion') return void api?.newVersion()
-        if (actionId === 'attachmentsHistory') return void api?.history()
+        if (!api) return
+      
+        if (actionId === 'attachmentsAdd') {
+          api.add()
+          return
+        }
+      
+        if (actionId === 'attachmentsEdit') {
+          api.editMeta()
+          return
+        }
+      
+        if (actionId === 'attachmentsSave') {
+          await api.save()
+          return
+        }
+      
+        if (actionId === 'attachmentsNewVersion') {
+          api.newVersion()
+          return
+        }
+      
+        if (actionId === 'attachmentsHistory') {
+          api.history()
+          return
+        }
+        if (actionId === 'columnSettings') {
+          api.columnSettings()
+          return
+        }
+        return
       }
 
       // CLOSE
