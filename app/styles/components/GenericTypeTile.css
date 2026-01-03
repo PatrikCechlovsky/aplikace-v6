@@ -107,18 +107,24 @@
 .generic-type__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--table-font);
 }
 
 .generic-type__table th {
   text-align: left;
-  padding: 6px 8px;
+  padding: var(--table-cell-py) var(--table-cell-px);
+  height: var(--table-header-h);
+  font-size: var(--table-header-font);
+
   color: var(--color-text-muted);
+  font-weight: 600;
 }
 
 .generic-type__cell {
   text-align: left;
-  padding: 6px 8px;
+  padding: var(--table-cell-py) var(--table-cell-px);
+  height: var(--table-row-h);
+  font-size: var(--table-font);
 }
 
 .generic-type__cell--center {
@@ -126,11 +132,11 @@
 }
 
 .generic-type__cell--name {
-  padding: 4px 6px;
+  padding: 0;
 }
 
 .generic-type__table tbody .generic-type__cell--name {
-  padding: 0 !important;
+  padding: 0;
 }
 
 .generic-type__row--selected {
