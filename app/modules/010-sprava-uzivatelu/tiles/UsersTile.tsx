@@ -43,6 +43,12 @@ type UiUser = {
   createdAt: string
   isArchived?: boolean
   firstLoginAt?: string | null
+
+  // ✅ systémové sloupce (existují ve v_users_list)
+  lastLoginAt?: string | null
+  lastInviteSentAt?: string | null
+  lastInviteExpiresAt?: string | null
+  lastInviteStatus?: string | null
 }
 
 type UsersTileProps = {
@@ -70,6 +76,11 @@ const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: '18%', sortable: true },
   { key: 'displayName', label: 'Jméno', sortable: true },
   { key: 'email', label: 'E-mail', sortable: true },
+
+  // ✅ nové systémové sloupce
+  { key: 'lastLoginAt', label: 'Poslední přihlášení', width: '16%', sortable: true },
+  { key: 'lastInviteStatus', label: 'Stav pozvánky', width: '14%', sortable: true },
+
   { key: 'isArchived', label: 'Archivován', width: '10%', align: 'center', sortable: true },
 ]
 
@@ -129,6 +140,12 @@ function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUse
     createdAt: (row as any).created_at ?? '',
     isArchived: !!(row as any).is_archived,
     firstLoginAt: (row as any).first_login_at ?? null,
+
+    // ✅ nové systémové hodnoty
+    lastLoginAt: (row as any).last_login_at ?? null,
+    lastInviteSentAt: (row as any).last_invite_sent_at ?? null,
+    lastInviteExpiresAt: (row as any).last_invite_expires_at ?? null,
+    lastInviteStatus: (row as any).last_invite_status ?? null,
   }
 }
 
@@ -145,6 +162,11 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
       ),
       displayName: u.displayName,
       email: u.email,
+
+      // ✅ nové sloupce (zatím bez formátování datumu – ať nic nevymýšlíme)
+      lastLoginAt: u.lastLoginAt ?? '',
+      lastInviteStatus: u.lastInviteStatus ?? '',
+
       isArchived: u.isArchived ? 'Ano' : '',
     },
     raw: u,
@@ -169,6 +191,11 @@ function getSortValue(u: UiUser, key: string): string | number {
       return normalizeString(u.displayName)
     case 'email':
       return normalizeString(u.email)
+    case 'lastLoginAt':
+      // ISO timestamp -> string sort funguje
+      return String(u.lastLoginAt ?? '')
+    case 'lastInviteStatus':
+      return normalizeString(u.lastInviteStatus ?? '')
     case 'isArchived':
       return u.isArchived ? 1 : 0
     default:
