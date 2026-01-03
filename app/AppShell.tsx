@@ -16,6 +16,7 @@ import './styles/components/DetailTabs.css'
 import './styles/components/DetailForm.css'
 import './styles/components/EntityDetailFrame.css'
 import './styles/components/DetailAttachments.css'
+import './styles/components/ExcelMode.css'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -227,6 +228,56 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (!el) return
     el.classList.toggle('layout--topmenu', menuLayout === 'top')
   }, [menuLayout])
+
+  // -------------------------
+  // App view settings (table/cards + excel style + density)
+  // -------------------------
+  type AppViewMode = 'table' | 'cards'
+  type UiStyle = 'default' | 'excel'
+  type Density = 'comfortable' | 'compact'
+  
+  function readAppViewSettings(): { viewMode: AppViewMode; uiStyle: UiStyle; density: Density; menuLayout?: 'sidebar' | 'top' } {
+    if (typeof window === 'undefined') return { viewMode: 'table', uiStyle: 'default', density: 'comfortable' }
+    try {
+      const raw = window.localStorage.getItem('app-view-settings')
+      const parsed = raw ? JSON.parse(raw) : {}
+      return {
+        viewMode: parsed.viewMode === 'cards' ? 'cards' : 'table',
+        uiStyle: parsed.uiStyle === 'excel' ? 'excel' : 'default',
+        density: parsed.density === 'compact' ? 'compact' : 'comfortable',
+        menuLayout: parsed.menuLayout === 'top' ? 'top' : parsed.menuLayout === 'sidebar' ? 'sidebar' : undefined,
+      }
+    } catch {
+      return { viewMode: 'table', uiStyle: 'default', density: 'comfortable' }
+    }
+  }
+  
+  function applyAppViewClasses() {
+    if (typeof document === 'undefined') return
+    const el = document.querySelector('.layout')
+    if (!el) return
+  
+    const s = readAppViewSettings()
+  
+    el.classList.toggle('layout--cards', s.viewMode === 'cards')
+    el.classList.toggle('layout--table', s.viewMode !== 'cards')
+  
+    el.classList.toggle('layout--excel', s.uiStyle === 'excel')
+    el.classList.toggle('layout--compact', s.density === 'compact')
+  }
+  
+  useEffect(() => {
+    // initial apply
+    applyAppViewClasses()
+  
+    // live updates from settings tile
+    function onChanged() {
+      applyAppViewClasses()
+    }
+  
+    window.addEventListener('app-view-settings-changed', onChanged as any)
+    return () => window.removeEventListener('app-view-settings-changed', onChanged as any)
+  }, [])
 
   // Auth init
   useEffect(() => {
