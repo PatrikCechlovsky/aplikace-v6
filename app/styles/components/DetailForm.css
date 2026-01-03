@@ -159,6 +159,7 @@ select.detail-form__input {
 /* Druhý řádek / vysvětlení */
 .detail-form__hint-sub {
   margin-top: 6px; /* ⬅️ přesně to, co jsi měl inline */
+}
 
 /* ===== ROZTAŽENÍ POLE (SPAN) ===== */
 /* default: na mobilu vždy 1, aby se nic nepřekrylo */
