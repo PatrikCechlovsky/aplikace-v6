@@ -3,32 +3,37 @@
    IMPORTANT: Do NOT style sidebar/topmenu here (sidebar has its own CSS). */
 
 .layout {
-  /* tabulka / “buňky” */
+  /* tabulka / “buňky” – pohodlná */
   --row-h: 44px;
   --cell-py: 10px;
   --cell-px: 12px;
 }
 
-.layout.layout--compact {
-  /* menší řádky v tabulkách */
+/* =========================
+   Hustota: KOMPAKTNÍ
+   ========================= */
+.layout.layout--density-compact {
   --row-h: 30px;
   --cell-py: 5px;
   --cell-px: 10px;
 }
 
+/* =========================
+   Hustota: MINI
+   ========================= */
 .layout.layout--density-mini {
   --row-h: 26px;
   --cell-py: 3px;
   --cell-px: 8px;
 }
 
+/* =========================
+   Excel režim (jen tabulky)
+   ========================= */
 .layout.layout--excel {
   --excel-grid: var(--color-border);
 }
 
-/* =========================
-   Excel grid: TABLES ONLY
-   ========================= */
 .layout.layout--excel table {
   border-collapse: collapse;
 }
