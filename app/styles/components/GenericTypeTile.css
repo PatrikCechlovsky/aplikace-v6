@@ -158,14 +158,15 @@
 .generic-type__name-badge {
   display: block;
   width: 100%;
-  padding: 4px 8px;
+  padding: var(--badge-py) var(--badge-px);
   border-radius: 8px;
   color: #ffffff;
   font-weight: 500;
+  font-size: var(--badge-font);
 }
 
 .generic-type__name-main {
-  padding: 4px 8px;
+  padding: var(--badge-py) var(--badge-px);
   display: block;
 }
 
