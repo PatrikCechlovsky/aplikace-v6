@@ -142,10 +142,23 @@ select.detail-form__input {
 }
 
 /* Jednoduchý hint text pro read-only bloky apod. */
+/* Základní hint */
 .detail-form__hint {
   font-size: 12px;
+  line-height: 15px;
   color: var(--color-text-muted);
 }
+
+/* Silnější první řádek */
+.detail-form__hint strong {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Druhý řádek / vysvětlení */
+.detail-form__hint-sub {
+  margin-top: 6px; /* ⬅️ přesně to, co jsi měl inline */
 
 /* ===== ROZTAŽENÍ POLE (SPAN) ===== */
 /* default: na mobilu vždy 1, aby se nic nepřekrylo */
