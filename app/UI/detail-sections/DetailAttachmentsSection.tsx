@@ -765,7 +765,9 @@ export default function DetailAttachmentsSection({
         {isManagerRequested && (
           <div className="detail-form__hint">
             <strong>Správa příloh je pouze pro čtení.</strong>
-            <div className="detail-form__hint-sub">{readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}</div>
+            <div className="detail-form__hint-sub">
+              {readOnlyReason ?? 'Nemáš oprávnění měnit přílohy nebo je entita archivovaná.'}
+            </div>
           </div>
         )}
 
@@ -799,12 +801,38 @@ export default function DetailAttachmentsSection({
                 onColumnResize={handleColumnResize}
               />
             )}
+
+            {/* ✅ Sloupce (Drawer) */}
+            <ListViewColumnsDrawer
+              open={colsOpen}
+              columns={sharedColumnsBase as any}
+              fixedFirstKey={fixedFirstKey}
+              requiredKeys={requiredKeys}
+              value={{
+                order: colPrefs.colOrder ?? [],
+                hidden: colPrefs.colHidden ?? [],
+              }}
+              onChange={(next) => {
+                setColPrefs((p) => ({
+                  ...p,
+                  colOrder: next.order,
+                  colHidden: next.hidden,
+                }))
+              }}
+              onReset={() => {
+                setColPrefs((p) => ({
+                  ...p,
+                  colOrder: [],
+                  colHidden: [],
+                }))
+              }}
+              onClose={() => setColsOpen(false)}
+            />
           </section>
         </div>
       </div>
     )
   }
-
   // ==========================================================================
   // MANAGER (ListView + panel + verze/historie) – bez lokálních tlačítek
   // ==========================================================================
@@ -923,9 +951,7 @@ export default function DetailAttachmentsSection({
           {/* PANEL: EDIT METADATA (otevírá CommonActions → attachmentsEdit) */}
           {editingDocId && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
-              <div className="detail-form__hint" style={{ marginBottom: 8 }}>
-                Úprava metadat (název / popis)
-              </div>
+              <div className="detail-form__hint" style={{ marginBottom: 8 }}>Úprava metadat (název / popis)</div>
 
               <div className="detail-attachments__panel-grid">
                 <div className="detail-form__field detail-form__field--span-6">
@@ -949,13 +975,12 @@ export default function DetailAttachmentsSection({
           {loading && <div className="detail-form__hint">Načítám přílohy…</div>}
           {!loading && managerRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
 
-
           {/* ========================= */}
           {/* MANAGER LAYOUT (hlavní tabulka + pevná historie) */}
           {/* ========================= */}
-          <div 
-            className="detail-attachments__manager-layout" 
-            style={{ 
+          <div
+            className="detail-attachments__manager-layout"
+            style={{
               marginTop: 12,
               height: 'calc(100vh - 260px)',
               maxHeight: 'calc(100vh - 260px)',
@@ -983,7 +1008,7 @@ export default function DetailAttachmentsSection({
                   />
                 </div>
               )}
-          
+
               {/* hidden inputs pro newVersion */}
               <div style={{ display: 'none' }}>
                 {filteredRows.map((r) => (
@@ -997,7 +1022,7 @@ export default function DetailAttachmentsSection({
                 ))}
               </div>
             </div>
-          
+
             {/* Historie: sticky karta dole, scroll jen uvnitř ListView */}
             <div className="detail-attachments__history-sticky">
               <div className="detail-attachments__history-head">
@@ -1005,18 +1030,18 @@ export default function DetailAttachmentsSection({
                   Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
                 </h3>
               </div>
-          
+
               <div className="detail-attachments__history-body">
                 {!expandedDocId && (
                   <div className="detail-form__hint detail-form__hint--single">
                     Vyber přílohu a klikni na <strong>Historie</strong> v CommonActions.
                   </div>
                 )}
-          
+
                 {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-form__hint">Načítám historii…</div>}
-          
+
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-form__hint">Žádná historie.</div>}
-          
+
                 {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
                   <div className="detail-attachments__lv-shell detail-attachments__history-compact">
                     <ListView
@@ -1038,6 +1063,33 @@ export default function DetailAttachmentsSection({
               </div>
             </div>
           </div>
+
+          {/* ✅ Sloupce (Drawer) */}
+          <ListViewColumnsDrawer
+            open={colsOpen}
+            columns={sharedColumnsBase as any}
+            fixedFirstKey={fixedFirstKey}
+            requiredKeys={requiredKeys}
+            value={{
+              order: colPrefs.colOrder ?? [],
+              hidden: colPrefs.colHidden ?? [],
+            }}
+            onChange={(next) => {
+              setColPrefs((p) => ({
+                ...p,
+                colOrder: next.order,
+                colHidden: next.hidden,
+              }))
+            }}
+            onReset={() => {
+              setColPrefs((p) => ({
+                ...p,
+                colOrder: [],
+                colHidden: [],
+              }))
+            }}
+            onClose={() => setColsOpen(false)}
+          />
         </section>
       </div>
     </div>
