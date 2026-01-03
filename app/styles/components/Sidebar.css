@@ -1,4 +1,4 @@
-// app/styles/components/Sidebar.css
+/* app/styles/components/Sidebar.css */
 
 .layout__sidebar,
 .sidebar {
@@ -109,112 +109,114 @@
   width: var(--sb-gutter);
   flex: 0 0 var(--sb-gutter);
 }
+/* app/styles/components/Sidebar.css */
 
-/* ---------- Level 2 ---------- */
-.sidebar__section-row {
+.layout__sidebar,
+.sidebar {
+  grid-row: 1 / span 3;
+  grid-column: 1;
+  background: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-border);
+}
+
+/* více ke kraji (ať sidebar nesežere content) */
+.layout__sidebar {
+  padding: 8px;            /* bylo 12px */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;               /* bylo 12px */
+}
+
+.sidebar__inner {
+  padding: 8px 6px;        /* bylo 12px 8px */
+}
+
+/* listy bez odrážek */
+.sidebar__list,
+.sidebar__sectionlist,
+.sidebar__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- společné tokeny ---------- */
+:root {
+  --sb-gutter: 18px;        /* falešné místo na šipku */
+  --sb-gap: 4px;            /* šipka ↔ ikona ↔ text */
+}
+
+/* ---------- Level 1 ---------- */
+.sidebar__row {
   display: flex;
   align-items: center;
   gap: var(--sb-gap);
-  padding: 6px 8px 6px 24px;   /* bylo 32px -> méně doprava */
+  padding: 4px 4px;         /* můžeš klidně 6px 6px pokud chceš ještě víc ke kraji */
+  border-radius: 10px;
   cursor: pointer;
-  border-radius: 8px;
 }
 
-.sidebar__section-item--active .sidebar__section-row {
+.sidebar__row--active {
   background: var(--color-selected-row-bg);
 }
 
-/* ---------- Level 3 ---------- */
-.sidebar__sublink {
+.sidebar__row--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pozn.: i když v některých místech není <a>, tenhle blok neublíží;
+   pokud máš někde <div class="sidebar__link">, je to OK. */
+.sidebar__link {
   display: flex;
   align-items: center;
   gap: var(--sb-gap);
-  padding: 4px 8px 4px 40px;   /* bylo 32px -> level 3 víc než level 2 */
-  border-radius: 8px;
   text-decoration: none;
   color: inherit;
+  flex: 1;
 }
 
-.sidebar__subitem--active .sidebar__sublink {
-  background: var(--color-selected-row-bg);
-}
-/* =========================================================
-   Excel / Compact sidebar sizing
-   - navazuje na tvoje .sidebar__row / section-row / sublink
-   ========================================================= */
-
-.layout.layout--excel {
-  /* default Excel sidebar metriky */
-  --sb-row-py: 4px;
-  --sb-row-px: 6px;
-
-  --sb-section-py: 4px;
-  --sb-section-pr: 8px;
-  --sb-section-pl: 22px;
-
-  --sb-sub-py: 3px;
-  --sb-sub-pr: 8px;
-  --sb-sub-pl: 38px;
-
-  --sb-font: 13px;
-  --sb-icon: 15px;
-  --sb-toggle: 15px;
-
-  /* gutter na “šipku” – tvoje je 18px, v excel režimu může být menší */
-  --sb-gutter: 16px;
+.sidebar__icon {
+  font-size: 16px;
 }
 
-/* ještě menší v compact */
-.layout.layout--excel.layout--compact {
-  --sb-row-py: 3px;
-  --sb-row-px: 5px;
-
-  --sb-section-py: 3px;
-  --sb-section-pr: 7px;
-  --sb-section-pl: 20px;
-
-  --sb-sub-py: 2px;
-  --sb-sub-pr: 7px;
-  --sb-sub-pl: 34px;
-
-  --sb-font: 12px;
-  --sb-icon: 14px;
-  --sb-toggle: 14px;
-
-  --sb-gutter: 14px;
+.sidebar__label {
+  font-size: 14px;
+  white-space: nowrap;
 }
 
-/* Aplikace metrik na Level 1/2/3 */
-.layout.layout--excel .sidebar__row {
-  padding: var(--sb-row-py) var(--sb-row-px);
-}
-
-.layout.layout--excel .sidebar__section-row {
-  padding: var(--sb-section-py) var(--sb-section-pr) var(--sb-section-py) var(--sb-section-pl);
-}
-
-.layout.layout--excel .sidebar__sublink {
-  padding: var(--sb-sub-py) var(--sb-sub-pr) var(--sb-sub-py) var(--sb-sub-pl);
-}
-
-.layout.layout--excel .sidebar__label {
-  font-size: var(--sb-font);
-}
-
-.layout.layout--excel .sidebar__icon {
-  font-size: var(--sb-icon);
-}
-
-.layout.layout--excel .sidebar__toggle,
-.layout.layout--excel .sidebar__section-toggle {
-  font-size: var(--sb-toggle);
+/* ---------- Toggles (šipky) ---------- */
+/* šipka má pevnou šířku = náš "gutter" */
+.sidebar__toggle,
+.sidebar__section-toggle {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 16px;
   width: var(--sb-gutter);
   flex: 0 0 var(--sb-gutter);
+  text-align: center;
+  transition: transform 0.15s ease;
+  cursor: pointer;
+  color: var(--color-text);
 }
 
-/* Jemná “excel” mřížka mezi řádky (nepřepisuje active bg) */
-.layout.layout--excel .sidebar__row,
-.layout.layout--excel .sidebar__section-row,
-.layout.layout--excel .sidebar__sublink {
-  border-bottom: 1px solid var(--color-border-soft);
+.sidebar__toggle--open,
+.sidebar__section-toggle--open {
+  transform: rotate(90deg);
+}
+
+.sidebar__toggle:hover,
+.sidebar__section-toggle:hover {
+  color: var(--color-primary-strong);
+}
+
+/* ✅ JEDNO PRAVIDLO: když toggle v řádku NENÍ, uděláme falešné místo 24px
+   Platí pro 1., 2. i 3. úroveň (pro row + section-row + sublink). */
+.sidebar__row:not(:has(> .sidebar__toggle))::before,
+.sidebar__section-row:not(:has(> .sidebar__section-toggle))::before,
+.sidebar__sublink:not(:has(> .sidebar__toggle))::before {
+  content: '';
+  width: var(--sb-gutter);
+  flex: 0 0 var(--sb-gutter);
 }
