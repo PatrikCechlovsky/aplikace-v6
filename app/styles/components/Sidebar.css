@@ -179,3 +179,18 @@
 .layout.layout--compact .sidebar__sublink {
   padding: 3px 8px 3px 36px;
 }
+/* =========================================================
+   Excel řádky v sidebaru (SAFE: jen linky mezi řádky)
+   ========================================================= */
+.layout.layout--excel .sidebar__row,
+.layout.layout--excel .sidebar__section-row,
+.layout.layout--excel .sidebar__sublink {
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+/* ať border není “nalepený” na rounded background aktivního řádku */
+.layout.layout--excel .sidebar__row,
+.layout.layout--excel .sidebar__section-row,
+.layout.layout--excel .sidebar__sublink {
+  background-clip: padding-box;
+}
