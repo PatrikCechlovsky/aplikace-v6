@@ -21,13 +21,22 @@ export type UsersListRow = {
   display_name: string | null
   email: string | null
   phone: string | null
+  subject_type: string | null
   role_code: string | null
   is_archived: boolean | null
   created_at: string | null
 
+  // ✅ person fields (pro list)
+  title_before?: string | null
+  first_name?: string | null
+  last_name?: string | null
+
+  // login/invite
   first_login_at?: string | null
+  last_login_at?: string | null
   last_invite_sent_at?: string | null
   last_invite_expires_at?: string | null
+  last_invite_status?: string | null
 }
 
 export async function listUsers(params: UsersListParams = {}): Promise<UsersListRow[]> {
