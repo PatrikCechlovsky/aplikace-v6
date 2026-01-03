@@ -5,8 +5,14 @@
 
 'use client'
 
-import React from 'react'
+/* =========================
+   1) IMPORTS
+   ========================= */
+import React, { useMemo } from 'react'
 
+/* =========================
+   2) TYPES
+   ========================= */
 type Props = {
   /** Volitelný nadpis detailu (když nechceš, nech prázdné) */
   title?: string
@@ -19,6 +25,26 @@ type Props = {
   systemInfoSlot?: React.ReactNode
 }
 
+/* =========================
+   3) HELPERS
+   ========================= */
+function buildBodyClassName(hasSide: boolean) {
+  return hasSide ? 'entity-detail__body entity-detail__body--with-side' : 'entity-detail__body'
+}
+
+/* =========================
+   4) DATA LOAD
+   ========================= */
+/* (none) */
+
+/* =========================
+   5) ACTION HANDLERS
+   ========================= */
+/* (none) */
+
+/* =========================
+   6) RENDER
+   ========================= */
 export default function EntityDetailFrame({
   title,
   subtitle,
@@ -29,6 +55,8 @@ export default function EntityDetailFrame({
   const hasSide = !!attachmentsSlot || !!systemInfoSlot
   const hasHeader = !!title || !!subtitle
 
+  const bodyClassName = useMemo(() => buildBodyClassName(hasSide), [hasSide])
+
   return (
     <div className="entity-detail">
       {/* Hlavička detailu – jen pokud máme něco k zobrazení */}
@@ -36,52 +64,51 @@ export default function EntityDetailFrame({
         <div className="entity-detail__header">
           <div>
             {title && <h2 className="entity-detail__title">{title}</h2>}
-            {subtitle && (
-              <div className="entity-detail__subtitle">{subtitle}</div>
-            )}
+            {subtitle && <div className="entity-detail__subtitle">{subtitle}</div>}
           </div>
         </div>
       )}
 
       {/* Tělo detailu – 1 sloupec (jen formulář) nebo 2 sloupce (form + pravý panel) */}
-      <div
-        className={
-          hasSide
-            ? 'entity-detail__body entity-detail__body--with-side'
-            : 'entity-detail__body'
-        }
-      >
+      <div className={bodyClassName}>
         <div className="entity-detail__main">{children}</div>
 
         {hasSide && (
           <aside className="entity-detail__side">
             <div className="entity-detail__section">
               <div className="entity-detail__section-title">Přílohy</div>
-              {attachmentsSlot ?? (
-                <div className="entity-detail__section-empty">
-                  Zatím žádné přílohy.
-                </div>
-              )}
+              {attachmentsSlot ?? <div className="entity-detail__section-empty">Zatím žádné přílohy.</div>}
             </div>
 
             <div className="entity-detail__section">
               <div className="entity-detail__section-title">Systém</div>
               {systemInfoSlot ?? (
-                <div className="entity-detail__section-empty">
-                  Systémové informace budou doplněny.
-                </div>
+                <div className="entity-detail__section-empty">Systémové informace budou doplněny.</div>
               )}
             </div>
           </aside>
         )}
       </div>
-
       <style jsx>{`
+        /* =========================================================
+           Density-aware typografie přes CSS proměnné z .layout
+           - tyto proměnné nastavuješ globálně (layout--density-*)
+           - tady je jen používáme + fallbacky
+           ========================================================= */
+
         .entity-detail {
+          /* spacing */
+          padding: var(--entity-frame-pad, 12px 16px 20px);
+          box-sizing: border-box;
           width: 100%;
           height: 100%;
-          padding: 12px 16px 20px;
-          box-sizing: border-box;
+
+          /* typography */
+          --_title-font: var(--entity-title-font, 22px);
+          --_subtitle-font: var(--entity-subtitle-font, 13px);
+          --_side-font: var(--entity-side-font, 13px);
+          --_section-title-font: var(--entity-section-title-font, 13px);
+          --_section-empty-font: var(--entity-section-empty-font, 12px);
         }
 
         .entity-detail__header {
@@ -90,12 +117,14 @@ export default function EntityDetailFrame({
         }
 
         .entity-detail__title {
-          font-size: var(--entity-title-font, 1.1rem);
+          font-size: var(--_title-font);
+          line-height: 1.3;
           font-weight: 600;
+          margin: 0;
         }
 
         .entity-detail__subtitle {
-          font-size: 0.85rem;
+          font-size: var(--_subtitle-font);
           color: #6b7280;
           margin-top: 2px;
         }
@@ -120,7 +149,7 @@ export default function EntityDetailFrame({
         }
 
         .entity-detail__side {
-          font-size: 0.85rem;
+          font-size: var(--_side-font);
         }
 
         .entity-detail__section {
@@ -133,19 +162,19 @@ export default function EntityDetailFrame({
 
         .entity-detail__section-title {
           font-weight: 600;
-          font-size: 0.85rem;
+          font-size: var(--_section-title-font);
           margin-bottom: 6px;
         }
 
         .entity-detail__section-empty {
-          font-size: 0.8rem;
+          font-size: var(--_section-empty-font);
           color: #6b7280;
         }
 
         /* Mobil – vše pod sebe */
         @media (max-width: 900px) {
           .entity-detail {
-            padding: 8px 8px 16px;
+            padding: var(--entity-frame-pad-mobile, 8px 8px 16px);
           }
 
           .entity-detail__header {
