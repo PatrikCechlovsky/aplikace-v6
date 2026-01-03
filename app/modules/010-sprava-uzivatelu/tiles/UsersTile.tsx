@@ -846,30 +846,7 @@ export default function UsersTile({
     void run()
   }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load])
   
-  // ✅ Column prefs (šířky/pořadí/viditelnost)
-  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
-    colWidths: {},
-    colOrder: [],
-    colHidden: [],
-  })
-
-  // ✅ Drawer state (MUSÍ být mimo podmínky!)
-  const [colsOpen, setColsOpen] = useState(false)
-
-  // První sloupec = pevný (aplikace)
-  const fixedFirstKey = useMemo(() => BASE_COLUMNS[0]?.key ?? 'roleLabel', [])
-
-  // Povinné sloupce: nejdou skrýt, ale mohou být kdekoliv (mimo první)
-  const requiredKeys = useMemo(() => ['displayName'], [])
-
-  const handleResetColumns = useCallback(() => {
-    setColPrefs((p) => ({
-      ...p,
-      colOrder: [],
-      colHidden: [],
-      // colWidths necháváme (šířky jsou separátní preference)
-    }))
-  }, [])
+  
   // =====================
   // 6) RENDER
   // =====================
