@@ -719,7 +719,7 @@ export default function UsersTile({
 
       // CLOSE
       if (actionId === 'close') {
-        const dirtyNow = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
+        const dirtyNow = String(viewMode) === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
         if (dirtyNow) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
