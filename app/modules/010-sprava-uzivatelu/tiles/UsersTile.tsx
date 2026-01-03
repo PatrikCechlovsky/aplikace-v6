@@ -768,6 +768,10 @@ export default function UsersTile({
 
       // LIST actions
       if (viewMode === 'list') {
+        if (actionId === 'columnSettings') {
+          setColsOpen(true)
+          return
+        }
         if (actionId === 'add') {
           setViewMode('create')
 
@@ -791,7 +795,7 @@ export default function UsersTile({
           setUrl({ t: 'users-list', id: 'new', vm: 'create', am: null }, 'push')
           return
         }
-
+               
         if (actionId === 'view' || actionId === 'edit') {
           if (!selectedId) return
           const u = users.find((x) => x.id === selectedId)
@@ -979,16 +983,6 @@ export default function UsersTile({
           sort={sort}
           onSortChange={handleSortChange}
           onColumnResize={handleColumnResize}
-          toolbarRight={
-            <button
-              type="button"
-              className="detail-attachments__btn"
-              onClick={() => setColsOpen(true)}
-              style={{ marginRight: 10 }}
-              title="Nastavit pořadí a viditelnost sloupců"
-            >
-              Sloupce
-            </button>
           }
         />
 
