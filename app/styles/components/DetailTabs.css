@@ -58,21 +58,48 @@
   margin-right: 4px;
 }
 /* =========================================================
-   Density → Detail tabs (SAFE)
+   Density → Invite "Režim" radio row (SAFE)
+   - cílíme jen na radio skupinu uvnitř .detail-form__field
    ========================================================= */
-.layout.layout--density-compact .detail-tabs {
-  --dt-tab-font: 12px;
-  --dt-tab-h: 32px;
+
+/* Kompaktní */
+.layout.layout--density-compact .detail-form__field label.detail-form__label + div {
+  gap: 10px !important;
+  padding-top: 6px !important;
 }
 
-.layout.layout--density-mini .detail-tabs {
-  --dt-tab-font: 11px;
-  --dt-tab-h: 30px;
+.layout.layout--density-compact .detail-form__field label.detail-form__label + div label {
+  font-size: 13px;
 }
 
-/* fallback když proměnné nejsou */
-.detail-tabs a,
-.detail-tabs button {
-  font-size: var(--dt-tab-font, 13px);
-  min-height: var(--dt-tab-h, 34px);
+/* Mini */
+.layout.layout--density-mini .detail-form__field label.detail-form__label + div {
+  gap: 8px !important;
+  padding-top: 4px !important;
 }
+
+.layout.layout--density-mini .detail-form__field label.detail-form__label + div label {
+  font-size: 12px;
+}
+/* =========================================================
+   Density → Entity detail header title
+   ========================================================= */
+
+/* Pohodlná (výchozí) */
+.layout .entity-detail__header h1,
+.layout .entity-detail__header h2 {
+  font-size: 22px;
+}
+
+/* Kompaktní */
+.layout.layout--density-compact .entity-detail__header h1,
+.layout.layout--density-compact .entity-detail__header h2 {
+  font-size: 20px;
+}
+
+/* Mini */
+.layout.layout--density-mini .entity-detail__header h1,
+.layout.layout--density-mini .entity-detail__header h2 {
+  font-size: 18px;
+}
+
