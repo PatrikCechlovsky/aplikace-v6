@@ -494,6 +494,78 @@ export default function UsersTile({
   useEffect(() => {
     void load()
   }, [load])
+
+  // ✅ Synchronizace URL parametrů s viewMode a detailUser
+  useEffect(() => {
+    const t = searchParams?.get('t')?.trim() ?? null
+    const id = searchParams?.get('id')?.trim() ?? null
+    const vm = searchParams?.get('vm')?.trim() ?? null
+
+    // Pokud není t nebo je t=users-list a není id ani vm, zobraz seznam
+    if (!t || (t === 'users-list' && !id && !vm)) {
+      if (viewMode !== 'list') {
+        setViewMode('list')
+        setDetailUser(null)
+        setIsDirty(false)
+      }
+      return
+    }
+
+    // Pokud je t=invite-user, zobraz invite
+    if (t === 'invite-user') {
+      if (viewMode !== 'invite') {
+        setViewMode('invite')
+        setInvitePresetSubjectId(id)
+        setIsDirty(false)
+      }
+      return
+    }
+
+    // Pokud je t=attachments-manager, zobraz attachments manager
+    if (t === 'attachments-manager') {
+      if (viewMode !== 'attachments-manager') {
+        setViewMode('attachments-manager')
+        setAttachmentsManagerSubjectId(id)
+        setIsDirty(false)
+      }
+      return
+    }
+
+    // Pokud je t=users-list a je id, zobraz detail
+    if (t === 'users-list' && id) {
+      const viewModeFromUrl = (vm === 'edit' ? 'edit' : vm === 'create' ? 'create' : 'read') as ViewMode
+      
+      // Pokud už máme detailUser s tímto id, jen aktualizuj viewMode
+      if (detailUser?.id === id && viewMode !== viewModeFromUrl) {
+        setViewMode(viewModeFromUrl as any)
+        setIsDirty(false)
+        return
+      }
+
+      // Pokud už máme správný viewMode a detailUser, nic nedělej
+      if (detailUser?.id === id && viewMode === viewModeFromUrl) {
+        return
+      }
+
+      // Najdi uživatele v seznamu
+      const user = users.find((u) => u.id === id)
+      if (user) {
+        setDetailUser(user)
+        setViewMode(viewModeFromUrl as any)
+        setDetailInitialSectionId('detail')
+        setDetailActiveSectionId('detail')
+        setIsDirty(false)
+      } else if (id === 'new') {
+        // Nový uživatel
+        setDetailUser({ id: 'new', displayName: '', email: '', roleLabel: '', createdAt: '' } as UiUser)
+        setViewMode('create')
+        setDetailInitialSectionId('detail')
+        setDetailActiveSectionId('detail')
+        setIsDirty(false)
+      }
+      return
+    }
+  }, [searchKey, users]) // ✅ Pouze searchKey a users jako dependency - viewMode a detailUser jsou výsledek, ne vstup
   
   // ✅ když se načtou roleTypes (barvy + order), přepočítej již načtené users
   useEffect(() => {

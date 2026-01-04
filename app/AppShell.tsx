@@ -502,9 +502,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     // ✅ FIX: Pokud je stejná selection, ale máme otevřený detail (tile-specifické parametry),
     // zavřeme detail a otevřeme seznam
     if (sameSelection) {
-      const hasTileSpecificParams = searchParams?.get('id') || searchParams?.get('vm') || searchParams?.get('t')
+      const id = searchParams?.get('id')
+      const vm = searchParams?.get('vm')
+      const t = searchParams?.get('t')
+      // Zkontroluj, jestli máme tile-specifické parametry (id nebo vm, nebo t jiné než users-list)
+      const hasTileSpecificParams = id || vm || (t && t !== 'users-list')
       if (hasTileSpecificParams) {
         // Zavřeme detail - zahoďme tile-specifické parametry
+        // Použijeme keepOtherParams=false, což zahodí všechny parametry kromě m/s/t
         setUrlState(
           {
             moduleId: selection.moduleId,
@@ -512,7 +517,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             tileId: selection.tileId ?? null,
           },
           'replace',
-          false // keepOtherParams=false znamená zahodit tile-specifické parametry
+          false // keepOtherParams=false znamená zahodit tile-specifické parametry (id/vm/am/t)
         )
         resetCommonActions()
       }
@@ -554,15 +559,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   function handleHomeClick() {
     if (!isAuthenticated) return
     
-    // ✅ FIX: Zkontroluj isDirty přímo z commonActionsUi, ne jen z confirmIfDirty
-    // confirmIfDirty může vracet false i když není dirty, pokud není v edit/create režimu
-    const hasDirtyChanges = commonActionsUi.isDirty && (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
-    
-    if (hasDirtyChanges) {
+    // ✅ FIX: Zkontroluj isDirty přímo z commonActionsUi
+    // Pokud je dirty v edit/create režimu, zeptej se uživatele
+    if (commonActionsUi.isDirty && (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')) {
       const ok = window.confirm('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')
       if (!ok) return
     }
 
+    // ✅ Vždy zavři modul a resetuj stav, i když není dirty
     setActiveModuleId(null)
     setActiveSelection(null)
     resetCommonActions()
