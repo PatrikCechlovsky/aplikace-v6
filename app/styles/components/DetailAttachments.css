@@ -228,7 +228,7 @@
   z-index: 6; /* Vyšší než historie (z-index: 5) */
 }
 
-/* Hlavička historie vždy vidět */
+/* Hlavička historie vždy vidět - sticky */
 .detail-attachments__history-head {
   display: flex;
   align-items: baseline;
@@ -238,6 +238,9 @@
   padding: 8px 12px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+  position: sticky;
+  top: 0;
+  z-index: 15; /* Vyšší než tabulka header (z-index: 10) */
 
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
@@ -247,7 +250,7 @@
 .detail-attachments__history-body {
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* ✅ body nescrolluje */
+  overflow: visible; /* ✅ body nescrolluje, scrolluje jen tabulka uvnitř */
   padding: 0; /* Odstraníme padding, aby tabulka měla stejnou šířku jako horní tabulka */
   min-height: 0;
   flex: 1;
@@ -288,6 +291,11 @@
   /* Comfortable: 34px (header) + 3.5 × 40px (řádky) = 174px */
   max-height: calc(var(--table-header-h, 34px) + 3.5 * var(--table-row-h, 40px));
   height: calc(var(--table-header-h, 34px) + 3.5 * var(--table-row-h, 40px));
+}
+
+/* Skrýt toolbar (hledání) v historii */
+.detail-attachments__history-compact .listview__toolbar {
+  display: none;
 }
 
 /* Zajisti, že tabulka historie má max 3.5 řádku viditelné, pak scroll */
