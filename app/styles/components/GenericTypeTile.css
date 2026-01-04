@@ -162,15 +162,18 @@
 }
 
 .generic-type__name-badge {
-  display: inline-flex;
-  align-items: center;
+  display: block;
+  width: 100%;              /* vyplní obsahovou šířku buňky (uvnitř paddingu) */
+  box-sizing: border-box;
 
   font-size: var(--badge-font);
   padding: var(--badge-py) var(--badge-px);
   border-radius: 999px;
-
-  line-height: 1;
   font-weight: 600;
+  line-height: 1;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
