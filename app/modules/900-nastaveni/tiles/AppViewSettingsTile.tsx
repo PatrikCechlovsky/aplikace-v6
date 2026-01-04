@@ -71,24 +71,27 @@ function ChoiceCard({ title, description, selected, onSelect, icon }: ChoiceCard
   return (
     <button
       type="button"
-      className={`avs-card ${selected ? 'avs-card--active' : ''}`}
+      className={`palette-card ${selected ? 'palette-card--active' : ''}`}
       onClick={onSelect}
       aria-pressed={selected}
     >
-      {selected ? <span className="avs-card__badge">Aktivní</span> : null}
-       <div className="avs-card__row">
-        <div className="avs-card__left">
-          <div className="avs-card__title">{title}</div>
-          {description ? <div className="avs-card__desc">{description}</div> : null}
-        </div>
-        {icon ? <div className="avs-card__icon">{icon}</div> : null}
+      <div className="palette-card__header">
+        <span className="palette-card__title">{title}</span>
+        {selected ? <span className="palette-card__badge">Aktivní</span> : null}
       </div>
-      <div className="avs-card__dotRow">
-        <span className={`avs-dot ${selected ? 'avs-dot--active' : ''}`} />
+
+      {description ? <p className="palette-card__description">{description}</p> : null}
+
+      {/* Místo tří teček theme preview dáme jednoduchý “indikátor” – stejné rozměry */}
+      <div className="palette-card__preview">
+        <span className={`palette-preview ${selected ? 'palette-preview--active' : ''}`} />
+        <span className="palette-preview palette-preview--ghost" />
+        <span className="palette-preview palette-preview--ghost" />
       </div>
     </button>
   )
 }
+
 
 /* =========================
    4) DATA LOAD
