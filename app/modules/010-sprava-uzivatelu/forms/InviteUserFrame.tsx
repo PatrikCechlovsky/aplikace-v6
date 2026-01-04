@@ -2,7 +2,7 @@
 
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
 import createLogger from '@/app/lib/logger'
 const logger = createLogger('InviteUserFrame')
