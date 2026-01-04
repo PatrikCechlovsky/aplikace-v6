@@ -162,12 +162,15 @@
 }
 
 .generic-type__name-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+
   font-size: var(--badge-font);
   padding: var(--badge-py) var(--badge-px);
   border-radius: 999px;
-  font-weight: 500;
+
   line-height: 1;
+  font-weight: 600;
   white-space: nowrap;
 }
 
