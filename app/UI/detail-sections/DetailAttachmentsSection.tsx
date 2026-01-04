@@ -1006,6 +1006,8 @@ export default function DetailAttachmentsSection({
                       rows={historyRows}
                       sort={sort}
                       onSortChange={handleSortChange}
+                      filterValue=""
+                      onFilterChange={() => {}} // Filtr z historie byl odstraněn
                       onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
                       onColumnResize={handleColumnResize}
                     />
