@@ -41,6 +41,7 @@ import type { IconKey } from '@/app/UI/icons'
 import { TopMenu } from '@/app/UI/TopMenu'
 import CommonActions from '@/app/UI/CommonActions'
 import type { CommonActionId, CommonActionsUiState, ViewMode } from '@/app/UI/CommonActions'
+import '@/app/styles/components/TileLayout.css'
 
 type SessionUser = {
   id?: string | null
@@ -645,10 +646,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     const selection = activeSelection
     if (!selection || (!selection.sectionId && !selection.tileId)) {
+      const title = activeModule.introTitle ?? activeModule.label
+      const description = activeModule.introText ?? 'Vyber položku v menu.'
       return (
-        <div className="content">
-          <h2>{activeModule.introTitle ?? activeModule.label}</h2>
-          <p>{activeModule.introText ?? 'Vyber položku v menu.'}</p>
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">{title}</h1>
+            {description && <p className="tile-layout__description">{description}</p>}
+          </div>
         </div>
       )
     }
@@ -656,14 +661,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (selection.sectionId && !selection.tileId) {
       const section = activeModule.sections?.find((s) => s.id === selection.sectionId)
       const title = section?.introTitle ?? section?.label ?? activeModule.label
-      const text = section?.introText ?? 'Vyber konkrétní položku v menu.'
+      const description = section?.introText ?? 'Vyber konkrétní položku v menu.'
       return (
-        <div className="content">
-          <h2>{activeModule.label}</h2>
-          <section className="content__section">
-            <h3 className="content__section-title">{title}</h3>
-            <p>{text}</p>
-          </section>
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">{title}</h1>
+            {description && <p className="tile-layout__description">{description}</p>}
+          </div>
         </div>
       )
     }
@@ -687,9 +691,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
 
     return (
-      <div className="content">
-        <h2>{activeModule.label}</h2>
-        <p>Modul nemá nakonfigurované tiles.</p>
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">{activeModule.label}</h1>
+          <p className="tile-layout__description">Modul nemá nakonfigurované tiles.</p>
+        </div>
       </div>
     )
   }

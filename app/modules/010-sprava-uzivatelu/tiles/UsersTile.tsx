@@ -1003,7 +1003,7 @@ export default function UsersTile({
     }
 
     void run()
-  }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load])
+  }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load, toast])
   
   
   // =====================
