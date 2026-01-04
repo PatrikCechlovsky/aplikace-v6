@@ -23,7 +23,7 @@
 }
 
 .tile-layout__title {
-  font-size: 1.5rem;
+  font-size: 20px; /* Fixní velikost, nezávislá na density */
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   color: var(--color-text);
