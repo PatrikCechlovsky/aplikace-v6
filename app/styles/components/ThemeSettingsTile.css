@@ -246,3 +246,15 @@
 .avs-dot--active {
   background: var(--color-accent, #3b82f6);
 }
+.settings-tile__grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.settings-tile__grid--2 {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.settings-tile__grid--3 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
