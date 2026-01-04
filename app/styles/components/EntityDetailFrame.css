@@ -2,7 +2,7 @@
 /* PURPOSE: Tile vzhled detailu + zrušení 2-sloupcového layoutu z Entity.css */
 
 .entity-detail {
-  background: var(--color-surface);
+  background: transparent;
   border: none;
   border-radius: 0;
   padding: 0;
