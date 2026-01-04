@@ -19,7 +19,7 @@ import './styles/components/DetailAttachments.css'
 import './styles/components/ExcelMode.css'
 import './styles/components/DensityTypography.css'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
@@ -149,6 +149,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
   const [activeSelection, setActiveSelection] = useState<SidebarSelection | null>(null)
+  
+  // ✅ Flag pro home button - aby se nevolal confirmIfDirty znovu
+  const homeButtonClickRef = useRef(false)
 
   // Menu layout
   const [menuLayout, setMenuLayout] = useState<MenuLayout>('sidebar')
@@ -454,10 +457,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       current.moduleId !== target.moduleId || current.sectionId !== target.sectionId || current.tileId !== target.tileId
     if (!differs) return
 
-    if (!confirmIfDirty()) {
-      // keep unknown params here (we are reverting user navigation)
-      setUrlState(current, 'replace', true)
-      return
+    // ✅ FIX: Pokud změna přichází z home buttonu, přeskoč confirmIfDirty
+    if (homeButtonClickRef.current) {
+      homeButtonClickRef.current = false
+      // Pokračuj bez confirmIfDirty
+    } else {
+      if (!confirmIfDirty()) {
+        // keep unknown params here (we are reverting user navigation)
+        setUrlState(current, 'replace', true)
+        return
+      }
     }
 
     if (!target.moduleId) {
@@ -568,14 +577,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       if (!ok) return
     }
 
-    // ✅ Vždy zavři modul a resetuj stav, i když není dirty
-    // Použijeme setTimeout, aby se stav aktualizoval před navigací
-    setActiveModuleId(null)
-    setActiveSelection(null)
-    resetCommonActions()
+    // ✅ FIX: Nastav flag, aby se v useEffect nevolal confirmIfDirty znovu
+    homeButtonClickRef.current = true
     
-    // ✅ Použijeme replace místo push, aby se historie nehromadila
-    router.replace('/')
+    // ✅ FIX: Nejdříve aktualizuj URL, pak teprve stav
+    // Tím se vyhneme dvojímu kliknutí - URL změna způsobí, že useEffect aktualizuje stav
+    setUrlState({ moduleId: null, sectionId: null, tileId: null }, 'replace', false)
+    resetCommonActions()
   }
 
   function forceSidebarLayout() {
