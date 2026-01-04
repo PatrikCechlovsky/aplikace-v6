@@ -164,9 +164,9 @@
 
 /* ✅ HORNÍ tabulka: max-height vypočti tak, aby zbyl prostor pro historii
    (tím donutíš scrollovat .listview__table-wrapper uvnitř ListView)
-   Pozn.: tohle je “jemné” a můžeš si doladit. */
+   Pozn.: historie má max 154px (3 řádky) + padding, takže horní tabulka má zbytek */
 .detail-attachments__list-scroll .detail-attachments__lv-shell {
-  --listview-max-height: calc(100vh - 430px);
+  --listview-max-height: calc(100vh - 280px); /* Zmenšeno z 430px, aby tabulka přílohy byla vidět */
 }
 
 /* Sticky karta historie dole */
@@ -180,6 +180,12 @@
   border-radius: 12px;
   background: var(--color-surface);
   box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* Zajisti, že vybraný řádek v horní tabulce je vždy vidět nad historií */
+.detail-attachments__list-scroll .generic-type__row--selected {
+  position: relative;
+  z-index: 6; /* Vyšší než historie (z-index: 5) */
 }
 
 /* Hlavička historie vždy vidět */
@@ -230,23 +236,41 @@
   margin-top: 6px;
 }
 
-/* Historie: kompaktní výška (cca 3 řádky) + správný flex/height řetězec */
+/* Historie: kompaktní výška (max 3 řádky) + správný flex/height řetězec */
 .detail-attachments__history-compact {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
-  --listview-max-height: 120px;
+  /* Max výška pro 3 řádky: header + 3 řádky (respektuje density) */
+  /* Comfortable: 34px (header) + 3 × 40px (řádky) = 154px */
+  max-height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
+  height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
+}
+
+/* Zajisti, že tabulka historie má max 3 řádky viditelné, pak scroll */
+.detail-attachments__history-compact .listview__table-wrapper {
+  max-height: calc(3 * var(--table-row-h, 40px)); /* 3 řádky */
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Zajisti, že hlavička tabulky zůstane vidět při scrollu */
+.detail-attachments__history-compact .generic-type__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 /* Mobil */
 @media (max-width: 720px) {
   .detail-attachments__list-scroll .detail-attachments__lv-shell {
-    --listview-max-height: calc(100vh - 380px);
+    --listview-max-height: calc(100vh - 280px);
   }
 
   .detail-attachments__history-compact {
-    --listview-max-height: 110px;
+    max-height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
+    height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
   }
 }
 /* Mobil – ať to není “přehuštěné” */

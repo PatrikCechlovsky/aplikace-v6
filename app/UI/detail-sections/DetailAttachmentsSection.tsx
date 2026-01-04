@@ -1025,12 +1025,6 @@ export default function DetailAttachmentsSection({
                       rows={historyRows}
                       sort={sort}
                       onSortChange={handleSortChange}
-                      filterValue={historyFilterText}
-                      onFilterChange={setHistoryFilterText}
-                      filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                      showArchived={includeArchived}
-                      onShowArchivedChange={setIncludeArchived}
-                      showArchivedLabel="Zobrazit archivované"
                       onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
                       onColumnResize={handleColumnResize}
                     />
