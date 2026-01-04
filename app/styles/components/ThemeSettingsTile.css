@@ -316,3 +316,10 @@ avs-dot {
 .palette-preview--ghost {
   background: transparent;
 }
+.settings-tile__section-title {
+  margin: 14px 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: none;
+}
