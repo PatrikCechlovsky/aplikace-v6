@@ -296,6 +296,8 @@ Každý modul definuje svůj vlastní formulář (schema), kde určuje:
 - viditelnost a role
 - read-only logiku
 
+**📖 Detailní dokumentace layoutu formulářů:** `docs/03-ui/forms-layout.md`
+
 Příklad (bez syntaxi zvýraznění, aby se dokument nerozpadal):
 {
 id: "property-detail",
