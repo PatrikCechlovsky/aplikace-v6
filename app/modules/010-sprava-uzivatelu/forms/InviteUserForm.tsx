@@ -5,6 +5,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { getUserDetail, listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('InviteUserForm')
 import { fetchPermissionTypes } from '@/app/modules/900-nastaveni/services/permissionTypes'
 
 export type InviteMode = 'existing' | 'new'
@@ -272,7 +274,7 @@ export default function InviteUserForm({
                       }))
                     } catch (err) {
                       // necháme uživatele vybrat ručně
-                      console.warn('[InviteUserForm.getUserDetail] WARN', err)
+                      logger.warn('getUserDetail failed', err)
                     }
                   })()
                 }}

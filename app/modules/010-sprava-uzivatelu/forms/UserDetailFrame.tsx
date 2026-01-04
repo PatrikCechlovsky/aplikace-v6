@@ -15,6 +15,8 @@ import { getUserDetail, saveUser } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/permissions'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('UserDetailFrame')
 
 // =====================
 // 2) TYPES
@@ -91,7 +93,7 @@ export default function UserDetailFrame({
   const resolveSeqRef = useRef(0)
 
   // Dirty
-  const [isDirty, setIsDirty] = useState(false)
+  const [_isDirty, setIsDirty] = useState(false) // Used via onDirtyChange callback
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
 
@@ -185,7 +187,7 @@ export default function UserDetailFrame({
         setIsDirty(false)
         onDirtyChange?.(false)
       } catch (e) {
-        console.warn('[UserDetailFrame.getUserDetail] WARN', e)
+        logger.warn('getUserDetail failed', e)
       }
     })()
 
@@ -202,7 +204,7 @@ export default function UserDetailFrame({
         const rows = await fetchRoleTypes()
         setRoleTypes(rows ?? [])
       } catch (e) {
-        console.warn('[UserDetailFrame.fetchRoleTypes] WARN', e)
+        logger.warn('fetchRoleTypes failed', e)
         setRoleTypes([])
       }
     })()
@@ -216,7 +218,7 @@ export default function UserDetailFrame({
         const rows = await listPermissionTypes({ includeInactive: false })
         setPermissionTypes(rows ?? [])
       } catch (e) {
-        console.warn('[UserDetailFrame.listPermissionTypes] WARN', e)
+        logger.warn('listPermissionTypes failed', e)
         setPermissionTypes([])
       }
     })()
@@ -335,7 +337,7 @@ export default function UserDetailFrame({
         alert('Uživatel uložen ✅')
         return saved
       } catch (e: any) {
-        console.error('[UserDetailFrame.save] ERROR', e)
+        logger.error('save failed', e)
         alert(e?.message ?? 'Chyba uložení uživatele')
         return null
       }
@@ -521,7 +523,7 @@ export default function UserDetailFrame({
         alert('Vytvořena nová pozvánka ✅')
         return true
       } catch (e: any) {
-        console.error('[UserDetailFrame.sendInvite] ERROR', e)
+        logger.error('sendInvite failed', e)
         alert(e?.message ?? 'Chyba při vytváření pozvánky')
         return false
       }

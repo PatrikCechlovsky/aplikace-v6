@@ -76,14 +76,17 @@ npm install
 ```
 
 ### 3. Přidání `.env.local`
-Nutné proměnné (minimální):
+1. Zkopíruj `.env.example` do `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+2. Vyplň hodnoty v `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL` - URL tvého Supabase projektu
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Anon key z Supabase
+   - `SUPABASE_SERVICE_ROLE_KEY` - Service role key (server-side only)
+   - `APP_BASE_URL` - URL aplikace (lokálně: `http://localhost:3000`)
 
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-APP_BASE_URL=http://localhost:3000
-```
+**⚠️ Důležité:** `.env.local` se nikdy necommitne do gitu (je v `.gitignore`)
 
 ### 4. Lokální spuštění
 ```bash

@@ -16,7 +16,7 @@
 // 1) IMPORTS
 // ============================================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 
 import {
@@ -140,15 +140,7 @@ function getAttachmentSortValue(row: any, key: string): string | number {
   return normalizeString(row?.[key])
 }
 
-function getHistorySortValue(row: any, key: string): string | number {
-  // pro historii je datum obvykle created_at (verze), ne version_created_at
-  if (key === 'title') return normalizeString(row?.title)
-  if (key === 'description') return normalizeString(row?.description)
-  if (key === 'file') return normalizeString(row?.file_name)
-  if (key === 'ver') return numberOrZero(row?.version_number)
-  if (key === 'uploaded') return dateToTs(row?.created_at)
-  return normalizeString(row?.[key])
-}
+// Removed unused function getHistorySortValue
 
 // ============================================================================
 // 4) DATA LOAD

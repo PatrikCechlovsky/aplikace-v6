@@ -8,6 +8,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { getIcon, IconKey } from '@/app/UI/icons'
 import { APP_COLOR_PALETTE } from '@/app/lib/colorPalette'
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('GenericTypeTile')
 
 export type GenericTypeItem = {
   code: string
@@ -144,11 +146,7 @@ export default function GenericTypeTile({
     return items.findIndex((it) => it.code === selectedCode)
   }, [items, selectedCode])
 
-  // Pořadí z formuláře (i když ještě není uložené)
-  const currentSortOrder =
-    typeof form.sort_order === 'number' && Number.isFinite(form.sort_order)
-      ? form.sort_order
-      : undefined
+  // Pořadí z formuláře (i když ještě není uložené) - removed unused variable
 
   // Map sort_order → count (z existujících položek)
   const sortOrderCounts = useMemo(() => {
@@ -242,7 +240,7 @@ export default function GenericTypeTile({
           resetFormToNew(true)
         }
       } catch (e) {
-        console.error('GenericTypeTile – fetchItems failed', e)
+        logger.error('fetchItems failed', e)
         if (!isMounted) return
         setError('Nepodařilo se načíst data. Zkuste to prosím znovu.')
       } finally {

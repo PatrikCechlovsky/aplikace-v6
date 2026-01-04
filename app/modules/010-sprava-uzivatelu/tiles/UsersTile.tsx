@@ -24,7 +24,7 @@ import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/se
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 
-const __typecheck_commonaction: CommonActionId = 'attachments'
+// Type check for CommonActionId - removed unused variable
 
 // =====================
 // 2) TYPES
@@ -68,12 +68,8 @@ type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 // =====================
 // 3) HELPERS
 // =====================
-const DEBUG = true
-const dbg = (...args: any[]) => {
-  if (!DEBUG) return
-  // eslint-disable-next-line no-console
-  console.log('[010 UsersTile]', ...args)
-}
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('010 UsersTile')
 
 const VIEW_KEY = '010.users.list'
 
@@ -150,12 +146,7 @@ function formatDateShort(v: any): string {
   return s
 }
 
-function dateSortValue(v: any): number {
-  const s = String(v ?? '').trim()
-  if (!s) return 0
-  const t = Date.parse(s)
-  return Number.isFinite(t) ? t : 0
-}
+// Removed unused function dateSortValue
 
 function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUser {
   const meta = resolveRoleMeta((row as any).role_code, roleMap)
@@ -369,6 +360,7 @@ export default function UsersTile({
   useEffect(() => {
     if (!prefsLoadedRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    if (!sort) return
   
     const persistSort: ViewPrefsSortState =
       sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
@@ -424,7 +416,7 @@ export default function UsersTile({
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
 
-      dbg('setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
+      logger.debug('setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
 
       if (nextUrl === currentUrl) return
 
@@ -453,8 +445,7 @@ export default function UsersTile({
         const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
         setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current)))
       } catch (e: any) {
-        // eslint-disable-next-line no-console
-        console.error('[UsersTile.listUsers] ERROR', e)
+        logger.error('listUsers failed', e)
         setError(e?.message ?? 'Chyba načtení uživatelů')
       } finally {
         setLoading(false)
@@ -477,8 +468,7 @@ export default function UsersTile({
         const rows = await fetchRoleTypes()
         setRoleTypes(rows)
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[UsersTile.fetchRoleTypes] WARN', e)
+        logger.warn('fetchRoleTypes failed', e)
       }
     })()
     roleTypesInFlightRef.current = p
@@ -529,6 +519,15 @@ export default function UsersTile({
 
   // ✅ sortedUsers (DEFAULT = roleOrderIndex ASC, email ASC)
   const sortedUsers = useMemo(() => {
+    if (!sort) {
+      // Default sort when sort is null
+      return [...users].sort((a, b) => {
+        const ao = a.roleOrderIndex ?? 999999
+        const bo = b.roleOrderIndex ?? 999999
+        if (ao !== bo) return ao - bo
+        return (a.email ?? '').localeCompare(b.email ?? '', 'cs')
+      })
+    }
     const key = String(sort.key ?? '').trim()
     const dir = sort.dir === 'desc' ? -1 : 1
     const arr = [...users]
@@ -675,10 +674,10 @@ export default function UsersTile({
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
-    dbg('register common action handler')
+    logger.debug('register common action handler')
 
     const handler = async (actionId: CommonActionId) => {
-      dbg('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
+      logger.debug('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
 
       // ATTACHMENTS MANAGER ACTIONS
       // ATTACHMENTS MANAGER ACTIONS
@@ -736,10 +735,10 @@ export default function UsersTile({
         const sp = new URLSearchParams(searchKey)
         const t = sp.get('t')?.trim() ?? null
 
-        dbg('close branch start', { t, viewMode })
+        logger.debug('close branch start', { t, viewMode })
 
         if (String(viewMode) === 'attachments-manager') {
-          dbg('close -> attachments-manager back to detail')
+          logger.debug('close -> attachments-manager back to detail')
         
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (!backId) {
@@ -761,18 +760,18 @@ export default function UsersTile({
         }
 
         if (t === 'invite-user') {
-          dbg('close -> closeListToModule (t=invite-user)')
+          logger.debug('close -> closeListToModule (t=invite-user)')
           closeListToModule()
           return
         }
 
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
-          dbg('close -> closeToList (detail)')
+          logger.debug('close -> closeToList (detail)')
           closeToList()
           return
         }
 
-        dbg('close -> closeListToModule (list)')
+        logger.debug('close -> closeListToModule (list)')
         closeListToModule()
         return
       }
@@ -780,7 +779,7 @@ export default function UsersTile({
       // ATTACHMENTS open manager
       if (actionId === 'attachments') {
         if (viewMode === 'list') {
-          dbg('attachments -> list', { selectedId })
+          logger.debug('attachments -> list', { selectedId })
           if (!selectedId) {
             alert('Nejdřív vyber uživatele v seznamu.')
             return

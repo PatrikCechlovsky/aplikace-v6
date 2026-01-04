@@ -5,6 +5,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
 import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('InviteUserFrame')
 import InviteUserForm, { type InviteFormValue } from './InviteUserForm'
 import { sendInvite, type InviteResult } from '@/app/lib/services/invites'
 
@@ -17,7 +19,7 @@ type Props = {
 export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegisterSubmit }: Props) {
   const [activeTab, setActiveTab] = useState<'invite' | 'system'>('invite')
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null)
-  const [isSending, setIsSending] = useState(false)
+  const [_isSending, setIsSending] = useState(false) // Used for future loading state
 
   const currentRef = useRef<InviteFormValue>({
     mode: presetSubjectId ? 'existing' : 'new',
@@ -82,7 +84,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       alert('Pozvánka byla založena ✅') // jasný feedback (můžeš později nahradit toastem)
       return true
     } catch (e: any) {
-      console.error('[InviteUserFrame.sendInvite] ERROR', e)
+      logger.error('sendInvite failed', e)
       alert(e?.message ?? 'Chyba při odeslání pozvánky')
       return false
     } finally {

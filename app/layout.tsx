@@ -6,6 +6,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { uiConfig } from './lib/uiConfig'
+import ErrorBoundary from './UI/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'Pronajímatel v6',
@@ -17,7 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="cs">
-      <body className={bodyClass}>{children}</body>
+      <body className={bodyClass}>
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      </body>
     </html>
   )
 }

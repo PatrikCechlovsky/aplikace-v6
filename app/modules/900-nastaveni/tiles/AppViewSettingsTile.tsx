@@ -67,7 +67,7 @@ type ChoiceCardProps = {
   icon?: React.ReactNode
 }
 
-function ChoiceCard({ title, description, selected, onSelect, icon }: ChoiceCardProps) {
+function ChoiceCard({ title, description, selected, onSelect, icon: _icon }: ChoiceCardProps) {
   return (
     <button
       type="button"

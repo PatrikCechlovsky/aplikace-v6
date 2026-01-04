@@ -27,6 +27,7 @@ import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
 import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import LoginPanel from '@/app/UI/LoginPanel'
+import ErrorBoundary from '@/app/UI/ErrorBoundary'
 
 import { applyThemeToLayout, loadThemeFromLocalStorage } from '@/app/lib/themeSettings'
 import { applyIconDisplayToLayout, loadIconDisplayFromLocalStorage } from '@/app/lib/iconDisplaySettings'
@@ -796,7 +797,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         />
       </div>
 
-      <main className="layout__content">{renderContent()}</main>
+      <main className="layout__content">
+        <ErrorBoundary>
+          {renderContent()}
+        </ErrorBoundary>
+      </main>
     </div>
   )
 }
