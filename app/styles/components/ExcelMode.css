@@ -19,7 +19,7 @@
 /* Gridlines + density tokens applied */
 .layout.layout--excel table th,
 .layout.layout--excel table td {
-  border: 1px solid var(--excel-grid);
+  border: 1.5px solid var(--excel-grid); /* Zesíleno z 1px na 1.5px pro výraznější čáry */
   padding: var(--table-cell-py) var(--table-cell-px);
   height: var(--table-row-h);
   vertical-align: middle;

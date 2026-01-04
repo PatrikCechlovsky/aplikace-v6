@@ -236,6 +236,27 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     el.classList.toggle('layout--topmenu', menuLayout === 'top')
   }, [menuLayout])
 
+  // ✅ Poslouchej změny menuLayout z AppViewSettingsTile
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    function onSettingsChanged() {
+      try {
+        const raw = window.localStorage.getItem('app-view-settings')
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (parsed.menuLayout === 'top' || parsed.menuLayout === 'sidebar') {
+          setMenuLayout(parsed.menuLayout as MenuLayout)
+        }
+      } catch {
+        // ignore
+      }
+    }
+    
+    window.addEventListener('app-view-settings-changed', onSettingsChanged)
+    return () => window.removeEventListener('app-view-settings-changed', onSettingsChanged)
+  }, [])
+
   // -------------------------
   // App view settings (table/cards + excel style + density)
   // -------------------------
