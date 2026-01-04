@@ -128,14 +128,25 @@ export default function Sidebar({
   }, [])
 
   // Když se změní aktivní modul (např. po kliknutí v sidebaru),
-  // zajistíme, že jeho menu bude rozbalené.
+  // zajistíme, že jeho menu bude rozbalené a ostatní zavřené.
   useEffect(() => {
-    if (!activeModuleId) return
+    if (!activeModuleId) {
+      // Pokud není aktivní modul, zavřeme všechna menu
+      setExpandedModuleIds([])
+      setExpandedSectionIds([])
+      return
+    }
 
-    setExpandedModuleIds((prev) =>
-      prev.includes(activeModuleId) ? prev : [...prev, activeModuleId],
-    )
-  }, [activeModuleId])
+    // Otevřeme aktivní modul a zavřeme ostatní
+    setExpandedModuleIds([activeModuleId])
+    
+    // Pokud má aktivní modul sekci, otevřeme ji a zavřeme ostatní
+    if (activeSelection?.sectionId) {
+      setExpandedSectionIds([activeSelection.sectionId])
+    } else {
+      setExpandedSectionIds([])
+    }
+  }, [activeModuleId, activeSelection?.sectionId])
 
   const showIcons = uiConfig.showSidebarIcons
 

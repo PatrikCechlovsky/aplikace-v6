@@ -499,7 +499,26 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
       (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
 
-    if (sameSelection) return
+    // ✅ FIX: Pokud je stejná selection, ale máme otevřený detail (tile-specifické parametry),
+    // zavřeme detail a otevřeme seznam
+    if (sameSelection) {
+      const hasTileSpecificParams = searchParams?.get('id') || searchParams?.get('vm') || searchParams?.get('t')
+      if (hasTileSpecificParams) {
+        // Zavřeme detail - zahoďme tile-specifické parametry
+        setUrlState(
+          {
+            moduleId: selection.moduleId,
+            sectionId: selection.sectionId ?? null,
+            tileId: selection.tileId ?? null,
+          },
+          'replace',
+          false // keepOtherParams=false znamená zahodit tile-specifické parametry
+        )
+        resetCommonActions()
+      }
+      return
+    }
+
     if (!confirmIfDirty()) return
 
     const prevModule = activeSelection?.moduleId ?? null
@@ -534,7 +553,15 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   function handleHomeClick() {
     if (!isAuthenticated) return
-    if (!confirmIfDirty('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')) return
+    
+    // ✅ FIX: Zkontroluj isDirty přímo z commonActionsUi, ne jen z confirmIfDirty
+    // confirmIfDirty může vracet false i když není dirty, pokud není v edit/create režimu
+    const hasDirtyChanges = commonActionsUi.isDirty && (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
+    
+    if (hasDirtyChanges) {
+      const ok = window.confirm('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')
+      if (!ok) return
+    }
 
     setActiveModuleId(null)
     setActiveSelection(null)
