@@ -7,29 +7,29 @@
 /* Sjednocený grid: 2-2-3 layout - fixní šířka dlaždic (180px) */
 .avs-grid--unified {
   display: grid;
-  grid-template-columns: repeat(3, 180px); /* 3 sloupce po 180px */
+  grid-template-columns: repeat(6, minmax(0, 1fr)); /* 6 sloupců pro flexibilní layout */
   gap: 12px;
-  max-width: 100%;
+  max-width: 600px; /* Omezení šířky: 2*180px + gap = cca 384px, ale necháme 600px pro větší flexibilitu */
   align-items: stretch; /* Dlaždice se roztáhnou na stejnou výšku v řádku */
 }
 
-/* První řádek: 2 dlaždice */
+/* První řádek: 2 dlaždice (každá zabere 3 sloupce) */
 .avs-grid--unified > :nth-child(1),
 .avs-grid--unified > :nth-child(2) {
-  grid-column: span 1;
+  grid-column: span 3;
 }
 
-/* Druhý řádek: 2 dlaždice */
+/* Druhý řádek: 2 dlaždice (každá zabere 3 sloupce) */
 .avs-grid--unified > :nth-child(3),
 .avs-grid--unified > :nth-child(4) {
-  grid-column: span 1;
+  grid-column: span 3;
 }
 
-/* Třetí řádek: 3 dlaždice vedle sebe */
+/* Třetí řádek: 3 dlaždice (každá zabere 2 sloupce) */
 .avs-grid--unified > :nth-child(5),
 .avs-grid--unified > :nth-child(6),
 .avs-grid--unified > :nth-child(7) {
-  grid-column: span 1;
+  grid-column: span 2;
 }
 
 /* Na menších obrazovkách: 2 sloupce */
