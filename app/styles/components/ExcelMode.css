@@ -137,6 +137,11 @@
   border: 1.5px solid var(--excel-grid);
 }
 
+/* ===== OHRANIČENÍ CELÉ TABULKY (LISTVIEW) ===== */
+.layout.layout--excel .listview {
+  border: 1.5px solid var(--excel-grid);
+}
+
 /* Header styling */
 .layout.layout--excel table thead th {
   height: var(--table-header-h);

@@ -500,9 +500,10 @@ export default function UsersTile({
     const t = searchParams?.get('t')?.trim() ?? null
     const id = searchParams?.get('id')?.trim() ?? null
     const vm = searchParams?.get('vm')?.trim() ?? null
+    const am = searchParams?.get('am')?.trim() ?? null
 
-    // Pokud není t nebo je t=users-list a není id ani vm, zobraz seznam
-    if (!t || (t === 'users-list' && !id && !vm)) {
+    // Pokud není t nebo je t=users-list a není id ani vm ani am, zobraz seznam
+    if (!t || (t === 'users-list' && !id && !vm && !am)) {
       if (viewMode !== 'list') {
         setViewMode('list')
         setDetailUser(null)
@@ -527,6 +528,21 @@ export default function UsersTile({
         setViewMode('attachments-manager')
         setAttachmentsManagerSubjectId(id)
         setIsDirty(false)
+      }
+      return
+    }
+
+    // ✅ Pokud je t=users-list a am=1, zobraz attachments manager (priorita před detailem)
+    if (t === 'users-list' && id && am === '1') {
+      if (viewMode !== 'attachments-manager' || attachmentsManagerSubjectId !== id) {
+        setViewMode('attachments-manager')
+        setAttachmentsManagerSubjectId(id)
+        setIsDirty(false)
+        // Zajisti, že máme detailUser pro případ návratu
+        const user = users.find((u) => u.id === id) ?? detailUser
+        if (user && user.id === id) {
+          setDetailUser(user)
+        }
       }
       return
     }
