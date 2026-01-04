@@ -97,6 +97,34 @@
   border-bottom: 1.5px solid var(--excel-grid);
 }
 
+/* ===== ČÁRA POD COMMON ACTIONS ===== */
+.layout.layout--excel .common-actions {
+  border-bottom: 1.5px solid var(--excel-grid);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+/* ===== VODOROVNÉ ČÁRY V SIDEBARU (VÝRAZNĚJŠÍ) ===== */
+.layout.layout--excel .sidebar__row,
+.layout.layout--excel .sidebar__section-row,
+.layout.layout--excel .sidebar__sublink {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+/* ===== OHRANIČENÍ ZÁLOŽEK (TABS) ===== */
+.layout.layout--excel .detail-tabs__tab {
+  border: 1.5px solid var(--excel-grid);
+}
+
+.layout.layout--excel .detail-tabs__tab.is-active {
+  border-bottom-color: var(--color-surface);
+}
+
+/* ===== OHRANIČENÍ HOME BUTTON ===== */
+.layout.layout--excel .home-button {
+  border: 1.5px solid var(--excel-grid);
+}
+
 /* ===== OHRANIČENÍ FORMULÁŘOVÝCH SEKCI ===== */
 .layout.layout--excel .detail-form__section {
   border: 1.5px solid var(--excel-grid);
