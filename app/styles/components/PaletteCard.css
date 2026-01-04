@@ -53,13 +53,19 @@
   background: var(--color-primary-soft);
 }
 
-/* Lepší kontrast textu na vybrané dlaždici */
+/* Lepší kontrast textu na vybrané dlaždici - světlý režim */
 .palette-card--active .palette-card__title {
   color: var(--color-primary-strong);
 }
 
 .palette-card--active .palette-card__description {
-  color: var(--color-text); /* Tmavší text pro lepší čitelnost */
+  color: var(--color-text);
+}
+
+/* Ve tmavém režimu: světlý text pro lepší čitelnost */
+.layout.theme-dark .palette-card--active .palette-card__title,
+.layout.theme-dark .palette-card--active .palette-card__description {
+  color: #ffffff; /* Bílý text pro maximální kontrast na tmavém pozadí */
 }
 
 /* Hlavička v dlaždici */
