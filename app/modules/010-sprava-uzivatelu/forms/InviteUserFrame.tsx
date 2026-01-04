@@ -116,7 +116,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
         </p>
       </div>
       <div className="tile-layout__content">
-        <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
+      <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
 
       {activeTab === 'invite' && (
         <InviteUserForm

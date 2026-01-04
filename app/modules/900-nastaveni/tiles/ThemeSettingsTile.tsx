@@ -245,9 +245,9 @@ export default function ThemeSettingsTile() {
                 <p className="palette-card__description">{preset.description}</p>
         
                 <div className="palette-card__preview">
-                  <span className={`palette-preview palette-preview--${preset.accent} primary`} />
-                  <span className={`palette-preview palette-preview--${preset.accent} soft`} />
-                  <span className={`palette-preview palette-preview--${preset.accent} accent`} />
+                  <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} primary`} />
+                  <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} soft`} />
+                  <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} accent`} />
                 </div>
               </button>
             )
@@ -289,9 +289,9 @@ export default function ThemeSettingsTile() {
                       </p>
         
                       <div className="palette-card__preview">
-                        <span className={`palette-preview palette-preview--${preset.accent} primary`} />
-                        <span className={`palette-preview palette-preview--${preset.accent} soft`} />
-                        <span className={`palette-preview palette-preview--${preset.accent} accent`} />
+                        <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} primary`} />
+                        <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} soft`} />
+                        <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} accent`} />
                       </div>
                     </button>
                   )
