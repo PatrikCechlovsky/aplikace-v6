@@ -11,17 +11,17 @@
   --entity-title-font: 22px;
 
   /* Tables / lists (comfortable) */
-  --table-font: 14px;
-  --table-header-font: 13px;
-  --table-row-h: 44px;
+  --table-font: 16px;
+  --table-header-font: 13,5px;
+  --table-row-h: 40px;
   --table-header-h: 34px;
   --table-cell-px: 12px;
-  --table-cell-py: 8px;
+  --table-cell-py: 6px;
 
   /* Badge (e.g. role pill in lists) */
-  --badge-font: 12px;
-  --badge-px: 12px;
-  --badge-py: 3px;
+  --badge-font: 14px;
+  --badge-px: 14px;
+  --badge-py: 5px;
   
   --tab-h: 34px;
   --tab-font: 13px;
