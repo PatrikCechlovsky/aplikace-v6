@@ -208,17 +208,13 @@
   width: 100%;
 }
 
-/* Zajisti, aby obě tabulky měly stejnou šířku */
-.detail-attachments__history-sticky {
-  width: 100%;
-}
-
-/* Sticky karta historie dole */
+/* Sticky karta historie dole - zajisti stejnou šířku jako horní tabulka */
 .detail-attachments__history-sticky {
   flex: 0 0 auto;
   position: sticky;
   bottom: 0;
   z-index: 5;
+  width: 100%; /* Zajisti stejnou šířku jako horní tabulka */
 
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -252,7 +248,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden; /* ✅ body nescrolluje */
-  padding: var(--detail-section-padding, 10px 12px);
+  padding: 0; /* Odstraníme padding, aby tabulka měla stejnou šířku jako horní tabulka */
   min-height: 0;
   flex: 1;
 }
@@ -287,6 +283,7 @@
   flex-direction: column;
   min-height: 0;
   flex: 1;
+  width: 100%; /* Zajisti stejnou šířku jako horní tabulka */
   /* Max výška pro 3.5 řádku: header + 3.5 × řádek (respektuje density) */
   /* Comfortable: 34px (header) + 3.5 × 40px (řádky) = 174px */
   max-height: calc(var(--table-header-h, 34px) + 3.5 * var(--table-row-h, 40px));
