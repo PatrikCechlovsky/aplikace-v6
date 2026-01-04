@@ -179,13 +179,6 @@ export default function InviteUserForm({
   return (
     <div className="detail-form">
       <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Pozvat ke spolupráci</h3>
-
-        <div className="detail-form__hint" style={{ marginBottom: 10 }}>
-          Pozvánka slouží k přizvání uživatele do aplikace, aby mohl spolupracovat na tvých nemovitostech.
-          Později stejný mechanismus použijeme i pro pozvání nového pronajímatele (hlavní – platící entity).
-        </div>
-
         {inviteBlockedReason && (
           <div className="detail-form__hint" style={{ marginBottom: 10 }}>
             {inviteBlockedReason}

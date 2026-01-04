@@ -700,9 +700,10 @@ export default function UserDetailFrame({
     return base
   }, [canShowInviteTab])
 
-  const title = isNewId(resolvedUser.id) 
+  const userName = isNewId(resolvedUser.id) 
     ? 'Nový uživatel' 
     : resolvedUser.displayName || 'Uživatel'
+  const title = `Detail uživatele: ${userName}`
 
   return (
     <div className="tile-layout">

@@ -46,3 +46,9 @@
   overflow: auto;
 }
 
+/* DetailView v content oblasti - odstranit vlastní padding */
+.tile-layout__content .detail-view {
+  padding: 0;
+  margin: 0;
+}
+

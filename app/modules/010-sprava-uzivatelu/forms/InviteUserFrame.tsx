@@ -111,6 +111,9 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     <div className="tile-layout">
       <div className="tile-layout__header">
         <h1 className="tile-layout__title">Pozvat uživatele</h1>
+        <p className="tile-layout__description">
+          Pozvánka slouží k přizvání uživatele do aplikace, aby mohl spolupracovat na tvých nemovitostech.
+        </p>
       </div>
       <div className="tile-layout__content">
         <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
