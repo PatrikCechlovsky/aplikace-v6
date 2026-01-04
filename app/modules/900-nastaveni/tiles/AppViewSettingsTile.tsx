@@ -137,7 +137,7 @@ const AppViewSettingsTile: React.FC = () => {
 
           {/* Menu layout */}
           <div className="generic-type__field-group">
-            <div className="generic-type__label">Umístění hlavního menu</div>
+            <div className="settings-tile__section-title">Umístění hlavního menu</div>
             <div className="avs-grid avs-grid--2">
               <ChoiceCard
                 title="Sidebar vlevo"
