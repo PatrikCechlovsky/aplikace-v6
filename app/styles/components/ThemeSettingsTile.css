@@ -180,8 +180,8 @@
   text-align: left;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  border-radius: 14px;
-  padding: 14px 14px 10px;
+  border-radius: 12px;
+  padding: 10px 12px 8px;
   cursor: pointer;
   transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
@@ -213,15 +213,15 @@
 
 .avs-card__title {
   font-weight: 700;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 13px;
+  line-height: 16px;
   color: var(--color-text);
 }
 
 .avs-card__desc {
-  margin-top: 6px;
-  font-size: 12px;
-  line-height: 16px;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 14px;
   color: var(--color-text-muted);
 }
 
@@ -233,18 +233,20 @@
 .avs-card__dotRow {
   display: flex;
   justify-content: flex-start;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-.avs-dot {
+avs-dot {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
 }
 
 .avs-dot--active {
-  background: var(--color-accent, #3b82f6);
+  background: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 .settings-tile__grid {
   display: grid;
