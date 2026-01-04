@@ -79,6 +79,36 @@
   font-size: var(--table-font);
 }
 
+/* ===== OHRANIČENÍ MEZI SIDEBAR/TOPMENU A CONTENT ===== */
+.layout.layout--excel .layout__sidebar {
+  border-right: 1.5px solid var(--excel-grid);
+}
+
+.layout.layout--excel.layout--topmenu .topmenu {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+/* ===== ODDĚLENÍ BREADCRUMBS + COMMON ACTIONS OD CONTENT ===== */
+.layout.layout--excel .layout__topbar {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+.layout.layout--excel .layout__actions {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+/* ===== OHRANIČENÍ FORMULÁŘOVÝCH SEKCI ===== */
+.layout.layout--excel .detail-form__section {
+  border: 1.5px solid var(--excel-grid);
+}
+
+/* ===== OHRANIČENÍ INPUT POLÍ ===== */
+.layout.layout--excel .detail-form__input,
+.layout.layout--excel .detail-form__select,
+.layout.layout--excel .detail-form__textarea {
+  border: 1.5px solid var(--excel-grid);
+}
+
 /* Header styling */
 .layout.layout--excel table thead th {
   height: var(--table-header-h);

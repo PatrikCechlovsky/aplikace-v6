@@ -53,6 +53,15 @@
   background: var(--color-primary-soft);
 }
 
+/* Lepší kontrast textu na vybrané dlaždici */
+.palette-card--active .palette-card__title {
+  color: var(--color-primary-strong);
+}
+
+.palette-card--active .palette-card__description {
+  color: var(--color-text); /* Tmavší text pro lepší čitelnost */
+}
+
 /* Hlavička v dlaždici */
 .palette-card__header {
   display: flex;
