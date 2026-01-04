@@ -196,6 +196,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* Zajisti, aby tabulka měla stejnou šířku jako historie */
+  width: 100%;
 }
 
 .detail-attachments__list-scroll .detail-attachments__lv-shell {
@@ -203,6 +205,12 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
+}
+
+/* Zajisti, aby obě tabulky měly stejnou šířku */
+.detail-attachments__history-sticky {
+  width: 100%;
 }
 
 /* Sticky karta historie dole */
@@ -273,21 +281,21 @@
   margin-top: 6px;
 }
 
-/* Historie: kompaktní výška (max 3 řádky) + správný flex/height řetězec */
+/* Historie: kompaktní výška (max 3.5 řádku) + správný flex/height řetězec */
 .detail-attachments__history-compact {
   display: flex;
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  /* Max výška pro 3 řádky: header + 3 řádky (respektuje density) */
-  /* Comfortable: 34px (header) + 3 × 40px (řádky) = 154px */
-  max-height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
-  height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
+  /* Max výška pro 3.5 řádku: header + 3.5 × řádek (respektuje density) */
+  /* Comfortable: 34px (header) + 3.5 × 40px (řádky) = 174px */
+  max-height: calc(var(--table-header-h, 34px) + 3.5 * var(--table-row-h, 40px));
+  height: calc(var(--table-header-h, 34px) + 3.5 * var(--table-row-h, 40px));
 }
 
-/* Zajisti, že tabulka historie má max 3 řádky viditelné, pak scroll */
+/* Zajisti, že tabulka historie má max 3.5 řádku viditelné, pak scroll */
 .detail-attachments__history-compact .listview__table-wrapper {
-  max-height: calc(3 * var(--table-row-h, 40px)); /* 3 řádky */
+  max-height: calc(3.5 * var(--table-row-h, 40px)); /* 3.5 řádku */
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -307,8 +315,8 @@
   }
 
   .detail-attachments__history-compact {
-    max-height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
-    height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));
+    max-height: calc(var(--table-header-h, 34px) + 3.5 * var(--table-row-h, 40px));
+    height: calc(var(--table-header-h, 34px) + 3.5 * var(--table-row-h, 40px));
   }
 }
 /* Mobil – ať to není “přehuštěné” */
