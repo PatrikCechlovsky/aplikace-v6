@@ -8,19 +8,26 @@ import '@/app/styles/components/Toast.css'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
 
+interface ToastAction {
+  label: string
+  onClick: () => void
+  primary?: boolean
+}
+
 interface Toast {
   id: string
   message: string
   type: ToastType
   duration?: number
+  action?: ToastAction
 }
 
 interface ToastContextValue {
-  showToast: (message: string, type?: ToastType, duration?: number) => void
-  showSuccess: (message: string, duration?: number) => void
-  showError: (message: string, duration?: number) => void
-  showWarning: (message: string, duration?: number) => void
-  showInfo: (message: string, duration?: number) => void
+  showToast: (message: string, type?: ToastType, duration?: number, action?: ToastAction) => void
+  showSuccess: (message: string, duration?: number, action?: ToastAction) => void
+  showError: (message: string, duration?: number, action?: ToastAction) => void
+  showWarning: (message: string, duration?: number, action?: ToastAction) => void
+  showInfo: (message: string, duration?: number, action?: ToastAction) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -45,38 +52,40 @@ export function ToastProvider({ children }: ToastProviderProps) {
   }, [])
 
   const showToast = useCallback(
-    (message: string, type: ToastType = 'info', duration: number = 5000) => {
+    (message: string, type: ToastType = 'info', duration: number = 5000, action?: ToastAction) => {
       const id = `toast-${Date.now()}-${Math.random()}`
-      const toast: Toast = { id, message, type, duration }
+      const toast: Toast = { id, message, type, duration, action }
 
       setToasts((prev) => [...prev, toast])
 
-      if (duration > 0) {
+      // Pokud má toast akci, neukončuj ho automaticky (nebo po delší době)
+      const autoCloseDuration = action ? (duration || 10000) : duration
+      if (autoCloseDuration > 0) {
         setTimeout(() => {
           removeToast(id)
-        }, duration)
+        }, autoCloseDuration)
       }
     },
     [removeToast]
   )
 
   const showSuccess = useCallback(
-    (message: string, duration?: number) => showToast(message, 'success', duration),
+    (message: string, duration?: number, action?: ToastAction) => showToast(message, 'success', duration, action),
     [showToast]
   )
 
   const showError = useCallback(
-    (message: string, duration?: number) => showToast(message, 'error', duration),
+    (message: string, duration?: number, action?: ToastAction) => showToast(message, 'error', duration, action),
     [showToast]
   )
 
   const showWarning = useCallback(
-    (message: string, duration?: number) => showToast(message, 'warning', duration),
+    (message: string, duration?: number, action?: ToastAction) => showToast(message, 'warning', duration, action),
     [showToast]
   )
 
   const showInfo = useCallback(
-    (message: string, duration?: number) => showToast(message, 'info', duration),
+    (message: string, duration?: number, action?: ToastAction) => showToast(message, 'info', duration, action),
     [showToast]
   )
 
@@ -110,13 +119,29 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
     setTimeout(onClose, 300) // Wait for animation
   }
 
+  const handleAction = () => {
+    toast.action?.onClick()
+    handleClose()
+  }
+
   return (
     <div
       className={`toast toast--${toast.type} ${isVisible ? 'toast--visible' : ''}`}
       role="alert"
     >
       <div className="toast__content">
-        <span className="toast__message">{toast.message}</span>
+        <div className="toast__message-wrapper">
+          <span className="toast__message">{toast.message}</span>
+          {toast.action && (
+            <button
+              type="button"
+              className={`toast__action ${toast.action.primary ? 'toast__action--primary' : ''}`}
+              onClick={handleAction}
+            >
+              {toast.action.label}
+            </button>
+          )}
+        </div>
         <button
           type="button"
           className="toast__close"

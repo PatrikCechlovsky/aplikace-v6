@@ -946,12 +946,16 @@ export default function UsersTile({
           setUrl({ t: 'users-list', id: savedUser.id, vm: 'read', am: null }, 'replace')
 
           if (wasCreate) {
-            const ask = confirm('Uživatel uložen. Chceš teď odeslat pozvánku?')
-            if (ask) {
-              setDetailInitialSectionId('invite')
-              setDetailActiveSectionId('invite')
-              setPendingSendInviteAfterCreate(true)
-            }
+            // Zobraz toast s akčním tlačítkem místo blocking modalu
+            toast.showSuccess('Uživatel uložen', 8000, {
+              label: 'Odeslat pozvánku',
+              primary: true,
+              onClick: () => {
+                setDetailInitialSectionId('invite')
+                setDetailActiveSectionId('invite')
+                setPendingSendInviteAfterCreate(true)
+              },
+            })
           }
 
           return

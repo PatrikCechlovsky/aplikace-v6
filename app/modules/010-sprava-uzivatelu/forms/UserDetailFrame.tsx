@@ -495,13 +495,14 @@ export default function UserDetailFrame({
           return false
         }
 
-        const rc = (roleCode ?? '').trim()
+        // Použij hodnoty ze state, nebo fallback na refs (pro automatické odeslání po vytvoření)
+        const rc = (roleCode ?? roleCodeInitialRef.current ?? (resolvedUser as any)?.roleCode ?? '').trim()
         if (!rc) {
           toast.showWarning('Chybí role – nejdřív vyber roli.')
           return false
         }
 
-        const pc = (permissionCode ?? '').trim()
+        const pc = (permissionCode ?? permissionCodeInitialRef.current ?? '').trim()
         if (!pc) {
           toast.showWarning('Chybí oprávnění – nejdřív vyber oprávnění.')
           return false
