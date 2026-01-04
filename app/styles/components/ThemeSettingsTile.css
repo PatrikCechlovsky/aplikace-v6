@@ -299,3 +299,20 @@ avs-dot {
     grid-template-columns: 1fr;
   }
 }
+/* malý pomocný preview pro ChoiceCard (není závislý na accent paletě) */
+.palette-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.palette-preview--active {
+  background: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+
+.palette-preview--ghost {
+  background: transparent;
+}
