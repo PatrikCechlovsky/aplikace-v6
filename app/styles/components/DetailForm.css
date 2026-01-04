@@ -49,49 +49,65 @@
 }
 
 /* ===== GRID POLÍ ===== */
-/* výchozí: 1 sloupec */
-/* Gap je řízen přes density classes */
+/* Hybridní přístup: fixní na desktopu, responzivní na mobilu */
+
+/* Mobil: 1 sloupec (vše pod sebou) */
 .detail-form__grid {
   display: grid;
   gap: 12px 16px; /* Výchozí hodnota, přepíše se přes density */
   grid-template-columns: 1fr;
 }
 
-/* 2 sloupce */
+/* Tablet: 2 sloupce (responzivní) */
 @media (min-width: 640px) {
   .detail-form__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-/* 3 sloupce */
+/* Desktop: fixní 3 sloupce (pole se nepřesouvají) */
 @media (min-width: 980px) {
   .detail-form__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 120px 280px 280px; /* Fixní šířky: Titul | Jméno | Příjmení */
+    gap: 12px 20px; /* Větší mezery pro lepší čitelnost */
+  }
+  
+  /* Pokud je pole označeno jako span-2 nebo span-3, roztáhne se */
+  .detail-form__field--span-2 {
+    grid-column: span 2;
+  }
+  
+  .detail-form__field--span-3 {
+    grid-column: span 3;
   }
 }
 
-/* 4 sloupce (velká obrazovka) */
-@media (min-width: 1280px) {
-  .detail-form__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-/* Úzká varianta – max 3 sloupce */
+/* Úzká varianta – pro formuláře s jednosloupcovými poli (např. pozvánka) */
 .detail-form__grid--narrow {
   grid-template-columns: 1fr;
 }
 
+/* Tablet: 2 sloupce */
 @media (min-width: 640px) {
   .detail-form__grid--narrow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+/* Desktop: fixní 2 sloupce (pro úzké formuláře) */
 @media (min-width: 980px) {
   .detail-form__grid--narrow {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr 1fr; /* Fixní 2 sloupce */
+    gap: 12px 20px;
+  }
+  
+  /* V úzkém gridu může pole spanovat oba sloupce */
+  .detail-form__grid--narrow .detail-form__field--span-2 {
+    grid-column: span 2;
+  }
+  
+  .detail-form__grid--narrow .detail-form__field--span-4 {
+    grid-column: span 2; /* span-4 se chová jako span-2 v úzkém gridu */
   }
 }
 
@@ -125,6 +141,29 @@
   background: var(--color-surface-subtle);
   color: var(--color-text);
   transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  width: 100%; /* Responzivní - na mobilu plná šířka */
+  box-sizing: border-box;
+}
+
+/* Přizpůsobení šířky podle typu pole */
+/* Na desktopu je šířka řízena gridem, na mobilu/tabletu max-width */
+@media (min-width: 640px) and (max-width: 979px) {
+  .detail-form__input--short {
+    max-width: 120px; /* Titul: cca 10 znaků */
+  }
+  
+  .detail-form__input--medium {
+    max-width: 250px; /* Jméno/příjmení: cca 20-25 znaků */
+  }
+}
+
+/* Na desktopu (≥ 980px) je šířka řízena fixním gridem, max-width se ignoruje */
+@media (min-width: 980px) {
+  .detail-form__input--short,
+  .detail-form__input--medium {
+    max-width: none; /* Grid řídí šířku */
+    width: 100%; /* Vyplní sloupec gridu */
+  }
 }
 
 .detail-form__input:focus {
@@ -186,6 +225,29 @@ select.detail-form__input {
 .detail-form__field--span-4 {
   grid-column: span 1;
 }
+
+/* Tablet: span funguje od 2 sloupců */
+@media (min-width: 640px) {
+  .detail-form__field--span-2 {
+    grid-column: span 2;
+  }
+}
+
+/* Desktop: span funguje v fixním gridu */
+@media (min-width: 980px) {
+  .detail-form__field--span-2 {
+    grid-column: span 2;
+  }
+  
+  .detail-form__field--span-3 {
+    grid-column: span 3;
+  }
+  
+  /* span-4 se chová jako span-3 v 3-sloupcovém gridu */
+  .detail-form__field--span-4 {
+    grid-column: span 3;
+  }
+}
 /* =========================================================
    Density → Detail form (SAFE: font-size + výška inputů + gap + padding)
    ========================================================= */
@@ -215,6 +277,13 @@ select.detail-form__input {
   gap: 12px 16px;
 }
 
+/* Desktop: větší gap pro fixní grid */
+@media (min-width: 980px) {
+  .layout.layout--density-comfortable .detail-form__grid {
+    gap: 12px 20px;
+  }
+}
+
 /* Kompaktní */
 .layout.layout--density-compact .detail-form {
   gap: 20px;
@@ -240,6 +309,13 @@ select.detail-form__input {
   gap: 10px 14px;
 }
 
+/* Desktop: větší gap pro fixní grid */
+@media (min-width: 980px) {
+  .layout.layout--density-compact .detail-form__grid {
+    gap: 10px 18px;
+  }
+}
+
 /* Mini */
 .layout.layout--density-mini .detail-form {
   gap: 16px;
@@ -263,6 +339,13 @@ select.detail-form__input {
 
 .layout.layout--density-mini .detail-form__grid {
   gap: 8px 12px;
+}
+
+/* Desktop: větší gap pro fixní grid */
+@media (min-width: 980px) {
+  .layout.layout--density-mini .detail-form__grid {
+    gap: 8px 16px;
+  }
 }
 
 /* span dává smysl až od 2 sloupců */

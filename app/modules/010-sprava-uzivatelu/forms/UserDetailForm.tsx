@@ -152,24 +152,30 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
   
   
         <div className="detail-form__grid">
-          <div className="detail-form__field">
+          <div className="detail-form__field detail-form__field--span-3">
             <label className="detail-form__label">
               Zobrazované jméno / přezdívka <span className="detail-form__required">*</span>
             </label>
             <input
               className="detail-form__input"
+              type="text"
+              maxLength={50}
+              size={30}
               value={val.displayName}
               readOnly={readOnly}
               onChange={(e) => update({ displayName: e.target.value })}
             />
           </div>
   
-          <div className="detail-form__field">
+          <div className="detail-form__field detail-form__field--span-3">
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
             </label>
             <input
               className="detail-form__input"
+              type="email"
+              maxLength={255}
+              size={40}
               value={val.email}
               readOnly={readOnly}
               onChange={(e) => update({ email: e.target.value })}
@@ -180,6 +186,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
             <label className="detail-form__label">Telefon</label>
             <input
               className="detail-form__input"
+              type="tel"
+              maxLength={20}
+              size={20}
               value={val.phone}
               readOnly={readOnly}
               onChange={(e) => update({ phone: e.target.value })}
@@ -190,6 +199,9 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
             <label className="detail-form__label">Přihlašovací jméno</label>
             <input
               className="detail-form__input"
+              type="text"
+              maxLength={50}
+              size={25}
               value={val.login}
               readOnly={readOnly}
               onChange={(e) => update({ login: e.target.value })}
@@ -206,7 +218,10 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
           <div className="detail-form__field">
             <label className="detail-form__label">Titul před</label>
             <input
-              className="detail-form__input"
+              className="detail-form__input detail-form__input--short"
+              type="text"
+              maxLength={10}
+              size={10}
               value={val.titleBefore}
               readOnly={readOnly}
               onChange={(e) => update({ titleBefore: e.target.value })}
@@ -216,7 +231,10 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
           <div className="detail-form__field">
             <label className="detail-form__label">Jméno</label>
             <input
-              className="detail-form__input"
+              className="detail-form__input detail-form__input--medium"
+              type="text"
+              maxLength={30}
+              size={20}
               value={val.firstName}
               readOnly={readOnly}
               onChange={(e) => update({ firstName: e.target.value })}
@@ -226,7 +244,10 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
           <div className="detail-form__field">
             <label className="detail-form__label">Příjmení</label>
             <input
-              className="detail-form__input"
+              className="detail-form__input detail-form__input--medium"
+              type="text"
+              maxLength={50}
+              size={25}
               value={val.lastName}
               readOnly={readOnly}
               onChange={(e) => update({ lastName: e.target.value })}
