@@ -1,11 +1,16 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Use environment variables instead of hardcoded credentials
+// Use environment variables - validated in env.ts
+// Note: This file runs in browser, so we can't import env.ts directly
+// We rely on Next.js to inject NEXT_PUBLIC_* variables
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables. Please check your .env.local file.');
+  throw new Error(
+    'Missing Supabase environment variables. Please check your .env.local file.\n' +
+    'Required: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY'
+  );
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { getIcon, IconKey } from '@/app/UI/icons'
 import { APP_COLOR_PALETTE } from '@/app/lib/colorPalette'
 import createLogger from '@/app/lib/logger'
+import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 const logger = createLogger('GenericTypeTile')
 
 export type GenericTypeItem = {
@@ -675,7 +676,9 @@ export default function GenericTypeTile({
           </div>
 
           {loading ? (
-            <div className="generic-type__loading">Načítám číselník…</div>
+            <div className="generic-type__loading">
+              <SkeletonTable rows={5} columns={7} />
+            </div>
           ) : filteredItems.length === 0 ? (
             <div className="generic-type__empty">Nebyl nalezen žádný záznam.</div>
           ) : (

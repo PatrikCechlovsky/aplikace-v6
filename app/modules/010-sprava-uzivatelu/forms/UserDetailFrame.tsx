@@ -16,6 +16,7 @@ import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/se
 import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/permissions'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
+import { useToast } from '@/app/UI/Toast'
 const logger = createLogger('UserDetailFrame')
 
 // =====================
@@ -94,6 +95,7 @@ export default function UserDetailFrame({
 
   // Dirty
   const [_isDirty, setIsDirty] = useState(false) // Used via onDirtyChange callback
+  const toast = useToast()
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
 
@@ -267,20 +269,20 @@ export default function UserDetailFrame({
         const v = formValue ?? buildInitialFormValue(resolvedUser)
   
         if (!v.displayName?.trim()) {
-          alert('Zobrazované jméno je povinné.')
+          toast.showWarning('Zobrazované jméno je povinné.')
           return null
         }
   
         // ✅ nově: role + permission povinné pro SAVE
         const rc = (roleCode ?? '').trim()
         if (!rc) {
-          alert('Chybí role – vyber roli a pak ulož.')
+          toast.showWarning('Chybí role – vyber roli a pak ulož.')
           return null
         }
   
         const pc = (permissionCode ?? '').trim()
         if (!pc) {
-          alert('Chybí oprávnění – vyber oprávnění a pak ulož.')
+          toast.showWarning('Chybí oprávnění – vyber oprávnění a pak ulož.')
           return null
         }
   
@@ -334,11 +336,11 @@ export default function UserDetailFrame({
         setIsDirty(false)
         onDirtyChange?.(false)
   
-        alert('Uživatel uložen ✅')
+        toast.showSuccess('Uživatel uložen')
         return saved
       } catch (e: any) {
         logger.error('save failed', e)
-        alert(e?.message ?? 'Chyba uložení uživatele')
+        toast.showError(e?.message ?? 'Chyba uložení uživatele')
         return null
       }
     })
@@ -489,19 +491,19 @@ export default function UserDetailFrame({
     inviteSubmitRef.current = async () => {
       try {
         if (!canShowInviteTab) {
-          alert('Pozvánka nedává smysl: uživatel je aktivní nebo nemá email.')
+          toast.showWarning('Pozvánka nedává smysl: uživatel je aktivní nebo nemá email.')
           return false
         }
 
         const rc = (roleCode ?? '').trim()
         if (!rc) {
-          alert('Chybí role – nejdřív vyber roli.')
+          toast.showWarning('Chybí role – nejdřív vyber roli.')
           return false
         }
 
         const pc = (permissionCode ?? '').trim()
         if (!pc) {
-          alert('Chybí oprávnění – nejdřív vyber oprávnění.')
+          toast.showWarning('Chybí oprávnění – nejdřív vyber oprávnění.')
           return false
         }
 
@@ -520,11 +522,11 @@ export default function UserDetailFrame({
         const refreshed = await getLatestInviteForSubject(resolvedUser.id)
         setLatestInvite(refreshed)
 
-        alert('Vytvořena nová pozvánka ✅')
+        toast.showSuccess('Vytvořena nová pozvánka')
         return true
       } catch (e: any) {
         logger.error('sendInvite failed', e)
-        alert(e?.message ?? 'Chyba při vytváření pozvánky')
+        toast.showError(e?.message ?? 'Chyba při vytváření pozvánky')
         return false
       }
     }

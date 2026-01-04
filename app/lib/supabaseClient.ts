@@ -1,11 +1,10 @@
-// app/lib/supabaseClient.ts
+// FILE: app/lib/supabaseClient.ts
+// PURPOSE: Supabase client initialization with validated environment variables
+
 import { createClient } from '@supabase/supabase-js'
+import { env, validateEnv } from './env'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+// Validate environment variables
+validateEnv()
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Chybí Supabase env proměnné')
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY)

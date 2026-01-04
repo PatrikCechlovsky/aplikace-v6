@@ -23,6 +23,8 @@ import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import { SkeletonTable } from '@/app/UI/SkeletonLoader'
+import { useToast } from '@/app/UI/Toast'
 
 // Type check for CommonActionId - removed unused variable
 
@@ -253,6 +255,7 @@ export default function UsersTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: UsersTileProps) {
+  const toast = useToast()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -781,7 +784,7 @@ export default function UsersTile({
         if (viewMode === 'list') {
           logger.debug('attachments -> list', { selectedId })
           if (!selectedId) {
-            alert('Nejdřív vyber uživatele v seznamu.')
+            toast.showWarning('Nejdřív vyber uživatele v seznamu.')
             return
           }
           setAttachmentsManagerSubjectId(selectedId)
@@ -793,11 +796,11 @@ export default function UsersTile({
 
         if (detailActiveSectionId === 'invite') return
         if (isDirty) {
-          alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
           return
         }
         if (!detailUser?.id || !detailUser.id.trim() || detailUser.id === 'new') {
-          alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+          toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
           return
         }
 
@@ -859,7 +862,7 @@ export default function UsersTile({
           }
 
           if (u.firstLoginAt) {
-            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+            toast.showWarning('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
             return
           }
 
@@ -905,17 +908,17 @@ export default function UsersTile({
       if (viewMode === 'edit' || viewMode === 'create') {
         if (actionId === 'invite') {
           if (isDirty) {
-            alert('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
+            toast.showWarning('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
             return
           }
 
           if (!detailUser?.id?.trim() || detailUser.id === 'new') {
-            alert('Nejdřív ulož záznam, aby šla poslat pozvánka.')
+            toast.showWarning('Nejdřív ulož záznam, aby šla poslat pozvánka.')
             return
           }
 
           if ((detailUser as any)?.firstLoginAt) {
-            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+            toast.showWarning('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
             return
           }
 
@@ -925,7 +928,7 @@ export default function UsersTile({
 
         if (actionId === 'save') {
           if (!submitRef.current) {
-            alert('Chybí submit handler (submitRef).')
+            toast.showError('Chybí submit handler (submitRef).')
             return
           }
 
@@ -990,7 +993,7 @@ export default function UsersTile({
       if (ok) {
         setIsDirty(false)
         await load()
-        alert('Pozvánka odeslána ✅')
+        toast.showSuccess('Pozvánka odeslána')
       }
     }
 
@@ -1005,9 +1008,12 @@ export default function UsersTile({
     return (
       <div>
         {error && <div style={{ padding: 8, color: 'crimson' }}>{error}</div>}
-        {loading && <div style={{ padding: 8 }}>Načítám…</div>}
-
-        <ListView<UiUser>
+        {loading ? (
+          <div style={{ padding: '1rem' }}>
+            <SkeletonTable rows={8} columns={columns.length} />
+          </div>
+        ) : (
+          <ListView<UiUser>
           columns={columns}
           rows={listRows}
           filterValue={filterText}
@@ -1025,6 +1031,7 @@ export default function UsersTile({
           onSortChange={handleSortChange}
           onColumnResize={handleColumnResize}
         />
+        )}
 
         <ListViewColumnsDrawer
           open={colsOpen}

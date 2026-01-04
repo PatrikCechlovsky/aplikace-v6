@@ -1,7 +1,24 @@
 {
   "name": "aplikace-v6",
   "version": "1.0.0",
+  "description": "Profesionální aplikace pro správu nemovitostí, jednotek, nájemníků, smluv, plateb a dokumentů",
+  "author": "Patrik Cechlovsky",
+  "license": "UNLICENSED",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PatrikCechlovsky/aplikace-v6.git"
+  },
+  "keywords": [
+    "pronajímatel",
+    "správa nemovitostí",
+    "nájem",
+    "smlouvy",
+    "platby",
+    "nextjs",
+    "supabase",
+    "typescript"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

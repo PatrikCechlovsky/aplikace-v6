@@ -9,6 +9,7 @@ import createLogger from '@/app/lib/logger'
 const logger = createLogger('InviteUserFrame')
 import InviteUserForm, { type InviteFormValue } from './InviteUserForm'
 import { sendInvite, type InviteResult } from '@/app/lib/services/invites'
+import { useToast } from '@/app/UI/Toast'
 
 type Props = {
   presetSubjectId?: string | null
@@ -17,6 +18,7 @@ type Props = {
 }
 
 export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegisterSubmit }: Props) {
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState<'invite' | 'system'>('invite')
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null)
   const [_isSending, setIsSending] = useState(false) // Used for future loading state
@@ -50,7 +52,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     try {
       // ✅ blokace opakovaného klikání/odeslání, když už máme výsledek
       if (inviteResult?.inviteId) {
-        alert('Pozvánka už byla založena. Pokud chceš poslat další, vrať se a založ novou pozvánku.')
+        toast.showWarning('Pozvánka už byla založena. Pokud chceš poslat další, vrať se a založ novou pozvánku.')
         setActiveTab('system')
         return true
       }
@@ -58,19 +60,19 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       const v = currentRef.current
 
       if (v.mode === 'existing' && !v.subjectId) {
-        alert('Vyber existujícího uživatele.')
+        toast.showWarning('Vyber existujícího uživatele.')
         return false
       }
       if (v.mode === 'new' && !v.email?.trim()) {
-        alert('Email je povinný.')
+        toast.showWarning('Email je povinný.')
         return false
       }
       if (!v.roleCode?.trim()) {
-        alert('Role je povinná.')
+        toast.showWarning('Role je povinná.')
         return false
       }
       if (!v.permissionCode?.trim()) {
-        alert('Oprávnění je povinné.')
+        toast.showWarning('Oprávnění je povinné.')
         return false
       }
 
@@ -81,11 +83,11 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       setActiveTab('system')
       onDirtyChange?.(false)
 
-      alert('Pozvánka byla založena ✅') // jasný feedback (můžeš později nahradit toastem)
+      toast.showSuccess('Pozvánka byla založena')
       return true
     } catch (e: any) {
       logger.error('sendInvite failed', e)
-      alert(e?.message ?? 'Chyba při odeslání pozvánky')
+      toast.showError(e?.message ?? 'Chyba při odeslání pozvánky')
       return false
     } finally {
       setIsSending(false)

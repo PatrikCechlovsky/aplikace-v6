@@ -28,6 +28,7 @@ import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import LoginPanel from '@/app/UI/LoginPanel'
 import ErrorBoundary from '@/app/UI/ErrorBoundary'
+import { SkeletonCentered } from '@/app/UI/SkeletonLoader'
 
 import { applyThemeToLayout, loadThemeFromLocalStorage } from '@/app/lib/themeSettings'
 import { applyIconDisplayToLayout, loadIconDisplayFromLocalStorage } from '@/app/lib/iconDisplaySettings'
@@ -590,7 +591,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (authLoading) {
       return (
         <div className="content content--center">
-          <p>Kontroluji přihlášení…</p>
+          <SkeletonCentered message="Kontroluji přihlášení…" />
         </div>
       )
     }
@@ -606,7 +607,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (modulesLoading) {
       return (
         <div className="content content--center">
-          <p>Načítám moduly aplikace…</p>
+          <SkeletonCentered message="Načítám moduly aplikace…" />
         </div>
       )
     }
