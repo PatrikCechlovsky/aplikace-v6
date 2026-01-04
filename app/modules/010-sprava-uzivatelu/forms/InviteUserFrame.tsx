@@ -10,6 +10,7 @@ const logger = createLogger('InviteUserFrame')
 import InviteUserForm, { type InviteFormValue } from './InviteUserForm'
 import { sendInvite, type InviteResult } from '@/app/lib/services/invites'
 import { useToast } from '@/app/UI/Toast'
+import '@/app/styles/components/InviteUserFrame.css'
 
 type Props = {
   presetSubjectId?: string | null
@@ -122,10 +123,10 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       )}
 
       {activeTab === 'system' && inviteResult && (
-        <div style={{ padding: 12 }}>
-          <h3 style={{ marginTop: 0 }}>Výsledek</h3>
+        <div className="invite-user-frame__result-container">
+          <h3 className="invite-user-frame__result-title">Výsledek</h3>
 
-          <div style={{ padding: 10, border: '1px solid #ddd', borderRadius: 8 }}>
+          <div className="invite-user-frame__result-box">
             <div>
               <b>Status:</b> {inviteResult.status ?? '—'}
             </div>
@@ -158,13 +159,13 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
               </div>
             )}
             {inviteResult.message && (
-              <div style={{ marginTop: 8 }}>
+              <div className="invite-user-frame__result-message">
                 <b>Poznámka:</b> {inviteResult.message}
               </div>
             )}
           </div>
 
-          <div style={{ marginTop: 12, opacity: 0.8 }}>
+          <div className="invite-user-frame__result-note">
             Teď už nejde „nepoznat“, že pozvánka proběhla. Opakované klikání je zablokované.
           </div>
         </div>

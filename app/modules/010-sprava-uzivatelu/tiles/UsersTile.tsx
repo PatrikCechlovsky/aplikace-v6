@@ -25,6 +25,7 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type Vi
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
+import '@/app/styles/components/UsersTile.css'
 
 // Type check for CommonActionId - removed unused variable
 
@@ -1007,9 +1008,9 @@ export default function UsersTile({
   if (viewMode === 'list') {
     return (
       <div>
-        {error && <div style={{ padding: 8, color: 'crimson' }}>{error}</div>}
+        {error && <div className="users-tile__error">{error}</div>}
         {loading ? (
-          <div style={{ padding: '1rem' }}>
+          <div className="users-tile__loading-container">
             <SkeletonTable rows={8} columns={columns.length} />
           </div>
         ) : (

@@ -1,0 +1,14 @@
+/*
+ * FILE: app/styles/components/UsersTile.css
+ * PURPOSE: Styly pro UsersTile komponentu
+ */
+
+.users-tile__error {
+  padding: 8px;
+  color: crimson;
+}
+
+.users-tile__loading-container {
+  padding: 1rem;
+}
+

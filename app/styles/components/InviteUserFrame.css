@@ -1,0 +1,28 @@
+/*
+ * FILE: app/styles/components/InviteUserFrame.css
+ * PURPOSE: Styly pro InviteUserFrame komponentu
+ */
+
+.invite-user-frame__result-container {
+  padding: 12px;
+}
+
+.invite-user-frame__result-title {
+  margin-top: 0;
+}
+
+.invite-user-frame__result-box {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.invite-user-frame__result-message {
+  margin-top: 8px;
+}
+
+.invite-user-frame__result-note {
+  margin-top: 12px;
+  opacity: 0.8;
+}
+

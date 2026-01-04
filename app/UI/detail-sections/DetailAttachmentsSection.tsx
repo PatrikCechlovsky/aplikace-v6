@@ -34,6 +34,7 @@ import {
 
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import { ATTACHMENTS_VIEW_KEY, getAttachmentsColumns } from '@/app/UI/attachments/attachmentsColumns'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 
 // ============================================================================
 // 2) TYPES
@@ -82,23 +83,6 @@ export type DetailAttachmentsSectionProps = {
 // ============================================================================
 // 3) HELPERS
 // ============================================================================
-function formatDt(s?: string | null) {
-  if (!s) return '—'
-  try {
-    const d = new Date(s)
-    if (Number.isNaN(d.getTime())) return s
-    return d.toLocaleString('cs-CZ', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return s
-  }
-}
-
 function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
   return { ...a, ...b }
 }
@@ -741,7 +725,7 @@ export default function DetailAttachmentsSection({
           ver: <span className="detail-attachments__muted">v{String(r.version_number ?? 0).padStart(3, '0')}</span>,
           uploaded: (
             <span className="detail-attachments__muted">
-              {formatDt(r.version_created_at)} • kdo: {uploadedName}
+              {formatDateTime(r.version_created_at)} • kdo: {uploadedName}
             </span>
           ),
         },
@@ -880,7 +864,7 @@ export default function DetailAttachmentsSection({
           ver: <span className="detail-attachments__muted">v{String(v.version_number ?? 0).padStart(3, '0')}</span>,
           uploaded: (
             <span className="detail-attachments__muted">
-              {formatDt(v.created_at)} • kdo: {who}
+              {formatDateTime(v.created_at)} • kdo: {who}
             </span>
           ),
         },
