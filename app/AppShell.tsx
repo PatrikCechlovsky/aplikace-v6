@@ -561,15 +561,20 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     
     // ✅ FIX: Zkontroluj isDirty přímo z commonActionsUi
     // Pokud je dirty v edit/create režimu, zeptej se uživatele
-    if (commonActionsUi.isDirty && (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')) {
+    const hasDirtyChanges = commonActionsUi.isDirty && (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
+    
+    if (hasDirtyChanges) {
       const ok = window.confirm('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')
       if (!ok) return
     }
 
     // ✅ Vždy zavři modul a resetuj stav, i když není dirty
+    // Použijeme setTimeout, aby se stav aktualizoval před navigací
     setActiveModuleId(null)
     setActiveSelection(null)
     resetCommonActions()
+    
+    // ✅ Použijeme replace místo push, aby se historie nehromadila
     router.replace('/')
   }
 
