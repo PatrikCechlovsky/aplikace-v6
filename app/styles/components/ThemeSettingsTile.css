@@ -276,3 +276,26 @@ avs-dot {
   color: var(--color-accent);
   font-weight: 600;
 }
+/* Automaticky samostatně */
+.settings-theme__grid-auto {
+  margin-bottom: 12px;
+}
+
+/* Seznam párů (řádky) */
+.settings-theme__pairs {
+  display: grid;
+  gap: 12px;
+}
+
+/* Jeden pár: 2 karty vedle sebe, na mobilu pod sebou */
+.settings-theme__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .settings-theme__pair {
+    grid-template-columns: 1fr;
+  }
+}
