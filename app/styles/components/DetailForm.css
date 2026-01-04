@@ -96,23 +96,21 @@
   }
 }
 
-/* Desktop: fixní 2 sloupce s max-width (kompaktní formulář) */
+/* Desktop: fixní 2 sloupce s fixní šířkou 280px (kompaktní formulář) */
 @media (min-width: 980px) {
   .detail-form__grid--narrow {
-    grid-template-columns: repeat(2, minmax(0, 280px)); /* Max 280px na sloupec */
-    max-width: 600px; /* Max šířka celého gridu */
+    grid-template-columns: 280px 280px; /* Fixní 280px na sloupec */
+    max-width: 600px; /* Max šířka celého gridu (280px + gap + 280px) */
     gap: 12px 20px;
   }
   
-  /* V úzkém gridu pole s span-2 zaberou oba sloupce, ale s max-width */
+  /* V úzkém gridu pole s span-2 zaberou oba sloupce (280px + gap + 280px) */
   .detail-form__grid--narrow .detail-form__field--span-2 {
-    grid-column: span 2; /* Přes oba sloupce */
-    max-width: 400px; /* Max šířka pro dlouhá pole (email, jméno) */
+    grid-column: span 2; /* Přes oba sloupce = 280px + 20px gap + 280px = 580px */
   }
   
   .detail-form__grid--narrow .detail-form__field--span-4 {
     grid-column: span 2; /* Přes oba sloupce */
-    max-width: 400px; /* Max šířka pro dlouhá pole */
   }
 }
 
@@ -257,7 +255,7 @@ select.detail-form__input {
    Density → Detail form (SAFE: font-size + výška inputů + gap + padding)
    ========================================================= */
 
-/* Pohodlná (výchozí) */
+/* Pohodlná (výchozí) - používá CSS proměnné z DensityTypography */
 .layout.layout--density-comfortable .detail-form {
   gap: 24px;
 }
@@ -267,14 +265,14 @@ select.detail-form__input {
 }
 
 .layout.layout--density-comfortable .detail-form__label {
-  font-size: 13px;
+  font-size: var(--table-header-font, 13px); /* Stejný jako hlavičky v tabulkách */
 }
 
 .layout.layout--density-comfortable .detail-form__input,
 .layout.layout--density-comfortable .detail-form__select,
 .layout.layout--density-comfortable .detail-form__textarea {
-  font-size: 14px;
-  min-height: 40px;
+  font-size: var(--table-font, 16px); /* Stejný jako buňky v tabulkách */
+  min-height: var(--table-row-h, 40px); /* Stejná výška jako řádky v tabulkách */
   padding: 9px 11px;
 }
 
@@ -289,7 +287,7 @@ select.detail-form__input {
   }
 }
 
-/* Kompaktní */
+/* Kompaktní - používá CSS proměnné z DensityTypography */
 .layout.layout--density-compact .detail-form {
   gap: 20px;
 }
@@ -299,14 +297,14 @@ select.detail-form__input {
 }
 
 .layout.layout--density-compact .detail-form__label {
-  font-size: 12px;
+  font-size: var(--table-header-font, 12.5px); /* Stejný jako hlavičky v tabulkách */
 }
 
 .layout.layout--density-compact .detail-form__input,
 .layout.layout--density-compact .detail-form__select,
 .layout.layout--density-compact .detail-form__textarea {
-  font-size: 13px;
-  min-height: 36px;
+  font-size: var(--table-font, 13.5px); /* Stejný jako buňky v tabulkách */
+  min-height: var(--table-row-h, 34px); /* Stejná výška jako řádky v tabulkách */
   padding: 7px 10px;
 }
 
@@ -321,7 +319,7 @@ select.detail-form__input {
   }
 }
 
-/* Mini */
+/* Mini - používá CSS proměnné z DensityTypography */
 .layout.layout--density-mini .detail-form {
   gap: 16px;
 }
@@ -331,14 +329,14 @@ select.detail-form__input {
 }
 
 .layout.layout--density-mini .detail-form__label {
-  font-size: 11px;
+  font-size: var(--table-header-font, 11px); /* Stejný jako hlavičky v tabulkách */
 }
 
 .layout.layout--density-mini .detail-form__input,
 .layout.layout--density-mini .detail-form__select,
 .layout.layout--density-mini .detail-form__textarea {
-  font-size: 12px;
-  min-height: 32px;
+  font-size: var(--table-font, 12px); /* Stejný jako buňky v tabulkách */
+  min-height: var(--table-row-h, 28px); /* Stejná výška jako řádky v tabulkách */
   padding: 6px 9px;
 }
 

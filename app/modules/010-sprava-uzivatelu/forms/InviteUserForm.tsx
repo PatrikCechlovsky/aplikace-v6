@@ -285,8 +285,8 @@ export default function InviteUserForm({
             </div>
           )}
 
-          {/* Email - střední šířka */}
-          <div className="detail-form__field detail-form__field--span-2">
+          {/* Email a Zobrazované jméno - vedle sebe, každé 280px */}
+          <div className="detail-form__field">
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
             </label>
@@ -294,7 +294,7 @@ export default function InviteUserForm({
               className={'detail-form__input' + (mode === 'existing' && variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
               type="email"
               maxLength={255}
-              size={40}
+              size={30}
               value={v.email}
               readOnly={variant === 'existingOnly'}
               onChange={(e) => {
@@ -305,8 +305,7 @@ export default function InviteUserForm({
             />
           </div>
 
-          {/* Zobrazované jméno - střední šířka */}
-          <div className="detail-form__field detail-form__field--span-2">
+          <div className="detail-form__field">
             <label className="detail-form__label">Zobrazované jméno</label>
             <input
               className={'detail-form__input' + (variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
