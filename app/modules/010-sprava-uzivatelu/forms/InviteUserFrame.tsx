@@ -116,7 +116,10 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
         </p>
       </div>
       <div className="tile-layout__content">
-      <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
+      {/* Zobrazit záložky jen když je více než jedna (když je inviteResult) */}
+      {tabItems.length > 1 && (
+        <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
+      )}
 
       {activeTab === 'invite' && (
         <InviteUserForm
