@@ -126,11 +126,37 @@
 }
 
 /* =============================
+   Manager wrapper - musí se vejít do TileLayout content
+   ============================= */
+.detail-attachments__manager-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  height: 100%;
+}
+
+.detail-attachments__manager-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  padding: 0; /* Odstraníme padding, protože TileLayout content už má padding */
+}
+
+.detail-attachments__manager-section .detail-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  gap: 0; /* Odstraníme gap mezi sekcemi */
+}
+
+/* =============================
    Manager layout (STICKY HISTORY) – FINÁL
    ============================= */
 
-/* Celý manager panel: sloupec.
-   ❗NEpoužívej default 100vh (to ti udělalo obr.2), jen když si to někde nastavíš přes var. */
+/* Celý manager panel: sloupec - musí se vejít na obrazovku */
 .detail-attachments__manager-layout {
   display: flex;
   flex-direction: column;
@@ -140,10 +166,10 @@
   overflow: visible;
   min-height: 0;
 
-  /* volitelně můžeš v konkrétním screen nastavit:
-     --attachments-manager-height: calc(100vh - XXXpx); */
-  height: var(--attachments-manager-height, auto);
-  max-height: var(--attachments-manager-height, none);
+  /* Výška se přizpůsobí dostupnému prostoru v TileLayout content */
+  height: 100%;
+  max-height: 100%;
+  flex: 1;
 }
 
 /* Horní část musí umět "sežrat" zbytek výšky */
@@ -152,6 +178,8 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden; /* ✅ žádný scroll tady */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Shell okolo ListView */
@@ -162,11 +190,19 @@
   overflow: hidden; /* ✅ nikdy nescrolluje shell */
 }
 
-/* ✅ HORNÍ tabulka: max-height vypočti tak, aby zbyl prostor pro historii
-   (tím donutíš scrollovat .listview__table-wrapper uvnitř ListView)
-   Pozn.: historie má max 154px (3 řádky) + padding, takže horní tabulka má zbytek */
+/* ✅ HORNÍ tabulka: flex 1, aby zabrala zbytek prostoru, scroll uvnitř */
+.detail-attachments__list-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .detail-attachments__list-scroll .detail-attachments__lv-shell {
-  --listview-max-height: calc(100vh - 280px); /* Zmenšeno z 430px, aby tabulka přílohy byla vidět */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Sticky karta historie dole */
@@ -210,6 +246,7 @@
   overflow: hidden; /* ✅ body nescrolluje */
   padding: var(--detail-section-padding, 10px 12px);
   min-height: 0;
+  flex: 1;
 }
 
 .detail-view__placeholder {
@@ -241,6 +278,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  flex: 1;
   /* Max výška pro 3 řádky: header + 3 řádky (respektuje density) */
   /* Comfortable: 34px (header) + 3 × 40px (řádky) = 154px */
   max-height: calc(var(--table-header-h, 34px) + 3 * var(--table-row-h, 40px));

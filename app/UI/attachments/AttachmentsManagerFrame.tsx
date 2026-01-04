@@ -44,9 +44,11 @@ export default function AttachmentsManagerFrame({
   onRegisterManagerApi,
   onManagerStateChange,
 }: AttachmentsManagerFrameProps) {
+  const title = entityLabel ? `Správa příloh: ${entityLabel}` : 'Správa příloh'
+  
   return (
     <TileLayout
-      title="Správa příloh"
+      title={title}
       description="Toto je správa příloh (verze, upload, metadata). V detailu entity je záložka Přílohy vždy pouze read-only seznam."
     >
       <DetailAttachmentsSection

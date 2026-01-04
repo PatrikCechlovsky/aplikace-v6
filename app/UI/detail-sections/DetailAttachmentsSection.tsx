@@ -676,7 +676,8 @@ export default function DetailAttachmentsSection({
     )
   }
 
-  const sectionTitle = isManager ? 'Přílohy' : 'Přílohy (read-only)'
+  // V manager variantě nechceme zobrazovat nadpis "Přílohy" - je to v TileLayout
+  const sectionTitle = isManager ? null : 'Přílohy (read-only)'
 
 
   const sharedColumnsBase = useMemo(() => {
@@ -875,10 +876,10 @@ export default function DetailAttachmentsSection({
   const selectedTitle = selectedRow?.title?.trim() ? selectedRow.title : '—'
 
   return (
-    <div className="detail-view__section">
+    <div className={`detail-view__section ${isManager ? 'detail-attachments__manager-wrapper' : ''}`}>
       <div className="detail-form">
-        <section className="detail-form__section">
-          <h3 className="detail-form__section-title">{sectionTitle}</h3>
+        <section className={`detail-form__section ${isManager ? 'detail-attachments__manager-section' : ''}`}>
+          {sectionTitle && <h3 className="detail-form__section-title">{sectionTitle}</h3>}
 
           {errorText && (
             <div className="detail-view__placeholder">
@@ -954,14 +955,7 @@ export default function DetailAttachmentsSection({
           {/* ========================= */}
           {/* MANAGER LAYOUT (hlavní tabulka + pevná historie) */}
           {/* ========================= */}
-          <div
-            className="detail-attachments__manager-layout"
-            style={{
-              marginTop: 12,
-              height: 'calc(100vh - 260px)',
-              maxHeight: 'calc(100vh - 260px)',
-            }}
-          >
+          <div className="detail-attachments__manager-layout">
             {/* Hlavní tabulka: flex 1 + scroll uvnitř ListView */}
             <div className="detail-attachments__list-scroll">
               {!loading && managerRows.length > 0 && (
