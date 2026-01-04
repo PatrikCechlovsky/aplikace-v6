@@ -858,7 +858,7 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [expandedDocId, filteredVersions, resolveName, openFileByPath, selectedRow])
+  }, [expandedDocId, expandedVersions, resolveName, openFileByPath, selectedRow])
 
   const selectedTitle = selectedRow?.title?.trim() ? selectedRow.title : '—'
 
