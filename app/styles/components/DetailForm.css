@@ -20,10 +20,10 @@
 /* ===== SEKCE FORMULÁŘE (Profil, Účet, …) ===== */
 
 .detail-form__section {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .detail-form__section-title {
