@@ -75,7 +75,8 @@ function ChoiceCard({ title, description, selected, onSelect, icon }: ChoiceCard
       onClick={onSelect}
       aria-pressed={selected}
     >
-      <div className="avs-card__row">
+      {selected ? <span className="avs-card__badge">Aktivní</span> : null}
+       <div className="avs-card__row">
         <div className="avs-card__left">
           <div className="avs-card__title">{title}</div>
           {description ? <div className="avs-card__desc">{description}</div> : null}
