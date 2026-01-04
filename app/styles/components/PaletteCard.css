@@ -50,7 +50,9 @@
 
 .palette-card--active {
   border-color: var(--color-primary);
+  border-width: 2px; /* Silnější border pro lepší viditelnost */
   background: var(--color-primary-soft);
+  box-shadow: 0 0 0 2px var(--color-primary-soft), 0 2px 8px rgba(0, 0, 0, 0.1); /* Dvojitý efekt pro výraznost */
 }
 
 /* Lepší kontrast textu na vybrané dlaždici - světlý režim */
@@ -62,10 +64,17 @@
   color: var(--color-text);
 }
 
-/* Ve tmavém režimu: světlý text pro lepší čitelnost */
+/* Ve tmavém režimu: jiný způsob označení - silnější border a box-shadow, světlý text */
+.layout.theme-dark .palette-card--active {
+  background: var(--color-surface-subtle); /* V tmavém režimu ponecháme původní pozadí */
+  border-color: var(--color-primary);
+  border-width: 2px;
+  box-shadow: 0 0 0 2px var(--color-primary-soft), 0 0 12px var(--color-primary-soft); /* Světlý efekt kolem borderu */
+}
+
 .layout.theme-dark .palette-card--active .palette-card__title,
 .layout.theme-dark .palette-card--active .palette-card__description {
-  color: #ffffff; /* Bílý text pro maximální kontrast na tmavém pozadí */
+  color: var(--color-text); /* Použijeme standardní text, protože pozadí zůstává tmavé */
 }
 
 /* Hlavička v dlaždici */
