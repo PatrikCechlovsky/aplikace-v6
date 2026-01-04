@@ -130,6 +130,20 @@ const PRESETS: ThemePreset[] = [
   },
 ]
 
+const AUTO_PRESET_ID = 'auto-neutral'
+
+const THEME_GROUPS: {
+  key: string
+  lightId: string
+  darkId: string
+}[] = [
+  { key: 'neutral', lightId: 'neutral-light', darkId: 'neutral-dark' },
+  { key: 'grey', lightId: 'grey-light', darkId: 'grey-dark' },
+  { key: 'blue', lightId: 'blue-light', darkId: 'blue-dark' },
+  { key: 'green', lightId: 'green-light', darkId: 'green-dark' },
+  { key: 'purple', lightId: 'purple-light', darkId: 'purple-dark' },
+]
+
 export default function ThemeSettingsTile() {
   // ❗ Tady už NEdobíráme hodnoty z localStorage / DB
   // – začínáme bez vybraného presetu.
@@ -206,11 +220,11 @@ export default function ThemeSettingsTile() {
 
       <div className="settings-tile__section">
         <h2 className="settings-tile__section-title">Předvolená témata</h2>
-
-        <div className="settings-tile__palette-grid">
-          {PRESETS.map((preset) => {
+        {/* === AUTOMATICKÉ TÉMA (samostatně) === */}
+        <div className="settings-theme__grid-auto">
+          {PRESETS.filter((p) => p.id === AUTO_PRESET_ID).map((preset) => {
             const isActive = preset.id === selectedPresetId
-
+        
             return (
               <button
                 key={preset.id}
@@ -222,33 +236,70 @@ export default function ThemeSettingsTile() {
                 disabled={isSaving}
               >
                 <div className="palette-card__header">
-                  <span className="palette-card__title">
-                    {preset.label}
-                  </span>
+                  <span className="palette-card__title">{preset.label}</span>
                   {isActive && (
                     <span className="palette-card__badge">Aktivní</span>
                   )}
                 </div>
-
-                <p className="palette-card__description">
-                  {preset.description}
-                </p>
-
+        
+                <p className="palette-card__description">{preset.description}</p>
+        
                 <div className="palette-card__preview">
-                  <span
-                    className={`palette-preview palette-preview--${preset.accent} primary`}
-                  />
-                  <span
-                    className={`palette-preview palette-preview--${preset.accent} soft`}
-                  />
-                  <span
-                    className={`palette-preview palette-preview--${preset.accent} accent`}
-                  />
+                  <span className={`palette-preview palette-preview--${preset.accent} primary`} />
+                  <span className={`palette-preview palette-preview--${preset.accent} soft`} />
+                  <span className={`palette-preview palette-preview--${preset.accent} accent`} />
                 </div>
               </button>
             )
           })}
         </div>
+        
+        {/* === PÁRY SVĚTLÉ / TMAVÉ === */}
+        <div className="settings-theme__pairs">
+          {THEME_GROUPS.map((group) => {
+            const light = PRESETS.find((p) => p.id === group.lightId)
+            const dark = PRESETS.find((p) => p.id === group.darkId)
+        
+            if (!light || !dark) return null
+        
+            return (
+              <div key={group.key} className="settings-theme__pair">
+                {[light, dark].map((preset) => {
+                  const isActive = preset.id === selectedPresetId
+        
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`palette-card ${
+                        isActive ? 'palette-card--active' : ''
+                      }`}
+                      onClick={() => handlePresetClick(preset)}
+                      disabled={isSaving}
+                    >
+                      <div className="palette-card__header">
+                        <span className="palette-card__title">{preset.label}</span>
+                        {isActive && (
+                          <span className="palette-card__badge">Aktivní</span>
+                        )}
+                      </div>
+        
+                      <p className="palette-card__description">
+                        {preset.description}
+                      </p>
+        
+                      <div className="palette-card__preview">
+                        <span className={`palette-preview palette-preview--${preset.accent} primary`} />
+                        <span className={`palette-preview palette-preview--${preset.accent} soft`} />
+                        <span className={`palette-preview palette-preview--${preset.accent} accent`} />
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>     
 
         {isSaving && (
           <p className="text-xs text-gray-400 mt-1">
