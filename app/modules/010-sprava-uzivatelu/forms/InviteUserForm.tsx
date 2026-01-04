@@ -186,7 +186,7 @@ export default function InviteUserForm({
           </div>
         )}
 
-        {/* Režim - plná šířka */}
+          {/* Režim - střední šířka */}
         {variant === 'standalone' && (
           <div className="detail-form__grid detail-form__grid--narrow" style={{ marginBottom: 12 }}>
             <div className="detail-form__field detail-form__field--span-2">
@@ -230,7 +230,7 @@ export default function InviteUserForm({
 
         {/* Hlavní formulář - optimalizované rozložení */}
         <div className="detail-form__grid detail-form__grid--narrow">
-          {/* Uživatel - plná šířka (pouze pokud existující) */}
+          {/* Uživatel - střední šířka (pouze pokud existující) */}
           {mode === 'existing' && variant === 'standalone' && (
             <div className="detail-form__field detail-form__field--span-2">
               <label className="detail-form__label">Uživatel</label>
@@ -285,7 +285,7 @@ export default function InviteUserForm({
             </div>
           )}
 
-          {/* Email - plná šířka */}
+          {/* Email - střední šířka */}
           <div className="detail-form__field detail-form__field--span-2">
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
@@ -305,7 +305,7 @@ export default function InviteUserForm({
             />
           </div>
 
-          {/* Zobrazované jméno - plná šířka */}
+          {/* Zobrazované jméno - střední šířka */}
           <div className="detail-form__field detail-form__field--span-2">
             <label className="detail-form__label">Zobrazované jméno</label>
             <input
@@ -368,7 +368,7 @@ export default function InviteUserForm({
             </select>
           </div>
 
-          {/* Poznámka - plná šířka */}
+          {/* Poznámka - střední šířka */}
           <div className="detail-form__field detail-form__field--span-2">
             <label className="detail-form__label">Poznámka</label>
             <textarea

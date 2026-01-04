@@ -85,29 +85,34 @@
 /* Úzká varianta – pro formuláře s jednosloupcovými poli (např. pozvánka) */
 .detail-form__grid--narrow {
   grid-template-columns: 1fr;
+  max-width: 100%; /* Na mobilu plná šířka */
 }
 
 /* Tablet: 2 sloupce */
 @media (min-width: 640px) {
   .detail-form__grid--narrow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 100%;
   }
 }
 
-/* Desktop: fixní 2 sloupce (pro úzké formuláře) */
+/* Desktop: fixní 2 sloupce s max-width (kompaktní formulář) */
 @media (min-width: 980px) {
   .detail-form__grid--narrow {
-    grid-template-columns: 1fr 1fr; /* Fixní 2 sloupce */
+    grid-template-columns: repeat(2, minmax(0, 280px)); /* Max 280px na sloupec */
+    max-width: 600px; /* Max šířka celého gridu */
     gap: 12px 20px;
   }
   
-  /* V úzkém gridu může pole spanovat oba sloupce */
+  /* V úzkém gridu pole s span-2 zaberou oba sloupce, ale s max-width */
   .detail-form__grid--narrow .detail-form__field--span-2 {
-    grid-column: span 2;
+    grid-column: span 2; /* Přes oba sloupce */
+    max-width: 400px; /* Max šířka pro dlouhá pole (email, jméno) */
   }
   
   .detail-form__grid--narrow .detail-form__field--span-4 {
-    grid-column: span 2; /* span-4 se chová jako span-2 v úzkém gridu */
+    grid-column: span 2; /* Přes oba sloupce */
+    max-width: 400px; /* Max šířka pro dlouhá pole */
   }
 }
 
