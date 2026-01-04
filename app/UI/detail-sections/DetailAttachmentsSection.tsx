@@ -152,7 +152,6 @@ export default function DetailAttachmentsSection({
 
   const [includeArchived, setIncludeArchived] = useState(false)
   const [filterText, setFilterText] = useState('')
-  const [historyFilterText, setHistoryFilterText] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -817,22 +816,10 @@ export default function DetailAttachmentsSection({
   const expandedVersions = expandedDocId ? versionsByDocId[expandedDocId] ?? [] : []
 
   // history rows (sloupce stejné jako nahoře)
-  const filteredVersions = useMemo(() => {
-    const t = historyFilterText.trim().toLowerCase()
-    if (!t) return expandedVersions
-    return expandedVersions.filter((v) => {
-      // ✅ filtrujeme podle snapshot metadat verze (fallback na selectedRow pro staré řádky bez snapshotu)
-      const vt = ((v.title ?? selectedRow?.title) ?? '').toLowerCase()
-      const vd = ((v.description ?? selectedRow?.description) ?? '').toLowerCase()
-      const fn = (v.file_name ?? '').toLowerCase()
-      const ver = `v${String(v.version_number ?? 0).padStart(3, '0')}`.toLowerCase()
-      return vt.includes(t) || vd.includes(t) || fn.includes(t) || ver.includes(t)
-    })
-  }, [expandedVersions, historyFilterText, selectedRow])
-
+  // Filtr z historie byl odstraněn podle požadavku uživatele
   const historyRows: ListViewRow<AttachmentVersionRow>[] = useMemo(() => {
     if (!expandedDocId) return []
-    return filteredVersions.map((v) => {
+    return expandedVersions.map((v) => {
       const who = resolveName(null, v.created_by)
 
       // ✅ snapshot metadat pro konkrétní verzi (fallback pro staré řádky)
