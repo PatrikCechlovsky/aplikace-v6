@@ -8,8 +8,8 @@
    1) IMPORTS
    ========================= */
 import React, { useEffect, useState } from 'react'
+import PaletteCard from '@/app/UI/PaletteCard'
 import '@/app/styles/components/AppViewSettingsTile.css'
-import '@/app/styles/components/ThemeSettingsTile.css' /* Sjednocený styl dlaždic */
 
 /* =========================
    2) TYPES
@@ -61,33 +61,7 @@ function notifySettingsChanged() {
   window.dispatchEvent(new CustomEvent('app-view-settings-changed'))
 }
 
-type ChoiceCardProps = {
-  title: string
-  description?: string
-  selected: boolean
-  onSelect: () => void
-  icon?: React.ReactNode
-}
-
-function ChoiceCard({ title, description, selected, onSelect, icon: _icon }: ChoiceCardProps) {
-  return (
-    <button
-      type="button"
-      className={`palette-card ${selected ? 'palette-card--active' : ''}`}
-      onClick={onSelect}
-      aria-pressed={selected}
-    >
-      <div className="palette-card__header">
-        <span className="palette-card__title">{title}</span>
-        {selected ? <span className="palette-card__badge">Aktivní</span> : null}
-      </div>
-
-      {description ? <p className="palette-card__description">{description}</p> : null}
-
-      {/* Preview kolečka odstraněna podle požadavku */}
-    </button>
-  )
-}
+// ChoiceCard je nyní nahrazena reusable PaletteCard komponentou
 
 
 /* =========================
@@ -131,13 +105,13 @@ const AppViewSettingsTile: React.FC = () => {
         {/* Všechna nastavení v jednom gridu: 2-2-3 */}
         <div className="avs-grid avs-grid--unified">
           {/* Řádek 1: Menu layout (2 dlaždice) */}
-          <ChoiceCard
+          <PaletteCard
             title="Sidebar vlevo"
             description="Klasické rozložení s navigací vlevo."
             selected={settings.menuLayout === 'sidebar'}
             onSelect={() => updateSettings({ menuLayout: 'sidebar' })}
           />
-          <ChoiceCard
+          <PaletteCard
             title="Horní lišta (Excel styl)"
             description="Navigace nahoře, víc místa na obsah."
             selected={settings.menuLayout === 'top'}
@@ -145,13 +119,13 @@ const AppViewSettingsTile: React.FC = () => {
           />
 
           {/* Řádek 2: UI style (2 dlaždice) */}
-          <ChoiceCard
+          <PaletteCard
             title="Standardní (moderní)"
             description="Čistý vzhled bez mřížky v tabulkách."
             selected={settings.uiStyle === 'default'}
             onSelect={() => updateSettings({ uiStyle: 'default' })}
           />
-          <ChoiceCard
+          <PaletteCard
             title="Excel (mřížka + ohraničení)"
             description="Tabulky s linkami jako v Excelu."
             selected={settings.uiStyle === 'excel'}
@@ -159,19 +133,19 @@ const AppViewSettingsTile: React.FC = () => {
           />
 
           {/* Řádek 3: Density (3 dlaždice) */}
-          <ChoiceCard
+          <PaletteCard
             title="Pohodlná"
             description="Největší text a více prostoru."
             selected={settings.density === 'comfortable'}
             onSelect={() => updateSettings({ density: 'comfortable' })}
           />
-          <ChoiceCard
+          <PaletteCard
             title="Kompaktní"
             description="Nižší řádky, rychlejší skenování."
             selected={settings.density === 'compact'}
             onSelect={() => updateSettings({ density: 'compact' })}
           />
-          <ChoiceCard
+          <PaletteCard
             title="Mini"
             description="Nejhustší režim pro velké seznamy."
             selected={settings.density === 'mini'}

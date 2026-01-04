@@ -20,9 +20,8 @@ import {
   type ThemeMode,
   type ThemeAccent,
 } from '../../../lib/themeSettings'
-
-
 import { getCurrentSession } from '../../../lib/services/auth'
+import PaletteCard from '../../../UI/PaletteCard'
 
 type ThemePreset = {
   id: string
@@ -226,30 +225,21 @@ export default function ThemeSettingsTile() {
             const isActive = preset.id === selectedPresetId
         
             return (
-              <button
+              <PaletteCard
                 key={preset.id}
-                type="button"
-                className={`palette-card ${
-                  isActive ? 'palette-card--active' : ''
-                }`}
-                onClick={() => handlePresetClick(preset)}
+                title={preset.label}
+                description={preset.description}
+                selected={isActive}
+                onSelect={() => handlePresetClick(preset)}
                 disabled={isSaving}
-              >
-                <div className="palette-card__header">
-                  <span className="palette-card__title">{preset.label}</span>
-                  {isActive && (
-                    <span className="palette-card__badge">Aktivní</span>
-                  )}
-                </div>
-        
-                <p className="palette-card__description">{preset.description}</p>
-        
-                <div className="palette-card__preview">
-                  <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} primary`} />
-                  <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} soft`} />
-                  <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} accent`} />
-                </div>
-              </button>
+                preview={
+                  <>
+                    <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} primary`} />
+                    <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} soft`} />
+                    <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} accent`} />
+                  </>
+                }
+              />
             )
           })}
         </div>
@@ -268,32 +258,21 @@ export default function ThemeSettingsTile() {
                   const isActive = preset.id === selectedPresetId
         
                   return (
-                    <button
+                    <PaletteCard
                       key={preset.id}
-                      type="button"
-                      className={`palette-card ${
-                        isActive ? 'palette-card--active' : ''
-                      }`}
-                      onClick={() => handlePresetClick(preset)}
+                      title={preset.label}
+                      description={preset.description}
+                      selected={isActive}
+                      onSelect={() => handlePresetClick(preset)}
                       disabled={isSaving}
-                    >
-                      <div className="palette-card__header">
-                        <span className="palette-card__title">{preset.label}</span>
-                        {isActive && (
-                          <span className="palette-card__badge">Aktivní</span>
-                        )}
-                      </div>
-        
-                      <p className="palette-card__description">
-                        {preset.description}
-                      </p>
-        
-                      <div className="palette-card__preview">
-                        <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} primary`} />
-                        <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} soft`} />
-                        <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} accent`} />
-                      </div>
-                    </button>
+                      preview={
+                        <>
+                          <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} primary`} />
+                          <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} soft`} />
+                          <span className={`palette-preview palette-preview--${preset.accent} palette-preview--${preset.mode} accent`} />
+                        </>
+                      }
+                    />
                   )
                 })}
               </div>

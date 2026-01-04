@@ -4,10 +4,10 @@
    APP VIEW SETTINGS TILE – VZHLED A ZOBRAZENÍ
    ========================================= */
 
-/* Sjednocený grid: 2-2-3 layout - užší dlaždice */
+/* Sjednocený grid: 2-2-3 layout - fixní šířka dlaždic (180px) */
 .avs-grid--unified {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   max-width: 100%;
 }
@@ -15,39 +15,13 @@
 /* Na mobilu všechno pod sebou */
 @media (max-width: 640px) {
   .avs-grid--unified {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Na větších obrazovkách: 2-2-3 layout - užší dlaždice */
-@media (min-width: 980px) {
-  .avs-grid--unified {
-    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    flex-direction: column;
   }
   
-  /* První řádek: 2 dlaždice (každá zabere 1.5 sloupce) */
-  .avs-grid--unified > :nth-child(1),
-  .avs-grid--unified > :nth-child(2) {
-    grid-column: span 1;
+  .avs-grid--unified .palette-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
-  
-  /* Druhý řádek: 2 dlaždice */
-  .avs-grid--unified > :nth-child(3),
-  .avs-grid--unified > :nth-child(4) {
-    grid-column: span 1;
-  }
-  
-  /* Třetí řádek: 3 dlaždice vedle sebe */
-  .avs-grid--unified > :nth-child(5),
-  .avs-grid--unified > :nth-child(6),
-  .avs-grid--unified > :nth-child(7) {
-    grid-column: span 1;
-  }
-}
-
-/* Sjednocení velikosti dlaždic s ThemeSettingsTile */
-.avs-grid--unified .palette-card {
-  min-width: 0; /* Aby se dlaždice přizpůsobily gridu */
-  width: 100%; /* Plná šířka sloupce */
 }
 

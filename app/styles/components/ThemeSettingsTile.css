@@ -47,87 +47,8 @@
   gap: 0.75rem;
 }
 
-/* Dlaždice/preset */
-
-.palette-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: left;
-  padding: 0.75rem 0.9rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-subtle);
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.1s ease;
-  min-width: 0; /* Aby se dlaždice přizpůsobily gridu */
-  width: 100%; /* Plná šířka sloupce */
-}
-
-.palette-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary-soft);
-  transform: translateY(-1px);
-}
-
-.palette-card:disabled,
-.palette-card[disabled] {
-  cursor: default;
-  opacity: 0.7;
-  transform: none;
-  box-shadow: none;
-}
-
-.palette-card--active {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-/* Hlavička v dlaždici */
-
-.palette-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
-}
-
-.palette-card__title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.palette-card__badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: var(--color-primary);
-  color: #ffffff;
-}
-
-/* Popisek */
-
-.palette-card__description {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-/* Barevný náhled (3 puntíky) */
-
-.palette-card__preview {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 0.25rem;
-}
+/* Dlaždice/preset - nyní používáme reusable PaletteCard komponentu */
+/* Styly jsou v app/styles/components/PaletteCard.css */
 
 .palette-preview {
   width: 18px;
@@ -216,35 +137,38 @@
   color: var(--color-accent);
   font-weight: 600;
 }
-/* Automaticky samostatně - první řádek: 1 dlaždice (užší) */
+/* Automaticky samostatně - první řádek: 1 dlaždice (stejná šířka jako ostatní) */
 .settings-theme__grid-auto {
   margin-bottom: 12px;
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr);
-  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 /* Seznam párů (řádky) - po dvou podle barvy */
 .settings-theme__pairs {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-/* Jeden pár: 2 karty vedle sebe (světlé + tmavé), na mobilu pod sebou (užší) */
+/* Jeden pár: 2 karty vedle sebe (světlé + tmavé), na mobilu pod sebou */
 .settings-theme__pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  display: flex;
   gap: 12px;
-  max-width: 100%;
+  flex-wrap: wrap;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 640px) {
   .settings-theme__pair {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
   
-  .settings-theme__grid-auto {
-    grid-template-columns: 1fr;
+  .settings-theme__pair .palette-card,
+  .settings-theme__grid-auto .palette-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 }
 /* malý pomocný preview pro ChoiceCard (není závislý na accent paletě) */
