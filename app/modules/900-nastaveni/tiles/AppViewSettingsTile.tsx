@@ -1,5 +1,5 @@
 // FILE: app/modules/900-nastaveni/tiles/AppViewSettingsTile.tsx
-// PURPOSE: Uživatelská nastavení vzhledu → výchozí zobrazení seznamů + rozložení menu + Excel režim + hustota řádků
+// PURPOSE: Uživatelská nastavení vzhledu → rozložení menu + styl aplikace + hustota
 // Poznámka: Per-user (localStorage). Tile pouze ukládá, AppShell aplikuje třídy na .layout.
 
 'use client'
@@ -12,13 +12,11 @@ import React, { useEffect, useState } from 'react'
 /* =========================
    2) TYPES
    ========================= */
-type ViewMode = 'table' | 'cards'
 type MenuLayout = 'sidebar' | 'top'
 type UiStyle = 'default' | 'excel'
 type Density = 'comfortable' | 'compact' | 'mini'
 
 interface AppViewSettings {
-  viewMode: ViewMode
   menuLayout: MenuLayout
   uiStyle: UiStyle
   density: Density
@@ -30,7 +28,6 @@ interface AppViewSettings {
 const STORAGE_KEY = 'app-view-settings'
 
 const DEFAULT_SETTINGS: AppViewSettings = {
-  viewMode: 'table',
   menuLayout: 'sidebar',
   uiStyle: 'default',
   density: 'comfortable',
@@ -59,9 +56,48 @@ function saveSettings(settings: AppViewSettings) {
 
 function notifySettingsChanged() {
   if (typeof window === 'undefined') return
-  // AppShell si na to může poslouchat a okamžitě přepnout třídy
   window.dispatchEvent(new CustomEvent('app-view-settings-changed'))
 }
+
+type ChoiceCardProps = {
+  title: string
+  description?: string
+  selected: boolean
+  onSelect: () => void
+  icon?: React.ReactNode
+}
+
+function ChoiceCard({ title, description, selected, onSelect, icon }: ChoiceCardProps) {
+  return (
+    <button
+      type="button"
+      className={`avs-card ${selected ? 'avs-card--active' : ''}`}
+      onClick={onSelect}
+      aria-pressed={selected}
+    >
+      <div className="avs-card__row">
+        <div className="avs-card__left">
+          <div className="avs-card__title">{title}</div>
+          {description ? <div className="avs-card__desc">{description}</div> : null}
+        </div>
+        {icon ? <div className="avs-card__icon">{icon}</div> : null}
+      </div>
+      <div className="avs-card__dotRow">
+        <span className={`avs-dot ${selected ? 'avs-dot--active' : ''}`} />
+      </div>
+    </button>
+  )
+}
+
+/* =========================
+   4) DATA LOAD
+   ========================= */
+// (not used)
+
+/* =========================
+   5) ACTION HANDLERS
+   ========================= */
+// (inside component)
 
 /* =========================
    6) RENDER
@@ -85,126 +121,75 @@ const AppViewSettingsTile: React.FC = () => {
       <header className="generic-type__header">
         <h1 className="generic-type__title">Vzhled a zobrazení</h1>
         <p className="generic-type__description">
-          Nastavení výchozího zobrazení seznamů, umístění menu a Excel stylu (mřížka).
+          Nastavení umístění menu, stylu aplikace (Excel mřížka) a hustoty (výchozí / kompaktní / mini).
           Uloženo pro každého uživatele samostatně.
         </p>
       </header>
 
       <div className="generic-type__body">
+        {/* Nastavení */}
         <div className="generic-type__panel">
-          <h2 className="generic-type__panel-title">Preferované rozložení</h2>
+          <h2 className="generic-type__panel-title">Nastavení</h2>
 
-          {/* Zobrazení seznamů */}
+          {/* Menu layout */}
           <div className="generic-type__field-group">
-            <label className="generic-type__label">Zobrazení seznamů</label>
-            <div className="generic-type__radio-row">
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="viewMode"
-                  checked={settings.viewMode === 'table'}
-                  onChange={() => updateSettings({ viewMode: 'table' })}
-                />
-                <span>Tabulkové (výchozí)</span>
-              </label>
-
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="viewMode"
-                  checked={settings.viewMode === 'cards'}
-                  onChange={() => updateSettings({ viewMode: 'cards' })}
-                />
-                <span>Karty / Dlaždice</span>
-              </label>
+            <div className="generic-type__label">Umístění hlavního menu</div>
+            <div className="avs-grid avs-grid--2">
+              <ChoiceCard
+                title="Sidebar vlevo"
+                description="Klasické rozložení s navigací vlevo."
+                selected={settings.menuLayout === 'sidebar'}
+                onSelect={() => updateSettings({ menuLayout: 'sidebar' })}
+              />
+              <ChoiceCard
+                title="Horní lišta (Excel styl)"
+                description="Navigace nahoře, víc místa na obsah."
+                selected={settings.menuLayout === 'top'}
+                onSelect={() => updateSettings({ menuLayout: 'top' })}
+              />
             </div>
           </div>
 
-          {/* Rozložení menu */}
+          {/* UI style */}
           <div className="generic-type__field-group">
-            <label className="generic-type__label">Umístění hlavního menu</label>
-            <div className="generic-type__radio-row">
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="menuLayout"
-                  checked={settings.menuLayout === 'sidebar'}
-                  onChange={() => updateSettings({ menuLayout: 'sidebar' })}
-                />
-                <span>Sidebar vlevo</span>
-              </label>
-
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="menuLayout"
-                  checked={settings.menuLayout === 'top'}
-                  onChange={() => updateSettings({ menuLayout: 'top' })}
-                />
-                <span>Horní lišta (Excel styl)</span>
-              </label>
+            <div className="generic-type__label">Styl aplikace</div>
+            <div className="avs-grid avs-grid--2">
+              <ChoiceCard
+                title="Standardní (moderní)"
+                description="Čistý vzhled bez mřížky v tabulkách."
+                selected={settings.uiStyle === 'default'}
+                onSelect={() => updateSettings({ uiStyle: 'default' })}
+              />
+              <ChoiceCard
+                title="Excel (mřížka + ohraničení)"
+                description="Tabulky s linkami jako v Excelu."
+                selected={settings.uiStyle === 'excel'}
+                onSelect={() => updateSettings({ uiStyle: 'excel' })}
+              />
             </div>
           </div>
-
-          {/* Excel styl / mřížka */}
+          {/* Density */}
           <div className="generic-type__field-group">
-            <label className="generic-type__label">Styl aplikace</label>
-            <div className="generic-type__radio-row">
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="uiStyle"
-                  checked={settings.uiStyle === 'default'}
-                  onChange={() => updateSettings({ uiStyle: 'default' })}
-                />
-                <span>Standardní (moderní)</span>
-              </label>
-
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="uiStyle"
-                  checked={settings.uiStyle === 'excel'}
-                  onChange={() => updateSettings({ uiStyle: 'excel' })}
-                />
-                <span>Excel (mřížka + ohraničení)</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Hustota řádků */}
-          <div className="generic-type__field-group">
-            <label className="generic-type__label">Hustota</label>
-            <div className="generic-type__radio-row">
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="density"
-                  checked={settings.density === 'comfortable'}
-                  onChange={() => updateSettings({ density: 'comfortable' })}
-                />
-                <span>Pohodlná</span>
-              </label>
-
-              <label className="generic-type__radio">
-                <input
-                  type="radio"
-                  name="density"
-                  checked={settings.density === 'compact'}
-                  onChange={() => updateSettings({ density: 'compact' })}
-                />
-                <span>Kompaktní (nižší řádky)</span>
-              </label>
-               
-              <label className="generic-type__radio">
-                 <input
-                   type="radio"
-                   name="density"
-                   checked={settings.density === 'mini'}
-                   onChange={() => updateSettings({ density: 'mini' })}
-                 />
-                 <span>Mini</span>
-               </label> 
+            <div className="generic-type__label">Hustota</div>
+            <div className="avs-grid avs-grid--3">
+              <ChoiceCard
+                title="Pohodlná"
+                description="Největší text a více prostoru."
+                selected={settings.density === 'comfortable'}
+                onSelect={() => updateSettings({ density: 'comfortable' })}
+              />
+              <ChoiceCard
+                title="Kompaktní"
+                description="Nižší řádky, rychlejší skenování."
+                selected={settings.density === 'compact'}
+                onSelect={() => updateSettings({ density: 'compact' })}
+              />
+              <ChoiceCard
+                title="Mini"
+                description="Nejhustší režim pro velké seznamy."
+                selected={settings.density === 'mini'}
+                onSelect={() => updateSettings({ density: 'mini' })}
+              />
             </div>
           </div>
         </div>
@@ -213,7 +198,7 @@ const AppViewSettingsTile: React.FC = () => {
         <div className="generic-type__panel">
           <h2 className="generic-type__panel-title">Náhled tabulkového zobrazení</h2>
           <p className="generic-type__panel-description">
-            Náhled používá stejné styly jako seznamy. Excel styl přidá mřížku a kompaktní režim sníží výšku řádků.
+            Náhled používá stejné styly jako seznamy. Excel styl přidá mřížku a hustota upraví výšku řádků a typografii.
           </p>
 
           <div className="generic-type__table-wrapper">
