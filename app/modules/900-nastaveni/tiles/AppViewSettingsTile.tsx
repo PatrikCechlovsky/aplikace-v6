@@ -102,55 +102,67 @@ const AppViewSettingsTile: React.FC = () => {
       </header>
 
       <div className="settings-tile__section">
-        {/* Všechna nastavení v jednom gridu: 2-2-3 */}
-        <div className="avs-grid avs-grid--unified">
-          {/* Řádek 1: Menu layout (2 dlaždice) */}
-          <PaletteCard
-            title="Sidebar vlevo"
-            description="Klasické rozložení s navigací vlevo."
-            selected={settings.menuLayout === 'sidebar'}
-            onSelect={() => updateSettings({ menuLayout: 'sidebar' })}
-          />
-          <PaletteCard
-            title="Horní lišta (Excel styl)"
-            description="Navigace nahoře, víc místa na obsah."
-            selected={settings.menuLayout === 'top'}
-            onSelect={() => updateSettings({ menuLayout: 'top' })}
-          />
+        {/* 1) Umístění menu */}
+        <div className="avs-section">
+          <h2 className="avs-section__title">Umístění menu:</h2>
+          <div className="avs-section__grid">
+            <PaletteCard
+              title="Sidebar vlevo"
+              description="Klasické rozložení s navigací vlevo."
+              selected={settings.menuLayout === 'sidebar'}
+              onSelect={() => updateSettings({ menuLayout: 'sidebar' })}
+            />
+            <PaletteCard
+              title="Horní lišta (Excel styl)"
+              description="Navigace nahoře, víc místa na obsah."
+              selected={settings.menuLayout === 'top'}
+              onSelect={() => updateSettings({ menuLayout: 'top' })}
+            />
+          </div>
+        </div>
 
-          {/* Řádek 2: UI style (2 dlaždice) */}
-          <PaletteCard
-            title="Standardní (moderní)"
-            description="Čistý vzhled bez mřížky v tabulkách."
-            selected={settings.uiStyle === 'default'}
-            onSelect={() => updateSettings({ uiStyle: 'default' })}
-          />
-          <PaletteCard
-            title="Excel (mřížka + ohraničení)"
-            description="Tabulky s linkami jako v Excelu."
-            selected={settings.uiStyle === 'excel'}
-            onSelect={() => updateSettings({ uiStyle: 'excel' })}
-          />
+        {/* 2) Grafické zobrazení */}
+        <div className="avs-section">
+          <h2 className="avs-section__title">Grafické zobrazení:</h2>
+          <div className="avs-section__grid">
+            <PaletteCard
+              title="Standardní (moderní)"
+              description="Čistý vzhled bez mřížky v tabulkách."
+              selected={settings.uiStyle === 'default'}
+              onSelect={() => updateSettings({ uiStyle: 'default' })}
+            />
+            <PaletteCard
+              title="Excel (mřížka + ohraničení)"
+              description="Tabulky s linkami jako v Excelu."
+              selected={settings.uiStyle === 'excel'}
+              onSelect={() => updateSettings({ uiStyle: 'excel' })}
+            />
+          </div>
+        </div>
 
-          {/* Řádek 3: Density (3 dlaždice) */}
-          <PaletteCard
-            title="Pohodlná"
-            description="Největší text a více prostoru."
-            selected={settings.density === 'comfortable'}
-            onSelect={() => updateSettings({ density: 'comfortable' })}
-          />
-          <PaletteCard
-            title="Kompaktní"
-            description="Nižší řádky, rychlejší skenování."
-            selected={settings.density === 'compact'}
-            onSelect={() => updateSettings({ density: 'compact' })}
-          />
-          <PaletteCard
-            title="Mini"
-            description="Nejhustší režim pro velké seznamy."
-            selected={settings.density === 'mini'}
-            onSelect={() => updateSettings({ density: 'mini' })}
-          />
+        {/* 3) Velikost buněk a textu */}
+        <div className="avs-section">
+          <h2 className="avs-section__title">Velikost buněk a textu:</h2>
+          <div className="avs-section__grid avs-section__grid--three">
+            <PaletteCard
+              title="Pohodlná"
+              description="Největší text a více prostoru."
+              selected={settings.density === 'comfortable'}
+              onSelect={() => updateSettings({ density: 'comfortable' })}
+            />
+            <PaletteCard
+              title="Kompaktní"
+              description="Nižší řádky, rychlejší skenování."
+              selected={settings.density === 'compact'}
+              onSelect={() => updateSettings({ density: 'compact' })}
+            />
+            <PaletteCard
+              title="Mini"
+              description="Nejhustší režim pro velké seznamy."
+              selected={settings.density === 'mini'}
+              onSelect={() => updateSettings({ density: 'mini' })}
+            />
+          </div>
         </div>
       </div>
     </section>

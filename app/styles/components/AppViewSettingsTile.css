@@ -4,63 +4,65 @@
    APP VIEW SETTINGS TILE – VZHLED A ZOBRAZENÍ
    ========================================= */
 
-/* Sjednocený grid: 2-2-3 layout - fixní šířka dlaždic (180px) */
-.avs-grid--unified {
+/* Sekce s nadpisem */
+.avs-section {
+  margin-bottom: 2rem;
+}
+
+.avs-section:last-child {
+  margin-bottom: 0;
+}
+
+.avs-section__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.75rem 0;
+}
+
+/* Grid pro dlaždice v sekci */
+.avs-section__grid {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  max-width: 600px; /* Omezení šířky */
-  align-items: stretch; /* Dlaždice se roztáhnou na stejnou výšku v řádku */
+  max-width: 600px;
+  align-items: stretch;
 }
 
-/* První řádek: 2 dlaždice vedle sebe */
-.avs-grid--unified > :nth-child(1),
-.avs-grid--unified > :nth-child(2) {
+/* Grid se 2 dlaždicemi (50% každá) */
+.avs-section__grid > * {
   flex: 0 0 calc(50% - 6px); /* 50% šířky minus polovina gapu */
 }
 
-/* Druhý řádek: 2 dlaždice vedle sebe */
-.avs-grid--unified > :nth-child(3),
-.avs-grid--unified > :nth-child(4) {
-  flex: 0 0 calc(50% - 6px); /* 50% šířky minus polovina gapu */
-}
-
-/* Třetí řádek: 3 dlaždice vedle sebe */
-.avs-grid--unified > :nth-child(5),
-.avs-grid--unified > :nth-child(6),
-.avs-grid--unified > :nth-child(7) {
+/* Grid se 3 dlaždicemi (33.333% každá) */
+.avs-section__grid--three > * {
   flex: 0 0 calc(33.333% - 8px); /* 33.333% šířky minus část gapu */
 }
 
 /* Na menších obrazovkách: 2 sloupce */
 @media (max-width: 600px) {
-  .avs-grid--unified {
-    grid-template-columns: repeat(2, 180px);
+  .avs-section__grid > * {
+    flex: 0 0 calc(50% - 6px);
   }
   
-  /* Třetí řádek: 2 dlaždice, třetí na nový řádek */
-  .avs-grid--unified > :nth-child(5),
-  .avs-grid--unified > :nth-child(6) {
-    grid-column: span 1;
+  .avs-section__grid--three > * {
+    flex: 0 0 calc(50% - 6px);
   }
   
-  .avs-grid--unified > :nth-child(7) {
-    grid-column: span 2; /* Třetí dlaždice zabere oba sloupce */
+  /* Třetí dlaždice v 3-sloupcovém gridu zabere oba sloupce */
+  .avs-section__grid--three > :nth-child(3) {
+    flex: 0 0 100%;
   }
 }
 
 /* Na mobilu všechno pod sebou */
 @media (max-width: 400px) {
-  .avs-grid--unified {
-    grid-template-columns: 1fr;
+  .avs-section__grid > *,
+  .avs-section__grid--three > * {
+    flex: 0 0 100% !important;
   }
   
-  .avs-grid--unified > * {
-    grid-column: span 1 !important;
-    height: auto;
-  }
-  
-  .avs-grid--unified .palette-card {
+  .avs-section__grid .palette-card {
     width: 100%;
     min-width: 0;
     max-width: 100%;
