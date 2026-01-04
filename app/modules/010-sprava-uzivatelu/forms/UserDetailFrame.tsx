@@ -17,6 +17,7 @@ import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
+import '@/app/styles/components/TileLayout.css'
 const logger = createLogger('UserDetailFrame')
 
 // =====================
@@ -699,39 +700,50 @@ export default function UserDetailFrame({
     return base
   }, [canShowInviteTab])
 
+  const title = isNewId(resolvedUser.id) 
+    ? 'Nový uživatel' 
+    : resolvedUser.displayName || 'Uživatel'
+
   return (
-    <DetailView
-      mode={detailMode}
-      sectionIds={sectionIds}
-      initialActiveId={initialSectionId ?? 'detail'}
-      onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
-      ctx={{
-        entityType: 'subjects',
-        entityId: resolvedUser.id || undefined,
-        entityLabel: resolvedUser.displayName ?? null,
-        showSystemEntityHeader: false,
-        mode: detailMode,
+    <div className="tile-layout">
+      <div className="tile-layout__header">
+        <h1 className="tile-layout__title">{title}</h1>
+      </div>
+      <div className="tile-layout__content">
+        <DetailView
+          mode={detailMode}
+          sectionIds={sectionIds}
+          initialActiveId={initialSectionId ?? 'detail'}
+          onActiveSectionChange={(id) => onActiveSectionChange?.(id)}
+          ctx={{
+            entityType: 'subjects',
+            entityId: resolvedUser.id || undefined,
+            entityLabel: resolvedUser.displayName ?? null,
+            showSystemEntityHeader: false,
+            mode: detailMode,
 
-        detailContent: (
-          <UserDetailForm
-            user={resolvedUser}
-            readOnly={viewMode === 'read'}
-            onDirtyChange={(dirty) => {
-              if (!dirty) computeDirty()
-            }}
-            onValueChange={(val: any) => {
-              setFormValue(val as UserFormValue)
-              markDirtyIfChanged(val)
-            }}
-          />
-        ),
+            detailContent: (
+              <UserDetailForm
+                user={resolvedUser}
+                readOnly={viewMode === 'read'}
+                onDirtyChange={(dirty) => {
+                  if (!dirty) computeDirty()
+                }}
+                onValueChange={(val: any) => {
+                  setFormValue(val as UserFormValue)
+                  markDirtyIfChanged(val)
+                }}
+              />
+            ),
 
-        rolesData,
-        rolesUi,
+            rolesData,
+            rolesUi,
 
-        inviteContent,
-        systemBlocks,
-      }}
-    />
+            inviteContent,
+            systemBlocks,
+          }}
+        />
+      </div>
+    </div>
   )
 }

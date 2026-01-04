@@ -3,13 +3,13 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
 import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
 import createLogger from '@/app/lib/logger'
 const logger = createLogger('InviteUserFrame')
 import InviteUserForm, { type InviteFormValue } from './InviteUserForm'
 import { sendInvite, type InviteResult } from '@/app/lib/services/invites'
 import { useToast } from '@/app/UI/Toast'
+import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/InviteUserFrame.css'
 
 type Props = {
@@ -108,8 +108,12 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
   }, [inviteResult])
 
   return (
-    <EntityDetailFrame title="Pozvat uživatele">
-      <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
+    <div className="tile-layout">
+      <div className="tile-layout__header">
+        <h1 className="tile-layout__title">Pozvat uživatele</h1>
+      </div>
+      <div className="tile-layout__content">
+        <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
 
       {activeTab === 'invite' && (
         <InviteUserForm
@@ -170,6 +174,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
           </div>
         </div>
       )}
-    </EntityDetailFrame>
+      </div>
+    </div>
   )
 }

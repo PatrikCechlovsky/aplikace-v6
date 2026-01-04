@@ -25,7 +25,7 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type Vi
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
-import '@/app/styles/components/UsersTile.css'
+import '@/app/styles/components/TileLayout.css'
 
 // Type check for CommonActionId - removed unused variable
 
@@ -1011,20 +1011,20 @@ export default function UsersTile({
   // =====================
   if (viewMode === 'list') {
     return (
-      <div className="users-tile">
-        <div className="users-tile__header">
-          <h1 className="users-tile__title">Přehled uživatelů</h1>
-          <p className="users-tile__description">
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">Přehled uživatelů</h1>
+          <p className="tile-layout__description">
             Seznam všech uživatelů v systému. Můžeš filtrovat, řadit a spravovat uživatele.
           </p>
         </div>
-        {error && <div className="users-tile__error">{error}</div>}
+        {error && <div style={{ padding: '0 1.5rem 0.5rem', color: 'crimson' }}>{error}</div>}
         {loading ? (
-          <div className="users-tile__loading-container">
+          <div className="tile-layout__content">
             <SkeletonTable rows={8} columns={columns.length} />
           </div>
         ) : (
-          <div className="users-tile__list-wrapper">
+          <div className="tile-layout__content">
             <ListView<UiUser>
               columns={columns}
               rows={listRows}
