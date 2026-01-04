@@ -12,6 +12,8 @@
   flex-direction: column;
   gap: 8px;
   min-height: 0;
+  flex: 1;
+  height: 100%;
 }
 
 /* Horní lišta */
@@ -25,6 +27,7 @@
 /* Tabulka wrapper
    - JEDINÝ scroll container (X i Y)
    - sticky header funguje pouze pokud scrolluje tento element
+   - flex: 1 zajišťuje, že se přizpůsobí výšce rodiče
 */
 .listview__table-wrapper {
   width: 100%;
@@ -32,7 +35,7 @@
   overflow-x: auto;
   overflow-y: auto;
   scrollbar-gutter: stable;
-  max-height: var(--listview-max-height, 260px);
+  flex: 1;
   min-height: 0;
 }
 

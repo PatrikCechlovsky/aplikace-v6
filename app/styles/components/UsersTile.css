@@ -3,12 +3,52 @@
  * PURPOSE: Styly pro UsersTile komponentu
  */
 
+.users-tile {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.users-tile__header {
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.users-tile__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text, #1f2937);
+}
+
+.users-tile__description {
+  font-size: 0.875rem;
+  color: var(--color-text-alt, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
 .users-tile__error {
   padding: 8px;
   color: crimson;
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
 }
 
 .users-tile__loading-container {
   padding: 1rem;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.users-tile__list-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 

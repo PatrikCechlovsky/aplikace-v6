@@ -1011,31 +1011,39 @@ export default function UsersTile({
   // =====================
   if (viewMode === 'list') {
     return (
-      <div>
+      <div className="users-tile">
+        <div className="users-tile__header">
+          <h1 className="users-tile__title">Přehled uživatelů</h1>
+          <p className="users-tile__description">
+            Seznam všech uživatelů v systému. Můžeš filtrovat, řadit a spravovat uživatele.
+          </p>
+        </div>
         {error && <div className="users-tile__error">{error}</div>}
         {loading ? (
           <div className="users-tile__loading-container">
             <SkeletonTable rows={8} columns={columns.length} />
           </div>
         ) : (
-          <ListView<UiUser>
-          columns={columns}
-          rows={listRows}
-          filterValue={filterText}
-          onFilterChange={setFilterText}
-          showArchived={showArchived}
-          onShowArchivedChange={setShowArchived}
-          selectedId={selectedId ?? null}
-          onRowClick={(row) => setSelectedId(String(row.id))}
-          onRowDoubleClick={(row) => {
-            const user = row.raw
-            if (!user) return
-            openDetail(user, 'read', 'detail')
-          }}
-          sort={sort}
-          onSortChange={handleSortChange}
-          onColumnResize={handleColumnResize}
-        />
+          <div className="users-tile__list-wrapper">
+            <ListView<UiUser>
+              columns={columns}
+              rows={listRows}
+              filterValue={filterText}
+              onFilterChange={setFilterText}
+              showArchived={showArchived}
+              onShowArchivedChange={setShowArchived}
+              selectedId={selectedId ?? null}
+              onRowClick={(row) => setSelectedId(String(row.id))}
+              onRowDoubleClick={(row) => {
+                const user = row.raw
+                if (!user) return
+                openDetail(user, 'read', 'detail')
+              }}
+              sort={sort}
+              onSortChange={handleSortChange}
+              onColumnResize={handleColumnResize}
+            />
+          </div>
         )}
 
         <ListViewColumnsDrawer
