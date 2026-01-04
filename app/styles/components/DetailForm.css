@@ -272,8 +272,8 @@ select.detail-form__input {
 .layout.layout--density-comfortable .detail-form__select,
 .layout.layout--density-comfortable .detail-form__textarea {
   font-size: var(--table-font, 16px); /* Stejný jako buňky v tabulkách */
-  min-height: var(--table-row-h, 40px); /* Stejná výška jako řádky v tabulkách */
-  padding: 9px 11px;
+  min-height: 36px; /* O 4px menší než tabulky pro kompaktnější vzhled */
+  padding: 8px 11px; /* Mírně menší vertikální padding */
 }
 
 .layout.layout--density-comfortable .detail-form__grid {
@@ -304,8 +304,8 @@ select.detail-form__input {
 .layout.layout--density-compact .detail-form__select,
 .layout.layout--density-compact .detail-form__textarea {
   font-size: var(--table-font, 13.5px); /* Stejný jako buňky v tabulkách */
-  min-height: var(--table-row-h, 34px); /* Stejná výška jako řádky v tabulkách */
-  padding: 7px 10px;
+  min-height: 30px; /* O 4px menší než tabulky pro kompaktnější vzhled */
+  padding: 6px 10px; /* Mírně menší vertikální padding */
 }
 
 .layout.layout--density-compact .detail-form__grid {
@@ -336,8 +336,8 @@ select.detail-form__input {
 .layout.layout--density-mini .detail-form__select,
 .layout.layout--density-mini .detail-form__textarea {
   font-size: var(--table-font, 12px); /* Stejný jako buňky v tabulkách */
-  min-height: var(--table-row-h, 28px); /* Stejná výška jako řádky v tabulkách */
-  padding: 6px 9px;
+  min-height: 24px; /* O 4px menší než tabulky pro kompaktnější vzhled */
+  padding: 5px 9px; /* Mírně menší vertikální padding */
 }
 
 .layout.layout--density-mini .detail-form__grid {
