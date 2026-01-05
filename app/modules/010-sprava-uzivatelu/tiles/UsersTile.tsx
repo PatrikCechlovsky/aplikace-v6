@@ -735,7 +735,18 @@ export default function UsersTile({
     if (viewMode === 'invite') return INVITE
 
     if (viewMode === 'attachments-manager') {
-      return ['attachmentsAdd', 'attachmentsEdit', 'attachmentsSave', 'attachmentsNewVersion', 'attachmentsHistory', 'columnSettings', 'close']
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') {
+        return ['save', 'close']
+      }
+      if (mode === 'edit') {
+        return ['save', 'attachmentsNewVersion', 'close']
+      }
+      if (mode === 'read') {
+        return ['edit', 'close']
+      }
+      // mode === 'list'
+      return ['add', 'view', 'edit', 'columnSettings', 'close']
     }
 
     if (viewMode === 'read') {
@@ -745,7 +756,7 @@ export default function UsersTile({
 
     if (viewMode === 'edit') return withAttachmentsBeforeClose(EDIT_DEFAULT)
     return withAttachmentsBeforeClose(CREATE_DEFAULT)
-  }, [viewMode, detailActiveSectionId])
+  }, [viewMode, detailActiveSectionId, attachmentsManagerUi.mode])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
@@ -772,7 +783,6 @@ export default function UsersTile({
       logger.debug('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
 
       // ATTACHMENTS MANAGER ACTIONS
-      // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
         // ✅ Close NECHCEME sežrat tady – musí propadnout níž do společného CLOSE bloku
         if (actionId === 'close') {
@@ -781,28 +791,28 @@ export default function UsersTile({
           const api = attachmentsManagerApiRef.current
           if (!api) return
       
-          if (actionId === 'attachmentsAdd') {
+          if (actionId === 'add') {
             api.add()
             return
           }
       
-          if (actionId === 'attachmentsEdit') {
-            api.editMeta()
+          if (actionId === 'view') {
+            api.view()
             return
           }
       
-          if (actionId === 'attachmentsSave') {
+          if (actionId === 'edit') {
+            api.edit()
+            return
+          }
+      
+          if (actionId === 'save') {
             await api.save()
             return
           }
       
           if (actionId === 'attachmentsNewVersion') {
             api.newVersion()
-            return
-          }
-      
-          if (actionId === 'attachmentsHistory') {
-            api.history()
             return
           }
       
