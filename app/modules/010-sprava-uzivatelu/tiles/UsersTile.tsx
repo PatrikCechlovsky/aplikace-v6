@@ -352,6 +352,7 @@ export default function UsersTile({
   const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
     hasSelection: false,
     isDirty: false,
+    mode: 'list',
   })
 
   // ✅ DEFAULT sort pro Users (Role -> order_index)
