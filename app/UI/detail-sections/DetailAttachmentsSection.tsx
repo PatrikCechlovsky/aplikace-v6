@@ -57,6 +57,7 @@ export type AttachmentsManagerApi = {
   save: () => Promise<void>
   newVersion: () => void
   columnSettings: () => void
+  close: () => void
 }
 
 export type DetailAttachmentsSectionProps = {
@@ -239,6 +240,7 @@ export default function DetailAttachmentsSection({
 
   // selection (manager)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const [readModeOpen, setReadModeOpen] = useState(false) // Rozlišuje mezi zvýrazněním a otevřeným read mode
   const selectedRow = useMemo(() => {
     if (!selectedDocId) return null
     return rows.find((x) => x.id === selectedDocId) ?? null
@@ -424,7 +426,7 @@ export default function DetailAttachmentsSection({
       mode = 'new'
     } else if (editingDocId) {
       mode = 'edit'
-    } else if (selectedDocId) {
+    } else if (readModeOpen && selectedDocId) {
       mode = 'read'
     }
 
@@ -433,7 +435,7 @@ export default function DetailAttachmentsSection({
       isDirty: !!panelDirty || !!metaDirty,
       mode,
     }
-  }, [selectedDocId, panelDirty, metaDirty, panelOpen, editingDocId])
+  }, [selectedDocId, panelDirty, metaDirty, panelOpen, editingDocId, readModeOpen])
 
   // ✅ hlášení stavu nahoru (kvůli Save/disabled v CommonActions)
   useEffect(() => {
@@ -625,6 +627,9 @@ export default function DetailAttachmentsSection({
 
       add: () => {
         // Zavřít předchozí režimy
+        if (readModeOpen) {
+          setReadModeOpen(false)
+        }
         if (editingDocId) {
           setEditingDocId(null)
           setEditTitle('')
@@ -651,6 +656,7 @@ export default function DetailAttachmentsSection({
           setEditTitle('')
           setEditDesc('')
         }
+        setReadModeOpen(true)
         // Automaticky otevřít historii při přechodu do read režimu
         if (expandedDocId !== r.id) {
           void handleToggleHistory(r.id)
@@ -664,6 +670,9 @@ export default function DetailAttachmentsSection({
         if (panelOpen) {
           setPanelOpen(false)
           resetPanel()
+        }
+        if (readModeOpen) {
+          setReadModeOpen(false)
         }
         handleStartEditMeta(r)
       },
@@ -687,6 +696,23 @@ export default function DetailAttachmentsSection({
 
       columnSettings: () => {
         setColsOpen(true)
+      },
+
+      close: () => {
+        // Zavřít read/edit mode a vrátit se do list mode
+        if (readModeOpen) {
+          setReadModeOpen(false)
+        }
+        if (editingDocId) {
+          setEditingDocId(null)
+          setEditTitle('')
+          setEditDesc('')
+        }
+        if (panelOpen) {
+          setPanelOpen(false)
+          resetPanel()
+        }
+        // Necháme selectedDocId, aby zůstal zvýrazněný řádek
       },
     }
 
@@ -961,6 +987,33 @@ export default function DetailAttachmentsSection({
             </div>
           )}
 
+          {/* PANEL: READ MODE (zobrazí se při dvojkliku) */}
+          {readModeOpen && selectedDocId && !editingDocId && !panelOpen && (
+            <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
+              <div className="detail-form__hint" style={{ marginBottom: 8 }}>Metadata přílohy</div>
+
+              <div className="detail-attachments__panel-grid">
+                <div className="detail-form__field detail-form__field--span-3">
+                  <label className="detail-form__label">Název</label>
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={selectedRow?.title ?? '—'}
+                    readOnly
+                  />
+                </div>
+
+                <div className="detail-form__field detail-form__field--span-3">
+                  <label className="detail-form__label">Popis</label>
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={selectedRow?.description ?? '—'}
+                    readOnly
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* PANEL: EDIT METADATA (otevírá CommonActions → attachmentsEdit) */}
           {editingDocId && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
@@ -985,16 +1038,19 @@ export default function DetailAttachmentsSection({
             </div>
           )}
 
-          {loading && <div className="detail-form__hint">Načítám přílohy…</div>}
-          {!loading && managerRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
+          {/* ========================= */}
+          {/* MANAGER LAYOUT */}
+          {/* ========================= */}
+          {/* LIST MODE: zobrazit hlavní seznam */}
+          {managerUiState.mode === 'list' && (
+            <>
+              {loading && <div className="detail-form__hint">Načítám přílohy…</div>}
+              {!loading && managerRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
 
-          {/* ========================= */}
-          {/* MANAGER LAYOUT (hlavní tabulka + pevná historie) */}
-          {/* ========================= */}
-          <div className="detail-attachments__manager-layout">
-            {/* Hlavní tabulka: flex 1 + scroll uvnitř ListView */}
-            <div className="detail-attachments__list-scroll">
-              {!loading && managerRows.length > 0 && (
+              <div className="detail-attachments__manager-layout">
+                {/* Hlavní tabulka: flex 1 + scroll uvnitř ListView */}
+                <div className="detail-attachments__list-scroll">
+                  {!loading && managerRows.length > 0 && (
                 <div className="detail-attachments__lv-shell">
                   <ListView
                     columns={sharedColumns}
@@ -1009,7 +1065,8 @@ export default function DetailAttachmentsSection({
                     showArchivedLabel="Zobrazit archivované"
                     selectedId={selectedDocId}
                     onRowClick={(row) => {
-                      // Zavřít předchozí detail při kliknutí na jiný řádek
+                      // Jednoduché kliknutí → pouze zvýrazní řádek (zůstane v list mode)
+                      // Zavřít předchozí režimy při kliknutí na jiný řádek
                       if (panelOpen) {
                         setPanelOpen(false)
                         resetPanel()
@@ -1018,11 +1075,16 @@ export default function DetailAttachmentsSection({
                         setEditingDocId(null)
                         setEditTitle('')
                         setEditDesc('')
+                      }
+                      // Zavřít read mode při kliknutí na jiný řádek
+                      if (readModeOpen) {
+                        setReadModeOpen(false)
+                        setExpandedDocId(null)
                       }
                       setSelectedDocId(String(row.id))
                     }}
                     onRowDoubleClick={(row) => {
-                      // Dvojklik → read režim (automaticky se nastaví selectedDocId)
+                      // Dvojklik → read režim (otevře detail view)
                       if (panelOpen) {
                         setPanelOpen(false)
                         resetPanel()
@@ -1033,6 +1095,11 @@ export default function DetailAttachmentsSection({
                         setEditDesc('')
                       }
                       setSelectedDocId(String(row.id))
+                      setReadModeOpen(true)
+                      // Automaticky otevřít historii při dvojkliku
+                      if (expandedDocId !== String(row.id)) {
+                        void handleToggleHistory(String(row.id))
+                      }
                     }}
                     onColumnResize={handleColumnResize}
                   />
@@ -1053,42 +1120,86 @@ export default function DetailAttachmentsSection({
               </div>
             </div>
 
-            {/* Historie: sticky karta dole, scroll jen uvnitř ListView */}
-            <div className="detail-attachments__history-sticky">
-              <div className="detail-attachments__history-head">
-                <h3 className="detail-form__section-title detail-attachments__history-titleline">
-                  Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
-                </h3>
+            {/* Historie: sticky karta dole, scroll jen uvnitř ListView (pouze v list mode) */}
+            {selectedDocId && (
+              <div className="detail-attachments__history-sticky">
+                <div className="detail-attachments__history-head">
+                  <h3 className="detail-form__section-title detail-attachments__history-titleline">
+                    Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
+                  </h3>
+                </div>
+
+                <div className="detail-attachments__history-body">
+                  {!expandedDocId && (
+                    <div className="detail-form__hint detail-form__hint--single">
+                      Historie verzí se automaticky zobrazí.
+                    </div>
+                  )}
+
+                  {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-form__hint">Načítám historii…</div>}
+
+                  {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-form__hint">Žádná historie.</div>}
+
+                  {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
+                    <div className="detail-attachments__lv-shell detail-attachments__history-compact">
+                      <ListView
+                        columns={sharedColumns}
+                        rows={historyRows}
+                        sort={sort}
+                        onSortChange={handleSortChange}
+                        filterValue=""
+                        onFilterChange={() => {}} // Filtr z historie byl odstraněn
+                        onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                        onColumnResize={handleColumnResize}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+          </div>
+          )}
 
-              <div className="detail-attachments__history-body">
-                {!expandedDocId && (
-                  <div className="detail-form__hint detail-form__hint--single">
-                    Vyber přílohu v seznamu výše a historie verzí se automaticky zobrazí.
-                  </div>
-                )}
+          {/* READ/EDIT MODE: zobrazit formulář a historii, skrýt hlavní seznam */}
+          {(managerUiState.mode === 'read' || managerUiState.mode === 'edit') && (
+            <div className="detail-attachments__manager-layout">
+              {/* Historie: sticky karta dole, scroll jen uvnitř ListView */}
+              <div className="detail-attachments__history-sticky">
+                <div className="detail-attachments__history-head">
+                  <h3 className="detail-form__section-title detail-attachments__history-titleline">
+                    Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
+                  </h3>
+                </div>
 
-                {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-form__hint">Načítám historii…</div>}
+                <div className="detail-attachments__history-body">
+                  {!expandedDocId && (
+                    <div className="detail-form__hint detail-form__hint--single">
+                      Historie verzí se automaticky zobrazí.
+                    </div>
+                  )}
 
-                {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-form__hint">Žádná historie.</div>}
+                  {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-form__hint">Načítám historii…</div>}
 
-                {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                  <div className="detail-attachments__lv-shell detail-attachments__history-compact">
-                    <ListView
-                      columns={sharedColumns}
-                      rows={historyRows}
-                      sort={sort}
-                      onSortChange={handleSortChange}
-                      filterValue=""
-                      onFilterChange={() => {}} // Filtr z historie byl odstraněn
-                      onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                      onColumnResize={handleColumnResize}
-                    />
-                  </div>
-                )}
+                  {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-form__hint">Žádná historie.</div>}
+
+                  {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
+                    <div className="detail-attachments__lv-shell detail-attachments__history-compact">
+                      <ListView
+                        columns={sharedColumns}
+                        rows={historyRows}
+                        sort={sort}
+                        onSortChange={handleSortChange}
+                        filterValue=""
+                        onFilterChange={() => {}} // Filtr z historie byl odstraněn
+                        onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                        onColumnResize={handleColumnResize}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* ✅ Sloupce (Drawer) */}
           <ListViewColumnsDrawer
