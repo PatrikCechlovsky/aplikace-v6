@@ -791,7 +791,16 @@ export default function DetailAttachmentsSection({
             <button
               type="button"
               className="detail-attachments__link"
-              onClick={() => void handleOpenLatestByPath(r.file_path)}
+              onClick={(e) => {
+                e.stopPropagation() // Zabraň propagaci kliknutí na řádek
+                // Kliknutí na odkaz → otevře read mode
+                setSelectedDocId(String(r.id))
+                setReadModeOpen(true)
+                // Automaticky otevřít historii
+                if (expandedDocId !== String(r.id)) {
+                  void handleToggleHistory(String(r.id))
+                }
+              }}
               disabled={!r.file_path}
             >
               {r.file_name ?? '—'}
@@ -1081,6 +1090,7 @@ export default function DetailAttachmentsSection({
                         setReadModeOpen(false)
                         setExpandedDocId(null)
                       }
+                      // Pouze zvýraznit řádek, neotevírat read mode
                       setSelectedDocId(String(row.id))
                     }}
                     onRowDoubleClick={(row) => {
