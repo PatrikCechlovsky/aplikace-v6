@@ -152,17 +152,18 @@
   padding: 1rem 1.5rem; /* Stejný padding jako TileLayout content pro seznam users */
 }
 
-.detail-attachments__manager-section .detail-form {
+/* detail-form uvnitř manager wrapperu - musí mít plnou šířku */
+.detail-attachments__manager-wrapper .detail-form {
   display: flex;
   flex-direction: column;
   min-height: 0;
   flex: 1;
   gap: 0; /* Odstraníme gap mezi sekcemi */
   max-width: none !important; /* Seznamy mají plnou šířku, neomezené max-width - přepisuje DetailForm.css */
-  width: 100%; /* Plná šířka */
+  width: 100% !important; /* Plná šířka - přepisuje DetailForm.css */
 }
 
-.detail-attachments__manager-section .detail-form__section {
+.detail-attachments__manager-wrapper .detail-form__section {
   max-width: none !important; /* Sekce také bez omezení šířky - přepisuje DetailForm.css */
   width: 100%; /* Plná šířka */
 }
