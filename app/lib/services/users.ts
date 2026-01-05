@@ -38,6 +38,9 @@ export type UsersListRow = {
   last_invite_sent_at?: string | null
   last_invite_expires_at?: string | null
   last_invite_status?: string | null
+
+  // permissions (načteno samostatně)
+  permission_codes?: string[]
 }
 
 export async function listUsers(params: UsersListParams = {}): Promise<UsersListRow[]> {
@@ -93,7 +96,37 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
-  return (data ?? []) as unknown as UsersListRow[]
+  const rows = (data ?? []) as unknown as UsersListRow[]
+
+  // Načíst oprávnění pro všechny uživatele najednou
+  if (rows.length > 0) {
+    const userIds = rows.map((r) => r.id).filter(Boolean)
+    const { data: permData, error: permError } = await supabase
+      .from('subject_permissions')
+      .select('subject_id, permission_code')
+      .in('subject_id', userIds)
+
+    if (!permError && permData) {
+      // Seskupit oprávnění podle subject_id
+      const permMap = new Map<string, string[]>()
+      for (const p of permData) {
+        const sid = String(p?.subject_id ?? '')
+        const code = String(p?.permission_code ?? '').trim()
+        if (sid && code) {
+          const existing = permMap.get(sid) ?? []
+          existing.push(code)
+          permMap.set(sid, existing)
+        }
+      }
+
+      // Přiřadit oprávnění k řádkům
+      for (const row of rows) {
+        row.permission_codes = permMap.get(row.id) ?? []
+      }
+    }
+  }
+
+  return rows
 }
 /* =========================
    DETAIL SHAPE

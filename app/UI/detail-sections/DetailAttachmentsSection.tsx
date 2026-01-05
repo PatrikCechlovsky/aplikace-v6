@@ -244,26 +244,13 @@ export default function DetailAttachmentsSection({
     return rows.find((x) => x.id === selectedDocId) ?? null
   }, [rows, selectedDocId])
 
-  // Automaticky otevřít historii při výběru přílohy
-  useEffect(() => {
-    if (!isManager) return
-    if (!selectedDocId) {
-      setExpandedDocId(null)
-      return
-    }
-    // Pokud je vybraná jiná příloha než ta, která má otevřenou historii, otevřít historii
-    if (expandedDocId !== selectedDocId) {
-      void handleToggleHistory(selectedDocId)
-    }
-  }, [isManager, selectedDocId, expandedDocId, handleToggleHistory])
-
-  // fallback userId -> display_name
-  const [nameById, setNameById] = useState<UserNameMap>({})
-
-  // versions
+  // versions (musí být před useEffect, který to používá)
   const [expandedDocId, setExpandedDocId] = useState<string | null>(null)
   const [versionsByDocId, setVersionsByDocId] = useState<Record<string, AttachmentVersionRow[]>>({})
   const [versionsLoadingId, setVersionsLoadingId] = useState<string | null>(null)
+
+  // fallback userId -> display_name
+  const [nameById, setNameById] = useState<UserNameMap>({})
 
   // anti-storm load guards
   const loadInFlightRef = useRef<Promise<void> | null>(null)
@@ -611,6 +598,18 @@ export default function DetailAttachmentsSection({
     [isManager, expandedDocId, refreshNamesFromVersions]
   )
 
+  // Automaticky otevřít historii při výběru přílohy
+  useEffect(() => {
+    if (!isManager) return
+    if (!selectedDocId) {
+      setExpandedDocId(null)
+      return
+    }
+    // Pokud je vybraná jiná příloha než ta, která má otevřenou historii, otevřít historii
+    if (expandedDocId !== selectedDocId) {
+      void handleToggleHistory(selectedDocId)
+    }
+  }, [isManager, selectedDocId, expandedDocId, handleToggleHistory])
 
   // ✅ API pro CommonActions (přes rodiče)
   useEffect(() => {

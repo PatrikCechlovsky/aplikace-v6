@@ -21,6 +21,7 @@ import InviteUserFrame from '../forms/InviteUserFrame'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
+import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/permissions'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
@@ -47,6 +48,9 @@ type UiUser = {
   roleLabel: string
   roleOrderIndex?: number | null
   roleColor?: string | null
+
+  permissionCodes?: string[]
+  permissionLabel: string
 
   createdAt: string
   isArchived?: boolean
@@ -78,6 +82,7 @@ const VIEW_KEY = '010.users.list'
 
 const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: 160, sortable: true },
+  { key: 'permissionLabel', label: 'Oprávnění', width: 180, sortable: true },
   { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
   { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
   { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
@@ -141,6 +146,45 @@ function resolveRoleMeta(roleCode: string | null | undefined, map: Record<string
   return map[c] ?? { label: roleCodeToLabel(c), color: null, orderIndex: null }
 }
 
+type PermissionMeta = {
+  label: string
+  color: string | null
+  orderIndex: number | null
+}
+
+function buildPermissionMetaMap(rows: PermissionTypeRow[]): Record<string, PermissionMeta> {
+  const map: Record<string, PermissionMeta> = {}
+  for (const r of rows ?? []) {
+    const code = String((r as any).code ?? '').trim().toLowerCase()
+    if (!code) continue
+
+    const name = String((r as any).name ?? '').trim()
+    const color = ((r as any).color ?? null) as string | null
+    const orderIndexRaw = (r as any).order_index
+    const orderIndex = typeof orderIndexRaw === 'number' && Number.isFinite(orderIndexRaw) ? orderIndexRaw : null
+
+    map[code] = {
+      label: name || String((r as any).code ?? code),
+      color: color && String(color).trim() ? String(color).trim() : null,
+      orderIndex,
+    }
+  }
+  return map
+}
+
+function resolvePermissionLabel(permissionCodes: string[] | null | undefined, map: Record<string, PermissionMeta>): string {
+  if (!permissionCodes || permissionCodes.length === 0) return '—'
+  const labels = permissionCodes
+    .map((code) => {
+      const c = String(code ?? '').trim().toLowerCase()
+      if (!c) return null
+      const meta = map[c]
+      return meta?.label ?? code
+    })
+    .filter((x): x is string => !!x)
+  return labels.length > 0 ? labels.join(', ') : '—'
+}
+
 function formatDateShort(v: any): string {
   const s = String(v ?? '').trim()
   if (!s) return ''
@@ -151,8 +195,10 @@ function formatDateShort(v: any): string {
 
 // Removed unused function dateSortValue
 
-function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUser {
+function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>, permissionMap: Record<string, PermissionMeta>): UiUser {
   const meta = resolveRoleMeta((row as any).role_code, roleMap)
+  const permissionCodes = (row as any).permission_codes ?? []
+  const permissionLabel = resolvePermissionLabel(permissionCodes, permissionMap)
   return {
     id: row.id,
     displayName: (row as any).display_name ?? '',
@@ -167,6 +213,9 @@ function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUse
     roleLabel: meta.label,
     roleOrderIndex: meta.orderIndex,
     roleColor: meta.color,
+
+    permissionCodes,
+    permissionLabel,
 
     createdAt: (row as any).created_at ?? '',
     isArchived: !!(row as any).is_archived,
@@ -192,6 +241,8 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
         <span className="generic-type__name-main">{u.roleLabel || '—'}</span>
       ),
 
+      permissionLabel: <span className="generic-type__name-main">{u.permissionLabel || '—'}</span>,
+
       displayName: u.displayName,
       lastName: u.lastName ?? '',
       firstName: u.firstName ?? '',
@@ -214,6 +265,9 @@ function getSortValue(u: UiUser, key: string): string | number {
   switch (key) {
     case 'roleLabel':
       return u.roleOrderIndex ?? 999999
+
+    case 'permissionLabel':
+      return norm(u.permissionLabel)
 
     case 'displayName':
       return norm(u.displayName)
@@ -281,6 +335,10 @@ export default function UsersTile({
   const [roleTypes, setRoleTypes] = useState<RoleTypeRow[]>([])
   const roleTypeMap = useMemo(() => buildRoleMetaMap(roleTypes), [roleTypes])
   const roleTypeMapRef = useRef<Record<string, RoleMeta>>({})
+
+  const [permissionTypes, setPermissionTypes] = useState<PermissionTypeRow[]>([])
+  const permissionTypeMap = useMemo(() => buildPermissionMetaMap(permissionTypes), [permissionTypes])
+  const permissionTypeMapRef = useRef<Record<string, PermissionMeta>>({})
 
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
   const inviteSubmitRef = useRef<null | (() => Promise<boolean>)>(null)
@@ -447,7 +505,7 @@ export default function UsersTile({
       setError(null)
       try {
         const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
-        setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current)))
+        setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current, permissionTypeMapRef.current)))
       } catch (e: any) {
         logger.error('listUsers failed', e)
         setError(e?.message ?? 'Chyba načtení uživatelů')
@@ -483,13 +541,37 @@ export default function UsersTile({
     }
   }, [])
 
+  const permissionTypesInFlightRef = useRef<Promise<void> | null>(null)
+  const loadPermissionTypes = useCallback(async () => {
+    if (permissionTypesInFlightRef.current) return permissionTypesInFlightRef.current
+    const p = (async () => {
+      try {
+        const rows = await listPermissionTypes()
+        setPermissionTypes(rows)
+      } catch (e) {
+        logger.warn('listPermissionTypes failed', e)
+      }
+    })()
+    permissionTypesInFlightRef.current = p
+    try {
+      await p
+    } finally {
+      if (permissionTypesInFlightRef.current === p) permissionTypesInFlightRef.current = null
+    }
+  }, [])
+
   useEffect(() => {
     roleTypeMapRef.current = roleTypeMap
   }, [roleTypeMap])
 
   useEffect(() => {
+    permissionTypeMapRef.current = permissionTypeMap
+  }, [permissionTypeMap])
+
+  useEffect(() => {
     void loadRoleTypes()
-  }, [loadRoleTypes])
+    void loadPermissionTypes()
+  }, [loadRoleTypes, loadPermissionTypes])
 
   useEffect(() => {
     void load()
@@ -573,7 +655,7 @@ export default function UsersTile({
         setIsDirty(false)
       } else if (id === 'new') {
         // Nový uživatel
-        setDetailUser({ id: 'new', displayName: '', email: '', roleLabel: '', createdAt: '' } as UiUser)
+        setDetailUser({ id: 'new', displayName: '', email: '', roleLabel: '', permissionLabel: '', createdAt: '' } as UiUser)
         setViewMode('create')
         setDetailInitialSectionId('detail')
         setDetailActiveSectionId('detail')
@@ -601,6 +683,23 @@ export default function UsersTile({
       })
     })
   }, [roleTypeMap])
+
+  // ✅ když se načtou permissionTypes, přepočítej již načtené users
+  useEffect(() => {
+    if (!permissionTypeMap || Object.keys(permissionTypeMap).length === 0) return
+  
+    setUsers((prev) => {
+      if (!prev?.length) return prev
+  
+      return prev.map((u) => {
+        const permissionLabel = resolvePermissionLabel(u.permissionCodes ?? null, permissionTypeMap)
+        return {
+          ...u,
+          permissionLabel,
+        }
+      })
+    })
+  }, [permissionTypeMap])
 
   // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
   const baseOrderIndex = useMemo(() => {
@@ -924,6 +1023,7 @@ export default function UsersTile({
             displayName: '',
             email: '',
             roleLabel: '',
+            permissionLabel: '',
             createdAt: new Date().toISOString(),
           }
 
