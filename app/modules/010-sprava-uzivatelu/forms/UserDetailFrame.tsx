@@ -30,7 +30,7 @@ export type UiUser = {
   email: string
   phone?: string
   roleLabel: string
-  permissionLabel?: string
+  permissionLabel: string
   twoFactorMethod?: string | null
   createdAt: string
   isArchived?: boolean
@@ -172,6 +172,7 @@ export default function UserDetailFrame({
           login: (s.login ?? (user as any).login ?? null) as any,
 
           roleCode: nextRole || null,
+          permissionLabel: (user as any)?.permissionLabel ?? '—',
         }
 
         setResolvedUser(nextUser)
@@ -316,13 +317,14 @@ export default function UserDetailFrame({
           isArchived: !!(savedRow as any).is_archived,
           createdAt: (savedRow as any).created_at ?? resolvedUser.createdAt,
           firstLoginAt: (savedRow as any).first_login_at ?? resolvedUser.firstLoginAt ?? null,
-  
+
           titleBefore: (savedRow as any).title_before ?? (resolvedUser as any).titleBefore ?? null,
           firstName: (savedRow as any).first_name ?? (resolvedUser as any).firstName ?? null,
           lastName: (savedRow as any).last_name ?? (resolvedUser as any).lastName ?? null,
           login: (savedRow as any).login ?? (resolvedUser as any).login ?? null,
-  
+
           roleCode: rc,
+          permissionLabel: (resolvedUser as any)?.permissionLabel ?? '—',
         }
   
         setResolvedUser(saved)
