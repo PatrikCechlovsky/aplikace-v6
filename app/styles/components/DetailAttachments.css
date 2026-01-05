@@ -158,12 +158,12 @@
   min-height: 0;
   flex: 1;
   gap: 0; /* Odstraníme gap mezi sekcemi */
-  max-width: none; /* Seznamy mají plnou šířku, neomezené max-width */
+  max-width: none !important; /* Seznamy mají plnou šířku, neomezené max-width - přepisuje DetailForm.css */
   width: 100%; /* Plná šířka */
 }
 
 .detail-attachments__manager-section .detail-form__section {
-  max-width: none; /* Sekce také bez omezení šířky */
+  max-width: none !important; /* Sekce také bez omezení šířky - přepisuje DetailForm.css */
   width: 100%; /* Plná šířka */
 }
 
