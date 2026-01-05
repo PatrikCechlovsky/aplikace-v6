@@ -1158,6 +1158,7 @@ export default function DetailAttachmentsSection({
               </div>
             )}
           </div>
+            </>
           )}
 
           {/* READ/EDIT MODE: zobrazit formulář a historii, skrýt hlavní seznam */}
