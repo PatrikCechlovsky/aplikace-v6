@@ -241,6 +241,8 @@ export default function DetailAttachmentsSection({
   // selection (manager)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [readModeOpen, setReadModeOpen] = useState(false) // Rozlišuje mezi zvýrazněním a otevřeným read mode
+  const doubleClickRef = useRef(false) // Flag pro detekci dvojkliku
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const selectedRow = useMemo(() => {
     if (!selectedDocId) return null
     return rows.find((x) => x.id === selectedDocId) ?? null
@@ -1074,26 +1076,51 @@ export default function DetailAttachmentsSection({
                     showArchivedLabel="Zobrazit archivované"
                     selectedId={selectedDocId}
                     onRowClick={(row) => {
-                      // Jednoduché kliknutí → pouze zvýrazní řádek (zůstane v list mode)
-                      // Zavřít předchozí režimy při kliknutí na jiný řádek
-                      if (panelOpen) {
-                        setPanelOpen(false)
-                        resetPanel()
+                      // Zrušit timeout z předchozího kliknutí (pokud existuje)
+                      if (clickTimeoutRef.current) {
+                        clearTimeout(clickTimeoutRef.current)
+                        clickTimeoutRef.current = null
                       }
-                      if (editingDocId) {
-                        setEditingDocId(null)
-                        setEditTitle('')
-                        setEditDesc('')
+                      
+                      // Pokud byl právě dvojklik, ignorovat jednoduché kliknutí
+                      if (doubleClickRef.current) {
+                        doubleClickRef.current = false
+                        return
                       }
-                      // Zavřít read mode při kliknutí na jiný řádek
-                      if (readModeOpen) {
-                        setReadModeOpen(false)
-                        setExpandedDocId(null)
-                      }
-                      // Pouze zvýraznit řádek, neotevírat read mode
-                      setSelectedDocId(String(row.id))
+                      
+                      // Nastavit timeout - pokud mezitím přijde dvojklik, timeout se zruší
+                      clickTimeoutRef.current = setTimeout(() => {
+                        clickTimeoutRef.current = null
+                        // Jednoduché kliknutí → pouze zvýrazní řádek (zůstane v list mode)
+                        // Zavřít předchozí režimy při kliknutí na jiný řádek
+                        if (panelOpen) {
+                          setPanelOpen(false)
+                          resetPanel()
+                        }
+                        if (editingDocId) {
+                          setEditingDocId(null)
+                          setEditTitle('')
+                          setEditDesc('')
+                        }
+                        // Zavřít read mode při kliknutí na jiný řádek
+                        if (readModeOpen) {
+                          setReadModeOpen(false)
+                          setExpandedDocId(null)
+                        }
+                        // Pouze zvýraznit řádek, neotevírat read mode
+                        setSelectedDocId(String(row.id))
+                      }, 200) // 200ms timeout pro detekci dvojkliku
                     }}
                     onRowDoubleClick={(row) => {
+                      // Zrušit timeout z onClick (aby se neprovedl)
+                      if (clickTimeoutRef.current) {
+                        clearTimeout(clickTimeoutRef.current)
+                        clickTimeoutRef.current = null
+                      }
+                      
+                      // Nastavit flag, aby se onClick ignoroval
+                      doubleClickRef.current = true
+                      
                       // Dvojklik → rovnou otevře read režim (jako v seznamu users)
                       if (panelOpen) {
                         setPanelOpen(false)
@@ -1111,6 +1138,11 @@ export default function DetailAttachmentsSection({
                       if (expandedDocId !== String(row.id)) {
                         void handleToggleHistory(String(row.id))
                       }
+                      
+                      // Resetovat flag po krátké době
+                      setTimeout(() => {
+                        doubleClickRef.current = false
+                      }, 300)
                     }}
                     onColumnResize={handleColumnResize}
                   />
