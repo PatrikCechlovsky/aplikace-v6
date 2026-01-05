@@ -962,7 +962,7 @@ export default function DetailAttachmentsSection({
           {panelOpen && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
               <div className="detail-attachments__panel-grid">
-                <div className="detail-form__field detail-form__field--span-3">
+                <div className="detail-form__field">
                   <label className="detail-form__label">Název</label>
                   <input
                     className="detail-form__input"
@@ -972,7 +972,7 @@ export default function DetailAttachmentsSection({
                   />
                 </div>
 
-                <div className="detail-form__field detail-form__field--span-3">
+                <div className="detail-form__field">
                   <label className="detail-form__label">Popis</label>
                   <input
                     className="detail-form__input"
@@ -1002,7 +1002,7 @@ export default function DetailAttachmentsSection({
               <div className="detail-form__hint" style={{ marginBottom: 8 }}>Metadata přílohy</div>
 
               <div className="detail-attachments__panel-grid">
-                <div className="detail-form__field detail-form__field--span-3">
+                <div className="detail-form__field">
                   <label className="detail-form__label">Název</label>
                   <input
                     className="detail-form__input detail-form__input--readonly"
@@ -1011,7 +1011,7 @@ export default function DetailAttachmentsSection({
                   />
                 </div>
 
-                <div className="detail-form__field detail-form__field--span-3">
+                <div className="detail-form__field">
                   <label className="detail-form__label">Popis</label>
                   <input
                     className="detail-form__input detail-form__input--readonly"
@@ -1029,12 +1029,12 @@ export default function DetailAttachmentsSection({
               <div className="detail-form__hint" style={{ marginBottom: 8 }}>Úprava metadat (název / popis)</div>
 
               <div className="detail-attachments__panel-grid">
-                <div className="detail-form__field detail-form__field--span-3">
+                <div className="detail-form__field">
                   <label className="detail-form__label">Název</label>
                   <input className="detail-form__input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
                 </div>
 
-                <div className="detail-form__field detail-form__field--span-3">
+                <div className="detail-form__field">
                   <label className="detail-form__label">Popis</label>
                   <input className="detail-form__input" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
                 </div>
@@ -1094,7 +1094,7 @@ export default function DetailAttachmentsSection({
                       setSelectedDocId(String(row.id))
                     }}
                     onRowDoubleClick={(row) => {
-                      // Dvojklik → read režim (otevře detail view)
+                      // Dvojklik → rovnou otevře read režim (jako v seznamu users)
                       if (panelOpen) {
                         setPanelOpen(false)
                         resetPanel()
@@ -1104,6 +1104,7 @@ export default function DetailAttachmentsSection({
                         setEditTitle('')
                         setEditDesc('')
                       }
+                      // Nastavit selectedDocId a rovnou otevřít read mode
                       setSelectedDocId(String(row.id))
                       setReadModeOpen(true)
                       // Automaticky otevřít historii při dvojkliku
