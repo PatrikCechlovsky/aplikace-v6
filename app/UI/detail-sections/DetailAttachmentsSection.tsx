@@ -1119,44 +1119,6 @@ export default function DetailAttachmentsSection({
                 ))}
               </div>
             </div>
-
-            {/* Historie: sticky karta dole, scroll jen uvnitř ListView (pouze v list mode) */}
-            {selectedDocId && (
-              <div className="detail-attachments__history-sticky">
-                <div className="detail-attachments__history-head">
-                  <h3 className="detail-form__section-title detail-attachments__history-titleline">
-                    Historie verzí přílohy: <span className="detail-attachments__history-filename">{selectedTitle}</span>
-                  </h3>
-                </div>
-
-                <div className="detail-attachments__history-body">
-                  {!expandedDocId && (
-                    <div className="detail-form__hint detail-form__hint--single">
-                      Historie verzí se automaticky zobrazí.
-                    </div>
-                  )}
-
-                  {expandedDocId && versionsLoadingId === expandedDocId && <div className="detail-form__hint">Načítám historii…</div>}
-
-                  {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length === 0 && <div className="detail-form__hint">Žádná historie.</div>}
-
-                  {expandedDocId && versionsLoadingId !== expandedDocId && historyRows.length > 0 && (
-                    <div className="detail-attachments__lv-shell detail-attachments__history-compact">
-                      <ListView
-                        columns={sharedColumns}
-                        rows={historyRows}
-                        sort={sort}
-                        onSortChange={handleSortChange}
-                        filterValue=""
-                        onFilterChange={() => {}} // Filtr z historie byl odstraněn
-                        onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                        onColumnResize={handleColumnResize}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
             </>
           )}
