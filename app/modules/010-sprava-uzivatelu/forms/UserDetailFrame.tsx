@@ -30,6 +30,7 @@ export type UiUser = {
   email: string
   phone?: string
   roleLabel: string
+  permissionLabel?: string
   twoFactorMethod?: string | null
   createdAt: string
   isArchived?: boolean
