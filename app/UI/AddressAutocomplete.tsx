@@ -34,14 +34,10 @@ export type AddressAutocompleteProps = {
 
 /**
  * RÚIAN API endpoint pro autocomplete
- * Dostupné API:
- * - RUIAN API od fnx.io: https://ruian.fnx.io/ (vyžaduje API klíč)
- * - ASAPI: https://asapi.eu/Home/Api (vyžaduje API klíč)
- * - GitHub: https://github.com/jindrichskupa/ruian-api (veřejné REST API)
- * 
- * Prozatím používáme jednoduché řešení - můžete nahradit vlastním API endpointem
+ * Používáme RUIAN API od fnx.io: https://ruian.fnx.io/
+ * API klíč: c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8
  */
-const RUIAN_API_BASE = 'https://ruian-api.fnx.io/api/v1/address'
+const RUIAN_API_BASE = 'https://ruian.fnx.io/api/v1/address'
 
 /**
  * Funkce pro vyhledávání adres v RÚIAN
@@ -59,27 +55,15 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
   }
 
   try {
-    // POZNÁMKA: Toto je ukázková implementace
-    // V produkci nahraďte správným API endpointem a přidejte API klíč
-    // Příklad pro RUIAN API od fnx.io:
-    // const apiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY
-    // const response = await fetch(`${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, {
+    // API klíč z environment variables nebo fallback na hardcoded klíč
+    const apiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY || 'c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8'
     
-    // Prozatím vracíme prázdný seznam - API není veřejně dostupné bez klíče
-    // Můžete použít některou z dostupných služeb:
-    // - https://ruian.fnx.io/ (vyžaduje registraci)
-    // - https://asapi.eu/Home/Api (vyžaduje registraci)
-    // - https://www.visidoo.cz/docs/autocomplete (vyžaduje registraci)
-    
-    console.log('AddressAutocomplete: API vyhledávání zatím není aktivní. Pro aktivaci zaregistrujte API klíč u poskytovatele RÚIAN API.')
-    return []
-    
-    /* Ukázka implementace s API:
-    const response = await fetch(`${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10`, {
+    // RUIAN API od fnx.io - endpoint pro vyhledávání adres
+    // Dokumentace: https://ruian.fnx.io/
+    const response = await fetch(`${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        // 'Authorization': `Bearer ${apiKey}`, // pokud API vyžaduje autentizaci
       },
     })
 
@@ -91,19 +75,38 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     const data = await response.json()
 
     // Transformace dat z RÚIAN API do našeho formátu
-    // Upravte podle skutečného formátu API
+    // Formát odpovědi se může lišit - upravte podle skutečného formátu API
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
-        street: item.streetName || item.street || '',
-        city: item.cityName || item.city || '',
-        zip: item.zipCode || item.zip || '',
-        houseNumber: item.houseNumber || item.house_number || '',
-        ruianId: item.id?.toString() || item.ruianId?.toString(),
+        street: item.streetName || item.street || item.nazev_ulice || '',
+        city: item.cityName || item.city || item.nazev_obce || '',
+        zip: item.zipCode || item.zip || item.psc || '',
+        houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || '',
+        ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || '',
         fullAddress: [
-          item.streetName || item.street,
-          item.houseNumber || item.house_number,
-          item.cityName || item.city,
-          item.zipCode || item.zip,
+          item.streetName || item.street || item.nazev_ulice,
+          item.houseNumber || item.house_number || item.cislo_domovni,
+          item.cityName || item.city || item.nazev_obce,
+          item.zipCode || item.zip || item.psc,
+        ]
+          .filter(Boolean)
+          .join(', '),
+      }))
+    }
+
+    // Pokud API vrací objekt s daty
+    if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
+      return data.data.map((item: any) => ({
+        street: item.streetName || item.street || item.nazev_ulice || '',
+        city: item.cityName || item.city || item.nazev_obce || '',
+        zip: item.zipCode || item.zip || item.psc || '',
+        houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || '',
+        ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || '',
+        fullAddress: [
+          item.streetName || item.street || item.nazev_ulice,
+          item.houseNumber || item.house_number || item.cislo_domovni,
+          item.cityName || item.city || item.nazev_obce,
+          item.zipCode || item.zip || item.psc,
         ]
           .filter(Boolean)
           .join(', '),
@@ -111,7 +114,6 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     }
 
     return []
-    */
   } catch (error) {
     console.error('Error fetching RÚIAN addresses:', error)
     return []
