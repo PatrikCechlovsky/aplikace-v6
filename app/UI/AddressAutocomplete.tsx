@@ -70,18 +70,18 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     let lastError: Error | null = null
     
     // Zkusíme několik možností endpointu a formátu
-    const endpoints = [
+    const endpointConfigs: Array<{ url: string; headers: Record<string, string> }> = [
       { url: `${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, headers: { 'Accept': 'application/json' } },
       { url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, headers: { 'Accept': 'application/json' } },
       { url: `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` } },
       { url: `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'X-API-Key': apiKey } },
     ]
     
-    for (const endpoint of endpoints) {
+    for (const config of endpointConfigs) {
       try {
-        response = await fetch(endpoint.url, {
+        response = await fetch(config.url, {
           method: 'GET',
-          headers: endpoint.headers,
+          headers: config.headers,
         })
         
         if (response.ok) {
@@ -95,7 +95,7 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     
     if (!response || !response.ok) {
       console.warn('RÚIAN API error:', response?.status, response?.statusText, lastError?.message)
-      console.warn('Zkoušené endpointy:', endpoints)
+      console.warn('Zkoušené endpointy:', endpointConfigs.map(c => c.url))
       return []
     }
 
