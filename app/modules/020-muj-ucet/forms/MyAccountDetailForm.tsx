@@ -121,7 +121,6 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               className="detail-form__input"
               type="text"
               maxLength={20}
-              size={15}
               value={val.titleBefore}
               onChange={(e) => update({ titleBefore: e.target.value })}
             />
@@ -133,7 +132,6 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               className="detail-form__input"
               type="text"
               maxLength={50}
-              size={30}
               value={val.firstName}
               onChange={(e) => update({ firstName: e.target.value })}
             />
@@ -145,7 +143,6 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               className="detail-form__input"
               type="text"
               maxLength={50}
-              size={30}
               value={val.lastName}
               onChange={(e) => update({ lastName: e.target.value })}
             />
@@ -179,8 +176,6 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               className="detail-form__input"
               type="text"
               maxLength={80}
-              size={50}
-              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.displayName}
               onChange={(e) => update({ displayName: e.target.value })}
               placeholder="volitelné"
@@ -194,8 +189,6 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
                 className="detail-form__input"
                 type="text"
                 maxLength={80}
-                size={50}
-                style={{ width: '50ch', maxWidth: '80ch' }}
                 value={val.login}
                 onChange={(e) => update({ login: e.target.value })}
                 placeholder="volitelné"
@@ -214,8 +207,6 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               className="detail-form__input"
               type="email"
               maxLength={80}
-              size={50}
-              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.email}
               onChange={(e) => update({ email: e.target.value })}
             />
@@ -229,8 +220,6 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               className="detail-form__input"
               type="tel"
               maxLength={20}
-              size={50}
-              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.phone}
               onChange={(e) => update({ phone: e.target.value })}
               placeholder="+420 999 874 564"

@@ -152,8 +152,6 @@ export default function UserDetailForm({
               className="detail-form__input"
               type="text"
               maxLength={80}
-              size={50}
-              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.displayName}
               readOnly={readOnly}
               onChange={(e) => update({ displayName: e.target.value })}
@@ -168,8 +166,6 @@ export default function UserDetailForm({
                 className="detail-form__input"
                 type="text"
                 maxLength={80}
-                size={50}
-                style={{ width: '50ch', maxWidth: '80ch' }}
                 value={val.login}
                 readOnly={readOnly}
                 onChange={(e) => update({ login: e.target.value })}
@@ -189,8 +185,6 @@ export default function UserDetailForm({
               className="detail-form__input"
               type="email"
               maxLength={80}
-              size={50}
-              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.email}
               readOnly={readOnly}
               onChange={(e) => update({ email: e.target.value })}
@@ -203,8 +197,6 @@ export default function UserDetailForm({
               className="detail-form__input"
               type="tel"
               maxLength={20}
-              size={50}
-              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.phone}
               readOnly={readOnly}
               onChange={(e) => update({ phone: e.target.value })}
@@ -279,7 +271,6 @@ export default function UserDetailForm({
               className="detail-form__input"
               type="text"
               maxLength={20}
-              size={15}
               value={val.titleBefore}
               readOnly={readOnly}
               onChange={(e) => update({ titleBefore: e.target.value })}
@@ -292,7 +283,6 @@ export default function UserDetailForm({
               className="detail-form__input"
               type="text"
               maxLength={50}
-              size={30}
               value={val.firstName}
               readOnly={readOnly}
               onChange={(e) => update({ firstName: e.target.value })}
@@ -305,7 +295,6 @@ export default function UserDetailForm({
               className="detail-form__input"
               type="text"
               maxLength={50}
-              size={30}
               value={val.lastName}
               readOnly={readOnly}
               onChange={(e) => update({ lastName: e.target.value })}
