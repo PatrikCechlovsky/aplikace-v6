@@ -40,14 +40,23 @@ export type UserFormValue = {
   firstName: string
   lastName: string
   login: string
+  note: string // Poznámka k uživateli
   isArchived: boolean
 }
 
 export type UserDetailFormProps = {
   user: UiUser
   readOnly: boolean
+  roleCode?: string | null
+  permissionCode?: string | null
+  roleLabel?: string
+  permissionLabel?: string
+  availableRoles?: Array<{ code: string; name: string }>
+  availablePermissions?: Array<{ code: string; name: string }>
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: UserFormValue) => void
+  onRoleChange?: (roleCode: string) => void
+  onPermissionChange?: (permissionCode: string) => void
 }
 
 // =====================
@@ -62,7 +71,20 @@ function safe(v: any) {
 // 4) DATA LOAD (hooks)
 // =====================
 
-export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueChange }: UserDetailFormProps) {
+export default function UserDetailForm({ 
+  user, 
+  readOnly, 
+  roleCode,
+  permissionCode,
+  roleLabel,
+  permissionLabel,
+  availableRoles = [],
+  availablePermissions = [],
+  onDirtyChange, 
+  onValueChange,
+  onRoleChange,
+  onPermissionChange,
+}: UserDetailFormProps) {
   const initial = useMemo<UserFormValue>(
     () => ({
       displayName: safe(user.displayName),
@@ -73,6 +95,7 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
       firstName: safe((user as any).firstName),
       lastName: safe((user as any).lastName),
       login: safe((user as any).login),
+      note: safe((user as any).note),
 
       isArchived: !!user.isArchived,
     }),
@@ -117,65 +140,57 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
   
   return (
     <div className="detail-form">
-      {/* ZÁKLAD */}
+      {/* PŘIHLAŠOVACÍ ÚDAJE */}
       <div className="detail-form__section">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <div className="detail-form__section-title">Základ</div>
-        
-          <label
-            className="detail-form__label"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              margin: 0,
-              whiteSpace: 'nowrap',
-              cursor: readOnly ? 'default' : 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={val.isArchived}
-              disabled={readOnly}
-              onChange={(e) => update({ isArchived: e.target.checked })}
-            />
-            <span>Archivováno</span>
-          </label>
-        </div>
+        <div className="detail-form__section-title">Přihlašovací údaje</div>
   
-  
-        <div className="detail-form__grid">
-          <div className="detail-form__field detail-form__field--span-3">
-            <label className="detail-form__label">
-              Zobrazované jméno / přezdívka <span className="detail-form__required">*</span>
-            </label>
+        {/* Řádek 1: Zobrazované jméno + Přihlašovací jméno (zobrazí se pokud nastaveno) */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Zobrazované jméno / přezdívka</label>
             <input
               className="detail-form__input"
               type="text"
-              maxLength={50}
-              size={30}
+              maxLength={80}
+              size={50}
+              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.displayName}
               readOnly={readOnly}
               onChange={(e) => update({ displayName: e.target.value })}
+              placeholder="volitelné"
             />
           </div>
   
-          <div className="detail-form__field detail-form__field--span-3">
+          {val.login && (
+            <div className="detail-form__field">
+              <label className="detail-form__label">Přihlašovací jméno</label>
+              <input
+                className="detail-form__input"
+                type="text"
+                maxLength={80}
+                size={50}
+                style={{ width: '50ch', maxWidth: '80ch' }}
+                value={val.login}
+                readOnly={readOnly}
+                onChange={(e) => update({ login: e.target.value })}
+                placeholder="volitelné"
+              />
+            </div>
+          )}
+        </div>
+  
+        {/* Řádek 2: Email + Telefon (musí se vejít +420 999 874 564) */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
             </label>
             <input
               className="detail-form__input"
               type="email"
-              maxLength={255}
-              size={40}
+              maxLength={80}
+              size={50}
+              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.email}
               readOnly={readOnly}
               onChange={(e) => update({ email: e.target.value })}
@@ -188,40 +203,83 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
               className="detail-form__input"
               type="tel"
               maxLength={20}
-              size={20}
+              size={50}
+              style={{ width: '50ch', maxWidth: '80ch' }}
               value={val.phone}
               readOnly={readOnly}
               onChange={(e) => update({ phone: e.target.value })}
+              placeholder="+420 999 874 564"
             />
+          </div>
+        </div>
+  
+        {/* Řádek 3: Role + Oprávnění */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Role</label>
+            {readOnly ? (
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                type="text"
+                value={roleLabel || '—'}
+                readOnly
+              />
+            ) : (
+              <select
+                className="detail-form__input"
+                value={roleCode || ''}
+                onChange={(e) => onRoleChange?.(e.target.value)}
+              >
+                <option value="">— vyber roli —</option>
+                {availableRoles.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
   
           <div className="detail-form__field">
-            <label className="detail-form__label">Přihlašovací jméno</label>
-            <input
-              className="detail-form__input"
-              type="text"
-              maxLength={50}
-              size={25}
-              value={val.login}
-              readOnly={readOnly}
-              onChange={(e) => update({ login: e.target.value })}
-            />
+            <label className="detail-form__label">Oprávnění</label>
+            {readOnly ? (
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                type="text"
+                value={permissionLabel || '—'}
+                readOnly
+              />
+            ) : (
+              <select
+                className="detail-form__input"
+                value={permissionCode || ''}
+                onChange={(e) => onPermissionChange?.(e.target.value)}
+              >
+                <option value="">— vyber oprávnění —</option>
+                {availablePermissions.map((p) => (
+                  <option key={p.code} value={p.code}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
   
-      {/* OSOBA */}
+      {/* OSOBNÍ ÚDAJE */}
       <div className="detail-form__section">
-        <div className="detail-form__section-title">Osoba</div>
+        <div className="detail-form__section-title">Osobní údaje</div>
   
-        <div className="detail-form__grid">
+        {/* Řádek 1: Titul + Jméno + Příjmení (3 sloupce) */}
+        <div className="detail-form__grid" style={{ gridTemplateColumns: '120px 280px 280px' }}>
           <div className="detail-form__field">
             <label className="detail-form__label">Titul před</label>
             <input
-              className="detail-form__input detail-form__input--short"
+              className="detail-form__input"
               type="text"
-              maxLength={10}
-              size={10}
+              maxLength={20}
+              size={15}
               value={val.titleBefore}
               readOnly={readOnly}
               onChange={(e) => update({ titleBefore: e.target.value })}
@@ -231,10 +289,10 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
           <div className="detail-form__field">
             <label className="detail-form__label">Jméno</label>
             <input
-              className="detail-form__input detail-form__input--medium"
+              className="detail-form__input"
               type="text"
-              maxLength={30}
-              size={20}
+              maxLength={50}
+              size={30}
               value={val.firstName}
               readOnly={readOnly}
               onChange={(e) => update({ firstName: e.target.value })}
@@ -244,13 +302,29 @@ export default function UserDetailForm({ user, readOnly, onDirtyChange, onValueC
           <div className="detail-form__field">
             <label className="detail-form__label">Příjmení</label>
             <input
-              className="detail-form__input detail-form__input--medium"
+              className="detail-form__input"
               type="text"
               maxLength={50}
-              size={25}
+              size={30}
               value={val.lastName}
               readOnly={readOnly}
               onChange={(e) => update({ lastName: e.target.value })}
+            />
+          </div>
+        </div>
+  
+        {/* Řádek 3: Poznámka k uživateli */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">Poznámka k uživateli</label>
+            <textarea
+              className="detail-form__input"
+              maxLength={255}
+              value={val.note}
+              readOnly={readOnly}
+              onChange={(e) => update({ note: e.target.value })}
+              placeholder="volitelné"
+              rows={4}
             />
           </div>
         </div>

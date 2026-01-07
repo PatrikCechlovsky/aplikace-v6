@@ -20,6 +20,8 @@ import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetail
 import InviteUserFrame from '../forms/InviteUserFrame'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
+import { getLatestInviteForSubject } from '@/app/lib/services/invites'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
 import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/permissions'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
@@ -1103,10 +1105,43 @@ export default function UsersTile({
       if (viewMode === 'read') {
         if (detailActiveSectionId === 'invite' && actionId === 'sendInvite') {
           if (!inviteSubmitRef.current) return
+          
+          // Kontrola povinných polí
+          if (!detailUser?.email?.trim()) {
+            toast.showWarning('Email je povinný pro odeslání pozvánky.')
+            return
+          }
+          
+          if (!detailUser?.roleCode?.trim()) {
+            toast.showWarning('Role je povinná pro odeslání pozvánky.')
+            return
+          }
+          
+          // Načíst informace o existující pozvánce pro zobrazení správné zprávy
+          let latestInvite: any = null
+          try {
+            if (detailUser?.id) {
+              latestInvite = await getLatestInviteForSubject(detailUser.id)
+            }
+          } catch (e) {
+            // Ignorovat chybu, pokračovat s prázdnou pozvánkou
+          }
+          
+          // Potvrzení před odesláním
+          let confirmMessage = 'Chcete odeslat pozvánku?'
+          if (latestInvite && (latestInvite.status === 'pending' || latestInvite.status === 'sent')) {
+            const validUntil = latestInvite.expires_at || latestInvite.valid_until
+            const validUntilStr = validUntil ? formatDateTime(validUntil) : '—'
+            confirmMessage = `Pozvánka je platná 7 dní a je již odeslaná, platí do ${validUntilStr}. Chcete odeslat novou?`
+          }
+          
+          if (!window.confirm(confirmMessage)) return
+          
           const ok = await inviteSubmitRef.current()
           if (!ok) return
           setIsDirty(false)
           await load()
+          toast.showSuccess('Pozvánka odeslána')
           return
         }
 
