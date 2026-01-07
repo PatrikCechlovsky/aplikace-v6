@@ -61,6 +61,13 @@ function buildInitialFormValue(u: UiUser): MyAccountFormValue {
     login: ((u as any).login ?? '').toString(),
 
     twoFactorMethod: (u.twoFactorMethod ?? '').toString(),
+
+    // Adresa
+    street: ((u as any).street ?? '').toString(),
+    city: ((u as any).city ?? '').toString(),
+    zip: ((u as any).zip ?? '').toString(),
+    houseNumber: ((u as any).houseNumber ?? '').toString(),
+    country: ((u as any).country ?? 'CZ').toString(),
   }
 }
 
