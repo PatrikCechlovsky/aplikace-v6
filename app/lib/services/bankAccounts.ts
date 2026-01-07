@@ -90,6 +90,17 @@ export async function listBankAccounts(subjectId: string): Promise<BankAccountWi
 export async function saveBankAccount(input: SaveBankAccountInput): Promise<BankAccountRow> {
   const isNew = !input.id || input.id === 'new'
 
+  const payload: any = {
+    subject_id: input.subjectId,
+    label: (input.label ?? '').trim() || null,
+    bank_id: input.bankId || null,
+    account_number: (input.accountNumber ?? '').trim() || null,
+    iban: (input.iban ?? '').trim() || null,
+    swift: (input.swift ?? '').trim() || null,
+    note: (input.note ?? '').trim() || null,
+    is_archived: input.isArchived ?? false,
+  }
+
   // Debug: Získat aktuální session pro logování
   const { data: sessionData } = await supabase.auth.getSession()
   const currentUserId = sessionData?.session?.user?.id ?? null
@@ -116,17 +127,6 @@ export async function saveBankAccount(input: SaveBankAccountInput): Promise<Bank
       : null,
     payload,
   })
-
-  const payload: any = {
-    subject_id: input.subjectId,
-    label: (input.label ?? '').trim() || null,
-    bank_id: input.bankId || null,
-    account_number: (input.accountNumber ?? '').trim() || null,
-    iban: (input.iban ?? '').trim() || null,
-    swift: (input.swift ?? '').trim() || null,
-    note: (input.note ?? '').trim() || null,
-    is_archived: input.isArchived ?? false,
-  }
 
   if (isNew) {
     const { data, error } = await supabase
