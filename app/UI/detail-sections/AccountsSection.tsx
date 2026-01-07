@@ -201,10 +201,6 @@ export default function AccountsSection({ subjectId }: Props) {
     }
   }, [selectedAccountId, subjectId, formValue, selectAccount, toast])
 
-  const selectedAccount = useMemo(() => {
-    return selectedAccountId ? accounts.find((a) => a.id === selectedAccountId) : null
-  }, [accounts, selectedAccountId])
-
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < accounts.length - 1
 
