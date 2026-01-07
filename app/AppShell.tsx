@@ -607,21 +607,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     resetCommonActions()
   }
 
-  function forceSidebarLayout() {
-    if (!confirmIfDirty()) return
-
-    setMenuLayout('sidebar')
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.localStorage.getItem('app-view-settings')
-        const parsed = raw ? JSON.parse(raw) : {}
-        const next = { ...parsed, menuLayout: 'sidebar' }
-        window.localStorage.setItem('app-view-settings', JSON.stringify(next))
-      } catch {
-        // ignore
-      }
-    }
-  }
 
   function getBreadcrumbSegments(): BreadcrumbSegment[] {
     const segments: BreadcrumbSegment[] = [{ label: 'Dashboard', icon: 'home' }]
