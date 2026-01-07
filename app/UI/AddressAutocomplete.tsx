@@ -36,8 +36,13 @@ export type AddressAutocompleteProps = {
  * RÚIAN API endpoint pro autocomplete
  * Používáme RUIAN API od fnx.io: https://ruian.fnx.io/
  * API klíč: c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8
+ * 
+ * Možné endpointy:
+ * - https://ruian.fnx.io/api/v1/address
+ * - https://api.ruian.fnx.io/v1/address
+ * - https://ruian-api.fnx.io/api/v1/address
  */
-const RUIAN_API_BASE = 'https://ruian.fnx.io/api/v1/address'
+const RUIAN_API_BASE = 'https://api.ruian.fnx.io/v1/address'
 
 /**
  * Funkce pro vyhledávání adres v RÚIAN
@@ -60,19 +65,47 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     
     // RUIAN API od fnx.io - endpoint pro vyhledávání adres
     // Dokumentace: https://ruian.fnx.io/
-    const response = await fetch(`${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      console.warn('RÚIAN API error:', response.status, response.statusText)
+    // Zkusíme více formátů endpointu a autentizace
+    let response: Response | null = null
+    let lastError: Error | null = null
+    
+    // Zkusíme několik možností endpointu a formátu
+    const endpoints = [
+      `${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`,
+      `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`,
+      `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`,
+    ]
+    
+    const headers = [
+      { 'Accept': 'application/json' },
+      { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      { 'Accept': 'application/json', 'X-API-Key': apiKey },
+    ]
+    
+    for (let i = 0; i < endpoints.length; i++) {
+      try {
+        response = await fetch(endpoints[i], {
+          method: 'GET',
+          headers: headers[i % headers.length],
+        })
+        
+        if (response.ok) {
+          break
+        }
+      } catch (error) {
+        lastError = error as Error
+        continue
+      }
+    }
+    
+    if (!response || !response.ok) {
+      console.warn('RÚIAN API error:', response?.status, response?.statusText, lastError?.message)
+      console.warn('Zkoušené endpointy:', endpoints)
       return []
     }
 
     const data = await response.json()
+    console.log('RÚIAN API response:', data) // Debug log
 
     // Transformace dat z RÚIAN API do našeho formátu
     // Formát odpovědi se může lišit - upravte podle skutečného formátu API

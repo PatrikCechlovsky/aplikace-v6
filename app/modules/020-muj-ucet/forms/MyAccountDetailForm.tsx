@@ -302,16 +302,14 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">
-              Přihlašovací jméno <span className="detail-form__required">*</span>
-            </label>
+            <label className="detail-form__label">Přihlašovací jméno</label>
             <input
               className="detail-form__input"
               type="text"
               maxLength={80}
               value={val.login}
               onChange={(e) => update({ login: e.target.value })}
-              placeholder="povinné"
+              placeholder="volitelné (používá se email, pokud není vyplněno)"
             />
           </div>
         </div>

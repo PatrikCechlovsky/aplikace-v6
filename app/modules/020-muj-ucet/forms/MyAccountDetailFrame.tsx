@@ -155,10 +155,7 @@ export default function MyAccountDetailFrame({
           return null
         }
 
-        if (!v.login?.trim()) {
-          toast.showWarning('Přihlašovací jméno je povinné.')
-          return null
-        }
+        // Přihlašovací jméno je volitelné - pokud není vyplněno, použije se email
 
         // Získat aktuálního uživatele pro nastavení auth_user_id
         const { data: sessionData } = await getCurrentSession()
