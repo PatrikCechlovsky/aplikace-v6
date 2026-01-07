@@ -61,21 +61,24 @@ export default function MyAccountTile({
     async function loadUser() {
       try {
         setLoading(true)
-        const session = await getCurrentSession()
+        const { data, error } = await getCurrentSession()
         if (cancelled) return
 
-        if (!session?.user?.id) {
+        if (error || !data?.session?.user?.id) {
           toast.showError('Nepodařilo se načíst informace o uživateli.')
           return
         }
 
-        const detail = await getUserDetail(session.user.id)
+        const session = data.session
+        const userId = session.user.id
+
+        const detail = await getUserDetail(userId)
         if (cancelled) return
 
         const s: any = (detail as any)?.subject ?? {}
         const nextUser: UiUser = {
-          id: String(s.id ?? session.user.id),
-          displayName: String(s.display_name ?? session.user.displayName ?? session.user.email ?? 'Uživatel'),
+          id: String(s.id ?? userId),
+          displayName: String(s.display_name ?? session.user.user_metadata?.full_name ?? session.user.email ?? 'Uživatel'),
           email: String(s.email ?? session.user.email ?? ''),
           phone: (s.phone ?? undefined) as any,
           titleBefore: (s.title_before ?? null) as any,
