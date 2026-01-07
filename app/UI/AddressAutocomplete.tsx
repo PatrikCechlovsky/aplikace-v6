@@ -71,22 +71,17 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     
     // Zkusíme několik možností endpointu a formátu
     const endpoints = [
-      `${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`,
-      `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`,
-      `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`,
+      { url: `${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, headers: { 'Accept': 'application/json' } },
+      { url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, headers: { 'Accept': 'application/json' } },
+      { url: `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` } },
+      { url: `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'X-API-Key': apiKey } },
     ]
     
-    const headers = [
-      { 'Accept': 'application/json' },
-      { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      { 'Accept': 'application/json', 'X-API-Key': apiKey },
-    ]
-    
-    for (let i = 0; i < endpoints.length; i++) {
+    for (const endpoint of endpoints) {
       try {
-        response = await fetch(endpoints[i], {
+        response = await fetch(endpoint.url, {
           method: 'GET',
-          headers: headers[i % headers.length],
+          headers: endpoint.headers,
         })
         
         if (response.ok) {
