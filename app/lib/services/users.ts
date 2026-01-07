@@ -182,7 +182,12 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
         first_name,
         last_name,
         login,
-        note
+        note,
+        street,
+        city,
+        zip,
+        house_number,
+        country
       `
     )
     .eq('id', subjectId)
@@ -298,6 +303,13 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
     last_name: (input.lastName ?? '').trim() || null,
     login: (input.login ?? '').trim() || null,
     note: (input.note ?? '').trim() || null,
+
+    // ADDRESS
+    street: (input.street ?? '').trim() || null,
+    city: (input.city ?? '').trim() || null,
+    zip: (input.zip ?? '').trim() || null,
+    house_number: (input.houseNumber ?? '').trim() || null,
+    country: (input.country ?? '').trim() || null,
 
     // DB: subjects.origin_module je NOT NULL -> musí být vždy
     origin_module: '010',

@@ -38,6 +38,11 @@ type UiUser = {
   twoFactorMethod?: string | null
   createdAt: string
   firstLoginAt?: string | null
+  street?: string | null
+  city?: string | null
+  zip?: string | null
+  houseNumber?: string | null
+  country?: string | null
 }
 
 // =====================
@@ -99,6 +104,11 @@ export default function MyAccountTile({
           twoFactorMethod: (s.two_factor_method ?? null) as any,
           createdAt: String(s.created_at ?? ''),
           firstLoginAt: (s.first_login_at ?? null) as any,
+          street: (s.street ?? null) as any,
+          city: (s.city ?? null) as any,
+          zip: (s.zip ?? null) as any,
+          houseNumber: (s.house_number ?? null) as any,
+          country: (s.country ?? null) as any,
         }
 
         setUser(nextUser)

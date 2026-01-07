@@ -10,6 +10,7 @@ import { getIcon, IconKey } from '@/app/UI/icons'
 import { APP_COLOR_PALETTE } from '@/app/lib/colorPalette'
 import createLogger from '@/app/lib/logger'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
+import InputWithHistory from './InputWithHistory'
 const logger = createLogger('GenericTypeTile')
 
 export type GenericTypeItem = {
@@ -946,7 +947,8 @@ export default function GenericTypeTile({
               <label className="generic-type__label">
                 Kód <span className="generic-type__required">*</span>
               </label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.code`}
                 type="text"
                 className="generic-type__input"
                 value={form.code}
@@ -960,7 +962,8 @@ export default function GenericTypeTile({
               <label className="generic-type__label">
                 Název <span className="generic-type__required">*</span>
               </label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.name`}
                 type="text"
                 className="generic-type__input"
                 value={form.name}
@@ -970,7 +973,8 @@ export default function GenericTypeTile({
 
             <div className="generic-type__field">
               <label className="generic-type__label">Barva (HEX)</label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.color`}
                 type="text"
                 className="generic-type__input"
                 placeholder="#E74C3C"
@@ -1031,7 +1035,8 @@ export default function GenericTypeTile({
 
             <div className="generic-type__field">
               <label className="generic-type__label">Ikona (klíč z&nbsp;icons.ts)</label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.icon`}
                 type="text"
                 className="generic-type__input"
                 placeholder="např. user, building, tenant…"

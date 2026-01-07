@@ -2,6 +2,9 @@
 // PURPOSE: Service pro bankovní účty
 
 import { supabase } from '@/app/lib/supabaseClient'
+import createLogger from '@/app/lib/logger'
+
+const logger = createLogger('bankAccounts')
 
 export type BankAccountRow = {
   id: string
@@ -87,6 +90,33 @@ export async function listBankAccounts(subjectId: string): Promise<BankAccountWi
 export async function saveBankAccount(input: SaveBankAccountInput): Promise<BankAccountRow> {
   const isNew = !input.id || input.id === 'new'
 
+  // Debug: Získat aktuální session pro logování
+  const { data: sessionData } = await supabase.auth.getSession()
+  const currentUserId = sessionData?.session?.user?.id ?? null
+  const currentUserEmail = sessionData?.session?.user?.email ?? null
+
+  // Debug: Zkontrolovat subject pro RLS
+  const { data: subjectData } = await supabase
+    .from('subjects')
+    .select('id, email, auth_user_id')
+    .eq('id', input.subjectId)
+    .single()
+
+  logger.debug('saveBankAccount - Debug info', {
+    isNew,
+    subjectId: input.subjectId,
+    currentUserId,
+    currentUserEmail,
+    subjectData: subjectData
+      ? {
+          id: subjectData.id,
+          email: subjectData.email,
+          auth_user_id: (subjectData as any).auth_user_id,
+        }
+      : null,
+    payload,
+  })
+
   const payload: any = {
     subject_id: input.subjectId,
     label: (input.label ?? '').trim() || null,
@@ -105,7 +135,10 @@ export async function saveBankAccount(input: SaveBankAccountInput): Promise<Bank
       .select()
       .single()
 
-    if (error) throw new Error(error.message)
+    if (error) {
+      logger.error('saveBankAccount - INSERT error', { error, payload, subjectId: input.subjectId })
+      throw new Error(error.message)
+    }
     if (!data) throw new Error('Nepodařilo se vytvořit účet.')
 
     return data as BankAccountRow
@@ -117,7 +150,10 @@ export async function saveBankAccount(input: SaveBankAccountInput): Promise<Bank
       .select()
       .single()
 
-    if (error) throw new Error(error.message)
+    if (error) {
+      logger.error('saveBankAccount - UPDATE error', { error, payload, accountId: input.id })
+      throw new Error(error.message)
+    }
     if (!data) throw new Error('Nepodařilo se aktualizovat účet.')
 
     return data as BankAccountRow

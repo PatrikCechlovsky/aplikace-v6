@@ -8,6 +8,7 @@
 // =====================
 
 import React, { useEffect, useMemo, useState } from 'react'
+import InputWithHistory from '../../../UI/InputWithHistory'
 
 // =====================
 // 2) TYPES
@@ -148,7 +149,8 @@ export default function UserDetailForm({
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Zobrazované jméno / přezdívka</label>
-            <input
+            <InputWithHistory
+              historyId="user.displayName"
               className="detail-form__input"
               type="text"
               maxLength={80}
@@ -181,7 +183,8 @@ export default function UserDetailForm({
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
             </label>
-            <input
+            <InputWithHistory
+              historyId="user.email"
               className="detail-form__input"
               type="email"
               maxLength={80}
@@ -193,7 +196,8 @@ export default function UserDetailForm({
   
           <div className="detail-form__field">
             <label className="detail-form__label">Telefon</label>
-            <input
+            <InputWithHistory
+              historyId="user.phone"
               className="detail-form__input"
               type="tel"
               maxLength={20}
@@ -269,7 +273,8 @@ export default function UserDetailForm({
           <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: '12px' }}>
             <div className="detail-form__field">
               <label className="detail-form__label">Titul</label>
-              <input
+              <InputWithHistory
+                historyId="user.titleBefore"
                 className="detail-form__input"
                 type="text"
                 maxLength={20}
@@ -283,7 +288,8 @@ export default function UserDetailForm({
               <label className="detail-form__label">
                 Jméno <span className="detail-form__required">*</span>
               </label>
-              <input
+              <InputWithHistory
+                historyId="user.firstName"
                 className="detail-form__input"
                 type="text"
                 maxLength={50}
@@ -299,7 +305,8 @@ export default function UserDetailForm({
             <label className="detail-form__label">
               Příjmení <span className="detail-form__required">*</span>
             </label>
-            <input
+            <InputWithHistory
+              historyId="user.lastName"
               className="detail-form__input"
               type="text"
               maxLength={50}

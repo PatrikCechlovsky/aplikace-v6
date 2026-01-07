@@ -8,6 +8,7 @@ import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
 import createLogger from '@/app/lib/logger'
 const logger = createLogger('InviteUserForm')
 import { fetchPermissionTypes } from '@/app/modules/900-nastaveni/services/permissionTypes'
+import InputWithHistory from '../../../UI/InputWithHistory'
 
 export type InviteMode = 'existing' | 'new'
 
@@ -290,7 +291,8 @@ export default function InviteUserForm({
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
             </label>
-            <input
+            <InputWithHistory
+              historyId="invite.email"
               className={'detail-form__input' + (mode === 'existing' && variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
               type="email"
               maxLength={255}
@@ -307,7 +309,8 @@ export default function InviteUserForm({
 
           <div className="detail-form__field">
             <label className="detail-form__label">Zobrazované jméno</label>
-            <input
+            <InputWithHistory
+              historyId="invite.displayName"
               className={'detail-form__input' + (variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
               type="text"
               maxLength={50}

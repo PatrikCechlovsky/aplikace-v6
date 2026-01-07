@@ -141,6 +141,11 @@ export default function MyAccountDetailFrame({
           return null
         }
 
+        if (!v.login?.trim()) {
+          toast.showWarning('Přihlašovací jméno je povinné.')
+          return null
+        }
+
         // Získat aktuálního uživatele pro nastavení auth_user_id
         const { data: sessionData } = await getCurrentSession()
         const authUserId = sessionData?.session?.user?.id ?? null
@@ -159,6 +164,13 @@ export default function MyAccountDetailFrame({
           lastName: v.lastName || null,
           login: v.login || null,
 
+          // ADDRESS
+          street: v.street || null,
+          city: v.city || null,
+          zip: v.zip || null,
+          houseNumber: v.houseNumber || null,
+          country: v.country || null,
+
           // Nastavit auth_user_id pro "Můj účet"
           authUserId: authUserId,
         })
@@ -176,6 +188,11 @@ export default function MyAccountDetailFrame({
           firstName: (s.first_name ?? v.firstName ?? null) as any,
           lastName: (s.last_name ?? v.lastName ?? null) as any,
           login: (s.login ?? v.login ?? null) as any,
+          street: (s.street ?? v.street ?? null) as any,
+          city: (s.city ?? v.city ?? null) as any,
+          zip: (s.zip ?? v.zip ?? null) as any,
+          houseNumber: (s.house_number ?? v.houseNumber ?? null) as any,
+          country: (s.country ?? v.country ?? null) as any,
         }
 
         setResolvedUser(nextUser)

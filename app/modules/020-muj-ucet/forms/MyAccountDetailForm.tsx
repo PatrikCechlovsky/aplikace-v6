@@ -8,6 +8,7 @@
 // =====================
 
 import React, { useEffect, useMemo, useState } from 'react'
+import InputWithHistory from '../../../UI/InputWithHistory'
 
 // =====================
 // 2) TYPES
@@ -24,6 +25,13 @@ type UiUser = {
   firstName?: string | null
   lastName?: string | null
   login?: string | null
+
+  // Adresa
+  street?: string | null
+  city?: string | null
+  zip?: string | null
+  houseNumber?: string | null
+  country?: string | null
 }
 
 export type MyAccountFormValue = {
@@ -37,6 +45,13 @@ export type MyAccountFormValue = {
   login: string
 
   twoFactorMethod: string
+
+  // Adresa
+  street: string
+  city: string
+  zip: string
+  houseNumber: string
+  country: string
 }
 
 export type MyAccountDetailFormProps = {
@@ -70,6 +85,13 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
       login: safe((user as any).login),
 
       twoFactorMethod: safe(user.twoFactorMethod),
+
+      // Adresa
+      street: safe((user as any).street),
+      city: safe((user as any).city),
+      zip: safe((user as any).zip),
+      houseNumber: safe((user as any).house_number),
+      country: safe((user as any).country) || 'CZ',
     }),
     [user]
   )
@@ -119,7 +141,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
           <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: '12px' }}>
             <div className="detail-form__field">
               <label className="detail-form__label">Titul</label>
-              <input
+              <InputWithHistory
+                historyId="myAccount.titleBefore"
                 className="detail-form__input"
                 type="text"
                 maxLength={20}
@@ -132,7 +155,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               <label className="detail-form__label">
                 Jméno <span className="detail-form__required">*</span>
               </label>
-              <input
+              <InputWithHistory
+                historyId="myAccount.firstName"
                 className="detail-form__input"
                 type="text"
                 maxLength={50}
@@ -147,7 +171,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
             <label className="detail-form__label">
               Příjmení <span className="detail-form__required">*</span>
             </label>
-            <input
+            <InputWithHistory
+              historyId="myAccount.lastName"
               className="detail-form__input"
               type="text"
               maxLength={50}
@@ -157,17 +182,73 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
           </div>
         </div>
 
-        {/* TODO: Adresa s autocomplete - bude implementováno později */}
+        {/* Adresa */}
         <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">Adresa</label>
+          <div className="detail-form__field">
+            <label className="detail-form__label">Ulice</label>
             <input
               className="detail-form__input"
               type="text"
-              placeholder="Adresa bude implementována s autocomplete"
-              disabled
+              maxLength={100}
+              value={val.street}
+              onChange={(e) => update({ street: e.target.value })}
+              placeholder="Název ulice"
             />
-            <div className="detail-form__hint">Autocomplete pro adresu bude implementován později</div>
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Číslo popisné</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={20}
+              value={val.houseNumber}
+              onChange={(e) => update({ houseNumber: e.target.value })}
+              placeholder="123"
+            />
+          </div>
+        </div>
+
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Město</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={100}
+              value={val.city}
+              onChange={(e) => update({ city: e.target.value })}
+              placeholder="Název města"
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">PSČ</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={10}
+              value={val.zip}
+              onChange={(e) => update({ zip: e.target.value })}
+              placeholder="12345"
+            />
+          </div>
+        </div>
+
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Stát</label>
+            <select
+              className="detail-form__input"
+              value={val.country}
+              onChange={(e) => update({ country: e.target.value })}
+            >
+              <option value="CZ">Česká republika</option>
+              <option value="SK">Slovensko</option>
+              <option value="PL">Polsko</option>
+              <option value="DE">Německo</option>
+              <option value="AT">Rakousko</option>
+            </select>
           </div>
         </div>
       </div>
@@ -180,7 +261,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Zobrazované jméno / přezdívka</label>
-            <input
+            <InputWithHistory
+              historyId="myAccount.displayName"
               className="detail-form__input"
               type="text"
               maxLength={80}
@@ -211,7 +293,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
             <label className="detail-form__label">
               E-mail <span className="detail-form__required">*</span>
             </label>
-            <input
+            <InputWithHistory
+              historyId="myAccount.email"
               className="detail-form__input"
               type="email"
               maxLength={80}
@@ -224,7 +307,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
             <label className="detail-form__label">
               Telefon {val.twoFactorMethod === 'phone' && <span className="detail-form__required">*</span>}
             </label>
-            <input
+            <InputWithHistory
+              historyId="myAccount.phone"
               className="detail-form__input"
               type="tel"
               maxLength={20}
