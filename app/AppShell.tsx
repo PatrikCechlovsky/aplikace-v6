@@ -815,7 +815,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               disabled={!isAuthenticated}
               onLogout={handleLogout}
               displayName={displayName}
-              onForceSidebar={forceSidebarLayout}
+              onProfileClick={() => {
+                handleModuleSelect({ moduleId: '020-muj-ucet' })
+              }}
             />
           </div>
         </div>

@@ -9,6 +9,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import InputWithHistory from '../../../UI/InputWithHistory'
+import AddressAutocomplete from '../../../UI/AddressAutocomplete'
 
 // =====================
 // 2) TYPES
@@ -183,6 +184,34 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
         </div>
 
         {/* Adresa */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">Adresa (autocomplete)</label>
+            {val.country === 'CZ' ? (
+              <AddressAutocomplete
+                street={val.street}
+                city={val.city}
+                zip={val.zip}
+                houseNumber={val.houseNumber}
+                country={val.country}
+                onAddressChange={(address) => {
+                  update({
+                    street: address.street,
+                    city: address.city,
+                    zip: address.zip,
+                    houseNumber: address.houseNumber,
+                    country: address.country,
+                  })
+                }}
+                placeholder="Začněte psát adresu (např. 'Praha, Václavské náměstí')"
+                className="detail-form__input"
+              />
+            ) : (
+              <div className="detail-form__hint">Autocomplete je dostupný pouze pro Českou republiku</div>
+            )}
+          </div>
+        </div>
+
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Ulice</label>
