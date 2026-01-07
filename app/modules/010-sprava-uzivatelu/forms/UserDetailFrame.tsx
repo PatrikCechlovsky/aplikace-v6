@@ -69,6 +69,7 @@ function buildInitialFormValue(u: UiUser): UserFormValue {
     firstName: ((u as any).firstName ?? '').toString(),
     lastName: ((u as any).lastName ?? '').toString(),
     login: ((u as any).login ?? '').toString(),
+    note: ((u as any).note ?? '').toString(),
 
     isArchived: !!u.isArchived,
   }
