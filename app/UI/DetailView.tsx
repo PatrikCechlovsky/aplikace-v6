@@ -310,7 +310,19 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   // placeholders pro jiné entity
   users: { id: 'users', label: 'Uživatelé', order: 30, render: () => null },
   equipment: { id: 'equipment', label: 'Vybavení', order: 40, render: () => null },
-  accounts: { id: 'accounts', label: 'Účty', order: 50, render: () => null },
+  accounts: {
+    id: 'accounts',
+    label: 'Účty',
+    order: 50,
+    visibleWhen: (ctx) => !!(ctx as any)?.entityId,
+    render: (ctx) => {
+      const entityId = (ctx as any)?.entityId
+      if (!entityId) return null
+      // Dynamicky importovat, aby se to nenačítalo, pokud není potřeba
+      const AccountsSection = require('@/app/UI/detail-sections/AccountsSection').default
+      return <AccountsSection subjectId={entityId} mode={ctx.mode ?? 'edit'} />
+    },
+  },
 }
 
 export default function DetailView({
