@@ -107,22 +107,30 @@ export async function saveBankAccount(input: SaveBankAccountInput): Promise<Bank
   const currentUserEmail = sessionData?.session?.user?.email ?? null
 
   // Debug: Zkontrolovat subject pro RLS
-  const { data: subjectData } = await supabase
+  const { data: subjectData, error: subjectError } = await supabase
     .from('subjects')
     .select('id, email, auth_user_id')
     .eq('id', input.subjectId)
     .single()
+
+  // Debug: Zkontrolovat JWT email
+  const { data: jwtData } = await supabase.auth.getUser()
+  const jwtEmail = jwtData?.user?.email ?? null
 
   logger.debug('saveBankAccount - Debug info', {
     isNew,
     subjectId: input.subjectId,
     currentUserId,
     currentUserEmail,
+    jwtEmail,
+    subjectError: subjectError?.message,
     subjectData: subjectData
       ? {
           id: subjectData.id,
           email: subjectData.email,
           auth_user_id: (subjectData as any).auth_user_id,
+          emailMatches: subjectData.email === currentUserEmail || subjectData.email === jwtEmail,
+          authUserIdMatches: (subjectData as any).auth_user_id === currentUserId,
         }
       : null,
     payload,
