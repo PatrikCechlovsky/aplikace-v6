@@ -52,6 +52,7 @@ export default function MyAccountTile({
   const [user, setUser] = useState<UiUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
+  const [activeSectionId, setActiveSectionId] = useState<string>('detail')
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
 
   // Načíst aktuálního uživatele
@@ -107,7 +108,7 @@ export default function MyAccountTile({
 
   // CommonActions
   const commonActions = useMemo<CommonActionId[]>(() => {
-    return ['save', 'close']
+    return ['save', 'attachments', 'close']
   }, [])
 
   useEffect(() => {
@@ -147,6 +148,11 @@ export default function MyAccountTile({
         toast.showSuccess('Změny uloženy')
         return
       }
+
+      if (actionId === 'attachments') {
+        setActiveSectionId('attachments')
+        return
+      }
     }
 
     onRegisterCommonActionHandler(handler)
@@ -181,6 +187,8 @@ export default function MyAccountTile({
   return (
     <MyAccountDetailFrame
       user={user}
+      initialSectionId={activeSectionId as any}
+      onActiveSectionChange={(id) => setActiveSectionId(id)}
       onDirtyChange={setIsDirty}
       onRegisterSubmit={(fn) => {
         submitRef.current = fn
