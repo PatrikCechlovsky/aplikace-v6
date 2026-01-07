@@ -34,12 +34,24 @@ export type AddressAutocompleteProps = {
 
 /**
  * RÚIAN API endpoint pro autocomplete
- * Dokumentace: https://api.cuzk.cz/
+ * Dostupné API:
+ * - RUIAN API od fnx.io: https://ruian.fnx.io/ (vyžaduje API klíč)
+ * - ASAPI: https://asapi.eu/Home/Api (vyžaduje API klíč)
+ * - GitHub: https://github.com/jindrichskupa/ruian-api (veřejné REST API)
+ * 
+ * Prozatím používáme jednoduché řešení - můžete nahradit vlastním API endpointem
  */
-const RUIAN_API_BASE = 'https://api.cuzk.cz/v1/address'
+const RUIAN_API_BASE = 'https://ruian-api.fnx.io/api/v1/address'
 
 /**
  * Funkce pro vyhledávání adres v RÚIAN
+ * 
+ * POZNÁMKA: Tato funkce je připravená pro integraci s RÚIAN API.
+ * V produkci bude potřeba:
+ * 1. Zaregistrovat se u poskytovatele RÚIAN API (např. fnx.io, ASAPI, Visidoo)
+ * 2. Získat API klíč
+ * 3. Upravit endpoint a přidat autentizaci
+ * 4. Upravit transformaci dat podle formátu API
  */
 async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]> {
   if (!query || query.trim().length < 3) {
@@ -47,12 +59,27 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
   }
 
   try {
-    // RÚIAN API pro vyhledávání adres
-    // Formát: https://api.cuzk.cz/v1/address?q={query}&limit=10
+    // POZNÁMKA: Toto je ukázková implementace
+    // V produkci nahraďte správným API endpointem a přidejte API klíč
+    // Příklad pro RUIAN API od fnx.io:
+    // const apiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY
+    // const response = await fetch(`${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, {
+    
+    // Prozatím vracíme prázdný seznam - API není veřejně dostupné bez klíče
+    // Můžete použít některou z dostupných služeb:
+    // - https://ruian.fnx.io/ (vyžaduje registraci)
+    // - https://asapi.eu/Home/Api (vyžaduje registraci)
+    // - https://www.visidoo.cz/docs/autocomplete (vyžaduje registraci)
+    
+    console.log('AddressAutocomplete: API vyhledávání zatím není aktivní. Pro aktivaci zaregistrujte API klíč u poskytovatele RÚIAN API.')
+    return []
+    
+    /* Ukázka implementace s API:
     const response = await fetch(`${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        // 'Authorization': `Bearer ${apiKey}`, // pokud API vyžaduje autentizaci
       },
     })
 
@@ -64,18 +91,19 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     const data = await response.json()
 
     // Transformace dat z RÚIAN API do našeho formátu
+    // Upravte podle skutečného formátu API
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
-        street: item.streetName || '',
-        city: item.cityName || '',
-        zip: item.zipCode || '',
-        houseNumber: item.houseNumber || '',
-        ruianId: item.id?.toString(),
+        street: item.streetName || item.street || '',
+        city: item.cityName || item.city || '',
+        zip: item.zipCode || item.zip || '',
+        houseNumber: item.houseNumber || item.house_number || '',
+        ruianId: item.id?.toString() || item.ruianId?.toString(),
         fullAddress: [
-          item.streetName,
-          item.houseNumber,
-          item.cityName,
-          item.zipCode,
+          item.streetName || item.street,
+          item.houseNumber || item.house_number,
+          item.cityName || item.city,
+          item.zipCode || item.zip,
         ]
           .filter(Boolean)
           .join(', '),
@@ -83,6 +111,7 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     }
 
     return []
+    */
   } catch (error) {
     console.error('Error fetching RÚIAN addresses:', error)
     return []
