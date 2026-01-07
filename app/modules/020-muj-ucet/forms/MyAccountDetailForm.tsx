@@ -301,19 +301,19 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
             />
           </div>
 
-          {val.login && (
-            <div className="detail-form__field">
-              <label className="detail-form__label">Přihlašovací jméno</label>
-              <input
-                className="detail-form__input"
-                type="text"
-                maxLength={80}
-                value={val.login}
-                onChange={(e) => update({ login: e.target.value })}
-                placeholder="volitelné"
-              />
-            </div>
-          )}
+          <div className="detail-form__field">
+            <label className="detail-form__label">
+              Přihlašovací jméno <span className="detail-form__required">*</span>
+            </label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={80}
+              value={val.login}
+              onChange={(e) => update({ login: e.target.value })}
+              placeholder="povinné"
+            />
+          </div>
         </div>
 
         {/* Řádek 2: Email + Telefon */}

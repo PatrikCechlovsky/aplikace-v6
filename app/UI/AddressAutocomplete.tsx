@@ -202,17 +202,18 @@ export default function AddressAutocomplete({
   }
 
   return (
-    <div className={`address-autocomplete ${className}`} style={{ position: 'relative' }}>
+    <div className={`address-autocomplete ${className}`} style={{ position: 'relative', width: '100%' }}>
       <input
         ref={inputRef}
         type="text"
-        className="detail-form__input"
+        className={className || 'detail-form__input'}
         value={query || buildQuery()}
         onChange={handleInputChange}
         onFocus={handleInputFocus}
         disabled={disabled}
         placeholder={placeholder}
         autoComplete="off"
+        style={{ width: '100%' }}
       />
 
       {loading && (
