@@ -304,6 +304,7 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
   }
 
   // Nastavit auth_user_id pokud je poskytnut (pro "Můj účet")
+  // Nastavujeme i při UPDATE, ne jen při INSERT
   if (input.authUserId) {
     subjectPayload.auth_user_id = input.authUserId
   }

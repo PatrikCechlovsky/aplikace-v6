@@ -237,7 +237,18 @@ export default function MyAccountTile({
         }
 
         if (viewMode === 'attachments-manager') {
-          // Zavřít attachments manager a vrátit se do edit mode
+          const mode = attachmentsManagerUi.mode ?? 'list'
+          
+          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
+          if (mode === 'read' || mode === 'edit') {
+            const api = attachmentsManagerApiRef.current
+            if (api?.close) {
+              api.close()
+            }
+            return
+          }
+          
+          // Pokud jsme v list mode, zavřít attachments manager a vrátit se do edit mode "Můj účet"
           setViewMode('edit')
           setActiveSectionId('detail')
           setIsDirty(false)
