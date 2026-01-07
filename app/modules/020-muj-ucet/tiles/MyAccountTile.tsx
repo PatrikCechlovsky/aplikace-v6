@@ -10,6 +10,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import MyAccountDetailFrame from '../forms/MyAccountDetailFrame'
+import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { getCurrentSession } from '@/app/lib/services/auth'
 import { getUserDetail } from '@/app/lib/services/users'
 import { useToast } from '@/app/UI/Toast'
@@ -52,8 +53,17 @@ export default function MyAccountTile({
   const [user, setUser] = useState<UiUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
+  const [viewMode, setViewMode] = useState<'edit' | 'attachments-manager'>('edit')
   const [activeSectionId, setActiveSectionId] = useState<string>('detail')
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
+
+  // Attachments manager state
+  const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
+  const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
+    hasSelection: false,
+    isDirty: false,
+    mode: 'list',
+  })
 
   // Načíst aktuálního uživatele
   useEffect(() => {
@@ -108,20 +118,38 @@ export default function MyAccountTile({
 
   // CommonActions
   const commonActions = useMemo<CommonActionId[]>(() => {
+    if (viewMode === 'attachments-manager') {
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') {
+        return ['save', 'close']
+      }
+      if (mode === 'edit') {
+        return ['save', 'attachmentsNewVersion', 'close']
+      }
+      if (mode === 'read') {
+        return ['edit', 'close']
+      }
+      // mode === 'list'
+      return ['add', 'view', 'edit', 'columnSettings', 'close']
+    }
     return ['save', 'attachments', 'close']
-  }, [])
+  }, [viewMode, attachmentsManagerUi.mode])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
 
   useEffect(() => {
+    const mappedViewMode: ViewMode = viewMode === 'attachments-manager' ? 'read' : 'edit'
+    const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : true
+    const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
+
     onRegisterCommonActionsState?.({
-      viewMode: 'edit',
-      hasSelection: true,
-      isDirty,
+      viewMode: mappedViewMode,
+      hasSelection: mappedHasSelection,
+      isDirty: mappedIsDirty,
     })
-  }, [onRegisterCommonActionsState, isDirty])
+  }, [onRegisterCommonActionsState, viewMode, isDirty, attachmentsManagerUi])
 
   // CommonActions handler
   useEffect(() => {
@@ -129,6 +157,13 @@ export default function MyAccountTile({
 
     const handler = async (actionId: CommonActionId) => {
       if (actionId === 'close') {
+        if (viewMode === 'attachments-manager') {
+          // Zavřít attachments manager a vrátit se do edit mode
+          setViewMode('edit')
+          setActiveSectionId('detail')
+          setIsDirty(false)
+          return
+        }
         // Zavřít modul - vrátit se na home
         window.location.href = '/'
         return
@@ -150,13 +185,68 @@ export default function MyAccountTile({
       }
 
       if (actionId === 'attachments') {
-        setActiveSectionId('attachments')
+        if (isDirty) {
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+          return
+        }
+        if (!user?.id || !user.id.trim() || user.id === 'new') {
+          toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+          return
+        }
+        setViewMode('attachments-manager')
+        setIsDirty(false)
+        return
+      }
+
+      // Attachments manager actions
+      if (viewMode === 'attachments-manager') {
+        if (actionId === 'close') {
+          // Zavřít attachments manager a vrátit se do edit mode
+          setViewMode('edit')
+          setActiveSectionId('detail')
+          setIsDirty(false)
+          return
+        }
+
+        const api = attachmentsManagerApiRef.current
+        if (!api) return
+
+        if (actionId === 'add') {
+          api.add()
+          return
+        }
+
+        if (actionId === 'view') {
+          api.view()
+          return
+        }
+
+        if (actionId === 'edit') {
+          api.edit()
+          return
+        }
+
+        if (actionId === 'save') {
+          await api.save()
+          return
+        }
+
+        if (actionId === 'attachmentsNewVersion') {
+          api.newVersion()
+          return
+        }
+
+        if (actionId === 'columnSettings') {
+          api.columnSettings()
+          return
+        }
+
         return
       }
     }
 
     onRegisterCommonActionHandler(handler)
-  }, [onRegisterCommonActionHandler, toast])
+  }, [onRegisterCommonActionHandler, toast, viewMode, isDirty, user, attachmentsManagerUi])
 
   if (loading) {
     return (
@@ -181,6 +271,25 @@ export default function MyAccountTile({
           <div style={{ padding: '2rem', textAlign: 'center' }}>Nepodařilo se načíst informace o uživateli.</div>
         </div>
       </div>
+    )
+  }
+
+  // Zobrazit attachments manager pokud je aktivní
+  if (viewMode === 'attachments-manager') {
+    return (
+      <AttachmentsManagerFrame
+        entityType="subjects"
+        entityId={user.id}
+        entityLabel={user.displayName ?? null}
+        canManage={true}
+        readOnlyReason={null}
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
+        }}
+        onManagerStateChange={(s) => {
+          setAttachmentsManagerUi(s)
+        }}
+      />
     )
   }
 
