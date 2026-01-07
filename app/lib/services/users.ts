@@ -247,6 +247,13 @@ export type SaveUserInput = {
   login?: string | null
   note?: string | null
 
+  // ADDRESS
+  street?: string | null
+  city?: string | null
+  zip?: string | null
+  houseNumber?: string | null
+  country?: string | null
+
   // ROLE + PERMISSIONS
   roleCode?: string | null
   permissionCodes?: string[]
