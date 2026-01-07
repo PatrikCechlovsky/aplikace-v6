@@ -156,17 +156,47 @@ export default function MyAccountTile({
     if (!onRegisterCommonActionHandler) return
 
     const handler = async (actionId: CommonActionId) => {
-      if (actionId === 'close') {
-        if (viewMode === 'attachments-manager') {
-          // Zavřít attachments manager a vrátit se do edit mode
-          setViewMode('edit')
-          setActiveSectionId('detail')
-          setIsDirty(false)
+      // Attachments manager actions
+      if (viewMode === 'attachments-manager') {
+        // Close necháme propadnout níž do společného CLOSE bloku
+        if (actionId === 'close') {
+          // žádný return - propadne do společného CLOSE bloku
+        } else {
+          const api = attachmentsManagerApiRef.current
+          if (!api) return
+
+          if (actionId === 'add') {
+            api.add()
+            return
+          }
+
+          if (actionId === 'view') {
+            api.view()
+            return
+          }
+
+          if (actionId === 'edit') {
+            api.edit()
+            return
+          }
+
+          if (actionId === 'save') {
+            await api.save()
+            return
+          }
+
+          if (actionId === 'attachmentsNewVersion') {
+            api.newVersion()
+            return
+          }
+
+          if (actionId === 'columnSettings') {
+            api.columnSettings()
+            return
+          }
+
           return
         }
-        // Zavřít modul - vrátit se na home
-        window.location.href = '/'
-        return
       }
 
       if (actionId === 'save') {
@@ -198,9 +228,15 @@ export default function MyAccountTile({
         return
       }
 
-      // Attachments manager actions
-      if (viewMode === 'attachments-manager') {
-        if (actionId === 'close') {
+      // CLOSE
+      if (actionId === 'close') {
+        const dirtyNow = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
+        if (dirtyNow) {
+          const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+          if (!ok) return
+        }
+
+        if (viewMode === 'attachments-manager') {
           // Zavřít attachments manager a vrátit se do edit mode
           setViewMode('edit')
           setActiveSectionId('detail')
@@ -208,39 +244,8 @@ export default function MyAccountTile({
           return
         }
 
-        const api = attachmentsManagerApiRef.current
-        if (!api) return
-
-        if (actionId === 'add') {
-          api.add()
-          return
-        }
-
-        if (actionId === 'view') {
-          api.view()
-          return
-        }
-
-        if (actionId === 'edit') {
-          api.edit()
-          return
-        }
-
-        if (actionId === 'save') {
-          await api.save()
-          return
-        }
-
-        if (actionId === 'attachmentsNewVersion') {
-          api.newVersion()
-          return
-        }
-
-        if (actionId === 'columnSettings') {
-          api.columnSettings()
-          return
-        }
-
+        // Zavřít modul - vrátit se na home
+        window.location.href = '/'
         return
       }
     }
