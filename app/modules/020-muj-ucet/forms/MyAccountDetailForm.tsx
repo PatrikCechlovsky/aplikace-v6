@@ -113,8 +113,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
       <div className="detail-form__section">
         <div className="detail-form__section-title">Osobní údaje</div>
 
-        {/* Řádek 1: Titul + Jméno (první sloupec) + Příjmení (druhý sloupec) */}
-        <div className="detail-form__grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+        {/* Řádek 1: Titul + Jméno (první sloupec, stejná šířka jako email) + Příjmení (druhý sloupec, stejná šířka jako telefon) */}
+        <div className="detail-form__grid detail-form__grid--narrow">
           {/* První sloupec: Titul + Jméno vedle sebe */}
           <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: '12px' }}>
             <div className="detail-form__field">
@@ -129,7 +129,9 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
             </div>
 
             <div className="detail-form__field">
-              <label className="detail-form__label">Jméno</label>
+              <label className="detail-form__label">
+                Jméno <span className="detail-form__required">*</span>
+              </label>
               <input
                 className="detail-form__input"
                 type="text"
@@ -142,7 +144,9 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
 
           {/* Druhý sloupec: Příjmení */}
           <div className="detail-form__field">
-            <label className="detail-form__label">Příjmení</label>
+            <label className="detail-form__label">
+              Příjmení <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -242,11 +246,11 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
             >
               <option value="">Žádné</option>
               <option value="email">E-mail</option>
-              <option value="phone">Telefon</option>
-              <option value="totp">Aplikace (TOTP)</option>
+              <option value="phone">SMS</option>
+              <option value="totp">Aplikace (potvrzení na mobilu)</option>
             </select>
             {val.twoFactorMethod === 'phone' && (
-              <div className="detail-form__hint">Telefon je povinný, pokud je vybráno ověření telefonem</div>
+              <div className="detail-form__hint">Telefon je povinný, pokud je vybráno ověření SMS</div>
             )}
           </div>
         </div>

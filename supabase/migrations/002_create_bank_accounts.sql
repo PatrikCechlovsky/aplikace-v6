@@ -65,11 +65,14 @@ CREATE POLICY "bank_accounts_select" ON public.bank_accounts
 CREATE POLICY "bank_accounts_insert" ON public.bank_accounts
   FOR INSERT
   WITH CHECK (
-    subject_id IN (
-      SELECT id FROM public.subjects
-      WHERE auth_user_id = auth.uid()
+    -- Vlastní účet (subject patří aktuálnímu uživateli)
+    EXISTS (
+      SELECT 1 FROM public.subjects s
+      WHERE s.id = bank_accounts.subject_id
+      AND s.auth_user_id = auth.uid()
     )
     OR
+    -- Účet subjektu, ke kterému má uživatel oprávnění
     EXISTS (
       SELECT 1 FROM public.subjects s
       WHERE s.id = bank_accounts.subject_id

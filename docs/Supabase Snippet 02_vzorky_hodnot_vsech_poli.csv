@@ -1,0 +1,951 @@
+schemat,tabulka,sloupec,identifikator_radku,hodnota_text
+public,app_admins,created_at,"(0,3)",2025-11-28 05:45:36.134433+00
+public,app_admins,note,"(0,3)",Hlavní admin aplikace
+public,app_admins,user_id,"(0,3)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_at,"(0,12)",2025-12-22 19:02:26.963532+00
+public,document_versions,created_at,"(0,13)",2025-12-22 16:02:40.24278+00
+public,document_versions,created_at,"(0,14)",2025-12-30 15:27:47.565847+00
+public,document_versions,created_at,"(0,23)",2025-12-29 19:37:15.672761+00
+public,document_versions,created_at,"(0,24)",2025-12-30 15:25:38.099672+00
+public,document_versions,created_at,"(0,25)",2025-12-30 15:26:13.335434+00
+public,document_versions,created_at,"(0,26)",2025-12-30 15:26:33.32215+00
+public,document_versions,created_at,"(0,27)",2025-12-30 15:26:46.244782+00
+public,document_versions,created_at,"(0,29)",2025-12-30 15:28:34.059229+00
+public,document_versions,created_at,"(1,1)",2025-12-30 15:28:42.572539+00
+public,document_versions,created_at,"(1,2)",2025-12-31 17:24:46.10708+00
+public,document_versions,created_at,"(1,3)",2025-12-31 20:01:07.746432+00
+public,document_versions,created_at,"(1,4)",2025-12-31 20:01:24.668095+00
+public,document_versions,created_at,"(1,5)",2025-12-31 20:04:14.781861+00
+public,document_versions,created_at,"(1,6)",2025-12-31 20:05:02.192055+00
+public,document_versions,created_at,"(1,7)",2025-12-31 20:30:34.086853+00
+public,document_versions,created_at,"(1,8)",2025-12-31 21:02:46.224176+00
+public,document_versions,created_at,"(1,9)",2025-12-31 21:03:01.681554+00
+public,document_versions,created_by,"(0,12)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,13)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,14)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,23)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,24)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,25)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,26)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,27)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(0,29)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,1)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,2)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,3)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,4)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,5)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,6)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,7)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,8)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,created_by,"(1,9)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,document_versions,description,"(0,12)",test new
+public,document_versions,description,"(0,13)",33
+public,document_versions,description,"(0,14)",",jhg,jhg,jhghjgluglk lglzigfliuzgziggiugš"
+public,document_versions,description,"(0,23)",33
+public,document_versions,description,"(0,24)",33
+public,document_versions,description,"(0,25)",33
+public,document_versions,description,"(0,26)",33
+public,document_versions,description,"(0,27)",33
+public,document_versions,description,"(0,29)",33
+public,document_versions,description,"(1,1)",33
+public,document_versions,description,"(1,2)",33
+public,document_versions,description,"(1,5)",oprava
+public,document_versions,description,"(1,6)",oprava
+public,document_versions,description,"(1,7)",oprava
+public,document_versions,description,"(1,8)",oprava
+public,document_versions,description,"(1,9)",oprava
+public,document_versions,document_id,"(0,12)",fbf06629-9e65-4445-9611-f2cc184d6029
+public,document_versions,document_id,"(0,13)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(0,14)",26bc1232-4205-490c-9e69-4c7142ade248
+public,document_versions,document_id,"(0,23)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(0,24)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(0,25)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(0,26)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(0,27)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(0,29)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(1,1)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(1,2)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,document_versions,document_id,"(1,3)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,document_versions,document_id,"(1,4)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,document_versions,document_id,"(1,5)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,document_versions,document_id,"(1,6)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,document_versions,document_id,"(1,7)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,document_versions,document_id,"(1,8)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,document_versions,document_id,"(1,9)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,document_versions,file_name,"(0,12)",Supabase Snippet Documents bucket access policies (3).csv
+public,document_versions,file_name,"(0,13)",e1-26562564-7dj.pdf
+public,document_versions,file_name,"(0,14)",Supabase Snippet 02_vzorky_hodnot_vsech_poli (1).csv
+public,document_versions,file_name,"(0,23)",permission_types_rows.csv
+public,document_versions,file_name,"(0,24)",faktura 892025.pdf
+public,document_versions,file_name,"(0,25)",documents_rows.csv
+public,document_versions,file_name,"(0,26)",subjects_rows.csv
+public,document_versions,file_name,"(0,27)",Supabase Snippet 02_vzorky_hodnot_vsech_poli (2).csv
+public,document_versions,file_name,"(0,29)",subjects_rows.csv
+public,document_versions,file_name,"(1,1)",subject_roles_rows (1).csv
+public,document_versions,file_name,"(1,2)",v008_subject_roles_rows_1_ (3).csv
+public,document_versions,file_name,"(1,3)",v008_subject_roles_rows_1_ (3).csv
+public,document_versions,file_name,"(1,4)",Supabase Snippet 02_vzorky_hodnot_vsech_poli (3).csv
+public,document_versions,file_name,"(1,5)",v008_subject_roles_rows_1_ (2).csv
+public,document_versions,file_name,"(1,6)",v002_permission_types_rows.csv
+public,document_versions,file_name,"(1,7)",document_versions_rows.csv
+public,document_versions,file_name,"(1,8)",v005_document_versions_rows.csv
+public,document_versions,file_name,"(1,9)",documents_rows (1).csv
+public,document_versions,file_path,"(0,12)",user/fd2bcfac-6ca3-40b6-a472-de9677499ea6/fbf06629-9e65-4445-9611-f2cc184d6029/v001_Supabase_Snippet_Documents_bucket_access_policies_3_.csv
+public,document_versions,file_path,"(0,13)",user/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v001_e1-26562564-7dj.pdf
+public,document_versions,file_path,"(0,14)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/26bc1232-4205-490c-9e69-4c7142ade248/v001_Supabase_Snippet_02_vzorky_hodnot_vsech_poli_1_.csv
+public,document_versions,file_path,"(0,23)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v002_permission_types_rows.csv
+public,document_versions,file_path,"(0,24)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v003_faktura_892025.pdf
+public,document_versions,file_path,"(0,25)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v004_documents_rows.csv
+public,document_versions,file_path,"(0,26)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v005_subjects_rows.csv
+public,document_versions,file_path,"(0,27)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v006_Supabase_Snippet_02_vzorky_hodnot_vsech_poli_2_.csv
+public,document_versions,file_path,"(0,29)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v007_subjects_rows.csv
+public,document_versions,file_path,"(1,1)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v008_subject_roles_rows_1_.csv
+public,document_versions,file_path,"(1,2)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v009_v008_subject_roles_rows_1__3_.csv
+public,document_versions,file_path,"(1,3)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v001_v008_subject_roles_rows_1__3_.csv
+public,document_versions,file_path,"(1,4)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v002_Supabase_Snippet_02_vzorky_hodnot_vsech_poli_3_.csv
+public,document_versions,file_path,"(1,5)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v003_v008_subject_roles_rows_1__2_.csv
+public,document_versions,file_path,"(1,6)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v004_v002_permission_types_rows.csv
+public,document_versions,file_path,"(1,7)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v005_document_versions_rows.csv
+public,document_versions,file_path,"(1,8)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v006_v005_document_versions_rows.csv
+public,document_versions,file_path,"(1,9)",subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v007_documents_rows_1_.csv
+public,document_versions,file_size,"(0,12)",221
+public,document_versions,file_size,"(0,13)",283398
+public,document_versions,file_size,"(0,14)",28831
+public,document_versions,file_size,"(0,23)",711
+public,document_versions,file_size,"(0,24)",159466
+public,document_versions,file_size,"(0,25)",489
+public,document_versions,file_size,"(0,26)",1051
+public,document_versions,file_size,"(0,27)",29036
+public,document_versions,file_size,"(0,29)",1051
+public,document_versions,file_size,"(1,1)",108
+public,document_versions,file_size,"(1,2)",108
+public,document_versions,file_size,"(1,3)",108
+public,document_versions,file_size,"(1,4)",37632
+public,document_versions,file_size,"(1,5)",108
+public,document_versions,file_size,"(1,6)",711
+public,document_versions,file_size,"(1,7)",5400
+public,document_versions,file_size,"(1,8)",5400
+public,document_versions,file_size,"(1,9)",1046
+public,document_versions,id,"(0,12)",0fe880f9-251a-495c-8a32-f8a036f83a4c
+public,document_versions,id,"(0,13)",296f5cf4-c76b-4b94-a470-cbb069e0c8f9
+public,document_versions,id,"(0,14)",cc0036c5-f995-4154-82c4-d5ce2d06e3e0
+public,document_versions,id,"(0,23)",a44b5887-2f04-4b9c-bdaa-92eb085e936d
+public,document_versions,id,"(0,24)",1a3347af-db20-4697-a3f5-a4ed1ee8161b
+public,document_versions,id,"(0,25)",69f03624-2014-4a18-aeeb-09f80cb03da6
+public,document_versions,id,"(0,26)",965b57b6-ace6-4573-88d2-9516b82270a6
+public,document_versions,id,"(0,27)",cad46f8f-8125-4b2d-bfca-2ab27e7631e6
+public,document_versions,id,"(0,29)",5dcfc48e-c7f7-4bd9-b201-a38b7da76393
+public,document_versions,id,"(1,1)",7dee383e-3980-43fa-911e-4914b97cc691
+public,document_versions,id,"(1,2)",85630aa5-db63-4cd6-bfa5-c1ad61e19ea0
+public,document_versions,id,"(1,3)",da697852-b099-451a-ba90-6e7d92950016
+public,document_versions,id,"(1,4)",a3d5297a-b990-437d-acff-ff87800c8707
+public,document_versions,id,"(1,5)",3217a691-bfcf-4433-8404-119de799e129
+public,document_versions,id,"(1,6)",9a394d76-6a05-4188-953e-a959cb33daa1
+public,document_versions,id,"(1,7)",97a568a5-04fe-411b-aab9-c6d90c20981b
+public,document_versions,id,"(1,8)",687f5bff-6d63-4a3f-b3dc-6fa36ddbdd2b
+public,document_versions,id,"(1,9)",ba50fa5a-d875-499d-8dd6-b706b5695dfc
+public,document_versions,is_archived,"(0,12)",false
+public,document_versions,is_archived,"(0,13)",false
+public,document_versions,is_archived,"(0,14)",false
+public,document_versions,is_archived,"(0,23)",false
+public,document_versions,is_archived,"(0,24)",false
+public,document_versions,is_archived,"(0,25)",false
+public,document_versions,is_archived,"(0,26)",false
+public,document_versions,is_archived,"(0,27)",false
+public,document_versions,is_archived,"(0,29)",false
+public,document_versions,is_archived,"(1,1)",false
+public,document_versions,is_archived,"(1,2)",false
+public,document_versions,is_archived,"(1,3)",false
+public,document_versions,is_archived,"(1,4)",false
+public,document_versions,is_archived,"(1,5)",false
+public,document_versions,is_archived,"(1,6)",false
+public,document_versions,is_archived,"(1,7)",false
+public,document_versions,is_archived,"(1,8)",false
+public,document_versions,is_archived,"(1,9)",false
+public,document_versions,mime_type,"(0,12)",text/csv
+public,document_versions,mime_type,"(0,13)",application/pdf
+public,document_versions,mime_type,"(0,14)",text/csv
+public,document_versions,mime_type,"(0,23)",text/csv
+public,document_versions,mime_type,"(0,24)",application/pdf
+public,document_versions,mime_type,"(0,25)",text/csv
+public,document_versions,mime_type,"(0,26)",text/csv
+public,document_versions,mime_type,"(0,27)",text/csv
+public,document_versions,mime_type,"(0,29)",text/csv
+public,document_versions,mime_type,"(1,1)",text/csv
+public,document_versions,mime_type,"(1,2)",text/csv
+public,document_versions,mime_type,"(1,3)",text/csv
+public,document_versions,mime_type,"(1,4)",text/csv
+public,document_versions,mime_type,"(1,5)",text/csv
+public,document_versions,mime_type,"(1,6)",text/csv
+public,document_versions,mime_type,"(1,7)",text/csv
+public,document_versions,mime_type,"(1,8)",text/csv
+public,document_versions,mime_type,"(1,9)",text/csv
+public,document_versions,title,"(0,12)",test2
+public,document_versions,title,"(0,13)",test34
+public,document_versions,title,"(0,14)","sgmhgtsfmjkhsf lziugfskf kj,hfgjkhgljglkjgl"
+public,document_versions,title,"(0,23)",test34
+public,document_versions,title,"(0,24)",test34
+public,document_versions,title,"(0,25)",test34
+public,document_versions,title,"(0,26)",test34
+public,document_versions,title,"(0,27)",test34
+public,document_versions,title,"(0,29)",test34
+public,document_versions,title,"(1,1)",test34
+public,document_versions,title,"(1,2)",test355
+public,document_versions,title,"(1,3)",seznam
+public,document_versions,title,"(1,4)",seznam
+public,document_versions,title,"(1,5)",seznam
+public,document_versions,title,"(1,6)",seznam
+public,document_versions,title,"(1,7)",seznam
+public,document_versions,title,"(1,8)",seznam
+public,document_versions,title,"(1,9)",seznam
+public,document_versions,updated_at,"(0,14)",2025-12-31 20:28:58.443535+00
+public,document_versions,updated_at,"(0,23)",2025-12-31 19:09:36.490705+00
+public,document_versions,updated_at,"(0,24)",2025-12-31 19:09:36.490705+00
+public,document_versions,updated_at,"(0,25)",2025-12-31 19:09:36.490705+00
+public,document_versions,updated_at,"(0,26)",2025-12-31 19:09:36.490705+00
+public,document_versions,updated_at,"(0,27)",2025-12-31 19:09:36.490705+00
+public,document_versions,updated_at,"(0,29)",2025-12-31 19:09:36.490705+00
+public,document_versions,updated_at,"(1,1)",2025-12-31 19:09:36.490705+00
+public,document_versions,updated_at,"(1,2)",2025-12-31 19:09:36.490705+00
+public,document_versions,version_number,"(0,12)",1
+public,document_versions,version_number,"(0,13)",1
+public,document_versions,version_number,"(0,14)",1
+public,document_versions,version_number,"(0,23)",2
+public,document_versions,version_number,"(0,24)",3
+public,document_versions,version_number,"(0,25)",4
+public,document_versions,version_number,"(0,26)",5
+public,document_versions,version_number,"(0,27)",6
+public,document_versions,version_number,"(0,29)",7
+public,document_versions,version_number,"(1,1)",8
+public,document_versions,version_number,"(1,2)",9
+public,document_versions,version_number,"(1,3)",1
+public,document_versions,version_number,"(1,4)",2
+public,document_versions,version_number,"(1,5)",3
+public,document_versions,version_number,"(1,6)",4
+public,document_versions,version_number,"(1,7)",5
+public,document_versions,version_number,"(1,8)",6
+public,document_versions,version_number,"(1,9)",7
+public,documents,created_at,"(0,19)",2025-12-22 19:02:26.466348+00
+public,documents,created_at,"(0,27)",2025-12-31 20:01:06.942883+00
+public,documents,created_at,"(0,28)",2025-12-30 15:27:47.040375+00
+public,documents,created_at,"(0,29)",2025-12-22 16:02:39.42951+00
+public,documents,created_by,"(0,19)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,created_by,"(0,27)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,created_by,"(0,28)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,created_by,"(0,29)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,description,"(0,19)",test new
+public,documents,description,"(0,27)",oprava
+public,documents,description,"(0,28)",",jhg,jhg,jhghjgluglk lglzigfliuzgziggiugš"
+public,documents,description,"(0,29)",mdjsgflsdg sdliugweiugeqwl
+public,documents,entity_id,"(0,19)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,entity_id,"(0,27)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,entity_id,"(0,28)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,entity_id,"(0,29)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,entity_type,"(0,19)",subject
+public,documents,entity_type,"(0,27)",subject
+public,documents,entity_type,"(0,28)",subject
+public,documents,entity_type,"(0,29)",subject
+public,documents,id,"(0,19)",fbf06629-9e65-4445-9611-f2cc184d6029
+public,documents,id,"(0,27)",7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,documents,id,"(0,28)",26bc1232-4205-490c-9e69-4c7142ade248
+public,documents,id,"(0,29)",491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,documents,is_archived,"(0,19)",false
+public,documents,is_archived,"(0,27)",false
+public,documents,is_archived,"(0,28)",false
+public,documents,is_archived,"(0,29)",false
+public,documents,title,"(0,19)",test2
+public,documents,title,"(0,27)",seznam
+public,documents,title,"(0,28)","sgmhgtsfmjkhsf lziugfskf kj,hfgjkhgljglkjgl"
+public,documents,title,"(0,29)",abecední seznam uživatelů
+public,documents,updated_at,"(0,19)",2025-12-29 19:33:27.684572+00
+public,documents,updated_at,"(0,27)",2025-12-31 20:02:03.042699+00
+public,documents,updated_at,"(0,28)",2025-12-31 20:28:24.729725+00
+public,documents,updated_at,"(0,29)",2026-01-01 00:05:52.225729+00
+public,documents,updated_by,"(0,27)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,documents,updated_by,"(0,29)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,payment_types,active,"(0,1)",true
+public,payment_types,active,"(0,2)",true
+public,payment_types,active,"(0,3)",true
+public,payment_types,active,"(0,4)",true
+public,payment_types,active,"(0,5)",true
+public,payment_types,active,"(0,6)",true
+public,payment_types,active,"(0,7)",true
+public,payment_types,code,"(0,1)",prichozi_planovana
+public,payment_types,code,"(0,2)",prichozi_pravidelna
+public,payment_types,code,"(0,3)",prichozi_neplanovana
+public,payment_types,code,"(0,4)",odchozi_planovana
+public,payment_types,code,"(0,5)",odchozi_pravidelna
+public,payment_types,code,"(0,6)",odchozi_neplanovana
+public,payment_types,code,"(0,7)",vracena_platba
+public,payment_types,description,"(0,1)",příjem
+public,payment_types,description,"(0,2)",příjem
+public,payment_types,description,"(0,3)",příjem
+public,payment_types,description,"(0,4)",výdaj
+public,payment_types,description,"(0,5)",výdaj
+public,payment_types,description,"(0,6)",výdaj
+public,payment_types,description,"(0,7)",výdaj
+public,payment_types,name,"(0,1)",příchozí plánovaná
+public,payment_types,name,"(0,2)",příchozí pravidelná
+public,payment_types,name,"(0,3)",příchozí neplánovaná
+public,payment_types,name,"(0,4)",odchozí plánovaná
+public,payment_types,name,"(0,5)",odchozí pravidelná
+public,payment_types,name,"(0,6)",odchozí neplánovaná
+public,payment_types,name,"(0,7)",vrácená platba
+public,payment_types,order_index,"(0,1)",1
+public,payment_types,order_index,"(0,2)",2
+public,payment_types,order_index,"(0,3)",3
+public,payment_types,order_index,"(0,4)",4
+public,payment_types,order_index,"(0,5)",5
+public,payment_types,order_index,"(0,6)",6
+public,payment_types,order_index,"(0,7)",7
+public,permission_types,active,"(0,1)",true
+public,permission_types,active,"(0,2)",true
+public,permission_types,active,"(0,3)",true
+public,permission_types,active,"(0,4)",true
+public,permission_types,active,"(0,5)",true
+public,permission_types,active,"(0,6)",true
+public,permission_types,active,"(0,7)",true
+public,permission_types,code,"(0,1)",admin_full
+public,permission_types,code,"(0,2)",manage_full
+public,permission_types,code,"(0,3)",manage_limited
+public,permission_types,code,"(0,4)",finance_manage
+public,permission_types,code,"(0,5)",finance_read
+public,permission_types,code,"(0,6)",read_full
+public,permission_types,code,"(0,7)",read_limited
+public,permission_types,description,"(0,1)",plná práva na vše (systémový administrátor)
+public,permission_types,description,"(0,2)","může vytvářet, upravovat, mazat, nastavovat"
+public,permission_types,description,"(0,3)","může upravovat jen některé věci, omezené řízení"
+public,permission_types,description,"(0,4)","může upravovat finanční data, vytvářet, měnit"
+public,permission_types,description,"(0,5)","může číst všechny finanční moduly (platby, účtování, přehledy)"
+public,permission_types,description,"(0,6)",může číst vše ve všech modulech
+public,permission_types,description,"(0,7)",může číst jen některé moduly nebo čast dat
+public,permission_types,name,"(0,1)",Administátor
+public,permission_types,name,"(0,2)",úplné řízení
+public,permission_types,name,"(0,3)",částčné řízení
+public,permission_types,name,"(0,4)",Editovat finance
+public,permission_types,name,"(0,5)",Čist finance
+public,permission_types,name,"(0,6)",úplné čtení
+public,permission_types,name,"(0,7)",částečné čtení
+public,permission_types,order_index,"(0,1)",1
+public,permission_types,order_index,"(0,2)",2
+public,permission_types,order_index,"(0,3)",3
+public,permission_types,order_index,"(0,4)",4
+public,permission_types,order_index,"(0,5)",5
+public,permission_types,order_index,"(0,6)",6
+public,permission_types,order_index,"(0,7)",7
+public,property_types,active,"(0,10)",true
+public,property_types,active,"(0,11)",true
+public,property_types,active,"(0,12)",true
+public,property_types,active,"(0,7)",true
+public,property_types,active,"(0,8)",true
+public,property_types,active,"(0,9)",true
+public,property_types,code,"(0,10)",pozemek
+public,property_types,code,"(0,11)",admin_budova
+public,property_types,code,"(0,12)",jiny_objekt
+public,property_types,code,"(0,7)",rodinny_dum
+public,property_types,code,"(0,8)",bytovy_dum
+public,property_types,code,"(0,9)",prumyslovy_objekt
+public,property_types,color,"(0,10)",#935116
+public,property_types,color,"(0,11)",#F5B041
+public,property_types,color,"(0,12)",#D7CCC8
+public,property_types,color,"(0,7)",#A564AD
+public,property_types,color,"(0,8)",#3498DB
+public,property_types,color,"(0,9)",#1ABC9C
+public,property_types,created_at,"(0,10)",2025-12-08 12:11:41.884233+00
+public,property_types,created_at,"(0,11)",2025-12-08 12:11:41.884233+00
+public,property_types,created_at,"(0,12)",2025-12-08 12:11:41.884233+00
+public,property_types,created_at,"(0,7)",2025-12-08 12:11:41.884233+00
+public,property_types,created_at,"(0,8)",2025-12-08 12:11:41.884233+00
+public,property_types,created_at,"(0,9)",2025-12-08 12:11:41.884233+00
+public,property_types,icon,"(0,10)",map
+public,property_types,icon,"(0,11)",briefcase
+public,property_types,icon,"(0,12)",grid
+public,property_types,icon,"(0,7)",home
+public,property_types,icon,"(0,8)",building-2
+public,property_types,icon,"(0,9)",warehouse
+public,property_types,id,"(0,10)",c9e43cea-0ec2-447d-9683-ce9b4c15f2b8
+public,property_types,id,"(0,11)",19fce34e-802d-4697-9ff7-1b747b3fde8d
+public,property_types,id,"(0,12)",d54c05e5-f8fc-4d06-9ec5-b2ef36c01dca
+public,property_types,id,"(0,7)",69642a59-abf4-4c3d-aea3-cb62ddf18912
+public,property_types,id,"(0,8)",ccf37a92-6807-4701-8132-9891e7e4671a
+public,property_types,id,"(0,9)",1e60cfc8-001a-44ba-9d90-c9dbe784b7b5
+public,property_types,name,"(0,10)",Pozemek
+public,property_types,name,"(0,11)",Administrativní budova
+public,property_types,name,"(0,12)",Jiný objekt
+public,property_types,name,"(0,7)",Rodinný dům
+public,property_types,name,"(0,8)",Bytový dům
+public,property_types,name,"(0,9)",Průmyslový objekt
+public,property_types,order_index,"(0,10)",6
+public,property_types,order_index,"(0,11)",4
+public,property_types,order_index,"(0,12)",5
+public,property_types,order_index,"(0,7)",1
+public,property_types,order_index,"(0,8)",2
+public,property_types,order_index,"(0,9)",3
+public,property_types,updated_at,"(0,10)",2025-12-08 12:11:41.884233+00
+public,property_types,updated_at,"(0,11)",2025-12-08 12:11:41.884233+00
+public,property_types,updated_at,"(0,12)",2025-12-08 12:11:41.884233+00
+public,property_types,updated_at,"(0,7)",2025-12-08 12:11:41.884233+00
+public,property_types,updated_at,"(0,8)",2025-12-08 12:11:41.884233+00
+public,property_types,updated_at,"(0,9)",2025-12-08 12:11:41.884233+00
+public,role_types,active,"(0,19)",true
+public,role_types,active,"(0,20)",true
+public,role_types,active,"(0,24)",true
+public,role_types,active,"(0,25)",true
+public,role_types,active,"(0,26)",true
+public,role_types,active,"(0,27)",true
+public,role_types,active,"(0,28)",true
+public,role_types,active,"(0,29)",true
+public,role_types,code,"(0,19)",admin
+public,role_types,code,"(0,20)",manager
+public,role_types,code,"(0,24)",najemnik
+public,role_types,code,"(0,25)",udrzba
+public,role_types,code,"(0,26)",user
+public,role_types,code,"(0,27)",pronajimatel
+public,role_types,code,"(0,28)",seting
+public,role_types,code,"(0,29)",calculator
+public,role_types,color,"(0,19)",#f4d35e
+public,role_types,color,"(0,20)",#e05570
+public,role_types,color,"(0,24)",#1e6fff
+public,role_types,color,"(0,25)",#d63ea5
+public,role_types,color,"(0,26)",#6b7280
+public,role_types,color,"(0,27)",#1fb086
+public,role_types,color,"(0,28)",#95AA56
+public,role_types,color,"(0,29)",#3498DB
+public,role_types,name,"(0,19)",Administrátor
+public,role_types,name,"(0,20)",Manager
+public,role_types,name,"(0,24)",Nájemník
+public,role_types,name,"(0,25)",Údržbář
+public,role_types,name,"(0,26)",Uživatel
+public,role_types,name,"(0,27)",Pronajímatel
+public,role_types,name,"(0,28)",Správce
+public,role_types,name,"(0,29)",Účetní
+public,role_types,order_index,"(0,19)",1
+public,role_types,order_index,"(0,20)",3
+public,role_types,order_index,"(0,24)",6
+public,role_types,order_index,"(0,25)",7
+public,role_types,order_index,"(0,26)",8
+public,role_types,order_index,"(0,27)",2
+public,role_types,order_index,"(0,28)",4
+public,role_types,order_index,"(0,29)",5
+public,subject_invites,created_at,"(0,6)",2025-12-22 18:40:15.678949+00
+public,subject_invites,created_at,"(0,7)",2025-12-26 19:56:42.608061+00
+public,subject_invites,created_at,"(0,8)",2026-01-04 08:09:12.659163+00
+public,subject_invites,created_at,"(0,9)",2026-01-04 08:14:54.28701+00
+public,subject_invites,display_name,"(0,6)",FISH-COM
+public,subject_invites,display_name,"(0,7)",Patizonan
+public,subject_invites,display_name,"(0,8)",je to nové
+public,subject_invites,display_name,"(0,9)",piskot
+public,subject_invites,email,"(0,6)",patrik.cechlovsky@fish-com.cz
+public,subject_invites,expires_at,"(0,6)",2025-12-29 18:40:15.678949+00
+public,subject_invites,expires_at,"(0,7)",2026-01-02 19:56:42.608061+00
+public,subject_invites,expires_at,"(0,8)",2026-01-11 08:09:12.659163+00
+public,subject_invites,expires_at,"(0,9)",2026-01-11 08:14:54.28701+00
+public,subject_invites,id,"(0,6)",271f1c5a-46eb-418d-98c1-a008bf2b8432
+public,subject_invites,id,"(0,7)",59b03ec4-52bc-41f3-a015-7f155991a0c9
+public,subject_invites,id,"(0,8)",45bda23d-14bc-43b4-a7f6-6f1eddf88c63
+public,subject_invites,id,"(0,9)",1738069e-14f6-4412-bbc9-789df74bbc8f
+public,subject_invites,invite_mode,"(0,6)",new
+public,subject_invites,invite_mode,"(0,7)",existing
+public,subject_invites,invite_mode,"(0,8)",existing
+public,subject_invites,invite_mode,"(0,9)",existing
+public,subject_invites,note,"(0,7)",Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).
+public,subject_invites,note,"(0,8)",Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).
+public,subject_invites,note,"(0,9)",Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).
+public,subject_invites,role_code,"(0,6)",pronajimatel
+public,subject_invites,role_code,"(0,7)",pronajimatel
+public,subject_invites,role_code,"(0,8)",manager
+public,subject_invites,role_code,"(0,9)",user
+public,subject_invites,status,"(0,6)",pending
+public,subject_invites,status,"(0,7)",pending
+public,subject_invites,status,"(0,8)",pending
+public,subject_invites,status,"(0,9)",pending
+public,subject_invites,subject_id,"(0,6)",45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,subject_invites,subject_id,"(0,7)",7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,subject_invites,subject_id,"(0,8)",91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,subject_invites,subject_id,"(0,9)",c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,subject_permissions,permission_code,"(0,3)",admin_full
+public,subject_permissions,permission_code,"(0,7)",manage_full
+public,subject_permissions,permission_code,"(0,8)",manage_full
+public,subject_permissions,permission_code,"(0,9)",read_limited
+public,subject_permissions,subject_id,"(0,3)",f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,subject_permissions,subject_id,"(0,7)",7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,subject_permissions,subject_id,"(0,8)",91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,subject_permissions,subject_id,"(0,9)",c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,subject_roles,role_code,"(0,15)",admin
+public,subject_roles,role_code,"(0,21)",pronajimatel
+public,subject_roles,role_code,"(0,22)",manager
+public,subject_roles,role_code,"(0,23)",user
+public,subject_roles,role_code,"(0,4)",user
+public,subject_roles,role_code,"(0,6)",pronajimatel
+public,subject_roles,subject_id,"(0,15)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,subject_roles,subject_id,"(0,21)",7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,subject_roles,subject_id,"(0,22)",91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,subject_roles,subject_id,"(0,23)",c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,subject_roles,subject_id,"(0,4)",45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,subject_roles,subject_id,"(0,6)",f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,subject_types,active,"(0,25)",true
+public,subject_types,active,"(0,34)",true
+public,subject_types,active,"(0,36)",true
+public,subject_types,active,"(0,37)",true
+public,subject_types,active,"(0,38)",true
+public,subject_types,active,"(0,42)",true
+public,subject_types,code,"(0,25)",osvc
+public,subject_types,code,"(0,34)",firma
+public,subject_types,code,"(0,36)",zastupce
+public,subject_types,code,"(0,37)",spolek
+public,subject_types,code,"(0,38)",statni
+public,subject_types,code,"(0,42)",osoba
+public,subject_types,color,"(0,25)",#F4D03F
+public,subject_types,color,"(0,34)",#A564AD
+public,subject_types,color,"(0,36)",#E05570
+public,subject_types,color,"(0,37)",#95AA56
+public,subject_types,color,"(0,38)",#1E8449
+public,subject_types,color,"(0,42)",#3498DB
+public,subject_types,description,"(0,42)",osoba bez IČ
+public,subject_types,icon,"(0,42)",user
+public,subject_types,name,"(0,25)",OSVČ
+public,subject_types,name,"(0,34)",Firma
+public,subject_types,name,"(0,36)",Zástupce jiného subjektu
+public,subject_types,name,"(0,37)",Spolek / SVJ
+public,subject_types,name,"(0,38)",Státní instituce
+public,subject_types,name,"(0,42)",Fyzická osoba
+public,subject_types,order_index,"(0,25)",2
+public,subject_types,order_index,"(0,34)",3
+public,subject_types,order_index,"(0,36)",6
+public,subject_types,order_index,"(0,37)",4
+public,subject_types,order_index,"(0,38)",5
+public,subject_types,order_index,"(0,42)",1
+public,subject_types,sort_order,"(0,25)",2
+public,subject_types,sort_order,"(0,34)",3
+public,subject_types,sort_order,"(0,36)",5
+public,subject_types,sort_order,"(0,37)",4
+public,subject_types,sort_order,"(0,38)",6
+public,subject_types,sort_order,"(0,42)",1
+public,subjects,created_at,"(0,21)",2025-12-22 18:40:15.435353+00
+public,subjects,created_at,"(0,23)",2025-12-15 20:51:06.712132+00
+public,subjects,created_at,"(0,32)",2025-12-16 07:47:26.728831+00
+public,subjects,created_at,"(0,43)",2025-12-26 19:35:18.58049+00
+public,subjects,created_at,"(0,44)",2026-01-04 08:07:12.45205+00
+public,subjects,created_at,"(0,45)",2026-01-04 08:13:44.397088+00
+public,subjects,display_name,"(0,21)",FISH-COM
+public,subjects,display_name,"(0,23)",Patrik test
+public,subjects,display_name,"(0,32)",Páťa
+public,subjects,display_name,"(0,43)",Patizonan
+public,subjects,display_name,"(0,44)",je to nové
+public,subjects,display_name,"(0,45)",piskot
+public,subjects,email,"(0,21)",patrik.cechlovsky@fish-com.cz
+public,subjects,email,"(0,23)",admin@local.test
+public,subjects,email,"(0,32)",patrik.cechlovsky@centrum.cz
+public,subjects,email,"(0,43)",patozonan@gmail.com
+public,subjects,email,"(0,44)","info@fish-com,cz"
+public,subjects,email,"(0,45)",piskozku@usmej.se
+public,subjects,first_login_at,"(0,32)",2025-12-22 22:35:52.977958+00
+public,subjects,first_name,"(0,32)",Patrik
+public,subjects,id,"(0,21)",45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,subjects,id,"(0,23)",f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,subjects,id,"(0,32)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,subjects,id,"(0,43)",7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,subjects,id,"(0,44)",91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,subjects,id,"(0,45)",c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,subjects,is_archived,"(0,21)",false
+public,subjects,is_archived,"(0,23)",false
+public,subjects,is_archived,"(0,32)",false
+public,subjects,is_archived,"(0,43)",false
+public,subjects,is_archived,"(0,44)",false
+public,subjects,is_archived,"(0,45)",false
+public,subjects,last_name,"(0,32)",Čechlovský
+public,subjects,origin_entity,"(0,23)",user
+public,subjects,origin_module,"(0,21)",010
+public,subjects,origin_module,"(0,23)",010
+public,subjects,origin_module,"(0,32)",010
+public,subjects,origin_module,"(0,43)",010
+public,subjects,origin_module,"(0,44)",010
+public,subjects,origin_module,"(0,45)",010
+public,subjects,phone,"(0,23)",+420700000001
+public,subjects,phone,"(0,32)",+420608973730
+public,subjects,subject_type,"(0,21)",osoba
+public,subjects,subject_type,"(0,23)",osoba
+public,subjects,subject_type,"(0,32)",osoba
+public,subjects,subject_type,"(0,43)",osoba
+public,subjects,subject_type,"(0,44)",osoba
+public,subjects,subject_type,"(0,45)",osoba
+public,subjects,updated_at,"(0,21)",2025-12-25 19:35:07.049334+00
+public,subjects,updated_at,"(0,23)",2025-12-25 19:38:08.339706+00
+public,subjects,updated_at,"(0,32)",2025-12-26 08:13:50.090762+00
+public,subjects,updated_at,"(0,43)",2025-12-26 19:56:22.144745+00
+public,subjects,updated_at,"(0,44)",2026-01-04 08:07:12.45205+00
+public,subjects,updated_at,"(0,45)",2026-01-04 08:13:44.397088+00
+public,unit_types,active,"(0,10)",true
+public,unit_types,active,"(0,11)",true
+public,unit_types,active,"(0,12)",true
+public,unit_types,active,"(0,13)",true
+public,unit_types,active,"(0,14)",true
+public,unit_types,active,"(0,15)",true
+public,unit_types,active,"(0,16)",true
+public,unit_types,active,"(0,17)",true
+public,unit_types,active,"(0,18)",true
+public,unit_types,code,"(0,10)",byt
+public,unit_types,code,"(0,11)",kancelar
+public,unit_types,code,"(0,12)",obchod
+public,unit_types,code,"(0,13)",puda
+public,unit_types,code,"(0,14)",sklep
+public,unit_types,code,"(0,15)",garaz
+public,unit_types,code,"(0,16)",sklad
+public,unit_types,code,"(0,17)",zahrada
+public,unit_types,code,"(0,18)",jina_jednotka
+public,unit_types,color,"(0,10)",#3498DB
+public,unit_types,color,"(0,11)",#A564AD
+public,unit_types,color,"(0,12)",#D7CCC8
+public,unit_types,color,"(0,13)",#935116
+public,unit_types,color,"(0,14)",#566573
+public,unit_types,color,"(0,15)",#95AA56
+public,unit_types,color,"(0,16)",#E74C3C
+public,unit_types,color,"(0,17)",#1E8449
+public,unit_types,color,"(0,18)",#F9F635
+public,unit_types,icon,"(0,10)",home
+public,unit_types,icon,"(0,11)",briefcase
+public,unit_types,icon,"(0,12)",shopping-cart
+public,unit_types,icon,"(0,14)",archive
+public,unit_types,icon,"(0,15)",car
+public,unit_types,icon,"(0,16)",warehouse
+public,unit_types,icon,"(0,18)",grid
+public,unit_types,name,"(0,10)",Byt
+public,unit_types,name,"(0,11)",Kancelář
+public,unit_types,name,"(0,12)",Obchodní prostor
+public,unit_types,name,"(0,13)",Půda
+public,unit_types,name,"(0,14)",Sklep
+public,unit_types,name,"(0,15)",Garáž/Parking
+public,unit_types,name,"(0,16)",Sklad
+public,unit_types,name,"(0,17)",Zahrada
+public,unit_types,name,"(0,18)",Jiná jednotka
+public,unit_types,order_index,"(0,10)",1
+public,unit_types,order_index,"(0,11)",2
+public,unit_types,order_index,"(0,12)",3
+public,unit_types,order_index,"(0,13)",7
+public,unit_types,order_index,"(0,14)",6
+public,unit_types,order_index,"(0,15)",5
+public,unit_types,order_index,"(0,16)",4
+public,unit_types,order_index,"(0,17)",8
+public,unit_types,order_index,"(0,18)",9
+public,user_theme_settings,id,"(0,4)",0c81029d-b270-43b8-a97c-4ab6ecac99d0
+public,user_theme_settings,theme_accent,"(0,4)",neutral
+public,user_theme_settings,theme_mode,"(0,4)",auto
+public,user_theme_settings,updated_at,"(0,4)",2025-12-07 16:22:17.08+00
+public,user_theme_settings,user_id,"(0,4)",fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,created_at,1,2025-12-22 19:02:26.466348+00
+public,v_document_latest_version,created_at,2,2025-12-31 20:01:06.942883+00
+public,v_document_latest_version,created_at,3,2025-12-30 15:27:47.040375+00
+public,v_document_latest_version,created_at,4,2025-12-22 16:02:39.42951+00
+public,v_document_latest_version,created_by,1,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,created_by,2,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,created_by,3,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,created_by,4,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,description,1,test new
+public,v_document_latest_version,description,2,oprava
+public,v_document_latest_version,description,3,",jhg,jhg,jhghjgluglk lglzigfliuzgziggiugš"
+public,v_document_latest_version,description,4,mdjsgflsdg sdliugweiugeqwl
+public,v_document_latest_version,entity_id,1,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,entity_id,2,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,entity_id,3,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,entity_id,4,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,entity_type,1,subject
+public,v_document_latest_version,entity_type,2,subject
+public,v_document_latest_version,entity_type,3,subject
+public,v_document_latest_version,entity_type,4,subject
+public,v_document_latest_version,file_name,1,Supabase Snippet Documents bucket access policies (3).csv
+public,v_document_latest_version,file_name,2,documents_rows (1).csv
+public,v_document_latest_version,file_name,3,Supabase Snippet 02_vzorky_hodnot_vsech_poli (1).csv
+public,v_document_latest_version,file_name,4,v008_subject_roles_rows_1_ (3).csv
+public,v_document_latest_version,file_path,1,user/fd2bcfac-6ca3-40b6-a472-de9677499ea6/fbf06629-9e65-4445-9611-f2cc184d6029/v001_Supabase_Snippet_Documents_bucket_access_policies_3_.csv
+public,v_document_latest_version,file_path,2,subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v007_documents_rows_1_.csv
+public,v_document_latest_version,file_path,3,subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/26bc1232-4205-490c-9e69-4c7142ade248/v001_Supabase_Snippet_02_vzorky_hodnot_vsech_poli_1_.csv
+public,v_document_latest_version,file_path,4,subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v009_v008_subject_roles_rows_1__3_.csv
+public,v_document_latest_version,file_size,1,221
+public,v_document_latest_version,file_size,2,1046
+public,v_document_latest_version,file_size,3,28831
+public,v_document_latest_version,file_size,4,108
+public,v_document_latest_version,id,1,fbf06629-9e65-4445-9611-f2cc184d6029
+public,v_document_latest_version,id,2,7fba56c6-0861-4989-8f7e-d891aa9c5ab5
+public,v_document_latest_version,id,3,26bc1232-4205-490c-9e69-4c7142ade248
+public,v_document_latest_version,id,4,491f42dc-08b0-4554-aa2d-fed15b9dd926
+public,v_document_latest_version,is_archived,1,false
+public,v_document_latest_version,is_archived,2,false
+public,v_document_latest_version,is_archived,3,false
+public,v_document_latest_version,is_archived,4,false
+public,v_document_latest_version,mime_type,1,text/csv
+public,v_document_latest_version,mime_type,2,text/csv
+public,v_document_latest_version,mime_type,3,text/csv
+public,v_document_latest_version,mime_type,4,text/csv
+public,v_document_latest_version,title,1,test2
+public,v_document_latest_version,title,2,seznam
+public,v_document_latest_version,title,3,"sgmhgtsfmjkhsf lziugfskf kj,hfgjkhgljglkjgl"
+public,v_document_latest_version,title,4,abecední seznam uživatelů
+public,v_document_latest_version,updated_at,1,2025-12-29 19:33:27.684572+00
+public,v_document_latest_version,updated_at,2,2025-12-31 20:02:03.042699+00
+public,v_document_latest_version,updated_at,3,2025-12-31 20:28:24.729725+00
+public,v_document_latest_version,updated_at,4,2026-01-01 00:05:52.225729+00
+public,v_document_latest_version,updated_by,1,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,updated_by,2,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,updated_by_name,1,Páťa
+public,v_document_latest_version,updated_by_name,2,Páťa
+public,v_document_latest_version,version_created_at,1,2025-12-22 19:02:26.963532+00
+public,v_document_latest_version,version_created_at,2,2025-12-31 21:03:01.681554+00
+public,v_document_latest_version,version_created_at,3,2025-12-30 15:27:47.565847+00
+public,v_document_latest_version,version_created_at,4,2025-12-31 17:24:46.10708+00
+public,v_document_latest_version,version_created_by,1,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,version_created_by,2,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,version_created_by,3,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,version_created_by,4,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_document_latest_version,version_created_by_name,1,Páťa
+public,v_document_latest_version,version_created_by_name,2,Páťa
+public,v_document_latest_version,version_created_by_name,3,Páťa
+public,v_document_latest_version,version_created_by_name,4,Páťa
+public,v_document_latest_version,version_id,1,0fe880f9-251a-495c-8a32-f8a036f83a4c
+public,v_document_latest_version,version_id,2,ba50fa5a-d875-499d-8dd6-b706b5695dfc
+public,v_document_latest_version,version_id,3,cc0036c5-f995-4154-82c4-d5ce2d06e3e0
+public,v_document_latest_version,version_id,4,85630aa5-db63-4cd6-bfa5-c1ad61e19ea0
+public,v_document_latest_version,version_is_archived,1,false
+public,v_document_latest_version,version_is_archived,2,false
+public,v_document_latest_version,version_is_archived,3,false
+public,v_document_latest_version,version_is_archived,4,false
+public,v_document_latest_version,version_number,1,1
+public,v_document_latest_version,version_number,2,7
+public,v_document_latest_version,version_number,3,1
+public,v_document_latest_version,version_number,4,9
+public,v_subject_invite_latest,created_at,1,2025-12-22 18:40:15.678949+00
+public,v_subject_invite_latest,created_at,2,2025-12-26 19:56:42.608061+00
+public,v_subject_invite_latest,created_at,3,2026-01-04 08:09:12.659163+00
+public,v_subject_invite_latest,created_at,4,2026-01-04 08:14:54.28701+00
+public,v_subject_invite_latest,expires_at,1,2025-12-29 18:40:15.678949+00
+public,v_subject_invite_latest,expires_at,2,2026-01-02 19:56:42.608061+00
+public,v_subject_invite_latest,expires_at,3,2026-01-11 08:09:12.659163+00
+public,v_subject_invite_latest,expires_at,4,2026-01-11 08:14:54.28701+00
+public,v_subject_invite_latest,invite_id,1,271f1c5a-46eb-418d-98c1-a008bf2b8432
+public,v_subject_invite_latest,invite_id,2,59b03ec4-52bc-41f3-a015-7f155991a0c9
+public,v_subject_invite_latest,invite_id,3,45bda23d-14bc-43b4-a7f6-6f1eddf88c63
+public,v_subject_invite_latest,invite_id,4,1738069e-14f6-4412-bbc9-789df74bbc8f
+public,v_subject_invite_latest,invite_state,1,expired
+public,v_subject_invite_latest,invite_state,2,expired
+public,v_subject_invite_latest,invite_state,3,pending
+public,v_subject_invite_latest,invite_state,4,pending
+public,v_subject_invite_latest,status,1,pending
+public,v_subject_invite_latest,status,2,pending
+public,v_subject_invite_latest,status,3,pending
+public,v_subject_invite_latest,status,4,pending
+public,v_subject_invite_latest,subject_id,1,45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,v_subject_invite_latest,subject_id,2,7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,v_subject_invite_latest,subject_id,3,91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,v_subject_invite_latest,subject_id,4,c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,v_subject_invite_state,expires_at,1,2025-12-29 18:40:15.678949+00
+public,v_subject_invite_state,expires_at,2,2026-01-02 19:56:42.608061+00
+public,v_subject_invite_state,expires_at,3,2026-01-11 08:09:12.659163+00
+public,v_subject_invite_state,expires_at,4,2026-01-11 08:14:54.28701+00
+public,v_subject_invite_state,invite_id,1,271f1c5a-46eb-418d-98c1-a008bf2b8432
+public,v_subject_invite_state,invite_id,2,59b03ec4-52bc-41f3-a015-7f155991a0c9
+public,v_subject_invite_state,invite_id,3,45bda23d-14bc-43b4-a7f6-6f1eddf88c63
+public,v_subject_invite_state,invite_id,4,1738069e-14f6-4412-bbc9-789df74bbc8f
+public,v_subject_invite_state,invite_state,1,expired
+public,v_subject_invite_state,invite_state,2,expired
+public,v_subject_invite_state,invite_state,3,pending
+public,v_subject_invite_state,invite_state,4,pending
+public,v_subject_invite_state,status,1,pending
+public,v_subject_invite_state,status,2,pending
+public,v_subject_invite_state,status,3,pending
+public,v_subject_invite_state,status,4,pending
+public,v_subject_invite_state,subject_id,1,45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,v_subject_invite_state,subject_id,2,7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,v_subject_invite_state,subject_id,3,91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,v_subject_invite_state,subject_id,4,c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,v_subject_public,display_name,1,FISH-COM
+public,v_subject_public,display_name,2,Patrik test
+public,v_subject_public,display_name,3,Páťa
+public,v_subject_public,display_name,4,Patizonan
+public,v_subject_public,display_name,5,je to nové
+public,v_subject_public,display_name,6,piskot
+public,v_subject_public,id,1,45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,v_subject_public,id,2,f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,v_subject_public,id,3,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_subject_public,id,4,7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,v_subject_public,id,5,91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,v_subject_public,id,6,c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,v_user_permissions,permission_code,1,admin_full
+public,v_user_permissions,permission_code,2,manage_full
+public,v_user_permissions,permission_code,3,manage_full
+public,v_user_permissions,permission_code,4,read_limited
+public,v_user_permissions,subject_id,1,f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,v_user_permissions,subject_id,2,7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,v_user_permissions,subject_id,3,91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,v_user_permissions,subject_id,4,c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,v_users_detail,created_at,1,2025-12-22 18:40:15.435353+00
+public,v_users_detail,created_at,2,2025-12-15 20:51:06.712132+00
+public,v_users_detail,created_at,3,2025-12-16 07:47:26.728831+00
+public,v_users_detail,created_at,4,2025-12-26 19:35:18.58049+00
+public,v_users_detail,created_at,5,2026-01-04 08:07:12.45205+00
+public,v_users_detail,created_at,6,2026-01-04 08:13:44.397088+00
+public,v_users_detail,display_name,1,FISH-COM
+public,v_users_detail,display_name,2,Patrik test
+public,v_users_detail,display_name,3,Páťa
+public,v_users_detail,display_name,4,Patizonan
+public,v_users_detail,display_name,5,je to nové
+public,v_users_detail,display_name,6,piskot
+public,v_users_detail,email,1,patrik.cechlovsky@fish-com.cz
+public,v_users_detail,email,2,admin@local.test
+public,v_users_detail,email,3,patrik.cechlovsky@centrum.cz
+public,v_users_detail,email,4,patozonan@gmail.com
+public,v_users_detail,email,5,"info@fish-com,cz"
+public,v_users_detail,email,6,piskozku@usmej.se
+public,v_users_detail,first_name,1,Patrik
+public,v_users_detail,id,1,45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,v_users_detail,id,2,f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,v_users_detail,id,3,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_users_detail,id,4,7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,v_users_detail,id,5,91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,v_users_detail,id,6,c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,v_users_detail,is_archived,1,false
+public,v_users_detail,is_archived,2,false
+public,v_users_detail,is_archived,3,false
+public,v_users_detail,is_archived,4,false
+public,v_users_detail,is_archived,5,false
+public,v_users_detail,is_archived,6,false
+public,v_users_detail,last_name,1,Čechlovský
+public,v_users_detail,origin_entity,1,user
+public,v_users_detail,origin_module,1,010
+public,v_users_detail,origin_module,2,010
+public,v_users_detail,origin_module,3,010
+public,v_users_detail,origin_module,4,010
+public,v_users_detail,origin_module,5,010
+public,v_users_detail,origin_module,6,010
+public,v_users_detail,phone,1,+420700000001
+public,v_users_detail,phone,2,+420608973730
+public,v_users_detail,role_code,1,user
+public,v_users_detail,role_code,2,pronajimatel
+public,v_users_detail,role_code,3,admin
+public,v_users_detail,role_code,4,pronajimatel
+public,v_users_detail,role_code,5,manager
+public,v_users_detail,role_code,6,user
+public,v_users_detail,subject_type,1,osoba
+public,v_users_detail,subject_type,2,osoba
+public,v_users_detail,subject_type,3,osoba
+public,v_users_detail,subject_type,4,osoba
+public,v_users_detail,subject_type,5,osoba
+public,v_users_detail,subject_type,6,osoba
+public,v_users_detail,updated_at,1,2025-12-25 19:35:07.049334+00
+public,v_users_detail,updated_at,2,2025-12-25 19:38:08.339706+00
+public,v_users_detail,updated_at,3,2025-12-26 08:13:50.090762+00
+public,v_users_detail,updated_at,4,2025-12-26 19:56:22.144745+00
+public,v_users_detail,updated_at,5,2026-01-04 08:07:12.45205+00
+public,v_users_detail,updated_at,6,2026-01-04 08:13:44.397088+00
+public,v_users_invite_gate,can_send_invite,1,true
+public,v_users_invite_gate,can_send_invite,2,true
+public,v_users_invite_gate,can_send_invite,3,false
+public,v_users_invite_gate,can_send_invite,4,true
+public,v_users_invite_gate,can_send_invite,5,false
+public,v_users_invite_gate,can_send_invite,6,false
+public,v_users_invite_gate,created_at,1,2025-12-22 18:40:15.435353+00
+public,v_users_invite_gate,created_at,2,2025-12-15 20:51:06.712132+00
+public,v_users_invite_gate,created_at,3,2025-12-16 07:47:26.728831+00
+public,v_users_invite_gate,created_at,4,2025-12-26 19:35:18.58049+00
+public,v_users_invite_gate,created_at,5,2026-01-04 08:07:12.45205+00
+public,v_users_invite_gate,created_at,6,2026-01-04 08:13:44.397088+00
+public,v_users_invite_gate,display_name,1,FISH-COM
+public,v_users_invite_gate,display_name,2,Patrik test
+public,v_users_invite_gate,display_name,3,Páťa
+public,v_users_invite_gate,display_name,4,Patizonan
+public,v_users_invite_gate,display_name,5,je to nové
+public,v_users_invite_gate,display_name,6,piskot
+public,v_users_invite_gate,email,1,patrik.cechlovsky@fish-com.cz
+public,v_users_invite_gate,email,2,admin@local.test
+public,v_users_invite_gate,email,3,patrik.cechlovsky@centrum.cz
+public,v_users_invite_gate,email,4,patozonan@gmail.com
+public,v_users_invite_gate,email,5,"info@fish-com,cz"
+public,v_users_invite_gate,email,6,piskozku@usmej.se
+public,v_users_invite_gate,first_login_at,1,2025-12-22 22:35:52.977958+00
+public,v_users_invite_gate,id,1,45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,v_users_invite_gate,id,2,f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,v_users_invite_gate,id,3,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_users_invite_gate,id,4,7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,v_users_invite_gate,id,5,91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,v_users_invite_gate,id,6,c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,v_users_invite_gate,is_archived,1,false
+public,v_users_invite_gate,is_archived,2,false
+public,v_users_invite_gate,is_archived,3,false
+public,v_users_invite_gate,is_archived,4,false
+public,v_users_invite_gate,is_archived,5,false
+public,v_users_invite_gate,is_archived,6,false
+public,v_users_invite_gate,last_invite_expires_at,1,2025-12-29 18:40:15.678949+00
+public,v_users_invite_gate,last_invite_expires_at,2,2026-01-02 19:56:42.608061+00
+public,v_users_invite_gate,last_invite_expires_at,3,2026-01-11 08:09:12.659163+00
+public,v_users_invite_gate,last_invite_expires_at,4,2026-01-11 08:14:54.28701+00
+public,v_users_invite_gate,last_invite_status,1,pending
+public,v_users_invite_gate,last_invite_status,2,pending
+public,v_users_invite_gate,last_invite_status,3,pending
+public,v_users_invite_gate,last_invite_status,4,pending
+public,v_users_invite_gate,phone,1,+420700000001
+public,v_users_invite_gate,phone,2,+420608973730
+public,v_users_invite_gate,role_code,1,user
+public,v_users_invite_gate,role_code,2,pronajimatel
+public,v_users_invite_gate,role_code,3,admin
+public,v_users_invite_gate,role_code,4,pronajimatel
+public,v_users_invite_gate,role_code,5,manager
+public,v_users_invite_gate,role_code,6,user
+public,v_users_invite_gate,subject_type,1,osoba
+public,v_users_invite_gate,subject_type,2,osoba
+public,v_users_invite_gate,subject_type,3,osoba
+public,v_users_invite_gate,subject_type,4,osoba
+public,v_users_invite_gate,subject_type,5,osoba
+public,v_users_invite_gate,subject_type,6,osoba
+public,v_users_list,created_at,1,2025-12-22 18:40:15.435353+00
+public,v_users_list,created_at,2,2025-12-15 20:51:06.712132+00
+public,v_users_list,created_at,3,2025-12-16 07:47:26.728831+00
+public,v_users_list,created_at,4,2025-12-26 19:35:18.58049+00
+public,v_users_list,created_at,5,2026-01-04 08:07:12.45205+00
+public,v_users_list,created_at,6,2026-01-04 08:13:44.397088+00
+public,v_users_list,display_name,1,FISH-COM
+public,v_users_list,display_name,2,Patrik test
+public,v_users_list,display_name,3,Páťa
+public,v_users_list,display_name,4,Patizonan
+public,v_users_list,display_name,5,je to nové
+public,v_users_list,display_name,6,piskot
+public,v_users_list,email,1,patrik.cechlovsky@fish-com.cz
+public,v_users_list,email,2,admin@local.test
+public,v_users_list,email,3,patrik.cechlovsky@centrum.cz
+public,v_users_list,email,4,patozonan@gmail.com
+public,v_users_list,email,5,"info@fish-com,cz"
+public,v_users_list,email,6,piskozku@usmej.se
+public,v_users_list,first_login_at,1,2025-12-22 22:35:52.977958+00
+public,v_users_list,first_name,1,Patrik
+public,v_users_list,id,1,45ed734f-2ffc-4d41-96c7-1c6df1e887b9
+public,v_users_list,id,2,f1bb5ad7-166c-44af-bf51-3fb61c05b717
+public,v_users_list,id,3,fd2bcfac-6ca3-40b6-a472-de9677499ea6
+public,v_users_list,id,4,7504d2ed-090d-4e1a-a9c2-672cac914d41
+public,v_users_list,id,5,91a475d4-8c98-4719-aab5-a6a143e3ec9e
+public,v_users_list,id,6,c5cf15b5-383c-4972-88c1-048b8ea198b6
+public,v_users_list,is_archived,1,false
+public,v_users_list,is_archived,2,false
+public,v_users_list,is_archived,3,false
+public,v_users_list,is_archived,4,false
+public,v_users_list,is_archived,5,false
+public,v_users_list,is_archived,6,false
+public,v_users_list,last_invite_expires_at,1,2025-12-29 18:40:15.678949+00
+public,v_users_list,last_invite_expires_at,2,2026-01-02 19:56:42.608061+00
+public,v_users_list,last_invite_expires_at,3,2026-01-11 08:09:12.659163+00
+public,v_users_list,last_invite_expires_at,4,2026-01-11 08:14:54.28701+00
+public,v_users_list,last_invite_status,1,pending
+public,v_users_list,last_invite_status,2,pending
+public,v_users_list,last_invite_status,3,pending
+public,v_users_list,last_invite_status,4,pending
+public,v_users_list,last_name,1,Čechlovský
+public,v_users_list,phone,1,+420700000001
+public,v_users_list,phone,2,+420608973730
+public,v_users_list,role_code,1,user
+public,v_users_list,role_code,2,pronajimatel
+public,v_users_list,role_code,3,admin
+public,v_users_list,role_code,4,pronajimatel
+public,v_users_list,role_code,5,manager
+public,v_users_list,role_code,6,user
+public,v_users_list,subject_type,1,osoba
+public,v_users_list,subject_type,2,osoba
+public,v_users_list,subject_type,3,osoba
+public,v_users_list,subject_type,4,osoba
+public,v_users_list,subject_type,5,osoba
+public,v_users_list,subject_type,6,osoba

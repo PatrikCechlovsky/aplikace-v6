@@ -252,3 +252,4 @@ Pokud chceš:
 
 *(Zatím prázdné, připravené pro budoucí úpravy)*
 
+

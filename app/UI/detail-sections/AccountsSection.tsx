@@ -166,6 +166,22 @@ export default function AccountsSection({ subjectId }: Props) {
   // Uložit
   const handleSave = useCallback(async () => {
     try {
+      // Validace povinných polí
+      if (!formValue.label?.trim()) {
+        toast.showWarning('Název účtu je povinný.')
+        return
+      }
+
+      if (!formValue.accountNumber?.trim()) {
+        toast.showWarning('Číslo účtu je povinné.')
+        return
+      }
+
+      if (!formValue.bankId?.trim()) {
+        toast.showWarning('Banka je povinná.')
+        return
+      }
+
       setSaving(true)
 
       const payload: SaveBankAccountInput = {
@@ -326,7 +342,9 @@ export default function AccountsSection({ subjectId }: Props) {
         <div className="detail-form__grid detail-form__grid--narrow">
           {/* Řádek 1: Název účtu + Archivováno */}
           <div className="detail-form__field">
-            <label className="detail-form__label">Název účtu</label>
+            <label className="detail-form__label">
+              Název účtu <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -354,7 +372,9 @@ export default function AccountsSection({ subjectId }: Props) {
 
           {/* Řádek 2: Číslo účtu + Kód banky */}
           <div className="detail-form__field">
-            <label className="detail-form__label">Číslo účtu</label>
+            <label className="detail-form__label">
+              Číslo účtu <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -367,7 +387,9 @@ export default function AccountsSection({ subjectId }: Props) {
             />
           </div>
           <div className="detail-form__field">
-            <label className="detail-form__label">Kód banky</label>
+            <label className="detail-form__label">
+              Kód banky <span className="detail-form__required">*</span>
+            </label>
             <select
               className="detail-form__input"
               value={formValue.bankId}
