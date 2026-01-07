@@ -304,7 +304,8 @@ export default function UserDetailFrame({
           firstName: v.firstName,
           lastName: v.lastName,
           login: v.login,
-  
+          note: v.note,
+
           roleCode: rc,
           // ✅ pošli jen když je vybrané (a tady je vždy)
           permissionCodes: [pc],

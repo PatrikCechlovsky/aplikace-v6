@@ -166,7 +166,7 @@ export type UserDetailRow = {
 export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
   const { data: subject, error: subjectErr } = await supabase
     .from('subjects')
-    .select(
+      .select(
       `
         id,
         subject_type,
@@ -181,7 +181,8 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
         title_before,
         first_name,
         last_name,
-        login
+        login,
+        note
       `
     )
     .eq('id', subjectId)
@@ -239,6 +240,7 @@ export type SaveUserInput = {
   firstName?: string | null
   lastName?: string | null
   login?: string | null
+  note?: string | null
 
   // ROLE + PERMISSIONS
   roleCode?: string | null
@@ -292,6 +294,7 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
     first_name: (input.firstName ?? '').trim() || null,
     last_name: (input.lastName ?? '').trim() || null,
     login: (input.login ?? '').trim() || null,
+    note: (input.note ?? '').trim() || null,
 
     // DB: subjects.origin_module je NOT NULL -> musí být vždy
     origin_module: '010',
@@ -305,7 +308,7 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
       .from('subjects')
       .insert(subjectPayload)
       .select(
-        `
+      `
         id,
         subject_type,
         display_name,
@@ -319,9 +322,10 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
         title_before,
         first_name,
         last_name,
-        login
+        login,
+        note
       `
-      )
+    )
       .single()
 
     if (error) throw new Error(error.message)
@@ -338,7 +342,7 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
       .update(subjectPayload)
       .eq('id', subjectId)
       .select(
-        `
+      `
         id,
         subject_type,
         display_name,
@@ -352,9 +356,10 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
         title_before,
         first_name,
         last_name,
-        login
+        login,
+        note
       `
-      )
+    )
       .single()
 
     if (error) throw new Error(error.message)
