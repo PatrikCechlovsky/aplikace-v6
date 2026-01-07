@@ -12,7 +12,9 @@ CREATE POLICY "bank_accounts_insert" ON public.bank_accounts
     EXISTS (
       SELECT 1 FROM public.subjects s
       WHERE s.id = bank_accounts.subject_id
-      AND s.email = (auth.jwt() ->> 'email')
+      AND (s.auth_user_id IS NULL OR s.auth_user_id != auth.uid())
+      AND s.email IS NOT NULL
+      AND s.email = COALESCE((auth.jwt() ->> 'email'), '')
     )
     OR
     EXISTS (

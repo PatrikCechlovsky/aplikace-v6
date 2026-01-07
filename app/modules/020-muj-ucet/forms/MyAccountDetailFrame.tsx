@@ -11,6 +11,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import MyAccountDetailForm, { type MyAccountFormValue } from './MyAccountDetailForm'
 import { getUserDetail, saveUser } from '@/app/lib/services/users'
+import { getCurrentSession } from '@/app/lib/services/auth'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
@@ -140,6 +141,10 @@ export default function MyAccountDetailFrame({
           return null
         }
 
+        // Získat aktuálního uživatele pro nastavení auth_user_id
+        const { data: sessionData } = await getCurrentSession()
+        const authUserId = sessionData?.session?.user?.id ?? null
+
         const savedRow = await saveUser({
           id: resolvedUser?.id?.trim() ? resolvedUser.id : 'new',
           subjectType: 'osoba',
@@ -153,6 +158,9 @@ export default function MyAccountDetailFrame({
           firstName: v.firstName || null,
           lastName: v.lastName || null,
           login: v.login || null,
+
+          // Nastavit auth_user_id pro "Můj účet"
+          authUserId: authUserId,
         })
 
         const detail = await getUserDetail(savedRow.id)

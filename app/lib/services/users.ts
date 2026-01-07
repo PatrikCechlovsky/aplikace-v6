@@ -245,6 +245,9 @@ export type SaveUserInput = {
   // ROLE + PERMISSIONS
   roleCode?: string | null
   permissionCodes?: string[]
+
+  // AUTH (pro "Můj účet" - nastaví auth_user_id)
+  authUserId?: string | null
 }
 
 /* =========================
@@ -298,6 +301,11 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
 
     // DB: subjects.origin_module je NOT NULL -> musí být vždy
     origin_module: '010',
+  }
+
+  // Nastavit auth_user_id pokud je poskytnut (pro "Můj účet")
+  if (input.authUserId) {
+    subjectPayload.auth_user_id = input.authUserId
   }
 
   // 1) save subject (insert/update)

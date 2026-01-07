@@ -17,10 +17,13 @@ CREATE POLICY "bank_accounts_insert" ON public.bank_accounts
     )
     OR
     -- Vlastní účet (subject má stejný email jako přihlášený uživatel z JWT)
+    -- Pouze pokud auth_user_id není nastaveno
     EXISTS (
       SELECT 1 FROM public.subjects s
       WHERE s.id = bank_accounts.subject_id
-      AND s.email = (auth.jwt() ->> 'email')
+      AND (s.auth_user_id IS NULL OR s.auth_user_id != auth.uid())
+      AND s.email IS NOT NULL
+      AND s.email = COALESCE((auth.jwt() ->> 'email'), '')
     )
     OR
     -- Účet subjektu, ke kterému má uživatel oprávnění
