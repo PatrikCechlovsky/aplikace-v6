@@ -35,6 +35,13 @@ export type UiUser = {
   firstName?: string | null
   lastName?: string | null
   login?: string | null
+
+  // Adresa
+  street?: string | null
+  city?: string | null
+  zip?: string | null
+  houseNumber?: string | null
+  country?: string | null
 }
 
 type Props = {
