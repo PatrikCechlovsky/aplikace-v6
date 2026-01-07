@@ -75,7 +75,6 @@ export default function MyAccountDetailFrame({
   onDirtyChange,
 }: Props) {
   const [resolvedUser, setResolvedUser] = useState<UiUser>(user)
-  const resolveSeqRef = useRef(0)
 
   const [_isDirty, setIsDirty] = useState(false)
   const toast = useToast()
