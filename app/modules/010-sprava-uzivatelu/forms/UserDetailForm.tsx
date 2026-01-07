@@ -264,7 +264,7 @@ export default function UserDetailForm({
         <div className="detail-form__section-title">Osobní údaje</div>
   
         {/* Řádek 1: Titul + Jméno + Příjmení (3 sloupce) */}
-        <div className="detail-form__grid" style={{ gridTemplateColumns: '120px 280px 280px' }}>
+        <div className="detail-form__grid" style={{ gridTemplateColumns: '90px 200px 1fr' }}>
           <div className="detail-form__field">
             <label className="detail-form__label">Titul před</label>
             <input
