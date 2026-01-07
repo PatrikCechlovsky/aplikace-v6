@@ -12,19 +12,12 @@ CREATE POLICY "bank_accounts_insert" ON public.bank_accounts
     )
     OR
     -- 2. Kontrola emailu z JWT (priorita 2 - pro "Můj účet" když auth_user_id ještě není nastavený)
+    -- Používáme pouze auth.jwt(), ne auth.users
     EXISTS (
       SELECT 1 FROM public.subjects s
       WHERE s.id = bank_accounts.subject_id
       AND s.email IS NOT NULL
-      AND (
-        -- Zkusit získat email z JWT
-        s.email = COALESCE((auth.jwt() ->> 'email'), '')
-        OR
-        -- Nebo zkusit získat email z auth.users (pokud máme přístup)
-        s.email = (
-          SELECT email FROM auth.users WHERE id = auth.uid() LIMIT 1
-        )
-      )
+      AND s.email = COALESCE((auth.jwt() ->> 'email'), '')
       AND COALESCE((auth.jwt() ->> 'email'), '') != ''
     )
     OR
