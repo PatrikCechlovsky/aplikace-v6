@@ -113,8 +113,8 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
       <div className="detail-form__section">
         <div className="detail-form__section-title">Osobní údaje</div>
 
-        {/* Řádek 1: Titul + Jméno + Příjmení (3 sloupce) */}
-        <div className="detail-form__grid" style={{ gridTemplateColumns: '90px 200px 1fr' }}>
+        {/* Řádek 1: Titul před (zkrácený) */}
+        <div className="detail-form__grid" style={{ gridTemplateColumns: '70px 1fr' }}>
           <div className="detail-form__field">
             <label className="detail-form__label">Titul před</label>
             <input
@@ -125,7 +125,10 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               onChange={(e) => update({ titleBefore: e.target.value })}
             />
           </div>
+        </div>
 
+        {/* Řádek 2: Jméno + Příjmení (2 sloupce) */}
+        <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Jméno</label>
             <input
