@@ -256,22 +256,40 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     id: 'attachments',
     label: 'Přílohy',
     order: 90,
-    visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId,
-    render: (ctx) => (
-      <DetailAttachmentsSection
-        entityType={ctx.entityType}
-        entityId={ctx.entityId}
-        entityLabel={ctx.entityLabel ?? null}
-        mode={ctx.mode ?? 'view'}
-      />
-    ),
+    // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
+    visibleWhen: (ctx) => {
+      if (!ctx.entityType) return false
+      // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
+      if (ctx.mode === 'create' || ctx.mode === 'edit') return true
+      // Pro read mode zobrazit jen pokud máme entityId
+      return !!ctx.entityId
+    },
+    render: (ctx) => {
+      // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
+      if (!ctx.entityId || ctx.entityId === 'new') {
+        return (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            Přílohy budou dostupné po uložení pronajimatele.
+          </div>
+        )
+      }
+      return (
+        <DetailAttachmentsSection
+          entityType={ctx.entityType}
+          entityId={ctx.entityId}
+          entityLabel={ctx.entityLabel ?? null}
+          mode={ctx.mode ?? 'view'}
+        />
+      )
+    },
   },
 
   system: {
     id: 'system',
     label: 'Systém',
     order: 100,
-    visibleWhen: (ctx) => !!(ctx as any)?.entityType && !!(ctx as any)?.entityId,
+    // Systém záložka je vždy viditelná pokud máme entityType (i pro create mode)
+    visibleWhen: (ctx) => !!(ctx as any)?.entityType,
     render: (ctx: any) => {
       const blocks = (ctx?.systemBlocks ?? []) as { title: string; content: React.ReactNode; visible?: boolean }[]
       const visibleBlocks = blocks.filter((b) => b && b.visible !== false)
@@ -314,10 +332,24 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     id: 'accounts',
     label: 'Účty',
     order: 50,
-    visibleWhen: (ctx) => !!(ctx as any)?.entityId,
+    // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
+    visibleWhen: (ctx) => {
+      if (!ctx.entityType) return false
+      // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
+      if (ctx.mode === 'create' || ctx.mode === 'edit') return true
+      // Pro read mode zobrazit jen pokud máme entityId
+      return !!(ctx as any)?.entityId
+    },
     render: (ctx) => {
       const entityId = (ctx as any)?.entityId
-      if (!entityId) return null
+      // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
+      if (!entityId || entityId === 'new') {
+        return (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            Účty budou dostupné po uložení pronajimatele.
+          </div>
+        )
+      }
       // Dynamicky importovat, aby se to nenačítalo, pokud není potřeba
       const AccountsSection = require('@/app/UI/detail-sections/AccountsSection').default
       return <AccountsSection subjectId={entityId} mode={ctx.mode ?? 'edit'} />

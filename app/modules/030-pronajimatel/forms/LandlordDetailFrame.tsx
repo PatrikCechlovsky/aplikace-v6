@@ -453,7 +453,8 @@ export default function LandlordDetailFrame({
           }}
           ctx={{
             entityType: 'subjects',
-            entityId: resolvedLandlord.id && resolvedLandlord.id !== 'new' ? resolvedLandlord.id : undefined,
+            // Pro create mode nastavit entityId na 'new', aby byly záložky viditelné
+            entityId: resolvedLandlord.id === 'new' ? 'new' : resolvedLandlord.id || undefined,
             entityLabel: resolvedLandlord.displayName ?? null,
             showSystemEntityHeader: false,
             mode: detailMode,

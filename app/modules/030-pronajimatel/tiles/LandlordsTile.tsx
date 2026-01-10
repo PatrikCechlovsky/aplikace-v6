@@ -587,7 +587,7 @@ export default function LandlordsTile({
         // actions.push('delete', 'archive')
       }
     } else if (viewMode === 'edit' || viewMode === 'create') {
-      actions.push('save', 'cancel')
+      actions.push('save', 'close') // V create/edit mode: "Uložit" a "Zavřít" (červené X)
     } else if (viewMode === 'read') {
       actions.push('edit', 'close')
       // TODO: Přidat delete a archive po implementaci
@@ -708,23 +708,8 @@ export default function LandlordsTile({
           return
         }
 
-        if (id === 'cancel') {
-          if (isDirty) {
-            const ok = confirm('Máš neuložené změny. Opravdu chceš zrušit?')
-            if (!ok) return
-          }
-
-          if (viewMode === 'create') {
-            // Z create režimu zpět do listu
-            closeToList()
-          } else {
-            // Z edit režimu zpět do detailu (read mode)
-            setViewMode('read')
-            setUrl({ vm: 'read' })
-            setIsDirty(false)
-          }
-          return
-        }
+        // Zavřít (close) v create/edit mode funguje stejně jako cancel - zavře bez uložení
+        // (už je implementováno v CLOSE bloku výše)
         return
       }
 
@@ -753,9 +738,10 @@ export default function LandlordsTile({
     return m
   }, [landlords])
 
-  // ✅ sortedLandlords (DEFAULT = subjectTypeOrderIndex ASC, email ASC)
+  // ✅ sortedLandlords (DEFAULT = subjectTypeOrderIndex ASC, email ASC) - stejně jako Users podle roleOrderIndex
   const sortedLandlords = useMemo(() => {
     if (!sort) {
+      // Default sort when sort is null (stejně jako v Users)
       return [...landlords].sort((a, b) => {
         const ao = a.subjectTypeOrderIndex ?? 999999
         const bo = b.subjectTypeOrderIndex ?? 999999
@@ -767,7 +753,7 @@ export default function LandlordsTile({
     const dir = sort.dir === 'desc' ? -1 : 1
     const arr = [...landlords]
 
-    // DEFAULT (subjectTypeLabel asc) má vlastní pravidla: order_index + email
+    // DEFAULT (subjectTypeLabel asc) má vlastní pravidla: order_index + email - stejně jako roleLabel v Users
     if (key === 'subjectTypeLabel' && dir === 1) {
       arr.sort((a, b) => {
         const ao = a.subjectTypeOrderIndex ?? 999999
@@ -775,11 +761,13 @@ export default function LandlordsTile({
         if (ao < bo) return -1
         if (ao > bo) return 1
 
-        const ae = normalizeString(a.email)
-        const be = normalizeString(b.email)
+        // Sekundární řazení podle emailu (stejně jako v Users) - používá normalizeString
+        const ae = normalizeString(a.email ?? '')
+        const be = normalizeString(b.email ?? '')
         if (ae < be) return -1
         if (ae > be) return 1
 
+        // Terciární řazení podle původního pořadí (stabilita)
         return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
       })
       return arr
@@ -800,6 +788,7 @@ export default function LandlordsTile({
         if (as > bs) return 1 * dir
       }
 
+      // Sekundární řazení podle původního pořadí (stabilita)
       return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
     })
 
