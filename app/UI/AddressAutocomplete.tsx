@@ -34,17 +34,9 @@ export type AddressAutocompleteProps = {
 
 /**
  * RÚIAN API endpoint pro autocomplete
- * Používáme veřejné REST API: https://github.com/jindrichskupa/ruian-api
- * 
- * Veřejný endpoint (bez API klíče):
- * - https://ruian-api.skaut.cz/api/v1/search
- * 
- * Nebo RUIAN API od fnx.io (vyžaduje API klíč):
- * - https://ruian.fnx.io/api/v1/address
- * - API klíč: c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8
+ * Používáme Next.js API route jako proxy (řeší CORS problémy)
  */
-const RUIAN_API_BASE_PUBLIC = 'https://ruian-api.skaut.cz/api/v1/search'
-const RUIAN_API_BASE_FNX = 'https://ruian.fnx.io/api/v1/address'
+const API_ROUTE = '/api/address-search'
 
 /**
  * Funkce pro vyhledávání adres v RÚIAN
@@ -65,201 +57,38 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
   console.log('🔍 Searching RÚIAN addresses for:', trimmedQuery)
 
   try {
-    // API klíč z environment variables nebo fallback na hardcoded klíč
-    const apiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY || 'c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8'
+    // Použijeme Next.js API route jako proxy (řeší CORS problémy)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 sekund timeout
     
-    let response: Response | null = null
-    let lastError: Error | null = null
-    let successfulEndpoint: string | null = null
+    const response = await fetch(`${API_ROUTE}?q=${encodeURIComponent(trimmedQuery)}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      signal: controller.signal,
+    })
     
-    // Zkusíme několik možností endpointu a formátu
-    // 1. Veřejné API (skaut.cz) - bez API klíče (zkusíme jako první)
-    // 2. Fnx.io API - s API klíčem
-    const endpointConfigs: Array<{ url: string; headers: Record<string, string>; name: string }> = [
-      // Veřejné API (skaut.cz) - formát: /api/v1/search?q={query}
-      { 
-        name: 'skaut.cz public API',
-        url: `${RUIAN_API_BASE_PUBLIC}?q=${encodeURIComponent(trimmedQuery)}`, 
-        headers: { 'Accept': 'application/json' } 
-      },
-      // Fnx.io API - formát: /api/v1/address?q={query}&apiKey={key}
-      { 
-        name: 'fnx.io API (query param)',
-        url: `${RUIAN_API_BASE_FNX}?q=${encodeURIComponent(trimmedQuery)}&limit=10&apiKey=${apiKey}`, 
-        headers: { 'Accept': 'application/json' } 
-      },
-      // Alternativní formát s Bearer tokenem
-      { 
-        name: 'fnx.io API (Bearer)',
-        url: `${RUIAN_API_BASE_FNX}?q=${encodeURIComponent(trimmedQuery)}&limit=10`, 
-        headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` } 
-      },
-      // Alternativní formát s X-API-Key headerem
-      { 
-        name: 'fnx.io API (X-API-Key)',
-        url: `${RUIAN_API_BASE_FNX}?q=${encodeURIComponent(trimmedQuery)}&limit=10`, 
-        headers: { 'Accept': 'application/json', 'X-API-Key': apiKey } 
-      },
-    ]
-    
-    // Zkusíme každý endpoint s timeoutem 5 sekund
-    for (const config of endpointConfigs) {
-      try {
-        console.log(`🔄 Trying endpoint: ${config.name}`, config.url)
-        
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 sekund timeout
-        
-        response = await fetch(config.url, {
-          method: 'GET',
-          headers: config.headers,
-          signal: controller.signal,
-        })
-        
-        clearTimeout(timeoutId)
-        
-        if (response.ok) {
-          successfulEndpoint = config.name
-          console.log(`✅ Success with endpoint: ${config.name}`, response.status)
-          break
-        } else {
-          console.warn(`❌ Endpoint ${config.name} returned:`, response.status, response.statusText)
-          const text = await response.text()
-          console.warn(`Response body:`, text.substring(0, 200))
-        }
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
-          console.warn(`⏱️ Timeout for endpoint: ${config.name}`)
-        } else {
-          console.warn(`❌ Error for endpoint ${config.name}:`, error.message)
-        }
-        lastError = error as Error
-        continue
-      }
-    }
-    
-    if (!response || !response.ok) {
-      console.error('❌ All RÚIAN API endpoints failed')
-      console.error('Last error:', lastError?.message)
-      console.error('Tried endpoints:', endpointConfigs.map(c => `${c.name}: ${c.url}`))
-      return []
-    }
+    clearTimeout(timeoutId)
 
-    const contentType = response.headers.get('content-type')
-    if (!contentType?.includes('application/json')) {
-      const text = await response.text()
-      console.error('❌ API returned non-JSON response:', contentType)
-      console.error('Response text:', text.substring(0, 500))
+    if (!response.ok) {
+      console.error('❌ API route returned:', response.status, response.statusText)
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Error data:', errorData)
       return []
     }
 
     const data = await response.json()
-    console.log(`✅ API response from ${successfulEndpoint}:`, data)
+    console.log('✅ API response:', data)
     console.log('Data type:', Array.isArray(data) ? 'array' : typeof data)
-    console.log('Data keys:', data && typeof data === 'object' ? Object.keys(data) : 'N/A')
+    console.log('Results count:', Array.isArray(data) ? data.length : 0)
 
-    // Transformace dat z RÚIAN API do našeho formátu
-    // Formát odpovědi se může lišit - upravte podle skutečného formátu API
-    let results: AddressSuggestion[] = []
-
-    // Pokud API vrací přímo pole
+    // API route už vrací transformovaná data ve správném formátu
     if (Array.isArray(data)) {
-      console.log(`📦 Parsing array with ${data.length} items`)
-      results = data.map((item: any, index: number) => {
-        const suggestion = {
-          street: item.streetName || item.street || item.nazev_ulice || item.ulice || '',
-          city: item.cityName || item.city || item.nazev_obce || item.mesto || '',
-          zip: item.zipCode || item.zip || item.psc || '',
-          houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne || '',
-          ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || '',
-          fullAddress: [
-            item.streetName || item.street || item.nazev_ulice || item.ulice,
-            item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne,
-            item.cityName || item.city || item.nazev_obce || item.mesto,
-            item.zipCode || item.zip || item.psc,
-          ]
-            .filter(Boolean)
-            .join(', '),
-        }
-        if (index < 3) console.log(`  Item ${index}:`, item, '→', suggestion)
-        return suggestion
-      })
-    }
-    // Pokud API vrací objekt s daty
-    else if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
-      console.log(`📦 Parsing object.data array with ${data.data.length} items`)
-      results = data.data.map((item: any, index: number) => {
-        const suggestion = {
-          street: item.streetName || item.street || item.nazev_ulice || item.ulice || '',
-          city: item.cityName || item.city || item.nazev_obce || item.mesto || '',
-          zip: item.zipCode || item.zip || item.psc || '',
-          houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne || '',
-          ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || '',
-          fullAddress: [
-            item.streetName || item.street || item.nazev_ulice || item.ulice,
-            item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne,
-            item.cityName || item.city || item.nazev_obce || item.mesto,
-            item.zipCode || item.zip || item.psc,
-          ]
-            .filter(Boolean)
-            .join(', '),
-        }
-        if (index < 3) console.log(`  Item ${index}:`, item, '→', suggestion)
-        return suggestion
-      })
-    }
-    // Pokud API vrací objekt s results
-    else if (data && typeof data === 'object' && 'results' in data && Array.isArray(data.results)) {
-      console.log(`📦 Parsing object.results array with ${data.results.length} items`)
-      results = data.results.map((item: any, index: number) => {
-        const suggestion = {
-          street: item.streetName || item.street || item.nazev_ulice || item.ulice || '',
-          city: item.cityName || item.city || item.nazev_obce || item.mesto || '',
-          zip: item.zipCode || item.zip || item.psc || '',
-          houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne || '',
-          ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || '',
-          fullAddress: [
-            item.streetName || item.street || item.nazev_ulice || item.ulice,
-            item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne,
-            item.cityName || item.city || item.nazev_obce || item.mesto,
-            item.zipCode || item.zip || item.psc,
-          ]
-            .filter(Boolean)
-            .join(', '),
-        }
-        if (index < 3) console.log(`  Item ${index}:`, item, '→', suggestion)
-        return suggestion
-      })
-    }
-    else {
-      console.warn('⚠️ Unexpected API response format:', data)
-      console.warn('Trying to extract any array from response...')
-      // Zkusíme najít jakoukoli pole v objektu
-      for (const key in data) {
-        if (Array.isArray(data[key]) && data[key].length > 0) {
-          console.log(`Found array in key "${key}" with ${data[key].length} items`)
-          results = data[key].slice(0, 10).map((item: any) => ({
-            street: item.streetName || item.street || item.nazev_ulice || item.ulice || '',
-            city: item.cityName || item.city || item.nazev_obce || item.mesto || '',
-            zip: item.zipCode || item.zip || item.psc || '',
-            houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne || '',
-            ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || '',
-            fullAddress: [
-              item.streetName || item.street || item.nazev_ulice || item.ulice,
-              item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne,
-              item.cityName || item.city || item.nazev_obce || item.mesto,
-              item.zipCode || item.zip || item.psc,
-            ]
-              .filter(Boolean)
-              .join(', '),
-          }))
-          break
-        }
-      }
+      return data.filter((r: AddressSuggestion) => r.fullAddress.trim().length > 0)
     }
 
-    console.log(`✅ Parsed ${results.length} suggestions`)
-    return results.filter(r => r.fullAddress.trim().length > 0) // Filtrujeme prázdné výsledky
+    return []
   } catch (error) {
     console.error('❌ Error fetching RÚIAN addresses:', error)
     if (error instanceof Error) {
