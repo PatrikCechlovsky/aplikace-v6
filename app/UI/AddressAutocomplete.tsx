@@ -319,6 +319,28 @@ export default function AddressAutocomplete({
         </div>
       )}
 
+      {/* Info zpráva pokud autocomplete nefunguje */}
+      {country === 'CZ' && !loading && query.trim().length >= 3 && suggestions.length === 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: '4px',
+            padding: '8px 12px',
+            backgroundColor: 'var(--color-surface, #fff)',
+            border: '1px solid var(--color-border-soft, #e5e7eb)',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            color: 'var(--color-text-soft, #6b7280)',
+            zIndex: 1000,
+          }}
+        >
+          Autocomplete adres momentálně není k dispozici. Prosím vyplňte adresu ručně.
+        </div>
+      )}
+
       {/* Tlačítko pro ruční vyplnění (skrýt autocomplete) */}
       {country === 'CZ' && !loading && (
         <button

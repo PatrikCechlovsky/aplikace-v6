@@ -29,27 +29,48 @@ export async function GET(request: NextRequest) {
     // API klíč z environment variables
     const apiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY || 'c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8'
 
-    // Zkusíme několik endpointů v pořadí podle pravděpodobnosti úspěchu
+    // POZNÁMKA: Veřejné RÚIAN API endpointy nejsou dostupné nebo nefungují
+    // Pro produkci bude potřeba:
+    // 1. Zaregistrovat se u poskytovatele (Visidoo, ASAPI, nebo jiný) a získat API klíč
+    // 2. Nebo použít alternativní službu (Google Places API, Mapbox Geocoding API)
+    // 3. Nebo nasadit vlastní RÚIAN API server (https://github.com/jindrichskupa/ruian-api)
+    
+    // Prozatím zkusíme několik možných endpointů (pravděpodobně selžou):
     const endpoints = [
-      // 1. Veřejné API (skaut.cz) - bez API klíče - zkusíme jako první
+      // Oficiální ČÚZK endpointy (pokud existují)
+      {
+        name: 'ruian.cuzk.cz',
+        url: `https://ruian.cuzk.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
+      },
+      {
+        name: 'cuzk.ruian.cz',
+        url: `https://cuzk.ruian.cz/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
+      },
+      // Skaut.cz (pravděpodobně nefunguje, ale zkusíme)
       {
         name: 'skaut.cz',
         url: `https://ruian-api.skaut.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
         headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
-      // 2. Alternativní endpoint pro skaut.cz
+      // Fnx.io s API klíčem
       {
-        name: 'skaut.cz (alt)',
-        url: `https://ruian-api.skaut.cz/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
-        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
-      },
-      // 3. Fnx.io API s API klíčem jako query param (z serveru není CORS problém)
-      {
-        name: 'fnx.io (query param)',
+        name: 'fnx.io',
         url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10&apiKey=${apiKey}`,
         headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
     ]
+    
+    // Pokud máme Visidoo API klíč, můžeme ho přidat:
+    // const visidooApiKey = process.env.NEXT_PUBLIC_VISIDOO_API_KEY
+    // if (visidooApiKey) {
+    //   endpoints.unshift({
+    //     name: 'visidoo',
+    //     url: `https://api.visidoo.cz/v1/address/autocomplete?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
+    //     headers: { 'Accept': 'application/json', 'X-API-Key': visidooApiKey },
+    //   })
+    // }
 
     // Zkusíme každý endpoint
     const errors: string[] = []
