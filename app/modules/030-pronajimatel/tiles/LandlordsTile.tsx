@@ -18,8 +18,10 @@ import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 
 import '@/app/styles/components/TileLayout.css'
+import '@/app/styles/components/PaletteCard.css'
 
 const logger = createLogger('030 LandlordsTile')
 
@@ -200,6 +202,9 @@ export default function LandlordsTile({
     return map
   }, [subjectTypes])
   const subjectTypeMapRef = useRef<Record<string, SubjectType>>({})
+
+  // State pro výběr typu subjektu při create režimu
+  const [selectedSubjectTypeForCreate, setSelectedSubjectTypeForCreate] = useState<string | null>(null)
 
   const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'subjectTypeLabel', dir: 'asc' }), [])
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
@@ -515,52 +520,21 @@ export default function LandlordsTile({
     }
   }, [searchParams, landlords, setUrl, toast, logger])
 
-  useEffect(() => {
-    const actions: CommonActionId[] = []
-    if (viewMode === 'list') {
-      if (selectedId) actions.push('delete', 'archive')
-    } else if (viewMode === 'edit' || viewMode === 'create') {
-      actions.push('save', 'cancel')
-    } else if (viewMode === 'read') {
-      actions.push('edit', 'delete', 'archive')
-    }
+  const closeListToModule = useCallback(() => {
+    setUrl({ t: null, id: null, vm: null, type: null }, 'replace')
+    router.push('/')
+  }, [router, setUrl])
 
-    onRegisterCommonActions?.(actions)
-    onRegisterCommonActionsState?.({
-      viewMode,
-      hasSelection: !!selectedId,
-      isDirty,
-    })
-  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
-
-  useEffect(() => {
-    if (!onRegisterCommonActionHandler) return
-
-    onRegisterCommonActionHandler(async (id: CommonActionId) => {
-      if (id === 'cancel') {
-        if (viewMode === 'create') {
-          router.push(`/modules/030-pronajimatel?t=landlords-list`)
-        } else {
-          setViewMode('read')
-          setUrl({ vm: 'read' })
-        }
-        setIsDirty(false)
-      } else if (id === 'edit') {
-        setViewMode('edit')
-        setUrl({ vm: 'edit' })
-      } else if (id === 'save') {
-        if (submitRef.current) {
-          const saved = await submitRef.current()
-          if (saved) {
-            setViewMode('read')
-            setUrl({ vm: 'read' })
-            void load()
-          }
-        }
-      }
-      // TODO: Implementovat delete a archive
-    })
-  }, [onRegisterCommonActionHandler, setUrl, viewMode, router, load])
+  const closeToList = useCallback(() => {
+    setDetailLandlord(null)
+    setSelectedSubjectTypeForCreate(null)
+    setDetailInitialSectionId('detail')
+    submitRef.current = null
+    setIsDirty(false)
+    setViewMode('list')
+    setSelectedId(null)
+    setUrl({ t: 'landlords-list', id: null, vm: null }, 'replace')
+  }, [setUrl])
 
   const openDetail = useCallback(
     (l: UiLandlord, vm: ViewMode, sectionId: any) => {
@@ -575,17 +549,25 @@ export default function LandlordsTile({
         titleBefore: l.titleBefore,
         firstName: l.firstName,
         lastName: l.lastName,
+        note: null,
+        birthDate: null,
+        personalIdNumber: null,
+        idDocType: null,
+        idDocNumber: null,
         companyName: l.companyName,
         ic: l.ic,
         dic: l.dic,
+        icValid: null,
+        dicValid: null,
+        delegateId: null,
         street: null,
         city: null,
         zip: null,
         houseNumber: null,
         country: 'CZ',
-        note: null,
       }
       setDetailLandlord(detail)
+      setSelectedSubjectTypeForCreate(null) // Reset pro create
       setDetailInitialSectionId(sectionId)
       setIsDirty(false)
       setViewMode(vm as any)
@@ -594,6 +576,175 @@ export default function LandlordsTile({
     },
     [setUrl]
   )
+
+  useEffect(() => {
+    const actions: CommonActionId[] = []
+    if (viewMode === 'list') {
+      actions.push('add', 'columnSettings', 'close')
+      if (selectedId) {
+        actions.push('view', 'edit')
+        // TODO: Přidat delete a archive po implementaci
+        // actions.push('delete', 'archive')
+      }
+    } else if (viewMode === 'edit' || viewMode === 'create') {
+      actions.push('save', 'cancel')
+    } else if (viewMode === 'read') {
+      actions.push('edit', 'close')
+      // TODO: Přidat delete a archive po implementaci
+      // actions.push('delete', 'archive')
+    }
+
+    onRegisterCommonActions?.(actions)
+    onRegisterCommonActionsState?.({
+      viewMode,
+      hasSelection: !!selectedId,
+      isDirty,
+    })
+  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+
+  useEffect(() => {
+    if (!onRegisterCommonActionHandler) return
+
+    onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      // CLOSE
+      if (id === 'close') {
+        if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
+          const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+          if (!ok) return
+        }
+
+        if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
+          closeToList()
+        } else {
+          closeListToModule()
+        }
+        return
+      }
+
+      // COLUMN SETTINGS
+      if (id === 'columnSettings') {
+        setColsOpen(true)
+        return
+      }
+
+      // LIST ACTIONS
+      if (viewMode === 'list') {
+        if (id === 'add') {
+          // Pro create režim nejdřív zobrazit výběr typu subjektu
+          setSelectedSubjectTypeForCreate(null)
+          const newLandlord: DetailUiLandlord = {
+            id: 'new',
+            displayName: '',
+            email: null,
+            phone: null,
+            subjectType: null,
+            isArchived: false,
+            createdAt: '',
+            titleBefore: null,
+            firstName: null,
+            lastName: null,
+            note: null,
+            birthDate: null,
+            personalIdNumber: null,
+            idDocType: null,
+            idDocNumber: null,
+            companyName: null,
+            ic: null,
+            dic: null,
+            icValid: null,
+            dicValid: null,
+            delegateId: null,
+            street: null,
+            city: null,
+            zip: null,
+            houseNumber: null,
+            country: 'CZ',
+          }
+          setDetailLandlord(newLandlord)
+          setViewMode('create')
+          setSelectedId('new')
+          setIsDirty(false)
+          setUrl({ t: 'landlords-list', id: 'new', vm: 'create' }, 'push')
+          return
+        }
+
+        if (id === 'view' || id === 'edit') {
+          if (!selectedId) {
+            toast.showWarning('Nejdřív vyber pronajimatele v seznamu.')
+            return
+          }
+          const l = landlords.find((x) => x.id === selectedId)
+          if (!l) {
+            toast.showWarning('Pronajímatel nenalezen.')
+            return
+          }
+          openDetail(l, id === 'edit' ? 'edit' : 'read', 'detail')
+          return
+        }
+
+        // TODO: Implementovat delete a archive
+        if (id === 'delete' || id === 'archive') {
+          toast.showWarning(`${id === 'delete' ? 'Smazání' : 'Archivace'} pronajimatele zatím není implementována.`)
+          return
+        }
+        return
+      }
+
+      // CREATE / EDIT ACTIONS
+      if (viewMode === 'create' || viewMode === 'edit') {
+        if (id === 'save') {
+          if (submitRef.current) {
+            const saved = await submitRef.current()
+            if (saved) {
+              // Po uložení přepnout na detail (read mode)
+              setDetailLandlord(saved)
+              setViewMode('read')
+              setSelectedId(saved.id)
+              setUrl({ t: 'landlords-list', id: saved.id, vm: 'read' })
+              setIsDirty(false)
+              void load() // Obnovit seznam
+            }
+          }
+          return
+        }
+
+        if (id === 'cancel') {
+          if (isDirty) {
+            const ok = confirm('Máš neuložené změny. Opravdu chceš zrušit?')
+            if (!ok) return
+          }
+
+          if (viewMode === 'create') {
+            // Z create režimu zpět do listu
+            closeToList()
+          } else {
+            // Z edit režimu zpět do detailu (read mode)
+            setViewMode('read')
+            setUrl({ vm: 'read' })
+            setIsDirty(false)
+          }
+          return
+        }
+        return
+      }
+
+      // READ ACTIONS
+      if (viewMode === 'read') {
+        if (id === 'edit') {
+          setViewMode('edit')
+          setUrl({ vm: 'edit' })
+          return
+        }
+
+        // TODO: Implementovat delete a archive
+        if (id === 'delete' || id === 'archive') {
+          toast.showWarning(`${id === 'delete' ? 'Smazání' : 'Archivace'} pronajimatele zatím není implementována.`)
+          return
+        }
+        return
+      }
+    })
+  }, [onRegisterCommonActionHandler, viewMode, isDirty, selectedId, landlords, setUrl, router, load, toast, openDetail, closeToList, closeListToModule])
 
   // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
   const baseOrderIndex = useMemo(() => {
@@ -702,33 +853,24 @@ export default function LandlordsTile({
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
               toolbarRight={
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  {!propSubjectTypeFilter && (
-                    <select
-                      value={subjectTypeFilter || ''}
-                      onChange={(e) => {
-                        const val = e.target.value || null
-                        setSubjectTypeFilter(val)
-                        setUrl({ t: 'landlords-list', type: val })
-                      }}
-                      style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
-                    >
-                      <option value="">Všechny typy</option>
-                      {subjectTypes.map((type) => (
-                        <option key={type.code} value={type.code}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setColsOpen(true)}
-                    style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: 'pointer' }}
+                !propSubjectTypeFilter ? (
+                  <select
+                    value={subjectTypeFilter || ''}
+                    onChange={(e) => {
+                      const val = e.target.value || null
+                      setSubjectTypeFilter(val)
+                      setUrl({ t: 'landlords-list', type: val })
+                    }}
+                    style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
                   >
-                    Sloupce
-                  </button>
-                </div>
+                    <option value="">Všechny typy</option>
+                    {subjectTypes.map((type) => (
+                      <option key={type.code} value={type.code}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : null
               }
               emptyText="Žádní pronajímatelé."
             />
@@ -764,8 +906,127 @@ export default function LandlordsTile({
     )
   }
 
-  if (viewMode === 'read' || viewMode === 'edit') {
+  // CREATE / EDIT / READ mode - zobrazit LandlordDetailFrame
+  if (viewMode === 'create' || viewMode === 'edit' || viewMode === 'read') {
+    // Pro create režim: pokud není vybrán typ subjektu, zobrazit výběr typu
+    // Zobrazit výběr typu, pokud:
+    // 1. Je create režim
+    // 2. A není vybrán typ (ani v selectedSubjectTypeForCreate, ani v detailLandlord.subjectType)
+    const needsTypeSelection = viewMode === 'create' && !selectedSubjectTypeForCreate && !detailLandlord?.subjectType
+
+    if (needsTypeSelection) {
+      const EXPECTED_SUBJECT_TYPES = ['osoba', 'osvc', 'firma', 'spolek', 'statni', 'zastupce']
+      const availableTypes = subjectTypes.filter((t) => EXPECTED_SUBJECT_TYPES.includes(t.code) && (t.active ?? true))
+
+      return (
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">Nový pronajímatel</h1>
+            <p className="tile-layout__description">Vyberte typ subjektu pro vytvoření nového pronajimatele</p>
+          </div>
+          <div className="tile-layout__content" style={{ padding: '1.5rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem',
+              }}
+            >
+              {availableTypes.map((type) => {
+                const isSelected = selectedSubjectTypeForCreate === type.code
+                const iconKey = (type.icon?.trim() || 'home') as IconKey
+                const icon = getIcon(iconKey)
+                const color = type.color?.trim() || '#666666'
+
+                return (
+                  <button
+                    key={type.code}
+                    type="button"
+                    className={`palette-card ${isSelected ? 'palette-card--active' : ''}`}
+                    onClick={() => {
+                      setSelectedSubjectTypeForCreate(type.code)
+                      // Nastavit subjectType do detailLandlord
+                      const updatedLandlord: DetailUiLandlord = detailLandlord
+                        ? {
+                            ...detailLandlord,
+                            subjectType: type.code,
+                          }
+                        : {
+                            id: 'new',
+                            displayName: '',
+                            email: null,
+                            phone: null,
+                            subjectType: type.code,
+                            isArchived: false,
+                            createdAt: '',
+                            titleBefore: null,
+                            firstName: null,
+                            lastName: null,
+                            note: null,
+                            birthDate: null,
+                            personalIdNumber: null,
+                            idDocType: null,
+                            idDocNumber: null,
+                            companyName: null,
+                            ic: null,
+                            dic: null,
+                            icValid: null,
+                            dicValid: null,
+                            delegateId: null,
+                            street: null,
+                            city: null,
+                            zip: null,
+                            houseNumber: null,
+                            country: 'CZ',
+                          }
+                      setDetailLandlord(updatedLandlord)
+                      setIsDirty(false)
+                    }}
+                    style={{
+                      backgroundColor: isSelected ? color : 'var(--color-surface-subtle)',
+                      borderColor: color,
+                      borderWidth: '2px',
+                      borderStyle: 'solid',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      <span style={{ fontSize: '2rem' }}>{icon}</span>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{type.name}</div>
+                        {type.description && (
+                          <div style={{ fontSize: '0.875rem', opacity: 0.8, marginTop: '0.25rem' }}>
+                            {type.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Zobrazit LandlordDetailFrame když je vybrán typ (create) nebo pro edit/read
     if (!detailLandlord) return null
+    
+    // Pro create režim: pokud není vybrán typ subjektu, zobrazit výběr typu (nebo pokud je detailLandlord.subjectType, zobrazit formulář)
+    // Pokud je create režim a není vybrán typ, zobrazit výběr (to jsme už zkontrolovali výše)
+    // Pokud je create režim a je vybrán typ (nebo selectedSubjectTypeForCreate nebo detailLandlord.subjectType), zobrazit formulář
 
     return (
       <LandlordDetailFrame
@@ -773,8 +1034,40 @@ export default function LandlordsTile({
         viewMode={viewMode}
         initialSectionId={detailInitialSectionId}
         onActiveSectionChange={() => {}}
-        onRegisterSubmit={submitRef.current ? undefined : (fn) => (submitRef.current = fn)}
+        onRegisterSubmit={(fn) => {
+          submitRef.current = fn
+        }}
         onDirtyChange={setIsDirty}
+        onSaved={(saved) => {
+          // Aktualizovat detail po uložení
+          setDetailLandlord(saved)
+          // Aktualizovat seznam (pokud je načten)
+          const updatedListRow: LandlordsListRow = {
+            id: saved.id,
+            display_name: saved.displayName,
+            email: saved.email,
+            phone: saved.phone,
+            subject_type: saved.subjectType,
+            is_archived: saved.isArchived,
+            created_at: saved.createdAt,
+            title_before: saved.titleBefore ?? null,
+            first_name: saved.firstName ?? null,
+            last_name: saved.lastName ?? null,
+            company_name: saved.companyName ?? null,
+            ic: saved.ic ?? null,
+            dic: saved.dic ?? null,
+            subject_type_name: subjectTypes.find((t) => t.code === saved.subjectType)?.name || null,
+            subject_type_color: subjectTypes.find((t) => t.code === saved.subjectType)?.color || null,
+            subject_type_sort_order: subjectTypes.find((t) => t.code === saved.subjectType)?.sort_order ?? null,
+          }
+          const updated = landlords.map((l) => (l.id === saved.id ? mapRowToUi(updatedListRow, subjectTypeMapRef.current) : l))
+          if (!landlords.find((l) => l.id === saved.id)) {
+            // Přidat nový záznam do seznamu
+            setLandlords([...landlords, mapRowToUi(updatedListRow, subjectTypeMapRef.current)])
+          } else {
+            setLandlords(updated)
+          }
+        }}
       />
     )
   }

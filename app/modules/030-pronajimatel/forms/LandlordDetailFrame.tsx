@@ -429,7 +429,14 @@ export default function LandlordDetailFrame({
   }, [resolvedLandlord])
 
   const landlordName = resolvedLandlord.displayName || 'Pronajímatel'
-  const title = resolvedLandlord.id === 'new' ? 'Nový pronajímatel' : `Pronajímatel: ${landlordName}`
+  let title = 'Pronajímatel'
+  if (resolvedLandlord.id === 'new' || viewMode === 'create') {
+    title = 'Nový pronajímatel'
+  } else if (viewMode === 'edit') {
+    title = `Editace pronajimatele: ${landlordName}`
+  } else {
+    title = `Pronajímatel: ${landlordName}`
+  }
 
   return (
     <div className="tile-layout">
