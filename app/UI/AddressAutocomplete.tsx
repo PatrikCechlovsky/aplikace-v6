@@ -34,15 +34,17 @@ export type AddressAutocompleteProps = {
 
 /**
  * RÚIAN API endpoint pro autocomplete
- * Používáme RUIAN API od fnx.io: https://ruian.fnx.io/
- * API klíč: c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8
+ * Používáme veřejné REST API: https://github.com/jindrichskupa/ruian-api
  * 
- * Možné endpointy:
+ * Veřejný endpoint (bez API klíče):
+ * - https://ruian-api.skaut.cz/api/v1/search
+ * 
+ * Nebo RUIAN API od fnx.io (vyžaduje API klíč):
  * - https://ruian.fnx.io/api/v1/address
- * - https://api.ruian.fnx.io/v1/address
- * - https://ruian-api.fnx.io/api/v1/address
+ * - API klíč: c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8
  */
-const RUIAN_API_BASE = 'https://api.ruian.fnx.io/v1/address'
+const RUIAN_API_BASE_PUBLIC = 'https://ruian-api.skaut.cz/api/v1/search'
+const RUIAN_API_BASE_FNX = 'https://ruian.fnx.io/api/v1/address'
 
 /**
  * Funkce pro vyhledávání adres v RÚIAN
@@ -70,11 +72,17 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
     let lastError: Error | null = null
     
     // Zkusíme několik možností endpointu a formátu
+    // 1. Veřejné API (skaut.cz) - bez API klíče
+    // 2. Fnx.io API - s API klíčem
     const endpointConfigs: Array<{ url: string; headers: Record<string, string> }> = [
-      { url: `${RUIAN_API_BASE}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, headers: { 'Accept': 'application/json' } },
-      { url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, headers: { 'Accept': 'application/json' } },
-      { url: `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` } },
-      { url: `https://api.ruian.fnx.io/v1/address?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'X-API-Key': apiKey } },
+      // Veřejné API (skaut.cz) - formát: /api/v1/search?q={query}
+      { url: `${RUIAN_API_BASE_PUBLIC}?q=${encodeURIComponent(query)}`, headers: { 'Accept': 'application/json' } },
+      // Fnx.io API - formát: /api/v1/address?q={query}&apiKey={key}
+      { url: `${RUIAN_API_BASE_FNX}?q=${encodeURIComponent(query)}&limit=10&apiKey=${apiKey}`, headers: { 'Accept': 'application/json' } },
+      // Alternativní formát s Bearer tokenem
+      { url: `${RUIAN_API_BASE_FNX}?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` } },
+      // Alternativní formát s X-API-Key headerem
+      { url: `${RUIAN_API_BASE_FNX}?q=${encodeURIComponent(query)}&limit=10`, headers: { 'Accept': 'application/json', 'X-API-Key': apiKey } },
     ]
     
     for (const config of endpointConfigs) {
