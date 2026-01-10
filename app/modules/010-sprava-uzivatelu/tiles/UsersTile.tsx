@@ -817,7 +817,12 @@ export default function UsersTile({
   // CommonActions list
   // -------------------------
   const commonActions = useMemo<CommonActionId[]>(() => {
-    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
+    // Pořadí jako v pronajimatelích: add, detail, edit/uložit, sloupce, zavřít
+    // Ale read/edit/invite jen když je vybrán řádek (selectedId)
+    const LIST_BASE: CommonActionId[] = ['add']
+    const LIST_SELECTED: CommonActionId[] = ['view', 'edit', 'invite'] // Detail, Edit, Odeslat pozvánku jen když je vybrán řádek
+    const LIST_ALWAYS: CommonActionId[] = ['columnSettings', 'close']
+
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
     const READ_DEFAULT: CommonActionId[] = ['edit', 'invite', 'close']
     const EDIT_DEFAULT: CommonActionId[] = ['save', 'invite', 'close']
@@ -833,7 +838,15 @@ export default function UsersTile({
       return hasClose ? ([...filtered, 'attachments', 'close'] as CommonActionId[]) : ([...filtered, 'attachments'] as CommonActionId[])
     }
 
-    if (viewMode === 'list') return withAttachmentsBeforeClose(LIST)
+    if (viewMode === 'list') {
+      // V list mode: add, (view, edit, invite jen když je selectedId), columnSettings, close, attachments
+      const listActions: CommonActionId[] = [...LIST_BASE]
+      if (selectedId) {
+        listActions.push(...LIST_SELECTED)
+      }
+      listActions.push(...LIST_ALWAYS)
+      return withAttachmentsBeforeClose(listActions)
+    }
     if (viewMode === 'invite') return INVITE
 
     if (viewMode === 'attachments-manager') {
@@ -858,7 +871,7 @@ export default function UsersTile({
 
     if (viewMode === 'edit') return withAttachmentsBeforeClose(EDIT_DEFAULT)
     return withAttachmentsBeforeClose(CREATE_DEFAULT)
-  }, [viewMode, detailActiveSectionId, attachmentsManagerUi.mode])
+  }, [viewMode, selectedId, detailActiveSectionId, attachmentsManagerUi.mode])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)

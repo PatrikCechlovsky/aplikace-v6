@@ -580,12 +580,16 @@ export default function LandlordsTile({
   useEffect(() => {
     const actions: CommonActionId[] = []
     if (viewMode === 'list') {
-      actions.push('add', 'columnSettings', 'close')
+      // Pořadí jako v Users: add, detail, edit/uložit, sloupce, zavřít
+      actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit')
-        // TODO: Přidat delete a archive po implementaci
-        // actions.push('delete', 'archive')
+        actions.push('view', 'edit') // Detail a Edit jen když je vybrán řádek
       }
+      actions.push('columnSettings', 'close')
+      // TODO: Přidat delete a archive po implementaci
+      // if (selectedId) {
+      //   actions.push('delete', 'archive')
+      // }
     } else if (viewMode === 'edit' || viewMode === 'create') {
       actions.push('save', 'close') // V create/edit mode: "Uložit" a "Zavřít" (červené X)
     } else if (viewMode === 'read') {
