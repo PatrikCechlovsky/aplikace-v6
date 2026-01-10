@@ -43,6 +43,12 @@ export type UiUser = {
   firstName?: string | null
   lastName?: string | null
   login?: string | null
+  
+  // Personal identification
+  birthDate?: string | null
+  personalIdNumber?: string | null
+  idDocType?: string | null
+  idDocNumber?: string | null
 }
 
 type Props = {
@@ -70,6 +76,12 @@ function buildInitialFormValue(u: UiUser): UserFormValue {
     lastName: ((u as any).lastName ?? '').toString(),
     login: ((u as any).login ?? '').toString(),
     note: ((u as any).note ?? '').toString(),
+
+    // Personal identification
+    birthDate: ((u as any).birthDate ?? '').toString(),
+    personalIdNumber: ((u as any).personalIdNumber ?? '').toString(),
+    idDocType: ((u as any).idDocType ?? '').toString(),
+    idDocNumber: ((u as any).idDocNumber ?? '').toString(),
 
     isArchived: !!u.isArchived,
   }
@@ -172,6 +184,12 @@ export default function UserDetailFrame({
           firstName: (s.first_name ?? (user as any).firstName ?? null) as any,
           lastName: (s.last_name ?? (user as any).lastName ?? null) as any,
           login: (s.login ?? (user as any).login ?? null) as any,
+          
+          // Personal identification
+          birthDate: (s.birth_date ?? (user as any).birthDate ?? null) as any,
+          personalIdNumber: (s.personal_id_number ?? (user as any).personalIdNumber ?? null) as any,
+          idDocType: (s.id_doc_type ?? (user as any).idDocType ?? null) as any,
+          idDocNumber: (s.id_doc_number ?? (user as any).idDocNumber ?? null) as any,
 
           roleCode: nextRole || null,
           permissionLabel: (user as any)?.permissionLabel ?? '—',
@@ -305,6 +323,12 @@ export default function UserDetailFrame({
           lastName: v.lastName,
           login: v.login,
           note: v.note,
+
+          // PERSONAL IDENTIFICATION
+          birthDate: v.birthDate || null,
+          personalIdNumber: v.personalIdNumber || null,
+          idDocType: v.idDocType || null,
+          idDocNumber: v.idDocNumber || null,
 
           roleCode: rc,
           // ✅ pošli jen když je vybrané (a tady je vždy)

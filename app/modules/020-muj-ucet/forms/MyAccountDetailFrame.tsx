@@ -36,6 +36,12 @@ export type UiUser = {
   lastName?: string | null
   login?: string | null
 
+  // Personal identification
+  birthDate?: string | null // DATE as ISO string (YYYY-MM-DD)
+  personalIdNumber?: string | null // Rodné číslo
+  idDocType?: string | null // Typ dokladu: 'OP', 'PAS', 'RP', 'OTHER'
+  idDocNumber?: string | null // Číslo dokladu
+
   // Adresa
   street?: string | null
   city?: string | null
@@ -66,6 +72,12 @@ function buildInitialFormValue(u: UiUser): MyAccountFormValue {
     firstName: ((u as any).firstName ?? '').toString(),
     lastName: ((u as any).lastName ?? '').toString(),
     login: ((u as any).login ?? '').toString(),
+
+    // Personal identification
+    birthDate: ((u as any).birthDate ?? '').toString(),
+    personalIdNumber: ((u as any).personalIdNumber ?? '').toString(),
+    idDocType: ((u as any).idDocType ?? '').toString(),
+    idDocNumber: ((u as any).idDocNumber ?? '').toString(),
 
     twoFactorMethod: (u.twoFactorMethod ?? '').toString(),
 
@@ -177,6 +189,12 @@ export default function MyAccountDetailFrame({
           firstName: v.firstName || null,
           lastName: v.lastName || null,
           login: v.login || null,
+
+          // PERSONAL IDENTIFICATION
+          birthDate: v.birthDate || null,
+          personalIdNumber: v.personalIdNumber || null,
+          idDocType: v.idDocType || null,
+          idDocNumber: v.idDocNumber || null,
 
           // ADDRESS
           street: v.street || null,

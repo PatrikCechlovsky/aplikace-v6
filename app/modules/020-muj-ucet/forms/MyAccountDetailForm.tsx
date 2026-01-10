@@ -45,6 +45,12 @@ export type MyAccountFormValue = {
   lastName: string
   login: string
 
+  // Personal identification
+  birthDate: string // DATE as ISO string (YYYY-MM-DD)
+  personalIdNumber: string // Rodné číslo
+  idDocType: string // Typ dokladu: 'OP', 'PAS', 'RP', 'OTHER'
+  idDocNumber: string // Číslo dokladu
+
   twoFactorMethod: string
 
   // Adresa
@@ -84,6 +90,12 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
       firstName: safe((user as any).firstName),
       lastName: safe((user as any).lastName),
       login: safe((user as any).login),
+
+      // Personal identification
+      birthDate: safe((user as any).birthDate),
+      personalIdNumber: safe((user as any).personalIdNumber),
+      idDocType: safe((user as any).idDocType),
+      idDocNumber: safe((user as any).idDocNumber),
 
       twoFactorMethod: safe(user.twoFactorMethod),
 
@@ -278,6 +290,61 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               <option value="DE">Německo</option>
               <option value="AT">Rakousko</option>
             </select>
+          </div>
+        </div>
+
+        {/* Řádek za Stát: Datum narození + Rodné číslo */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Datum narození</label>
+            <input
+              className="detail-form__input"
+              type="date"
+              value={val.birthDate || ''}
+              onChange={(e) => update({ birthDate: e.target.value })}
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Rodné číslo</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={11}
+              value={val.personalIdNumber}
+              onChange={(e) => update({ personalIdNumber: e.target.value })}
+              placeholder="YYMMDD/XXXX nebo YYMMDDXXXX"
+            />
+          </div>
+        </div>
+
+        {/* Další řádek: Druh dokladu + Číslo dokladu */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Druh dokladu</label>
+            <select
+              className="detail-form__input"
+              value={val.idDocType || ''}
+              onChange={(e) => update({ idDocType: e.target.value })}
+            >
+              <option value="">— vyber doklad —</option>
+              <option value="OP">Občanský průkaz</option>
+              <option value="PAS">Pas</option>
+              <option value="RP">Řidičský průkaz</option>
+              <option value="OTHER">Jiný</option>
+            </select>
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Číslo dokladu</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={50}
+              value={val.idDocNumber}
+              onChange={(e) => update({ idDocNumber: e.target.value })}
+              placeholder="Číslo dokladu"
+            />
           </div>
         </div>
       </div>

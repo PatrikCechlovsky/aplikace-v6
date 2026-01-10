@@ -151,6 +151,12 @@ export type SubjectRow = {
   first_name?: string | null
   last_name?: string | null
   login?: string | null
+  
+  // personal identification fields
+  birth_date?: string | null // DATE as ISO string
+  personal_id_number?: string | null // Rodné číslo
+  id_doc_type?: string | null // Typ dokladu: 'OP', 'PAS', 'RP', 'OTHER'
+  id_doc_number?: string | null // Číslo dokladu
 }
 
 export type UserDetailRow = {
@@ -183,6 +189,10 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
         last_name,
         login,
         note,
+        birth_date,
+        personal_id_number,
+        id_doc_type,
+        id_doc_number,
         street,
         city,
         zip,
@@ -246,6 +256,12 @@ export type SaveUserInput = {
   lastName?: string | null
   login?: string | null
   note?: string | null
+  
+  // PERSONAL IDENTIFICATION
+  birthDate?: string | null // DATE as ISO string (YYYY-MM-DD)
+  personalIdNumber?: string | null // Rodné číslo
+  idDocType?: string | null // Typ dokladu: 'OP', 'PAS', 'RP', 'OTHER'
+  idDocNumber?: string | null // Číslo dokladu
 
   // ADDRESS
   street?: string | null
@@ -310,6 +326,12 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
     last_name: (input.lastName ?? '').trim() || null,
     login: (input.login ?? '').trim() || null,
     note: (input.note ?? '').trim() || null,
+    
+    // PERSONAL IDENTIFICATION
+    birth_date: input.birthDate ? (input.birthDate.trim() || null) : null,
+    personal_id_number: (input.personalIdNumber ?? '').trim() || null,
+    id_doc_type: (input.idDocType ?? '').trim() || null,
+    id_doc_number: (input.idDocNumber ?? '').trim() || null,
 
     // ADDRESS
     street: (input.street ?? '').trim() || null,
@@ -351,7 +373,11 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
         first_name,
         last_name,
         login,
-        note
+        note,
+        birth_date,
+        personal_id_number,
+        id_doc_type,
+        id_doc_number
       `
     )
       .single()

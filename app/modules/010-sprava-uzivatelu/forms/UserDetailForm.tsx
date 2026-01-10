@@ -29,6 +29,12 @@ type UiUser = {
   firstName?: string | null
   lastName?: string | null
   login?: string | null
+  
+  // Personal identification
+  birthDate?: string | null
+  personalIdNumber?: string | null
+  idDocType?: string | null
+  idDocNumber?: string | null
 }
 
 export type UserFormValue = {
@@ -43,6 +49,12 @@ export type UserFormValue = {
   login: string
   note: string // Poznámka k uživateli
   isArchived: boolean
+  
+  // Personal identification
+  birthDate: string
+  personalIdNumber: string
+  idDocType: string
+  idDocNumber: string
 }
 
 export type UserDetailFormProps = {
@@ -97,6 +109,12 @@ export default function UserDetailForm({
       lastName: safe((user as any).lastName),
       login: safe((user as any).login),
       note: safe((user as any).note),
+
+      // Personal identification
+      birthDate: safe((user as any).birthDate),
+      personalIdNumber: safe((user as any).personalIdNumber),
+      idDocType: safe((user as any).idDocType),
+      idDocNumber: safe((user as any).idDocNumber),
 
       isArchived: !!user.isArchived,
     }),
@@ -317,6 +335,73 @@ export default function UserDetailForm({
           </div>
         </div>
   
+        {/* Řádek za osobní údaje: Datum narození + Rodné číslo */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Datum narození</label>
+            <input
+              className="detail-form__input"
+              type="date"
+              value={val.birthDate || ''}
+              readOnly={readOnly}
+              onChange={(e) => update({ birthDate: e.target.value })}
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Rodné číslo</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={11}
+              value={val.personalIdNumber}
+              readOnly={readOnly}
+              onChange={(e) => update({ personalIdNumber: e.target.value })}
+              placeholder="YYMMDD/XXXX nebo YYMMDDXXXX"
+            />
+          </div>
+        </div>
+
+        {/* Další řádek: Druh dokladu + Číslo dokladu */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Druh dokladu</label>
+            {readOnly ? (
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                type="text"
+                value={val.idDocType === 'OP' ? 'Občanský průkaz' : val.idDocType === 'PAS' ? 'Pas' : val.idDocType === 'RP' ? 'Řidičský průkaz' : val.idDocType === 'OTHER' ? 'Jiný' : val.idDocType || '—'}
+                readOnly
+              />
+            ) : (
+              <select
+                className="detail-form__input"
+                value={val.idDocType || ''}
+                onChange={(e) => update({ idDocType: e.target.value })}
+              >
+                <option value="">— vyber doklad —</option>
+                <option value="OP">Občanský průkaz</option>
+                <option value="PAS">Pas</option>
+                <option value="RP">Řidičský průkaz</option>
+                <option value="OTHER">Jiný</option>
+              </select>
+            )}
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">Číslo dokladu</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={50}
+              value={val.idDocNumber}
+              readOnly={readOnly}
+              onChange={(e) => update({ idDocNumber: e.target.value })}
+              placeholder="Číslo dokladu"
+            />
+          </div>
+        </div>
+
         {/* Řádek 3: Poznámka k uživateli */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field detail-form__field--span-2">
