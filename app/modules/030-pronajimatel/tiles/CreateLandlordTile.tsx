@@ -1,32 +1,30 @@
 'use client'
 
 // FILE: app/modules/030-pronajimatel/tiles/CreateLandlordTile.tsx
-// PURPOSE: Tile pro vytvoření nového pronajimatele - zobrazí 6 dlaždic podle typů subjektů a formulář pod vybranou dlaždicí
+// PURPOSE: Tile pro vytvoření nového pronajimatele - stejný jako v LandlordsTile (výběr typu subjektu + LandlordDetailFrame)
+// POZNÁMKA: Tento tile je nyní jen wrapper, který přesměruje na LandlordsTile s create mode
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 import { getIcon, type IconKey } from '@/app/UI/icons'
-import { saveLandlord, type SaveLandlordInput } from '@/app/lib/services/landlords'
+import LandlordDetailFrame, { type UiLandlord as DetailUiLandlord } from '../forms/LandlordDetailFrame'
+import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
-import TileLayout from '@/app/UI/TileLayout'
-import LandlordDetailForm, { type LandlordFormValue } from '../forms/LandlordDetailForm'
+
 import '@/app/styles/components/PaletteCard.css'
 import '@/app/styles/components/TileLayout.css'
-import '@/app/styles/components/DetailForm.css'
 
 const logger = createLogger('CreateLandlordTile')
 
 // Očekávané typy subjektů pro pronajimatele
 const EXPECTED_SUBJECT_TYPES = ['osoba', 'osvc', 'firma', 'spolek', 'statni', 'zastupce']
 
-type CommonActionId = 'save' | 'cancel' | 'new' | 'delete' | 'archive'
-
 type Props = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
-  onRegisterCommonActionsState?: (state: { isDirty: boolean; viewMode: 'list' | 'edit' | 'create' }) => void
-  onRegisterCommonActionHandler?: (handler: (id: CommonActionId) => void) => void
+  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
 }
 
 export default function CreateLandlordTile({
@@ -37,11 +35,12 @@ export default function CreateLandlordTile({
   const toast = useToast()
   const router = useRouter()
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
-  const [selectedType, setSelectedType] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [formDirty, setFormDirty] = useState(false)
-  const [formValue, setFormValue] = useState<LandlordFormValue | null>(null)
-  const savingRef = useRef(false)
+  const [selectedSubjectType, setSelectedSubjectType] = useState<string | null>(null)
+  const [detailLandlord, setDetailLandlord] = useState<DetailUiLandlord | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
+  const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
+
+  const submitRef = useRef<null | (() => Promise<DetailUiLandlord | null>)>(null)
 
   // Načíst typy subjektů
   useEffect(() => {
@@ -69,223 +68,179 @@ export default function CreateLandlordTile({
 
   // Registrace CommonActions
   useEffect(() => {
-    const actions: CommonActionId[] = selectedType ? ['save', 'cancel'] : []
+    const actions: CommonActionId[] = []
+    if (!selectedSubjectType) {
+      // Pokud není vybrán typ, žádné akce
+    } else {
+      // Pokud je vybrán typ, zobrazit save a close (stejně jako v LandlordsTile)
+      actions.push('save', 'close')
+    }
     onRegisterCommonActions?.(actions)
-    onRegisterCommonActionsState?.({ isDirty: formDirty, viewMode: 'create' })
-  }, [formDirty, selectedType, onRegisterCommonActions, onRegisterCommonActionsState])
+    onRegisterCommonActionsState?.({
+      viewMode: 'create',
+      hasSelection: false,
+      isDirty,
+    })
+  }, [selectedSubjectType, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
+  // CommonActions handler
   useEffect(() => {
-    onRegisterCommonActionHandler?.(async (id: CommonActionId) => {
-      if (id === 'save' && selectedType && formValue) {
-        if (savingRef.current) return
-        savingRef.current = true
-        setLoading(true)
+    if (!onRegisterCommonActionHandler) return
 
-        try {
-          // Mapovat formValue na SaveLandlordInput
-          const input: SaveLandlordInput = {
-            id: 'new', // nový záznam
-            subjectType: selectedType,
-
-            displayName: formValue.displayName.trim() || null,
-            email: formValue.email.trim() || null,
-            phone: formValue.phone.trim() || null,
-            isArchived: formValue.isArchived,
-
-            // Person fields
-            titleBefore: formValue.titleBefore.trim() || null,
-            firstName: formValue.firstName.trim() || null,
-            lastName: formValue.lastName.trim() || null,
-            note: formValue.note.trim() || null,
-
-            // Personal identification
-            birthDate: formValue.birthDate.trim() || null,
-            personalIdNumber: formValue.personalIdNumber.trim() || null,
-            idDocType: formValue.idDocType.trim() || null,
-            idDocNumber: formValue.idDocNumber.trim() || null,
-
-            // Company fields
-            companyName: formValue.companyName.trim() || null,
-            ic: formValue.ic.trim() || null,
-            dic: formValue.dic.trim() || null,
-            icValid: formValue.icValid,
-            dicValid: formValue.dicValid,
-            delegateId: formValue.delegateId.trim() || null,
-
-            // Address
-            street: formValue.street.trim() || null,
-            city: formValue.city.trim() || null,
-            zip: formValue.zip.trim() || null,
-            houseNumber: formValue.houseNumber.trim() || null,
-            country: formValue.country.trim() || null,
-          }
-
-          const saved = await saveLandlord(input)
-          logger.log('Landlord saved', { id: saved.id })
-
-          toast.showSuccess('Pronajímatel byl úspěšně vytvořen')
-
-          // Přesměrovat na detail nově vytvořeného pronajimatele
-          // TODO: Aktualizovat URL na detail (bude implementováno v LandlordsTile)
-          router.push(`/modules/030-pronajimatel?t=landlords-list&id=${saved.id}&vm=read`)
-
-          // Reset formuláře
-          setSelectedType(null)
-          setFormDirty(false)
-          setFormValue(null)
-        } catch (err: any) {
-          logger.error('saveLandlord failed', err)
-          toast.showError(err?.message || 'Nepodařilo se uložit pronajimatele')
-        } finally {
-          setLoading(false)
-          savingRef.current = false
+    onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      if (id === 'close') {
+        if (isDirty) {
+          const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+          if (!ok) return
         }
+        // Zavřít tile - přesměrovat na seznam pronajímatelů
+        router.push('/modules/030-pronajimatel?t=landlords-list')
+        return
       }
-      if (id === 'cancel') {
-        setSelectedType(null)
-        setFormDirty(false)
-        setFormValue(null)
+
+      if (id === 'save') {
+        if (submitRef.current) {
+          const saved = await submitRef.current()
+          if (saved) {
+            toast.showSuccess('Pronajímatel byl úspěšně vytvořen')
+            // Přesměrovat na detail nově vytvořeného pronajimatele v seznamu pronajímatelů
+            router.push(`/modules/030-pronajimatel?t=landlords-list&id=${saved.id}&vm=read`)
+          }
+        }
+        return
       }
     })
-  }, [selectedType, formValue, toast, router, onRegisterCommonActionHandler])
+  }, [onRegisterCommonActionHandler, isDirty, router, toast])
 
-  const handleTypeSelect = useCallback((typeCode: string) => {
-    const isSame = selectedType === typeCode
-    setSelectedType(isSame ? null : typeCode)
-    setFormDirty(false)
-    // Inicializovat prázdný formulář pro nový typ
-    if (!isSame && typeCode) {
-      const emptyForm: LandlordFormValue = {
-        displayName: '',
-        email: '',
-        phone: '',
-        note: '',
-        isArchived: false,
-        street: '',
-        city: '',
-        zip: '',
-        houseNumber: '',
-        country: 'CZ',
-        titleBefore: '',
-        firstName: '',
-        lastName: '',
-        birthDate: '',
-        personalIdNumber: '',
-        idDocType: '',
-        idDocNumber: '',
-        companyName: '',
-        ic: '',
-        dic: '',
-        icValid: false,
-        dicValid: false,
-        delegateId: '',
+  const handleTypeSelect = useCallback(
+    (typeCode: string) => {
+      const isSame = selectedSubjectType === typeCode
+      if (isSame) {
+        setSelectedSubjectType(null)
+        setDetailLandlord(null)
+      } else {
+        setSelectedSubjectType(typeCode)
+        // Vytvořit nový landlord s vybraným typem
+        const newLandlord: DetailUiLandlord = {
+          id: 'new',
+          displayName: '',
+          email: null,
+          phone: null,
+          subjectType: typeCode,
+          isArchived: false,
+          createdAt: '',
+          titleBefore: null,
+          firstName: null,
+          lastName: null,
+          note: null,
+          birthDate: null,
+          personalIdNumber: null,
+          idDocType: null,
+          idDocNumber: null,
+          companyName: null,
+          ic: null,
+          dic: null,
+          icValid: null,
+          dicValid: null,
+          delegateId: null,
+          street: null,
+          city: null,
+          zip: null,
+          houseNumber: null,
+          country: 'CZ',
+        }
+        setDetailLandlord(newLandlord)
+        setIsDirty(false)
+        setDetailInitialSectionId('detail')
       }
-      setFormValue(emptyForm)
-    } else {
-      setFormValue(null)
-    }
-  }, [selectedType])
+    },
+    [selectedSubjectType]
+  )
 
-  const handleFormValueChange = useCallback((val: LandlordFormValue) => {
-    setFormValue(val)
-  }, [])
-
-  return (
-    <TileLayout
-      title="Přidat pronajimatele"
-      description="Vyberte typ subjektu pro vytvoření nového pronajimatele"
-    >
-      <div style={{ padding: '1.5rem' }}>
-        {/* Grid dlaždic podle typů subjektů */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '1rem',
-            marginBottom: selectedType ? '2rem' : '0',
-          }}
-        >
-          {subjectTypes.map((type) => {
-            const isSelected = selectedType === type.code
-            const iconKey = (type.icon?.trim() || 'home') as IconKey
-            const icon = getIcon(iconKey)
-            const color = type.color?.trim() || '#666666'
-
-            return (
-              <button
-                key={type.code}
-                type="button"
-                className={`palette-card ${isSelected ? 'palette-card--active' : ''}`}
-                onClick={() => handleTypeSelect(type.code)}
-                style={{
-                  backgroundColor: isSelected ? color : 'var(--color-surface-subtle)',
-                  borderColor: color,
-                  borderWidth: '2px',
-                  borderStyle: 'solid',
-                  padding: '1.5rem',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    marginBottom: '0.5rem',
-                  }}
-                >
-                  <span style={{ fontSize: '2rem' }}>{icon}</span>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{type.name}</div>
-                    {type.description && (
-                      <div style={{ fontSize: '0.875rem', opacity: 0.8, marginTop: '0.25rem' }}>
-                        {type.description}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </button>
-            )
-          })}
+  // Pokud není vybrán typ subjektu, zobrazit výběr typu (6 dlaždic)
+  if (!selectedSubjectType || !detailLandlord) {
+    return (
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">Nový pronajímatel</h1>
+          <p className="tile-layout__description">Vyberte typ subjektu pro vytvoření nového pronajimatele</p>
         </div>
-
-        {/* Formulář pod vybranou dlaždicí */}
-        {selectedType && (
+        <div className="tile-layout__content" style={{ padding: '1.5rem' }}>
           <div
             style={{
-              marginTop: '2rem',
-              padding: '1.5rem',
-              backgroundColor: 'var(--color-surface)',
-              borderRadius: '8px',
-              border: '1px solid var(--color-border)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
             }}
           >
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 600 }}>
-              Formulář pro typ: {subjectTypes.find((t) => t.code === selectedType)?.name}
-            </h3>
+            {subjectTypes.map((type) => {
+              const isSelected = selectedSubjectType === type.code
+              const iconKey = (type.icon?.trim() || 'home') as IconKey
+              const icon = getIcon(iconKey)
+              const color = type.color?.trim() || '#666666'
 
-            {loading && (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                Ukládání...
-              </div>
-            )}
-
-            {!loading && formValue && (
-              <LandlordDetailForm
-                subjectType={selectedType}
-                landlord={formValue}
-                readOnly={false}
-                onDirtyChange={setFormDirty}
-                onValueChange={handleFormValueChange}
-              />
-            )}
+              return (
+                <button
+                  key={type.code}
+                  type="button"
+                  className={`palette-card ${isSelected ? 'palette-card--active' : ''}`}
+                  onClick={() => handleTypeSelect(type.code)}
+                  style={{
+                    backgroundColor: isSelected ? color : 'var(--color-surface-subtle)',
+                    borderColor: color,
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    padding: '1.5rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    <span style={{ fontSize: '2rem' }}>{icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{type.name}</div>
+                      {type.description && (
+                        <div style={{ fontSize: '0.875rem', opacity: 0.8, marginTop: '0.25rem' }}>
+                          {type.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
           </div>
-        )}
+        </div>
       </div>
-    </TileLayout>
+    )
+  }
+
+  // Pokud je vybrán typ, zobrazit LandlordDetailFrame (stejný jako v LandlordsTile)
+  return (
+    <LandlordDetailFrame
+      landlord={detailLandlord}
+      viewMode="create"
+      initialSectionId={detailInitialSectionId}
+      onActiveSectionChange={(id) => {
+        setDetailInitialSectionId(id)
+      }}
+      onRegisterSubmit={(fn) => {
+        submitRef.current = fn
+      }}
+      onDirtyChange={setIsDirty}
+      onSaved={(saved) => {
+        // Po uložení přesměrovat na detail v seznamu pronajímatelů
+        router.push(`/modules/030-pronajimatel?t=landlords-list&id=${saved.id}&vm=read`)
+      }}
+    />
   )
 }
-

@@ -3,7 +3,7 @@
 // FILE: app/modules/030-pronajimatel/forms/LandlordDetailFrame.tsx
 // PURPOSE: Detail view pro pronajimatele (read/edit mode) - bez role/permissions
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
 
@@ -12,6 +12,7 @@ import { getLandlordDetail, saveLandlord, type SaveLandlordInput } from '@/app/l
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
+import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
 
@@ -67,6 +68,9 @@ type Props = {
   onDirtyChange?: (dirty: boolean) => void
   onSaved?: (landlord: UiLandlord) => void // Callback po uložení
 }
+
+// Očekávané typy subjektů pro pronajimatele
+const EXPECTED_SUBJECT_TYPES = ['osoba', 'osvc', 'firma', 'spolek', 'statni', 'zastupce']
 
 // =====================
 // 2) HELPERS
@@ -127,13 +131,54 @@ export default function LandlordDetailFrame({
   const [resolvedLandlord, setResolvedLandlord] = useState<UiLandlord>(landlord)
   const resolveSeqRef = useRef(0)
 
-  // Dirty
-  const [_isDirty, setIsDirty] = useState(false)
+  // Subject types pro změnu typu v edit mode
+  const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
+  const [selectedSubjectType, setSelectedSubjectType] = useState<string | null>(landlord.subjectType || null)
+
+  // Dirty state - wrapper který volá onDirtyChange callback
+  const setDirtyAndNotify = useCallback(
+    (dirty: boolean) => {
+      onDirtyChange?.(dirty)
+    },
+    [onDirtyChange]
+  )
   const toast = useToast()
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
 
   const [formValue, setFormValue] = useState<LandlordFormValue>(() => buildInitialFormValue(landlord))
+
+  // Načíst typy subjektů pro select v edit mode
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const types = await fetchSubjectTypes()
+        if (!mounted) return
+
+        // Filtrovat jen očekávané typy
+        const filtered = EXPECTED_SUBJECT_TYPES.map((code) =>
+          types.find((t) => t.code === code)
+        ).filter((t): t is SubjectType => !!t && (t.active ?? true))
+
+        setSubjectTypes(filtered)
+      } catch (err: any) {
+        logger.error('fetchSubjectTypes failed', err)
+        // Není kritické - pouze pro select v edit mode
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // Aktualizovat selectedSubjectType když se změní resolvedLandlord.subjectType (při načtení dat)
+  useEffect(() => {
+    if (resolvedLandlord.subjectType && resolvedLandlord.subjectType !== selectedSubjectType) {
+      setSelectedSubjectType(resolvedLandlord.subjectType)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedLandlord.id]) // Aktualizovat jen když se změní ID (nový landlord)
 
   // Resolve DB truth on open / landlord change
   useEffect(() => {
@@ -144,11 +189,10 @@ export default function LandlordDetailFrame({
     if (viewMode === 'create' || isNewId(landlord?.id)) {
       const init = buildInitialFormValue(landlord)
       setFormValue(init)
-      initialSnapshotRef.current = JSON.stringify(init)
-      firstRenderRef.current = true
-      setIsDirty(false)
-      onDirtyChange?.(false)
-      return
+        initialSnapshotRef.current = JSON.stringify(init)
+        firstRenderRef.current = true
+        setDirtyAndNotify(false)
+        return
     }
 
     // read/edit => resolve from Supabase (jen pokud není 'new')
@@ -159,8 +203,7 @@ export default function LandlordDetailFrame({
       setFormValue(init)
       initialSnapshotRef.current = JSON.stringify(init)
       firstRenderRef.current = true
-      setIsDirty(false)
-      onDirtyChange?.(false)
+      setDirtyAndNotify(false)
       return
     }
 
@@ -217,9 +260,7 @@ export default function LandlordDetailFrame({
         setFormValue(init)
         initialSnapshotRef.current = JSON.stringify(init)
         firstRenderRef.current = true
-
-        setIsDirty(false)
-        onDirtyChange?.(false)
+        setDirtyAndNotify(false)
       } catch (e: any) {
         if (!mounted) return
         logger.error('getLandlordDetail failed', { subjectId, error: e, message: e?.message, code: e?.code })
@@ -237,25 +278,25 @@ export default function LandlordDetailFrame({
   // 4) ACTION HANDLERS
   // =====================
 
-  const computeDirty = (nextFormSnap?: string) => {
+  const computeDirty = useCallback((nextFormSnap?: string) => {
     const formSnap = typeof nextFormSnap === 'string' ? nextFormSnap : JSON.stringify(formValue ?? {})
     const dirty = formSnap !== initialSnapshotRef.current
+    setDirtyAndNotify(dirty)
+  }, [formValue, setDirtyAndNotify])
 
-    setIsDirty(dirty)
-    onDirtyChange?.(dirty)
-  }
-
-  const markDirtyIfChanged = (nextVal: any) => {
-    const snap = JSON.stringify(nextVal ?? {})
-    if (firstRenderRef.current) {
-      firstRenderRef.current = false
-      initialSnapshotRef.current = snap
-      setIsDirty(false)
-      onDirtyChange?.(false)
-      return
-    }
-    computeDirty(snap)
-  }
+  const markDirtyIfChanged = useCallback(
+    (nextVal: any) => {
+      const snap = JSON.stringify(nextVal ?? {})
+      if (firstRenderRef.current) {
+        firstRenderRef.current = false
+        initialSnapshotRef.current = snap
+        setDirtyAndNotify(false)
+        return
+      }
+      computeDirty(snap)
+    },
+    [computeDirty, setDirtyAndNotify]
+  )
 
   // Register save submit
   useEffect(() => {
@@ -270,7 +311,12 @@ export default function LandlordDetailFrame({
           return null
         }
 
-        const subjectType = resolvedLandlord.subjectType || 'osoba'
+        // Použít změněný subjectType pokud je v edit mode, jinak použít z resolvedLandlord
+        const subjectType = selectedSubjectType || resolvedLandlord.subjectType || 'osoba'
+        if (!subjectType) {
+          toast.showError('Typ subjektu je povinný')
+          return null
+        }
 
         // Mapovat formValue na SaveLandlordInput
         const input: SaveLandlordInput = {
@@ -351,8 +397,7 @@ export default function LandlordDetailFrame({
         setFormValue(newInit)
         initialSnapshotRef.current = JSON.stringify(newInit)
         firstRenderRef.current = true
-        setIsDirty(false)
-        onDirtyChange?.(false)
+        setDirtyAndNotify(false)
 
         // Callback pro rodiče (LandlordsTile)
         onSaved?.(updated)
@@ -364,19 +409,62 @@ export default function LandlordDetailFrame({
         return null
       }
     })
-  }, [formValue, resolvedLandlord, toast, onRegisterSubmit, onDirtyChange, onSaved])
+  }, [formValue, resolvedLandlord, selectedSubjectType, toast, onRegisterSubmit, setDirtyAndNotify, onSaved])
 
   // =====================
   // 5) RENDER
   // =====================
 
   const readOnly = viewMode === 'read'
-  const subjectType = resolvedLandlord.subjectType || 'osoba'
+  const subjectType = selectedSubjectType || resolvedLandlord.subjectType || 'osoba'
   const detailMode: DetailViewMode = readOnly ? 'view' : 'edit'
 
   const sectionIds: DetailSectionId[] = useMemo(() => ['detail', 'accounts', 'attachments', 'system'], [])
 
+  const handleSubjectTypeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newType = e.target.value
+      const oldType = selectedSubjectType
+
+      // Pokud se typ změnil, upozornit uživatele
+      if (oldType && oldType !== newType) {
+        const ok = confirm(
+          'Změna typu subjektu může způsobit ztrátu dat v polích specifických pro původní typ. Chceš pokračovat?'
+        )
+        if (!ok) {
+          // Vrátit původní hodnotu - musím použít setSelectedSubjectType, protože e.target.value se nedá jednoduše resetovat
+          return
+        }
+      }
+
+      setSelectedSubjectType(newType || null)
+      // Aktualizovat resolvedLandlord s novým typem
+      setResolvedLandlord((prev) => ({
+        ...prev,
+        subjectType: newType || null,
+      }))
+
+      // Reset formuláře pro nový typ - znovu inicializovat formValue podle nového typu
+      // Key prop na LandlordDetailForm způsobí remount, ale formValue musí být také aktualizován
+      const updatedLandlord: UiLandlord = {
+        ...resolvedLandlord,
+        subjectType: newType || null,
+      }
+      const resetFormValue = buildInitialFormValue(updatedLandlord)
+      setFormValue(resetFormValue)
+      initialSnapshotRef.current = JSON.stringify(resetFormValue)
+      firstRenderRef.current = true
+
+      // Označit jako dirty (změna typu je změna)
+      setDirtyAndNotify(true)
+    },
+    [selectedSubjectType, resolvedLandlord, setDirtyAndNotify]
+  )
+
   const systemBlocks = useMemo(() => {
+    // Najít aktuálně vybraný typ subjektu
+    const currentSubjectType = subjectTypes.find((t) => t.code === selectedSubjectType)
+
     return [
       {
         title: 'Systémové údaje',
@@ -394,12 +482,30 @@ export default function LandlordDetailFrame({
 
             <div className="detail-form__field">
               <label className="detail-form__label">Typ subjektu</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                type="text"
-                value={resolvedLandlord.subjectType || '—'}
-                readOnly
-              />
+              {readOnly ? (
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  type="text"
+                  value={currentSubjectType?.name || resolvedLandlord.subjectType || '—'}
+                  readOnly
+                />
+              ) : (
+                <select
+                  className="detail-form__input"
+                  value={selectedSubjectType || resolvedLandlord.subjectType || ''}
+                  onChange={handleSubjectTypeChange}
+                  style={{ maxWidth: '100%' }}
+                >
+                  <option value="" disabled>
+                    — vyber typ subjektu —
+                  </option>
+                  {subjectTypes.map((type) => (
+                    <option key={type.code} value={type.code}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="detail-form__field">
@@ -426,7 +532,7 @@ export default function LandlordDetailFrame({
         visible: true,
       },
     ]
-  }, [resolvedLandlord])
+  }, [resolvedLandlord, subjectTypes, selectedSubjectType, readOnly, handleSubjectTypeChange])
 
   const landlordName = resolvedLandlord.displayName || 'Pronajímatel'
   let title = 'Pronajímatel'
@@ -461,6 +567,7 @@ export default function LandlordDetailFrame({
 
             detailContent: (
               <LandlordDetailForm
+                key={`form-${resolvedLandlord.id}-${subjectType}`}
                 subjectType={subjectType}
                 landlord={formValue}
                 readOnly={readOnly}
