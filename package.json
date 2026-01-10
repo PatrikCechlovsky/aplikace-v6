@@ -20,6 +20,7 @@
     "typescript"
   ],
   "scripts": {
+    "auto-deploy": "./scripts/auto-commit-push.sh",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
