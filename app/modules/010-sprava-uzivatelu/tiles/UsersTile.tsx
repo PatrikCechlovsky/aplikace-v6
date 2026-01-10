@@ -1198,9 +1198,9 @@ export default function UsersTile({
               label: 'Odeslat pozvánku',
               primary: true,
               onClick: () => {
-                setDetailInitialSectionId('invite')
-                setDetailActiveSectionId('invite')
-                setPendingSendInviteAfterCreate(true)
+              setDetailInitialSectionId('invite')
+              setDetailActiveSectionId('invite')
+              setPendingSendInviteAfterCreate(true)
               },
             })
           }
@@ -1272,24 +1272,24 @@ export default function UsersTile({
           </div>
         ) : (
           <div className="tile-layout__content">
-            <ListView<UiUser>
-              columns={columns}
-              rows={listRows}
-              filterValue={filterText}
-              onFilterChange={setFilterText}
-              showArchived={showArchived}
-              onShowArchivedChange={setShowArchived}
-              selectedId={selectedId ?? null}
-              onRowClick={(row) => setSelectedId(String(row.id))}
-              onRowDoubleClick={(row) => {
-                const user = row.raw
-                if (!user) return
-                openDetail(user, 'read', 'detail')
-              }}
-              sort={sort}
-              onSortChange={handleSortChange}
-              onColumnResize={handleColumnResize}
-            />
+        <ListView<UiUser>
+          columns={columns}
+          rows={listRows}
+          filterValue={filterText}
+          onFilterChange={setFilterText}
+          showArchived={showArchived}
+          onShowArchivedChange={setShowArchived}
+          selectedId={selectedId ?? null}
+          onRowClick={(row) => setSelectedId(String(row.id))}
+          onRowDoubleClick={(row) => {
+            const user = row.raw
+            if (!user) return
+            openDetail(user, 'read', 'detail')
+          }}
+          sort={sort}
+          onSortChange={handleSortChange}
+          onColumnResize={handleColumnResize}
+        />
           </div>
         )}
 

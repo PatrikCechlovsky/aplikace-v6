@@ -13,6 +13,8 @@ import Link from 'next/link'
 import { MODULE_SOURCES } from '@/app/modules.index.js'
 import { getIcon } from './icons'
 import { uiConfig } from '../lib/uiConfig'
+import { getLandlordCountsByType } from '@/app/lib/services/landlords'
+import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
 
 /**
  * 3. úroveň – konkrétní položky (např. „Typy subjektů“).
@@ -91,6 +93,83 @@ export default function Sidebar({
 
           if (conf.enabled === false) continue
 
+          let tiles = Array.isArray(conf.tiles)
+            ? conf.tiles.map((t: any) => ({
+                id: t.id,
+                label: t.label ?? t.id,
+                sectionId: t.sectionId ?? null,
+                icon: t.icon ?? null,
+              }))
+            : []
+
+          // Pro modul 030 (Pronajímatelé) načteme počty podle typů a aktualizujeme labels + ikony
+          if (conf.id === '030-pronajimatel' && Array.isArray(conf.tiles)) {
+            try {
+              // Načíst počty podle typů
+              const counts = await getLandlordCountsByType(false)
+              const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+
+              // Načíst typy subjektů z modulu 900 pro ikony
+              const subjectTypes = await fetchSubjectTypes()
+              const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+
+              // Mapování typů subjektů na názvy (fallback)
+              const typeLabels: Record<string, string> = {
+                osoba: 'Osoba',
+                osvc: 'OSVČ',
+                firma: 'Firma',
+                spolek: 'Spolek',
+                statni: 'Státní',
+                zastupce: 'Zástupce',
+              }
+
+              // Aktualizovat tiles s počty, ikonami a filtrovat jen ty s počtem > 0
+              tiles = conf.tiles
+                .map((tile: any) => {
+                  // Pokud je tile pro typ subjektu, aktualizovat label s počtem a ikonu z modulu 900
+                  if (tile.dynamicLabel && tile.subjectType) {
+                    const count = countsMap.get(tile.subjectType) ?? 0
+                    const typeDef = typesMap.get(tile.subjectType)
+                    const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
+                    const icon = typeDef?.icon || tile.icon || 'user' // Ikona z modulu 900 nebo fallback
+
+                    return {
+                      id: tile.id,
+                      label: `${typeLabel} (${count})`,
+                      sectionId: tile.sectionId ?? null,
+                      icon: icon,
+                    }
+                  }
+                  return {
+                    id: tile.id,
+                    label: tile.label ?? tile.id,
+                    sectionId: tile.sectionId ?? null,
+                    icon: tile.icon ?? null,
+                  }
+                })
+                .filter((tile: any) => {
+                  // Filtrovat tiles s dynamicLabel - zobrazit jen pokud mají počet > 0
+                  const originalTile = conf.tiles.find((t: any) => t.id === tile.id)
+                  if (originalTile?.dynamicLabel && originalTile?.subjectType) {
+                    const count = countsMap.get(originalTile.subjectType) ?? 0
+                    return count > 0
+                  }
+                  return true // Ostatní tiles zobrazit vždy (Přehled pronajímatelů, Přidat pronajimatele)
+                })
+            } catch (countErr) {
+              console.error('Sidebar: Chyba při načítání počtů pronajímatelů:', countErr)
+              // Fallback na původní tiles bez počtů
+              tiles = Array.isArray(conf.tiles)
+                ? conf.tiles.map((t: any) => ({
+                    id: t.id,
+                    label: t.label ?? t.id,
+                    sectionId: t.sectionId ?? null,
+                    icon: t.icon ?? null,
+                  }))
+                : []
+            }
+          }
+
           const normalized: ModuleConfig = {
             id: conf.id,
             label: conf.label,
@@ -103,14 +182,7 @@ export default function Sidebar({
                   icon: s.icon ?? null,
                 }))
               : undefined,
-            tiles: Array.isArray(conf.tiles)
-              ? conf.tiles.map((t: any) => ({
-                  id: t.id,
-                  label: t.label ?? t.id,
-                  sectionId: t.sectionId ?? null,
-                  icon: t.icon ?? null,
-                }))
-              : [],
+            tiles,
           }
 
           loaded.push(normalized)

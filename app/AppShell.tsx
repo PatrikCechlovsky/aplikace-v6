@@ -34,6 +34,8 @@ import { applyThemeToLayout, loadThemeFromLocalStorage } from '@/app/lib/themeSe
 import { applyIconDisplayToLayout, loadIconDisplayFromLocalStorage } from '@/app/lib/iconDisplaySettings'
 
 import { getCurrentSession, onAuthStateChange, logout } from '@/app/lib/services/auth'
+import { getLandlordCountsByType } from '@/app/lib/services/landlords'
+import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
 
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
@@ -402,17 +404,97 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           if (!cfg?.id) continue
           if (cfg.enabled === false) continue
 
-          loaded.push({
-            id: cfg.id,
-            label: cfg.label ?? cfg.id,
-            icon: cfg.icon,
-            order: cfg.order ?? 9999,
-            enabled: cfg.enabled ?? true,
-            tiles: cfg.tiles ?? [],
-            sections: cfg.sections ?? [],
-            introTitle: cfg.introTitle,
-            introText: cfg.introText,
-          })
+          // Pro modul 030 (Pronajímatelé) načteme počty podle typů a aktualizujeme labels + ikony
+          if (cfg.id === '030-pronajimatel' && Array.isArray(cfg.tiles)) {
+            try {
+              // Načíst počty podle typů
+              const counts = await getLandlordCountsByType(false)
+              const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+
+              // Načíst typy subjektů z modulu 900 pro ikony a barvy
+              const subjectTypes = await fetchSubjectTypes()
+              const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+
+              // Mapování typů subjektů na názvy (fallback, pokud není v DB)
+              const typeLabels: Record<string, string> = {
+                osoba: 'Osoba',
+                osvc: 'OSVČ',
+                firma: 'Firma',
+                spolek: 'Spolek',
+                statni: 'Státní',
+                zastupce: 'Zástupce',
+              }
+
+              // Aktualizovat tiles s počty, ikonami a filtrovat jen ty s počtem > 0
+              const updatedTiles = cfg.tiles
+                .map((tile: any) => {
+                  // Pokud je tile pro typ subjektu, aktualizovat label s počtem a ikonu z modulu 900
+                  if (tile.dynamicLabel && tile.subjectType) {
+                    const count = countsMap.get(tile.subjectType) ?? 0
+                    const typeDef = typesMap.get(tile.subjectType)
+                    const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
+                    const icon = typeDef?.icon || tile.icon || 'user' // Ikona z modulu 900 nebo fallback
+
+                    // Vrátit tile s aktualizovaným labelem a ikonou
+                    return {
+                      ...tile,
+                      label: `${typeLabel} (${count})`,
+                      icon: icon as IconKey,
+                      _count: count, // Uložit počet pro pozdější použití
+                      _color: typeDef?.color || null, // Uložit barvu pro pozdější použití
+                    }
+                  }
+                  return tile
+                })
+                .filter((tile: any) => {
+                  // Filtrovat tiles s dynamicLabel - zobrazit jen pokud mají počet > 0
+                  if (tile.dynamicLabel && tile.subjectType) {
+                    const count = countsMap.get(tile.subjectType) ?? 0
+                    return count > 0
+                  }
+                  return true // Ostatní tiles zobrazit vždy (Přehled pronajímatelů, Přidat pronajimatele)
+                })
+
+              loaded.push({
+                id: cfg.id,
+                label: cfg.label ?? cfg.id,
+                icon: cfg.icon,
+                order: cfg.order ?? 9999,
+                enabled: cfg.enabled ?? true,
+                tiles: updatedTiles,
+                sections: cfg.sections ?? [],
+                introTitle: cfg.introTitle,
+                introText: cfg.introText,
+              })
+            } catch (countErr) {
+              console.error('Chyba při načítání počtů pronajímatelů:', countErr)
+              // Fallback na původní konfiguraci bez počtů
+              loaded.push({
+                id: cfg.id,
+                label: cfg.label ?? cfg.id,
+                icon: cfg.icon,
+                order: cfg.order ?? 9999,
+                enabled: cfg.enabled ?? true,
+                tiles: cfg.tiles ?? [],
+                sections: cfg.sections ?? [],
+                introTitle: cfg.introTitle,
+                introText: cfg.introText,
+              })
+            }
+          } else {
+            // Ostatní moduly bez změn
+            loaded.push({
+              id: cfg.id,
+              label: cfg.label ?? cfg.id,
+              icon: cfg.icon,
+              order: cfg.order ?? 9999,
+              enabled: cfg.enabled ?? true,
+              tiles: cfg.tiles ?? [],
+              sections: cfg.sections ?? [],
+              introTitle: cfg.introTitle,
+              introText: cfg.introText,
+            })
+          }
         }
 
         loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -428,7 +510,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isAuthenticated]) // Načíst počty až po autentizaci
 
   // Initial module
   useEffect(() => {
