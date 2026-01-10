@@ -362,7 +362,7 @@ export default function LandlordDetailFrame({
   const subjectType = resolvedLandlord.subjectType || 'osoba'
   const detailMode: DetailViewMode = readOnly ? 'view' : 'edit'
 
-  const sectionIds: DetailSectionId[] = useMemo(() => ['detail', 'system'], [])
+  const sectionIds: DetailSectionId[] = useMemo(() => ['detail', 'accounts', 'attachments', 'system'], [])
 
   const systemBlocks = useMemo(() => {
     return [

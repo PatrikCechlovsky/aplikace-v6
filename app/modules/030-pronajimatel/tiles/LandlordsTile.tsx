@@ -1,21 +1,140 @@
 'use client'
 
 // FILE: app/modules/030-pronajimatel/tiles/LandlordsTile.tsx
-// PURPOSE: List + detail pronajímatelů (030)
-// Základní verze - bude postupně rozšířena o plnou funkcionalitu
+// PURPOSE: List + detail pronajímatelů (030) - stejné chování jako UsersTile
+// URL state:
+// - t=landlords-list (list + detail)
+// - id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
-import { listLandlords, type LandlordsListRow, getLandlordDetail } from '@/app/lib/services/landlords'
+import LandlordDetailFrame, { type UiLandlord as DetailUiLandlord } from '../forms/LandlordDetailFrame'
+import { listLandlords, getLandlordDetail, type LandlordsListRow } from '@/app/lib/services/landlords'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
-import TileLayout from '@/app/UI/TileLayout'
-import LandlordDetailFrame, { type UiLandlord as DetailUiLandlord } from '../forms/LandlordDetailFrame'
+import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
+
 import '@/app/styles/components/TileLayout.css'
 
-const logger = createLogger('LandlordsTile')
+const logger = createLogger('030 LandlordsTile')
+
+type LandlordsTileProps = {
+  subjectTypeFilter?: string | null // Přednastavený filtr podle typu subjektu
+  onRegisterCommonActions?: (actions: CommonActionId[]) => void
+  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+}
+
+type LocalViewMode = ViewMode | 'list'
+
+const VIEW_KEY = '030.landlords.list'
+
+const BASE_COLUMNS: ListViewColumn[] = [
+  { key: 'subjectTypeLabel', label: 'Typ pronajimatele', width: 160, sortable: true },
+  { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
+  { key: 'email', label: 'E-mail', width: 260, sortable: true },
+  { key: 'phone', label: 'Telefon', width: 180, sortable: true },
+  { key: 'companyName', label: 'Název společnosti', width: 220, sortable: true },
+  { key: 'ic', label: 'IČ', width: 120, sortable: true },
+  { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
+  { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
+  { key: 'isArchived', label: 'Archivován', width: 120, align: 'center', sortable: true },
+]
+
+function mapRowToUi(row: LandlordsListRow, subjectTypeMap: Record<string, SubjectType>): UiLandlord {
+  const subjectTypeMeta = subjectTypeMap[row.subject_type ?? '']
+  return {
+    id: row.id,
+    subjectType: row.subject_type ?? '',
+    displayName: row.display_name ?? '',
+    email: row.email ?? '',
+    phone: row.phone ?? null,
+    createdAt: row.created_at ?? '',
+    isArchived: !!row.is_archived,
+
+    titleBefore: row.title_before ?? null,
+    firstName: row.first_name ?? null,
+    lastName: row.last_name ?? null,
+
+    companyName: row.company_name ?? null,
+    ic: row.ic ?? null,
+    dic: row.dic ?? null,
+
+    // Metadata z subject_types
+    subjectTypeLabel: subjectTypeMeta?.name || row.subject_type_name || row.subject_type || '—',
+    subjectTypeColor: subjectTypeMeta?.color || row.subject_type_color || null,
+    subjectTypeOrderIndex: subjectTypeMeta?.sort_order ?? row.subject_type_sort_order ?? null,
+  }
+}
+
+function toRow(l: UiLandlord): ListViewRow<UiLandlord> {
+  return {
+    id: l.id,
+    data: {
+      subjectTypeLabel: l.subjectTypeColor ? (
+        <span className="generic-type__name-badge" style={{ backgroundColor: l.subjectTypeColor }}>
+          {l.subjectTypeLabel || '—'}
+        </span>
+      ) : (
+        <span className="generic-type__name-main">{l.subjectTypeLabel || '—'}</span>
+      ),
+      displayName: l.displayName || '—',
+      email: l.email ?? '—',
+      phone: l.phone ?? '—',
+      companyName: l.companyName ?? '—',
+      ic: l.ic ?? '—',
+      firstName: l.firstName ?? '—',
+      lastName: l.lastName ?? '—',
+      isArchived: l.isArchived ? 'Ano' : 'Ne',
+    },
+    raw: l,
+  }
+}
+
+function normalizeString(v: any): string {
+  return String(v ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function numberOrZero(v: any): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function getSortValue(l: UiLandlord, key: string): string | number {
+  const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  switch (key) {
+    case 'subjectTypeLabel':
+      return l.subjectTypeOrderIndex ?? 999999
+    case 'displayName':
+      return norm(l.displayName)
+    case 'email':
+      return norm(l.email)
+    case 'phone':
+      return norm(l.phone)
+    case 'companyName':
+      return norm(l.companyName)
+    case 'ic':
+      return norm(l.ic)
+    case 'firstName':
+      return norm(l.firstName)
+    case 'lastName':
+      return norm(l.lastName)
+    case 'isArchived':
+      return l.isArchived ? 1 : 0
+    default:
+      return ''
+  }
+}
 
 type UiLandlord = {
   id: string
@@ -35,66 +154,12 @@ type UiLandlord = {
   companyName?: string | null
   ic?: string | null
   dic?: string | null
+
+  // Metadata z subject_types
+  subjectTypeLabel: string
+  subjectTypeColor: string | null
+  subjectTypeOrderIndex: number | null
 }
-
-type LandlordsTileProps = {
-  subjectTypeFilter?: string | null // Přednastavený filtr podle typu subjektu
-  onRegisterCommonActions?: (actions: CommonActionId[]) => void
-  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
-  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
-}
-
-const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'subjectType', label: 'Typ', width: 120, sortable: true },
-  { key: 'displayName', label: 'Název / Jméno', width: 250, sortable: true },
-  { key: 'companyName', label: 'Název firmy', width: 220, sortable: true },
-  { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
-  { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
-  { key: 'ic', label: 'IČ', width: 120, sortable: true },
-  { key: 'email', label: 'E-mail', width: 260, sortable: true },
-  { key: 'phone', label: 'Telefon', width: 160, sortable: true },
-  { key: 'isArchived', label: 'Archivován', width: 120, align: 'center', sortable: true },
-]
-
-function mapRowToUi(row: LandlordsListRow): UiLandlord {
-  return {
-    id: row.id,
-    displayName: row.display_name ?? '',
-    email: row.email,
-    phone: row.phone,
-    subjectType: row.subject_type,
-    isArchived: row.is_archived,
-    createdAt: row.created_at ?? '',
-
-    titleBefore: row.title_before ?? null,
-    firstName: row.first_name ?? null,
-    lastName: row.last_name ?? null,
-
-    companyName: row.company_name ?? null,
-    ic: row.ic ?? null,
-    dic: row.dic ?? null,
-  }
-}
-
-function toRow(u: UiLandlord): ListViewRow<UiLandlord> {
-  return {
-    id: u.id,
-    data: {
-      subjectType: u.subjectType ?? '—',
-      displayName: u.displayName || '—',
-      companyName: u.companyName ?? '—',
-      lastName: u.lastName ?? '—',
-      firstName: u.firstName ?? '—',
-      ic: u.ic ?? '—',
-      email: u.email ?? '—',
-      phone: u.phone ?? '—',
-      isArchived: u.isArchived ? 'Ano' : 'Ne',
-    },
-    raw: u,
-  }
-}
-
-const DEFAULT_SORT: ListViewSortState = { key: 'displayName', dir: 'asc' }
 
 export default function LandlordsTile({
   subjectTypeFilter: propSubjectTypeFilter,
@@ -116,100 +181,111 @@ export default function LandlordsTile({
   const [subjectTypeFilter, setSubjectTypeFilter] = useState<string | null>(propSubjectTypeFilter || null)
   const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
-  const [isDirty, setIsDirty] = useState(false)
+
+  const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailLandlord, setDetailLandlord] = useState<DetailUiLandlord | null>(null)
-  const [detailLoading, setDetailLoading] = useState(false)
+
+  const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
+
+  const [isDirty, setIsDirty] = useState(false)
+
   const submitRef = useRef<null | (() => Promise<DetailUiLandlord | null>)>(null)
-  const fromListViewRef = useRef(true) // true = přišlo ze seznamu, false = z detailu
 
-  // Load detail landlord
-  const loadDetailLandlord = useCallback(async (id: string) => {
-    if (detailLoading) return
-    setDetailLoading(true)
-    try {
-      const detail = await getLandlordDetail(id)
-      const s: any = detail?.subject ?? {}
+  const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
+  const subjectTypeMap = useMemo(() => {
+    const map: Record<string, SubjectType> = {}
+    for (const type of subjectTypes) {
+      map[type.code] = type
+    }
+    return map
+  }, [subjectTypes])
+  const subjectTypeMapRef = useRef<Record<string, SubjectType>>({})
 
-      const uiLandlord: DetailUiLandlord = {
-        id: String(s.id ?? id),
-        displayName: String(s.display_name ?? ''),
-        email: s.email ?? null,
-        phone: s.phone ?? null,
-        subjectType: s.subject_type ?? null,
-        isArchived: !!s.is_archived,
-        createdAt: String(s.created_at ?? ''),
+  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'subjectTypeLabel', dir: 'asc' }), [])
+  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
 
-        titleBefore: s.title_before ?? null,
-        firstName: s.first_name ?? null,
-        lastName: s.last_name ?? null,
-        note: s.note ?? null,
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
 
-        birthDate: s.birth_date ?? null,
-        personalIdNumber: s.personal_id_number ?? null,
-        idDocType: s.id_doc_type ?? null,
-        idDocNumber: s.id_doc_number ?? null,
+  const columns = useMemo(() => {
+    return applyColumnPrefs(BASE_COLUMNS, colPrefs)
+  }, [colPrefs])
 
-        companyName: s.company_name ?? null,
-        ic: s.ic ?? null,
-        dic: s.dic ?? null,
-        icValid: s.ic_valid ?? null,
-        dicValid: s.dic_valid ?? null,
-        delegateId: s.delegate_id ?? null,
+  const [colsOpen, setColsOpen] = useState(false)
 
-        street: s.street ?? null,
-        city: s.city ?? null,
-        zip: s.zip ?? null,
-        houseNumber: s.house_number ?? null,
-        country: s.country ?? 'CZ',
+  const fixedFirstKey = 'subjectTypeLabel'
+  const requiredKeys = ['email']
+
+  const prefsLoadedRef = useRef(false)
+  const saveTimerRef = useRef<any>(null)
+
+  useEffect(() => {
+    setColPrefs((prev) => {
+      const order = Array.isArray(prev.colOrder) ? prev.colOrder : []
+      const hidden = Array.isArray(prev.colHidden) ? prev.colHidden : []
+
+      const nextOrder = [fixedFirstKey, ...order.filter((k) => k && k !== fixedFirstKey)]
+      const nextHidden = hidden.filter((k) => k !== fixedFirstKey)
+
+      const changed = nextOrder.join('|') !== order.join('|') || nextHidden.join('|') !== hidden.join('|')
+      if (!changed) return prev
+
+      return {
+        ...prev,
+        colOrder: nextOrder,
+        colHidden: nextHidden,
       }
+    })
+  }, [])
 
-      setDetailLandlord(uiLandlord)
-    } catch (err: any) {
-      logger.error('loadDetailLandlord failed', err)
-      toast.showError('Nepodařilo se načíst detail pronajimatele')
-    } finally {
-      setDetailLoading(false)
-    }
-  }, [detailLoading, toast, logger])
-
-  // Sync propSubjectTypeFilter to state
   useEffect(() => {
-    if (propSubjectTypeFilter !== undefined) {
-      setSubjectTypeFilter(propSubjectTypeFilter)
-    }
-  }, [propSubjectTypeFilter])
+    void (async () => {
+      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
 
-  // URL state management
+      const loadedSort = (prefs.sort as ViewPrefsSortState) ?? null
+      setSort(loadedSort ? loadedSort : DEFAULT_SORT)
+
+      setColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+
+      prefsLoadedRef.current = true
+    })()
+  }, [DEFAULT_SORT])
+
   useEffect(() => {
-    const id = searchParams?.get('id') || null
-    const vm = (searchParams?.get('vm') || 'list') as ViewMode
-    const type = searchParams?.get('type') || null
+    if (!prefsLoadedRef.current) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    if (!sort) return
 
-    // Pokud je propSubjectTypeFilter předán, použijeme ho a ignorujeme URL type
-    // Jinak použijeme URL type (pokud existuje)
-    if (!propSubjectTypeFilter && type) {
-      setSubjectTypeFilter(type)
-    } else if (propSubjectTypeFilter) {
-      setSubjectTypeFilter(propSubjectTypeFilter)
+    const persistSort: ViewPrefsSortState =
+      sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
+
+    const payload: ViewPrefs = {
+      v: 1,
+      sort: persistSort,
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
     }
 
-    // Načíst detail pronajimatele, pokud je vybrán
-    if (id && (vm === 'read' || vm === 'edit')) {
-      setSelectedId(id)
-      setViewMode(vm || 'read')
-      loadDetailLandlord(id)
-    } else {
-      setSelectedId(null)
-      setViewMode('list')
-      setDetailLandlord(null)
-    }
-  }, [searchParams, loadDetailLandlord, propSubjectTypeFilter])
+    saveTimerRef.current = setTimeout(() => {
+      void saveViewPrefs(VIEW_KEY, payload)
+    }, 500)
+  }, [sort, DEFAULT_SORT, colPrefs])
 
   const setUrl = useCallback(
-    (next: { t?: string | null; id?: string | null; vm?: string | null; type?: string | null }, mode: 'replace' | 'push' = 'replace') => {
+    (
+      next: { t?: string | null; id?: string | null; vm?: string | null; type?: string | null },
+      mode: 'replace' | 'push' = 'replace'
+    ) => {
       const sp = new URLSearchParams(searchKey)
+
       const setOrDelete = (key: string, val: string | null | undefined) => {
         const v = (val ?? '').toString().trim()
         if (v) sp.set(key, v)
@@ -225,6 +301,8 @@ export default function LandlordsTile({
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
 
+      logger.debug('setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
+
       if (nextUrl === currentUrl) return
 
       if (mode === 'push') router.push(nextUrl)
@@ -233,12 +311,11 @@ export default function LandlordsTile({
     [pathname, router, searchKey]
   )
 
-  // Load data
   const loadInFlightRef = useRef<Promise<void> | null>(null)
   const lastLoadKeyRef = useRef<string>('')
 
   const load = useCallback(async () => {
-    const key = `${(filterText ?? '').trim().toLowerCase()}|${showArchived ? '1' : '0'}|${subjectTypeFilter ?? ''}`
+    const key = `${(filterText ?? '').trim().toLowerCase()}|${subjectTypeFilter ?? ''}|${showArchived ? '1' : '0'}`
 
     if (loadInFlightRef.current && lastLoadKeyRef.current === key) return loadInFlightRef.current
     lastLoadKeyRef.current = key
@@ -247,16 +324,11 @@ export default function LandlordsTile({
       setLoading(true)
       setError(null)
       try {
-        const rows = await listLandlords({
-          searchText: filterText,
-          subjectType: subjectTypeFilter,
-          includeArchived: showArchived,
-        })
-        setLandlords(rows.map(mapRowToUi))
+        const rows = await listLandlords({ searchText: filterText, subjectType: subjectTypeFilter, includeArchived: showArchived })
+        setLandlords(rows.map((r) => mapRowToUi(r, subjectTypeMapRef.current)))
       } catch (e: any) {
         logger.error('listLandlords failed', e)
         setError(e?.message ?? 'Chyba načtení pronajímatelů')
-        toast.showError('Nepodařilo se načíst pronajimatele')
       } finally {
         setLoading(false)
       }
@@ -268,13 +340,114 @@ export default function LandlordsTile({
     } finally {
       if (loadInFlightRef.current === p) loadInFlightRef.current = null
     }
-  }, [filterText, showArchived, subjectTypeFilter, toast])
+  }, [filterText, subjectTypeFilter, showArchived])
+
+  const subjectTypesInFlightRef = useRef<Promise<void> | null>(null)
+  const loadSubjectTypes = useCallback(async () => {
+    if (subjectTypesInFlightRef.current) return subjectTypesInFlightRef.current
+    const p = (async () => {
+      try {
+        const rows = await fetchSubjectTypes()
+        setSubjectTypes(rows)
+        const map: Record<string, SubjectType> = {}
+        for (const type of rows) {
+          map[type.code] = type
+        }
+        subjectTypeMapRef.current = map
+      } catch (e) {
+        logger.warn('fetchSubjectTypes failed', e)
+      }
+    })()
+    subjectTypesInFlightRef.current = p
+    try {
+      await p
+    } finally {
+      if (subjectTypesInFlightRef.current === p) subjectTypesInFlightRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
-    load()
+    void loadSubjectTypes()
+  }, [loadSubjectTypes])
+
+  useEffect(() => {
+    void load()
   }, [load])
 
-  // CommonActions registration
+  // ✅ když se načtou subjectTypes (barvy + order), přepočítej již načtené landlords
+  useEffect(() => {
+    if (!subjectTypeMap || Object.keys(subjectTypeMap).length === 0) return
+
+    setLandlords((prev) => {
+      if (!prev?.length) return prev
+
+      return prev.map((l) => {
+        const meta = subjectTypeMap[l.subjectType ?? '']
+        return {
+          ...l,
+          subjectTypeLabel: meta?.name || l.subjectType || '—',
+          subjectTypeColor: meta?.color || null,
+          subjectTypeOrderIndex: meta?.sort_order ?? null,
+        }
+      })
+    })
+  }, [subjectTypeMap])
+
+  useEffect(() => {
+    const id = searchParams?.get('id') ?? null
+    const vm = (searchParams?.get('vm') ?? 'list') as LocalViewMode
+    const type = searchParams?.get('type') ?? null
+
+    setSelectedId(id)
+    setViewMode(id ? vm : 'list')
+    setSubjectTypeFilter(type)
+
+    if (id && vm !== 'list') {
+      void (async () => {
+        try {
+          const detail = await getLandlordDetail(id)
+          const detailUi: DetailUiLandlord = {
+            id: detail.id,
+            displayName: detail.display_name ?? '',
+            email: detail.email,
+            phone: detail.phone,
+            subjectType: detail.subject_type,
+            isArchived: !!detail.is_archived,
+            createdAt: detail.created_at ?? '',
+            titleBefore: detail.title_before ?? null,
+            firstName: detail.first_name ?? null,
+            lastName: detail.last_name ?? null,
+            note: detail.note ?? null,
+            birthDate: detail.birth_date ?? null,
+            personalIdNumber: detail.personal_id_number ?? null,
+            idDocType: detail.id_doc_type ?? null,
+            idDocNumber: detail.id_doc_number ?? null,
+            companyName: detail.company_name ?? null,
+            ic: detail.ic ?? null,
+            dic: detail.dic ?? null,
+            icValid: detail.ic_valid ?? null,
+            dicValid: detail.dic_valid ?? null,
+            delegateId: detail.delegate_id ?? null,
+            street: detail.street ?? null,
+            city: detail.city ?? null,
+            zip: detail.zip ?? null,
+            houseNumber: detail.house_number ?? null,
+            country: detail.country ?? 'CZ',
+          }
+          setDetailLandlord(detailUi)
+        } catch (e: any) {
+          logger.error('getLandlordDetail failed', e)
+          toast.showError(e?.message || 'Nepodařilo se načíst detail pronajimatele')
+          setSelectedId(null)
+          setViewMode('list')
+          setUrl({ id: null, vm: null })
+        }
+      })()
+    } else {
+      setDetailLandlord(null)
+    }
+  }, [searchParams, setUrl, toast])
+
   useEffect(() => {
     const actions: CommonActionId[] = []
     if (viewMode === 'list') {
@@ -294,188 +467,251 @@ export default function LandlordsTile({
   }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
   useEffect(() => {
-    onRegisterCommonActionHandler?.(async (id: CommonActionId) => {
-      if (id === 'save' && submitRef.current) {
-        const saved = await submitRef.current()
-        if (saved) {
-          // Aktualizovat detail
-          setDetailLandlord(saved)
-          // Přesměrovat podle odkud přišel: ze seznamu zpět do seznamu, z detailu zpět do detailu
-          if (fromListViewRef.current) {
-            // Ze seznamu → zpět do seznamu
-            setViewMode('list')
-            setSelectedId(null)
-            setUrl({ t: 'landlords-list', id: null, vm: null })
-            // Obnovit seznam
-            load()
-          } else {
-            // Z detailu → zpět do detailu (read mode)
-            setViewMode('read')
-            setUrl({ t: 'landlords-list', id: saved.id, vm: 'read' })
-          }
-          setIsDirty(false)
-        }
-      }
+    if (!onRegisterCommonActionHandler) return
+
+    onRegisterCommonActionHandler(async (id: CommonActionId) => {
       if (id === 'cancel') {
-        if (fromListViewRef.current) {
-          // Ze seznamu → zpět do seznamu
-          setViewMode('list')
-          setSelectedId(null)
-          setUrl({ t: 'landlords-list', id: null, vm: null })
+        if (viewMode === 'create') {
+          router.push(`/modules/030-pronajimatel?t=landlords-list`)
         } else {
-          // Z detailu → zpět do detailu (read mode)
           setViewMode('read')
-          if (selectedId) {
-            setUrl({ t: 'landlords-list', id: selectedId, vm: 'read' })
-          }
+          setUrl({ vm: 'read' })
         }
         setIsDirty(false)
-      }
-      if (id === 'edit' && selectedId) {
-        fromListViewRef.current = false // Z detailu
+      } else if (id === 'edit') {
         setViewMode('edit')
-        setUrl({ t: 'landlords-list', id: selectedId, vm: 'edit' })
+        setUrl({ vm: 'edit' })
+      } else if (id === 'save') {
+        if (submitRef.current) {
+          const saved = await submitRef.current()
+          if (saved) {
+            setViewMode('read')
+            setUrl({ vm: 'read' })
+            void load()
+          }
+        }
       }
       // TODO: Implementovat delete a archive
     })
-  }, [selectedId, onRegisterCommonActionHandler, setUrl, load])
+  }, [onRegisterCommonActionHandler, setUrl, viewMode, router, load])
 
-  const handleRowClick = useCallback(
-    (row: ListViewRow<UiLandlord>) => {
-      const id = row?.id ? String(row.id) : null
-      setSelectedId(id)
-      if (id) {
-        fromListViewRef.current = true // Ze seznamu
-        setViewMode('read')
-        setUrl({ t: 'landlords-list', id, vm: 'read' }, 'push')
-        // Načíst detail
-        loadDetailLandlord(id)
-      } else {
-        setViewMode('list')
-        setUrl({ t: 'landlords-list', id: null, vm: null })
-        setDetailLandlord(null)
+  const openDetail = useCallback(
+    (l: UiLandlord, vm: ViewMode, sectionId: any) => {
+      const detail: DetailUiLandlord = {
+        id: l.id,
+        displayName: l.displayName,
+        email: l.email,
+        phone: l.phone,
+        subjectType: l.subjectType,
+        isArchived: l.isArchived,
+        createdAt: l.createdAt,
+        titleBefore: l.titleBefore,
+        firstName: l.firstName,
+        lastName: l.lastName,
+        companyName: l.companyName,
+        ic: l.ic,
+        dic: l.dic,
+        street: null,
+        city: null,
+        zip: null,
+        houseNumber: null,
+        country: 'CZ',
+        note: null,
       }
+      setDetailLandlord(detail)
+      setDetailInitialSectionId(sectionId)
+      setIsDirty(false)
+      setViewMode(vm as any)
+      setSelectedId(l.id)
+      setUrl({ t: 'landlords-list', id: l.id, vm }, 'push')
     },
-    [setUrl, loadDetailLandlord]
+    [setUrl]
   )
 
-  const rows = useMemo(() => landlords.map(toRow), [landlords])
+  // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
+  const baseOrderIndex = useMemo(() => {
+    const m = new Map<string, number>()
+    landlords.forEach((l, i) => m.set(l.id, i))
+    return m
+  }, [landlords])
 
-  const handleSortChange = useCallback((next: ListViewSortState) => {
-    setSort(next ?? DEFAULT_SORT)
+  // ✅ sortedLandlords (DEFAULT = subjectTypeOrderIndex ASC, email ASC)
+  const sortedLandlords = useMemo(() => {
+    if (!sort) {
+      return [...landlords].sort((a, b) => {
+        const ao = a.subjectTypeOrderIndex ?? 999999
+        const bo = b.subjectTypeOrderIndex ?? 999999
+        if (ao !== bo) return ao - bo
+        return (a.email ?? '').localeCompare(b.email ?? '', 'cs')
+      })
+    }
+    const key = String(sort.key ?? '').trim()
+    const dir = sort.dir === 'desc' ? -1 : 1
+    const arr = [...landlords]
+
+    // DEFAULT (subjectTypeLabel asc) má vlastní pravidla: order_index + email
+    if (key === 'subjectTypeLabel' && dir === 1) {
+      arr.sort((a, b) => {
+        const ao = a.subjectTypeOrderIndex ?? 999999
+        const bo = b.subjectTypeOrderIndex ?? 999999
+        if (ao < bo) return -1
+        if (ao > bo) return 1
+
+        const ae = normalizeString(a.email)
+        const be = normalizeString(b.email)
+        if (ae < be) return -1
+        if (ae > be) return 1
+
+        return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
+      })
+      return arr
+    }
+
+    // Obecné řazení dle klíče
+    arr.sort((a, b) => {
+      const av = getSortValue(a, key)
+      const bv = getSortValue(b, key)
+
+      if (typeof av === 'number' && typeof bv === 'number') {
+        if (av < bv) return -1 * dir
+        if (av > bv) return 1 * dir
+      } else {
+        const as = String(av ?? '')
+        const bs = String(bv ?? '')
+        if (as < bs) return -1 * dir
+        if (as > bs) return 1 * dir
+      }
+
+      return numberOrZero(baseOrderIndex.get(a.id)) - numberOrZero(baseOrderIndex.get(b.id))
+    })
+
+    return arr
+  }, [landlords, sort, baseOrderIndex])
+
+  const rows = useMemo(() => sortedLandlords.map((l) => toRow(l)), [sortedLandlords])
+
+  const handleSortChange = useCallback(
+    (next: ListViewSortState) => {
+      setSort(next ?? DEFAULT_SORT)
+    },
+    [DEFAULT_SORT]
+  )
+
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
   }, [])
 
-  return (
-    <TileLayout title="Přehled pronajímatelů" description="Seznam všech pronajímatelů">
-      <div style={{ padding: '1.5rem' }}>
-        {error && (
-          <div style={{ padding: '1rem', backgroundColor: 'var(--color-error-bg)', color: 'var(--color-error)', borderRadius: '4px', marginBottom: '1rem' }}>
-            {error}
+  if (viewMode === 'list') {
+    return (
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">Přehled pronajímatelů</h1>
+          <p className="tile-layout__description">
+            Seznam všech pronajímatelů. Můžeš filtrovat, řadit a spravovat pronajímatele.
+          </p>
+        </div>
+        {error && <div style={{ padding: '0 1.5rem 0.5rem', color: 'crimson' }}>{error}</div>}
+        {loading ? (
+          <div className="tile-layout__content">
+            <SkeletonTable rows={8} columns={columns.length} />
           </div>
-        )}
-
-        {viewMode === 'list' && (
-          <>
-            {/* Filtry */}
-            <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder="Hledat podle názvu, emailu, telefonu..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                style={{ flex: 1, padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
-              />
-              {!propSubjectTypeFilter && (
-                <select
-                  value={subjectTypeFilter || ''}
-                  onChange={(e) => {
-                    const val = e.target.value || null
-                    setSubjectTypeFilter(val)
-                    setUrl({ t: 'landlords-list', type: val })
-                  }}
-                  style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
-                >
-                  <option value="">Všechny typy</option>
-                  <option value="osoba">Osoba</option>
-                  <option value="osvc">OSVČ</option>
-                  <option value="firma">Firma</option>
-                  <option value="spolek">Spolek</option>
-                  <option value="statni">Státní</option>
-                  <option value="zastupce">Zástupce</option>
-                </select>
-              )}
-              {propSubjectTypeFilter && (
-                <div style={{ padding: '0.5rem', color: 'var(--color-text-muted)' }}>
-                  Filtr: {propSubjectTypeFilter}
+        ) : (
+          <div className="tile-layout__content">
+            <ListView
+              columns={columns}
+              rows={rows}
+              filterValue={filterText}
+              onFilterChange={setFilterText}
+              showArchived={showArchived}
+              onShowArchivedChange={setShowArchived}
+              selectedId={selectedId ?? null}
+              onRowClick={(row) => setSelectedId(String(row.id))}
+              onRowDoubleClick={(row) => {
+                const landlord = row.raw
+                if (!landlord) return
+                openDetail(landlord, 'read', 'detail')
+              }}
+              sort={sort}
+              onSortChange={handleSortChange}
+              onColumnResize={handleColumnResize}
+              toolbarRight={
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {!propSubjectTypeFilter && (
+                    <select
+                      value={subjectTypeFilter || ''}
+                      onChange={(e) => {
+                        const val = e.target.value || null
+                        setSubjectTypeFilter(val)
+                        setUrl({ t: 'landlords-list', type: val })
+                      }}
+                      style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
+                    >
+                      <option value="">Všechny typy</option>
+                      {subjectTypes.map((type) => (
+                        <option key={type.code} value={type.code}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setColsOpen(true)}
+                    style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    Sloupce
+                  </button>
                 </div>
-              )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-                Zobrazit archivované
-              </label>
-            </div>
-
-            {/* ListView */}
-            {loading ? (
-              <div>Načítání...</div>
-            ) : (
-              <ListView
-                columns={BASE_COLUMNS}
-                rows={rows}
-                filterValue={filterText}
-                onFilterChange={setFilterText}
-                showArchived={showArchived}
-                onShowArchivedChange={setShowArchived}
-                selectedId={selectedId}
-                onRowClick={handleRowClick}
-                sort={sort}
-                onSortChange={handleSortChange}
-                emptyText="Žádní pronajímatelé."
-              />
-            )}
-          </>
-        )}
-
-        {(viewMode === 'read' || viewMode === 'edit') && selectedId && detailLandlord && (
-          <div>
-            {detailLoading ? (
-              <div>Načítání detailu...</div>
-            ) : (
-              <LandlordDetailFrame
-                landlord={detailLandlord}
-                viewMode={viewMode}
-                onRegisterSubmit={(fn) => {
-                  submitRef.current = fn
-                }}
-                onDirtyChange={setIsDirty}
-                onSaved={(saved) => {
-                  // Aktualizovat detail po uložení
-                  setDetailLandlord(saved)
-                  // Aktualizovat seznam (pokud je načten) - mapování na UiLandlord
-                  const updatedListRow: LandlordsListRow = {
-                    id: saved.id,
-                    display_name: saved.displayName,
-                    email: saved.email,
-                    phone: saved.phone,
-                    subject_type: saved.subjectType,
-                    is_archived: saved.isArchived,
-                    created_at: saved.createdAt,
-                    title_before: saved.titleBefore ?? null,
-                    first_name: saved.firstName ?? null,
-                    last_name: saved.lastName ?? null,
-                    company_name: saved.companyName ?? null,
-                    ic: saved.ic ?? null,
-                    dic: saved.dic ?? null,
-                  }
-                  const updated = landlords.map((l) => (l.id === saved.id ? mapRowToUi(updatedListRow) : l))
-                  setLandlords(updated)
-                }}
-              />
-            )}
+              }
+              emptyText="Žádní pronajímatelé."
+            />
           </div>
         )}
+
+        <ListViewColumnsDrawer
+          open={colsOpen}
+          onClose={() => setColsOpen(false)}
+          columns={BASE_COLUMNS}
+          fixedFirstKey={fixedFirstKey}
+          requiredKeys={requiredKeys}
+          value={{
+            order: colPrefs.colOrder ?? [],
+            hidden: colPrefs.colHidden ?? [],
+          }}
+          onChange={(next) => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: next.order,
+              colHidden: next.hidden,
+            }))
+          }}
+          onReset={() => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: [],
+              colHidden: [],
+            }))
+          }}
+        />
       </div>
-    </TileLayout>
-  )
+    )
+  }
+
+  if (viewMode === 'read' || viewMode === 'edit') {
+    if (!detailLandlord) return null
+
+    return (
+      <LandlordDetailFrame
+        landlord={detailLandlord}
+        viewMode={viewMode}
+        initialSectionId={detailInitialSectionId}
+        onActiveSectionChange={() => {}}
+        onRegisterSubmit={submitRef.current ? undefined : (fn) => (submitRef.current = fn)}
+        onDirtyChange={setIsDirty}
+      />
+    )
+  }
+
+  return null
 }
 

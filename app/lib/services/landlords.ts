@@ -6,6 +6,7 @@
 // - saveLandlord(input) -> vrací uložený SUBJECT ROW
 
 import { supabase } from '@/app/lib/supabaseClient'
+import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
 
 /* =========================
    LIST
@@ -36,6 +37,11 @@ export type LandlordsListRow = {
   company_name?: string | null
   ic?: string | null
   dic?: string | null
+
+  // ✅ metadata z subject_types (pro barevné označení a řazení)
+  subject_type_name?: string | null
+  subject_type_color?: string | null
+  subject_type_sort_order?: number | null
 }
 
 export async function listLandlords(params: LandlordsListParams = {}): Promise<LandlordsListRow[]> {
@@ -97,7 +103,39 @@ export async function listLandlords(params: LandlordsListParams = {}): Promise<L
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
-  return (data ?? []) as unknown as LandlordsListRow[]
+  // Načíst metadata typů subjektů pro barevné označení a řazení
+  let subjectTypesMap: Map<string, { name: string; color: string | null; sort_order: number | null }> = new Map()
+  try {
+    const subjectTypes = await fetchSubjectTypes()
+    subjectTypesMap = new Map(
+      subjectTypes.map((st) => [
+        st.code,
+        {
+          name: st.name,
+          color: st.color,
+          sort_order: st.sort_order,
+        },
+      ])
+    )
+  } catch (err) {
+    // Pokud se nepodaří načíst typy, pokračujeme bez metadat
+    console.warn('Failed to load subject types metadata', err)
+  }
+
+  // Spojit data s metadaty typů
+  const rows = (data ?? []).map((row: any) => {
+    const subjectTypeCode = row.subject_type
+    const metadata = subjectTypeCode ? subjectTypesMap.get(subjectTypeCode) : null
+
+    return {
+      ...row,
+      subject_type_name: metadata?.name ?? null,
+      subject_type_color: metadata?.color ?? null,
+      subject_type_sort_order: metadata?.sort_order ?? null,
+    } as LandlordsListRow
+  })
+
+  return rows
 }
 
 /* =========================
@@ -150,7 +188,7 @@ export type LandlordDetailRow = {
    DETAIL: getLandlordDetail
    ========================= */
 
-export async function getLandlordDetail(subjectId: string): Promise<{ subject: LandlordDetailRow }> {
+export async function getLandlordDetail(subjectId: string): Promise<LandlordDetailRow> {
   const { data: subject, error: subjectErr } = await supabase
     .from('subjects')
     .select(
@@ -197,9 +235,7 @@ export async function getLandlordDetail(subjectId: string): Promise<{ subject: L
   if (subjectErr) throw new Error(subjectErr.message)
   if (!subject?.id) throw new Error('Pronajímatel nebyl nalezen.')
 
-  return {
-    subject: subject as unknown as LandlordDetailRow,
-  }
+  return subject as unknown as LandlordDetailRow
 }
 
 /* =========================

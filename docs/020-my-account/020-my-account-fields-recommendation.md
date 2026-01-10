@@ -201,3 +201,4 @@ Nepřidávat teď:
 
 **Toto je správný přístup – mít základní, funkční verzi a rozšiřovat podle potřeby.**
 
+
