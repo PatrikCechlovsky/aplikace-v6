@@ -43,10 +43,12 @@ NEXT_PUBLIC_VISIDOO_API_KEY=váš_visidoo_api_klíč
 5. Dokumentace: https://developers.google.com/maps/documentation/places/web-service/autocomplete
 
 **Nastavení:**
-Přidejte do `.env.local`:
+Přidejte do `.env.local` (doporučeno bez `NEXT_PUBLIC_` prefixu, protože se používá pouze na serveru):
 ```bash
-NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=váš_google_places_api_klíč
+GOOGLE_PLACES_API_KEY=váš_google_places_api_klíč
 ```
+
+**Poznámka:** Pokud máte klíč již nastavený jako `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`, bude fungovat i nadále (fallback).
 
 **Cena:** 
 - 100 USD kredit měsíčně (zdarma)
@@ -73,15 +75,22 @@ Aplikace podporuje obě API služby současně. Priorita:
 NEXT_PUBLIC_VISIDOO_API_KEY=váš_visidoo_klíč
 
 # NEBO Google Places API (spolehlivé, univerzální)
-NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=váš_google_places_klíč
+# Použijte bez NEXT_PUBLIC_ prefixu (server-side proměnná):
+GOOGLE_PLACES_API_KEY=váš_google_places_klíč
+# (Fallback: NEXT_PUBLIC_GOOGLE_PLACES_API_KEY také funguje)
 ```
 
 2. Na Vercelu přidejte environment variables:
    - Jděte do projektu → Settings → Environment Variables
-   - Přidejte `NEXT_PUBLIC_VISIDOO_API_KEY` nebo `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`
+   - Přidejte `GOOGLE_PLACES_API_KEY` (nebo `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY`)
    - Nastavte pro "Production", "Preview", a "Development"
 
 3. Redeploy aplikace (nebo počkejte na automatický deploy)
+
+**⚠️ Důležité pro Google Places API:**
+- Musíte aktivovat **"Places API"** v Google Cloud Console (nebo "Places API (Legacy)")
+- V sekci "Credentials" → "API restrictions" omezte klíč pouze na "Places API" (bezpečnost)
+- V sekci "Application restrictions" můžete nastavit IP adresy nebo HTTP referrery (volitelné)
 
 ---
 
@@ -112,7 +121,11 @@ Po nastavení API klíče:
 3. **Zkontrolujte API klíč:**
    - Je API klíč aktivní a platný?
    - Máte dostatečný kredit/quota?
-   - Jsou správně nastavená API omezení (Google)?
+   - **Pro Google Places API:**
+     - Je aktivní "Places API" v Google Cloud Console? (APIs & Services → Enabled APIs)
+     - Má klíč správně nastavená omezení? (Credentials → Edit → API restrictions → vyberte "Places API")
+     - Pokud vidíte chybu "REQUEST_DENIED", zkontrolujte, že je Places API aktivní
+     - Pokud vidíte chybu "INVALID_REQUEST", zkontrolujte formát klíče v `.env.local`
 
 4. **Zkontrolujte server logy (Vercel):**
    - Podívejte se na logy API route `/api/address-search`

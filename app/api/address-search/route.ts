@@ -27,9 +27,16 @@ export async function GET(request: NextRequest) {
     const trimmedQuery = query.trim()
     
     // API klíče z environment variables
+    // Google Places API klíč může být buď GOOGLE_PLACES_API_KEY (server-side) nebo NEXT_PUBLIC_GOOGLE_PLACES_API_KEY (fallback)
     const visidooApiKey = process.env.NEXT_PUBLIC_VISIDOO_API_KEY
-    const googlePlacesApiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+    const googlePlacesApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
     const ruianApiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY || 'c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8'
+
+    // Debug: Zkontroluj, zda máme API klíče
+    console.log('[API Route] Checking API keys:')
+    console.log('  - Visidoo:', visidooApiKey ? `${visidooApiKey.substring(0, 8)}...` : 'NOT SET')
+    console.log('  - Google Places:', googlePlacesApiKey ? `${googlePlacesApiKey.substring(0, 8)}... (from ${process.env.GOOGLE_PLACES_API_KEY ? 'GOOGLE_PLACES_API_KEY' : 'NEXT_PUBLIC_GOOGLE_PLACES_API_KEY'})` : 'NOT SET - Check .env.local')
+    console.log('  - RÚIAN:', ruianApiKey ? `${ruianApiKey.substring(0, 8)}...` : 'NOT SET')
 
     // Priorita: Visidoo > Google Places > ostatní RÚIAN endpointy
     const endpoints: Array<{ name: string; url: string; headers: Record<string, string> }> = []
@@ -121,17 +128,34 @@ export async function GET(request: NextRequest) {
           let results: any[] = []
 
           if (endpoint.name === 'google-places') {
-            // Google Places API vrací { predictions: [...] }
-            if (data.predictions && Array.isArray(data.predictions)) {
+            // Google Places API vrací { predictions: [...], status: 'OK' | 'ZERO_RESULTS' | 'REQUEST_DENIED' | ... }
+            console.log(`[API Route] google-places response status:`, data.status)
+            
+            if (data.status === 'OK' && data.predictions && Array.isArray(data.predictions)) {
               results = data.predictions
               console.log(`[API Route] google-places: Found ${results.length} predictions`)
             } else if (data.status === 'ZERO_RESULTS') {
               console.log(`[API Route] google-places: No results found`)
               errors.push(`[google-places] No results found`)
-            } else if (data.status && data.status !== 'OK') {
-              const errorMsg = `[google-places] API error: ${data.status} - ${data.error_message || ''}`
-              console.warn(errorMsg)
+            } else if (data.status === 'REQUEST_DENIED') {
+              const errorMsg = `[google-places] Request denied - check API key and enable Places API in Google Cloud Console. Error: ${data.error_message || 'No error message'}`
+              console.error(errorMsg)
               errors.push(errorMsg)
+            } else if (data.status === 'INVALID_REQUEST') {
+              const errorMsg = `[google-places] Invalid request: ${data.error_message || 'Check query format'}`
+              console.error(errorMsg)
+              errors.push(errorMsg)
+            } else if (data.status === 'OVER_QUERY_LIMIT') {
+              const errorMsg = `[google-places] Over query limit - API quota exceeded`
+              console.error(errorMsg)
+              errors.push(errorMsg)
+            } else if (data.status && data.status !== 'OK') {
+              const errorMsg = `[google-places] API error: ${data.status} - ${data.error_message || 'Unknown error'}`
+              console.error(errorMsg)
+              errors.push(errorMsg)
+            } else {
+              console.warn(`[API Route] google-places: Unexpected response format:`, Object.keys(data))
+              errors.push(`[google-places] Unexpected response format: ${Object.keys(data).join(', ')}`)
             }
           } else if (endpoint.name === 'visidoo') {
             // Visidoo API vrací { data: [...] } nebo přímo pole
@@ -236,14 +260,28 @@ export async function GET(request: NextRequest) {
         } else {
           const errorMsg = `[${endpoint.name}] HTTP ${response.status}: ${response.statusText}`
           console.warn(errorMsg)
-          errors.push(errorMsg)
           
-          // Zkusíme získat response body pro debug
+          // Zkusíme získat response body pro debug (zejména pro Google Places API)
           try {
-            const text = await response.text()
-            console.warn(`[API Route] ${endpoint.name} error body:`, text.substring(0, 200))
+            const contentType = response.headers.get('content-type')
+            if (contentType?.includes('application/json')) {
+              const jsonData = await response.json()
+              console.error(`[API Route] ${endpoint.name} error response:`, JSON.stringify(jsonData))
+              
+              // Pro Google Places API může být chyba v JSON formátu
+              if (endpoint.name === 'google-places' && jsonData.status) {
+                const detailedError = `[google-places] Status: ${jsonData.status}, Error: ${jsonData.error_message || 'No error message'}`
+                errors.push(detailedError)
+              } else {
+                errors.push(errorMsg)
+              }
+            } else {
+              const text = await response.text()
+              console.warn(`[API Route] ${endpoint.name} error body:`, text.substring(0, 500))
+              errors.push(errorMsg)
+            }
           } catch (e) {
-            // Ignore
+            errors.push(errorMsg)
           }
         }
       } catch (error: any) {

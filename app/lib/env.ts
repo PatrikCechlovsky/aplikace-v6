@@ -12,8 +12,10 @@ const optionalEnvVars = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   SENTRY_DSN: process.env.SENTRY_DSN,
   // Address autocomplete API keys (podporujeme Visidoo a Google Places)
+  // Visidoo může být NEXT_PUBLIC_ pokud se volá z klienta, ale pro Google Places používáme server-side
   NEXT_PUBLIC_VISIDOO_API_KEY: process.env.NEXT_PUBLIC_VISIDOO_API_KEY,
-  NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY,
+  // Google Places API klíč - pouze server-side (bez NEXT_PUBLIC_ prefixu)
+  GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY,
   // Legacy RÚIAN API key (pro případné další endpointy)
   NEXT_PUBLIC_RUIAN_API_KEY: process.env.NEXT_PUBLIC_RUIAN_API_KEY,
 } as const
@@ -54,7 +56,7 @@ export const env = {
   SENTRY_DSN: optionalEnvVars.SENTRY_DSN,
   // Address autocomplete API keys
   NEXT_PUBLIC_VISIDOO_API_KEY: optionalEnvVars.NEXT_PUBLIC_VISIDOO_API_KEY,
-  NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: optionalEnvVars.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY,
+  GOOGLE_PLACES_API_KEY: optionalEnvVars.GOOGLE_PLACES_API_KEY,
   NEXT_PUBLIC_RUIAN_API_KEY: optionalEnvVars.NEXT_PUBLIC_RUIAN_API_KEY,
   
   // Computed
