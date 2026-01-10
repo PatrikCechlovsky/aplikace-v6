@@ -304,9 +304,6 @@ export default function LandlordDetailFrame({
           zip: v.zip.trim() || null,
           houseNumber: v.houseNumber.trim() || null,
           country: v.country.trim() || null,
-          ruianAddressId: null,
-          ruianValidated: false,
-          addressSource: null,
         }
 
         const saved = await saveLandlord(input)
@@ -431,43 +428,53 @@ export default function LandlordDetailFrame({
     ]
   }, [resolvedLandlord])
 
+  const landlordName = resolvedLandlord.displayName || 'Pronajímatel'
+  const title = resolvedLandlord.id === 'new' ? 'Nový pronajímatel' : `Pronajímatel: ${landlordName}`
+
   return (
-    <DetailView
-      mode={detailMode}
-      sectionIds={sectionIds}
-      initialActiveId={initialSectionId ?? 'detail'}
-      onActiveSectionChange={(id) => {
-        onActiveSectionChange?.(id)
-      }}
-      ctx={{
-        entityType: 'subjects',
-        entityId: resolvedLandlord.id || undefined,
-        entityLabel: resolvedLandlord.displayName ?? null,
-        showSystemEntityHeader: false,
-        mode: detailMode,
+    <div className="tile-layout">
+      <div className="tile-layout__header">
+        <h1 className="tile-layout__title">{title}</h1>
+      </div>
+      <div className="tile-layout__content">
+        <DetailView
+          mode={detailMode}
+          sectionIds={sectionIds}
+          initialActiveId={initialSectionId ?? 'detail'}
+          onActiveSectionChange={(id) => {
+            onActiveSectionChange?.(id)
+          }}
+          ctx={{
+            entityType: 'subjects',
+            entityId: resolvedLandlord.id && resolvedLandlord.id !== 'new' ? resolvedLandlord.id : undefined,
+            entityLabel: resolvedLandlord.displayName ?? null,
+            showSystemEntityHeader: false,
+            mode: detailMode,
 
-        detailContent: (
-          <LandlordDetailForm
-            subjectType={subjectType}
-            landlord={formValue}
-            readOnly={readOnly}
-            onDirtyChange={(dirty) => {
-              if (dirty) {
-                markDirtyIfChanged(formValue)
-              } else {
-                computeDirty()
-              }
-            }}
-            onValueChange={(val) => {
-              setFormValue(val)
-              markDirtyIfChanged(val)
-            }}
-          />
-        ),
+            detailContent: (
+              <LandlordDetailForm
+                subjectType={subjectType}
+                landlord={formValue}
+                readOnly={readOnly}
+                onDirtyChange={(dirty) => {
+                  if (dirty) {
+                    markDirtyIfChanged(formValue)
+                  } else {
+                    computeDirty()
+                  }
+                }}
+                onValueChange={(val) => {
+                  setFormValue(val)
+                  markDirtyIfChanged(val)
+                }}
+              />
+            ),
 
-        systemBlocks,
-      }}
-    />
+            systemBlocks,
+          }}
+        />
+      </div>
+    </div>
   )
 }
 

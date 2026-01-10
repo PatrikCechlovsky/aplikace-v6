@@ -179,9 +179,6 @@ export type LandlordDetailRow = {
   zip?: string | null
   house_number?: string | null
   country?: string | null
-  ruian_address_id?: string | null
-  ruian_validated?: boolean | null
-  address_source?: string | null
 }
 
 /* =========================
@@ -220,18 +217,15 @@ export async function getLandlordDetail(subjectId: string): Promise<LandlordDeta
           dic_valid,
           delegate_id,
           
-          street,
-          city,
-          zip,
-          house_number,
-          country,
-          ruian_address_id,
-          ruian_validated,
-          address_source
-        `
-      )
-      .eq('id', subjectId)
-      .single()
+        street,
+        city,
+        zip,
+        house_number,
+        country
+      `
+    )
+    .eq('id', subjectId)
+    .single()
 
     if (subjectErr) {
       console.error('getLandlordDetail: Supabase error', {
@@ -299,9 +293,6 @@ export type SaveLandlordInput = {
   zip?: string | null
   houseNumber?: string | null
   country?: string | null
-  ruianAddressId?: string | null
-  ruianValidated?: boolean | null
-  addressSource?: string | null
 }
 
 /* =========================
@@ -373,9 +364,6 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     zip: (input.zip ?? '').trim() || null,
     house_number: (input.houseNumber ?? '').trim() || null,
     country: (input.country ?? '').trim() || null,
-    ruian_address_id: (input.ruianAddressId ?? '').trim() || null,
-    ruian_validated: input.ruianValidated ?? false,
-    address_source: (input.addressSource ?? '').trim() || null,
 
     // DB: subjects.origin_module je NOT NULL -> musí být vždy
     origin_module: '030',
@@ -416,9 +404,6 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     zip,
     house_number,
     country,
-    ruian_address_id,
-    ruian_validated,
-    address_source
   `
 
   if (isNew) {
@@ -429,10 +414,13 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
       .single()
 
     if (error) throw new Error(error.message)
-    subjectId = data?.id ?? null
+    if (!data || typeof data !== 'object' || !('id' in data)) throw new Error('Nepodařilo se vytvořit pronajimatele.')
+    
+    const dataObj = data as any
+    subjectId = String(dataObj.id ?? '').trim() || null
     if (!subjectId) throw new Error('Nepodařilo se vytvořit pronajimatele.')
 
-    return data as unknown as LandlordDetailRow
+    return dataObj as LandlordDetailRow
   } else {
     const { data, error } = await supabase
       .from('subjects')
@@ -442,9 +430,9 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
       .single()
 
     if (error) throw new Error(error.message)
-    if (!data) throw new Error('Nepodařilo se aktualizovat pronajimatele.')
+    if (!data || typeof data !== 'object' || !('id' in data)) throw new Error('Nepodařilo se aktualizovat pronajimatele.')
 
-    return data as unknown as LandlordDetailRow
+    return data as any as LandlordDetailRow
   }
 }
 

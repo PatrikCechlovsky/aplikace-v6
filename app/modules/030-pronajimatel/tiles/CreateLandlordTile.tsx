@@ -118,9 +118,6 @@ export default function CreateLandlordTile({
             zip: formValue.zip.trim() || null,
             houseNumber: formValue.houseNumber.trim() || null,
             country: formValue.country.trim() || null,
-            ruianAddressId: null,
-            ruianValidated: false,
-            addressSource: null,
           }
 
           const saved = await saveLandlord(input)

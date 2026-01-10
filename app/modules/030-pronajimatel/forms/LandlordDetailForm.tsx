@@ -2,30 +2,18 @@
 
 // FILE: app/modules/030-pronajimatel/forms/LandlordDetailForm.tsx
 // PURPOSE: Formulář pronajimatele podle typu subjektu (030)
-// Zobrazí příslušná pole podle subject_type (osoba, osvc, firma, spolek, statni, zastupce)
+// Struktura stejná jako "Můj účet", ale bez přihlašovacích údajů
+// Sekce: Osobní údaje -> Adresa -> Základní údaje (email, telefon)
 
 import React, { useEffect, useMemo, useState } from 'react'
 import InputWithHistory from '@/app/UI/InputWithHistory'
+import AddressAutocomplete from '@/app/UI/AddressAutocomplete'
 
 // =====================
 // 1) TYPES
 // =====================
 
 export type LandlordFormValue = {
-  // Všechny typy
-  displayName: string
-  email: string
-  phone: string
-  note: string
-  isArchived: boolean
-
-  // Adresa (všechny typy)
-  street: string
-  city: string
-  zip: string
-  houseNumber: string
-  country: string
-
   // Person fields (osoba, osvc, zastupce)
   titleBefore: string
   firstName: string
@@ -35,13 +23,29 @@ export type LandlordFormValue = {
   idDocType: string
   idDocNumber: string
 
+  // Adresa (všechny typy)
+  street: string
+  city: string
+  zip: string
+  houseNumber: string
+  country: string
+
+  // Základní údaje / Kontakty (všechny typy) - BEZ přihlašovacích údajů
+  displayName: string
+  email: string
+  phone: string
+
   // Company fields (firma, spolek, statni)
   companyName: string
   ic: string
   dic: string
   icValid: boolean
   dicValid: boolean
-  delegateId: string // FK na subject (zástupce)
+  delegateId: string
+
+  // Poznámka
+  note: string
+  isArchived: boolean
 }
 
 export type LandlordDetailFormProps = {
@@ -84,18 +88,7 @@ export default function LandlordDetailForm({
 
   const initial = useMemo<LandlordFormValue>(
     () => ({
-      displayName: safe(landlord.displayName),
-      email: safe(landlord.email),
-      phone: safe(landlord.phone),
-      note: safe(landlord.note),
-      isArchived: !!landlord.isArchived,
-
-      street: safe(landlord.street),
-      city: safe(landlord.city),
-      zip: safe(landlord.zip),
-      houseNumber: safe(landlord.houseNumber),
-      country: safe(landlord.country || 'CZ'),
-
+      // Person fields
       titleBefore: safe(landlord.titleBefore),
       firstName: safe(landlord.firstName),
       lastName: safe(landlord.lastName),
@@ -104,12 +97,29 @@ export default function LandlordDetailForm({
       idDocType: safe(landlord.idDocType),
       idDocNumber: safe(landlord.idDocNumber),
 
+      // Adresa
+      street: safe(landlord.street),
+      city: safe(landlord.city),
+      zip: safe(landlord.zip),
+      houseNumber: safe(landlord.houseNumber),
+      country: safe(landlord.country || 'CZ'),
+
+      // Základní údaje
+      displayName: safe(landlord.displayName),
+      email: safe(landlord.email),
+      phone: safe(landlord.phone),
+
+      // Company fields
       companyName: safe(landlord.companyName),
       ic: safe(landlord.ic),
       dic: safe(landlord.dic),
       icValid: !!landlord.icValid,
       dicValid: !!landlord.dicValid,
       delegateId: safe(landlord.delegateId),
+
+      // Poznámka
+      note: safe(landlord.note),
+      isArchived: !!landlord.isArchived,
     }),
     [landlord]
   )
@@ -142,65 +152,12 @@ export default function LandlordDetailForm({
 
   return (
     <div className="detail-form">
-      {/* ZÁKLADNÍ ÚDAJE */}
-      <div className="detail-form__section">
-        <div className="detail-form__section-title">Základní údaje</div>
-
-        {/* Zobrazované jméno + Email + Telefon */}
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">Zobrazované jméno / přezdívka</label>
-            <InputWithHistory
-              historyId="landlord.displayName"
-              className="detail-form__input"
-              type="text"
-              maxLength={80}
-              value={val.displayName}
-              readOnly={readOnly}
-              onChange={(e) => update({ displayName: e.target.value })}
-              placeholder="volitelné"
-            />
-          </div>
-
-          <div className="detail-form__field">
-            <label className="detail-form__label">
-              E-mail <span className="detail-form__required">*</span>
-            </label>
-            <InputWithHistory
-              historyId="landlord.email"
-              className="detail-form__input"
-              type="email"
-              maxLength={80}
-              value={val.email}
-              readOnly={readOnly}
-              onChange={(e) => update({ email: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">Telefon</label>
-            <InputWithHistory
-              historyId="landlord.phone"
-              className="detail-form__input"
-              type="tel"
-              maxLength={20}
-              value={val.phone}
-              readOnly={readOnly}
-              onChange={(e) => update({ phone: e.target.value })}
-              placeholder="+420 999 874 564"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* OSOBNÍ ÚDAJE (pro osoba, osvc, zastupce) */}
       {isPerson && (
         <div className="detail-form__section">
           <div className="detail-form__section-title">Osobní údaje</div>
 
-          {/* Titul + Jméno + Příjmení */}
+          {/* Řádek 1: Titul + Jméno + Příjmení */}
           <div className="detail-form__grid detail-form__grid--narrow">
             <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: '12px' }}>
               <div className="detail-form__field">
@@ -248,7 +205,7 @@ export default function LandlordDetailForm({
             </div>
           </div>
 
-          {/* Datum narození + Rodné číslo */}
+          {/* Řádek 2: Datum narození + Rodné číslo */}
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field">
               <label className="detail-form__label">Datum narození</label>
@@ -275,7 +232,7 @@ export default function LandlordDetailForm({
             </div>
           </div>
 
-          {/* Druh dokladu + Číslo dokladu */}
+          {/* Řádek 3: Druh dokladu + Číslo dokladu */}
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field">
               <label className="detail-form__label">Druh dokladu</label>
@@ -396,7 +353,7 @@ export default function LandlordDetailForm({
             </div>
           </div>
 
-          {/* Zástupce (lookup na subject s typem zastupce) */}
+          {/* Zástupce */}
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-2">
               <label className="detail-form__label">Zástupce</label>
@@ -413,55 +370,37 @@ export default function LandlordDetailForm({
         </div>
       )}
 
-      {/* ADRESA (všechny typy) */}
+      {/* ADRESA (samostatná sekce mezi osobními a základními údaji) */}
       <div className="detail-form__section">
-        <div className="detail-form__section-title">Adresa</div>
+        <div className="detail-form__section-title">Adresa (autocomplete)</div>
 
-        {/* Stát + PSČ + Město */}
+        {/* Adresa autocomplete (pro CZ) */}
         <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">
-              Stát <span className="detail-form__required">*</span>
-            </label>
-            <input
-              className="detail-form__input"
-              type="text"
-              maxLength={3}
-              value={val.country}
-              readOnly={readOnly}
-              onChange={(e) => update({ country: e.target.value.toUpperCase() })}
-              placeholder="CZ"
-            />
-          </div>
-
-          <div className="detail-form__field">
-            <label className="detail-form__label">
-              PSČ <span className="detail-form__required">*</span>
-            </label>
-            <input
-              className="detail-form__input"
-              type="text"
-              maxLength={10}
-              value={val.zip}
-              readOnly={readOnly}
-              onChange={(e) => update({ zip: e.target.value })}
-              placeholder="12345"
-            />
-          </div>
-
-          <div className="detail-form__field">
-            <label className="detail-form__label">
-              Město <span className="detail-form__required">*</span>
-            </label>
-            <InputWithHistory
-              historyId="landlord.city"
-              className="detail-form__input"
-              type="text"
-              maxLength={100}
-              value={val.city}
-              readOnly={readOnly}
-              onChange={(e) => update({ city: e.target.value })}
-            />
+          <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">Adresa (autocomplete)</label>
+            {val.country === 'CZ' ? (
+              <AddressAutocomplete
+                street={val.street}
+                city={val.city}
+                zip={val.zip}
+                houseNumber={val.houseNumber}
+                country={val.country}
+                onAddressChange={(address) => {
+                  update({
+                    street: address.street,
+                    city: address.city,
+                    zip: address.zip,
+                    houseNumber: address.houseNumber,
+                    country: address.country,
+                  })
+                }}
+                placeholder="Začněte psát adresu (např. 'Praha, Václavské náměstí')"
+                className="detail-form__input"
+                disabled={readOnly}
+              />
+            ) : (
+              <div className="detail-form__hint">Autocomplete je dostupný pouze pro Českou republiku</div>
+            )}
           </div>
         </div>
 
@@ -469,14 +408,14 @@ export default function LandlordDetailForm({
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Ulice</label>
-            <InputWithHistory
-              historyId="landlord.street"
+            <input
               className="detail-form__input"
               type="text"
               maxLength={100}
               value={val.street}
               readOnly={readOnly}
               onChange={(e) => update({ street: e.target.value })}
+              placeholder="Název ulice"
             />
           </div>
 
@@ -490,6 +429,107 @@ export default function LandlordDetailForm({
               readOnly={readOnly}
               onChange={(e) => update({ houseNumber: e.target.value })}
               placeholder="123"
+            />
+          </div>
+        </div>
+
+        {/* Město + PSČ + Stát */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Město</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={100}
+              value={val.city}
+              readOnly={readOnly}
+              onChange={(e) => update({ city: e.target.value })}
+              placeholder="Název města"
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">PSČ</label>
+            <input
+              className="detail-form__input"
+              type="text"
+              maxLength={10}
+              value={val.zip}
+              readOnly={readOnly}
+              onChange={(e) => update({ zip: e.target.value })}
+              placeholder="12345"
+            />
+          </div>
+        </div>
+
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Stát</label>
+            <select
+              className="detail-form__input"
+              value={val.country}
+              onChange={(e) => update({ country: e.target.value })}
+              disabled={readOnly}
+            >
+              <option value="CZ">Česká republika</option>
+              <option value="SK">Slovensko</option>
+              <option value="PL">Polsko</option>
+              <option value="DE">Německo</option>
+              <option value="AT">Rakousko</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ZÁKLADNÍ ÚDAJE / KONTAKTY (BEZ přihlašovacích údajů) */}
+      <div className="detail-form__section">
+        <div className="detail-form__section-title">Kontaktní údaje</div>
+
+        {/* Zobrazované jméno + Email */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Zobrazované jméno / přezdívka</label>
+            <InputWithHistory
+              historyId="landlord.displayName"
+              className="detail-form__input"
+              type="text"
+              maxLength={80}
+              value={val.displayName}
+              readOnly={readOnly}
+              onChange={(e) => update({ displayName: e.target.value })}
+              placeholder="volitelné"
+            />
+          </div>
+
+          <div className="detail-form__field">
+            <label className="detail-form__label">
+              E-mail <span className="detail-form__required">*</span>
+            </label>
+            <InputWithHistory
+              historyId="landlord.email"
+              className="detail-form__input"
+              type="email"
+              maxLength={80}
+              value={val.email}
+              readOnly={readOnly}
+              onChange={(e) => update({ email: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {/* Telefon */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Telefon</label>
+            <InputWithHistory
+              historyId="landlord.phone"
+              className="detail-form__input"
+              type="tel"
+              maxLength={20}
+              value={val.phone}
+              readOnly={readOnly}
+              onChange={(e) => update({ phone: e.target.value })}
+              placeholder="+420 999 874 564"
             />
           </div>
         </div>
@@ -517,4 +557,3 @@ export default function LandlordDetailForm({
     </div>
   )
 }
-
