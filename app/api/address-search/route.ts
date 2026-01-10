@@ -26,18 +26,45 @@ export async function GET(request: NextRequest) {
 
     const trimmedQuery = query.trim()
     
-    // API klíč z environment variables
-    const apiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY || 'c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8'
+    // API klíče z environment variables
+    const visidooApiKey = process.env.NEXT_PUBLIC_VISIDOO_API_KEY
+    const googlePlacesApiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+    const ruianApiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY || 'c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8'
 
-    // POZNÁMKA: Veřejné RÚIAN API endpointy nejsou dostupné nebo nefungují
-    // Pro produkci bude potřeba:
-    // 1. Zaregistrovat se u poskytovatele (Visidoo, ASAPI, nebo jiný) a získat API klíč
-    // 2. Nebo použít alternativní službu (Google Places API, Mapbox Geocoding API)
-    // 3. Nebo nasadit vlastní RÚIAN API server (https://github.com/jindrichskupa/ruian-api)
+    // Priorita: Visidoo > Google Places > ostatní RÚIAN endpointy
+    const endpoints: Array<{ name: string; url: string; headers: Record<string, string> }> = []
     
-    // Prozatím zkusíme několik možných endpointů (pravděpodobně selžou):
-    const endpoints = [
-      // Oficiální ČÚZK endpointy (pokud existují)
+    // 1. Visidoo API (nejlepší pro české adresy - RÚIAN)
+    // Registrace: https://www.visidoo.cz/docs/autocomplete
+    // Dokumentace: https://www.visidoo.cz/docs/autocomplete
+    if (visidooApiKey) {
+      endpoints.push({
+        name: 'visidoo',
+        url: `https://api.visidoo.cz/v1/address/autocomplete?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
+        headers: { 
+          'Accept': 'application/json', 
+          'X-API-Key': visidooApiKey,
+          'User-Agent': 'Next.js/14',
+        },
+      })
+    }
+    
+    // 2. Google Places API (spolehlivé, podporuje české adresy)
+    // Registrace: https://console.cloud.google.com/google/maps-apis
+    // Dokumentace: https://developers.google.com/maps/documentation/places/web-service/autocomplete
+    if (googlePlacesApiKey) {
+      endpoints.push({
+        name: 'google-places',
+        url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(trimmedQuery)}&components=country:cz&key=${googlePlacesApiKey}&language=cs`,
+        headers: { 
+          'Accept': 'application/json',
+          'User-Agent': 'Next.js/14',
+        },
+      })
+    }
+    
+    // 3. Fallback: ostatní RÚIAN endpointy (pravděpodobně nefungují, ale zkusíme)
+    endpoints.push(
       {
         name: 'ruian.cuzk.cz',
         url: `https://ruian.cuzk.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
@@ -48,29 +75,17 @@ export async function GET(request: NextRequest) {
         url: `https://cuzk.ruian.cz/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
         headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
-      // Skaut.cz (pravděpodobně nefunguje, ale zkusíme)
       {
         name: 'skaut.cz',
         url: `https://ruian-api.skaut.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
         headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
-      // Fnx.io s API klíčem
       {
         name: 'fnx.io',
-        url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10&apiKey=${apiKey}`,
+        url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10&apiKey=${ruianApiKey}`,
         headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
-    ]
-    
-    // Pokud máme Visidoo API klíč, můžeme ho přidat:
-    // const visidooApiKey = process.env.NEXT_PUBLIC_VISIDOO_API_KEY
-    // if (visidooApiKey) {
-    //   endpoints.unshift({
-    //     name: 'visidoo',
-    //     url: `https://api.visidoo.cz/v1/address/autocomplete?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
-    //     headers: { 'Accept': 'application/json', 'X-API-Key': visidooApiKey },
-    //   })
-    // }
+    )
 
     // Zkusíme každý endpoint
     const errors: string[] = []
@@ -102,53 +117,114 @@ export async function GET(request: NextRequest) {
           const data = await response.json()
           console.log(`[API Route] ${endpoint.name} response:`, JSON.stringify(data).substring(0, 500))
           
-          // Transformace dat podle formátu API
+          // Transformace dat podle formátu API (různé API mají různé formáty)
           let results: any[] = []
 
-          if (Array.isArray(data)) {
-            results = data
-            console.log(`[API Route] ${endpoint.name}: Found array with ${results.length} items`)
-          } else if (data && typeof data === 'object') {
-            if (Array.isArray(data.data)) {
+          if (endpoint.name === 'google-places') {
+            // Google Places API vrací { predictions: [...] }
+            if (data.predictions && Array.isArray(data.predictions)) {
+              results = data.predictions
+              console.log(`[API Route] google-places: Found ${results.length} predictions`)
+            } else if (data.status === 'ZERO_RESULTS') {
+              console.log(`[API Route] google-places: No results found`)
+              errors.push(`[google-places] No results found`)
+            } else if (data.status && data.status !== 'OK') {
+              const errorMsg = `[google-places] API error: ${data.status} - ${data.error_message || ''}`
+              console.warn(errorMsg)
+              errors.push(errorMsg)
+            }
+          } else if (endpoint.name === 'visidoo') {
+            // Visidoo API vrací { data: [...] } nebo přímo pole
+            if (Array.isArray(data)) {
+              results = data
+              console.log(`[API Route] visidoo: Found array with ${results.length} items`)
+            } else if (data && typeof data === 'object' && Array.isArray(data.data)) {
               results = data.data
-              console.log(`[API Route] ${endpoint.name}: Found data.data array with ${results.length} items`)
-            } else if (Array.isArray(data.results)) {
+              console.log(`[API Route] visidoo: Found data.data array with ${results.length} items`)
+            } else if (data && typeof data === 'object' && Array.isArray(data.results)) {
               results = data.results
-              console.log(`[API Route] ${endpoint.name}: Found data.results array with ${results.length} items`)
-            } else if (Array.isArray(data.items)) {
-              results = data.items
-              console.log(`[API Route] ${endpoint.name}: Found data.items array with ${results.length} items`)
+              console.log(`[API Route] visidoo: Found data.results array with ${results.length} items`)
             } else {
-              console.warn(`[API Route] ${endpoint.name}: Unexpected response format, keys:`, Object.keys(data))
-              errors.push(`[${endpoint.name}] Unexpected response format: ${Object.keys(data).join(', ')}`)
+              console.warn(`[API Route] visidoo: Unexpected response format, keys:`, Object.keys(data))
+              errors.push(`[visidoo] Unexpected response format: ${Object.keys(data).join(', ')}`)
             }
           } else {
-            console.warn(`[API Route] ${endpoint.name}: Response is not array or object:`, typeof data)
-            errors.push(`[${endpoint.name}] Response is not array or object: ${typeof data}`)
+            // Ostatní RÚIAN API endpointy
+            if (Array.isArray(data)) {
+              results = data
+              console.log(`[API Route] ${endpoint.name}: Found array with ${results.length} items`)
+            } else if (data && typeof data === 'object') {
+              if (Array.isArray(data.data)) {
+                results = data.data
+                console.log(`[API Route] ${endpoint.name}: Found data.data array with ${results.length} items`)
+              } else if (Array.isArray(data.results)) {
+                results = data.results
+                console.log(`[API Route] ${endpoint.name}: Found data.results array with ${results.length} items`)
+              } else if (Array.isArray(data.items)) {
+                results = data.items
+                console.log(`[API Route] ${endpoint.name}: Found data.items array with ${results.length} items`)
+              } else {
+                console.warn(`[API Route] ${endpoint.name}: Unexpected response format, keys:`, Object.keys(data))
+                errors.push(`[${endpoint.name}] Unexpected response format: ${Object.keys(data).join(', ')}`)
+              }
+            } else {
+              console.warn(`[API Route] ${endpoint.name}: Response is not array or object:`, typeof data)
+              errors.push(`[${endpoint.name}] Response is not array or object: ${typeof data}`)
+            }
           }
 
           if (results.length > 0) {
             console.log(`[API Route] ${endpoint.name}: Parsing ${results.length} items`)
-            // Transformace do jednotného formátu
-            const transformed = results.map((item: any) => ({
-              street: item.streetName || item.street || item.nazev_ulice || item.ulice || '',
-              city: item.cityName || item.city || item.nazev_obce || item.mesto || '',
-              zip: item.zipCode || item.zip || item.psc || '',
-              houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne || '',
-              ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || '',
-              fullAddress: [
-                item.streetName || item.street || item.nazev_ulice || item.ulice,
-                item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne,
-                item.cityName || item.city || item.nazev_obce || item.mesto,
-                item.zipCode || item.zip || item.psc,
-              ]
-                .filter(Boolean)
-                .join(', '),
-            })).filter((r: any) => r.fullAddress.trim().length > 0)
+            
+            // Transformace do jednotného formátu podle typu API
+            let transformed: any[] = []
+            
+            if (endpoint.name === 'google-places') {
+              // Google Places API: predictions mají strukturu { description, place_id, structured_formatting }
+              transformed = results.map((prediction: any) => {
+                const structured = prediction.structured_formatting || {}
+                const description = prediction.description || ''
+                
+                // Parsování adresy z description (např. "Pivovarská, Praha, Česká republika")
+                const parts = description.split(',').map((p: string) => p.trim())
+                const street = parts[0] || ''
+                const city = parts[1] || ''
+                const country = parts[2] || ''
+                
+                return {
+                  street: structured.main_text || street || '',
+                  city: structured.secondary_text || city || '',
+                  zip: '', // Google Places autocomplete nevrátí PSČ bez dalšího requestu
+                  houseNumber: '', // Google Places autocomplete nevrátí číslo popisné bez dalšího requestu
+                  ruianId: prediction.place_id || '',
+                  placeId: prediction.place_id || '', // Uložíme place_id pro případné další použití
+                  fullAddress: description,
+                }
+              })
+            } else {
+              // Visidoo a ostatní RÚIAN API endpointy
+              transformed = results.map((item: any) => ({
+                street: item.streetName || item.street || item.nazev_ulice || item.ulice || item.main_text || '',
+                city: item.cityName || item.city || item.nazev_obce || item.mesto || item.secondary_text || '',
+                zip: item.zipCode || item.zip || item.psc || '',
+                houseNumber: item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne || '',
+                ruianId: item.id?.toString() || item.ruianId?.toString() || item.id_adm || item.place_id || '',
+                fullAddress: item.fullAddress || item.description || [
+                  item.streetName || item.street || item.nazev_ulice || item.ulice || item.main_text,
+                  item.houseNumber || item.house_number || item.cislo_domovni || item.cislo_popisne,
+                  item.cityName || item.city || item.nazev_obce || item.mesto || item.secondary_text,
+                  item.zipCode || item.zip || item.psc,
+                ]
+                  .filter(Boolean)
+                  .join(', '),
+              }))
+            }
+            
+            const validResults = transformed.filter((r: any) => r.fullAddress.trim().length > 0)
 
-            console.log(`[API Route] ${endpoint.name}: Transformed ${transformed.length} valid addresses`)
-            if (transformed.length > 0) {
-              return NextResponse.json(transformed, {
+            console.log(`[API Route] ${endpoint.name}: Transformed ${validResults.length} valid addresses`)
+            if (validResults.length > 0) {
+              return NextResponse.json(validResults, {
                 headers: {
                   'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', // Cache na 1 hodinu
                 },

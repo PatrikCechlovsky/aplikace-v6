@@ -11,6 +11,10 @@ const optionalEnvVars = {
   APP_BASE_URL: process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_BASE_URL || 'http://localhost:3000',
   NODE_ENV: process.env.NODE_ENV || 'development',
   SENTRY_DSN: process.env.SENTRY_DSN,
+  // Address autocomplete API keys (podporujeme Visidoo a Google Places)
+  NEXT_PUBLIC_VISIDOO_API_KEY: process.env.NEXT_PUBLIC_VISIDOO_API_KEY,
+  NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY,
+  // Legacy RÚIAN API key (pro případné další endpointy)
   NEXT_PUBLIC_RUIAN_API_KEY: process.env.NEXT_PUBLIC_RUIAN_API_KEY,
 } as const
 
@@ -48,6 +52,9 @@ export const env = {
   APP_BASE_URL: optionalEnvVars.APP_BASE_URL,
   NODE_ENV: optionalEnvVars.NODE_ENV,
   SENTRY_DSN: optionalEnvVars.SENTRY_DSN,
+  // Address autocomplete API keys
+  NEXT_PUBLIC_VISIDOO_API_KEY: optionalEnvVars.NEXT_PUBLIC_VISIDOO_API_KEY,
+  NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: optionalEnvVars.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY,
   NEXT_PUBLIC_RUIAN_API_KEY: optionalEnvVars.NEXT_PUBLIC_RUIAN_API_KEY,
   
   // Computed
