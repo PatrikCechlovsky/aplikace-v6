@@ -151,18 +151,31 @@ export default function LandlordDetailFrame({
       return
     }
 
-    // read/edit => resolve from Supabase
+    // read/edit => resolve from Supabase (jen pokud není 'new')
     const subjectId = String(landlord?.id ?? '').trim()
+    if (!subjectId || subjectId === 'new') {
+      // Nový landlord - použij initial hodnoty
+      const init = buildInitialFormValue(landlord)
+      setFormValue(init)
+      initialSnapshotRef.current = JSON.stringify(init)
+      firstRenderRef.current = true
+      setIsDirty(false)
+      onDirtyChange?.(false)
+      return
+    }
+
     const mySeq = ++resolveSeqRef.current
     let mounted = true
 
     ;(async () => {
       try {
+        logger.log('LandlordDetailFrame: loading detail', { subjectId, viewMode })
         const detail = await getLandlordDetail(subjectId)
         if (!mounted) return
         if (mySeq !== resolveSeqRef.current) return
 
         const s: any = detail ?? {}
+        logger.log('LandlordDetailFrame: detail loaded', { detail: s })
 
         const nextLandlord: UiLandlord = {
           ...landlord,
@@ -207,16 +220,18 @@ export default function LandlordDetailFrame({
 
         setIsDirty(false)
         onDirtyChange?.(false)
-      } catch (e) {
-        logger.warn('getLandlordDetail failed', e)
-        toast.showError('Nepodařilo se načíst detail pronajimatele')
+      } catch (e: any) {
+        if (!mounted) return
+        logger.error('getLandlordDetail failed', { subjectId, error: e, message: e?.message, code: e?.code })
+        toast.showError(e?.message || 'Nepodařilo se načíst detail pronajimatele')
+        // Necháme landlord z prop, aby se formulář alespoň zobrazil
       }
     })()
 
     return () => {
       mounted = false
     }
-  }, [landlord?.id, viewMode, toast, onDirtyChange]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [landlord?.id, viewMode, toast, onDirtyChange, logger]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // =====================
   // 4) ACTION HANDLERS

@@ -189,53 +189,73 @@ export type LandlordDetailRow = {
    ========================= */
 
 export async function getLandlordDetail(subjectId: string): Promise<LandlordDetailRow> {
-  const { data: subject, error: subjectErr } = await supabase
-    .from('subjects')
-    .select(
-      `
-        id,
-        subject_type,
-        display_name,
-        email,
-        phone,
-        is_archived,
-        created_at,
-        updated_at,
-        
-        title_before,
-        first_name,
-        last_name,
-        note,
-        
-        birth_date,
-        personal_id_number,
-        id_doc_type,
-        id_doc_number,
-        
-        company_name,
-        ic,
-        dic,
-        ic_valid,
-        dic_valid,
-        delegate_id,
-        
-        street,
-        city,
-        zip,
-        house_number,
-        country,
-        ruian_address_id,
-        ruian_validated,
-        address_source
-      `
-    )
-    .eq('id', subjectId)
-    .single()
+  try {
+    const { data: subject, error: subjectErr } = await supabase
+      .from('subjects')
+      .select(
+        `
+          id,
+          subject_type,
+          display_name,
+          email,
+          phone,
+          is_archived,
+          created_at,
+          updated_at,
+          
+          title_before,
+          first_name,
+          last_name,
+          note,
+          
+          birth_date,
+          personal_id_number,
+          id_doc_type,
+          id_doc_number,
+          
+          company_name,
+          ic,
+          dic,
+          ic_valid,
+          dic_valid,
+          delegate_id,
+          
+          street,
+          city,
+          zip,
+          house_number,
+          country,
+          ruian_address_id,
+          ruian_validated,
+          address_source
+        `
+      )
+      .eq('id', subjectId)
+      .single()
 
-  if (subjectErr) throw new Error(subjectErr.message)
-  if (!subject?.id) throw new Error('Pronajímatel nebyl nalezen.')
+    if (subjectErr) {
+      console.error('getLandlordDetail: Supabase error', {
+        subjectId,
+        error: subjectErr,
+        code: subjectErr.code,
+        message: subjectErr.message,
+        details: subjectErr.details,
+        hint: subjectErr.hint,
+      })
+      throw new Error(`Chyba při načítání pronajimatele: ${subjectErr.message}${subjectErr.hint ? ` (${subjectErr.hint})` : ''}`)
+    }
 
-  return subject as unknown as LandlordDetailRow
+    if (!subject?.id) {
+      console.error('getLandlordDetail: Subject not found', { subjectId, subject })
+      throw new Error('Pronajímatel nebyl nalezen.')
+    }
+
+    return subject as unknown as LandlordDetailRow
+  } catch (err: any) {
+    console.error('getLandlordDetail: Unexpected error', { subjectId, error: err })
+    if (err instanceof Error) throw err
+    throw new Error(`Neočekávaná chyba při načítání pronajimatele: ${String(err)}`)
+  }
 }
 
 /* =========================

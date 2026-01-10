@@ -402,51 +402,118 @@ export default function LandlordsTile({
     setViewMode(id ? vm : 'list')
     setSubjectTypeFilter(type)
 
+    // Pokud je id a nejde o list mode, najdi pronajimatele v seznamu a otevři detail
     if (id && vm !== 'list') {
-      void (async () => {
-        try {
-          const detail = await getLandlordDetail(id)
-          const detailUi: DetailUiLandlord = {
-            id: detail.id,
-            displayName: detail.display_name ?? '',
-            email: detail.email,
-            phone: detail.phone,
-            subjectType: detail.subject_type,
-            isArchived: !!detail.is_archived,
-            createdAt: detail.created_at ?? '',
-            titleBefore: detail.title_before ?? null,
-            firstName: detail.first_name ?? null,
-            lastName: detail.last_name ?? null,
-            note: detail.note ?? null,
-            birthDate: detail.birth_date ?? null,
-            personalIdNumber: detail.personal_id_number ?? null,
-            idDocType: detail.id_doc_type ?? null,
-            idDocNumber: detail.id_doc_number ?? null,
-            companyName: detail.company_name ?? null,
-            ic: detail.ic ?? null,
-            dic: detail.dic ?? null,
-            icValid: detail.ic_valid ?? null,
-            dicValid: detail.dic_valid ?? null,
-            delegateId: detail.delegate_id ?? null,
-            street: detail.street ?? null,
-            city: detail.city ?? null,
-            zip: detail.zip ?? null,
-            houseNumber: detail.house_number ?? null,
-            country: detail.country ?? 'CZ',
-          }
-          setDetailLandlord(detailUi)
-        } catch (e: any) {
-          logger.error('getLandlordDetail failed', e)
-          toast.showError(e?.message || 'Nepodařilo se načíst detail pronajimatele')
-          setSelectedId(null)
-          setViewMode('list')
-          setUrl({ id: null, vm: null })
+      const landlord = landlords.find((l) => l.id === id)
+      if (landlord) {
+        // Načíst detail z databáze - LandlordDetailFrame to udělá sám
+        const detailUi: DetailUiLandlord = {
+          id: landlord.id,
+          displayName: landlord.displayName ?? '',
+          email: landlord.email ?? null,
+          phone: landlord.phone ?? null,
+          subjectType: landlord.subjectType ?? null,
+          isArchived: landlord.isArchived ?? false,
+          createdAt: landlord.createdAt ?? '',
+          titleBefore: landlord.titleBefore ?? null,
+          firstName: landlord.firstName ?? null,
+          lastName: landlord.lastName ?? null,
+          note: null,
+          birthDate: null,
+          personalIdNumber: null,
+          idDocType: null,
+          idDocNumber: null,
+          companyName: landlord.companyName ?? null,
+          ic: landlord.ic ?? null,
+          dic: landlord.dic ?? null,
+          icValid: null,
+          dicValid: null,
+          delegateId: null,
+          street: null,
+          city: null,
+          zip: null,
+          houseNumber: null,
+          country: 'CZ',
         }
-      })()
+        setDetailLandlord(detailUi)
+      } else if (id === 'new') {
+        // Nový pronajímatel
+        const newLandlord: DetailUiLandlord = {
+          id: 'new',
+          displayName: '',
+          email: null,
+          phone: null,
+          subjectType: null,
+          isArchived: false,
+          createdAt: '',
+          titleBefore: null,
+          firstName: null,
+          lastName: null,
+          note: null,
+          birthDate: null,
+          personalIdNumber: null,
+          idDocType: null,
+          idDocNumber: null,
+          companyName: null,
+          ic: null,
+          dic: null,
+          icValid: null,
+          dicValid: null,
+          delegateId: null,
+          street: null,
+          city: null,
+          zip: null,
+          houseNumber: null,
+          country: 'CZ',
+        }
+        setDetailLandlord(newLandlord)
+      } else {
+        // Pronajímatel není v seznamu - načíst z DB
+        void (async () => {
+          try {
+            const detail = await getLandlordDetail(id)
+            const detailUi: DetailUiLandlord = {
+              id: detail.id,
+              displayName: detail.display_name ?? '',
+              email: detail.email,
+              phone: detail.phone,
+              subjectType: detail.subject_type,
+              isArchived: !!detail.is_archived,
+              createdAt: detail.created_at ?? '',
+              titleBefore: detail.title_before ?? null,
+              firstName: detail.first_name ?? null,
+              lastName: detail.last_name ?? null,
+              note: detail.note ?? null,
+              birthDate: detail.birth_date ?? null,
+              personalIdNumber: detail.personal_id_number ?? null,
+              idDocType: detail.id_doc_type ?? null,
+              idDocNumber: detail.id_doc_number ?? null,
+              companyName: detail.company_name ?? null,
+              ic: detail.ic ?? null,
+              dic: detail.dic ?? null,
+              icValid: detail.ic_valid ?? null,
+              dicValid: detail.dic_valid ?? null,
+              delegateId: detail.delegate_id ?? null,
+              street: detail.street ?? null,
+              city: detail.city ?? null,
+              zip: detail.zip ?? null,
+              houseNumber: detail.house_number ?? null,
+              country: detail.country ?? 'CZ',
+            }
+            setDetailLandlord(detailUi)
+          } catch (e: any) {
+            logger.error('getLandlordDetail failed', e)
+            toast.showError(e?.message || 'Nepodařilo se načíst detail pronajimatele')
+            setSelectedId(null)
+            setViewMode('list')
+            setUrl({ id: null, vm: null })
+          }
+        })()
+      }
     } else {
       setDetailLandlord(null)
     }
-  }, [searchParams, setUrl, toast])
+  }, [searchParams, landlords, setUrl, toast, logger])
 
   useEffect(() => {
     const actions: CommonActionId[] = []
