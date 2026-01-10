@@ -78,10 +78,25 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
       return []
     }
 
+    // Zkontrolujme debug headers z API route
+    const debugErrors = response.headers.get('X-Debug-Errors')
+    if (debugErrors) {
+      try {
+        const errors = JSON.parse(debugErrors)
+        console.error('❌ API route debug errors:', errors)
+      } catch (e) {
+        console.warn('⚠️ Could not parse debug errors:', debugErrors)
+      }
+    }
+
     const data = await response.json()
     console.log('✅ API response:', data)
     console.log('Data type:', Array.isArray(data) ? 'array' : typeof data)
     console.log('Results count:', Array.isArray(data) ? data.length : 0)
+    
+    if (Array.isArray(data) && data.length === 0 && debugErrors) {
+      console.warn('⚠️ No results found - check server logs for details')
+    }
 
     // API route už vrací transformovaná data ve správném formátu
     if (Array.isArray(data)) {
