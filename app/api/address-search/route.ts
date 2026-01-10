@@ -189,7 +189,6 @@ export async function GET(request: NextRequest) {
                 const parts = description.split(',').map((p: string) => p.trim())
                 const street = parts[0] || ''
                 const city = parts[1] || ''
-                const country = parts[2] || ''
                 
                 return {
                   street: structured.main_text || street || '',
