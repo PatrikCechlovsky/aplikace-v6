@@ -31,23 +31,23 @@ export async function GET(request: NextRequest) {
 
     // Zkusíme několik endpointů v pořadí podle pravděpodobnosti úspěchu
     const endpoints = [
-      // 1. Veřejné API (skaut.cz) - bez API klíče
+      // 1. Veřejné API (skaut.cz) - bez API klíče - zkusíme jako první
       {
         name: 'skaut.cz',
-        url: `https://ruian-api.skaut.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}`,
-        headers: { 'Accept': 'application/json' },
+        url: `https://ruian-api.skaut.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
-      // 2. Alternativní veřejné API (pokud existuje)
+      // 2. Alternativní endpoint pro skaut.cz
       {
-        name: 'ruian-api.fnx.io',
-        url: `https://ruian-api.fnx.io/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
-        headers: { 'Accept': 'application/json' },
+        name: 'skaut.cz (alt)',
+        url: `https://ruian-api.skaut.cz/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
-      // 3. Fnx.io API s API klíčem jako query param
+      // 3. Fnx.io API s API klíčem jako query param (z serveru není CORS problém)
       {
         name: 'fnx.io (query param)',
         url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10&apiKey=${apiKey}`,
-        headers: { 'Accept': 'application/json' },
+        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
       },
     ]
 
