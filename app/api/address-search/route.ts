@@ -52,8 +52,10 @@ export async function GET(request: NextRequest) {
     ]
 
     // Zkusíme každý endpoint
+    const errors: string[] = []
     for (const endpoint of endpoints) {
       try {
+        console.log(`[API Route] Trying endpoint: ${endpoint.name}`, endpoint.url)
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 sekund timeout
 
@@ -70,28 +72,42 @@ export async function GET(request: NextRequest) {
           
           if (!contentType?.includes('application/json')) {
             const text = await response.text()
-            console.warn(`[${endpoint.name}] Non-JSON response:`, contentType, text.substring(0, 200))
+            const errorMsg = `[${endpoint.name}] Non-JSON response: ${contentType}, body: ${text.substring(0, 200)}`
+            console.warn(errorMsg)
+            errors.push(errorMsg)
             continue
           }
 
           const data = await response.json()
+          console.log(`[API Route] ${endpoint.name} response:`, JSON.stringify(data).substring(0, 500))
           
           // Transformace dat podle formátu API
           let results: any[] = []
 
           if (Array.isArray(data)) {
             results = data
+            console.log(`[API Route] ${endpoint.name}: Found array with ${results.length} items`)
           } else if (data && typeof data === 'object') {
             if (Array.isArray(data.data)) {
               results = data.data
+              console.log(`[API Route] ${endpoint.name}: Found data.data array with ${results.length} items`)
             } else if (Array.isArray(data.results)) {
               results = data.results
+              console.log(`[API Route] ${endpoint.name}: Found data.results array with ${results.length} items`)
             } else if (Array.isArray(data.items)) {
               results = data.items
+              console.log(`[API Route] ${endpoint.name}: Found data.items array with ${results.length} items`)
+            } else {
+              console.warn(`[API Route] ${endpoint.name}: Unexpected response format, keys:`, Object.keys(data))
+              errors.push(`[${endpoint.name}] Unexpected response format: ${Object.keys(data).join(', ')}`)
             }
+          } else {
+            console.warn(`[API Route] ${endpoint.name}: Response is not array or object:`, typeof data)
+            errors.push(`[${endpoint.name}] Response is not array or object: ${typeof data}`)
           }
 
           if (results.length > 0) {
+            console.log(`[API Route] ${endpoint.name}: Parsing ${results.length} items`)
             // Transformace do jednotného formátu
             const transformed = results.map((item: any) => ({
               street: item.streetName || item.street || item.nazev_ulice || item.ulice || '',
@@ -109,6 +125,7 @@ export async function GET(request: NextRequest) {
                 .join(', '),
             })).filter((r: any) => r.fullAddress.trim().length > 0)
 
+            console.log(`[API Route] ${endpoint.name}: Transformed ${transformed.length} valid addresses`)
             if (transformed.length > 0) {
               return NextResponse.json(transformed, {
                 headers: {
@@ -116,22 +133,45 @@ export async function GET(request: NextRequest) {
                 },
               })
             }
+          } else {
+            console.warn(`[API Route] ${endpoint.name}: No results found in response`)
+            errors.push(`[${endpoint.name}] No results found`)
           }
         } else {
-          console.warn(`[${endpoint.name}] HTTP ${response.status}: ${response.statusText}`)
+          const errorMsg = `[${endpoint.name}] HTTP ${response.status}: ${response.statusText}`
+          console.warn(errorMsg)
+          errors.push(errorMsg)
+          
+          // Zkusíme získat response body pro debug
+          try {
+            const text = await response.text()
+            console.warn(`[API Route] ${endpoint.name} error body:`, text.substring(0, 200))
+          } catch (e) {
+            // Ignore
+          }
         }
       } catch (error: any) {
         if (error.name === 'AbortError') {
-          console.warn(`[${endpoint.name}] Timeout`)
+          const errorMsg = `[${endpoint.name}] Timeout after 5s`
+          console.warn(errorMsg)
+          errors.push(errorMsg)
         } else {
-          console.warn(`[${endpoint.name}] Error:`, error.message)
+          const errorMsg = `[${endpoint.name}] Error: ${error.message}`
+          console.warn(errorMsg)
+          errors.push(errorMsg)
         }
         continue
       }
     }
 
-    // Pokud všechny endpointy selhaly, vrátíme prázdný výsledek
-    return NextResponse.json([], { status: 200 })
+    // Pokud všechny endpointy selhaly, vrátíme prázdný výsledek s informacemi o chybách
+    console.error(`[API Route] All endpoints failed for query "${trimmedQuery}":`, errors)
+    return NextResponse.json([], { 
+      status: 200,
+      headers: {
+        'X-Debug-Errors': JSON.stringify(errors),
+      },
+    })
   } catch (error: any) {
     console.error('Address search API error:', error)
     return NextResponse.json(
