@@ -35,6 +35,13 @@ type UiUser = {
   firstName?: string | null
   lastName?: string | null
   login?: string | null
+  
+  // Personal identification
+  birthDate?: string | null
+  personalIdNumber?: string | null
+  idDocType?: string | null
+  idDocNumber?: string | null
+  
   twoFactorMethod?: string | null
   createdAt: string
   firstLoginAt?: string | null
