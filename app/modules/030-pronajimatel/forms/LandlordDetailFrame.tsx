@@ -70,6 +70,7 @@ type Props = {
   onDirtyChange?: (dirty: boolean) => void
   onSaved?: (landlord: UiLandlord) => void // Callback po uložení
   onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
+  onOpenNewDelegateForm?: (type: string, fromUserId?: string) => void // Callback pro otevření formuláře nového zástupce
 }
 
 // Očekávané typy subjektů pro pronajimatele
@@ -130,6 +131,7 @@ export default function LandlordDetailFrame({
   onDirtyChange,
   onSaved,
   onCreateDelegateFromUser,
+  onOpenNewDelegateForm,
 }: Props) {
   // DB truth (subjects)
   const [resolvedLandlord, setResolvedLandlord] = useState<UiLandlord>(landlord)
@@ -205,7 +207,9 @@ export default function LandlordDetailFrame({
     if (!subjectId || subjectId === 'new') {
       // Nový landlord - zkontrolovat, jestli máme fromUserId pro předvyplnění dat uživatele
       const fromUserId = searchParams?.get('fromUserId')?.trim() ?? null
-      if (fromUserId && landlord.subjectType === 'zastupce') {
+      const typeFromUrl = searchParams?.get('type')?.trim() ?? null
+      const subjectType = landlord.subjectType || typeFromUrl // Použít type z URL pokud není v landlord
+      if (fromUserId && subjectType === 'zastupce') {
         // Načíst data uživatele a předvyplnit formulář
         const mySeq = ++resolveSeqRef.current
         let mounted = true
@@ -224,7 +228,7 @@ export default function LandlordDetailFrame({
             const presetLandlord: UiLandlord = {
               ...landlord,
               id: 'new',
-              subjectType: 'zastupce',
+              subjectType: subjectType || 'zastupce',
               displayName: s.display_name ?? '',
               email: s.email ?? null,
               phone: s.phone ?? null,
@@ -634,7 +638,8 @@ export default function LandlordDetailFrame({
               entityLabel: resolvedLandlord.displayName ?? null,
               showSystemEntityHeader: false,
               mode: detailMode,
-              onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
+                  onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
+                  onOpenNewDelegateForm, // Předat do DelegatesSection přes ctx
 
               detailContent: (
                 <LandlordDetailForm

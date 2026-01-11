@@ -443,13 +443,14 @@ export default function LandlordsTile({
         }
         setDetailLandlord(detailUi)
       } else if (id === 'new') {
-        // Nový pronajímatel
+        // Nový pronajímatel - zkontrolovat type z URL
+        const typeFromUrl = searchParams?.get('type')?.trim() ?? null
         const newLandlord: DetailUiLandlord = {
           id: 'new',
           displayName: '',
           email: null,
           phone: null,
-          subjectType: null,
+          subjectType: typeFromUrl, // Nastavit z URL parametru
           isArchived: false,
           createdAt: '',
           titleBefore: null,
@@ -1035,6 +1036,43 @@ export default function LandlordsTile({
         onCreateDelegateFromUser={(userId) => {
           // Přesměrovat na formulář pro vytvoření zástupce s předvyplněnými daty uživatele
           setUrl({ t: 'landlords-list', id: 'new', vm: 'create', type: 'zastupce', fromUserId: userId }, 'push')
+        }}
+        onOpenNewDelegateForm={(type, fromUserId) => {
+          // Otevřít formulář pro nového zástupce přímo v aktuálním kontextu
+          const newLandlord: DetailUiLandlord = {
+            id: 'new',
+            displayName: '',
+            email: null,
+            phone: null,
+            subjectType: type,
+            isArchived: false,
+            createdAt: '',
+            titleBefore: null,
+            firstName: null,
+            lastName: null,
+            note: null,
+            birthDate: null,
+            personalIdNumber: null,
+            idDocType: null,
+            idDocNumber: null,
+            companyName: null,
+            ic: null,
+            dic: null,
+            icValid: null,
+            dicValid: null,
+            delegateIds: [],
+            street: null,
+            city: null,
+            zip: null,
+            houseNumber: null,
+            country: 'CZ',
+          }
+          setDetailLandlord(newLandlord)
+          setSelectedSubjectTypeForCreate(null)
+          setViewMode('create')
+          setSelectedId('new')
+          setIsDirty(false)
+          setUrl({ t: 'landlords-list', id: 'new', vm: 'create', type, fromUserId }, 'push')
         }}
         onSaved={(saved) => {
           // Aktualizovat detail po uložení

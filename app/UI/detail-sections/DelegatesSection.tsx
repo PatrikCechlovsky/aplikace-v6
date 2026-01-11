@@ -8,9 +8,8 @@ import { getAvailableDelegates, getLandlordDelegates, type DelegateOption } from
 import { supabase } from '@/app/lib/supabaseClient'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
-import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
+import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import { getIcon, type IconKey } from '@/app/UI/icons'
-import { useRouter } from 'next/navigation'
 
 const logger = createLogger('DelegatesSection')
 
@@ -18,32 +17,37 @@ type Props = {
   subjectId: string
   mode?: 'view' | 'edit'
   onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
+  onOpenNewDelegateForm?: (type: string, fromUserId?: string) => void // Callback pro otevření formuláře nového zástupce
 }
 
+// Sloupce stejné jako v seznamu pronajímatelů (displayName, email, phone)
 const AVAILABLE_DELEGATES_COLUMNS: ListViewColumn[] = [
-  { key: 'displayName', label: 'Jméno', width: 200, sortable: true },
-  { key: 'email', label: 'Email', width: 250, sortable: true },
+  { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
+  { key: 'email', label: 'E-mail', width: 260, sortable: true },
   { key: 'phone', label: 'Telefon', width: 180, sortable: true },
   { key: 'type', label: 'Typ', width: 150, sortable: true },
 ]
 
 const DELEGATES_COLUMNS: ListViewColumn[] = [
-  { key: 'displayName', label: 'Jméno', width: 200, sortable: true },
-  { key: 'email', label: 'Email', width: 250, sortable: true },
+  { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
+  { key: 'email', label: 'E-mail', width: 260, sortable: true },
   { key: 'phone', label: 'Telefon', width: 180, sortable: true },
   { key: 'type', label: 'Typ', width: 150, sortable: true },
   { key: 'actions', label: 'Akce', width: 100, align: 'center', sortable: false },
 ]
 
-export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDelegateFromUser }: Props) {
+// Výchozí řazení stejné jako pronajímatelé (podle emailu)
+const DEFAULT_SORT: ListViewSortState = { key: 'email', dir: 'asc' }
+
+export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDelegateFromUser, onOpenNewDelegateForm }: Props) {
   const toast = useToast()
-  const router = useRouter()
   const [delegates, setDelegates] = useState<DelegateOption[]>([])
   const [loading, setLoading] = useState(true)
   
   const [availableDelegates, setAvailableDelegates] = useState<DelegateOption[]>([])
   const [loadingAvailable, setLoadingAvailable] = useState(false)
   const [searchText, setSearchText] = useState('')
+  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
 
   const [selectedAvailableDelegateId, setSelectedAvailableDelegateId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -99,6 +103,45 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
       cancelled = true
     }
   }, [searchText, mode])
+
+  // Seřadit dostupné zástupce podle sort state
+  const sortedAvailableDelegates = useMemo(() => {
+    const filtered = availableDelegates.filter((d) => !delegates.find((existing) => existing.id === d.id)) // Vyloučit již přidané
+    
+    if (!sort) return filtered
+
+    const sorted = [...filtered].sort((a, b) => {
+      let aVal: string | number = ''
+      let bVal: string | number = ''
+
+      switch (sort.key) {
+        case 'displayName':
+          aVal = (a.displayName || '').toLowerCase()
+          bVal = (b.displayName || '').toLowerCase()
+          break
+        case 'email':
+          aVal = (a.email || '').toLowerCase()
+          bVal = (b.email || '').toLowerCase()
+          break
+        case 'phone':
+          aVal = (a.phone || '').toLowerCase()
+          bVal = (b.phone || '').toLowerCase()
+          break
+        case 'type':
+          aVal = (a.subjectType || '').toLowerCase()
+          bVal = (b.subjectType || '').toLowerCase()
+          break
+        default:
+          return 0
+      }
+
+      if (aVal < bVal) return sort.dir === 'asc' ? -1 : 1
+      if (aVal > bVal) return sort.dir === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return sorted
+  }, [availableDelegates, delegates, sort])
 
   // Přidat zástupce do seznamu
   const handleAdd = useCallback(async () => {
@@ -168,8 +211,10 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
 
   // Přidat nového zástupce (otevřít formulář)
   const handleAddNewDelegate = useCallback(() => {
-    router.push('/modules/030-pronajimatel?t=landlords-list&id=new&vm=create&type=zastupce')
-  }, [router])
+    if (onOpenNewDelegateForm) {
+      onOpenNewDelegateForm('zastupce')
+    }
+  }, [onOpenNewDelegateForm])
 
   // Zpracování kliknutí na řádek v seznamu dostupných zástupců
   const handleAvailableDelegateClick = useCallback(
@@ -198,25 +243,23 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
 
   // Převést dostupné zástupce na ListView řádky
   const availableDelegateRows: ListViewRow<DelegateOption>[] = useMemo(() => {
-    return availableDelegates
-      .filter((d) => !delegates.find((existing) => existing.id === d.id)) // Vyloučit již přidané
-      .map((delegate) => ({
-        id: delegate.id,
-        data: {
-          displayName: delegate.displayName || '—',
-          email: delegate.email || '—',
-          phone: delegate.phone || '—',
-          type:
-            delegate.source === 'user' && delegate.roleCode ? (
-              <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Uživatel ({delegate.roleCode})</span>
-            ) : (
-              delegate.subjectType || '—'
-            ),
-        },
-        raw: delegate,
-        className: selectedAvailableDelegateId === delegate.id ? 'generic-type__row--selected' : '',
-      }))
-  }, [availableDelegates, delegates, selectedAvailableDelegateId])
+    return sortedAvailableDelegates.map((delegate) => ({
+      id: delegate.id,
+      data: {
+        displayName: delegate.displayName || '—',
+        email: delegate.email || '—',
+        phone: delegate.phone || '—',
+        type:
+          delegate.source === 'user' && delegate.roleCode ? (
+            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Uživatel ({delegate.roleCode})</span>
+          ) : (
+            delegate.subjectType || '—'
+          ),
+      },
+      raw: delegate,
+      className: selectedAvailableDelegateId === delegate.id ? 'generic-type__row--selected' : '',
+    }))
+  }, [sortedAvailableDelegates, selectedAvailableDelegateId])
 
   // Převést zástupce na ListView řádky
   const delegateRows: ListViewRow<DelegateOption>[] = useMemo(() => {
@@ -281,11 +324,11 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
         )}
       </section>
 
-      {/* Formulář pro přidání zástupce */}
+      {/* Vybrat zástupce */}
       {!readOnly && (
         <section className="detail-form__section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">Formulář</h3>
+            <h3 className="detail-form__section-title">Vybrat zástupce</h3>
             <div style={{ display: 'flex', gap: 8 }}>
               {/* Tlačítko Přidat (ikonka) */}
               <button
@@ -332,31 +375,26 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
             </div>
           </div>
 
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">
-                Zástupce <span className="detail-form__required">*</span>
-              </label>
-              {loadingAvailable ? (
-                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Načítání zástupců...</div>
-              ) : availableDelegateRows.length > 0 ? (
-                <ListView
-                  columns={AVAILABLE_DELEGATES_COLUMNS}
-                  rows={availableDelegateRows}
-                  filterValue={searchText}
-                  onFilterChange={setSearchText}
-                  filterPlaceholder="Hledat zástupce..."
-                  emptyText={searchText ? 'Žádní zástupci nenalezeni' : 'Žádní dostupní zástupci'}
-                  selectedId={selectedAvailableDelegateId}
-                  onRowClick={handleAvailableDelegateClick}
-                />
-              ) : (
-                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                  {searchText ? 'Žádní zástupci nenalezeni' : 'Žádní dostupní zástupci'}
-                </div>
-              )}
+          {loadingAvailable ? (
+            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Načítání zástupců...</div>
+          ) : availableDelegateRows.length > 0 ? (
+            <ListView
+              columns={AVAILABLE_DELEGATES_COLUMNS}
+              rows={availableDelegateRows}
+              filterValue={searchText}
+              onFilterChange={setSearchText}
+              filterPlaceholder="Hledat zástupce..."
+              emptyText={searchText ? 'Žádní zástupci nenalezeni' : 'Žádní dostupní zástupci'}
+              selectedId={selectedAvailableDelegateId}
+              onRowClick={handleAvailableDelegateClick}
+              sort={sort}
+              onSortChange={setSort}
+            />
+          ) : (
+            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+              {searchText ? 'Žádní zástupci nenalezeni' : 'Žádní dostupní zástupci'}
             </div>
-          </div>
+          )}
         </section>
       )}
     </div>

@@ -372,6 +372,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     render: (ctx) => {
       const entityId = (ctx as any)?.entityId
       const onCreateDelegateFromUser = (ctx as any)?.onCreateDelegateFromUser
+      const onOpenNewDelegateForm = (ctx as any)?.onOpenNewDelegateForm
       // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
       if (!entityId || entityId === 'new') {
         return (
@@ -382,7 +383,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       }
       // Dynamicky importovat, aby se to nenačítalo, pokud není potřeba
       const DelegatesSection = require('@/app/UI/detail-sections/DelegatesSection').default
-      return <DelegatesSection subjectId={entityId} mode={ctx.mode ?? 'edit'} onCreateDelegateFromUser={onCreateDelegateFromUser} />
+      return <DelegatesSection subjectId={entityId} mode={ctx.mode ?? 'edit'} onCreateDelegateFromUser={onCreateDelegateFromUser} onOpenNewDelegateForm={onOpenNewDelegateForm} />
     },
   },
 }
