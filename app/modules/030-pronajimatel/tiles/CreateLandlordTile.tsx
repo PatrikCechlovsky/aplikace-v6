@@ -142,7 +142,7 @@ export default function CreateLandlordTile({
           dic: null,
           icValid: null,
           dicValid: null,
-          delegateId: null,
+          delegateIds: [],
           street: null,
           city: null,
           zip: null,

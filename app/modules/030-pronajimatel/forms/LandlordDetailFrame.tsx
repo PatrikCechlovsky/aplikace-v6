@@ -49,7 +49,7 @@ export type UiLandlord = {
   dic?: string | null
   icValid?: boolean | null
   dicValid?: boolean | null
-  delegateId?: string | null
+  delegateIds?: string[] // Pole ID zástupců (N:N vztah přes subject_delegates)
 
   // Address
   street?: string | null
@@ -97,7 +97,7 @@ function buildInitialFormValue(l: UiLandlord): LandlordFormValue {
     dic: (l.dic ?? '').toString(),
     icValid: !!l.icValid,
     dicValid: !!l.dicValid,
-    delegateId: (l.delegateId ?? '').toString(),
+    delegateIds: Array.isArray(l.delegateIds) ? l.delegateIds : [],
 
     street: (l.street ?? '').toString(),
     city: (l.city ?? '').toString(),
@@ -245,7 +245,7 @@ export default function LandlordDetailFrame({
           dic: s.dic ?? landlord.dic ?? null,
           icValid: s.ic_valid ?? landlord.icValid ?? null,
           dicValid: s.dic_valid ?? landlord.dicValid ?? null,
-          delegateId: s.delegate_id ?? landlord.delegateId ?? null,
+          delegateIds: (s as any).delegateIds ?? landlord.delegateIds ?? [],
 
           street: s.street ?? landlord.street ?? null,
           city: s.city ?? landlord.city ?? null,
@@ -343,7 +343,7 @@ export default function LandlordDetailFrame({
           dic: v.dic.trim() || null,
           icValid: v.icValid,
           dicValid: v.dicValid,
-          delegateId: v.delegateId.trim() || null,
+          delegateIds: Array.isArray(v.delegateIds) ? v.delegateIds.filter((id) => id && id.trim()) : [],
 
           street: v.street.trim() || null,
           city: v.city.trim() || null,
@@ -383,7 +383,7 @@ export default function LandlordDetailFrame({
           dic: saved.dic ?? null,
           icValid: saved.ic_valid ?? null,
           dicValid: saved.dic_valid ?? null,
-          delegateId: saved.delegate_id ?? null,
+          delegateIds: (saved as any).delegateIds ?? [],
 
           street: saved.street ?? null,
           city: saved.city ?? null,

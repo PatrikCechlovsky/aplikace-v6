@@ -7,6 +7,7 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
+import { listUsers } from './users'
 
 /* =========================
    LIST
@@ -171,7 +172,7 @@ export type LandlordDetailRow = {
   dic?: string | null
   ic_valid?: boolean | null
   dic_valid?: boolean | null
-  delegate_id?: string | null // FK na subject (zástupce)
+  // delegate_id bylo odstraněno - zástupci se ukládají do subject_delegates tabulky
 
   // Address (všechny typy)
   street?: string | null
@@ -215,7 +216,6 @@ export async function getLandlordDetail(subjectId: string): Promise<LandlordDeta
           dic,
           ic_valid,
           dic_valid,
-          delegate_id,
           
         street,
         city,
@@ -244,7 +244,21 @@ export async function getLandlordDetail(subjectId: string): Promise<LandlordDeta
       throw new Error('Pronajímatel nebyl nalezen.')
     }
 
-    return subject as unknown as LandlordDetailRow
+    // Načíst zástupce z subject_delegates tabulky
+    const { data: delegatesData, error: delegatesErr } = await supabase
+      .from('subject_delegates')
+      .select('delegate_subject_id')
+      .eq('subject_id', subjectId)
+
+    // delegateIds se přidá do výsledku (ale ne do typu LandlordDetailRow, protože to by vyžadovalo změnu typu)
+    const result = subject as any as LandlordDetailRow
+    if (!delegatesErr && delegatesData) {
+      ;(result as any).delegateIds = delegatesData.map((row: any) => String(row.delegate_subject_id)).filter(Boolean)
+    } else {
+      ;(result as any).delegateIds = []
+    }
+
+    return result
   } catch (err: any) {
     console.error('getLandlordDetail: Unexpected error', { subjectId, error: err })
     if (err instanceof Error) throw err
@@ -285,7 +299,7 @@ export type SaveLandlordInput = {
   dic?: string | null
   icValid?: boolean | null
   dicValid?: boolean | null
-  delegateId?: string | null // FK na subject (zástupce)
+  delegateIds?: string[] // Pole ID zástupců (N:N vztah přes subject_delegates)
 
   // ADDRESS (všechny typy)
   street?: string | null
@@ -356,7 +370,7 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     dic: (input.dic ?? '').trim() || null,
     ic_valid: input.icValid ?? false,
     dic_valid: input.dicValid ?? false,
-    delegate_id: input.delegateId?.trim() || null,
+    // delegate_id bylo odstraněno - zástupci se ukládají do subject_delegates tabulky
 
     // ADDRESS fields
     street: (input.street ?? '').trim() || null,
@@ -397,7 +411,6 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     dic,
     ic_valid,
     dic_valid,
-    delegate_id,
     
     street,
     city,
@@ -420,6 +433,28 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     subjectId = String(dataObj.id ?? '').trim() || null
     if (!subjectId) throw new Error('Nepodařilo se vytvořit pronajimatele.')
 
+    // Uložit zástupce do subject_delegates tabulky
+    if (input.delegateIds && input.delegateIds.length > 0) {
+      const delegatesToInsert = input.delegateIds
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .map((delegateId) => ({
+          subject_id: subjectId,
+          delegate_subject_id: delegateId,
+        }))
+
+      if (delegatesToInsert.length > 0) {
+        const { error: delegatesError } = await supabase
+          .from('subject_delegates')
+          .insert(delegatesToInsert)
+
+        if (delegatesError) {
+          console.error('Failed to save delegates', delegatesError)
+          // Nevyhodit chybu, jen logovat - subject už je uložený
+        }
+      }
+    }
+
     return dataObj as LandlordDetailRow
   } else {
     const { data, error } = await supabase
@@ -431,6 +466,40 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
 
     if (error) throw new Error(error.message)
     if (!data || typeof data !== 'object' || !('id' in data)) throw new Error('Nepodařilo se aktualizovat pronajimatele.')
+
+    // Aktualizovat zástupce v subject_delegates tabulce
+    // Nejdřív smazat všechny existující zástupce
+    const { error: deleteError } = await supabase
+      .from('subject_delegates')
+      .delete()
+      .eq('subject_id', subjectId)
+
+    if (deleteError) {
+      console.error('Failed to delete existing delegates', deleteError)
+      // Nevyhodit chybu, pokračovat
+    }
+
+    // Pak přidat nové zástupce
+    if (input.delegateIds && input.delegateIds.length > 0) {
+      const delegatesToInsert = input.delegateIds
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .map((delegateId) => ({
+          subject_id: subjectId,
+          delegate_subject_id: delegateId,
+        }))
+
+      if (delegatesToInsert.length > 0) {
+        const { error: delegatesError } = await supabase
+          .from('subject_delegates')
+          .insert(delegatesToInsert)
+
+        if (delegatesError) {
+          console.error('Failed to save delegates', delegatesError)
+          // Nevyhodit chybu, jen logovat
+        }
+      }
+    }
 
     return data as any as LandlordDetailRow
   }
@@ -475,5 +544,133 @@ export async function getLandlordCountsByType(includeArchived: boolean = false):
     subject_type,
     count,
   }))
+}
+
+/* =========================
+   DELEGATES: getAvailableDelegates
+   ========================= */
+
+export type DelegateOption = {
+  id: string
+  displayName: string
+  email: string | null
+  phone: string | null
+  subjectType: string | null
+  roleCode?: string | null // Pro uživatele s rolí
+  source: 'landlord' | 'user' // Zda je z seznamu pronajímatelů nebo uživatelů
+}
+
+/**
+ * Načte seznam dostupných zástupců pro výběr.
+ * Kombinuje:
+ * 1. Subjekty s typem "zastupce" ze seznamu pronajímatelů
+ * 2. Osoby ze seznamu uživatelů s rolí pronajimatel, manager, nebo správce
+ */
+export async function getAvailableDelegates(searchText?: string): Promise<DelegateOption[]> {
+  const search = (searchText ?? '').trim()
+  const delegates: DelegateOption[] = []
+
+  // 1) Načíst zástupce ze seznamu pronajímatelů (typ "zastupce")
+  try {
+    const landlords = await listLandlords({
+      subjectType: 'zastupce',
+      includeArchived: false,
+      limit: 500,
+      searchText: search || undefined,
+    })
+
+    for (const landlord of landlords) {
+      delegates.push({
+        id: landlord.id,
+        displayName: landlord.display_name || '',
+        email: landlord.email,
+        phone: landlord.phone,
+        subjectType: landlord.subject_type,
+        source: 'landlord',
+      })
+    }
+  } catch (err) {
+    console.error('Failed to load delegates from landlords', err)
+    // Pokračovat i při chybě
+  }
+
+  // 2) Načíst uživatele s rolí pronajimatel, manager, nebo správce
+  try {
+    const users = await listUsers({
+      includeArchived: false,
+      limit: 500,
+      searchText: search || undefined,
+    })
+
+    // Povolené role pro zástupce
+    const allowedRoles = ['pronajimatel', 'manager', 'spravce', 'správce']
+
+    for (const user of users) {
+      // Filtrovat jen uživatele s povolenou rolí
+      if (user.role_code && allowedRoles.includes(user.role_code.toLowerCase())) {
+        delegates.push({
+          id: user.id,
+          displayName: user.display_name || '',
+          email: user.email,
+          phone: user.phone,
+          subjectType: user.subject_type,
+          roleCode: user.role_code,
+          source: 'user',
+        })
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load delegates from users', err)
+    // Pokračovat i při chybě
+  }
+
+  // Seřadit podle displayName
+  delegates.sort((a, b) => {
+    const nameA = (a.displayName || '').toLowerCase()
+    const nameB = (b.displayName || '').toLowerCase()
+    return nameA.localeCompare(nameB, 'cs')
+  })
+
+  return delegates
+}
+
+/**
+ * Načte seznam zástupců pro konkrétního pronajimatele.
+ */
+export async function getLandlordDelegates(landlordId: string): Promise<DelegateOption[]> {
+  const { data, error } = await supabase
+    .from('subject_delegates')
+    .select('delegate_subject_id')
+    .eq('subject_id', landlordId)
+
+  if (error) throw new Error(error.message)
+
+  const delegateIds = (data ?? []).map((row: any) => String(row.delegate_subject_id)).filter(Boolean)
+  
+  if (delegateIds.length === 0) {
+    return []
+  }
+
+  // Načíst detaily zástupců
+  const { data: subjects, error: subjectsError } = await supabase
+    .from('subjects')
+    .select('id, display_name, email, phone, subject_type')
+    .in('id', delegateIds)
+
+  if (subjectsError) throw new Error(subjectsError.message)
+
+  const delegates: DelegateOption[] = []
+  for (const subject of subjects ?? []) {
+    delegates.push({
+      id: subject.id,
+      displayName: subject.display_name || '',
+      email: subject.email,
+      phone: subject.phone,
+      subjectType: subject.subject_type,
+      source: 'landlord', // Default, můžeme později rozlišit
+    })
+  }
+
+  return delegates
 }
 
