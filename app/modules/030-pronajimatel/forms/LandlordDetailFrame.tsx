@@ -185,7 +185,19 @@ export default function LandlordDetailFrame({
       setSelectedSubjectType(resolvedLandlord.subjectType)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedLandlord.id]) // Aktualizovat jen když se změní ID (nový landlord)
+  }, [resolvedLandlord.id, resolvedLandlord.subjectType]) // Aktualizovat když se změní ID nebo subjectType
+
+  // Aktualizovat formValue když se změní landlord prop (např. při výběru typu subjektu)
+  useEffect(() => {
+    if (viewMode === 'create' || isNewId(landlord?.id)) {
+      const init = buildInitialFormValue(landlord)
+      setFormValue(init)
+      initialSnapshotRef.current = JSON.stringify(init)
+      firstRenderRef.current = true
+      setDirtyAndNotify(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [landlord?.subjectType, viewMode]) // Aktualizovat když se změní subjectType nebo viewMode
 
   // Resolve DB truth on open / landlord change
   useEffect(() => {
@@ -196,10 +208,10 @@ export default function LandlordDetailFrame({
     if (viewMode === 'create' || isNewId(landlord?.id)) {
       const init = buildInitialFormValue(landlord)
       setFormValue(init)
-        initialSnapshotRef.current = JSON.stringify(init)
-        firstRenderRef.current = true
-        setDirtyAndNotify(false)
-        return
+      initialSnapshotRef.current = JSON.stringify(init)
+      firstRenderRef.current = true
+      setDirtyAndNotify(false)
+      return
     }
 
     // read/edit => resolve from Supabase (jen pokud není 'new')
@@ -345,7 +357,7 @@ export default function LandlordDetailFrame({
     return () => {
       mounted = false
     }
-  }, [landlord?.id, viewMode, toast, onDirtyChange, logger]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [landlord?.id, landlord?.subjectType, viewMode, toast, onDirtyChange, logger]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // =====================
   // 4) ACTION HANDLERS
@@ -361,11 +373,13 @@ export default function LandlordDetailFrame({
     (nextVal: any) => {
       const snap = JSON.stringify(nextVal ?? {})
       if (firstRenderRef.current) {
+        // První render - nastavit snapshot, ale neoznačovat jako dirty
         firstRenderRef.current = false
         initialSnapshotRef.current = snap
         setDirtyAndNotify(false)
         return
       }
+      // Následující změny - zkontrolovat, jestli se skutečně změnilo
       computeDirty(snap)
     },
     [computeDirty, setDirtyAndNotify]

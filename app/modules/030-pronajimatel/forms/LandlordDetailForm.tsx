@@ -129,10 +129,13 @@ export default function LandlordDetailForm({
 
   // Když se změní landlord, přepiš form
   useEffect(() => {
-    setVal(initial)
+    // Vytvořit nový objekt, ne jen referenci
+    const newVal = { ...initial }
+    setVal(newVal)
     setDirty(false)
     onDirtyChange?.(false)
-    onValueChange?.(initial)
+    // Nevolat onValueChange zde - to způsobuje problémy s synchronizací
+    // onValueChange se volá jen když uživatel skutečně změní hodnotu přes update()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial])
 
