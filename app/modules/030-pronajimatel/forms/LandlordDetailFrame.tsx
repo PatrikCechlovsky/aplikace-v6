@@ -608,13 +608,22 @@ export default function LandlordDetailFrame({
   }, [resolvedLandlord, subjectTypes, selectedSubjectType, readOnly, handleSubjectTypeChange])
 
   const landlordName = resolvedLandlord.displayName || 'Pronajímatel'
+  
+  // Najít název typu subjektu
+  const subjectTypeName = useMemo(() => {
+    const type = selectedSubjectType || resolvedLandlord.subjectType
+    if (!type) return null
+    const typeMeta = subjectTypes.find((t) => t.code === type)
+    return typeMeta?.name || type
+  }, [selectedSubjectType, resolvedLandlord.subjectType, subjectTypes])
+  
   let title = 'Pronajímatel'
   if (resolvedLandlord.id === 'new' || viewMode === 'create') {
-    title = 'Nový pronajímatel'
+    title = subjectTypeName ? `Nový pronajímatel - ${subjectTypeName}` : 'Nový pronajímatel'
   } else if (viewMode === 'edit') {
-    title = `Editace pronajimatele: ${landlordName}`
+    title = subjectTypeName ? `Editace pronajimatele - ${subjectTypeName}: ${landlordName}` : `Editace pronajimatele: ${landlordName}`
   } else {
-    title = `Pronajímatel: ${landlordName}`
+    title = subjectTypeName ? `Pronajímatel - ${subjectTypeName}: ${landlordName}` : `Pronajímatel: ${landlordName}`
   }
 
   return (
