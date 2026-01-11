@@ -3,11 +3,15 @@
 
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { getAvailableDelegates, getLandlordDelegates, type DelegateOption } from '@/app/lib/services/landlords'
 import { supabase } from '@/app/lib/supabaseClient'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
+import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
+import { getIcon, type IconKey } from '@/app/UI/icons'
+import { useRouter } from 'next/navigation'
+
 const logger = createLogger('DelegatesSection')
 
 type Props = {
@@ -16,8 +20,24 @@ type Props = {
   onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
 }
 
+const AVAILABLE_DELEGATES_COLUMNS: ListViewColumn[] = [
+  { key: 'displayName', label: 'Jméno', width: 200, sortable: true },
+  { key: 'email', label: 'Email', width: 250, sortable: true },
+  { key: 'phone', label: 'Telefon', width: 180, sortable: true },
+  { key: 'type', label: 'Typ', width: 150, sortable: true },
+]
+
+const DELEGATES_COLUMNS: ListViewColumn[] = [
+  { key: 'displayName', label: 'Jméno', width: 200, sortable: true },
+  { key: 'email', label: 'Email', width: 250, sortable: true },
+  { key: 'phone', label: 'Telefon', width: 180, sortable: true },
+  { key: 'type', label: 'Typ', width: 150, sortable: true },
+  { key: 'actions', label: 'Akce', width: 100, align: 'center', sortable: false },
+]
+
 export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDelegateFromUser }: Props) {
   const toast = useToast()
+  const router = useRouter()
   const [delegates, setDelegates] = useState<DelegateOption[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -25,7 +45,7 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
   const [loadingAvailable, setLoadingAvailable] = useState(false)
   const [searchText, setSearchText] = useState('')
 
-  const [selectedDelegateId, setSelectedDelegateId] = useState<string | null>(null)
+  const [selectedAvailableDelegateId, setSelectedAvailableDelegateId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   // Načíst zástupce
@@ -80,22 +100,16 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
     }
   }, [searchText, mode])
 
-  // Přidat zástupce
-  const handleAdd = useCallback(() => {
-    if (mode === 'view') return
-    setSelectedDelegateId(null)
-  }, [mode])
-
   // Přidat zástupce do seznamu
-  const handleSave = useCallback(async () => {
+  const handleAdd = useCallback(async () => {
     if (mode === 'view') return
-    if (!selectedDelegateId) {
+    if (!selectedAvailableDelegateId) {
       toast.showWarning('Vyber zástupce k přidání')
       return
     }
 
     // Kontrola, jestli už není přidaný
-    if (delegates.find((d) => d.id === selectedDelegateId)) {
+    if (delegates.find((d) => d.id === selectedAvailableDelegateId)) {
       toast.showWarning('Tento zástupce je již přidaný')
       return
     }
@@ -108,7 +122,7 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
         .from('subject_delegates')
         .insert({
           subject_id: subjectId,
-          delegate_subject_id: selectedDelegateId,
+          delegate_subject_id: selectedAvailableDelegateId,
         })
 
       if (error) throw new Error(error.message)
@@ -116,7 +130,7 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
       // Obnovit seznam
       const refreshed = await getLandlordDelegates(subjectId)
       setDelegates(refreshed)
-      setSelectedDelegateId(null)
+      setSelectedAvailableDelegateId(null)
       toast.showSuccess('Zástupce přidán')
     } catch (e: any) {
       logger.error('addDelegate failed', e)
@@ -124,7 +138,7 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
     } finally {
       setSaving(false)
     }
-  }, [selectedDelegateId, subjectId, delegates, mode, toast])
+  }, [selectedAvailableDelegateId, subjectId, delegates, mode, toast])
 
   // Odebrat zástupce
   const handleRemove = useCallback(
@@ -152,7 +166,97 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
     [subjectId, mode, toast]
   )
 
+  // Přidat nového zástupce (otevřít formulář)
+  const handleAddNewDelegate = useCallback(() => {
+    router.push('/modules/030-pronajimatel?t=landlords-list&id=new&vm=create&type=zastupce')
+  }, [router])
+
+  // Zpracování kliknutí na řádek v seznamu dostupných zástupců
+  const handleAvailableDelegateClick = useCallback(
+    (row: ListViewRow<DelegateOption>) => {
+      if (mode === 'view') return
+      const delegate = row.raw
+      if (!delegate) return
+
+      if (delegate.source === 'user' && onCreateDelegateFromUser) {
+        // Uživatel - zobrazit potvrzení a přesměrovat na formulář pro vytvoření zástupce
+        const confirmed = window.confirm(
+          `Uživatel "${delegate.displayName}" není zástupce. Chcete vytvořit zástupce z tohoto uživatele? Formulář se otevře s předvyplněnými údaji.`
+        )
+        if (confirmed) {
+          onCreateDelegateFromUser(delegate.id)
+        }
+      } else {
+        // Zástupce - jednoduše vybrat
+        setSelectedAvailableDelegateId(delegate.id)
+      }
+    },
+    [mode, onCreateDelegateFromUser]
+  )
+
   const readOnly = mode === 'view'
+
+  // Převést dostupné zástupce na ListView řádky
+  const availableDelegateRows: ListViewRow<DelegateOption>[] = useMemo(() => {
+    return availableDelegates
+      .filter((d) => !delegates.find((existing) => existing.id === d.id)) // Vyloučit již přidané
+      .map((delegate) => ({
+        id: delegate.id,
+        data: {
+          displayName: delegate.displayName || '—',
+          email: delegate.email || '—',
+          phone: delegate.phone || '—',
+          type:
+            delegate.source === 'user' && delegate.roleCode ? (
+              <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Uživatel ({delegate.roleCode})</span>
+            ) : (
+              delegate.subjectType || '—'
+            ),
+        },
+        raw: delegate,
+        className: selectedAvailableDelegateId === delegate.id ? 'generic-type__row--selected' : '',
+      }))
+  }, [availableDelegates, delegates, selectedAvailableDelegateId])
+
+  // Převést zástupce na ListView řádky
+  const delegateRows: ListViewRow<DelegateOption>[] = useMemo(() => {
+    return delegates.map((delegate) => ({
+      id: delegate.id,
+      data: {
+        displayName: delegate.displayName || '—',
+        email: delegate.email || '—',
+        phone: delegate.phone || '—',
+        type:
+          delegate.source === 'user' && delegate.roleCode ? (
+            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Uživatel ({delegate.roleCode})</span>
+          ) : (
+            delegate.subjectType || '—'
+          ),
+        actions: !readOnly ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleRemove(delegate.id)
+            }}
+            style={{
+              padding: '4px 8px',
+              border: '1px solid var(--color-error)',
+              borderRadius: '4px',
+              background: 'var(--color-surface)',
+              color: 'var(--color-error)',
+              cursor: 'pointer',
+              fontSize: '12px',
+            }}
+            title="Odebrat zástupce"
+          >
+            {getIcon('delete' as IconKey)}
+          </button>
+        ) : null,
+      },
+      raw: delegate,
+    }))
+  }, [delegates, readOnly, handleRemove])
 
   return (
     <div className="detail-form">
@@ -165,60 +269,15 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
         {!loading && delegates.length === 0 && <div className="detail-form__hint">Zatím žádní zástupci.</div>}
 
         {!loading && delegates.length > 0 && (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Jméno</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Email</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Telefon</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Typ</th>
-                  {!readOnly && <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Akce</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {delegates.map((delegate) => (
-                  <tr
-                    key={delegate.id}
-                    style={{
-                      cursor: readOnly ? 'default' : 'pointer',
-                      borderBottom: '1px solid var(--color-border-soft)',
-                      backgroundColor: selectedDelegateId === delegate.id ? 'var(--color-primary-soft)' : 'transparent',
-                    }}
-                  >
-                    <td style={{ padding: '8px' }}>{delegate.displayName || '—'}</td>
-                    <td style={{ padding: '8px' }}>{delegate.email || '—'}</td>
-                    <td style={{ padding: '8px' }}>{delegate.phone || '—'}</td>
-                    <td style={{ padding: '8px' }}>
-                      {delegate.source === 'user' && delegate.roleCode ? `Uživatel (${delegate.roleCode})` : delegate.subjectType || '—'}
-                    </td>
-                    {!readOnly && (
-                      <td style={{ padding: '8px' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleRemove(delegate.id)
-                          }}
-                          style={{
-                            padding: '4px 8px',
-                            border: '1px solid var(--color-error)',
-                            borderRadius: '4px',
-                            background: 'var(--color-surface)',
-                            color: 'var(--color-error)',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                          }}
-                        >
-                          Odebrat
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ListView
+            columns={DELEGATES_COLUMNS}
+            rows={delegateRows}
+            filterValue=""
+            onFilterChange={() => {}}
+            emptyText="Žádní zástupci"
+            selectedId={null}
+            onRowClick={() => {}}
+          />
         )}
       </section>
 
@@ -228,34 +287,47 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Formulář</h3>
             <div style={{ display: 'flex', gap: 8 }}>
+              {/* Tlačítko Přidat (ikonka) */}
               <button
                 type="button"
                 onClick={handleAdd}
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                  background: 'var(--color-surface)',
-                  cursor: 'pointer',
-                }}
-              >
-                Přidat
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || !selectedDelegateId}
+                disabled={saving || !selectedAvailableDelegateId}
                 style={{
                   padding: '6px 12px',
                   border: '1px solid var(--color-primary)',
                   borderRadius: '8px',
                   background: 'var(--color-primary)',
                   color: 'white',
-                  cursor: saving || !selectedDelegateId ? 'not-allowed' : 'pointer',
-                  opacity: saving || !selectedDelegateId ? 0.5 : 1,
+                  cursor: saving || !selectedAvailableDelegateId ? 'not-allowed' : 'pointer',
+                  opacity: saving || !selectedAvailableDelegateId ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
+                title="Přidat vybraného zástupce"
               >
-                {saving ? 'Ukládám…' : 'Uložit'}
+                <span>{getIcon('add' as IconKey)}</span>
+                <span>{saving ? 'Ukládám…' : 'Přidat'}</span>
+              </button>
+
+              {/* Tlačítko Přidat nového zástupce (ikonka) */}
+              <button
+                type="button"
+                onClick={handleAddNewDelegate}
+                style={{
+                  padding: '6px 12px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  background: 'var(--color-surface)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                title="Přidat nového zástupce"
+              >
+                <span>{getIcon('add' as IconKey)}</span>
+                <span>Nový zástupce</span>
               </button>
             </div>
           </div>
@@ -265,106 +337,24 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
               <label className="detail-form__label">
                 Zástupce <span className="detail-form__required">*</span>
               </label>
-              {/* Vyhledávání */}
-              <input
-                className="detail-form__input"
-                type="text"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Hledat zástupce..."
-                style={{ marginBottom: '0.5rem' }}
-              />
-              {/* Seznam dostupných zástupců */}
               {loadingAvailable ? (
                 <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Načítání zástupců...</div>
-              ) : availableDelegates.length > 0 ? (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.5rem',
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '4px',
-                    padding: '0.75rem',
-                  }}
-                >
-                  {availableDelegates
-                    .filter((d) => !delegates.find((existing) => existing.id === d.id)) // Vyloučit již přidané
-                    .map((delegate) => {
-                      const isSelected = selectedDelegateId === delegate.id
-                      return (
-                        <label
-                          key={delegate.id}
-                          style={{
-                            display: 'flex',
-                            gap: '0.75rem',
-                            alignItems: 'flex-start',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            backgroundColor: isSelected ? 'var(--color-primary-soft)' : 'transparent',
-                          }}
-                          onClick={() => {
-                            if (delegate.source === 'user' && onCreateDelegateFromUser) {
-                              // Uživatel - zobrazit potvrzení a přesměrovat na formulář pro vytvoření zástupce
-                              const confirmed = window.confirm(
-                                `Uživatel "${delegate.displayName}" není zástupce. Chcete vytvořit zástupce z tohoto uživatele? Formulář se otevře s předvyplněnými údaji.`
-                              )
-                              if (confirmed) {
-                                onCreateDelegateFromUser(delegate.id)
-                              }
-                            } else {
-                              // Zástupce - jednoduše vybrat
-                              setSelectedDelegateId(delegate.id)
-                            }
-                          }}
-                        >
-                          <input
-                            type="radio"
-                            name="delegate-select"
-                            checked={isSelected}
-                            onChange={() => setSelectedDelegateId(delegate.id)}
-                            style={{ marginTop: '0.25rem' }}
-                          />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: isSelected ? 600 : 400 }}>
-                              {delegate.displayName}
-                              {delegate.source === 'user' && delegate.roleCode && (
-                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '0.5rem' }}>
-                                  ({delegate.roleCode})
-                                </span>
-                              )}
-                            </div>
-                            {delegate.email && (
-                              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{delegate.email}</div>
-                            )}
-                            {delegate.phone && (
-                              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{delegate.phone}</div>
-                            )}
-                          </div>
-                        </label>
-                      )
-                    })}
-                </div>
+              ) : availableDelegateRows.length > 0 ? (
+                <ListView
+                  columns={AVAILABLE_DELEGATES_COLUMNS}
+                  rows={availableDelegateRows}
+                  filterValue={searchText}
+                  onFilterChange={setSearchText}
+                  filterPlaceholder="Hledat zástupce..."
+                  emptyText={searchText ? 'Žádní zástupci nenalezeni' : 'Žádní dostupní zástupci'}
+                  selectedId={selectedAvailableDelegateId}
+                  onRowClick={handleAvailableDelegateClick}
+                />
               ) : (
                 <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                   {searchText ? 'Žádní zástupci nenalezeni' : 'Žádní dostupní zástupci'}
                 </div>
               )}
-              {/* Tlačítko pro přidání nového zástupce */}
-              <button
-                type="button"
-                className="detail-form__button"
-                onClick={() => {
-                  // Otevřít novou kartu pro vytvoření zástupce
-                  window.location.href = '/modules/030-pronajimatel?t=landlords-list&id=new&vm=create&type=zastupce'
-                }}
-                style={{ alignSelf: 'flex-start', marginTop: '0.5rem' }}
-              >
-                + Přidat nového zástupce
-              </button>
             </div>
           </div>
         </section>
@@ -372,4 +362,3 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
     </div>
   )
 }
-
