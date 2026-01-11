@@ -57,6 +57,7 @@ export type LandlordDetailFormProps = {
   readOnly: boolean
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: LandlordFormValue) => void
+  onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
 }
 
 // =====================
@@ -85,6 +86,7 @@ export default function LandlordDetailForm({
   readOnly,
   onDirtyChange,
   onValueChange,
+  onCreateDelegateFromUser,
 }: LandlordDetailFormProps) {
   const router = useRouter()
   const toast = useToast()
@@ -188,13 +190,33 @@ export default function LandlordDetailForm({
 
   const handleDelegateToggle = useCallback(
     (delegateId: string, checked: boolean) => {
+      // Pokud uživatel odškrtává, jednoduše odebrat
+      if (!checked) {
+        const currentIds = val.delegateIds || []
+        const nextIds = currentIds.filter((id) => id !== delegateId)
+        update({ delegateIds: nextIds })
+        return
+      }
+
+      // Pokud uživatel zaškrtává, zjistit, jestli je to uživatel (source: 'user')
+      const delegate = availableDelegates.find((d) => d.id === delegateId)
+      if (delegate && delegate.source === 'user') {
+        // Je to uživatel - zobrazit potvrzení a přesměrovat na formulář pro vytvoření zástupce
+        const confirmed = window.confirm(
+          `Uživatel "${delegate.displayName}" není zástupce. Chcete vytvořit zástupce z tohoto uživatele? Formulář se otevře s předvyplněnými údaji.`
+        )
+        if (confirmed && onCreateDelegateFromUser) {
+          onCreateDelegateFromUser(delegateId)
+        }
+        return
+      }
+
+      // Je to zástupce z seznamu pronajímatelů - přidat normálně
       const currentIds = val.delegateIds || []
-      const nextIds = checked
-        ? [...currentIds, delegateId].filter((id, idx, arr) => arr.indexOf(id) === idx) // Přidat, pokud už není
-        : currentIds.filter((id) => id !== delegateId) // Odebrat
+      const nextIds = [...currentIds, delegateId].filter((id, idx, arr) => arr.indexOf(id) === idx) // Přidat, pokud už není
       update({ delegateIds: nextIds })
     },
-    [val.delegateIds]
+    [val.delegateIds, availableDelegates, onCreateDelegateFromUser]
   )
 
   const handleAddNewDelegate = useCallback(() => {

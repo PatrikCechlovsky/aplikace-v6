@@ -4,11 +4,13 @@
 // PURPOSE: Detail view pro pronajimatele (read/edit mode) - bez role/permissions
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
 
 import LandlordDetailForm, { type LandlordFormValue } from './LandlordDetailForm'
 import { getLandlordDetail, saveLandlord, type SaveLandlordInput } from '@/app/lib/services/landlords'
+import { getUserDetail } from '@/app/lib/services/users'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
@@ -67,6 +69,7 @@ type Props = {
   onRegisterSubmit?: (fn: () => Promise<UiLandlord | null>) => void
   onDirtyChange?: (dirty: boolean) => void
   onSaved?: (landlord: UiLandlord) => void // Callback po uložení
+  onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
 }
 
 // Očekávané typy subjektů pro pronajimatele
@@ -126,10 +129,12 @@ export default function LandlordDetailFrame({
   onRegisterSubmit,
   onDirtyChange,
   onSaved,
+  onCreateDelegateFromUser,
 }: Props) {
   // DB truth (subjects)
   const [resolvedLandlord, setResolvedLandlord] = useState<UiLandlord>(landlord)
   const resolveSeqRef = useRef(0)
+  const searchParams = useSearchParams()
 
   // Subject types pro změnu typu v edit mode
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
@@ -198,13 +203,77 @@ export default function LandlordDetailFrame({
     // read/edit => resolve from Supabase (jen pokud není 'new')
     const subjectId = String(landlord?.id ?? '').trim()
     if (!subjectId || subjectId === 'new') {
-      // Nový landlord - použij initial hodnoty
-      const init = buildInitialFormValue(landlord)
-      setFormValue(init)
-      initialSnapshotRef.current = JSON.stringify(init)
-      firstRenderRef.current = true
-      setDirtyAndNotify(false)
-      return
+      // Nový landlord - zkontrolovat, jestli máme fromUserId pro předvyplnění dat uživatele
+      const fromUserId = searchParams?.get('fromUserId')?.trim() ?? null
+      if (fromUserId && landlord.subjectType === 'zastupce') {
+        // Načíst data uživatele a předvyplnit formulář
+        const mySeq = ++resolveSeqRef.current
+        let mounted = true
+
+        ;(async () => {
+          try {
+            logger.log('LandlordDetailFrame: loading user data for delegate', { fromUserId })
+            const userDetail = await getUserDetail(fromUserId)
+            if (!mounted) return
+            if (mySeq !== resolveSeqRef.current) return
+
+            const s = userDetail.subject
+            logger.log('LandlordDetailFrame: user data loaded', { userDetail: s })
+
+            // Předvyplnit formulář daty uživatele
+            const presetLandlord: UiLandlord = {
+              ...landlord,
+              id: 'new',
+              subjectType: 'zastupce',
+              displayName: s.display_name ?? '',
+              email: s.email ?? null,
+              phone: s.phone ?? null,
+              titleBefore: s.title_before ?? null,
+              firstName: s.first_name ?? null,
+              lastName: s.last_name ?? null,
+              birthDate: s.birth_date ?? null,
+              personalIdNumber: s.personal_id_number ?? null,
+              idDocType: s.id_doc_type ?? null,
+              idDocNumber: s.id_doc_number ?? null,
+              street: (s as any).street ?? null,
+              city: (s as any).city ?? null,
+              zip: (s as any).zip ?? null,
+              houseNumber: (s as any).house_number ?? null,
+              country: (s as any).country ?? 'CZ',
+              note: (s as any).note ?? null,
+            }
+
+            setResolvedLandlord(presetLandlord)
+            const init = buildInitialFormValue(presetLandlord)
+            setFormValue(init)
+            initialSnapshotRef.current = JSON.stringify(init)
+            firstRenderRef.current = true
+            setDirtyAndNotify(false)
+          } catch (e: any) {
+            if (!mounted) return
+            logger.error('getUserDetail failed', { fromUserId, error: e, message: e?.message, code: e?.code })
+            toast.showError(e?.message || 'Nepodařilo se načíst data uživatele')
+            // Použít standardní inicializaci
+            const init = buildInitialFormValue(landlord)
+            setFormValue(init)
+            initialSnapshotRef.current = JSON.stringify(init)
+            firstRenderRef.current = true
+            setDirtyAndNotify(false)
+          }
+        })()
+
+        return () => {
+          mounted = false
+        }
+      } else {
+        // Nový landlord bez fromUserId - použij initial hodnoty
+        const init = buildInitialFormValue(landlord)
+        setFormValue(init)
+        initialSnapshotRef.current = JSON.stringify(init)
+        firstRenderRef.current = true
+        setDirtyAndNotify(false)
+        return
+      }
     }
 
     const mySeq = ++resolveSeqRef.current
@@ -582,6 +651,7 @@ export default function LandlordDetailFrame({
                   setFormValue(val)
                   markDirtyIfChanged(val)
                 }}
+                onCreateDelegateFromUser={onCreateDelegateFromUser}
               />
             ),
 

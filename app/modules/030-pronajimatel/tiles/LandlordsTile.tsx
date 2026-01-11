@@ -286,7 +286,7 @@ export default function LandlordsTile({
 
   const setUrl = useCallback(
     (
-      next: { t?: string | null; id?: string | null; vm?: string | null; type?: string | null },
+      next: { t?: string | null; id?: string | null; vm?: string | null; type?: string | null; fromUserId?: string | null },
       mode: 'replace' | 'push' = 'replace'
     ) => {
       const sp = new URLSearchParams(searchKey)
@@ -301,6 +301,7 @@ export default function LandlordsTile({
       if (Object.prototype.hasOwnProperty.call(next, 'id')) setOrDelete('id', next.id)
       if (Object.prototype.hasOwnProperty.call(next, 'vm')) setOrDelete('vm', next.vm)
       if (Object.prototype.hasOwnProperty.call(next, 'type')) setOrDelete('type', next.type)
+      if (Object.prototype.hasOwnProperty.call(next, 'fromUserId')) setOrDelete('fromUserId', next.fromUserId)
 
       const qs = sp.toString()
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
@@ -1031,6 +1032,10 @@ export default function LandlordsTile({
           submitRef.current = fn
         }}
         onDirtyChange={setIsDirty}
+        onCreateDelegateFromUser={(userId) => {
+          // Přesměrovat na formulář pro vytvoření zástupce s předvyplněnými daty uživatele
+          setUrl({ t: 'landlords-list', id: 'new', vm: 'create', type: 'zastupce', fromUserId: userId }, 'push')
+        }}
         onSaved={(saved) => {
           // Aktualizovat detail po uložení
           setDetailLandlord(saved)
