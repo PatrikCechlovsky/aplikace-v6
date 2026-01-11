@@ -5,9 +5,10 @@
 // Struktura stejná jako "Můj účet", ale bez přihlašovacích údajů
 // Sekce: Osobní údaje -> Adresa -> Základní údaje (email, telefon)
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import InputWithHistory from '@/app/UI/InputWithHistory'
 import AddressAutocomplete from '@/app/UI/AddressAutocomplete'
+import { useToast } from '@/app/UI/Toast'
 
 // =====================
 // 1) TYPES
@@ -126,6 +127,8 @@ export default function LandlordDetailForm({
 
   const [val, setVal] = useState<LandlordFormValue>(initial)
   const [dirty, setDirty] = useState(false)
+  const [loadingAres, setLoadingAres] = useState(false)
+  const toast = useToast()
 
   // Když se změní landlord, přepiš form
   useEffect(() => {
@@ -152,6 +155,64 @@ export default function LandlordDetailForm({
       return next
     })
   }
+
+  // Načíst data z ARES podle IČO
+  const handleLoadFromAres = useCallback(async () => {
+    const currentIc = val.ic.trim()
+    if (!currentIc) {
+      toast.showWarning('Nejdřív zadejte IČO')
+      return
+    }
+
+    // Validace IČO (8 číslic)
+    if (!/^\d{8}$/.test(currentIc.replace(/\s+/g, ''))) {
+      toast.showWarning('IČO musí obsahovat 8 číslic')
+      return
+    }
+
+    try {
+      setLoadingAres(true)
+      const response = await fetch(`/api/ares?ico=${encodeURIComponent(currentIc)}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Nepodařilo se načíst data z ARES')
+      }
+
+      // Předvyplnit formulář daty z ARES (použít aktuální hodnoty jako fallback)
+      setVal((prev) => {
+        const updates: Partial<LandlordFormValue> = {
+          companyName: data.companyName || prev.companyName,
+          ic: data.ic || prev.ic,
+          dic: data.dic || prev.dic,
+          icValid: data.icValid ?? prev.icValid,
+          dicValid: data.dicValid ?? prev.dicValid,
+          street: data.street || prev.street,
+          houseNumber: data.houseNumber || prev.houseNumber,
+          city: data.city || prev.city,
+          zip: data.zip || prev.zip,
+          country: data.country || prev.country,
+        }
+        const next = { ...prev, ...updates }
+        
+        // Označit jako dirty a notifikovat
+        if (!dirty) {
+          setDirty(true)
+          onDirtyChange?.(true)
+        }
+        onValueChange?.(next)
+        
+        return next
+      })
+      
+      toast.showSuccess('Data z ARES byla úspěšně načtena')
+    } catch (error: any) {
+      console.error('ARES load failed:', error)
+      toast.showError(error.message || 'Nepodařilo se načíst data z ARES')
+    } finally {
+      setLoadingAres(false)
+    }
+  }, [val.ic, toast, dirty, onDirtyChange, onValueChange])
 
 
   return (
@@ -329,8 +390,14 @@ export default function LandlordDetailForm({
                   placeholder="12345678"
                 />
                 {!readOnly && (
-                  <button type="button" className="detail-form__button" title="Načíst z ARES">
-                    ARES
+                  <button
+                    type="button"
+                    className="detail-form__button"
+                    title="Načíst z ARES"
+                    onClick={handleLoadFromAres}
+                    disabled={loadingAres || !val.ic.trim()}
+                  >
+                    {loadingAres ? 'Načítám...' : 'ARES'}
                   </button>
                 )}
               </div>
