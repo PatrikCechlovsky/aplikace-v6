@@ -13,6 +13,7 @@ export type DetailSectionId =
   | 'users'
   | 'equipment'
   | 'accounts'
+  | 'delegates'
   | 'attachments'
   | 'system'
 
@@ -353,6 +354,35 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       // Dynamicky importovat, aby se to nenačítalo, pokud není potřeba
       const AccountsSection = require('@/app/UI/detail-sections/AccountsSection').default
       return <AccountsSection subjectId={entityId} mode={ctx.mode ?? 'edit'} />
+    },
+  },
+
+  delegates: {
+    id: 'delegates',
+    label: 'Zástupci',
+    order: 55,
+    // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
+    visibleWhen: (ctx) => {
+      if (!ctx.entityType) return false
+      // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
+      if (ctx.mode === 'create' || ctx.mode === 'edit') return true
+      // Pro read mode zobrazit jen pokud máme entityId
+      return !!(ctx as any)?.entityId
+    },
+    render: (ctx) => {
+      const entityId = (ctx as any)?.entityId
+      const onCreateDelegateFromUser = (ctx as any)?.onCreateDelegateFromUser
+      // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
+      if (!entityId || entityId === 'new') {
+        return (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            Zástupci budou dostupní po uložení pronajimatele.
+          </div>
+        )
+      }
+      // Dynamicky importovat, aby se to nenačítalo, pokud není potřeba
+      const DelegatesSection = require('@/app/UI/detail-sections/DelegatesSection').default
+      return <DelegatesSection subjectId={entityId} mode={ctx.mode ?? 'edit'} onCreateDelegateFromUser={onCreateDelegateFromUser} />
     },
   },
 }

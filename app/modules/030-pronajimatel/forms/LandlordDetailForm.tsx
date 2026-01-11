@@ -5,12 +5,9 @@
 // Struktura stejná jako "Můj účet", ale bez přihlašovacích údajů
 // Sekce: Osobní údaje -> Adresa -> Základní údaje (email, telefon)
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useEffect, useMemo, useState } from 'react'
 import InputWithHistory from '@/app/UI/InputWithHistory'
 import AddressAutocomplete from '@/app/UI/AddressAutocomplete'
-import { getAvailableDelegates, type DelegateOption } from '@/app/lib/services/landlords'
-import { useToast } from '@/app/UI/Toast'
 
 // =====================
 // 1) TYPES
@@ -57,7 +54,6 @@ export type LandlordDetailFormProps = {
   readOnly: boolean
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: LandlordFormValue) => void
-  onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
 }
 
 // =====================
@@ -86,43 +82,9 @@ export default function LandlordDetailForm({
   readOnly,
   onDirtyChange,
   onValueChange,
-  onCreateDelegateFromUser,
 }: LandlordDetailFormProps) {
-  const router = useRouter()
-  const toast = useToast()
   const isPerson = isPersonType(subjectType)
   const isCompany = isCompanyType(subjectType)
-
-  // Načítání dostupných zástupců
-  const [availableDelegates, setAvailableDelegates] = useState<DelegateOption[]>([])
-  const [delegatesLoading, setDelegatesLoading] = useState(false)
-  const [delegateSearchText, setDelegateSearchText] = useState('')
-
-  useEffect(() => {
-    if (!isCompany) return // Zástupce jen pro firemní typy
-
-    let mounted = true
-    setDelegatesLoading(true)
-    ;(async () => {
-      try {
-        const delegates = await getAvailableDelegates(delegateSearchText || undefined)
-        if (!mounted) return
-        setAvailableDelegates(delegates)
-      } catch (err: any) {
-        console.error('Failed to load delegates', err)
-        if (!mounted) return
-        toast.showError('Nepodařilo se načíst seznam zástupců')
-      } finally {
-        if (mounted) {
-          setDelegatesLoading(false)
-        }
-      }
-    })()
-
-    return () => {
-      mounted = false
-    }
-  }, [isCompany, delegateSearchText, toast])
 
   const initial = useMemo<LandlordFormValue>(
     () => ({
@@ -188,41 +150,6 @@ export default function LandlordDetailForm({
     })
   }
 
-  const handleDelegateToggle = useCallback(
-    (delegateId: string, checked: boolean) => {
-      // Pokud uživatel odškrtává, jednoduše odebrat
-      if (!checked) {
-        const currentIds = val.delegateIds || []
-        const nextIds = currentIds.filter((id) => id !== delegateId)
-        update({ delegateIds: nextIds })
-        return
-      }
-
-      // Pokud uživatel zaškrtává, zjistit, jestli je to uživatel (source: 'user')
-      const delegate = availableDelegates.find((d) => d.id === delegateId)
-      if (delegate && delegate.source === 'user') {
-        // Je to uživatel - zobrazit potvrzení a přesměrovat na formulář pro vytvoření zástupce
-        const confirmed = window.confirm(
-          `Uživatel "${delegate.displayName}" není zástupce. Chcete vytvořit zástupce z tohoto uživatele? Formulář se otevře s předvyplněnými údaji.`
-        )
-        if (confirmed && onCreateDelegateFromUser) {
-          onCreateDelegateFromUser(delegateId)
-        }
-        return
-      }
-
-      // Je to zástupce z seznamu pronajímatelů - přidat normálně
-      const currentIds = val.delegateIds || []
-      const nextIds = [...currentIds, delegateId].filter((id, idx, arr) => arr.indexOf(id) === idx) // Přidat, pokud už není
-      update({ delegateIds: nextIds })
-    },
-    [val.delegateIds, availableDelegates, onCreateDelegateFromUser]
-  )
-
-  const handleAddNewDelegate = useCallback(() => {
-    // Otevřít novou kartu pro vytvoření zástupce
-    router.push('/modules/030-pronajimatel?t=landlords-list&id=new&vm=create&type=zastupce')
-  }, [router])
 
   return (
     <div className="detail-form">
@@ -423,112 +350,6 @@ export default function LandlordDetailForm({
               />
               {val.dicValid && (
                 <span style={{ fontSize: '0.875rem', color: 'var(--color-success)' }}>✓ DIČ ověřeno</span>
-              )}
-            </div>
-          </div>
-
-          {/* Zástupci (více zástupců) */}
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">Zástupci</label>
-              
-              {readOnly ? (
-                // Read-only: zobrazit jen vybrané zástupce
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {val.delegateIds && val.delegateIds.length > 0 ? (
-                    val.delegateIds.map((delegateId) => {
-                      const delegate = availableDelegates.find((d) => d.id === delegateId)
-                      return delegate ? (
-                        <div key={delegateId} style={{ padding: '0.5rem', backgroundColor: 'var(--color-surface-subtle)', borderRadius: '4px' }}>
-                          <strong>{delegate.displayName}</strong>
-                          {delegate.email && <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{delegate.email}</div>}
-                          {delegate.roleCode && <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Role: {delegate.roleCode}</div>}
-                        </div>
-                      ) : (
-                        <div key={delegateId} style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                          Zástupce (ID: {delegateId})
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Žádní zástupci</div>
-                  )}
-                </div>
-              ) : (
-                // Edit mode: checkbox seznam s možností přidat
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {/* Vyhledávání */}
-                  <input
-                    className="detail-form__input"
-                    type="text"
-                    value={delegateSearchText}
-                    onChange={(e) => setDelegateSearchText(e.target.value)}
-                    placeholder="Hledat zástupce..."
-                    style={{ marginBottom: '0.5rem' }}
-                  />
-
-                  {/* Tlačítko pro přidání nového zástupce */}
-                  <button
-                    type="button"
-                    className="detail-form__button"
-                    onClick={handleAddNewDelegate}
-                    style={{ alignSelf: 'flex-start', marginBottom: '0.5rem' }}
-                  >
-                    + Přidat nového zástupce
-                  </button>
-
-                  {/* Checkbox seznam zástupců */}
-                  {delegatesLoading ? (
-                    <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Načítání zástupců...</div>
-                  ) : availableDelegates.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '0.75rem' }}>
-                      {availableDelegates.map((delegate) => {
-                        const isChecked = (val.delegateIds || []).includes(delegate.id)
-                        return (
-                          <label
-                            key={delegate.id}
-                            style={{
-                              display: 'flex',
-                              gap: '0.75rem',
-                              alignItems: 'flex-start',
-                              padding: '0.5rem',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              backgroundColor: isChecked ? 'var(--color-surface-subtle)' : 'transparent',
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => handleDelegateToggle(delegate.id, e.target.checked)}
-                              style={{ marginTop: '0.25rem' }}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: isChecked ? 600 : 400 }}>
-                                {delegate.displayName}
-                                {delegate.source === 'user' && delegate.roleCode && (
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '0.5rem' }}>
-                                    ({delegate.roleCode})
-                                  </span>
-                                )}
-                              </div>
-                              {delegate.email && (
-                                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{delegate.email}</div>
-                              )}
-                              {delegate.phone && (
-                                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{delegate.phone}</div>
-                              )}
-                            </div>
-                          </label>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                      {delegateSearchText ? 'Žádní zástupci nenalezeni' : 'Žádní dostupní zástupci'}
-                    </div>
-                  )}
-                </div>
               )}
             </div>
           </div>

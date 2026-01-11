@@ -488,7 +488,7 @@ export default function LandlordDetailFrame({
   const subjectType = selectedSubjectType || resolvedLandlord.subjectType || 'osoba'
   const detailMode: DetailViewMode = readOnly ? 'view' : 'edit'
 
-  const sectionIds: DetailSectionId[] = useMemo(() => ['detail', 'accounts', 'attachments', 'system'], [])
+  const sectionIds: DetailSectionId[] = useMemo(() => ['detail', 'accounts', 'delegates', 'attachments', 'system'], [])
 
   const handleSubjectTypeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -626,37 +626,38 @@ export default function LandlordDetailFrame({
           onActiveSectionChange={(id) => {
             onActiveSectionChange?.(id)
           }}
-          ctx={{
-            entityType: 'subjects',
-            // Pro create mode nastavit entityId na 'new', aby byly záložky viditelné
-            entityId: resolvedLandlord.id === 'new' ? 'new' : resolvedLandlord.id || undefined,
-            entityLabel: resolvedLandlord.displayName ?? null,
-            showSystemEntityHeader: false,
-            mode: detailMode,
+          ctx={
+            {
+              entityType: 'subjects',
+              // Pro create mode nastavit entityId na 'new', aby byly záložky viditelné
+              entityId: resolvedLandlord.id === 'new' ? 'new' : resolvedLandlord.id || undefined,
+              entityLabel: resolvedLandlord.displayName ?? null,
+              showSystemEntityHeader: false,
+              mode: detailMode,
+              onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
 
-            detailContent: (
-              <LandlordDetailForm
-                key={`form-${resolvedLandlord.id}-${subjectType}`}
-                subjectType={subjectType}
-                landlord={formValue}
-                readOnly={readOnly}
-                onDirtyChange={(dirty) => {
-                  if (dirty) {
-                    markDirtyIfChanged(formValue)
-                  } else {
-                    computeDirty()
-                  }
-                }}
-                onValueChange={(val) => {
-                  setFormValue(val)
-                  markDirtyIfChanged(val)
-                }}
-                onCreateDelegateFromUser={onCreateDelegateFromUser}
-              />
-            ),
+              detailContent: (
+                <LandlordDetailForm
+                  key={`form-${resolvedLandlord.id}-${subjectType}`}
+                  subjectType={subjectType}
+                  landlord={formValue}
+                  readOnly={readOnly}
+                  onDirtyChange={(dirty) => {
+                    if (dirty) {
+                      markDirtyIfChanged(formValue)
+                    } else {
+                      computeDirty()
+                    }
+                  }}
+                  onValueChange={(val) => {
+                    setFormValue(val)
+                    markDirtyIfChanged(val)
+                  }}
+                />
+              ),
 
             systemBlocks,
-          }}
+          } as any}
         />
       </div>
     </div>
