@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // Node.js runtime - potřebujeme fetch
 export const runtime = 'nodejs'
+// Dynamická route - používá searchParams
+export const dynamic = 'force-dynamic'
 
 /**
  * ARES API endpoint pro získání dat o firmě podle IČO
