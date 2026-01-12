@@ -393,15 +393,39 @@ export default function LandlordDetailFrame({
       try {
         const v = formValue ?? buildInitialFormValue(resolvedLandlord)
 
-        if (!v.email?.trim()) {
-          toast.showError('E-mail je povinný')
-          return null
-        }
-
         // Použít změněný subjectType pokud je v edit mode, jinak použít z resolvedLandlord
         const subjectType = selectedSubjectType || resolvedLandlord.subjectType || 'osoba'
         if (!subjectType) {
           toast.showError('Typ subjektu je povinný')
+          return null
+        }
+
+        // Validace podle typu subjektu
+        const missingFields: string[] = []
+
+        // E-mail je vždy povinný
+        if (!v.email?.trim()) {
+          missingFields.push('E-mail')
+        }
+
+        // Pro fyzické osoby (osoba, osvc, zastupce)
+        const isPersonType = ['osoba', 'osvc', 'zastupce'].includes(subjectType)
+        if (isPersonType) {
+          if (!v.firstName?.trim()) missingFields.push('Jméno')
+          if (!v.lastName?.trim()) missingFields.push('Příjmení')
+        }
+
+        // Pro firmy, spolky, státní organizace
+        const isCompanyType = ['firma', 'spolek', 'statni'].includes(subjectType)
+        if (isCompanyType) {
+          if (!v.companyName?.trim()) missingFields.push('Název společnosti')
+          if (!v.ic?.trim()) missingFields.push('IČ')
+        }
+
+        // Pokud chybí nějaká pole, zobrazit chybu
+        if (missingFields.length > 0) {
+          const fieldList = missingFields.join(', ')
+          toast.showError(`Vyplňte prosím povinná pole: ${fieldList}`)
           return null
         }
 
