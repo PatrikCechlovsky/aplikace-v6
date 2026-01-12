@@ -132,6 +132,10 @@ export default function LandlordDetailForm({
 
   // Když se změní landlord, přepiš form
   useEffect(() => {
+    // Pokud je formulář dirty, neresetuj ho - uživatel právě edituje
+    if (dirty) {
+      return
+    }
     // Vytvořit nový objekt, ne jen referenci
     const newVal = { ...initial }
     setVal(newVal)
