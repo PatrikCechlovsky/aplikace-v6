@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
         houseNumber: data.sidlo?.cisloDomovni ? String(data.sidlo.cisloDomovni) : (data.sidlo?.cisloPopisne ? String(data.sidlo.cisloPopisne) : ''),
         city: data.sidlo?.nazevObce || data.sidlo?.obec || '',
         zip: data.sidlo?.psc ? String(data.sidlo.psc) : '',
-        country: data.sidlo?.kodStatu === 'CZ' ? 'Česká republika' : (data.sidlo?.nazevStatu || 'Česká republika'),
+        country: data.sidlo?.kodStatu || 'CZ', // Použít kód státu (CZ, SK, ...)
         // Raw data pro případné další použití
         aresData: data,
       }
