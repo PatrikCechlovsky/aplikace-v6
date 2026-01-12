@@ -132,11 +132,14 @@ export default function LandlordDetailForm({
 
   // Když se změní landlord, přepiš form
   useEffect(() => {
+    console.log('[LandlordDetailForm] useEffect triggered, initial changed. dirty:', dirty)
     // Pokud je formulář dirty, neresetuj ho - uživatel právě edituje
     if (dirty) {
+      console.log('[LandlordDetailForm] Skipping reset because form is dirty')
       return
     }
     // Vytvořit nový objekt, ne jen referenci
+    console.log('[LandlordDetailForm] Resetting form to initial values:', initial)
     const newVal = { ...initial }
     setVal(newVal)
     setDirty(false)
@@ -147,10 +150,13 @@ export default function LandlordDetailForm({
   }, [initial])
 
   const update = (patch: Partial<LandlordFormValue>) => {
+    console.log('[LandlordDetailForm] update() called with:', patch)
     setVal((prev) => {
       const next = { ...prev, ...patch }
+      console.log('[LandlordDetailForm] New form value:', next)
 
       if (!dirty) {
+        console.log('[LandlordDetailForm] Setting dirty to true')
         setDirty(true)
         onDirtyChange?.(true)
       }
