@@ -327,7 +327,7 @@ export default function CommonActions({
         const isDisabled =
           disabled ||
           (def.requiresSelection && !hasSelection) ||
-          (def.requiresDirty && !isDirty)
+          (def.requiresDirty && !isDirty && viewMode !== 'create') // V create mode není potřeba dirty flag
 
         const label = def.label[locale]
         const desc = def.description?.[locale] ?? label
