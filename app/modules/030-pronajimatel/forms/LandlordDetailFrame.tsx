@@ -399,9 +399,13 @@ export default function LandlordDetailFrame({
       try {
         // Použít ref místo state pro získání aktuální hodnoty
         const v = formValueRef.current ?? buildInitialFormValue(resolvedLandlord)
+        
+        console.log('[LandlordDetailFrame] Validating form values:', v)
 
         // Použít změněný subjectType pokud je v edit mode, jinak použít z resolvedLandlord
         const subjectType = selectedSubjectType || resolvedLandlord.subjectType || 'osoba'
+        console.log('[LandlordDetailFrame] Subject type:', subjectType)
+        
         if (!subjectType) {
           toast.showError('Typ subjektu je povinný')
           return null
@@ -425,9 +429,15 @@ export default function LandlordDetailFrame({
         // Pro firmy, spolky, státní organizace
         const isCompanyType = ['firma', 'spolek', 'statni'].includes(subjectType)
         if (isCompanyType) {
+          console.log('[LandlordDetailFrame] Checking company fields:', {
+            companyName: v.companyName,
+            ic: v.ic
+          })
           if (!v.companyName?.trim()) missingFields.push('Název společnosti')
           if (!v.ic?.trim()) missingFields.push('IČ')
         }
+
+        console.log('[LandlordDetailFrame] Missing fields:', missingFields)
 
         // Pokud chybí nějaká pole, zobrazit chybu
         if (missingFields.length > 0) {
@@ -709,6 +719,7 @@ export default function LandlordDetailFrame({
                     }
                   }}
                   onValueChange={(val) => {
+                    console.log('[LandlordDetailFrame] onValueChange called with:', val)
                     setFormValue(val)
                     formValueRef.current = val // Synchronně aktualizovat ref
                     markDirtyIfChanged(val)
