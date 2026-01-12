@@ -208,7 +208,7 @@ export default function LandlordDetailForm({
     } finally {
       setLoadingAres(false)
     }
-  }, [val.ic, toast, dirty, onDirtyChange, onValueChange])
+  }, [val.ic, toast, update])
 
 
   return (
