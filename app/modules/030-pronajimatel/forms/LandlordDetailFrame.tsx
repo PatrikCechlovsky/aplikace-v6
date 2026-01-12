@@ -710,6 +710,7 @@ export default function LandlordDetailFrame({
                   }}
                   onValueChange={(val) => {
                     setFormValue(val)
+                    formValueRef.current = val // Synchronně aktualizovat ref
                     markDirtyIfChanged(val)
                   }}
                 />
