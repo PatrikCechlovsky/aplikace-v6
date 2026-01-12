@@ -175,6 +175,9 @@ export default function LandlordDetailForm({
       const response = await fetch(`/api/ares?ico=${encodeURIComponent(currentIc)}`)
       const data = await response.json()
 
+      console.log('[Frontend] ARES API response:', data)
+      console.log('[Frontend] Response OK:', response.ok)
+
       if (!response.ok) {
         throw new Error(data.error || 'Nepodařilo se načíst data z ARES')
       }

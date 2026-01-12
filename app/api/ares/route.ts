@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
 
       const data = await response.json()
       console.log(`[ARES API] Response received for IČO ${trimmedIco}`)
+      console.log('[ARES API] Full response data:', JSON.stringify(data, null, 2))
 
       // ARES API vrací data v struktuře:
       // {
@@ -97,13 +98,15 @@ export async function GET(request: NextRequest) {
         dicValid: !!data.dic,
         // Adresa
         street: data.sidlo?.nazevUlice || data.sidlo?.ulice || '',
-        houseNumber: data.sidlo?.cisloDomovni || data.sidlo?.cisloPopisne || '',
+        houseNumber: data.sidlo?.cisloDomovni ? String(data.sidlo.cisloDomovni) : (data.sidlo?.cisloPopisne ? String(data.sidlo.cisloPopisne) : ''),
         city: data.sidlo?.nazevObce || data.sidlo?.obec || '',
-        zip: data.sidlo?.psc || data.sidlo?.psc || '',
-        country: data.sidlo?.kodStatu === 'CZ' ? 'CZ' : data.sidlo?.kodStatu || 'CZ',
+        zip: data.sidlo?.psc ? String(data.sidlo.psc) : '',
+        country: data.sidlo?.kodStatu === 'CZ' ? 'Česká republika' : (data.sidlo?.nazevStatu || 'Česká republika'),
         // Raw data pro případné další použití
         aresData: data,
       }
+
+      console.log('[ARES API] Transformed data:', JSON.stringify(transformed, null, 2))
 
       return NextResponse.json(transformed, {
         headers: {
