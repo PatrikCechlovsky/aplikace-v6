@@ -154,6 +154,12 @@ export default function LandlordDetailFrame({
   const firstRenderRef = useRef(true)
 
   const [formValue, setFormValue] = useState<LandlordFormValue>(() => buildInitialFormValue(landlord))
+  const formValueRef = useRef<LandlordFormValue>(formValue) // Ref pro aktuální hodnotu
+
+  // Aktualizovat ref při změně formValue
+  useEffect(() => {
+    formValueRef.current = formValue
+  }, [formValue])
 
   // Načíst typy subjektů pro select v edit mode
   useEffect(() => {
@@ -391,7 +397,8 @@ export default function LandlordDetailFrame({
 
     onRegisterSubmit(async () => {
       try {
-        const v = formValue ?? buildInitialFormValue(resolvedLandlord)
+        // Použít ref místo state pro získání aktuální hodnoty
+        const v = formValueRef.current ?? buildInitialFormValue(resolvedLandlord)
 
         // Použít změněný subjectType pokud je v edit mode, jinak použít z resolvedLandlord
         const subjectType = selectedSubjectType || resolvedLandlord.subjectType || 'osoba'
