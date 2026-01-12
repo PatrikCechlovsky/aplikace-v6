@@ -184,6 +184,7 @@ export default function LandlordDetailForm({
 
       // Předvyplnit formulář daty z ARES (použít aktuální hodnoty jako fallback)
       setVal((prev) => {
+        console.log('[Frontend] Previous values:', prev)
         const updates: Partial<LandlordFormValue> = {
           companyName: data.companyName || prev.companyName,
           ic: data.ic || prev.ic,
@@ -196,7 +197,9 @@ export default function LandlordDetailForm({
           zip: data.zip || prev.zip,
           country: data.country || prev.country,
         }
+        console.log('[Frontend] Updates:', updates)
         const next = { ...prev, ...updates }
+        console.log('[Frontend] Next values:', next)
         
         // Označit jako dirty a notifikovat
         if (!dirty) {
