@@ -39,6 +39,11 @@ export type LandlordsListRow = {
   ic?: string | null
   dic?: string | null
 
+  // ✅ role flags
+  is_landlord?: boolean | null
+  is_tenant?: boolean | null
+  is_user?: boolean | null
+
   // ✅ metadata z subject_types (pro barevné označení a řazení)
   subject_type_name?: string | null
   subject_type_color?: string | null
@@ -69,9 +74,14 @@ export async function listLandlords(params: LandlordsListParams = {}): Promise<L
         
         company_name,
         ic,
-        dic
+        dic,
+        
+        is_landlord,
+        is_tenant,
+        is_user
       `
     )
+    .eq('is_landlord', true) // ✅ Filtrovat jen pronajímatele
     .order('display_name', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -351,6 +361,9 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     email,
     phone: (input.phone ?? '').trim() || null,
     is_archived: input.isArchived ?? false,
+
+    // ✅ Role flags - pronajímatel je vždy is_landlord = true
+    is_landlord: true,
 
     // PERSON fields
     title_before: (input.titleBefore ?? '').trim() || null,
