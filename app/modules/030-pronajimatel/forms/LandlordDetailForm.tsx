@@ -192,33 +192,33 @@ export default function LandlordDetailForm({
         throw new Error(data.error || 'Nepodařilo se načíst data z ARES')
       }
 
-      // Předvyplnit formulář daty z ARES přímo bez propagace přes update()
+      // Předvyplnit formulář daty z ARES přímo
       console.log('[Frontend] Updating form with ARES data')
+      console.log('[Frontend] Current val before update:', val)
       
-      setVal((prev) => {
-        const next = {
-          ...prev,
-          companyName: data.companyName || prev.companyName,
-          ic: data.ic || prev.ic,
-          dic: data.dic || prev.dic,
-          icValid: data.icValid ?? prev.icValid,
-          dicValid: data.dicValid ?? prev.dicValid,
-          street: data.street || prev.street,
-          houseNumber: data.houseNumber || prev.houseNumber,
-          city: data.city || prev.city,
-          zip: data.zip || prev.zip,
-          country: data.country || prev.country,
-        }
-        
-        // Nastavit dirty a propagovat změnu
-        if (!dirtyRef.current) {
-          dirtyRef.current = true
-          onDirtyChange?.(true)
-        }
-        onValueChange?.(next)
-        
-        return next
-      })
+      const updatedVal = {
+        ...val,
+        companyName: data.companyName || val.companyName,
+        ic: data.ic || val.ic,
+        dic: data.dic || val.dic,
+        icValid: data.icValid ?? val.icValid,
+        dicValid: data.dicValid ?? val.dicValid,
+        street: data.street || val.street,
+        houseNumber: data.houseNumber || val.houseNumber,
+        city: data.city || val.city,
+        zip: data.zip || val.zip,
+        country: data.country || val.country,
+      }
+      
+      console.log('[Frontend] Updated val:', updatedVal)
+      setVal(updatedVal)
+      
+      // Nastavit dirty a propagovat změnu
+      if (!dirtyRef.current) {
+        dirtyRef.current = true
+        onDirtyChange?.(true)
+      }
+      onValueChange?.(updatedVal)
       
       toast.showSuccess('Data z ARES byla úspěšně načtena')
     } catch (error: any) {
