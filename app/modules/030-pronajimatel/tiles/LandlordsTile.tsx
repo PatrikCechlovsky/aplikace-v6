@@ -206,38 +206,24 @@ export default function LandlordsTile({
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   
-  // Inicializovat ref se stejnou hodnotou jako state pro správné tracking změn
-  const previousFilterRef = useRef<string | null>(
-    propSubjectTypeFilter || 
-    (searchParams?.get('t')?.startsWith('landlords-type-') 
-      ? searchParams.get('t')!.replace('landlords-type-', '') 
-      : null)
-  )
-  
   // Aktualizovat subjectTypeFilter při změně URL nebo prop
   useEffect(() => {
-    let newFilter: string | null = null
-    
     // 1. Priorita: propSubjectTypeFilter (když je použit přes LandlordTypeTile)
     if (propSubjectTypeFilter) {
-      newFilter = propSubjectTypeFilter
-    } else {
-      // 2. Jinak extrahovat z URL parametru 't'
-      const tileId = searchParams?.get('t') || null
-      
-      if (tileId?.startsWith('landlords-type-')) {
-        newFilter = tileId.replace('landlords-type-', '')
-      } else if (tileId === 'landlords-list') {
-        newFilter = null
-      }
+      setSubjectTypeFilter(prev => prev !== propSubjectTypeFilter ? propSubjectTypeFilter : prev)
+      return
     }
     
-    // Nastavit jen pokud se skutečně změnilo
-    if (newFilter !== previousFilterRef.current) {
-      previousFilterRef.current = newFilter
-      setSubjectTypeFilter(newFilter)
+    // 2. Jinak extrahovat z URL parametru 't'
+    const tileId = searchParams?.get('t') || null
+    
+    if (tileId?.startsWith('landlords-type-')) {
+      const newFilter = tileId.replace('landlords-type-', '')
+      setSubjectTypeFilter(prev => prev !== newFilter ? newFilter : prev)
+    } else if (tileId === 'landlords-list' || !tileId) {
+      setSubjectTypeFilter(prev => prev !== null ? null : prev)
     }
-  }, [searchKey, propSubjectTypeFilter, searchParams])
+  }, [propSubjectTypeFilter, searchParams])
   const subjectTypeMap = useMemo(() => {
     const map: Record<string, SubjectType> = {}
     for (const type of subjectTypes) {
