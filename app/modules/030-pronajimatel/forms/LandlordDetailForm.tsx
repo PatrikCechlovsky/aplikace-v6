@@ -192,19 +192,32 @@ export default function LandlordDetailForm({
         throw new Error(data.error || 'Nepodařilo se načíst data z ARES')
       }
 
-      // Předvyplnit formulář daty z ARES pomocí funkce update
+      // Předvyplnit formulář daty z ARES přímo bez propagace přes update()
       console.log('[Frontend] Updating form with ARES data')
-      update({
-        companyName: data.companyName,
-        ic: data.ic,
-        dic: data.dic,
-        icValid: data.icValid,
-        dicValid: data.dicValid,
-        street: data.street,
-        houseNumber: data.houseNumber,
-        city: data.city,
-        zip: data.zip,
-        country: data.country,
+      
+      setVal((prev) => {
+        const next = {
+          ...prev,
+          companyName: data.companyName || prev.companyName,
+          ic: data.ic || prev.ic,
+          dic: data.dic || prev.dic,
+          icValid: data.icValid ?? prev.icValid,
+          dicValid: data.dicValid ?? prev.dicValid,
+          street: data.street || prev.street,
+          houseNumber: data.houseNumber || prev.houseNumber,
+          city: data.city || prev.city,
+          zip: data.zip || prev.zip,
+          country: data.country || prev.country,
+        }
+        
+        // Nastavit dirty a propagovat změnu
+        if (!dirtyRef.current) {
+          dirtyRef.current = true
+          onDirtyChange?.(true)
+        }
+        onValueChange?.(next)
+        
+        return next
       })
       
       toast.showSuccess('Data z ARES byla úspěšně načtena')
