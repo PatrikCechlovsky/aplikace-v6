@@ -205,7 +205,14 @@ export default function LandlordsTile({
   const submitRef = useRef<null | (() => Promise<DetailUiLandlord | null>)>(null)
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
-  const previousFilterRef = useRef<string | null>(null)
+  
+  // Inicializovat ref se stejnou hodnotou jako state pro správné tracking změn
+  const previousFilterRef = useRef<string | null>(
+    propSubjectTypeFilter || 
+    (searchParams?.get('t')?.startsWith('landlords-type-') 
+      ? searchParams.get('t')!.replace('landlords-type-', '') 
+      : null)
+  )
   
   // Aktualizovat subjectTypeFilter při změně URL nebo prop
   useEffect(() => {
@@ -214,23 +221,19 @@ export default function LandlordsTile({
     // 1. Priorita: propSubjectTypeFilter (když je použit přes LandlordTypeTile)
     if (propSubjectTypeFilter) {
       newFilter = propSubjectTypeFilter
-      console.log('[LandlordsTile] Using propSubjectTypeFilter:', propSubjectTypeFilter)
     } else {
       // 2. Jinak extrahovat z URL parametru 't'
       const tileId = searchParams?.get('t') || null
       
       if (tileId?.startsWith('landlords-type-')) {
         newFilter = tileId.replace('landlords-type-', '')
-        console.log('[LandlordsTile] Extracted from tileId:', tileId, '→', newFilter)
       } else if (tileId === 'landlords-list') {
         newFilter = null
-        console.log('[LandlordsTile] Using landlords-list → no filter')
       }
     }
     
     // Nastavit jen pokud se skutečně změnilo
     if (newFilter !== previousFilterRef.current) {
-      console.log('[LandlordsTile] Setting subjectTypeFilter:', previousFilterRef.current, '→', newFilter)
       previousFilterRef.current = newFilter
       setSubjectTypeFilter(newFilter)
     }
@@ -857,15 +860,12 @@ export default function LandlordsTile({
 
   // Dynamický nadpis podle filtru
   const pageTitle = useMemo(() => {
-    console.log('[LandlordsTile] Computing pageTitle - subjectTypeFilter:', subjectTypeFilter, 'subjectTypes:', subjectTypes.length)
     if (!subjectTypeFilter) return 'Přehled pronajímatelů'
     
     // Najít typ z načtených typů
     const typeMeta = subjectTypes.find(t => t.code === subjectTypeFilter)
     const typeName = typeMeta?.name || subjectTypeFilter
-    const title = `Přehled pronajímatelů - ${typeName}`
-    console.log('[LandlordsTile] pageTitle computed:', title, 'typeMeta:', typeMeta)
-    return title
+    return `Přehled pronajímatelů - ${typeName}`
   }, [subjectTypeFilter, subjectTypes])
 
   if (viewMode === 'list') {
