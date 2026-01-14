@@ -2,8 +2,9 @@
 -- Date: 2026-01-14
 -- Purpose: Umožnit filtrování uživatelů podle příznaku is_user
 
--- Drop existing view
-DROP VIEW IF EXISTS public.v_users_list;
+-- Drop existing views (CASCADE protože v_users_invite_gate závisí na v_users_list)
+DROP VIEW IF EXISTS public.v_users_invite_gate CASCADE;
+DROP VIEW IF EXISTS public.v_users_list CASCADE;
 
 -- Recreate view with is_user column
 CREATE VIEW public.v_users_list AS
@@ -34,3 +35,16 @@ LEFT JOIN public.roles r ON sr.role_id = r.id;
 
 -- Grant select permissions
 GRANT SELECT ON public.v_users_list TO authenticated;
+
+-- Recreate dependent view v_users_invite_gate
+CREATE VIEW public.v_users_invite_gate AS
+SELECT 
+  u.*,
+  CASE
+    WHEN u.last_invite_status = 'pending' AND u.last_invite_expires_at > NOW() THEN true
+    ELSE false
+  END as has_pending_invite
+FROM public.v_users_list u;
+
+-- Grant select permissions
+GRANT SELECT ON public.v_users_invite_gate TO authenticated;
