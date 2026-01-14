@@ -213,7 +213,7 @@ export default function LandlordDetailForm({
           country: data.country || currentVal.country,
         }
         
-        console.log('[Frontend] Updated val:', updatedVal)
+        console.log('[Frontend] Updated val - companyName:', updatedVal.companyName, 'ic:', updatedVal.ic, 'city:', updatedVal.city, 'email:', updatedVal.email)
         
         // Nastavit dirty a propagovat změnu
         if (!dirtyRef.current) {

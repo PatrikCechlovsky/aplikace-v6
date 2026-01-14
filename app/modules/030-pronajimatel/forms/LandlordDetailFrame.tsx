@@ -400,7 +400,7 @@ export default function LandlordDetailFrame({
         // Použít ref místo state pro získání aktuální hodnoty
         const v = formValueRef.current ?? buildInitialFormValue(resolvedLandlord)
         
-        console.log('[LandlordDetailFrame] Validating form values:', v)
+        console.log('[LandlordDetailFrame] Validating form values - companyName:', v.companyName, 'ic:', v.ic, 'city:', v.city, 'email:', v.email)
 
         // Použít změněný subjectType pokud je v edit mode, jinak použít z resolvedLandlord
         const subjectType = selectedSubjectType || resolvedLandlord.subjectType || 'osoba'
@@ -725,7 +725,7 @@ export default function LandlordDetailFrame({
                     }
                   }}
                   onValueChange={(val) => {
-                    console.log('[LandlordDetailFrame] onValueChange called with:', val)
+                    console.log('[LandlordDetailFrame] onValueChange - companyName:', val.companyName, 'ic:', val.ic, 'city:', val.city)
                     setFormValue(val)
                     formValueRef.current = val // Synchronně aktualizovat ref
                     markDirtyIfChanged(val)
