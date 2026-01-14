@@ -205,6 +205,7 @@ export default function LandlordsTile({
   const submitRef = useRef<null | (() => Promise<DetailUiLandlord | null>)>(null)
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
+  const previousFilterRef = useRef<string | null>(null)
   
   // Aktualizovat subjectTypeFilter při změně URL nebo prop
   useEffect(() => {
@@ -228,11 +229,12 @@ export default function LandlordsTile({
     }
     
     // Nastavit jen pokud se skutečně změnilo
-    if (newFilter !== subjectTypeFilter) {
-      console.log('[LandlordsTile] Setting subjectTypeFilter:', subjectTypeFilter, '→', newFilter)
+    if (newFilter !== previousFilterRef.current) {
+      console.log('[LandlordsTile] Setting subjectTypeFilter:', previousFilterRef.current, '→', newFilter)
+      previousFilterRef.current = newFilter
       setSubjectTypeFilter(newFilter)
     }
-  }, [searchKey, propSubjectTypeFilter, searchParams, subjectTypeFilter])
+  }, [searchKey, propSubjectTypeFilter, searchParams])
   const subjectTypeMap = useMemo(() => {
     const map: Record<string, SubjectType> = {}
     for (const type of subjectTypes) {
