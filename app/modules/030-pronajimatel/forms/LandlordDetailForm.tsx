@@ -5,7 +5,7 @@
 // Struktura stejná jako "Můj účet", ale bez přihlašovacích údajů
 // Sekce: Osobní údaje -> Adresa -> Základní údaje (email, telefon)
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import InputWithHistory from '@/app/UI/InputWithHistory'
 import AddressAutocomplete from '@/app/UI/AddressAutocomplete'
 import { useToast } from '@/app/UI/Toast'
