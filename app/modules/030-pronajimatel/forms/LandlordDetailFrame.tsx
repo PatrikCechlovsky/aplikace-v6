@@ -456,7 +456,8 @@ export default function LandlordDetailFrame({
           id: isNewId(resolvedLandlord.id) ? 'new' : resolvedLandlord.id,
           subjectType,
 
-          displayName: v.displayName.trim() || null,
+          // displayName je povinné v DB - fallback na název firmy nebo email
+          displayName: v.displayName.trim() || v.companyName.trim() || v.email.trim() || 'Bez názvu',
           email: v.email.trim() || null,
           phone: v.phone.trim() || null,
           isArchived: v.isArchived,
