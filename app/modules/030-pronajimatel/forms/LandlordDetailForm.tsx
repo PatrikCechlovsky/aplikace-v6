@@ -194,31 +194,36 @@ export default function LandlordDetailForm({
 
       // Předvyplnit formulář daty z ARES přímo
       console.log('[Frontend] Updating form with ARES data')
-      console.log('[Frontend] Current val before update:', val)
       
-      const updatedVal = {
-        ...val,
-        companyName: data.companyName || val.companyName,
-        ic: data.ic || val.ic,
-        dic: data.dic || val.dic,
-        icValid: data.icValid ?? val.icValid,
-        dicValid: data.dicValid ?? val.dicValid,
-        street: data.street || val.street,
-        houseNumber: data.houseNumber || val.houseNumber,
-        city: data.city || val.city,
-        zip: data.zip || val.zip,
-        country: data.country || val.country,
-      }
-      
-      console.log('[Frontend] Updated val:', updatedVal)
-      setVal(updatedVal)
-      
-      // Nastavit dirty a propagovat změnu
-      if (!dirtyRef.current) {
-        dirtyRef.current = true
-        onDirtyChange?.(true)
-      }
-      onValueChange?.(updatedVal)
+      // Použít funkční update aby se použil aktuální stav
+      setVal((currentVal) => {
+        console.log('[Frontend] Current val before update:', currentVal)
+        
+        const updatedVal = {
+          ...currentVal,
+          companyName: data.companyName || currentVal.companyName,
+          ic: data.ic || currentVal.ic,
+          dic: data.dic || currentVal.dic,
+          icValid: data.icValid ?? currentVal.icValid,
+          dicValid: data.dicValid ?? currentVal.dicValid,
+          street: data.street || currentVal.street,
+          houseNumber: data.houseNumber || currentVal.houseNumber,
+          city: data.city || currentVal.city,
+          zip: data.zip || currentVal.zip,
+          country: data.country || currentVal.country,
+        }
+        
+        console.log('[Frontend] Updated val:', updatedVal)
+        
+        // Nastavit dirty a propagovat změnu
+        if (!dirtyRef.current) {
+          dirtyRef.current = true
+          onDirtyChange?.(true)
+        }
+        onValueChange?.(updatedVal)
+        
+        return updatedVal
+      })
       
       toast.showSuccess('Data z ARES byla úspěšně načtena')
     } catch (error: any) {
