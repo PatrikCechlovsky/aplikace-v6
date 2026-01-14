@@ -855,14 +855,16 @@ export default function LandlordsTile({
 
   // Dynamický nadpis podle filtru
   const pageTitle = useMemo(() => {
-    console.log('[LandlordsTile] Computing pageTitle - subjectTypeFilter:', subjectTypeFilter, 'subjectTypeMap:', Object.keys(subjectTypeMap))
+    console.log('[LandlordsTile] Computing pageTitle - subjectTypeFilter:', subjectTypeFilter, 'subjectTypes:', subjectTypes.length)
     if (!subjectTypeFilter) return 'Přehled pronajímatelů'
-    const typeMeta = subjectTypeMap[subjectTypeFilter]
+    
+    // Najít typ z načtených typů
+    const typeMeta = subjectTypes.find(t => t.code === subjectTypeFilter)
     const typeName = typeMeta?.name || subjectTypeFilter
     const title = `Přehled pronajímatelů - ${typeName}`
-    console.log('[LandlordsTile] pageTitle computed:', title)
+    console.log('[LandlordsTile] pageTitle computed:', title, 'typeMeta:', typeMeta)
     return title
-  }, [subjectTypeFilter, subjectTypeMap])
+  }, [subjectTypeFilter, subjectTypes])
 
   if (viewMode === 'list') {
     return (
