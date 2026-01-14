@@ -157,7 +157,7 @@ export default function LandlordDetailForm({
 
       if (!dirtyRef.current) {
         console.log('[LandlordDetailForm] Setting dirty to true')
-        setDirty(true)
+        dirtyRef.current = true
         onDirtyChange?.(true)
       }
 
