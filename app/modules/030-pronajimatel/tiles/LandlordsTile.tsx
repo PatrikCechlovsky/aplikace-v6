@@ -417,11 +417,9 @@ export default function LandlordsTile({
   useEffect(() => {
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as LocalViewMode
-    const type = searchParams?.get('type') ?? null
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
-    setSubjectTypeFilter(type)
 
     // Pokud je id a nejde o list mode, najdi pronajimatele v seznamu a otevři detail
     if (id && vm !== 'list') {
@@ -878,8 +876,8 @@ export default function LandlordsTile({
                     value={subjectTypeFilter || ''}
                     onChange={(e) => {
                       const val = e.target.value || null
-                      setSubjectTypeFilter(val)
-                      setUrl({ t: 'landlords-list', type: val })
+                      // Změnit URL na landlords-type-{typ} nebo landlords-list
+                      setUrl({ t: val ? `landlords-type-${val}` : 'landlords-list' })
                     }}
                     style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
                   >
