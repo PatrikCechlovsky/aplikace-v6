@@ -2,11 +2,7 @@
 // PURPOSE: API endpoint pro kontrolu duplicitních subjektů podle IČ, emailu a dalších polí
 // USAGE: POST /api/subjects/check-duplicates
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
