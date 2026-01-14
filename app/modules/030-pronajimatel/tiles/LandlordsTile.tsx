@@ -204,6 +204,7 @@ export default function LandlordsTile({
   useEffect(() => {
     const typeFromUrl = searchParams?.get('type') || null
     const newFilter = propSubjectTypeFilter || typeFromUrl
+    console.log('[LandlordsTile] URL changed - searchKey:', searchKey, 'typeFromUrl:', typeFromUrl, 'propSubjectTypeFilter:', propSubjectTypeFilter, 'newFilter:', newFilter)
     setSubjectTypeFilter(newFilter)
   }, [searchKey, propSubjectTypeFilter])
   const subjectTypeMap = useMemo(() => {
@@ -828,10 +829,13 @@ export default function LandlordsTile({
 
   // Dynamický nadpis podle filtru
   const pageTitle = useMemo(() => {
+    console.log('[LandlordsTile] Computing pageTitle - subjectTypeFilter:', subjectTypeFilter, 'subjectTypeMap:', Object.keys(subjectTypeMap))
     if (!subjectTypeFilter) return 'Přehled pronajímatelů'
     const typeMeta = subjectTypeMap[subjectTypeFilter]
     const typeName = typeMeta?.name || subjectTypeFilter
-    return `Přehled pronajímatelů - ${typeName}`
+    const title = `Přehled pronajímatelů - ${typeName}`
+    console.log('[LandlordsTile] pageTitle computed:', title)
+    return title
   }, [subjectTypeFilter, subjectTypeMap])
 
   if (viewMode === 'list') {
