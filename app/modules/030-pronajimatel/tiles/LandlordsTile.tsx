@@ -180,7 +180,11 @@ export default function LandlordsTile({
   const [error, setError] = useState<string | null>(null)
 
   const [filterText, setFilterText] = useState('')
-  const [subjectTypeFilter, setSubjectTypeFilter] = useState<string | null>(propSubjectTypeFilter || null)
+  const [subjectTypeFilter, setSubjectTypeFilter] = useState<string | null>(() => {
+    // Načíst z URL parametru 'type' nebo použít prop
+    const typeFromUrl = searchParams?.get('type') || null
+    return propSubjectTypeFilter || typeFromUrl
+  })
   const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -814,11 +818,19 @@ export default function LandlordsTile({
     setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
   }, [])
 
+  // Dynamický nadpis podle filtru
+  const pageTitle = useMemo(() => {
+    if (!subjectTypeFilter) return 'Přehled pronajímatelů'
+    const typeMeta = subjectTypeMap[subjectTypeFilter]
+    const typeName = typeMeta?.name || subjectTypeFilter
+    return `Přehled pronajímatelů - ${typeName}`
+  }, [subjectTypeFilter, subjectTypeMap])
+
   if (viewMode === 'list') {
     return (
       <div className="tile-layout">
         <div className="tile-layout__header">
-          <h1 className="tile-layout__title">Přehled pronajímatelů</h1>
+          <h1 className="tile-layout__title">{pageTitle}</h1>
           <p className="tile-layout__description">
             Seznam všech pronajímatelů. Můžeš filtrovat, řadit a spravovat pronajímatele.
           </p>
