@@ -200,13 +200,12 @@ export default function LandlordsTile({
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   
   // Aktualizovat subjectTypeFilter při změně URL nebo prop
+  // Používáme searchKey místo searchParams aby se useEffect spustil jen při skutečné změně URL
   useEffect(() => {
     const typeFromUrl = searchParams?.get('type') || null
     const newFilter = propSubjectTypeFilter || typeFromUrl
-    if (newFilter !== subjectTypeFilter) {
-      setSubjectTypeFilter(newFilter)
-    }
-  }, [searchParams, propSubjectTypeFilter])
+    setSubjectTypeFilter(newFilter)
+  }, [searchKey, propSubjectTypeFilter])
   const subjectTypeMap = useMemo(() => {
     const map: Record<string, SubjectType> = {}
     for (const type of subjectTypes) {
