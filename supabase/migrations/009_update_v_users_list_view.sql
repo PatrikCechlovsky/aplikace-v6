@@ -25,13 +25,12 @@ SELECT
   s.is_landlord,
   s.is_tenant,
   s.is_delegate,
-  r.code as role_code,
-  (SELECT sent_at FROM public.invitations WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_sent_at,
-  (SELECT expires_at FROM public.invitations WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_expires_at,
-  (SELECT status FROM public.invitations WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_status
+  sr.role_code,
+  (SELECT sent_at FROM public.subject_invites WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_sent_at,
+  (SELECT expires_at FROM public.subject_invites WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_expires_at,
+  (SELECT status FROM public.subject_invites WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_status
 FROM public.subjects s
-LEFT JOIN public.subject_roles sr ON s.id = sr.subject_id
-LEFT JOIN public.roles r ON sr.role_id = r.id;
+LEFT JOIN public.subject_roles sr ON s.id = sr.subject_id;
 
 -- Grant select permissions
 GRANT SELECT ON public.v_users_list TO authenticated;
