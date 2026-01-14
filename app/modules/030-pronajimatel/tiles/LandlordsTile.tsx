@@ -180,18 +180,21 @@ export default function LandlordsTile({
   const [error, setError] = useState<string | null>(null)
 
   const [filterText, setFilterText] = useState('')
-  const [subjectTypeFilter, setSubjectTypeFilter] = useState<string | null>(() => {
-    // propSubjectTypeFilter má prioritu (když je komponenta použita přes LandlordTypeTile)
+  
+  // Vypočítat subjectTypeFilter přímo z props/URL bez state (spolehlivější)
+  const subjectTypeFilter = useMemo(() => {
+    // 1. Priorita: propSubjectTypeFilter (když je použit přes LandlordTypeTile)
     if (propSubjectTypeFilter) return propSubjectTypeFilter
     
-    // Jinak načíst z URL parametru 't' a extrahovat typ
+    // 2. Jinak extrahovat z URL parametru 't'
     const tileId = searchParams?.get('t') || null
     if (tileId?.startsWith('landlords-type-')) {
       return tileId.replace('landlords-type-', '')
     }
     
     return null
-  })
+  }, [propSubjectTypeFilter, searchParams])
+  
   const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -206,24 +209,6 @@ export default function LandlordsTile({
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   
-  // Aktualizovat subjectTypeFilter při změně URL nebo prop
-  useEffect(() => {
-    // 1. Priorita: propSubjectTypeFilter (když je použit přes LandlordTypeTile)
-    if (propSubjectTypeFilter) {
-      setSubjectTypeFilter(prev => prev !== propSubjectTypeFilter ? propSubjectTypeFilter : prev)
-      return
-    }
-    
-    // 2. Jinak extrahovat z URL parametru 't'
-    const tileId = searchParams?.get('t') || null
-    
-    if (tileId?.startsWith('landlords-type-')) {
-      const newFilter = tileId.replace('landlords-type-', '')
-      setSubjectTypeFilter(prev => prev !== newFilter ? newFilter : prev)
-    } else if (tileId === 'landlords-list' || !tileId) {
-      setSubjectTypeFilter(prev => prev !== null ? null : prev)
-    }
-  }, [propSubjectTypeFilter, searchParams])
   const subjectTypeMap = useMemo(() => {
     const map: Record<string, SubjectType> = {}
     for (const type of subjectTypes) {
