@@ -126,7 +126,6 @@ export default function LandlordDetailForm({
   )
 
   const [val, setVal] = useState<LandlordFormValue>(initial)
-  const [dirty, setDirty] = useState(false)
   const dirtyRef = useRef(false) // Ref pro okamžitou kontrolu
   const [loadingAres, setLoadingAres] = useState(false)
   const toast = useToast()
@@ -143,7 +142,6 @@ export default function LandlordDetailForm({
     console.log('[LandlordDetailForm] Resetting form to initial values:', initial)
     const newVal = { ...initial }
     setVal(newVal)
-    setDirty(false)
     dirtyRef.current = false
     onDirtyChange?.(false)
     // Nevolat onValueChange zde - to způsobuje problémy s synchronizací
@@ -160,7 +158,6 @@ export default function LandlordDetailForm({
       if (!dirtyRef.current) {
         console.log('[LandlordDetailForm] Setting dirty to true')
         setDirty(true)
-        dirtyRef.current = true // Synchronně nastavit ref
         onDirtyChange?.(true)
       }
 
