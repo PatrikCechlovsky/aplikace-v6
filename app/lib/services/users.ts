@@ -72,6 +72,7 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
         last_invite_status
       `
     )
+    .eq('is_user', true) // ✅ Filtrovat jen uživatele
     .order('display_name', { ascending: true })
     .limit(limit)
 
@@ -320,6 +321,9 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
     email,
     phone: (input.phone ?? '').trim() || null,
     is_archived: input.isArchived ?? false,
+
+    // ✅ Role flags - uživatel je vždy is_user = true
+    is_user: true,
 
     title_before: (input.titleBefore ?? '').trim() || null,
     first_name: (input.firstName ?? '').trim() || null,

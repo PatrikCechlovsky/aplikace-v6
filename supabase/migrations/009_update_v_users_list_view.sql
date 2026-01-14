@@ -1,0 +1,36 @@
+-- Migration: Přidat sloupec is_user do view v_users_list
+-- Date: 2026-01-14
+-- Purpose: Umožnit filtrování uživatelů podle příznaku is_user
+
+-- Drop existing view
+DROP VIEW IF EXISTS public.v_users_list;
+
+-- Recreate view with is_user column
+CREATE VIEW public.v_users_list AS
+SELECT 
+  s.id,
+  s.display_name,
+  s.email,
+  s.phone,
+  s.subject_type,
+  s.is_archived,
+  s.created_at,
+  s.title_before,
+  s.first_name,
+  s.last_name,
+  s.first_login_at,
+  s.last_login_at,
+  s.is_user,
+  s.is_landlord,
+  s.is_tenant,
+  s.is_delegate,
+  r.code as role_code,
+  (SELECT sent_at FROM public.invitations WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_sent_at,
+  (SELECT expires_at FROM public.invitations WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_expires_at,
+  (SELECT status FROM public.invitations WHERE subject_id = s.id ORDER BY sent_at DESC LIMIT 1) as last_invite_status
+FROM public.subjects s
+LEFT JOIN public.subject_roles sr ON s.id = sr.subject_id
+LEFT JOIN public.roles r ON sr.role_id = r.id;
+
+-- Grant select permissions
+GRANT SELECT ON public.v_users_list TO authenticated;
