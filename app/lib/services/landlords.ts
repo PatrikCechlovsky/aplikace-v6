@@ -535,6 +535,7 @@ export async function getLandlordCountsByType(includeArchived: boolean = false):
   let q = supabase
     .from('subjects')
     .select('subject_type')
+    .eq('is_landlord', true) // Pouze pronajímatelé
 
   if (!includeArchived) {
     q = q.or('is_archived.is.null,is_archived.eq.false')
