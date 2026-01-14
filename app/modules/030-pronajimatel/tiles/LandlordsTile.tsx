@@ -181,9 +181,16 @@ export default function LandlordsTile({
 
   const [filterText, setFilterText] = useState('')
   const [subjectTypeFilter, setSubjectTypeFilter] = useState<string | null>(() => {
-    // Načíst z URL parametru 'type' nebo použít prop
-    const typeFromUrl = searchParams?.get('type') || null
-    return propSubjectTypeFilter || typeFromUrl
+    // propSubjectTypeFilter má prioritu (když je komponenta použita přes LandlordTypeTile)
+    if (propSubjectTypeFilter) return propSubjectTypeFilter
+    
+    // Jinak načíst z URL parametru 't' a extrahovat typ
+    const tileId = searchParams?.get('t') || null
+    if (tileId?.startsWith('landlords-type-')) {
+      return tileId.replace('landlords-type-', '')
+    }
+    
+    return null
   })
   const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -200,13 +207,27 @@ export default function LandlordsTile({
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   
   // Aktualizovat subjectTypeFilter při změně URL nebo prop
-  // Používáme searchKey místo searchParams aby se useEffect spustil jen při skutečné změně URL
   useEffect(() => {
-    const typeFromUrl = searchParams?.get('type') || null
-    const newFilter = propSubjectTypeFilter || typeFromUrl
-    console.log('[LandlordsTile] URL changed - searchKey:', searchKey, 'typeFromUrl:', typeFromUrl, 'propSubjectTypeFilter:', propSubjectTypeFilter, 'newFilter:', newFilter)
-    setSubjectTypeFilter(newFilter)
-  }, [searchKey, propSubjectTypeFilter])
+    // propSubjectTypeFilter má prioritu
+    if (propSubjectTypeFilter) {
+      console.log('[LandlordsTile] URL changed - using propSubjectTypeFilter:', propSubjectTypeFilter)
+      setSubjectTypeFilter(propSubjectTypeFilter)
+      return
+    }
+    
+    // Jinak extrahovat z URL parametru 't'
+    const tileId = searchParams?.get('t') || null
+    let typeFromUrl: string | null = null
+    
+    if (tileId?.startsWith('landlords-type-')) {
+      typeFromUrl = tileId.replace('landlords-type-', '')
+    } else if (tileId === 'landlords-list') {
+      typeFromUrl = null // Celý seznam
+    }
+    
+    console.log('[LandlordsTile] URL changed - searchKey:', searchKey, 'tileId:', tileId, 'typeFromUrl:', typeFromUrl)
+    setSubjectTypeFilter(typeFromUrl)
+  }, [searchKey, propSubjectTypeFilter, searchParams])
   const subjectTypeMap = useMemo(() => {
     const map: Record<string, SubjectType> = {}
     for (const type of subjectTypes) {
