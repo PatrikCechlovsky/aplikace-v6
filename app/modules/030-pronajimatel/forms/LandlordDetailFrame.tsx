@@ -419,6 +419,11 @@ export default function LandlordDetailFrame({
           missingFields.push('E-mail')
         }
 
+        // Adresa je vždy povinná (minimálně město)
+        if (!v.city?.trim()) {
+          missingFields.push('Město')
+        }
+
         // Pro fyzické osoby (osoba, osvc, zastupce)
         const isPersonType = ['osoba', 'osvc', 'zastupce'].includes(subjectType)
         if (isPersonType) {
