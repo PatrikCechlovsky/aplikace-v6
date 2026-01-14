@@ -263,6 +263,23 @@ postgres,public,audit_log,success,18,boolean,null,null,null,false,true,false
 postgres,public,audit_log,message,19,text,null,null,null,true,null,false
 postgres,public,audit_log,diff,20,jsonb,null,null,null,true,null,false
 postgres,public,audit_log,meta,21,jsonb,null,null,null,true,null,false
+postgres,public,bank_accounts,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,bank_accounts,subject_id,2,uuid,null,null,null,false,null,false
+postgres,public,bank_accounts,label,3,text,null,null,null,true,null,false
+postgres,public,bank_accounts,bank_id,4,uuid,null,null,null,true,null,false
+postgres,public,bank_accounts,account_number,5,text,null,null,null,true,null,false
+postgres,public,bank_accounts,iban,6,text,null,null,null,true,null,false
+postgres,public,bank_accounts,swift,7,text,null,null,null,true,null,false
+postgres,public,bank_accounts,note,8,text,null,null,null,true,null,false
+postgres,public,bank_accounts,is_archived,9,boolean,null,null,null,false,false,false
+postgres,public,bank_accounts,created_at,10,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,bank_accounts,updated_at,11,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,bank_list,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,bank_list,bank_code,2,text,null,null,null,false,null,false
+postgres,public,bank_list,bank_name,3,text,null,null,null,false,null,false
+postgres,public,bank_list,swift,4,text,null,null,null,true,null,false
+postgres,public,bank_list,created_at,5,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,bank_list,updated_at,6,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,document_versions,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,document_versions,document_id,2,uuid,null,null,null,false,null,false
 postgres,public,document_versions,version_number,3,integer,null,32,0,false,null,false
@@ -338,6 +355,13 @@ postgres,public,role_types,icon,4,text,null,null,null,true,null,false
 postgres,public,role_types,order_index,5,integer,null,32,0,true,null,false
 postgres,public,role_types,active,6,boolean,null,null,null,false,true,false
 postgres,public,role_types,description,7,text,null,null,null,true,null,false
+postgres,public,subject_delegates,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,subject_delegates,subject_id,2,uuid,null,null,null,false,null,false
+postgres,public,subject_delegates,delegate_subject_id,3,uuid,null,null,null,false,null,false
+postgres,public,subject_delegates,created_at,4,timestamp with time zone,null,null,null,false,now(),false
+postgres,public,subject_delegates,created_by,5,uuid,null,null,null,true,null,false
+postgres,public,subject_delegates,updated_at,6,timestamp with time zone,null,null,null,true,null,false
+postgres,public,subject_delegates,updated_by,7,uuid,null,null,null,true,null,false
 postgres,public,subject_invites,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,subject_invites,invite_mode,2,text,null,null,null,false,null,false
 postgres,public,subject_invites,subject_id,3,uuid,null,null,null,true,null,false
@@ -406,6 +430,12 @@ postgres,public,subjects,archived_by,39,uuid,null,null,null,true,null,false
 postgres,public,subjects,first_login_at,40,timestamp with time zone,null,null,null,true,null,false
 postgres,public,subjects,last_login_at,41,timestamp with time zone,null,null,null,true,null,false
 postgres,public,subjects,note,42,text,null,null,null,true,null,false
+postgres,public,subjects,zip,43,text,null,null,null,true,null,false
+postgres,public,subjects,personal_id_number,44,text,null,null,null,true,null,false
+postgres,public,subjects,is_landlord,45,boolean,null,null,null,true,false,false
+postgres,public,subjects,is_tenant,46,boolean,null,null,null,true,false,false
+postgres,public,subjects,is_user,47,boolean,null,null,null,true,false,false
+postgres,public,subjects,is_delegate,48,boolean,null,null,null,true,false,false
 postgres,public,ui_view_prefs,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,ui_view_prefs,client_id,2,uuid,null,null,null,false,null,false
 postgres,public,ui_view_prefs,user_id,3,uuid,null,null,null,false,null,false
@@ -516,13 +546,20 @@ postgres,public,v_users_invite_gate,phone,4,text,null,null,null,true,null,false
 postgres,public,v_users_invite_gate,subject_type,5,text,null,null,null,true,null,false
 postgres,public,v_users_invite_gate,is_archived,6,boolean,null,null,null,true,null,false
 postgres,public,v_users_invite_gate,created_at,7,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_invite_gate,role_code,8,text,null,null,null,true,null,false
-postgres,public,v_users_invite_gate,first_login_at,9,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_invite_gate,last_login_at,10,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_invite_gate,last_invite_sent_at,11,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_invite_gate,last_invite_expires_at,12,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_invite_gate,last_invite_status,13,text,null,null,null,true,null,false
-postgres,public,v_users_invite_gate,can_send_invite,14,boolean,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,title_before,8,text,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,first_name,9,text,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,last_name,10,text,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,first_login_at,11,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,last_login_at,12,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,is_user,13,boolean,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,is_landlord,14,boolean,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,is_tenant,15,boolean,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,is_delegate,16,boolean,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,role_code,17,text,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,last_invite_sent_at,18,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,last_invite_expires_at,19,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,last_invite_status,20,text,null,null,null,true,null,false
+postgres,public,v_users_invite_gate,has_pending_invite,21,boolean,null,null,null,true,null,false
 postgres,public,v_users_list,id,1,uuid,null,null,null,true,null,false
 postgres,public,v_users_list,display_name,2,text,null,null,null,true,null,false
 postgres,public,v_users_list,email,3,text,null,null,null,true,null,false
@@ -530,15 +567,19 @@ postgres,public,v_users_list,phone,4,text,null,null,null,true,null,false
 postgres,public,v_users_list,subject_type,5,text,null,null,null,true,null,false
 postgres,public,v_users_list,is_archived,6,boolean,null,null,null,true,null,false
 postgres,public,v_users_list,created_at,7,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_list,role_code,8,text,null,null,null,true,null,false
-postgres,public,v_users_list,first_login_at,9,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_list,last_login_at,10,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_list,last_invite_sent_at,11,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_list,last_invite_expires_at,12,timestamp with time zone,null,null,null,true,null,false
-postgres,public,v_users_list,last_invite_status,13,text,null,null,null,true,null,false
-postgres,public,v_users_list,title_before,14,text,null,null,null,true,null,false
-postgres,public,v_users_list,first_name,15,text,null,null,null,true,null,false
-postgres,public,v_users_list,last_name,16,text,null,null,null,true,null,false
+postgres,public,v_users_list,title_before,8,text,null,null,null,true,null,false
+postgres,public,v_users_list,first_name,9,text,null,null,null,true,null,false
+postgres,public,v_users_list,last_name,10,text,null,null,null,true,null,false
+postgres,public,v_users_list,first_login_at,11,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_list,last_login_at,12,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_list,is_user,13,boolean,null,null,null,true,null,false
+postgres,public,v_users_list,is_landlord,14,boolean,null,null,null,true,null,false
+postgres,public,v_users_list,is_tenant,15,boolean,null,null,null,true,null,false
+postgres,public,v_users_list,is_delegate,16,boolean,null,null,null,true,null,false
+postgres,public,v_users_list,role_code,17,text,null,null,null,true,null,false
+postgres,public,v_users_list,last_invite_sent_at,18,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_list,last_invite_expires_at,19,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_users_list,last_invite_status,20,text,null,null,null,true,null,false
 postgres,realtime,messages,topic,3,text,null,null,null,false,null,false
 postgres,realtime,messages,extension,4,text,null,null,null,false,null,false
 postgres,realtime,messages,payload,5,jsonb,null,null,null,true,null,false
