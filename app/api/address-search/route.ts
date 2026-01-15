@@ -262,16 +262,38 @@ export async function GET(request: NextRequest) {
                 const structured = prediction.structured_formatting || {}
                 const description = prediction.description || ''
                 
-                // Parsování adresy z description (např. "Pivovarská, Praha, Česká republika")
-                const parts = description.split(',').map((p: string) => p.trim())
-                const street = parts[0] || ''
-                const city = parts[1] || ''
+                // main_text = "Čs Armády 514" (ulice + číslo)
+                // secondary_text = "Štětí, Česko" (město + země)
+                const mainText = structured.main_text || ''
+                const secondaryText = structured.secondary_text || ''
+                
+                // Oddělit číslo popisné od ulice
+                // "Čs Armády 514" → street: "Čs Armády", houseNumber: "514"
+                let street = mainText
+                let houseNumber = ''
+                const lastSpaceIndex = mainText.lastIndexOf(' ')
+                if (lastSpaceIndex > 0) {
+                  const potentialNumber = mainText.substring(lastSpaceIndex + 1)
+                  // Zkontroluj, jestli poslední část je číslo (může obsahovat písmena jako 123a)
+                  if (/^\d+[a-zA-Z]?$/.test(potentialNumber)) {
+                    street = mainText.substring(0, lastSpaceIndex).trim()
+                    houseNumber = potentialNumber
+                  }
+                }
+                
+                // Oddělit zemi od města
+                // "Štětí, Česko" → city: "Štětí"
+                let city = secondaryText
+                if (secondaryText.includes(',')) {
+                  const cityParts = secondaryText.split(',').map((p: string) => p.trim())
+                  city = cityParts[0] // První část je město, druhá je země
+                }
                 
                 return {
-                  street: structured.main_text || street || '',
-                  city: structured.secondary_text || city || '',
+                  street: street || mainText || '',
+                  city: city || '',
                   zip: '', // Google Places autocomplete nevrátí PSČ bez dalšího requestu
-                  houseNumber: '', // Google Places autocomplete nevrátí číslo popisné bez dalšího requestu
+                  houseNumber: houseNumber || '',
                   ruianId: prediction.place_id || '',
                   placeId: prediction.place_id || '', // Uložíme place_id pro případné další použití
                   fullAddress: description,
