@@ -48,7 +48,6 @@ export type TenantsListRow = {
 
   // ✅ role flags
   is_tenant?: boolean | null
-  is_tenant?: boolean | null
   is_user?: boolean | null
 
   // ✅ metadata z subject_types (pro barevné označení a řazení)
