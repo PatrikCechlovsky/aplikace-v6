@@ -11,6 +11,7 @@ export type AddressSuggestion = {
   zip: string
   houseNumber: string
   ruianId?: string
+  placeId?: string  // Google Places ID pro načtení detailů včetně PSČ
   fullAddress: string
 }
 
@@ -225,7 +226,41 @@ export default function AddressAutocomplete({
     }
   }
 
-  const handleSuggestionClick = (suggestion: AddressSuggestion) => {
+  const handleSuggestionClick = async (suggestion: AddressSuggestion) => {
+    console.log('📍 Clicked suggestion:', suggestion)
+    
+    // Pokud máme place_id, načíst kompletní detaily včetně PSČ
+    if (suggestion.placeId) {
+      try {
+        console.log('🔄 Fetching place details for placeId:', suggestion.placeId)
+        const response = await fetch(`/api/place-details?place_id=${encodeURIComponent(suggestion.placeId)}`)
+        
+        if (!response.ok) {
+          console.error('❌ Failed to fetch place details:', response.status)
+          throw new Error('Failed to fetch place details')
+        }
+        
+        const details = await response.json()
+        console.log('✅ Place details received:', details)
+        
+        onAddressChange({
+          street: details.street || suggestion.street,
+          city: details.city || suggestion.city,
+          zip: details.zip || suggestion.zip,
+          houseNumber: details.houseNumber || suggestion.houseNumber,
+          country: details.country || country || 'CZ',
+        })
+        
+        setQuery(details.fullAddress || suggestion.fullAddress)
+        setIsOpen(false)
+        return
+      } catch (error) {
+        console.error('❌ Error fetching place details:', error)
+        // Fallback na původní data ze suggestion
+      }
+    }
+    
+    // Fallback: použít data ze suggestions (pokud place_id není nebo selhalo)
     onAddressChange({
       street: suggestion.street,
       city: suggestion.city,
