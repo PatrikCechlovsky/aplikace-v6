@@ -694,7 +694,6 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
             {/* Adresa autocomplete (pro CZ) */}
             <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Adresa (autocomplete)</label>
                 {val.country === 'CZ' ? (
                   <AddressAutocomplete
                     street={val.street}
