@@ -75,19 +75,55 @@ export async function GET(request: NextRequest) {
     if (endpoints.length === 0) {
       console.log('[API Route] No API keys available - returning mock data for development')
       
-      // Realistická mock data různých českých adres
+      // Rozšířená mock data - běžné české adresy
       const allMockAddresses = [
+        // Praha
         { street: 'Václavské náměstí', city: 'Praha 1', zip: '11000', houseNumber: '1' },
         { street: 'Václavské náměstí', city: 'Praha 1', zip: '11000', houseNumber: '28' },
         { street: 'Václavské náměstí', city: 'Praha 1', zip: '11000', houseNumber: '56' },
         { street: 'Karlovo náměstí', city: 'Praha 2', zip: '12000', houseNumber: '13' },
         { street: 'Náměstí Míru', city: 'Praha 2', zip: '12000', houseNumber: '1' },
         { street: 'Hlavní', city: 'Praha 10', zip: '10000', houseNumber: '123' },
+        { street: 'Pivovarská', city: 'Praha 5', zip: '15000', houseNumber: '5' },
+        { street: 'Pivovarská', city: 'Praha 5', zip: '15000', houseNumber: '10' },
+        { street: 'Pivovarská', city: 'Praha 5', zip: '15000', houseNumber: '15' },
+        
+        // Brno
         { street: 'Masarykova', city: 'Brno', zip: '60200', houseNumber: '1' },
+        { street: 'Masarykova', city: 'Brno', zip: '60200', houseNumber: '25' },
         { street: 'Palackého', city: 'Brno', zip: '61200', houseNumber: '44' },
+        { street: 'Pivovarská', city: 'Brno', zip: '61300', houseNumber: '2' },
+        
+        // Ostrava
         { street: 'Krátká', city: 'Ostrava', zip: '70200', houseNumber: '5' },
+        { street: 'Pivovarská', city: 'Ostrava', zip: '70800', houseNumber: '8' },
+        
+        // Plzeň
         { street: 'Dlouhá', city: 'Plzeň', zip: '30100', houseNumber: '10' },
+        { street: 'Pivovarská', city: 'Plzeň', zip: '30100', houseNumber: '3' },
+        
+        // Olomouc
         { street: 'Nová', city: 'Olomouc', zip: '77200', houseNumber: '8' },
+        
+        // Štětí (město kde bydlí uživatel)
+        { street: 'Pivovarská', city: 'Štětí', zip: '41108', houseNumber: '1' },
+        { street: 'Pivovarská', city: 'Štětí', zip: '41108', houseNumber: '2' },
+        { street: 'Pivovarská', city: 'Štětí', zip: '41108', houseNumber: '3' },
+        { street: 'Pivovarská', city: 'Štětí', zip: '41108', houseNumber: '5' },
+        { street: 'Pivovarská', city: 'Štětí', zip: '41108', houseNumber: '10' },
+        { street: 'Pivovarská', city: 'Štětí', zip: '41108', houseNumber: '15' },
+        { street: 'Hlavní', city: 'Štětí', zip: '41108', houseNumber: '100' },
+        { street: 'Nádražní', city: 'Štětí', zip: '41108', houseNumber: '50' },
+        { street: 'Litoměřická', city: 'Štětí', zip: '41108', houseNumber: '25' },
+        
+        // Další běžné ulice v různých městech
+        { street: 'Hlavní', city: 'České Budějovice', zip: '37001', houseNumber: '20' },
+        { street: 'Hlavní', city: 'Liberec', zip: '46001', houseNumber: '30' },
+        { street: 'Hlavní', city: 'Hradec Králové', zip: '50002', houseNumber: '40' },
+        { street: 'Nádražní', city: 'Pardubice', zip: '53002', houseNumber: '12' },
+        { street: 'Nádražní', city: 'Ústí nad Labem', zip: '40001', houseNumber: '22' },
+        { street: 'Masarykova', city: 'Zlín', zip: '76001', houseNumber: '15' },
+        { street: 'Pivovarská', city: 'České Budějovice', zip: '37004', houseNumber: '7' },
       ]
       
       const mockData = allMockAddresses
