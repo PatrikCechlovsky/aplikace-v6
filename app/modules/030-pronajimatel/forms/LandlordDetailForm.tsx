@@ -663,40 +663,66 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
 
       {/* ADRESA (samostatná sekce mezi osobními a základními údaji) */}
       <div className="detail-form__section">
-        <div className="detail-form__section-title">Adresa (autocomplete)</div>
+        <div className="detail-form__section-title">Adresa</div>
 
-        {/* Adresa autocomplete (pro CZ) */}
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">Adresa (autocomplete)</label>
-            {val.country === 'CZ' ? (
-              <AddressAutocomplete
-                street={val.street}
-                city={val.city}
-                zip={val.zip}
-                houseNumber={val.houseNumber}
-                country={val.country}
-                onAddressChange={(address) => {
-                  update({
-                    street: address.street,
-                    city: address.city,
-                    zip: address.zip,
-                    houseNumber: address.houseNumber,
-                    country: address.country,
-                  })
-                }}
-                placeholder="Začněte psát adresu (např. 'Praha, Václavské náměstí')"
-                className="detail-form__input"
-                disabled={readOnly}
-              />
-            ) : (
-              <div className="detail-form__hint">Autocomplete je dostupný pouze pro Českou republiku</div>
-            )}
+        {/* Režim ČTENÍ: Jen kompletní adresa */}
+        {readOnly && (
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-2">
+              <label className="detail-form__label">Adresa</label>
+              <div className="detail-form__value">
+                {[val.street, val.houseNumber, val.city, val.zip].filter(Boolean).join(', ') || '—'}
+              </div>
+            </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Stát</label>
+              <div className="detail-form__value">
+                {val.country === 'CZ' ? 'Česká republika' : 
+                 val.country === 'SK' ? 'Slovensko' :
+                 val.country === 'PL' ? 'Polsko' :
+                 val.country === 'DE' ? 'Německo' :
+                 val.country === 'AT' ? 'Rakousko' :
+                 val.country || '—'}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Ulice + Číslo popisné */}
-        <div className="detail-form__grid detail-form__grid--narrow">
+        {/* Režim EDITACE: Autocomplete + všechna pole */}
+        {!readOnly && (
+          <>
+            {/* Adresa autocomplete (pro CZ) */}
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Adresa (autocomplete)</label>
+                {val.country === 'CZ' ? (
+                  <AddressAutocomplete
+                    street={val.street}
+                    city={val.city}
+                    zip={val.zip}
+                    houseNumber={val.houseNumber}
+                    country={val.country}
+                    onAddressChange={(address) => {
+                      update({
+                        street: address.street,
+                        city: address.city,
+                        zip: address.zip,
+                        houseNumber: address.houseNumber,
+                        country: address.country,
+                      })
+                    }}
+                    placeholder="Začněte psát adresu (např. 'Praha, Václavské náměstí')"
+                    className="detail-form__input"
+                    disabled={false}
+                  />
+                ) : (
+                  <div className="detail-form__hint">Autocomplete je dostupný pouze pro Českou republiku</div>
+                )}
+              </div>
+            </div>
+
+            {/* Ulice + Číslo popisné */}
+            <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">
               Ulice <span className="detail-form__required">*</span>
@@ -837,6 +863,8 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
             </select>
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* ZÁKLADNÍ ÚDAJE / KONTAKTY (BEZ přihlašovacích údajů) */}
