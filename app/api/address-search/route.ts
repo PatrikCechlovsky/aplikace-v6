@@ -27,21 +27,36 @@ export async function GET(request: NextRequest) {
     const trimmedQuery = query.trim()
     
     // API klíče z environment variables
-    // Google Places API klíč může být buď GOOGLE_PLACES_API_KEY (server-side) nebo NEXT_PUBLIC_GOOGLE_PLACES_API_KEY (fallback)
-    const visidooApiKey = process.env.NEXT_PUBLIC_VISIDOO_API_KEY
+    // Preferovat server-only klíče (bez NEXT_PUBLIC_)
     const googlePlacesApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
-    const ruianApiKey = process.env.NEXT_PUBLIC_RUIAN_API_KEY || 'c24d82cff9e807c08544e149c2a1dc4d11600c49589704d6d7b49ce4cbca50c8'
+    const visidooApiKey = process.env.VISIDOO_API_KEY || process.env.NEXT_PUBLIC_VISIDOO_API_KEY
+    const ruianApiKey = process.env.RUIAN_API_KEY || process.env.NEXT_PUBLIC_RUIAN_API_KEY
 
     // Debug: Zkontroluj, zda máme API klíče
-    console.log('[API Route] Checking API keys:')
-    console.log('  - Visidoo:', visidooApiKey ? `${visidooApiKey.substring(0, 8)}...` : 'NOT SET')
-    console.log('  - Google Places:', googlePlacesApiKey ? `${googlePlacesApiKey.substring(0, 8)}... (from ${process.env.GOOGLE_PLACES_API_KEY ? 'GOOGLE_PLACES_API_KEY' : 'NEXT_PUBLIC_GOOGLE_PLACES_API_KEY'})` : 'NOT SET - Check .env.local')
-    console.log('  - RÚIAN:', ruianApiKey ? `${ruianApiKey.substring(0, 8)}...` : 'NOT SET')
+    console.log('[API Route] Address search request for:', trimmedQuery)
+    console.log('[API Route] API keys available:')
+    console.log('  - Google Places:', googlePlacesApiKey ? 'YES' : 'NO')
+    console.log('  - Visidoo:', visidooApiKey ? 'YES' : 'NO')
+    console.log('  - RÚIAN:', ruianApiKey ? 'YES' : 'NO')
 
-    // Priorita: Visidoo > Google Places > ostatní RÚIAN endpointy
+    // Priorita: Google Places > Visidoo > ostatní RÚIAN endpointy
     const endpoints: Array<{ name: string; url: string; headers: Record<string, string> }> = []
     
-    // 1. Visidoo API (nejlepší pro české adresy - RÚIAN)
+    // 1. Google Places API (nejspolehlivější)
+    // Registrace: https://console.cloud.google.com/google/maps-apis
+    // Dokumentace: https://developers.google.com/maps/documentation/places/web-service/autocomplete
+    if (googlePlacesApiKey) {
+      endpoints.push({
+        name: 'google-places',
+        url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(trimmedQuery)}&components=country:cz&key=${googlePlacesApiKey}&language=cs`,
+        headers: { 
+          'Accept': 'application/json',
+          'User-Agent': 'Next.js/14',
+        },
+      })
+    }
+    
+    // 2. Visidoo API (nejlepší pro české adresy - RÚIAN)
     // Registrace: https://www.visidoo.cz/docs/autocomplete
     // Dokumentace: https://www.visidoo.cz/docs/autocomplete
     if (visidooApiKey) {
@@ -56,43 +71,45 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // 2. Google Places API (spolehlivé, podporuje české adresy)
-    // Registrace: https://console.cloud.google.com/google/maps-apis
-    // Dokumentace: https://developers.google.com/maps/documentation/places/web-service/autocomplete
-    if (googlePlacesApiKey) {
-      endpoints.push({
-        name: 'google-places',
-        url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(trimmedQuery)}&components=country:cz&key=${googlePlacesApiKey}&language=cs`,
-        headers: { 
-          'Accept': 'application/json',
-          'User-Agent': 'Next.js/14',
+    // MOCK DATA pro development (když žádné API není dostupné)
+    if (endpoints.length === 0) {
+      console.log('[API Route] No API keys available - returning mock data for development')
+      
+      // Realistická mock data různých českých adres
+      const allMockAddresses = [
+        { street: 'Václavské náměstí', city: 'Praha 1', zip: '11000', houseNumber: '1' },
+        { street: 'Václavské náměstí', city: 'Praha 1', zip: '11000', houseNumber: '28' },
+        { street: 'Václavské náměstí', city: 'Praha 1', zip: '11000', houseNumber: '56' },
+        { street: 'Karlovo náměstí', city: 'Praha 2', zip: '12000', houseNumber: '13' },
+        { street: 'Náměstí Míru', city: 'Praha 2', zip: '12000', houseNumber: '1' },
+        { street: 'Hlavní', city: 'Praha 10', zip: '10000', houseNumber: '123' },
+        { street: 'Masarykova', city: 'Brno', zip: '60200', houseNumber: '1' },
+        { street: 'Palackého', city: 'Brno', zip: '61200', houseNumber: '44' },
+        { street: 'Krátká', city: 'Ostrava', zip: '70200', houseNumber: '5' },
+        { street: 'Dlouhá', city: 'Plzeň', zip: '30100', houseNumber: '10' },
+        { street: 'Nová', city: 'Olomouc', zip: '77200', houseNumber: '8' },
+      ]
+      
+      const mockData = allMockAddresses
+        .filter(item => {
+          const addressStr = `${item.street} ${item.houseNumber}, ${item.city}, ${item.zip}`.toLowerCase()
+          return addressStr.includes(trimmedQuery.toLowerCase())
+        })
+        .slice(0, 5) // Max 5 výsledků
+        .map((item, index) => ({
+          ...item,
+          ruianId: `mock-${index}`,
+          fullAddress: `${item.street} ${item.houseNumber}, ${item.city}, ${item.zip}`,
+        }))
+      
+      return NextResponse.json(mockData, {
+        headers: {
+          'X-Debug-Mode': 'mock',
+          'X-Debug-Message': 'Using mock data - configure Google Places API key in .env.local for real data',
+          'Cache-Control': 'no-cache', // Mock data by neměla být cachována
         },
       })
     }
-    
-    // 3. Fallback: ostatní RÚIAN endpointy (pravděpodobně nefungují, ale zkusíme)
-    endpoints.push(
-      {
-        name: 'ruian.cuzk.cz',
-        url: `https://ruian.cuzk.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
-        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
-      },
-      {
-        name: 'cuzk.ruian.cz',
-        url: `https://cuzk.ruian.cz/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
-        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
-      },
-      {
-        name: 'skaut.cz',
-        url: `https://ruian-api.skaut.cz/api/v1/search?q=${encodeURIComponent(trimmedQuery)}&limit=10`,
-        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
-      },
-      {
-        name: 'fnx.io',
-        url: `https://ruian.fnx.io/api/v1/address?q=${encodeURIComponent(trimmedQuery)}&limit=10&apiKey=${ruianApiKey}`,
-        headers: { 'Accept': 'application/json', 'User-Agent': 'Next.js/14' },
-      },
-    )
 
     // Zkusíme každý endpoint
     const errors: string[] = []

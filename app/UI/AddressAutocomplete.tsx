@@ -40,17 +40,11 @@ const API_ROUTE = '/api/address-search'
 
 /**
  * Funkce pro vyhledávání adres v RÚIAN
- * 
- * POZNÁMKA: Tato funkce je připravená pro integraci s RÚIAN API.
- * V produkci bude potřeba:
- * 1. Zaregistrovat se u poskytovatele RÚIAN API (např. fnx.io, ASAPI, Visidoo)
- * 2. Získat API klíč
- * 3. Upravit endpoint a přidat autentizaci
- * 4. Upravit transformaci dat podle formátu API
+ * Vrací pole návrhů a informaci o mock mode
  */
-async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]> {
+async function searchRuianAddresses(query: string): Promise<{ suggestions: AddressSuggestion[]; isMock: boolean }> {
   if (!query || query.trim().length < 3) {
-    return []
+    return { suggestions: [], isMock: false }
   }
 
   const trimmedQuery = query.trim()
@@ -75,7 +69,7 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
       console.error('❌ API route returned:', response.status, response.statusText)
       const errorData = await response.json().catch(() => ({}))
       console.error('Error data:', errorData)
-      return []
+      return { suggestions: [], isMock: false }
     }
 
     // Zkontrolujme debug headers z API route
@@ -87,6 +81,14 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
       } catch (e) {
         console.warn('⚠️ Could not parse debug errors:', debugErrors)
       }
+    }
+    
+    // Zkontroluj mock mode
+    const debugMode = response.headers.get('X-Debug-Mode')
+    const debugMessage = response.headers.get('X-Debug-Message')
+    const isMock = debugMode === 'mock'
+    if (isMock) {
+      console.log('ℹ️ Using mock data:', debugMessage)
     }
 
     const data = await response.json()
@@ -100,17 +102,20 @@ async function searchRuianAddresses(query: string): Promise<AddressSuggestion[]>
 
     // API route už vrací transformovaná data ve správném formátu
     if (Array.isArray(data)) {
-      return data.filter((r: AddressSuggestion) => r.fullAddress.trim().length > 0)
+      return { 
+        suggestions: data.filter((r: AddressSuggestion) => r.fullAddress.trim().length > 0),
+        isMock 
+      }
     }
 
-    return []
+    return { suggestions: [], isMock }
   } catch (error) {
     console.error('❌ Error fetching RÚIAN addresses:', error)
     if (error instanceof Error) {
       console.error('Error message:', error.message)
       console.error('Error stack:', error.stack)
     }
-    return []
+    return { suggestions: [], isMock: false }
   }
 }
 
@@ -125,18 +130,19 @@ export default function AddressAutocomplete({
   className = '',
   placeholder = 'Začněte psát adresu...',
 }: AddressAutocompleteProps) {
-  const [query, setQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const suggestionsRef = useRef<HTMLDivElement>(null)
-
   // Sestavit query z aktuálních hodnot
   const buildQuery = () => {
     const parts = [street, city, zip, houseNumber].filter(Boolean)
     return parts.join(' ')
   }
+
+  const [query, setQuery] = useState(buildQuery())
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [isMockMode, setIsMockMode] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
 
   // Načíst návrhy při změně query
   useEffect(() => {
@@ -144,6 +150,7 @@ export default function AddressAutocomplete({
       setSuggestions([])
       setIsOpen(false)
       setLoading(false)
+      setIsMockMode(false)
       return
     }
 
@@ -154,8 +161,11 @@ export default function AddressAutocomplete({
       setIsOpen(false) // Skrýt předchozí výsledky během načítání
       try {
         console.log('🔍 Loading suggestions for query:', query)
-        const results = await searchRuianAddresses(query)
-        console.log('✅ Received', results.length, 'suggestions')
+        
+        const { suggestions: results, isMock } = await searchRuianAddresses(query)
+        setIsMockMode(isMock)
+        
+        console.log('✅ Received', results.length, 'suggestions', isMock ? '(mock data)' : '')
         
         if (!cancelled) {
           setSuggestions(results)
@@ -228,22 +238,15 @@ export default function AddressAutocomplete({
     setIsOpen(false)
   }
 
-  const handleInputFocus = () => {
-    const currentQuery = buildQuery()
-    if (currentQuery.trim().length >= 3) {
-      setQuery(currentQuery)
-    }
-  }
-
   return (
     <div className={`address-autocomplete ${className}`} style={{ position: 'relative', width: '100%' }}>
       <input
         ref={inputRef}
         type="text"
         className={className || 'detail-form__input'}
-        value={query || buildQuery()}
+        value={query}
         onChange={handleInputChange}
-        onFocus={handleInputFocus}
+
         disabled={disabled}
         placeholder={placeholder}
         autoComplete="off"
@@ -337,7 +340,32 @@ export default function AddressAutocomplete({
             zIndex: 1000,
           }}
         >
-          Autocomplete adres momentálně není k dispozici. Prosím vyplňte adresu ručně.
+          {isMockMode 
+            ? 'Mock data nenalezena. Vyplňte adresu ručně níže.'
+            : 'Autocomplete adres momentálně není k dispozici. Prosím vyplňte adresu ručně.'
+          }
+        </div>
+      )}
+
+      {/* Mock mode indikátor */}
+      {isMockMode && isOpen && suggestions.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: '4px',
+            padding: '4px 8px',
+            backgroundColor: 'var(--color-warning-soft, #fff3cd)',
+            border: '1px solid var(--color-warning, #ffc107)',
+            borderRadius: '4px',
+            fontSize: '0.75rem',
+            color: 'var(--color-warning-dark, #856404)',
+            zIndex: 999,
+          }}
+        >
+          ⚠️ Testovací data - Nakonfigurujte Google Places API pro skutečné adresy
         </div>
       )}
 
