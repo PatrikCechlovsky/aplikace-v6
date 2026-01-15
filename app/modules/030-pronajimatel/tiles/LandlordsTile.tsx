@@ -39,6 +39,7 @@ const VIEW_KEY = '030.landlords.list'
 const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'subjectTypeLabel', label: 'Typ pronajimatele', width: 160, sortable: true },
   { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
+  { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
   { key: 'email', label: 'E-mail', width: 260, sortable: true },
   { key: 'phone', label: 'Telefon', width: 180, sortable: true },
   { key: 'companyName', label: 'Název společnosti', width: 220, sortable: true },
@@ -50,6 +51,18 @@ const BASE_COLUMNS: ListViewColumn[] = [
 
 function mapRowToUi(row: LandlordsListRow, subjectTypeMap: Record<string, SubjectType>): UiLandlord {
   const subjectTypeMeta = subjectTypeMap[row.subject_type ?? '']
+  
+  // Složit adresu ve formátu: "Ulice ČísloPopisné, PSČ Město, Stát"
+  const streetPart = [row.street, row.house_number].filter(Boolean).join(' ')
+  const cityPart = [row.zip, row.city].filter(Boolean).join(' ')
+  const countryName = row.country === 'CZ' ? 'Česká republika' : 
+                     row.country === 'SK' ? 'Slovensko' :
+                     row.country === 'PL' ? 'Polsko' :
+                     row.country === 'DE' ? 'Německo' :
+                     row.country === 'AT' ? 'Rakousko' :
+                     row.country || ''
+  const fullAddress = [streetPart, cityPart, countryName].filter(Boolean).join(', ')
+  
   return {
     id: row.id,
     subjectType: row.subject_type ?? '',
@@ -66,6 +79,9 @@ function mapRowToUi(row: LandlordsListRow, subjectTypeMap: Record<string, Subjec
     companyName: row.company_name ?? null,
     ic: row.ic ?? null,
     dic: row.dic ?? null,
+    
+    // Adresa
+    fullAddress: fullAddress || null,
 
     // Metadata z subject_types
     subjectTypeLabel: subjectTypeMeta?.name || row.subject_type_name || row.subject_type || '—',
@@ -86,6 +102,7 @@ function toRow(l: UiLandlord): ListViewRow<UiLandlord> {
         <span className="generic-type__name-main">{l.subjectTypeLabel || '—'}</span>
       ),
       displayName: l.displayName || '—',
+      fullAddress: l.fullAddress ?? '—',
       email: l.email ?? '—',
       phone: l.phone ?? '—',
       companyName: l.companyName ?? '—',
@@ -119,6 +136,8 @@ function getSortValue(l: UiLandlord, key: string): string | number {
       return l.subjectTypeOrderIndex ?? 999999
     case 'displayName':
       return norm(l.displayName)
+    case 'fullAddress':
+      return norm(l.fullAddress)
     case 'email':
       return norm(l.email)
     case 'phone':
@@ -156,6 +175,9 @@ type UiLandlord = {
   companyName?: string | null
   ic?: string | null
   dic?: string | null
+  
+  // Address
+  fullAddress?: string | null
 
   // Metadata z subject_types
   subjectTypeLabel: string

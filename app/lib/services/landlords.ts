@@ -38,6 +38,13 @@ export type LandlordsListRow = {
   company_name?: string | null
   ic?: string | null
   dic?: string | null
+  
+  // ✅ address fields
+  street?: string | null
+  house_number?: string | null
+  city?: string | null
+  zip?: string | null
+  country?: string | null
 
   // ✅ role flags
   is_landlord?: boolean | null
@@ -75,6 +82,12 @@ export async function listLandlords(params: LandlordsListParams = {}): Promise<L
         company_name,
         ic,
         dic,
+        
+        street,
+        house_number,
+        city,
+        zip,
+        country,
         
         is_landlord,
         is_tenant,
