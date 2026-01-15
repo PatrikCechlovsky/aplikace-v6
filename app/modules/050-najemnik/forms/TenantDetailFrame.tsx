@@ -64,8 +64,6 @@ export type UiTenant = {
   isUser?: boolean | null
   isTenant?: boolean | null
   isTenantDelegate?: boolean | null
-  isTenant?: boolean | null
-  isTenantDelegate?: boolean | null
   isMaintenance?: boolean | null
   isMaintenanceDelegate?: boolean | null
 }
@@ -120,8 +118,6 @@ function buildInitialFormValue(l: UiTenant): TenantFormValue {
 
     isUser: !!l.isUser,
     isTenant: l.isTenant !== undefined ? !!l.isTenant : true,
-    isTenantDelegate: !!l.isTenantDelegate,
-    isTenant: !!l.isTenant,
     isTenantDelegate: !!l.isTenantDelegate,
     isMaintenance: !!l.isMaintenance,
     isMaintenanceDelegate: !!l.isMaintenanceDelegate,
