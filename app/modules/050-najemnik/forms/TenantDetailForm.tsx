@@ -48,8 +48,6 @@ export type TenantFormValue = {
   isUser: boolean
   isTenant: boolean
   isTenantDelegate: boolean
-  isTenant: boolean
-  isTenantDelegate: boolean
   isMaintenance: boolean
   isMaintenanceDelegate: boolean
 
