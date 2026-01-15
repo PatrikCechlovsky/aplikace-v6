@@ -62,6 +62,10 @@ export type LandlordDetailFormProps = {
   onValueChange?: (val: LandlordFormValue) => void
 }
 
+export type LandlordDetailFormRef = {
+  validateForm: () => boolean
+}
+
 // =====================
 // 2) HELPERS
 // =====================
@@ -145,13 +149,14 @@ function validateEmail(value: string): string | null {
 // 3) COMPONENT
 // =====================
 
-export default function LandlordDetailForm({
-  subjectType,
-  landlord,
-  readOnly,
-  onDirtyChange,
-  onValueChange,
-}: LandlordDetailFormProps) {
+const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetailFormProps>(
+  function LandlordDetailForm({
+    subjectType,
+    landlord,
+    readOnly,
+    onDirtyChange,
+    onValueChange,
+  }, ref) {
   const isPerson = isPersonType(subjectType)
   const isCompany = isCompanyType(subjectType)
 
@@ -278,6 +283,11 @@ export default function LandlordDetailForm({
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
+  // Expose validateForm to parent via ref
+  React.useImperativeHandle(ref, () => ({
+    validateForm,
+  }))
 
   // Načíst data z ARES podle IČO
   const handleLoadFromAres = useCallback(async () => {
@@ -868,4 +878,6 @@ export default function LandlordDetailForm({
       </div>
     </div>
   )
-}
+})
+
+export default LandlordDetailForm

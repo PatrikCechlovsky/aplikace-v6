@@ -67,6 +67,10 @@ export type MyAccountDetailFormProps = {
   onValueChange?: (val: MyAccountFormValue) => void
 }
 
+export type MyAccountDetailFormRef = {
+  validateForm: () => boolean
+}
+
 // =====================
 // 3) HELPERS
 // =====================
@@ -122,7 +126,8 @@ function validateEmail(value: string): string | null {
 // 4) COMPONENT
 // =====================
 
-export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange }: MyAccountDetailFormProps) {
+const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDetailFormProps>(
+  function MyAccountDetailForm({ user, onDirtyChange, onValueChange }, ref) {
   const initial = useMemo<MyAccountFormValue>(
     () => ({
       displayName: safe(user.displayName),
@@ -220,6 +225,11 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
+  // Expose validateForm to parent via ref
+  React.useImperativeHandle(ref, () => ({
+    validateForm,
+  }))
 
   // =====================
   // 6) RENDER
@@ -600,5 +610,7 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
       </div>
     </div>
   )
-}
+})
+
+export default MyAccountDetailForm
 

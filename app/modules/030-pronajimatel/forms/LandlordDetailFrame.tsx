@@ -59,6 +59,11 @@ export type UiLandlord = {
   zip?: string | null
   houseNumber?: string | null
   country?: string | null
+
+  // Role flags
+  isLandlord?: boolean | null
+  isTenant?: boolean | null
+  isDelegate?: boolean | null
 }
 
 type Props = {
@@ -108,6 +113,10 @@ function buildInitialFormValue(l: UiLandlord): LandlordFormValue {
     zip: (l.zip ?? '').toString(),
     houseNumber: (l.houseNumber ?? '').toString(),
     country: (l.country ?? 'CZ').toString(),
+
+    isLandlord: l.isLandlord !== undefined ? !!l.isLandlord : true,
+    isTenant: !!l.isTenant,
+    isDelegate: !!l.isDelegate,
 
     isArchived: !!l.isArchived,
   }
