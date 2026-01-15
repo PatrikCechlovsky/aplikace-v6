@@ -75,6 +75,49 @@ function safe(v: any) {
   return (v ?? '').toString()
 }
 
+// Validační funkce
+function validatePersonalIdNumber(value: string): string | null {
+  if (!value) return null
+  const cleaned = value.replace(/\s+/g, '').replace('/', '')
+  if (!/^\d{9,10}$/.test(cleaned)) {
+    return 'Rodné číslo musí mít formát YYMMDD/XXXX (9-10 číslic)'
+  }
+  if (cleaned.length === 10) {
+    const num = parseInt(cleaned, 10)
+    if (num % 11 !== 0) {
+      return 'Neplatné rodné číslo (kontrolní součet)'
+    }
+  }
+  return null
+}
+
+function validateZip(value: string): string | null {
+  if (!value) return 'PSČ je povinné'
+  const cleaned = value.replace(/\s+/g, '')
+  if (!/^\d{5}$/.test(cleaned)) {
+    return 'PSČ musí mít 5 číslic'
+  }
+  return null
+}
+
+function validatePhone(value: string): string | null {
+  if (!value) return null
+  const cleaned = value.replace(/\s+/g, '').replace(/[-()+]/g, '')
+  if (!/^\d{9,15}$/.test(cleaned)) {
+    return 'Telefon musí mít 9-15 číslic (mezinárodní formát)'
+  }
+  return null
+}
+
+function validateEmail(value: string): string | null {
+  if (!value) return 'E-mail je povinný'
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(value)) {
+    return 'Neplatný formát e-mailu'
+  }
+  return null
+}
+
 // =====================
 // 4) COMPONENT
 // =====================
@@ -111,6 +154,7 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
 
   const [val, setVal] = useState<MyAccountFormValue>(initial)
   const [dirty, setDirty] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setVal(initial)
@@ -136,6 +180,45 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
       onValueChange?.(next)
       return next
     })
+  }
+
+  // Validace celého formuláře před uložením
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    // Email - povinný
+    const emailError = validateEmail(val.email)
+    if (emailError) {
+      newErrors.email = emailError
+    }
+
+    // Adresa - povinná pole
+    if (!val.city?.trim()) {
+      newErrors.city = 'Město je povinné'
+    }
+    const zipError = validateZip(val.zip)
+    if (zipError) {
+      newErrors.zip = zipError
+    }
+
+    // Telefon - pokud je vyplněný, musí být validní
+    if (val.phone) {
+      const phoneError = validatePhone(val.phone)
+      if (phoneError) {
+        newErrors.phone = phoneError
+      }
+    }
+
+    // Rodné číslo - pokud je vyplněné, musí být validní
+    if (val.personalIdNumber) {
+      const personalIdError = validatePersonalIdNumber(val.personalIdNumber)
+      if (personalIdError) {
+        newErrors.personalIdNumber = personalIdError
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   // =====================
@@ -252,33 +335,68 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Město</label>
+            <label className="detail-form__label">
+              Město <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
               maxLength={100}
               value={val.city}
               onChange={(e) => update({ city: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, city: 'Město je povinné' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.city
+                    return next
+                  })
+                }
+              }}
               placeholder="Název města"
             />
+            {errors.city && (
+              <div className="detail-form__error">{errors.city}</div>
+            )}
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">PSČ</label>
+            <label className="detail-form__label">
+              PSČ <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
               maxLength={10}
               value={val.zip}
               onChange={(e) => update({ zip: e.target.value })}
+              onBlur={(e) => {
+                const error = validateZip(e.target.value)
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  if (error) {
+                    next.zip = error
+                  } else {
+                    delete next.zip
+                  }
+                  return next
+                })
+              }}
               placeholder="12345"
             />
+            {errors.zip && (
+              <div className="detail-form__error">{errors.zip}</div>
+            )}
           </div>
         </div>
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Stát</label>
+            <label className="detail-form__label">
+              Stát <span className="detail-form__required">*</span>
+            </label>
             <select
               className="detail-form__input"
               value={val.country}
@@ -313,8 +431,23 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               maxLength={11}
               value={val.personalIdNumber}
               onChange={(e) => update({ personalIdNumber: e.target.value })}
+              onBlur={(e) => {
+                const error = validatePersonalIdNumber(e.target.value)
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  if (error) {
+                    next.personalIdNumber = error
+                  } else {
+                    delete next.personalIdNumber
+                  }
+                  return next
+                })
+              }}
               placeholder="YYMMDD/XXXX nebo YYMMDDXXXX"
             />
+            {errors.personalIdNumber && (
+              <div className="detail-form__error">{errors.personalIdNumber}</div>
+            )}
           </div>
         </div>
 
@@ -396,7 +529,22 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               maxLength={80}
               value={val.email}
               onChange={(e) => update({ email: e.target.value })}
+              onBlur={(e) => {
+                const error = validateEmail(e.target.value)
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  if (error) {
+                    next.email = error
+                  } else {
+                    delete next.email
+                  }
+                  return next
+                })
+              }}
             />
+            {errors.email && (
+              <div className="detail-form__error">{errors.email}</div>
+            )}
           </div>
 
           <div className="detail-form__field">
@@ -410,8 +558,23 @@ export default function MyAccountDetailForm({ user, onDirtyChange, onValueChange
               maxLength={20}
               value={val.phone}
               onChange={(e) => update({ phone: e.target.value })}
+              onBlur={(e) => {
+                const error = validatePhone(e.target.value)
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  if (error) {
+                    next.phone = error
+                  } else {
+                    delete next.phone
+                  }
+                  return next
+                })
+              }}
               placeholder="+420 999 874 564"
             />
+            {errors.phone && (
+              <div className="detail-form__error">{errors.phone}</div>
+            )}
           </div>
         </div>
 

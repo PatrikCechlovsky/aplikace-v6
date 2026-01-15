@@ -136,6 +136,13 @@
   font-weight: 700;
 }
 
+/* Chybové hlášení pod polem */
+.detail-form__error {
+  font-size: 11px;
+  color: var(--color-danger-text);
+  margin-top: 4px;
+}
+
 .detail-form__input {
   font-size: 13px; /* Výchozí hodnota, přepíše se přes density */
   padding: 9px 11px; /* Výchozí hodnota, přepíše se přes density */

@@ -44,6 +44,11 @@ export type LandlordFormValue = {
   dicValid: boolean
   delegateIds: string[] // Pole ID zástupců (N:N vztah)
 
+  // Role flags
+  isLandlord: boolean
+  isTenant: boolean
+  isDelegate: boolean
+
   // Poznámka
   note: string
   isArchived: boolean
@@ -71,6 +76,69 @@ function isPersonType(type: string): boolean {
 
 function isCompanyType(type: string): boolean {
   return type === 'firma' || type === 'spolek' || type === 'statni'
+}
+
+// =====================
+// 3) VALIDACE
+// =====================
+
+// Validace rodného čísla (formát: YYMMDD/XXXX nebo YYMMDDXXXX)
+function validatePersonalIdNumber(value: string): string | null {
+  if (!value) return null
+  
+  const cleaned = value.replace(/\s+/g, '').replace('/', '')
+  
+  // Musí být 9 nebo 10 číslic
+  if (!/^\d{9,10}$/.test(cleaned)) {
+    return 'Rodné číslo musí mít formát YYMMDD/XXXX (9-10 číslic)'
+  }
+  
+  // Kontrola dělitelnosti 11 (platí pro RČ vydané po 1953)
+  if (cleaned.length === 10) {
+    const num = parseInt(cleaned, 10)
+    if (num % 11 !== 0) {
+      return 'Neplatné rodné číslo (kontrolní součet)'
+    }
+  }
+  
+  return null
+}
+
+// Validace PSČ (formát: XXXXX nebo XXX XX)
+function validateZip(value: string): string | null {
+  if (!value) return 'PSČ je povinné'
+  
+  const cleaned = value.replace(/\s+/g, '')
+  
+  if (!/^\d{5}$/.test(cleaned)) {
+    return 'PSČ musí mít 5 číslic (např. 120 00 nebo 12000)'
+  }
+  
+  return null
+}
+
+// Validace telefonu (mezinárodní formát)
+function validatePhone(value: string): string | null {
+  if (!value) return null
+  
+  const cleaned = value.replace(/[\s()-]/g, '')
+  
+  if (!/^\+?[0-9]{9,15}$/.test(cleaned)) {
+    return 'Telefon musí mít 9-15 číslic (např. +420 123 456 789)'
+  }
+  
+  return null
+}
+
+// Validace emailu
+function validateEmail(value: string): string | null {
+  if (!value) return 'Email je povinný'
+  
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    return 'Neplatný formát emailu'
+  }
+  
+  return null
 }
 
 // =====================
@@ -118,6 +186,11 @@ export default function LandlordDetailForm({
       dicValid: !!landlord.dicValid,
       delegateIds: Array.isArray(landlord.delegateIds) ? landlord.delegateIds : [],
 
+      // Role flags
+      isLandlord: landlord.isLandlord !== undefined ? !!landlord.isLandlord : true, // Default true protože editujeme pronajimatele
+      isTenant: !!landlord.isTenant,
+      isDelegate: !!landlord.isDelegate,
+
       // Poznámka
       note: safe(landlord.note),
       isArchived: !!landlord.isArchived,
@@ -128,6 +201,7 @@ export default function LandlordDetailForm({
   const [val, setVal] = useState<LandlordFormValue>(initial)
   const dirtyRef = useRef(false) // Ref pro okamžitou kontrolu
   const [loadingAres, setLoadingAres] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const toast = useToast()
 
   // Když se změní landlord, přepiš form
@@ -164,6 +238,45 @@ export default function LandlordDetailForm({
       onValueChange?.(next)
       return next
     })
+  }
+
+  // Validace celého formuláře před uložením
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    // Email - povinný
+    const emailError = validateEmail(val.email)
+    if (emailError) {
+      newErrors.email = emailError
+    }
+
+    // Adresa - povinná pole
+    if (!val.city?.trim()) {
+      newErrors.city = 'Město je povinné'
+    }
+    const zipError = validateZip(val.zip)
+    if (zipError) {
+      newErrors.zip = zipError
+    }
+
+    // Telefon - pokud je vyplněný, musí být validní
+    if (val.phone) {
+      const phoneError = validatePhone(val.phone)
+      if (phoneError) {
+        newErrors.phone = phoneError
+      }
+    }
+
+    // Rodné číslo - jen pro osoby, OSVČ a zástupce
+    if (isPerson && val.personalIdNumber) {
+      const personalIdError = validatePersonalIdNumber(val.personalIdNumber)
+      if (personalIdError) {
+        newErrors.personalIdNumber = personalIdError
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   // Načíst data z ARES podle IČO
@@ -312,8 +425,23 @@ export default function LandlordDetailForm({
                 value={val.personalIdNumber}
                 readOnly={readOnly}
                 onChange={(e) => update({ personalIdNumber: e.target.value })}
+                onBlur={(e) => {
+                  const error = validatePersonalIdNumber(e.target.value)
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    if (error) {
+                      next.personalIdNumber = error
+                    } else {
+                      delete next.personalIdNumber
+                    }
+                    return next
+                  })
+                }}
                 placeholder="YYMMDD/XXXX nebo YYMMDDXXXX"
               />
+              {errors.personalIdNumber && (
+                <div className="detail-form__error">{errors.personalIdNumber}</div>
+              )}
             </div>
           </div>
 
@@ -512,7 +640,9 @@ export default function LandlordDetailForm({
         {/* Město + PSČ + Stát */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Město</label>
+            <label className="detail-form__label">
+              Město <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -520,12 +650,28 @@ export default function LandlordDetailForm({
               value={val.city}
               readOnly={readOnly}
               onChange={(e) => update({ city: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, city: 'Město je povinné' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.city
+                    return next
+                  })
+                }
+              }}
               placeholder="Název města"
             />
+            {errors.city && (
+              <div className="detail-form__error">{errors.city}</div>
+            )}
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">PSČ</label>
+            <label className="detail-form__label">
+              PSČ <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -533,14 +679,31 @@ export default function LandlordDetailForm({
               value={val.zip}
               readOnly={readOnly}
               onChange={(e) => update({ zip: e.target.value })}
+              onBlur={(e) => {
+                const error = validateZip(e.target.value)
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  if (error) {
+                    next.zip = error
+                  } else {
+                    delete next.zip
+                  }
+                  return next
+                })
+              }}
               placeholder="12345"
             />
+            {errors.zip && (
+              <div className="detail-form__error">{errors.zip}</div>
+            )}
           </div>
         </div>
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Stát</label>
+            <label className="detail-form__label">
+              Stát <span className="detail-form__required">*</span>
+            </label>
             <select
               className="detail-form__input"
               value={val.country}
@@ -589,7 +752,22 @@ export default function LandlordDetailForm({
               value={val.email}
               readOnly={readOnly}
               onChange={(e) => update({ email: e.target.value })}
+              onBlur={(e) => {
+                const error = validateEmail(e.target.value)
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  if (error) {
+                    next.email = error
+                  } else {
+                    delete next.email
+                  }
+                  return next
+                })
+              }}
             />
+            {errors.email && (
+              <div className="detail-form__error">{errors.email}</div>
+            )}
           </div>
         </div>
 
@@ -605,8 +783,66 @@ export default function LandlordDetailForm({
               value={val.phone}
               readOnly={readOnly}
               onChange={(e) => update({ phone: e.target.value })}
+              onBlur={(e) => {
+                const error = validatePhone(e.target.value)
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  if (error) {
+                    next.phone = error
+                  } else {
+                    delete next.phone
+                  }
+                  return next
+                })
+              }}
               placeholder="+420 999 874 564"
             />
+            {errors.phone && (
+              <div className="detail-form__error">{errors.phone}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ROLE */}
+      <div className="detail-form__section">
+        <div className="detail-form__section-title">Role subjektu</div>
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isLandlord}
+                disabled={readOnly}
+                onChange={(e) => update({ isLandlord: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Je pronajímatel
+            </label>
+          </div>
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isTenant}
+                disabled={readOnly}
+                onChange={(e) => update({ isTenant: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Je nájemník
+            </label>
+          </div>
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isDelegate}
+                disabled={readOnly}
+                onChange={(e) => update({ isDelegate: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Je zástupce
+            </label>
           </div>
         </div>
       </div>
