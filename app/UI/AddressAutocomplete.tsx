@@ -145,6 +145,15 @@ export default function AddressAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
 
+  // Aktualizovat query když se změní props (např. z ARES API)
+  useEffect(() => {
+    const newQuery = buildQuery()
+    if (newQuery && newQuery !== query) {
+      console.log('🔄 Updating query from props:', newQuery)
+      setQuery(newQuery)
+    }
+  }, [street, city, zip, houseNumber])
+
   // Načíst návrhy při změně query
   useEffect(() => {
     if (!query || query.trim().length < 3 || country !== 'CZ') {
