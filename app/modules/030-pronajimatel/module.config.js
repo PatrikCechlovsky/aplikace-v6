@@ -39,7 +39,7 @@ export default {
   tiles: [
     {
       id: 'landlords-list',
-      label: 'Přehled pronajímatelů',
+      label: 'Přehled',
       icon: 'list-alt',
       component: LandlordsTile,
       order: 10,
@@ -102,7 +102,7 @@ export default {
     },
     {
       id: 'create-landlord',
-      label: 'Přidat pronajimatele',
+      label: 'Přidat',
       icon: 'add',
       component: CreateLandlordTile,
       order: 100,
