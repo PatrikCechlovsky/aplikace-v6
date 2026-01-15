@@ -29,6 +29,8 @@ INSERT INTO public.subjects (
   city,
   zip,
   country,
+  -- Origin
+  origin_module,
   -- Poznámka
   note,
   is_archived
@@ -59,6 +61,8 @@ INSERT INTO public.subjects (
   'Praha',
   '11000',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací OSVČ pronajímatel #1',
   false
@@ -89,6 +93,8 @@ INSERT INTO public.subjects (
   'Brno',
   '60200',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací OSVČ pronajímatel #2',
   false
@@ -113,6 +119,8 @@ INSERT INTO public.subjects (
   city,
   zip,
   country,
+  -- Origin
+  origin_module,
   -- Poznámka
   note,
   is_archived
@@ -135,6 +143,8 @@ INSERT INTO public.subjects (
   'Praha',
   '11000',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací spolek pronajímatel #1',
   false
@@ -157,6 +167,8 @@ INSERT INTO public.subjects (
   'Olomouc',
   '77200',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací spolek pronajímatel #2',
   false
@@ -183,6 +195,8 @@ INSERT INTO public.subjects (
   city,
   zip,
   country,
+  -- Origin
+  origin_module,
   -- Poznámka
   note,
   is_archived
@@ -207,6 +221,8 @@ INSERT INTO public.subjects (
   'Ostrava',
   '70200',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací zástupce pronajímatel #1',
   false
@@ -231,6 +247,8 @@ INSERT INTO public.subjects (
   'Plzeň',
   '30100',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací zástupce pronajímatel #2',
   false
@@ -255,6 +273,8 @@ INSERT INTO public.subjects (
   city,
   zip,
   country,
+  -- Origin
+  origin_module,
   -- Poznámka
   note,
   is_archived
@@ -277,6 +297,8 @@ INSERT INTO public.subjects (
   'Praha 1',
   '11001',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací státní subjekt pronajímatel #1',
   false
@@ -299,6 +321,8 @@ INSERT INTO public.subjects (
   'Praha 8',
   '18211',
   'CZ',
+  -- Origin
+  '030',
   -- Poznámka
   'Testovací státní subjekt pronajímatel #2',
   false
