@@ -317,6 +317,15 @@ export type SaveLandlordInput = {
   zip?: string | null
   houseNumber?: string | null
   country?: string | null
+
+  // ROLE FLAGS
+  isUser?: boolean | null
+  isLandlord?: boolean | null
+  isLandlordDelegate?: boolean | null
+  isTenant?: boolean | null
+  isTenantDelegate?: boolean | null
+  isMaintenance?: boolean | null
+  isMaintenanceDelegate?: boolean | null
 }
 
 /* =========================

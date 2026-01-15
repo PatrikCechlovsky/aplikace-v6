@@ -198,6 +198,12 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
     }
 
     // Adresa - povinná pole
+    if (!val.street?.trim()) {
+      newErrors.street = 'Ulice je povinná'
+    }
+    if (!val.houseNumber?.trim()) {
+      newErrors.houseNumber = 'Číslo popisné je povinné'
+    }
     if (!val.city?.trim()) {
       newErrors.city = 'Město je povinné'
     }
@@ -206,20 +212,37 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
       newErrors.zip = zipError
     }
 
-    // Telefon - pokud je vyplněný, musí být validní
-    if (val.phone) {
+    // Telefon - povinný pro uživatele
+    if (!val.phone) {
+      newErrors.phone = 'Telefon je povinný'
+    } else {
       const phoneError = validatePhone(val.phone)
       if (phoneError) {
         newErrors.phone = phoneError
       }
     }
 
-    // Rodné číslo - pokud je vyplněné, musí být validní
-    if (val.personalIdNumber) {
+    // Rodné číslo - povinné pro uživatele
+    if (!val.personalIdNumber) {
+      newErrors.personalIdNumber = 'Rodné číslo je povinné'
+    } else {
       const personalIdError = validatePersonalIdNumber(val.personalIdNumber)
       if (personalIdError) {
         newErrors.personalIdNumber = personalIdError
       }
+    }
+
+    // Datum narození - povinné pro uživatele
+    if (!val.birthDate) {
+      newErrors.birthDate = 'Datum narození je povinné'
+    }
+
+    // Typ dokladu a číslo dokladu - povinné pro uživatele
+    if (!val.idDocType) {
+      newErrors.idDocType = 'Typ dokladu je povinný'
+    }
+    if (!val.idDocNumber?.trim()) {
+      newErrors.idDocNumber = 'Číslo dokladu je povinné'
     }
 
     setErrors(newErrors)
@@ -319,27 +342,59 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Ulice</label>
+            <label className="detail-form__label">
+              Ulice <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
               maxLength={100}
               value={val.street}
               onChange={(e) => update({ street: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, street: 'Ulice je povinná' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.street
+                    return next
+                  })
+                }
+              }}
               placeholder="Název ulice"
             />
+            {errors.street && (
+              <div className="detail-form__error">{errors.street}</div>
+            )}
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">Číslo popisné</label>
+            <label className="detail-form__label">
+              Číslo popisné <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
               maxLength={20}
               value={val.houseNumber}
               onChange={(e) => update({ houseNumber: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, houseNumber: 'Číslo popisné je povinné' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.houseNumber
+                    return next
+                  })
+                }
+              }}
               placeholder="123"
             />
+            {errors.houseNumber && (
+              <div className="detail-form__error">{errors.houseNumber}</div>
+            )}
           </div>
         </div>
 
@@ -424,17 +479,35 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
         {/* Řádek za Stát: Datum narození + Rodné číslo */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Datum narození</label>
+            <label className="detail-form__label">
+              Datum narození <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="date"
               value={val.birthDate || ''}
               onChange={(e) => update({ birthDate: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value) {
+                  setErrors((prev) => ({ ...prev, birthDate: 'Datum narození je povinné' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.birthDate
+                    return next
+                  })
+                }
+              }}
             />
+            {errors.birthDate && (
+              <div className="detail-form__error">{errors.birthDate}</div>
+            )}
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">Rodné číslo</label>
+            <label className="detail-form__label">
+              Rodné číslo <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -442,16 +515,20 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
               value={val.personalIdNumber}
               onChange={(e) => update({ personalIdNumber: e.target.value })}
               onBlur={(e) => {
-                const error = validatePersonalIdNumber(e.target.value)
-                setErrors((prev) => {
-                  const next = { ...prev }
-                  if (error) {
-                    next.personalIdNumber = error
-                  } else {
-                    delete next.personalIdNumber
-                  }
-                  return next
-                })
+                if (!e.target.value) {
+                  setErrors((prev) => ({ ...prev, personalIdNumber: 'Rodné číslo je povinné' }))
+                } else {
+                  const error = validatePersonalIdNumber(e.target.value)
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    if (error) {
+                      next.personalIdNumber = error
+                    } else {
+                      delete next.personalIdNumber
+                    }
+                    return next
+                  })
+                }
               }}
               placeholder="YYMMDD/XXXX nebo YYMMDDXXXX"
             />
@@ -464,11 +541,24 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
         {/* Další řádek: Druh dokladu + Číslo dokladu */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Druh dokladu</label>
+            <label className="detail-form__label">
+              Druh dokladu <span className="detail-form__required">*</span>
+            </label>
             <select
               className="detail-form__input"
               value={val.idDocType || ''}
               onChange={(e) => update({ idDocType: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value) {
+                  setErrors((prev) => ({ ...prev, idDocType: 'Typ dokladu je povinný' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.idDocType
+                    return next
+                  })
+                }
+              }}
             >
               <option value="">— vyber doklad —</option>
               <option value="OP">Občanský průkaz</option>
@@ -476,18 +566,37 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
               <option value="RP">Řidičský průkaz</option>
               <option value="OTHER">Jiný</option>
             </select>
+            {errors.idDocType && (
+              <div className="detail-form__error">{errors.idDocType}</div>
+            )}
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">Číslo dokladu</label>
+            <label className="detail-form__label">
+              Číslo dokladu <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
               maxLength={50}
               value={val.idDocNumber}
               onChange={(e) => update({ idDocNumber: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, idDocNumber: 'Číslo dokladu je povinné' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.idDocNumber
+                    return next
+                  })
+                }
+              }}
               placeholder="Číslo dokladu"
             />
+            {errors.idDocNumber && (
+              <div className="detail-form__error">{errors.idDocNumber}</div>
+            )}
           </div>
         </div>
       </div>
@@ -559,7 +668,8 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
 
           <div className="detail-form__field">
             <label className="detail-form__label">
-              Telefon {val.twoFactorMethod === 'phone' && <span className="detail-form__required">*</span>}
+              Telefon <span className="detail-form__required">*</span>
+              {val.twoFactorMethod === 'phone' && <span style={{marginLeft: '4px'}}>(povinný pro SMS ověření)</span>}
             </label>
             <InputWithHistory
               historyId="myAccount.phone"
@@ -569,16 +679,20 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
               value={val.phone}
               onChange={(e) => update({ phone: e.target.value })}
               onBlur={(e) => {
-                const error = validatePhone(e.target.value)
-                setErrors((prev) => {
-                  const next = { ...prev }
-                  if (error) {
-                    next.phone = error
-                  } else {
-                    delete next.phone
-                  }
-                  return next
-                })
+                if (!e.target.value) {
+                  setErrors((prev) => ({ ...prev, phone: 'Telefon je povinný' }))
+                } else {
+                  const error = validatePhone(e.target.value)
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    if (error) {
+                      next.phone = error
+                    } else {
+                      delete next.phone
+                    }
+                    return next
+                  })
+                }
               }}
               placeholder="+420 999 874 564"
             />

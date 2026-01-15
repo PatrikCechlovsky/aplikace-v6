@@ -45,9 +45,13 @@ export type LandlordFormValue = {
   delegateIds: string[] // Pole ID zástupců (N:N vztah)
 
   // Role flags
+  isUser: boolean
   isLandlord: boolean
+  isLandlordDelegate: boolean
   isTenant: boolean
-  isDelegate: boolean
+  isTenantDelegate: boolean
+  isMaintenance: boolean
+  isMaintenanceDelegate: boolean
 
   // Poznámka
   note: string
@@ -150,13 +154,8 @@ function validateEmail(value: string): string | null {
 // =====================
 
 const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetailFormProps>(
-  function LandlordDetailForm({
-    subjectType,
-    landlord,
-    readOnly,
-    onDirtyChange,
-    onValueChange,
-  }, ref) {
+  function LandlordDetailForm(props, ref) {
+  const { subjectType, landlord, readOnly = false, onDirtyChange, onValueChange } = props
   const isPerson = isPersonType(subjectType)
   const isCompany = isCompanyType(subjectType)
 
@@ -192,9 +191,13 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
       delegateIds: Array.isArray(landlord.delegateIds) ? landlord.delegateIds : [],
 
       // Role flags
+      isUser: !!landlord.isUser,
       isLandlord: landlord.isLandlord !== undefined ? !!landlord.isLandlord : true, // Default true protože editujeme pronajimatele
+      isLandlordDelegate: !!landlord.isLandlordDelegate,
       isTenant: !!landlord.isTenant,
-      isDelegate: !!landlord.isDelegate,
+      isTenantDelegate: !!landlord.isTenantDelegate,
+      isMaintenance: !!landlord.isMaintenance,
+      isMaintenanceDelegate: !!landlord.isMaintenanceDelegate,
 
       // Poznámka
       note: safe(landlord.note),
@@ -256,6 +259,12 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
     }
 
     // Adresa - povinná pole
+    if (!val.street?.trim()) {
+      newErrors.street = 'Ulice je povinná'
+    }
+    if (!val.houseNumber?.trim()) {
+      newErrors.houseNumber = 'Číslo popisné je povinné'
+    }
     if (!val.city?.trim()) {
       newErrors.city = 'Město je povinné'
     }
@@ -264,19 +273,47 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
       newErrors.zip = zipError
     }
 
-    // Telefon - pokud je vyplněný, musí být validní
-    if (val.phone) {
-      const phoneError = validatePhone(val.phone)
-      if (phoneError) {
-        newErrors.phone = phoneError
+    // Pro osoby (osoba, osvc, zastupce) - povinná pole
+    if (isPerson) {
+      // Telefon - povinný pro osoby
+      if (!val.phone) {
+        newErrors.phone = 'Telefon je povinný'
+      } else {
+        const phoneError = validatePhone(val.phone)
+        if (phoneError) {
+          newErrors.phone = phoneError
+        }
       }
-    }
 
-    // Rodné číslo - jen pro osoby, OSVČ a zástupce
-    if (isPerson && val.personalIdNumber) {
-      const personalIdError = validatePersonalIdNumber(val.personalIdNumber)
-      if (personalIdError) {
-        newErrors.personalIdNumber = personalIdError
+      // Rodné číslo - povinné pro osoby
+      if (!val.personalIdNumber) {
+        newErrors.personalIdNumber = 'Rodné číslo je povinné'
+      } else {
+        const personalIdError = validatePersonalIdNumber(val.personalIdNumber)
+        if (personalIdError) {
+          newErrors.personalIdNumber = personalIdError
+        }
+      }
+
+      // Datum narození - povinné pro osoby
+      if (!val.birthDate) {
+        newErrors.birthDate = 'Datum narození je povinné'
+      }
+
+      // Typ dokladu a číslo dokladu - povinné pro osoby
+      if (!val.idDocType) {
+        newErrors.idDocType = 'Typ dokladu je povinný'
+      }
+      if (!val.idDocNumber?.trim()) {
+        newErrors.idDocNumber = 'Číslo dokladu je povinné'
+      }
+    } else {
+      // Pro firmy - telefon volitelný, ale pokud je vyplněný, musí být validní
+      if (val.phone) {
+        const phoneError = validatePhone(val.phone)
+        if (phoneError) {
+          newErrors.phone = phoneError
+        }
       }
     }
 
@@ -355,7 +392,7 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
     } finally {
       setLoadingAres(false)
     }
-  }, [val.ic, toast, update])
+  }, [val.ic, toast, onDirtyChange, onValueChange])
 
 
   return (
@@ -416,18 +453,36 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
           {/* Řádek 2: Datum narození + Rodné číslo */}
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field">
-              <label className="detail-form__label">Datum narození</label>
+              <label className="detail-form__label">
+                Datum narození {isPerson && <span className="detail-form__required">*</span>}
+              </label>
               <input
                 className="detail-form__input"
                 type="date"
                 value={val.birthDate || ''}
                 readOnly={readOnly}
                 onChange={(e) => update({ birthDate: e.target.value })}
+                onBlur={(e) => {
+                  if (isPerson && !e.target.value) {
+                    setErrors((prev) => ({ ...prev, birthDate: 'Datum narození je povinné' }))
+                  } else {
+                    setErrors((prev) => {
+                      const next = { ...prev }
+                      delete next.birthDate
+                      return next
+                    })
+                  }
+                }}
               />
+              {errors.birthDate && (
+                <div className="detail-form__error">{errors.birthDate}</div>
+              )}
             </div>
 
             <div className="detail-form__field">
-              <label className="detail-form__label">Rodné číslo</label>
+              <label className="detail-form__label">
+                Rodné číslo {isPerson && <span className="detail-form__required">*</span>}
+              </label>
               <input
                 className="detail-form__input"
                 type="text"
@@ -436,16 +491,20 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
                 readOnly={readOnly}
                 onChange={(e) => update({ personalIdNumber: e.target.value })}
                 onBlur={(e) => {
-                  const error = validatePersonalIdNumber(e.target.value)
-                  setErrors((prev) => {
-                    const next = { ...prev }
-                    if (error) {
-                      next.personalIdNumber = error
-                    } else {
-                      delete next.personalIdNumber
-                    }
-                    return next
-                  })
+                  if (isPerson && !e.target.value) {
+                    setErrors((prev) => ({ ...prev, personalIdNumber: 'Rodné číslo je povinné' }))
+                  } else {
+                    const error = validatePersonalIdNumber(e.target.value)
+                    setErrors((prev) => {
+                      const next = { ...prev }
+                      if (error) {
+                        next.personalIdNumber = error
+                      } else {
+                        delete next.personalIdNumber
+                      }
+                      return next
+                    })
+                  }
                 }}
                 placeholder="YYMMDD/XXXX nebo YYMMDDXXXX"
               />
@@ -458,7 +517,9 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
           {/* Řádek 3: Druh dokladu + Číslo dokladu */}
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field">
-              <label className="detail-form__label">Druh dokladu</label>
+              <label className="detail-form__label">
+                Druh dokladu {isPerson && <span className="detail-form__required">*</span>}
+              </label>
               {readOnly ? (
                 <input
                   className="detail-form__input detail-form__input--readonly"
@@ -492,7 +553,9 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
             </div>
 
             <div className="detail-form__field">
-              <label className="detail-form__label">Číslo dokladu</label>
+              <label className="detail-form__label">
+                Číslo dokladu {isPerson && <span className="detail-form__required">*</span>}
+              </label>
               <input
                 className="detail-form__input"
                 type="text"
@@ -500,8 +563,22 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
                 value={val.idDocNumber}
                 readOnly={readOnly}
                 onChange={(e) => update({ idDocNumber: e.target.value })}
+                onBlur={(e) => {
+                  if (isPerson && !e.target.value.trim()) {
+                    setErrors((prev) => ({ ...prev, idDocNumber: 'Číslo dokladu je povinné' }))
+                  } else {
+                    setErrors((prev) => {
+                      const next = { ...prev }
+                      delete next.idDocNumber
+                      return next
+                    })
+                  }
+                }}
                 placeholder="Číslo dokladu"
               />
+              {errors.idDocNumber && (
+                <div className="detail-form__error">{errors.idDocNumber}</div>
+              )}
             </div>
           </div>
         </div>
@@ -621,7 +698,9 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
         {/* Ulice + Číslo popisné */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Ulice</label>
+            <label className="detail-form__label">
+              Ulice <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -629,12 +708,28 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
               value={val.street}
               readOnly={readOnly}
               onChange={(e) => update({ street: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, street: 'Ulice je povinná' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.street
+                    return next
+                  })
+                }
+              }}
               placeholder="Název ulice"
             />
+            {errors.street && (
+              <div className="detail-form__error">{errors.street}</div>
+            )}
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">Číslo popisné</label>
+            <label className="detail-form__label">
+              Číslo popisné <span className="detail-form__required">*</span>
+            </label>
             <input
               className="detail-form__input"
               type="text"
@@ -642,8 +737,22 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
               value={val.houseNumber}
               readOnly={readOnly}
               onChange={(e) => update({ houseNumber: e.target.value })}
+              onBlur={(e) => {
+                if (!e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, houseNumber: 'Číslo popisné je povinné' }))
+                } else {
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    delete next.houseNumber
+                    return next
+                  })
+                }
+              }}
               placeholder="123"
             />
+            {errors.houseNumber && (
+              <div className="detail-form__error">{errors.houseNumber}</div>
+            )}
           </div>
         </div>
 
@@ -784,7 +893,9 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
         {/* Telefon */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Telefon</label>
+            <label className="detail-form__label">
+              Telefon {isPerson && <span className="detail-form__required">*</span>}
+            </label>
             <InputWithHistory
               historyId="landlord.phone"
               className="detail-form__input"
@@ -794,16 +905,20 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
               readOnly={readOnly}
               onChange={(e) => update({ phone: e.target.value })}
               onBlur={(e) => {
-                const error = validatePhone(e.target.value)
-                setErrors((prev) => {
-                  const next = { ...prev }
-                  if (error) {
-                    next.phone = error
-                  } else {
-                    delete next.phone
-                  }
-                  return next
-                })
+                if (isPerson && !e.target.value) {
+                  setErrors((prev) => ({ ...prev, phone: 'Telefon je povinný' }))
+                } else {
+                  const error = validatePhone(e.target.value)
+                  setErrors((prev) => {
+                    const next = { ...prev }
+                    if (error) {
+                      next.phone = error
+                    } else {
+                      delete next.phone
+                    }
+                    return next
+                  })
+                }
               }}
               placeholder="+420 999 874 564"
             />
@@ -814,10 +929,24 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
         </div>
       </div>
 
-      {/* ROLE */}
+      {/* PŘIŘAZENÍ SUBJEKTU */}
       <div className="detail-form__section">
-        <div className="detail-form__section-title">Role subjektu</div>
+        <div className="detail-form__section-title">Přiřazení subjektu jako:</div>
+        
+        {/* 1. řádek: Uživatel aplikace, Pronajímatel, Zástupce pronajimatele */}
         <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isUser}
+                disabled={readOnly}
+                onChange={(e) => update({ isUser: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Uživatel aplikace
+            </label>
+          </div>
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
               <input
@@ -827,9 +956,25 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
                 onChange={(e) => update({ isLandlord: e.target.checked })}
                 style={{ marginRight: '0.5rem' }}
               />
-              Je pronajímatel
+              Pronajímatel
             </label>
           </div>
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isLandlordDelegate}
+                disabled={readOnly}
+                onChange={(e) => update({ isLandlordDelegate: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Zástupce pronajimatele
+            </label>
+          </div>
+        </div>
+
+        {/* 2. řádek: Nájemník, Zástupce nájemníka */}
+        <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
               <input
@@ -839,19 +984,47 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
                 onChange={(e) => update({ isTenant: e.target.checked })}
                 style={{ marginRight: '0.5rem' }}
               />
-              Je nájemník
+              Nájemník
             </label>
           </div>
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
               <input
                 type="checkbox"
-                checked={val.isDelegate}
+                checked={val.isTenantDelegate}
                 disabled={readOnly}
-                onChange={(e) => update({ isDelegate: e.target.checked })}
+                onChange={(e) => update({ isTenantDelegate: e.target.checked })}
                 style={{ marginRight: '0.5rem' }}
               />
-              Je zástupce
+              Zástupce nájemníka
+            </label>
+          </div>
+        </div>
+
+        {/* 3. řádek: Údržba, Zástupce údržby */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isMaintenance}
+                disabled={readOnly}
+                onChange={(e) => update({ isMaintenance: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Údržba
+            </label>
+          </div>
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isMaintenanceDelegate}
+                disabled={readOnly}
+                onChange={(e) => update({ isMaintenanceDelegate: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Zástupce údržby
             </label>
           </div>
         </div>

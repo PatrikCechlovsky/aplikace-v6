@@ -61,9 +61,13 @@ export type UiLandlord = {
   country?: string | null
 
   // Role flags
+  isUser?: boolean | null
   isLandlord?: boolean | null
+  isLandlordDelegate?: boolean | null
   isTenant?: boolean | null
-  isDelegate?: boolean | null
+  isTenantDelegate?: boolean | null
+  isMaintenance?: boolean | null
+  isMaintenanceDelegate?: boolean | null
 }
 
 type Props = {
@@ -114,9 +118,13 @@ function buildInitialFormValue(l: UiLandlord): LandlordFormValue {
     houseNumber: (l.houseNumber ?? '').toString(),
     country: (l.country ?? 'CZ').toString(),
 
+    isUser: !!l.isUser,
     isLandlord: l.isLandlord !== undefined ? !!l.isLandlord : true,
+    isLandlordDelegate: !!l.isLandlordDelegate,
     isTenant: !!l.isTenant,
-    isDelegate: !!l.isDelegate,
+    isTenantDelegate: !!l.isTenantDelegate,
+    isMaintenance: !!l.isMaintenance,
+    isMaintenanceDelegate: !!l.isMaintenanceDelegate,
 
     isArchived: !!l.isArchived,
   }
