@@ -933,7 +933,7 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
       <div className="detail-form__section">
         <div className="detail-form__section-title">Přiřazení subjektu jako:</div>
         
-        {/* 1. řádek: Uživatel aplikace, Pronajímatel, Zástupce pronajimatele */}
+        {/* 1. řádek: Uživatel aplikace */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
@@ -947,6 +947,10 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
               Uživatel aplikace
             </label>
           </div>
+        </div>
+
+        {/* 2. řádek: Pronajímatel, Zástupce pronajimatele */}
+        <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
               <input
@@ -973,7 +977,7 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
           </div>
         </div>
 
-        {/* 2. řádek: Nájemník, Zástupce nájemníka */}
+        {/* 3. řádek: Nájemník, Zástupce nájemníka */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
@@ -1001,7 +1005,7 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
           </div>
         </div>
 
-        {/* 3. řádek: Údržba, Zástupce údržby */}
+        {/* 4. řádek: Údržba, Zástupce údržby */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
