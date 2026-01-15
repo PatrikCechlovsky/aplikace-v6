@@ -334,8 +334,6 @@ export type SaveTenantInput = {
   isUser?: boolean | null
   isTenant?: boolean | null
   isTenantDelegate?: boolean | null
-  isTenant?: boolean | null
-  isTenantDelegate?: boolean | null
   isMaintenance?: boolean | null
   isMaintenanceDelegate?: boolean | null
 }
