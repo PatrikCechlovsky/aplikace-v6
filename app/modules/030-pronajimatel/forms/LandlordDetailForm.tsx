@@ -665,24 +665,24 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
       <div className="detail-form__section">
         <div className="detail-form__section-title">Adresa</div>
 
-        {/* Režim ČTENÍ: Jen kompletní adresa */}
+        {/* Režim ČTENÍ: Jen kompletní adresa včetně státu */}
         {readOnly && (
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">Adresa</label>
               <div className="detail-form__value">
-                {[val.street, val.houseNumber, val.city, val.zip].filter(Boolean).join(', ') || '—'}
-              </div>
-            </div>
-            <div className="detail-form__field">
-              <label className="detail-form__label">Stát</label>
-              <div className="detail-form__value">
-                {val.country === 'CZ' ? 'Česká republika' : 
-                 val.country === 'SK' ? 'Slovensko' :
-                 val.country === 'PL' ? 'Polsko' :
-                 val.country === 'DE' ? 'Německo' :
-                 val.country === 'AT' ? 'Rakousko' :
-                 val.country || '—'}
+                {(() => {
+                  // Formát: "Ulice ČísloPopisné, PSČ Město, Stát"
+                  const streetPart = [val.street, val.houseNumber].filter(Boolean).join(' ')
+                  const cityPart = [val.zip, val.city].filter(Boolean).join(' ')
+                  const countryName = val.country === 'CZ' ? 'Česká republika' : 
+                                     val.country === 'SK' ? 'Slovensko' :
+                                     val.country === 'PL' ? 'Polsko' :
+                                     val.country === 'DE' ? 'Německo' :
+                                     val.country === 'AT' ? 'Rakousko' :
+                                     val.country || ''
+                  
+                  return [streetPart, cityPart, countryName].filter(Boolean).join(', ') || '—'
+                })()}
               </div>
             </div>
           </div>
