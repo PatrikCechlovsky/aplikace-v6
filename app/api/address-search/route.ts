@@ -135,7 +135,8 @@ export async function GET(request: NextRequest) {
         .map((item, index) => ({
           ...item,
           ruianId: `mock-${index}`,
-          fullAddress: `${item.street} ${item.houseNumber}, ${item.city}, ${item.zip}`,
+          // Formát: "Ulice ČísloPopisné, PSČ Město"
+          fullAddress: `${item.street} ${item.houseNumber}, ${item.zip} ${item.city}`,
         }))
       
       return NextResponse.json(mockData, {
@@ -289,6 +290,13 @@ export async function GET(request: NextRequest) {
                   city = cityParts[0] // První část je město, druhá je země
                 }
                 
+                // Formát fullAddress: "Ulice ČísloPopisné, PSČ Město"
+                const streetPart = [street, houseNumber].filter(Boolean).join(' ')
+                const cityPart = city || ''
+                const fullAddress = streetPart && cityPart 
+                  ? `${streetPart}, ${cityPart}` 
+                  : description
+                
                 return {
                   street: street || mainText || '',
                   city: city || '',
@@ -296,7 +304,7 @@ export async function GET(request: NextRequest) {
                   houseNumber: houseNumber || '',
                   ruianId: prediction.place_id || '',
                   placeId: prediction.place_id || '', // Uložíme place_id pro případné další použití
-                  fullAddress: description,
+                  fullAddress: fullAddress,
                 }
               })
             } else {

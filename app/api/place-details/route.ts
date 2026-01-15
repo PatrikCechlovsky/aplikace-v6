@@ -102,13 +102,20 @@ export async function GET(request: NextRequest) {
 
     console.log('[Place Details API] Parsed:', { street, houseNumber, city, zip, country })
 
+    // Formát fullAddress: "Ulice ČísloPopisné, PSČ Město"
+    const streetPart = [street, houseNumber].filter(Boolean).join(' ')
+    const cityPart = [zip, city].filter(Boolean).join(' ')
+    const fullAddress = streetPart && cityPart 
+      ? `${streetPart}, ${cityPart}` 
+      : result?.formatted_address || ''
+
     return NextResponse.json({
       street,
       houseNumber,
       city,
       zip,
       country,
-      fullAddress: result?.formatted_address || '',
+      fullAddress: fullAddress,
       placeId,
     }, {
       headers: {

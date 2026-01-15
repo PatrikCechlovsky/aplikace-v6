@@ -131,10 +131,18 @@ export default function AddressAutocomplete({
   className = '',
   placeholder = 'Začněte psát adresu...',
 }: AddressAutocompleteProps) {
-  // Sestavit query z aktuálních hodnot
+  // Sestavit query z aktuálních hodnot ve formátu: "Ulice ČísloPopisné, PSČ Město"
   const buildQuery = () => {
-    const parts = [street, city, zip, houseNumber].filter(Boolean)
-    return parts.join(' ')
+    // Formát: "Čs. armády 514, 41108 Štětí"
+    const streetPart = [street, houseNumber].filter(Boolean).join(' ')
+    const cityPart = [zip, city].filter(Boolean).join(' ')
+    
+    if (streetPart && cityPart) {
+      return `${streetPart}, ${cityPart}`
+    }
+    if (streetPart) return streetPart
+    if (cityPart) return cityPart
+    return ''
   }
 
   const [query, setQuery] = useState(buildQuery())
