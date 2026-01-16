@@ -32,7 +32,7 @@ INSERT INTO public.subjects (
 (
   'osoba',
   'Petr Dvořák',
-  'petr.dvorak@test.cz',
+  'petr.dvorak.najemnik@test.cz',
   '+420 606 111 222',
   true,
   -- Person fields
@@ -58,7 +58,7 @@ INSERT INTO public.subjects (
 (
   'osoba',
   'Eva Horáková',
-  'eva.horakova@test.cz',
+  'eva.horakova.najemnik@test.cz',
   '+420 606 222 333',
   true,
   -- Person fields
@@ -118,7 +118,7 @@ INSERT INTO public.subjects (
 (
   'osvc',
   'Tomáš Černý - OSVČ',
-  'tomas.cerny.osvc@test.cz',
+  'tomas.cerny.osvc.najemnik@test.cz',
   '+420 606 333 444',
   true,
   -- Person fields
@@ -150,7 +150,7 @@ INSERT INTO public.subjects (
 (
   'osvc',
   'Lucie Malá - OSVČ',
-  'lucie.mala.osvc@test.cz',
+  'lucie.mala.osvc.najemnik@test.cz',
   '+420 606 444 555',
   true,
   -- Person fields
@@ -208,7 +208,7 @@ INSERT INTO public.subjects (
 (
   'firma',
   'IT Solutions s.r.o.',
-  'info@itsolutions.cz',
+  'info@itsolutions-najemnik.cz',
   '+420 606 555 666',
   true,
   -- Company fields
@@ -232,7 +232,7 @@ INSERT INTO public.subjects (
 (
   'firma',
   'Design Studio a.s.',
-  'kontakt@designstudio.cz',
+  'kontakt@designstudio-najemnik.cz',
   '+420 606 666 777',
   true,
   -- Company fields
@@ -282,7 +282,7 @@ INSERT INTO public.subjects (
 (
   'spolek',
   'Klub turistů',
-  'info@klubtouristu.cz',
+  'info@klubtouristu-najemnik.cz',
   '+420 606 777 888',
   true,
   -- Company fields
@@ -306,7 +306,7 @@ INSERT INTO public.subjects (
 (
   'spolek',
   'Sportovní klub Sokol',
-  'info@sokol.cz',
+  'info@sokol-najemnik.cz',
   '+420 606 888 999',
   true,
   -- Company fields
@@ -356,7 +356,7 @@ INSERT INTO public.subjects (
 (
   'statni',
   'Městský úřad Štětí',
-  'urad@mestosteti.cz',
+  'urad@mestosteti-najemnik.cz',
   '+420 606 000 111',
   true,
   -- Company fields
@@ -380,7 +380,7 @@ INSERT INTO public.subjects (
 (
   'statni',
   'Krajský úřad Ústeckého kraje',
-  'posta@kr-ustecky.cz',
+  'posta@kr-ustecky-najemnik.cz',
   '+420 606 000 222',
   true,
   -- Company fields
@@ -432,7 +432,7 @@ INSERT INTO public.subjects (
 (
   'zastupce',
   'Karel Novotný - zástupce',
-  'karel.novotny@zastupce.cz',
+  'karel.novotny@zastupce-najemnik.cz',
   '+420 606 111 000',
   true,
   -- Person fields
@@ -458,7 +458,7 @@ INSERT INTO public.subjects (
 (
   'zastupce',
   'Jana Procházková - zástupce',
-  'jana.prochazkova@zastupce.cz',
+  'jana.prochazkova@zastupce-najemnik.cz',
   '+420 606 222 000',
   true,
   -- Person fields
