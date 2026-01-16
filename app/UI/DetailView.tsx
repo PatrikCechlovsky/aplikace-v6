@@ -327,7 +327,33 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   },
 
   // placeholders pro jiné entity
-  users: { id: 'users', label: 'Uživatelé', order: 30, render: () => null },
+  users: {
+    id: 'users',
+    label: 'Uživatelé',
+    order: 30,
+    // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
+    visibleWhen: (ctx) => {
+      if (!ctx.entityType) return false
+      // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
+      if (ctx.mode === 'create' || ctx.mode === 'edit') return true
+      // Pro read mode zobrazit jen pokud máme entityId
+      return !!(ctx as any)?.entityId
+    },
+    render: (ctx) => {
+      const entityId = (ctx as any)?.entityId
+      // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
+      if (!entityId || entityId === 'new') {
+        return (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            Uživatelé lze přidat po vytvoření nájemníka.
+          </div>
+        )
+      }
+      // Dynamicky importovat, aby se to nenačítalo, pokud není potřeba
+      const TenantUsersSection = require('@/app/UI/detail-sections/TenantUsersSection').default
+      return <TenantUsersSection tenantId={entityId} viewMode={ctx.mode ?? 'edit'} />
+    },
+  },
   equipment: { id: 'equipment', label: 'Vybavení', order: 40, render: () => null },
   accounts: {
     id: 'accounts',

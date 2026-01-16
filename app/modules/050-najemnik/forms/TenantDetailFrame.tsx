@@ -566,7 +566,7 @@ export default function TenantDetailFrame({
   const subjectType = selectedSubjectType || resolvedTenant.subjectType || 'osoba'
   const detailMode: DetailViewMode = readOnly ? 'view' : 'edit'
 
-  const sectionIds: DetailSectionId[] = useMemo(() => ['detail', 'accounts', 'delegates', 'attachments', 'system'], [])
+  const sectionIds: DetailSectionId[] = useMemo(() => ['detail', 'users', 'accounts', 'delegates', 'attachments', 'system'], [])
 
   const handleSubjectTypeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
