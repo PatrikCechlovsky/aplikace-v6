@@ -278,19 +278,19 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
               </button>
               <button
                 type="button"
-                onClick={handleArchive}
-                disabled={!selectedUserId}
+                onClick={handleSave}
+                disabled={saving || !isDirty}
                 style={{
                   padding: '6px 12px',
-                  border: '1px solid var(--color-danger)',
+                  border: '1px solid var(--color-primary)',
                   borderRadius: '8px',
-                  background: 'var(--color-danger)',
+                  background: 'var(--color-primary)',
                   color: 'white',
-                  cursor: !selectedUserId ? 'not-allowed' : 'pointer',
-                  opacity: !selectedUserId ? 0.5 : 1,
+                  cursor: saving || !isDirty ? 'not-allowed' : 'pointer',
+                  opacity: saving || !isDirty ? 0.5 : 1,
                 }}
               >
-                Archivovat
+                {saving ? 'Ukládám…' : 'Uložit'}
               </button>
             </div>
           )}
@@ -361,7 +361,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
           </div>
 
           {/* Řádek 3: Poznámka přes oba sloupce */}
-          <div className="detail-form__field detail-form__field--span-8">
+          <div className="detail-form__field detail-form__field--span-2">
             <label className="detail-form__label">Poznámka</label>
             <textarea
               className="detail-form__input"
@@ -376,27 +376,6 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
             />
           </div>
         </div>
-
-        {viewMode !== 'read' && (
-          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || !isDirty}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                background: 'var(--color-primary)',
-                color: 'white',
-                cursor: saving || !isDirty ? 'not-allowed' : 'pointer',
-                opacity: saving || !isDirty ? 0.6 : 1,
-              }}
-            >
-              {saving ? 'Ukládám…' : 'Uložit'}
-            </button>
-          </div>
-        )}
       </section>
     </div>
   )
