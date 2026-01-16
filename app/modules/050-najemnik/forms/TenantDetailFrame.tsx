@@ -62,6 +62,7 @@ export type UiTenant = {
 
   // Role flags
   isUser?: boolean | null
+  isLandlord?: boolean | null
   isTenant?: boolean | null
   isTenantDelegate?: boolean | null
   isMaintenance?: boolean | null
@@ -117,6 +118,7 @@ function buildInitialFormValue(l: UiTenant): TenantFormValue {
     country: (l.country ?? 'CZ').toString(),
 
     isUser: !!l.isUser,
+    isLandlord: !!l.isLandlord,
     isTenant: l.isTenant !== undefined ? !!l.isTenant : true,
     isTenantDelegate: !!l.isTenantDelegate,
     isMaintenance: !!l.isMaintenance,

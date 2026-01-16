@@ -2,6 +2,15 @@
 -- PURPOSE: Vytvoření tabulky pro uživatele nájemního vztahu (spolubydlící, spoluuživatelé)
 -- DATE: 2026-01-16
 
+-- Vytvoření trigger funkce pro updated_at (pokud ještě neexistuje)
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Vytvoření tabulky tenant_users
 CREATE TABLE IF NOT EXISTS public.tenant_users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -46,6 +46,7 @@ export type TenantFormValue = {
 
   // Role flags
   isUser: boolean
+  isLandlord: boolean
   isTenant: boolean
   isTenantDelegate: boolean
   isMaintenance: boolean
@@ -1000,18 +1001,18 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
           </div>
         </div>
 
-        {/* 3. řádek: Nájemník, Zástupce nájemníka */}
+        {/* 3. řádek: Pronajimatel, Zástupce nájemníka */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
               <input
                 type="checkbox"
-                checked={val.isTenant}
+                checked={val.isLandlord}
                 disabled={readOnly}
-                onChange={(e) => update({ isTenant: e.target.checked })}
+                onChange={(e) => update({ isLandlord: e.target.checked })}
                 style={{ marginRight: '0.5rem' }}
               />
-              Nájemník
+              Pronajimatel
             </label>
           </div>
           <div className="detail-form__field">
