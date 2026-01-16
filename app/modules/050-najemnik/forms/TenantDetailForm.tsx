@@ -191,6 +191,7 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
 
       // Role flags
       isUser: !!tenant.isUser,
+      isLandlord: !!tenant.isLandlord,
       isTenant: tenant.isTenant !== undefined ? !!tenant.isTenant : true, // Default true protože editujeme nájemníka
       isTenantDelegate: !!tenant.isTenantDelegate,
       isMaintenance: !!tenant.isMaintenance,
