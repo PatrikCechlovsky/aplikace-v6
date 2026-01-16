@@ -27,7 +27,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
   const toast = useToast()
   const [users, setUsers] = useState<TenantUser[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [editingUser, setEditingUser] = useState<TenantUser | null>(null)
   const [formData, setFormData] = useState<TenantUserFormData>({
     first_name: '',
@@ -67,7 +67,6 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
       birth_date: '',
       note: '',
     })
-    setShowForm(true)
   }
 
   const handleEdit = (user: TenantUser) => {
@@ -78,11 +77,9 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
       birth_date: user.birth_date,
       note: user.note || '',
     })
-    setShowForm(true)
   }
 
   const handleCancel = () => {
-    setShowForm(false)
     setEditingUser(null)
     setFormData({
       first_name: '',
@@ -99,6 +96,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
     }
 
     try {
+      setSaving(true)
       if (editingUser) {
         await updateTenantUser(editingUser.id, formData)
         toast.showSuccess('Uživatel byl aktualizován')
@@ -111,6 +109,8 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
     } catch (err: any) {
       logger.error('handleSave failed', err)
       toast.showError(err.message || 'Nepodařilo se uložit uživatele')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -137,176 +137,183 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
     )
   }
 
-  if (loading) {
-    return <div style={{ padding: '2rem' }}>Načítám uživatele...</div>
-  }
-
   return (
-    <div style={{ padding: '1.5rem' }}>
-      {/* Počet uživatelů */}
-      <div
-        style={{
-          marginBottom: '1.5rem',
-          padding: '1rem',
-          backgroundColor: 'var(--color-surface-subtle)',
-          borderRadius: '8px',
-          fontSize: '1rem',
-        }}
-      >
-        <strong>Počet uživatelů celkem:</strong> {totalCount} (1 nájemník + {users.length} spolubydlících)
-      </div>
-
+    <div className="detail-form">
       {/* Seznam uživatelů */}
-      {!showForm && (
-        <>
-          <div style={{ marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0 }}>Seznam uživatelů</h3>
-            {users.length === 0 && (
-              <p style={{ color: 'var(--color-text-subtle)', marginTop: '0.5rem' }}>Zatím žádní uživatelé.</p>
-            )}
-          </div>
+      <section className="detail-form__section">
+        <h3 className="detail-form__section-title">
+          Seznam uživatelů
+          <span style={{ marginLeft: '12px', fontWeight: 400, fontSize: '14px', color: 'var(--color-text-subtle)' }}>
+            Počet celkem: {totalCount} (1 nájemník + {users.length} spolubydlících)
+          </span>
+        </h3>
 
-          {users.length > 0 && (
-            <table
-              style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                marginBottom: '1.5rem',
-              }}
-            >
+        {loading && <div className="detail-form__hint">Načítám uživatele…</div>}
+
+        {!loading && users.length === 0 && <div className="detail-form__hint">Zatím žádní uživatelé.</div>}
+
+        {!loading && users.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr
-                  style={{
-                    backgroundColor: 'var(--color-surface-subtle)',
-                    textAlign: 'left',
-                  }}
-                >
-                  <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>Jméno</th>
-                  <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>Příjmení</th>
-                  <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>Datum narození</th>
-                  <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>Poznámka</th>
-                  <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)', width: '150px' }}>
-                    Akce
-                  </th>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Jméno</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Příjmení</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Datum narození</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Poznámka</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '0.75rem' }}>{user.first_name}</td>
-                    <td style={{ padding: '0.75rem' }}>{user.last_name}</td>
-                    <td style={{ padding: '0.75rem' }}>{new Date(user.birth_date).toLocaleDateString('cs-CZ')}</td>
-                    <td style={{ padding: '0.75rem' }}>{user.note || '—'}</td>
-                    <td style={{ padding: '0.75rem' }}>
-                      {viewMode !== 'read' && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(user)}
-                            style={{
-                              marginRight: '0.5rem',
-                              padding: '0.25rem 0.75rem',
-                              fontSize: '0.875rem',
-                            }}
-                          >
-                            Upravit
-                          </button>
-                          <button
-                            onClick={() => handleArchive(user.id)}
-                            style={{
-                              padding: '0.25rem 0.75rem',
-                              fontSize: '0.875rem',
-                              backgroundColor: 'var(--color-danger)',
-                              color: 'white',
-                            }}
-                          >
-                            Archivovat
-                          </button>
-                        </>
-                      )}
-                    </td>
+                  <tr
+                    key={user.id}
+                    onClick={() => handleEdit(user)}
+                    style={{
+                      cursor: viewMode !== 'read' ? 'pointer' : 'default',
+                      borderBottom: '1px solid var(--color-border-soft)',
+                      backgroundColor: editingUser?.id === user.id ? 'var(--color-primary-soft)' : 'transparent',
+                    }}
+                  >
+                    <td style={{ padding: '8px' }}>{user.first_name}</td>
+                    <td style={{ padding: '8px' }}>{user.last_name}</td>
+                    <td style={{ padding: '8px' }}>{new Date(user.birth_date).toLocaleDateString('cs-CZ')}</td>
+                    <td style={{ padding: '8px' }}>{user.note || '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
-
-          {viewMode !== 'read' && (
-            <button onClick={handleAdd} style={{ padding: '0.5rem 1.5rem' }}>
-              ➕ Přidat uživatele
-            </button>
-          )}
-        </>
-      )}
+          </div>
+        )}
+      </section>
 
       {/* Formulář */}
-      {showForm && (
-        <div
-          style={{
-            border: '1px solid var(--color-border)',
-            borderRadius: '8px',
-            padding: '1.5rem',
-            backgroundColor: 'var(--color-surface)',
-          }}
-        >
-          <h3 style={{ marginTop: 0 }}>{editingUser ? 'Upravit uživatele' : 'Přidat uživatele'}</h3>
+      <section className="detail-form__section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 className="detail-form__section-title">Formulář</h3>
+          {viewMode !== 'read' && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleAdd}
+                style={{
+                  padding: '6px 12px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  background: 'var(--color-surface)',
+                  cursor: 'pointer',
+                }}
+              >
+                ➕ Nový
+              </button>
+              {editingUser && (
+                <button
+                  type="button"
+                  onClick={() => handleArchive(editingUser.id)}
+                  style={{
+                    padding: '6px 12px',
+                    border: '1px solid var(--color-danger)',
+                    borderRadius: '8px',
+                    background: 'var(--color-danger)',
+                    color: 'white',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🗑️ Archivovat
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 500 }}>
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">
               Jméno <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
+              className="detail-form__input"
               type="text"
               value={formData.first_name}
               onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem' }}
+              readOnly={viewMode === 'read'}
             />
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 500 }}>
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">
               Příjmení <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
+              className="detail-form__input"
               type="text"
               value={formData.last_name}
               onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem' }}
+              readOnly={viewMode === 'read'}
             />
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 500 }}>
+          <div className="detail-form__field detail-form__field--span-4">
+            <label className="detail-form__label">
               Datum narození <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
+              className="detail-form__input"
               type="date"
               value={formData.birth_date}
               onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem' }}
+              readOnly={viewMode === 'read'}
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 500 }}>Poznámka</label>
+          <div className="detail-form__field detail-form__field--span-8">
+            <label className="detail-form__label">Poznámka</label>
             <textarea
+              className="detail-form__input"
               value={formData.note || ''}
               onChange={(e) => setFormData({ ...formData, note: e.target.value })}
               rows={3}
-              style={{ width: '100%', padding: '0.5rem' }}
               placeholder="např. manželka, syn, spoluuživatel garáže..."
+              readOnly={viewMode === 'read'}
             />
           </div>
+        </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button onClick={handleSave} style={{ padding: '0.5rem 1.5rem', backgroundColor: 'var(--color-primary)' }}>
-              {editingUser ? 'Uložit' : 'Přidat'}
+        {viewMode !== 'read' && (
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'var(--color-primary)',
+                color: 'white',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? 'Ukládám...' : editingUser ? 'Uložit' : 'Přidat'}
             </button>
-            <button onClick={handleCancel} style={{ padding: '0.5rem 1.5rem' }}>
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={saving}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
               Zrušit
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   )
 }
