@@ -37,7 +37,7 @@ type LocalViewMode = ViewMode | 'list'
 const VIEW_KEY = '030.tenants.list'
 
 const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'subjectTypeLabel', label: 'Typ pronajimatele', width: 160, sortable: true },
+  { key: 'subjectTypeLabel', label: 'Typ nájemníka', width: 160, sortable: true },
   { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
   { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
   { key: 'email', label: 'E-mail', width: 260, sortable: true },
