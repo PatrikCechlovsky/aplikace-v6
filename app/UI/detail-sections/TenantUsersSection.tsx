@@ -9,7 +9,6 @@ import {
   listTenantUsers,
   createTenantUser,
   updateTenantUser,
-  archiveTenantUser,
   type TenantUser,
   type TenantUserFormData,
 } from '@/app/lib/services/tenantUsers'
@@ -141,28 +140,6 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
       toast.showError(err.message || 'Nepodařilo se uložit uživatele')
     } finally {
       setSaving(false)
-    }
-  }
-
-  const handleArchive = async () => {
-    if (!selectedUserId) return
-    if (!confirm('Opravdu chcete archivovat tohoto uživatele?')) return
-
-    try {
-      await archiveTenantUser(selectedUserId)
-      toast.showSuccess('Uživatel byl archivován')
-      
-      // Obnovit seznam a vybrat první
-      const refreshed = await listTenantUsers(tenantId, false)
-      setUsers(refreshed)
-      if (refreshed.length > 0) {
-        selectUser(refreshed[0].id)
-      } else {
-        selectUser(null)
-      }
-    } catch (err: any) {
-      logger.error('handleArchive failed', err)
-      toast.showError(err.message || 'Nepodařilo se archivovat uživatele')
     }
   }
 
