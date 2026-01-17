@@ -13,6 +13,7 @@ import {
   type TenantUserFormData,
 } from '@/app/lib/services/tenantUsers'
 import { useToast } from '@/app/UI/Toast'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 
 const logger = createLogger('TenantUsersSection')
@@ -146,6 +147,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < users.length - 1
   const totalCount = users.length + 1 // +1 za nájemníka
+  const readOnly = viewMode === 'read'
 
   if (tenantId === 'new') {
     return (
@@ -205,11 +207,11 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
       </section>
 
       {/* Formulář */}
+      {!readOnly && (
       <section className="detail-form__section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 className="detail-form__section-title">Formulář</h3>
-          {viewMode !== 'read' && (
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="button"
                 onClick={handlePrevious}
@@ -222,8 +224,9 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                   cursor: canGoPrevious ? 'pointer' : 'not-allowed',
                   opacity: canGoPrevious ? 1 : 0.5,
                 }}
+                title="Předchozí uživatel"
               >
-                Předchozí
+                {getIcon('arrow-left' as IconKey)}
               </button>
               <button
                 type="button"
@@ -237,8 +240,9 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                   cursor: canGoNext ? 'pointer' : 'not-allowed',
                   opacity: canGoNext ? 1 : 0.5,
                 }}
+                title="Další uživatel"
               >
-                Další
+                {getIcon('arrow-right' as IconKey)}
               </button>
               <button
                 type="button"
@@ -250,8 +254,9 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                   background: 'var(--color-surface)',
                   cursor: 'pointer',
                 }}
+                title="Přidat nového uživatele"
               >
-                Přidat
+                {getIcon('add' as IconKey)}
               </button>
               <button
                 type="button"
@@ -266,11 +271,11 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                   cursor: saving || !isDirty ? 'not-allowed' : 'pointer',
                   opacity: saving || !isDirty ? 0.5 : 1,
                 }}
+                title={saving ? 'Ukládám…' : 'Uložit uživatele'}
               >
-                {saving ? 'Ukládám…' : 'Uložit'}
+                {getIcon('save' as IconKey)}
               </button>
-            </div>
-          )}
+          </div>
         </div>
 
         <div className="detail-form__grid detail-form__grid--narrow">
@@ -287,7 +292,6 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 setFormData({ ...formData, first_name: e.target.value })
                 setIsDirty(true)
               }}
-              readOnly={viewMode === 'read'}
             />
           </div>
           <div className="detail-form__field">
@@ -302,7 +306,6 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 setFormData({ ...formData, last_name: e.target.value })
                 setIsDirty(true)
               }}
-              readOnly={viewMode === 'read'}
             />
           </div>
 
@@ -319,7 +322,6 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 setFormData({ ...formData, birth_date: e.target.value })
                 setIsDirty(true)
               }}
-              readOnly={viewMode === 'read'}
             />
           </div>
           <div className="detail-form__field">
@@ -331,7 +333,6 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                   setIsArchived(e.target.checked)
                   setIsDirty(true)
                 }}
-                disabled={viewMode === 'read'}
               />
               Archivováno
             </label>
@@ -349,11 +350,12 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
               }}
               rows={3}
               placeholder="např. manželka, syn, spoluuživatel garáže..."
-              readOnly={viewMode === 'read'}
+
             />
           </div>
         </div>
       </section>
+      )}
     </div>
   )
 }

@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { listBankAccounts, listBanks, saveBankAccount, type BankAccountWithBank, type SaveBankAccountInput } from '@/app/lib/services/bankAccounts'
 import { useToast } from '@/app/UI/Toast'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 const logger = createLogger('AccountsSection')
 
@@ -219,6 +220,7 @@ export default function AccountsSection({ subjectId }: Props) {
 
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < accounts.length - 1
+  const readOnly = mode === 'view'
 
   return (
     <div className="detail-form">
@@ -273,6 +275,7 @@ export default function AccountsSection({ subjectId }: Props) {
       </section>
 
       {/* Formulář */}
+      {!readOnly && (
       <section className="detail-form__section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 className="detail-form__section-title">Formulář</h3>
@@ -289,8 +292,9 @@ export default function AccountsSection({ subjectId }: Props) {
                 cursor: canGoPrevious ? 'pointer' : 'not-allowed',
                 opacity: canGoPrevious ? 1 : 0.5,
               }}
+              title="Předchozí účet"
             >
-              Předchozí
+              {getIcon('arrow-left' as IconKey)}
             </button>
             <button
               type="button"
@@ -304,8 +308,9 @@ export default function AccountsSection({ subjectId }: Props) {
                 cursor: canGoNext ? 'pointer' : 'not-allowed',
                 opacity: canGoNext ? 1 : 0.5,
               }}
+              title="Další účet"
             >
-              Další
+              {getIcon('arrow-right' as IconKey)}
             </button>
             <button
               type="button"
@@ -317,8 +322,9 @@ export default function AccountsSection({ subjectId }: Props) {
                 background: 'var(--color-surface)',
                 cursor: 'pointer',
               }}
+              title="Přidat nový účet"
             >
-              Přidat
+              {getIcon('add' as IconKey)}
             </button>
             <button
               type="button"
@@ -333,8 +339,9 @@ export default function AccountsSection({ subjectId }: Props) {
                 cursor: saving || !isDirty ? 'not-allowed' : 'pointer',
                 opacity: saving || !isDirty ? 0.5 : 1,
               }}
+              title={saving ? 'Ukládám…' : 'Uložit účet'}
             >
-              {saving ? 'Ukládám…' : 'Uložit'}
+              {getIcon('save' as IconKey)}
             </button>
           </div>
         </div>
@@ -452,6 +459,7 @@ export default function AccountsSection({ subjectId }: Props) {
           </div>
         </div>
       </section>
+      )}
     </div>
   )
 }
