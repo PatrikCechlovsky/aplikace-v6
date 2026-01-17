@@ -25,7 +25,7 @@ type AccountFormValue = {
   isArchived: boolean
 }
 
-export default function AccountsSection({ subjectId }: Props) {
+export default function AccountsSection({ subjectId, mode = 'edit' }: Props) {
   const toast = useToast()
   const [accounts, setAccounts] = useState<BankAccountWithBank[]>([])
   const [loading, setLoading] = useState(true)
