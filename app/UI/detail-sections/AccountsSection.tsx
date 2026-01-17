@@ -287,7 +287,7 @@ export default function AccountsSection({ subjectId, mode = 'edit' }: Props) {
               className="common-actions__btn"
               title="Předchozí účet"
             >
-              <span className="common-actions__icon">{getIcon('arrow-left' as IconKey)}</span>
+              <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
               <span className="common-actions__label">Předchozí</span>
             </button>
             <button
@@ -297,7 +297,7 @@ export default function AccountsSection({ subjectId, mode = 'edit' }: Props) {
               className="common-actions__btn"
               title="Další účet"
             >
-              <span className="common-actions__icon">{getIcon('arrow-right' as IconKey)}</span>
+              <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
               <span className="common-actions__label">Další</span>
             </button>
             <button

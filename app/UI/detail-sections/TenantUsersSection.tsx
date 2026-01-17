@@ -219,7 +219,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 className="common-actions__btn"
                 title="Předchozí uživatel"
               >
-                <span className="common-actions__icon">{getIcon('arrow-left' as IconKey)}</span>
+                <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
                 <span className="common-actions__label">Předchozí</span>
               </button>
               <button
@@ -229,7 +229,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 className="common-actions__btn"
                 title="Další uživatel"
               >
-                <span className="common-actions__icon">{getIcon('arrow-right' as IconKey)}</span>
+                <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                 <span className="common-actions__label">Další</span>
               </button>
               <button
