@@ -187,9 +187,9 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    onClick={() => viewMode !== 'read' && selectUser(user.id)}
+                    onClick={() => !readOnly && selectUser(user.id)}
                     style={{
-                      cursor: viewMode !== 'read' ? 'pointer' : 'default',
+                      cursor: !readOnly ? 'pointer' : 'default',
                       borderBottom: '1px solid var(--color-border-soft)',
                       backgroundColor: selectedUserId === user.id ? 'var(--color-primary-soft)' : 'transparent',
                     }}
@@ -216,64 +216,40 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 type="button"
                 onClick={handlePrevious}
                 disabled={!canGoPrevious}
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                  background: 'var(--color-surface)',
-                  cursor: canGoPrevious ? 'pointer' : 'not-allowed',
-                  opacity: canGoPrevious ? 1 : 0.5,
-                }}
+                className="common-actions__btn"
                 title="Předchozí uživatel"
               >
-                {getIcon('arrow-left' as IconKey)}
+                <span className="common-actions__icon">{getIcon('arrow-left' as IconKey)}</span>
+                <span className="common-actions__label">Předchozí</span>
               </button>
               <button
                 type="button"
                 onClick={handleNext}
                 disabled={!canGoNext}
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                  background: 'var(--color-surface)',
-                  cursor: canGoNext ? 'pointer' : 'not-allowed',
-                  opacity: canGoNext ? 1 : 0.5,
-                }}
+                className="common-actions__btn"
                 title="Další uživatel"
               >
-                {getIcon('arrow-right' as IconKey)}
+                <span className="common-actions__icon">{getIcon('arrow-right' as IconKey)}</span>
+                <span className="common-actions__label">Další</span>
               </button>
               <button
                 type="button"
                 onClick={handleAdd}
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                  background: 'var(--color-surface)',
-                  cursor: 'pointer',
-                }}
+                className="common-actions__btn"
                 title="Přidat nového uživatele"
               >
-                {getIcon('add' as IconKey)}
+                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                <span className="common-actions__label">Přidat</span>
               </button>
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving || !isDirty}
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid var(--color-primary)',
-                  borderRadius: '8px',
-                  background: 'var(--color-primary)',
-                  color: 'white',
-                  cursor: saving || !isDirty ? 'not-allowed' : 'pointer',
-                  opacity: saving || !isDirty ? 0.5 : 1,
-                }}
+                className="common-actions__btn"
                 title={saving ? 'Ukládám…' : 'Uložit uživatele'}
               >
-                {getIcon('save' as IconKey)}
+                <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
               </button>
           </div>
         </div>
