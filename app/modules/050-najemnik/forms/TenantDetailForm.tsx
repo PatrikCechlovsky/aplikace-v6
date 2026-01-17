@@ -974,7 +974,35 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
           </div>
         </div>
 
-        {/* 2. řádek: Nájemník, Zástupce pronajimatele */}
+        {/* 2. řádek: Pronajímatel, Zástupce pronajimatele */}
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isLandlord}
+                disabled={readOnly}
+                onChange={(e) => update({ isLandlord: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Pronajímatel
+            </label>
+          </div>
+          <div className="detail-form__field">
+            <label className="detail-form__checkbox-label">
+              <input
+                type="checkbox"
+                checked={val.isLandlordDelegate}
+                disabled={readOnly}
+                onChange={(e) => update({ isLandlordDelegate: e.target.checked })}
+                style={{ marginRight: '0.5rem' }}
+              />
+              Zástupce pronajimatele
+            </label>
+          </div>
+        </div>
+
+        {/* 3. řádek: Nájemník, Zástupce nájemníka */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__checkbox-label">
@@ -986,34 +1014,6 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
                 style={{ marginRight: '0.5rem' }}
               />
               Nájemník
-            </label>
-          </div>
-          <div className="detail-form__field">
-            <label className="detail-form__checkbox-label">
-              <input
-                type="checkbox"
-                checked={val.isTenantDelegate}
-                disabled={readOnly}
-                onChange={(e) => update({ isTenantDelegate: e.target.checked })}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Zástupce pronajimatele
-            </label>
-          </div>
-        </div>
-
-        {/* 3. řádek: Pronajimatel, Zástupce nájemníka */}
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__checkbox-label">
-              <input
-                type="checkbox"
-                checked={val.isLandlord}
-                disabled={readOnly}
-                onChange={(e) => update({ isLandlord: e.target.checked })}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Pronajimatel
             </label>
           </div>
           <div className="detail-form__field">
