@@ -20,7 +20,7 @@ const logger = createLogger('TenantUsersSection')
 
 type TenantUsersSectionProps = {
   tenantId: string
-  viewMode: 'read' | 'edit' | 'create'
+  viewMode: 'view' | 'edit' | 'create'
 }
 
 export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSectionProps) {
@@ -147,7 +147,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < users.length - 1
   const totalCount = users.length + 1 // +1 za nájemníka
-  const readOnly = viewMode === 'read'
+  const readOnly = viewMode === 'view'
 
   if (tenantId === 'new') {
     return (
