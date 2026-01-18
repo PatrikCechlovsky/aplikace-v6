@@ -12,6 +12,7 @@ import { listProperties, type PropertiesListRow } from '@/app/lib/services/prope
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
+import { supabase } from '@/app/lib/supabaseClient'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -105,12 +106,38 @@ export default function PropertiesTile({
   const [filterInput, setFilterInput] = useState('')
   const [filterText, setFilterText] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [propertyTypeId, setPropertyTypeId] = useState<string | null>(null)
 
   // Debounce filter
   useEffect(() => {
     const timer = setTimeout(() => setFilterText(filterInput), 500)
     return () => clearTimeout(timer)
   }, [filterInput])
+
+  // Load property type UUID from code
+  useEffect(() => {
+    if (!propertyTypeCode) {
+      setPropertyTypeId(null)
+      return
+    }
+
+    async function loadPropertyTypeId() {
+      try {
+        const { data } = await supabase
+          .from('property_types')
+          .select('id')
+          .eq('code', propertyTypeCode)
+          .single()
+        
+        setPropertyTypeId(data?.id || null)
+      } catch (err) {
+        logger.error('Failed to load property type ID', err)
+        setPropertyTypeId(null)
+      }
+    }
+
+    loadPropertyTypeId()
+  }, [propertyTypeCode])
 
   // Register common actions
   useEffect(() => {
@@ -137,7 +164,7 @@ export default function PropertiesTile({
       
       const data = await listProperties({
         searchText: filterText,
-        propertyTypeId: null, // TODO: filter by propertyTypeCode
+        propertyTypeId: propertyTypeId,
         includeArchived: false,
       })
       
@@ -149,7 +176,7 @@ export default function PropertiesTile({
     } finally {
       setLoading(false)
     }
-  }, [filterText, toast])
+  }, [filterText, propertyTypeId, toast])
 
   useEffect(() => {
     loadData()
