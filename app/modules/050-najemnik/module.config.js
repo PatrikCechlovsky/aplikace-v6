@@ -42,7 +42,6 @@ export default {
       label: 'Přehled nájemníků',
       icon: 'list-alt',
       component: TenantsTile,
-      href: '/modules/050-najemnik',
       order: 10,
       // Dynamické children - typy nájemníků jako filtry
       children: [
