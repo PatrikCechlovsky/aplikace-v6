@@ -525,8 +525,11 @@ export default function Sidebar({
                                 <div
                                   className="sidebar__sublink"
                                   onClick={() => {
-                                    // Klik na tile vždy naviguje (zobrazí všechny záznamy)
+                                    // Klik na tile naviguje + pokud má children, automaticky je otevře
                                     handleSelect({ moduleId: m.id, tileId: t.id })
+                                    if (hasChildren && !isTileOpen) {
+                                      toggleTile(t.id)
+                                    }
                                   }}
                                 >
                                   {hasChildren && (
