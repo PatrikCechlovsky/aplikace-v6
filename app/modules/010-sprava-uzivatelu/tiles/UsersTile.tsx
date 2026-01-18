@@ -322,7 +322,18 @@ export default function UsersTile({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [filterText, setFilterText] = useState('')
+  const [filterInput, setFilterInput] = useState('') // Okamžitá hodnota z inputu
+  const [filterText, setFilterText] = useState('') // Debounced hodnota pro vyhledávání
+  
+  // Debounce pro filterText (500ms zpoždění)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilterText(filterInput)
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [filterInput])
+  
   const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -1288,8 +1299,8 @@ export default function UsersTile({
         <ListView<UiUser>
           columns={columns}
           rows={listRows}
-          filterValue={filterText}
-          onFilterChange={setFilterText}
+          filterValue={filterInput}
+          onFilterChange={setFilterInput}
           showArchived={showArchived}
           onShowArchivedChange={setShowArchived}
           selectedId={selectedId ?? null}

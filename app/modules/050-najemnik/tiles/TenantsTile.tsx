@@ -204,7 +204,17 @@ export default function TenantsTile({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [filterText, setFilterText] = useState('')
+  const [filterInput, setFilterInput] = useState('') // Okamžitá hodnota z inputu
+  const [filterText, setFilterText] = useState('') // Debounced hodnota pro vyhledávání
+  
+  // Debounce pro filterText (500ms zpoždění)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilterText(filterInput)
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [filterInput])
   
   // Vypočítat subjectTypeFilter přímo z props/URL bez state (spolehlivější)
   const subjectTypeFilter = useMemo(() => {
@@ -1069,8 +1079,8 @@ export default function TenantsTile({
             <ListView
               columns={columns}
               rows={rows}
-              filterValue={filterText}
-              onFilterChange={setFilterText}
+              filterValue={filterInput}
+              onFilterChange={setFilterInput}
               showArchived={showArchived}
               onShowArchivedChange={setShowArchived}
               selectedId={selectedId ?? null}

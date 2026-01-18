@@ -120,7 +120,18 @@ export default function GenericTypeTile({
   const [saving, setSaving] = useState(false)
 
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
-  const [filter, setFilter] = useState('')
+  const [filterInput, setFilterInput] = useState('') // Okamžitá hodnota z inputu
+  const [filter, setFilter] = useState('') // Debounced hodnota pro vyhledávání
+  
+  // Debounce pro filter (500ms zpoždění)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilter(filterInput)
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [filterInput])
+  
   const [showArchived, setShowArchived] = useState(false)
   const [orderEditInfo, setOrderEditInfo] = useState<string | null>(null)
 
@@ -660,8 +671,8 @@ export default function GenericTypeTile({
               type="text"
               className="generic-type__filter-input"
               placeholder="Hledat podle názvu, kódu nebo popisu..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={filterInput}
+              onChange={(e) => setFilterInput(e.target.value)}
             />
 
             <div className="generic-type__list-toolbar-right">
