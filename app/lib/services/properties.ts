@@ -362,18 +362,18 @@ export async function saveProperty(input: SavePropertyInput): Promise<PropertyDe
    ========================= */
 
 export type PropertyCountByType = {
-  property_type_id: string | null
+  property_type_code: string | null
   count: number
 }
 
 /**
- * Vrátí počty nemovitostí seskupené podle property_type_id.
+ * Vrátí počty nemovitostí seskupené podle property_type_code.
  * @param includeArchived - pokud true, počítá i archivované
  */
 export async function getPropertyCountsByType(includeArchived = false): Promise<PropertyCountByType[]> {
   let q = supabase
     .from('properties')
-    .select('property_type_id', { count: 'exact', head: false })
+    .select('property_type_code', { count: 'exact', head: false })
 
   if (!includeArchived) {
     q = q.or('is_archived.is.null,is_archived.eq.false')
@@ -384,15 +384,15 @@ export async function getPropertyCountsByType(includeArchived = false): Promise<
   if (error) throw new Error(error.message)
   if (!data) return []
 
-  // Seskupit podle property_type_id
+  // Seskupit podle property_type_code
   const countsMap = new Map<string | null, number>()
   for (const row of data) {
-    const typeId = row.property_type_id
-    countsMap.set(typeId, (countsMap.get(typeId) ?? 0) + 1)
+    const typeCode = row.property_type_code
+    countsMap.set(typeCode, (countsMap.get(typeCode) ?? 0) + 1)
   }
 
-  return Array.from(countsMap.entries()).map(([property_type_id, count]) => ({
-    property_type_id,
+  return Array.from(countsMap.entries()).map(([property_type_code, count]) => ({
+    property_type_code,
     count,
   }))
 }

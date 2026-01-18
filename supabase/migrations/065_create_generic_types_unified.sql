@@ -99,8 +99,12 @@ FROM public.equipment_types
 ON CONFLICT (category, code) DO NOTHING;
 
 -- ============================================================================
--- INDEXES
+-- INDEXES AND CONSTRAINTS
 -- ============================================================================
+
+-- Add UNIQUE constraint on code (assuming codes are unique across all categories)
+-- This allows FK constraints to reference generic_types(code) directly
+ALTER TABLE public.generic_types ADD CONSTRAINT generic_types_code_unique UNIQUE (code);
 
 CREATE INDEX idx_generic_types_category ON public.generic_types(category);
 CREATE INDEX idx_generic_types_active ON public.generic_types(active);
