@@ -828,7 +828,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     if (selection.tileId && activeModule.tiles?.length) {
       // Rekurzivní vyhledávání včetně children
-      const findTileRecursive = (tiles, id) => {
+      const findTileRecursive = (tiles: any[], id: string): any | null => {
         for (const t of tiles) {
           if (t.id === id) return t
           if (t.children?.length) {
