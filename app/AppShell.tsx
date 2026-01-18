@@ -638,17 +638,29 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     if (!confirmIfDirty()) return
 
+    // ✅ AUTO-SELECT: Pokud není vybrán tile, ale modul má tiles, automaticky vyber první
+    let finalSelection = { ...selection }
+    if (!selection.tileId && !selection.sectionId) {
+      const targetModule = modules.find(m => m.id === selection.moduleId)
+      if (targetModule?.tiles && targetModule.tiles.length > 0) {
+        const firstTile = targetModule.tiles.find(t => t.component) || targetModule.tiles[0]
+        if (firstTile) {
+          finalSelection.tileId = firstTile.id
+        }
+      }
+    }
+
     const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null
 
-    const nextModule = selection.moduleId ?? null
-    const nextTile = selection.tileId ?? null
+    const nextModule = finalSelection.moduleId ?? null
+    const nextTile = finalSelection.tileId ?? null
 
     const moduleChanged = prevModule !== nextModule
     const tileChanged = prevTile !== nextTile
 
-    setActiveModuleId(selection.moduleId)
-    setActiveSelection(selection)
+    setActiveModuleId(finalSelection.moduleId)
+    setActiveSelection(finalSelection)
 
     // ✅ KEY FIX:
     // Když měníš modul nebo tile, zahoď tile-specifické parametry (id/vm/...)
@@ -657,9 +669,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     setUrlState(
       {
-        moduleId: selection.moduleId,
-        sectionId: selection.sectionId ?? null,
-        tileId: selection.tileId ?? null,
+        moduleId: finalSelection.moduleId,
+        sectionId: finalSelection.sectionId ?? null,
+        tileId: finalSelection.tileId ?? null,
       },
       'push',
       keepOtherParams
