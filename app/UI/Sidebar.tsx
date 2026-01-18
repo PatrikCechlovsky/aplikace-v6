@@ -172,7 +172,6 @@ export default function Sidebar({
 
               // Načíst property types z generic_types
               const propertyTypes = await listActiveByCategory('property_types')
-              const typesById = new Map(propertyTypes.map((t) => [t.id, t]))
 
               // Aktualizovat children v "Přehled nemovitostí" tile
               tiles = tiles.map((tile) => {
