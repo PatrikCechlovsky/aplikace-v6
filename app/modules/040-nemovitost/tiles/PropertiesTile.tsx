@@ -232,7 +232,7 @@ export default function PropertiesTile({
         columns={BASE_COLUMNS}
         rows={properties.map(toRow)}
         onRowClick={handleRowClick}
-        selectedRowId={selectedId}
+        selectedId={selectedId}
         loading={loading}
       />
       
