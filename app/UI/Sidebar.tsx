@@ -20,12 +20,14 @@ import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectT
 /**
  * 3. úroveň – konkrétní položky (např. „Typy subjektů“).
  * sectionId říká, do které sekce (2. úroveň) tile patří.
+ * children umožňuje vnořené sub-tiles (např. filtry pod "Přehled nemovitostí")
  */
 interface SidebarTile {
   id: string
   label: string
   sectionId?: string | null
   icon?: string | null
+  children?: SidebarTile[]
 }
 
 /**
@@ -81,6 +83,8 @@ export default function Sidebar({
   const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([])
   // rozbalené sekce (2. úroveň)
   const [expandedSectionIds, setExpandedSectionIds] = useState<string[]>([])
+  // rozbalené tiles (3. úroveň - pro tiles s children)
+  const [expandedTileIds, setExpandedTileIds] = useState<string[]>([])
 
   // Načtení modulů z module.config.js
   useEffect(() => {
@@ -100,6 +104,13 @@ export default function Sidebar({
                 label: t.label ?? t.id,
                 sectionId: t.sectionId ?? null,
                 icon: t.icon ?? null,
+                children: Array.isArray(t.children)
+                  ? t.children.map((c: any) => ({
+                      id: c.id,
+                      label: c.label ?? c.id,
+                      icon: c.icon ?? null,
+                    }))
+                  : undefined,
               }))
             : []
 
@@ -304,6 +315,14 @@ export default function Sidebar({
       prev.includes(sectionId)
         ? prev.filter((id) => id !== sectionId)
         : [...prev, sectionId],
+    )
+  }
+
+  function toggleTile(tileId: string) {
+    setExpandedTileIds((prev) =>
+      prev.includes(tileId)
+        ? prev.filter((id) => id !== tileId)
+        : [...prev, tileId],
     )
   }
 
@@ -527,40 +546,114 @@ export default function Sidebar({
                           })}
                         </ul>
                       ) : (
-                        // Modul NEMÁ sections → fallback na 2-level (modul → tiles)
+                        // Modul NEMÁ sections → 2-level (modul → tiles s možnými children)
                         <ul className="sidebar__sublist">
                           {m.tiles!.map((t) => {
                             const tileHref = `/modules/${m.id}`
                             const isActiveTile = isTileActive(m, t)
+                            const hasChildren = t.children && t.children.length > 0
+                            const isTileOpen = expandedTileIds.includes(t.id)
 
                             return (
-                              <li
-                                key={t.id}
-                                className={
-                                  'sidebar__subitem' +
-                                  (isActiveTile
-                                    ? ' sidebar__subitem--active'
-                                    : '')
-                                }
-                              >
-                                <Link
-                                  href={tileHref}
-                                  className="sidebar__sublink"
-                                  onClick={(e) => {
-                                    handleSelect(
-                                      { moduleId: m.id, tileId: t.id },
-                                      e,
-                                    )
-                                  }}
+                              <li key={t.id}>
+                                <div
+                                  className={
+                                    'sidebar__subitem' +
+                                    (isActiveTile
+                                      ? ' sidebar__subitem--active'
+                                      : '')
+                                  }
                                 >
-                                  {showIcons && t.icon && (
-                                    <span className="sidebar__subicon">
-                                      {getIcon(t.icon as any)}
-                                    </span>
+                                  {hasChildren && (
+                                    <button
+                                      type="button"
+                                      className={
+                                        'sidebar__toggle' +
+                                        (isTileOpen
+                                          ? ' sidebar__toggle--open'
+                                          : '')
+                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        toggleTile(t.id)
+                                      }}
+                                      aria-label={
+                                        isTileOpen
+                                          ? 'Skrýt filtry'
+                                          : 'Zobrazit filtry'
+                                      }
+                                    >
+                                      ▸
+                                    </button>
                                   )}
-                                  <span className="sidebar__sublabel">
-                                    {t.label}</span>
-                                </Link>
+
+                                  <Link
+                                    href={tileHref}
+                                    className="sidebar__sublink"
+                                    onClick={(e) => {
+                                      handleSelect(
+                                        { moduleId: m.id, tileId: t.id },
+                                        e,
+                                      )
+                                    }}
+                                  >
+                                    {showIcons && t.icon && (
+                                      <span className="sidebar__subicon">
+                                        {getIcon(t.icon as any)}
+                                      </span>
+                                    )}
+                                    <span className="sidebar__sublabel">
+                                      {t.label}
+                                    </span>
+                                  </Link>
+                                </div>
+
+                                {/* 3. úroveň – children (filtry) pod tile */}
+                                {isTileOpen && hasChildren && (
+                                  <ul className="sidebar__subsublist">
+                                    {t.children!.map((child) => {
+                                      const childHref = `/modules/${m.id}`
+                                      const isActiveChild =
+                                        activeSelection?.moduleId === m.id &&
+                                        activeSelection?.tileId === child.id
+
+                                      return (
+                                        <li
+                                          key={child.id}
+                                          className={
+                                            'sidebar__subsubitem' +
+                                            (isActiveChild
+                                              ? ' sidebar__subsubitem--active'
+                                              : '')
+                                          }
+                                        >
+                                          <Link
+                                            href={childHref}
+                                            className="sidebar__subsublink"
+                                            onClick={(e) => {
+                                              handleSelect(
+                                                {
+                                                  moduleId: m.id,
+                                                  tileId: child.id,
+                                                },
+                                                e,
+                                              )
+                                            }}
+                                          >
+                                            {showIcons && child.icon && (
+                                              <span className="sidebar__subsubicon">
+                                                {getIcon(child.icon as any)}
+                                              </span>
+                                            )}
+                                            <span className="sidebar__subsublabel">
+                                              {child.label}
+                                            </span>
+                                          </Link>
+                                        </li>
+                                      )
+                                    })}
+                                  </ul>
+                                )}
                               </li>
                             )
                           })}

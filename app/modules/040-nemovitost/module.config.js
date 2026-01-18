@@ -33,127 +33,129 @@ export default {
   order: 40,
   enabled: true,
 
-  // 2. ÚROVEŇ – SECTIONS (hlavní kategorie)
-  sections: [
-    {
-      id: 'properties',
-      label: 'Nemovitosti',
-      icon: 'building',
-    },
-    {
-      id: 'units',
-      label: 'Jednotky',
-      icon: 'door-open',
-    },
-  ],
-
-  // 3. ÚROVEŇ – TILES (konkrétní pohledy)
+  // 2. ÚROVEŇ – TILES (flat seznam s možností children pro 3. úroveň)
   tiles: [
-    // === NEMOVITOSTI ===
+    // === PŘEHLED NEMOVITOSTÍ (s filtry jako children) ===
     {
       id: 'properties-list',
       label: 'Přehled nemovitostí',
       icon: 'list-alt',
-      sectionId: 'properties',
       component: PropertiesTile,
       order: 10,
+      children: [
+        // 3. ÚROVEŇ – Filtry podle typu nemovitosti
+        {
+          id: 'properties-type-rodinny_dum',
+          label: 'Rodinný dům (0)',
+          icon: 'home',
+          component: createPropertyTypeTile('rodinny_dum'),
+          propertyTypeCode: 'rodinny_dum',
+          dynamicLabel: true,
+        },
+        {
+          id: 'properties-type-bytovy_dum',
+          label: 'Bytový dům (0)',
+          icon: 'building',
+          component: createPropertyTypeTile('bytovy_dum'),
+          propertyTypeCode: 'bytovy_dum',
+          dynamicLabel: true,
+        },
+        {
+          id: 'properties-type-admin_budova',
+          label: 'Admin. budova (0)',
+          icon: 'briefcase',
+          component: createPropertyTypeTile('admin_budova'),
+          propertyTypeCode: 'admin_budova',
+          dynamicLabel: true,
+        },
+        {
+          id: 'properties-type-jiny_objekt',
+          label: 'Jiný objekt (0)',
+          icon: 'cube',
+          component: createPropertyTypeTile('jiny_objekt'),
+          propertyTypeCode: 'jiny_objekt',
+          dynamicLabel: true,
+        },
+        {
+          id: 'properties-type-pozemek',
+          label: 'Pozemek (0)',
+          icon: 'map',
+          component: createPropertyTypeTile('pozemek'),
+          propertyTypeCode: 'pozemek',
+          dynamicLabel: true,
+        },
+        {
+          id: 'properties-type-prumyslovy_objekt',
+          label: 'Průmysl. objekt (0)',
+          icon: 'industry',
+          component: createPropertyTypeTile('prumyslovy_objekt'),
+          propertyTypeCode: 'prumyslovy_objekt',
+          dynamicLabel: true,
+        },
+      ],
     },
+
+    // === PŘIDAT NEMOVITOST ===
     {
       id: 'properties-add',
       label: 'Přidat nemovitost',
       icon: 'plus',
-      sectionId: 'properties',
       component: null, // TODO: Add mode
-      order: 11,
-    },
-    // Filtry podle typu nemovitosti (vnořené pod sekci Nemovitosti)
-    {
-      id: 'properties-type-rodinny_dum',
-      label: 'Rodinný dům (0)',
-      icon: 'home',
-      sectionId: 'properties',
-      component: createPropertyTypeTile('rodinny_dum'),
-      order: 20,
-      propertyTypeCode: 'rodinny_dum',
-      dynamicLabel: true,
-    },
-    {
-      id: 'properties-type-bytovy_dum',
-      label: 'Bytový dům (0)',
-      icon: 'building',
-      sectionId: 'properties',
-      component: createPropertyTypeTile('bytovy_dum'),
-      order: 21,
-      propertyTypeCode: 'bytovy_dum',
-      dynamicLabel: true,
-    },
-    {
-      id: 'properties-type-admin_budova',
-      label: 'Admin. budova (0)',
-      icon: 'briefcase',
-      sectionId: 'properties',
-      component: createPropertyTypeTile('admin_budova'),
-      order: 22,
-      propertyTypeCode: 'admin_budova',
-      dynamicLabel: true,
-    },
-    {
-      id: 'properties-type-jiny_objekt',
-      label: 'Jiný objekt (0)',
-      icon: 'cube',
-      sectionId: 'properties',
-      component: createPropertyTypeTile('jiny_objekt'),
-      order: 23,
-      propertyTypeCode: 'jiny_objekt',
-      dynamicLabel: true,
-    },
-    {
-      id: 'properties-type-pozemek',
-      label: 'Pozemek (0)',
-      icon: 'map',
-      sectionId: 'properties',
-      component: createPropertyTypeTile('pozemek'),
-      order: 24,
-      propertyTypeCode: 'pozemek',
-      dynamicLabel: true,
-    },
-    {
-      id: 'properties-type-prumyslovy_objekt',
-      label: 'Průmysl. objekt (0)',
-      icon: 'industry',
-      sectionId: 'properties',
-      component: createPropertyTypeTile('prumyslovy_objekt'),
-      order: 25,
-      propertyTypeCode: 'prumyslovy_objekt',
-      dynamicLabel: true,
+      order: 15,
     },
 
-    // === JEDNOTKY ===
+    // === PŘEHLED JEDNOTEK (s filtry jako children) ===
     {
       id: 'units-list',
       label: 'Přehled jednotek',
       icon: 'list-alt',
-      sectionId: 'units',
       component: UnitsTile,
-      order: 30,
+      order: 20,
+      children: [
+        // 3. ÚROVEŇ – Filtry podle typu jednotky
+        {
+          id: 'units-type-byt',
+          label: 'Byt (0)',
+          icon: 'door-open',
+          component: null, // TODO: UnitTypeTile
+          unitTypeCode: 'byt',
+          dynamicLabel: true,
+        },
+        {
+          id: 'units-type-puda',
+          label: 'Půda (0)',
+          icon: 'home',
+          component: null, // TODO: UnitTypeTile
+          unitTypeCode: 'puda',
+          dynamicLabel: true,
+        },
+        {
+          id: 'units-type-garaz',
+          label: 'Garáž (0)',
+          icon: 'car',
+          component: null, // TODO: UnitTypeTile
+          unitTypeCode: 'garaz',
+          dynamicLabel: true,
+        },
+      ],
     },
+
+    // === PŘIDAT JEDNOTKU ===
     {
       id: 'units-add',
       label: 'Přidat jednotku',
       icon: 'plus',
-      sectionId: 'units',
       component: null, // TODO: Add mode
-      order: 31,
+      order: 25,
     },
 
-    // === OSTATNÍ (bez sekce, na 2. úrovni) ===
+    // === KATALOG VYBAVENÍ ===
     {
       id: 'equipment-catalog',
-      label: 'Katalog vybavení',
+      label: 'Přehled vybavení',
       icon: 'toolbox',
-      sectionId: null,
       component: EquipmentTile,
-      order: 100,
+      order: 30,
     },
   ],
 }
