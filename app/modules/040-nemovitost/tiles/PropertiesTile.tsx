@@ -193,7 +193,7 @@ export default function PropertiesTile({
 
   const handleRowClick = useCallback((row: ListViewRow<UiProperty>) => {
     setSelectedId(row.id)
-    toast.showInfo(`Detail nemovitosti: ${row.raw.displayName} - v implementaci`)
+    toast.showInfo(`Detail nemovitosti: ${row.raw?.displayName || 'Nemovitost'} - v implementaci`)
   }, [toast])
 
   if (loading && properties.length === 0) {
