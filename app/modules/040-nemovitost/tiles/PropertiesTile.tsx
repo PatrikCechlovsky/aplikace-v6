@@ -1,13 +1,15 @@
 'use client'
 
 // FILE: app/modules/040-nemovitost/tiles/PropertiesTile.tsx
-// PURPOSE: Seznam nemovitostí s filtry + detail view
+// PURPOSE: Seznam nemovitostí s filtry + detail view - stejné chování jako LandlordsTile
 // URL state: t=properties-list, id + vm (detail: read/edit/create)
 
-import React, { useCallback, useEffect, useState } from 'react'
-import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, type PropertiesListRow } from '@/app/lib/services/properties'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
@@ -17,13 +19,15 @@ import '@/app/styles/components/TileLayout.css'
 
 const logger = createLogger('040 PropertiesTile')
 
+const VIEW_KEY = '040.properties.list'
+
 const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'propertyTypeName', label: 'Typ', width: 160 },
-  { key: 'displayName', label: 'Název', width: 250 },
-  { key: 'fullAddress', label: 'Adresa', width: 300 },
-  { key: 'landlordName', label: 'Pronajímatel', width: 200 },
-  { key: 'buildingArea', label: 'Plocha (m²)', width: 120 },
-  { key: 'unitsCount', label: 'Jednotky', width: 100 },
+  { key: 'propertyTypeName', label: 'Typ', width: 160, sortable: true },
+  { key: 'displayName', label: 'Název', width: 250, sortable: true },
+  { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
+  { key: 'landlordName', label: 'Pronajímatel', width: 200, sortable: true },
+  { key: 'buildingArea', label: 'Plocha (m²)', width: 120, sortable: true },
+  { key: 'unitsCount', label: 'Jednotky', width: 100, sortable: true },
 ]
 
 type UiProperty = {
@@ -31,10 +35,12 @@ type UiProperty = {
   displayName: string
   propertyTypeName: string
   propertyTypeColor: string | null
+  propertyTypeOrderIndex: number | null
   landlordName: string | null
   fullAddress: string
   buildingArea: number | null
   unitsCount: number
+  isArchived: boolean
 }
 
 function mapRowToUi(row: PropertiesListRow): UiProperty {
@@ -49,10 +55,12 @@ function mapRowToUi(row: PropertiesListRow): UiProperty {
     displayName: row.display_name || '—',
     propertyTypeName: row.property_type_name || '—',
     propertyTypeColor: row.property_type_color || null,
+    propertyTypeOrderIndex: null, // TODO: pokud bude v property_types sort_order
     landlordName: row.landlord_name || '—',
     fullAddress: addressParts.join(', ') || '—',
     buildingArea: row.building_area,
     unitsCount: row.units_count || 0,
+    isArchived: !!row.is_archived,
   }
 }
 
@@ -77,6 +85,7 @@ function toRow(p: UiProperty): ListViewRow<UiProperty> {
       buildingArea: p.buildingArea ? `${p.buildingArea.toFixed(2)} m²` : '—',
       unitsCount: p.unitsCount.toString(),
     },
+    className: p.isArchived ? 'row--archived' : undefined,
     raw: p,
   }
 }
@@ -99,10 +108,48 @@ export default function PropertiesTile({
   const [properties, setProperties] = useState<UiProperty[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
   const [filterInput, setFilterInput] = useState('')
   const [filterText, setFilterText] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [propertyTypeId, setPropertyTypeId] = useState<string | null>(null)
+  
+  // Column settings
+  const [colsOpen, setColsOpen] = useState(false)
+  const [sort, setSort] = useState<ListViewSortState>(null)
+  const [columns, setColumns] = useState<ListViewColumn[]>(BASE_COLUMNS)
+
+  // View mode (list only for now, later add read/edit/create)
+  const viewMode: ViewMode = 'list'
+  const isDirty = false
+
+  // Load view prefs
+  useEffect(() => {
+    const prefs = loadViewPrefs(VIEW_KEY)
+    if (prefs) {
+      if (prefs.columns) {
+        setColumns(applyColumnPrefs(BASE_COLUMNS, prefs.columns))
+      }
+      if (prefs.sort) {
+        const s: ViewPrefsSortState = prefs.sort as any
+        setSort({ key: s.key, dir: s.dir })
+      }
+    }
+  }, [])
+
+  // Save view prefs when changed
+  const savePrefs = useCallback(() => {
+    const prefs: ViewPrefs = {
+      columns: columns.map((c) => ({ key: c.key, width: c.width, visible: true })),
+      sort: sort ? { key: sort.key, dir: sort.dir } : undefined,
+    }
+    saveViewPrefs(VIEW_KEY, prefs)
+  }, [columns, sort])
+
+  useEffect(() => {
+    savePrefs()
+  }, [savePrefs])
 
   // Debounce filter
   useEffect(() => {
@@ -121,7 +168,7 @@ export default function PropertiesTile({
       try {
         const { data } = await supabase
           .from('property_types')
-          .select('id')
+          .select('id, name')
           .eq('code', propertyTypeCode)
           .single()
         
@@ -137,20 +184,50 @@ export default function PropertiesTile({
 
   // Register common actions
   useEffect(() => {
-    if (onRegisterCommonActions) {
-      onRegisterCommonActions(['add'])
+    const actions: CommonActionId[] = []
+    if (viewMode === 'list') {
+      actions.push('add')
+      if (selectedId) {
+        actions.push('view', 'edit')
+      }
+      actions.push('columnSettings', 'close')
     }
-  }, [onRegisterCommonActions])
 
+    onRegisterCommonActions?.(actions)
+    onRegisterCommonActionsState?.({
+      viewMode,
+      hasSelection: !!selectedId,
+      isDirty,
+    })
+  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+
+  // Handle common actions
   useEffect(() => {
-    if (onRegisterCommonActionsState) {
-      onRegisterCommonActionsState({
-        viewMode: 'list',
-        hasSelection: !!selectedId,
-        isDirty: false,
-      })
-    }
-  }, [selectedId, onRegisterCommonActionsState])
+    if (!onRegisterCommonActionHandler) return
+    
+    onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      if (id === 'close') {
+        // TODO: Close tile or go back to module
+        toast.showInfo('Zavřít - v implementaci')
+        return
+      }
+
+      if (id === 'columnSettings') {
+        setColsOpen(true)
+        return
+      }
+
+      if (id === 'add') {
+        toast.showInfo('Vytvoření nemovitosti - v implementaci')
+        return
+      }
+
+      if (id === 'view' || id === 'edit') {
+        toast.showInfo(`${id === 'view' ? 'Detail' : 'Úprava'} nemovitosti - v implementaci`)
+        return
+      }
+    })
+  }, [onRegisterCommonActionHandler, toast])
 
   // Load data
   const loadData = useCallback(async () => {
@@ -161,7 +238,7 @@ export default function PropertiesTile({
       const data = await listProperties({
         searchText: filterText,
         propertyTypeId: propertyTypeId,
-        includeArchived: false,
+        includeArchived: showArchived,
       })
       
       setProperties(data.map(mapRowToUi))
@@ -172,82 +249,127 @@ export default function PropertiesTile({
     } finally {
       setLoading(false)
     }
-  }, [filterText, propertyTypeId, toast])
+  }, [filterText, propertyTypeId, showArchived, toast])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  // Handle common actions
-  useEffect(() => {
-    if (!onRegisterCommonActionHandler) return
-    
-    const handler = (actionId: CommonActionId) => {
-      if (actionId === 'add') {
-        toast.showInfo('Vytvoření nemovitosti - v implementaci')
-      }
-    }
-    
-    onRegisterCommonActionHandler(handler)
-  }, [onRegisterCommonActionHandler, toast])
-
+  // Row handlers
   const handleRowClick = useCallback((row: ListViewRow<UiProperty>) => {
     setSelectedId(row.id)
-    toast.showInfo(`Detail nemovitosti: ${row.raw?.displayName || 'Nemovitost'} - v implementaci`)
+  }, [])
+
+  const handleRowDoubleClick = useCallback((row: ListViewRow<UiProperty>) => {
+    const property = row.raw
+    if (!property) return
+    toast.showInfo(`Detail nemovitosti: ${property.displayName} - v implementaci`)
   }, [toast])
 
-  if (loading && properties.length === 0) {
-    return <SkeletonTable rows={10} columns={BASE_COLUMNS.length} />
-  }
+  // Sort handler
+  const handleSortChange = useCallback((nextSort: ListViewSortState) => {
+    setSort(nextSort)
+  }, [])
 
-  if (error && properties.length === 0) {
+  // Column resize handler
+  const handleColumnResize = useCallback((columnKey: string, widthPx: number) => {
+    setColumns((prev) =>
+      prev.map((c) => (c.key === columnKey ? { ...c, width: widthPx } : c))
+    )
+  }, [])
+
+  // Apply sorting to rows
+  const rows = useMemo(() => {
+    let sorted = [...properties]
+
+    if (sort) {
+      sorted.sort((a, b) => {
+        const aVal = (a as any)[sort.key]
+        const bVal = (b as any)[sort.key]
+
+        if (aVal == null && bVal == null) return 0
+        if (aVal == null) return sort.dir === 'asc' ? 1 : -1
+        if (bVal == null) return sort.dir === 'asc' ? -1 : 1
+
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sort.dir === 'asc'
+            ? aVal.localeCompare(bVal, 'cs')
+            : bVal.localeCompare(aVal, 'cs')
+        }
+
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sort.dir === 'asc' ? aVal - bVal : bVal - aVal
+        }
+
+        return 0
+      })
+    }
+
+    return sorted.map(toRow)
+  }, [properties, sort])
+
+  // Page title based on filter
+  const pageTitle = useMemo(() => {
+    if (propertyTypeCode) {
+      // TODO: Get property type name from loaded data
+      return `Přehled nemovitostí - ${propertyTypeCode}`
+    }
+    return 'Přehled nemovitostí'
+  }, [propertyTypeCode])
+
+  if (viewMode === 'list') {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p style={{ color: '#ef4444' }}>❌ {error}</p>
-        <button onClick={loadData} style={{ marginTop: '10px' }}>
-          Zkusit znovu
-        </button>
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">{pageTitle}</h1>
+          <p className="tile-layout__description">
+            Seznam všech nemovitostí. Můžeš filtrovat, řadit a spravovat nemovitosti.
+          </p>
+        </div>
+        {error && <div style={{ padding: '0 1.5rem 0.5rem', color: 'crimson' }}>{error}</div>}
+        {loading ? (
+          <div className="tile-layout__content">
+            <SkeletonTable rows={8} columns={columns.length} />
+          </div>
+        ) : (
+          <div className="tile-layout__content">
+            <ListView
+              columns={columns}
+              rows={rows}
+              filterValue={filterInput}
+              onFilterChange={setFilterInput}
+              showArchived={showArchived}
+              onShowArchivedChange={setShowArchived}
+              selectedId={selectedId ?? null}
+              onRowClick={handleRowClick}
+              onRowDoubleClick={handleRowDoubleClick}
+              sort={sort}
+              onSortChange={handleSortChange}
+              onColumnResize={handleColumnResize}
+            />
+            
+            {properties.length === 0 && (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                {filterInput ? 'Žádné nemovitosti nenalezeny' : 'Zatím nemáte žádné nemovitosti'}
+              </div>
+            )}
+          </div>
+        )}
+
+        {colsOpen && (
+          <ListViewColumnsDrawer
+            columns={columns}
+            onClose={() => setColsOpen(false)}
+            onApply={(newCols) => {
+              setColumns(newCols)
+              setColsOpen(false)
+            }}
+          />
+        )}
       </div>
     )
   }
 
-  return (
-    <div className="tile-layout">
-      <div className="tile-layout__filters">
-        <input
-          type="text"
-          placeholder="Hledat nemovitost..."
-          value={filterInput}
-          onChange={(e) => setFilterInput(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            width: '300px',
-          }}
-        />
-      </div>
-      
-      {loading ? (
-        <SkeletonTable rows={8} columns={BASE_COLUMNS.length} />
-      ) : (
-        <>
-          <ListView
-            columns={BASE_COLUMNS}
-            rows={properties.map(toRow)}
-            filterValue={filterText}
-            onFilterChange={setFilterText}
-            onRowClick={handleRowClick}
-            selectedId={selectedId}
-          />
-          
-          {properties.length === 0 && (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-              {filterText ? 'Žádné nemovitosti nenalezeny' : 'Zatím nemáte žádné nemovitosti'}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
+  // TODO: Add read/edit/create modes here
+  return <div>Mode {viewMode} - v implementaci</div>
 }

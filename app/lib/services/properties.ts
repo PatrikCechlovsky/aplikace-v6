@@ -118,6 +118,25 @@ export async function listProperties(params: PropertiesListParams = {}): Promise
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
+  // Get property IDs for counting units
+  const propertyIds = (data ?? []).map((row: any) => row.id)
+  
+  // Count units for each property
+  const unitCounts: Record<string, number> = {}
+  if (propertyIds.length > 0) {
+    const { data: countsData } = await supabase
+      .from('units')
+      .select('property_id')
+      .in('property_id', propertyIds)
+      .or('is_archived.is.null,is_archived.eq.false')
+    
+    if (countsData) {
+      countsData.forEach((row: any) => {
+        unitCounts[row.property_id] = (unitCounts[row.property_id] || 0) + 1
+      })
+    }
+  }
+
   // Transform joined data
   const rows = (data ?? []).map((row: any) => {
     const landlord = Array.isArray(row.landlord) ? row.landlord[0] : row.landlord
@@ -129,7 +148,7 @@ export async function listProperties(params: PropertiesListParams = {}): Promise
       property_type_name: propertyType?.name ?? null,
       property_type_icon: propertyType?.icon ?? null,
       property_type_color: propertyType?.color ?? null,
-      units_count: 0, // TODO: count from units table
+      units_count: unitCounts[row.id] || 0,
     }
   })
 
