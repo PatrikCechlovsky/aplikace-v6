@@ -5,7 +5,6 @@
 // URL state: t=properties-list, id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, type PropertiesListRow } from '@/app/lib/services/properties'
@@ -96,9 +95,6 @@ export default function PropertiesTile({
   onRegisterCommonActionHandler,
 }: PropertiesTileProps) {
   const toast = useToast()
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   const [properties, setProperties] = useState<UiProperty[]>([])
   const [loading, setLoading] = useState(false)
