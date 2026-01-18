@@ -119,6 +119,7 @@ function buildInitialFormValue(l: UiTenant): TenantFormValue {
 
     isUser: !!l.isUser,
     isLandlord: !!l.isLandlord,
+    isLandlordDelegate: !!l.isLandlordDelegate,
     isTenant: l.isTenant !== undefined ? !!l.isTenant : true,
     isTenantDelegate: !!l.isTenantDelegate,
     isMaintenance: !!l.isMaintenance,
