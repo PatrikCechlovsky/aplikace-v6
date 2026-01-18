@@ -26,7 +26,8 @@
 /* listy bez odrážek */
 .sidebar__list,
 .sidebar__sectionlist,
-.sidebar__sublist {
+.sidebar__sublist,
+.sidebar__subsublist {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -152,6 +153,7 @@
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
+  cursor: pointer; /* Přidáno - je to clickable wrapper */
 }
 
 .sidebar__subitem--active .sidebar__sublink {
@@ -166,6 +168,41 @@
 .sidebar__sublabel {
   font-size: 16px; /* Comfortable */
   white-space: nowrap;
+}
+
+/* =========================
+   Level 4 (children pod tiles)
+   ========================= */
+
+.sidebar__subsublink {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-gap);
+  padding: 4px 8px 4px 56px; /* Hlubší odsazení než level 3 */
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sidebar__subsubitem--active .sidebar__subsublink {
+  background: var(--color-selected-row-bg);
+}
+
+.sidebar__subsubicon {
+  font-size: 16px;
+}
+
+.sidebar__subsublabel {
+  font-size: 16px; /* Comfortable */
+  white-space: nowrap;
+}
+
+/* Pseudoelement pro zarovnání bez toggle buttonu */
+.sidebar__subsublink::before {
+  content: '';
+  width: var(--sb-gutter);
+  flex: 0 0 var(--sb-gutter);
 }
 
 /* =========================================================
@@ -238,6 +275,19 @@
   padding: 3px 8px 3px 36px;
 }
 
+/* Level 4 */
+.layout.layout--density-compact .sidebar__subsublabel {
+  font-size: 13px; /* Compact */
+}
+
+.layout.layout--density-compact .sidebar__subsubicon {
+  font-size: 15px;
+}
+
+.layout.layout--density-compact .sidebar__subsublink {
+  padding: 3px 8px 3px 50px;
+}
+
 /* MINI */
 .layout.layout--density-mini {
   --sb-gutter: 14px;
@@ -289,6 +339,19 @@
   padding: 2px 8px 2px 32px;
 }
 
+/* Level 4 */
+.layout.layout--density-mini .sidebar__subsublabel {
+  font-size: 11px;
+}
+
+.layout.layout--density-mini .sidebar__subsubicon {
+  font-size: 14px;
+}
+
+.layout.layout--density-mini .sidebar__subsublink {
+  padding: 2px 8px 2px 44px;
+}
+
 /* =========================================================
    Excel: jemné ohraničení řádků v sidebaru (SAFE)
    - jen border-bottom, nic layoutového
@@ -296,6 +359,7 @@
 
 .layout.layout--excel .sidebar__row,
 .layout.layout--excel .sidebar__section-row,
-.layout.layout--excel .sidebar__sublink {
+.layout.layout--excel .sidebar__sublink,
+.layout.layout--excel .sidebar__subsublink {
   border-bottom: 1px solid var(--color-border-soft);
 }

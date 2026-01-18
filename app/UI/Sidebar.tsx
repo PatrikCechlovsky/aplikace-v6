@@ -555,14 +555,25 @@ export default function Sidebar({
                             const isTileOpen = expandedTileIds.includes(t.id)
 
                             return (
-                              <li key={t.id}>
+                              <li
+                                key={t.id}
+                                className={
+                                  'sidebar__subitem' +
+                                  (isActiveTile
+                                    ? ' sidebar__subitem--active'
+                                    : '')
+                                }
+                              >
+                                {/* 2. úroveň – tile row (stejná struktura jako section-row) */}
                                 <div
-                                  className={
-                                    'sidebar__subitem' +
-                                    (isActiveTile
-                                      ? ' sidebar__subitem--active'
-                                      : '')
-                                  }
+                                  className="sidebar__sublink"
+                                  onClick={() => {
+                                    handleSelect({ moduleId: m.id, tileId: t.id })
+                                    // Pokud má children, toggle při kliku
+                                    if (hasChildren) {
+                                      toggleTile(t.id)
+                                    }
+                                  }}
                                 >
                                   {hasChildren && (
                                     <button
@@ -587,25 +598,15 @@ export default function Sidebar({
                                     </button>
                                   )}
 
-                                  <Link
-                                    href={tileHref}
-                                    className="sidebar__sublink"
-                                    onClick={(e) => {
-                                      handleSelect(
-                                        { moduleId: m.id, tileId: t.id },
-                                        e,
-                                      )
-                                    }}
-                                  >
-                                    {showIcons && t.icon && (
-                                      <span className="sidebar__subicon">
-                                        {getIcon(t.icon as any)}
-                                      </span>
-                                    )}
-                                    <span className="sidebar__sublabel">
-                                      {t.label}
+                                  {showIcons && t.icon && (
+                                    <span className="sidebar__subicon">
+                                      {getIcon(t.icon as any)}
                                     </span>
-                                  </Link>
+                                  )}
+
+                                  <span className="sidebar__sublabel">
+                                    {t.label}
+                                  </span>
                                 </div>
 
                                 {/* 3. úroveň – children (filtry) pod tile */}
