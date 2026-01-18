@@ -74,21 +74,16 @@ function toRow(p: UiProperty): ListViewRow<UiProperty> {
         <span style={{ 
           backgroundColor: p.propertyTypeColor,
           color: '#fff',
-          padding: '2px 8px',
+          padding: '4px 12px',
           borderRadius: '4px',
           fontSize: '0.875rem',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '4px',
+          fontWeight: 500,
+          display: 'inline-block',
         }}>
-          {p.propertyTypeIcon && <span>{p.propertyTypeIcon}</span>}
           {p.propertyTypeName}
         </span>
       ) : (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          {p.propertyTypeIcon && <span>{p.propertyTypeIcon}</span>}
-          {p.propertyTypeName}
-        </span>
+        <span>{p.propertyTypeName}</span>
       ),
       displayName: p.displayName,
       fullAddress: p.fullAddress,
