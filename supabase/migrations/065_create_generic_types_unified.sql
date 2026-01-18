@@ -193,24 +193,12 @@ BEGIN
     -- Drop old FK if exists
     ALTER TABLE public.units DROP CONSTRAINT IF EXISTS units_unit_type_id_fkey;
     
-    -- Add temporary code column to store current TEXT values
-    ALTER TABLE public.units ADD COLUMN IF NOT EXISTS unit_type_code_temp TEXT;
-    
-    -- Copy current unit_type_id values (TEXT) to temp column
-    UPDATE public.units SET unit_type_code_temp = unit_type_id;
-    
-    -- Change unit_type_id column type from TEXT to UUID
-    ALTER TABLE public.units ALTER COLUMN unit_type_id TYPE UUID USING NULL;
-    
-    -- Update unit_type_id to new UUID from generic_types (lookup by code)
-    UPDATE public.units u
-    SET unit_type_id = gt.id
-    FROM public.generic_types gt
-    WHERE gt.category = 'unit_types' 
-    AND gt.code = u.unit_type_code_temp;
-    
-    -- Drop temporary column
-    ALTER TABLE public.units DROP COLUMN unit_type_code_temp;
+    -- Change unit_type_id column type from TEXT to UUID with direct lookup
+    -- USING subquery converts TEXT code to UUID from generic_types
+    ALTER TABLE public.units ALTER COLUMN unit_type_id TYPE UUID USING (
+      SELECT gt.id FROM public.generic_types gt 
+      WHERE gt.category = 'unit_types' AND gt.code = units.unit_type_id
+    );
     
     -- Add new FK constraint to generic_types
     ALTER TABLE public.units
@@ -255,24 +243,12 @@ BEGIN
     -- Drop old FK if exists
     ALTER TABLE public.equipment DROP CONSTRAINT IF EXISTS equipment_equipment_type_id_fkey;
     
-    -- Add temporary code column to store current TEXT values
-    ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS equipment_type_code_temp TEXT;
-    
-    -- Copy current equipment_type_id values (TEXT) to temp column
-    UPDATE public.equipment SET equipment_type_code_temp = equipment_type_id;
-    
-    -- Change equipment_type_id column type from TEXT to UUID
-    ALTER TABLE public.equipment ALTER COLUMN equipment_type_id TYPE UUID USING NULL;
-    
-    -- Update equipment_type_id to new UUID from generic_types (lookup by code)
-    UPDATE public.equipment e
-    SET equipment_type_id = gt.id
-    FROM public.generic_types gt
-    WHERE gt.category = 'equipment_types' 
-    AND gt.code = e.equipment_type_code_temp;
-    
-    -- Drop temporary column
-    ALTER TABLE public.equipment DROP COLUMN equipment_type_code_temp;
+    -- Change equipment_type_id column type from TEXT to UUID with direct lookup
+    -- USING subquery converts TEXT code to UUID from generic_types
+    ALTER TABLE public.equipment ALTER COLUMN equipment_type_id TYPE UUID USING (
+      SELECT gt.id FROM public.generic_types gt 
+      WHERE gt.category = 'equipment_types' AND gt.code = equipment.equipment_type_id
+    );
     
     -- Add new FK constraint to generic_types
     ALTER TABLE public.equipment
