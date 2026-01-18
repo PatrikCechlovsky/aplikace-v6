@@ -192,9 +192,8 @@ CREATE POLICY "equipment_catalog_admin_all"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.is_admin = TRUE
+      SELECT 1 FROM public.app_admins
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -212,9 +211,14 @@ CREATE POLICY "equipment_catalog_manage"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND (users.is_admin = TRUE OR users.is_landlord = TRUE)
+      SELECT 1 FROM public.app_admins
+      WHERE user_id = auth.uid()
+    )
+    OR
+    EXISTS (
+      SELECT 1 FROM public.subjects
+      WHERE auth_user_id = auth.uid()
+      AND is_landlord = TRUE
     )
   );
 
@@ -231,9 +235,8 @@ CREATE POLICY "unit_equipment_admin_all"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.is_admin = TRUE
+      SELECT 1 FROM public.app_admins
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -244,11 +247,11 @@ CREATE POLICY "unit_equipment_landlord_select"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.units un ON un.id = unit_equipment.unit_id
-      JOIN public.properties p ON p.id = un.property_id
-      WHERE u.user_id = auth.uid()
-      AND p.landlord_id = u.subject_id
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      JOIN public.units un ON un.property_id = p.id
+      WHERE s.auth_user_id = auth.uid()
+      AND un.id = unit_equipment.unit_id
     )
   );
 
@@ -259,26 +262,16 @@ CREATE POLICY "unit_equipment_landlord_manage"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.units un ON un.id = unit_equipment.unit_id
-      JOIN public.properties p ON p.id = un.property_id
-      WHERE u.user_id = auth.uid()
-      AND p.landlord_id = u.subject_id
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      JOIN public.units un ON un.property_id = p.id
+      WHERE s.auth_user_id = auth.uid()
+      AND un.id = unit_equipment.unit_id
     )
   );
 
--- Policy: Tenants can see equipment in their unit
-CREATE POLICY "unit_equipment_tenant_select"
-  ON public.unit_equipment
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.unit_id = unit_equipment.unit_id
-    )
-  );
+-- TODO: Tenant policy requires unit_id field in subjects or subject_roles table
+-- Will be added after implementing tenant-unit relationship
 
 -- ============================================================================
 -- RLS POLICIES - Property Equipment
@@ -293,9 +286,8 @@ CREATE POLICY "property_equipment_admin_all"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.is_admin = TRUE
+      SELECT 1 FROM public.app_admins
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -306,10 +298,10 @@ CREATE POLICY "property_equipment_landlord_select"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.properties p ON p.id = property_equipment.property_id
-      WHERE u.user_id = auth.uid()
-      AND p.landlord_id = u.subject_id
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
+      AND p.id = property_equipment.property_id
     )
   );
 
@@ -320,10 +312,10 @@ CREATE POLICY "property_equipment_landlord_manage"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.properties p ON p.id = property_equipment.property_id
-      WHERE u.user_id = auth.uid()
-      AND p.landlord_id = u.subject_id
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
+      AND p.id = property_equipment.property_id
     )
   );
 

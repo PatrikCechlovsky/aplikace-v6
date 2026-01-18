@@ -94,12 +94,8 @@ SELECT
   p.reconstruction_year AS property_reconstruction_year,
   -- Calculated fields (read-only)
   ROUND((u.area / NULLIF(p.building_area, 0)) * 100, 2) AS area_ratio_percent,
-  (
-    SELECT COUNT(DISTINCT usr.user_id)
-    FROM public.users usr
-    WHERE usr.unit_id = u.id
-    AND usr.is_archived = FALSE
-  ) AS user_count,
+  -- TODO: user_count requires units.tenant_id or subject_roles.unit_id - add later
+  0 AS user_count,
   -- Unit type info
   ut.name AS unit_type_name,
   ut.icon AS unit_type_icon
@@ -123,9 +119,8 @@ CREATE POLICY "units_admin_all"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.is_admin = TRUE
+      SELECT 1 FROM public.app_admins
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -136,9 +131,9 @@ CREATE POLICY "units_landlord_select"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.properties p ON p.landlord_id = u.subject_id
-      WHERE u.user_id = auth.uid()
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
       AND p.id = units.property_id
     )
   );
@@ -150,9 +145,9 @@ CREATE POLICY "units_landlord_insert"
   TO authenticated
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.properties p ON p.landlord_id = u.subject_id
-      WHERE u.user_id = auth.uid()
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
       AND p.id = property_id
     )
   );
@@ -164,9 +159,9 @@ CREATE POLICY "units_landlord_update"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.properties p ON p.landlord_id = u.subject_id
-      WHERE u.user_id = auth.uid()
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
       AND p.id = units.property_id
     )
   );
@@ -178,25 +173,15 @@ CREATE POLICY "units_landlord_delete"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users u
-      JOIN public.properties p ON p.landlord_id = u.subject_id
-      WHERE u.user_id = auth.uid()
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
       AND p.id = units.property_id
     )
   );
 
--- Policy: Tenants see their own unit
-CREATE POLICY "units_tenant_select"
-  ON public.units
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.unit_id = units.id
-    )
-  );
+-- TODO: Tenant policy requires unit_id field in subjects or subject_roles table
+-- Will be added after implementing tenant-unit relationship
 
 -- ============================================================================
 -- UPDATED_AT TRIGGER

@@ -107,9 +107,8 @@ CREATE POLICY "properties_admin_all"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.is_admin = TRUE
+      SELECT 1 FROM public.app_admins
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -120,9 +119,9 @@ CREATE POLICY "properties_landlord_select"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.subject_id = properties.landlord_id
+      SELECT 1 FROM public.subjects
+      WHERE subjects.id = properties.landlord_id
+      AND subjects.auth_user_id = auth.uid()
     )
   );
 
@@ -133,9 +132,9 @@ CREATE POLICY "properties_landlord_insert"
   TO authenticated
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.subject_id = landlord_id
+      SELECT 1 FROM public.subjects
+      WHERE subjects.id = landlord_id
+      AND subjects.auth_user_id = auth.uid()
     )
   );
 
@@ -146,9 +145,9 @@ CREATE POLICY "properties_landlord_update"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.subject_id = properties.landlord_id
+      SELECT 1 FROM public.subjects
+      WHERE subjects.id = properties.landlord_id
+      AND subjects.auth_user_id = auth.uid()
     )
   );
 
@@ -159,9 +158,9 @@ CREATE POLICY "properties_landlord_delete"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.subject_id = properties.landlord_id
+      SELECT 1 FROM public.subjects
+      WHERE subjects.id = properties.landlord_id
+      AND subjects.auth_user_id = auth.uid()
     )
   );
 

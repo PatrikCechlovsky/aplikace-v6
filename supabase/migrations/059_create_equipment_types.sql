@@ -73,9 +73,8 @@ CREATE POLICY "equipment_types_admin_all"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.user_id = auth.uid()
-      AND users.is_admin = TRUE
+      SELECT 1 FROM public.app_admins
+      WHERE user_id = auth.uid()
     )
   );
 
