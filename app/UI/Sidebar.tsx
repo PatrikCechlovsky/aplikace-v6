@@ -549,7 +549,6 @@ export default function Sidebar({
                         // Modul NEMÁ sections → 2-level (modul → tiles s možnými children)
                         <ul className="sidebar__sublist">
                           {m.tiles!.map((t) => {
-                            const tileHref = `/modules/${m.id}`
                             const isActiveTile = isTileActive(m, t)
                             const hasChildren = t.children && t.children.length > 0
                             const isTileOpen = expandedTileIds.includes(t.id)
