@@ -15,7 +15,9 @@ import { getIcon } from './icons'
 import { uiConfig } from '../lib/uiConfig'
 import { getLandlordCountsByType } from '@/app/lib/services/landlords'
 import { getTenantCountsByType } from '@/app/lib/services/tenants'
+import { getPropertyCountsByType } from '@/app/lib/services/properties'
 import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
+import { supabase } from '@/app/lib/supabaseClient'
 
 /**
  * 3. úroveň – konkrétní položky (např. „Typy subjektů“).
@@ -158,6 +160,61 @@ export default function Sidebar({
               })
             } catch (countErr) {
               console.error('Sidebar: Chyba při načítání počtů pronajímatelů:', countErr)
+            }
+          }
+
+          // Pro modul 040 (Nemovitosti) načteme počty podle typů a aktualizujeme children labels
+          if (conf.id === '040-nemovitost' && Array.isArray(tiles)) {
+            try {
+              // Načíst počty podle property_type_id
+              const counts = await getPropertyCountsByType(false)
+              const countsMap = new Map(counts.map((c) => [c.property_type_id, c.count]))
+
+              // Načíst property types z databáze pro mapování id -> code a metadata
+              const { data: propertyTypes } = await supabase
+                .from('property_types')
+                .select('id, code, name, icon, color')
+                .order('order_index')
+
+              const typesMap = new Map(propertyTypes?.map((t) => [t.id, t]) ?? [])
+
+              // Aktualizovat children v "Přehled nemovitostí" tile
+              tiles = tiles.map((tile) => {
+                if (tile.id === 'properties-list' && tile.children) {
+                  return {
+                    ...tile,
+                    children: tile.children
+                      .map((child: any) => {
+                        // Najít původní child config s metadata
+                        const originalChild = conf.tiles
+                          .find((t: any) => t.id === 'properties-list')
+                          ?.children?.find((c: any) => c.id === child.id)
+
+                        if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
+                          // Najít property type podle code
+                          const propertyType = propertyTypes?.find(
+                            (pt) => pt.code === originalChild.propertyTypeCode
+                          )
+                          const count = propertyType 
+                            ? (countsMap.get(propertyType.id) ?? 0)
+                            : 0
+                          const typeLabel = propertyType?.name || child.label
+                          const icon = propertyType?.icon || child.icon || 'building'
+
+                          return {
+                            ...child,
+                            label: `${typeLabel} (${count})`,
+                            icon: icon,
+                          }
+                        }
+                        return child
+                      }),
+                  }
+                }
+                return tile
+              })
+            } catch (countErr) {
+              console.error('Sidebar: Chyba při načítání počtů nemovitostí:', countErr)
             }
           }
 
