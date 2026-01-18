@@ -48,6 +48,17 @@
   margin: 0 0 8px;
 }
 
+/* ===== MOBILE SPACER (oddělovač mezi checkboxy) ===== */
+.mobile-only-spacer {
+  display: block; /* Viditelné na mobilu */
+}
+
+@media (min-width: 640px) {
+  .mobile-only-spacer {
+    display: none; /* Skryté na tabletu a PC */
+  }
+}
+
 /* ===== GRID POLÍ ===== */
 /* Hybridní přístup: fixní na desktopu, responzivní na mobilu */
 
