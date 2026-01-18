@@ -641,14 +641,22 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     // ✅ AUTO-SELECT: Pokud není vybrán tile, ale modul má tiles, automaticky vyber první
     let finalSelection = { ...selection }
     if (!selection.tileId && !selection.sectionId) {
+      console.log('🔍 AppShell: Auto-select - hledám první tile pro modul:', selection.moduleId)
       const targetModule = modules.find(m => m.id === selection.moduleId)
+      console.log('🔍 AppShell: Nalezený modul:', targetModule?.label, 'tiles count:', targetModule?.tiles?.length)
       if (targetModule?.tiles && targetModule.tiles.length > 0) {
         const firstTile = targetModule.tiles.find(t => t.component) || targetModule.tiles[0]
+        console.log('🔍 AppShell: První tile:', firstTile?.id, firstTile?.label)
         if (firstTile) {
           finalSelection.tileId = firstTile.id
+          console.log('✅ AppShell: Auto-vybrán tile:', firstTile.id)
         }
+      } else {
+        console.warn('⚠️ AppShell: Modul nemá žádné tiles!')
       }
     }
+
+    console.log('🔍 AppShell: Final selection:', finalSelection)
 
     const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null
@@ -658,6 +666,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     const moduleChanged = prevModule !== nextModule
     const tileChanged = prevTile !== nextTile
+
+    console.log('🔍 AppShell: moduleChanged:', moduleChanged, 'tileChanged:', tileChanged)
 
     setActiveModuleId(finalSelection.moduleId)
     setActiveSelection(finalSelection)
@@ -818,8 +828,22 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     if (selection.tileId && activeModule.tiles?.length) {
       const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
+      console.log('🔍 AppShell: Hledám tile s id:', selection.tileId)
+      console.log('🔍 AppShell: Nalezený tile:', tile?.label, 'má component?', !!tile?.component)
       if (tile) {
         const TileComponent = tile.component
+        if (!TileComponent) {
+          console.error('❌ AppShell: Tile nemá component!', tile)
+          return (
+            <div className="tile-layout">
+              <div className="tile-layout__header">
+                <h1 className="tile-layout__title">{tile.label}</h1>
+                <p className="tile-layout__description">Tento tile nemá nakonfigurovanou komponentu.</p>
+              </div>
+            </div>
+          )
+        }
+        console.log('✅ AppShell: Renderuji TileComponent:', tile.label)
         return (
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
@@ -831,6 +855,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             </section>
           </div>
         )
+      } else {
+        console.error('❌ AppShell: Tile s id', selection.tileId, 'nebyl nalezen v modulu', activeModule.label)
       }
     }
 
