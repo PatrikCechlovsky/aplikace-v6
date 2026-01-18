@@ -142,14 +142,14 @@
 }
 
 /* =========================
-   Level 3
+   Level 2/3 (tiles - podle toho, jestli má modul sections)
    ========================= */
 
 .sidebar__sublink {
   display: flex;
   align-items: center;
   gap: var(--sb-gap);
-  padding: 4px 8px 4px 40px;
+  padding: 4px 8px 4px 24px; /* Sjednoceno s section-row (24px místo 40px) */
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
@@ -171,14 +171,14 @@
 }
 
 /* =========================
-   Level 4 (children pod tiles)
+   Level 3/4 (children pod tiles)
    ========================= */
 
 .sidebar__subsublink {
   display: flex;
   align-items: center;
   gap: var(--sb-gap);
-  padding: 4px 8px 4px 56px; /* Hlubší odsazení než level 3 */
+  padding: 4px 8px 4px 40px; /* Hlouběji než sublink (40px místo 56px) */
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
@@ -272,10 +272,10 @@
 }
 
 .layout.layout--density-compact .sidebar__sublink {
-  padding: 3px 8px 3px 36px;
+  padding: 3px 8px 3px 22px; /* Sjednoceno s section-row */
 }
 
-/* Level 4 */
+/* Level 3/4 */
 .layout.layout--density-compact .sidebar__subsublabel {
   font-size: 13px; /* Compact */
 }
@@ -285,7 +285,7 @@
 }
 
 .layout.layout--density-compact .sidebar__subsublink {
-  padding: 3px 8px 3px 50px;
+  padding: 3px 8px 3px 36px; /* Hlouběji než sublink */
 }
 
 /* MINI */
@@ -336,10 +336,10 @@
 }
 
 .layout.layout--density-mini .sidebar__sublink {
-  padding: 2px 8px 2px 32px;
+  padding: 2px 8px 2px 20px; /* Sjednoceno s section-row */
 }
 
-/* Level 4 */
+/* Level 3/4 */
 .layout.layout--density-mini .sidebar__subsublabel {
   font-size: 11px;
 }
@@ -349,7 +349,7 @@
 }
 
 .layout.layout--density-mini .sidebar__subsublink {
-  padding: 2px 8px 2px 44px;
+  padding: 2px 8px 2px 32px; /* Hlouběji než sublink */
 }
 
 /* =========================================================
