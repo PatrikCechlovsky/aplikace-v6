@@ -4,7 +4,7 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 
-const SELECT_FIELDS = 'category, code, name, description, color, icon, order_index, active, created_at, updated_at'
+const SELECT_FIELDS = 'id, category, code, name, description, color, icon, order_index, active, created_at, updated_at'
 
 /**
  * Podporované kategorie typů
@@ -15,6 +15,7 @@ export type GenericTypeCategory = 'subject_types' | 'property_types' | 'unit_typ
  * Datový typ přesně podle tabulky generic_types
  */
 export type GenericTypeRow = {
+  id: string // UUID
   category: GenericTypeCategory
   code: string
   name: string

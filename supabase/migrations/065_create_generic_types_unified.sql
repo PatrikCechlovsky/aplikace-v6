@@ -8,7 +8,10 @@
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS public.generic_types (
-  -- Composite primary key (category + code)
+  -- Surrogate primary key (UUID for FK relationships)
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Business key (composite unique)
   category TEXT NOT NULL,
   code TEXT NOT NULL,
   
@@ -24,8 +27,8 @@ CREATE TABLE IF NOT EXISTS public.generic_types (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
-  -- Composite PK
-  PRIMARY KEY (category, code),
+  -- Composite UNIQUE constraint (code is unique within category)
+  CONSTRAINT generic_types_category_code_unique UNIQUE (category, code),
   
   -- Constraints
   CONSTRAINT generic_types_category_check CHECK (category IN (
@@ -43,8 +46,9 @@ CREATE TABLE IF NOT EXISTS public.generic_types (
 -- ============================================================================
 
 -- Migrate subject_types
-INSERT INTO public.generic_types (category, code, name, description, color, icon, order_index, active)
+INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
+  gen_random_uuid(),
   'subject_types' AS category,
   code,
   name,
@@ -56,9 +60,10 @@ SELECT
 FROM public.subject_types
 ON CONFLICT (category, code) DO NOTHING;
 
--- Migrate property_types
-INSERT INTO public.generic_types (category, code, name, description, color, icon, order_index, active)
+-- Migrate property_types (preserve existing UUIDs if they have id column)
+INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
+  COALESCE(id, gen_random_uuid()),
   'property_types' AS category,
   code,
   name,
@@ -71,8 +76,9 @@ FROM public.property_types
 ON CONFLICT (category, code) DO NOTHING;
 
 -- Migrate unit_types
-INSERT INTO public.generic_types (category, code, name, description, color, icon, order_index, active)
+INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
+  COALESCE(id, gen_random_uuid()),
   'unit_types' AS category,
   code,
   name,
@@ -85,8 +91,9 @@ FROM public.unit_types
 ON CONFLICT (category, code) DO NOTHING;
 
 -- Migrate equipment_types
-INSERT INTO public.generic_types (category, code, name, description, color, icon, order_index, active)
+INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
+  COALESCE(id, gen_random_uuid()),
   'equipment_types' AS category,
   code,
   name,
@@ -95,17 +102,14 @@ SELECT
   icon,
   order_index,
   active
-FROM public.equipment_types
-ON CONFLICT (category, code) DO NOTHING;
-
--- ============================================================================
--- INDEXES AND CONSTRAINTS
+FROM publi
 -- ============================================================================
 
--- Add UNIQUE constraint on code (assuming codes are unique across all categories)
--- This allows FK constraints to reference generic_types(code) directly
-ALTER TABLE public.generic_types ADD CONSTRAINT generic_types_code_unique UNIQUE (code);
-
+CREATE INDEX idx_generic_types_category ON public.generic_types(category);
+CREATE INDEX idx_generic_types_active ON public.generic_types(active);
+CREATE INDEX idx_generic_types_order ON public.generic_types(category, order_index);
+CREATE INDEX idx_generic_types_code ON public.generic_types(code);
+CREATE INDEX idx_generic_types_category_code ON public.generic_types(category, 
 CREATE INDEX idx_generic_types_category ON public.generic_types(category);
 CREATE INDEX idx_generic_types_active ON public.generic_types(active);
 CREATE INDEX idx_generic_types_order ON public.generic_types(category, order_index);
@@ -119,8 +123,9 @@ COMMENT ON TABLE public.generic_types IS 'Univerzální číselník pro všechny
 COMMENT ON COLUMN public.generic_types.category IS 'Kategorie typu (subject_types, property_types, unit_types, equipment_types)';
 COMMENT ON COLUMN public.generic_types.code IS 'Unikátní kód typu v rámci kategorie';
 COMMENT ON COLUMN public.generic_types.name IS 'Zobrazovaný název';
-COMMENT ON COLUMN public.generic_types.description IS 'Popis typu';
-COMMENT ON COLUMN public.generic_types.color IS 'Barva pro UI (hex #RRGGBB)';
+COMMENT ON COLUMN public.generic_types.id IS 'UUID surrogate primary key pro FK vztahy';
+COMMENT ON COLUMN public.generic_types.category IS 'Kategorie typu (subject_types, property_types, unit_types, equipment_types)';
+COMMENT ON COLUMN public.generic_types.code IS 'Business key - uBarva pro UI (hex #RRGGBB)';
 COMMENT ON COLUMN public.generic_types.icon IS 'Ikona (emoji nebo kód)';
 COMMENT ON COLUMN public.generic_types.order_index IS 'Pořadí pro řazení';
 COMMENT ON COLUMN public.generic_types.active IS 'Je typ aktivní?';
@@ -128,64 +133,55 @@ COMMENT ON COLUMN public.generic_types.active IS 'Je typ aktivní?';
 -- ============================================================================
 -- UPDATE FOREIGN KEYS IN MAIN TABLES
 -- ============================================================================
-
--- Add subject_type_code column to subjects (if not exists)
+id column to subjects (if not exists)
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' 
     AND table_name = 'subjects' 
-    AND column_name = 'subject_type_code'
+    AND column_name = 'subject_type_id'
   ) THEN
-    ALTER TABLE public.subjects ADD COLUMN subject_type_code TEXT;
+    ALTER TABLE public.subjects ADD COLUMN subject_type_id UUID;
   END IF;
 END $$;
 
--- Migrate subject_type values
-UPDATE public.subjects 
-SET subject_type_code = subject_type
-WHERE subject_type_code IS NULL;
+-- Migrate subject_type values (lookup generic_types.id by code)
+UPDATE public.subjects s
+SET subject_type_id = gt.id
+FROM public.generic_types gt
+WHERE gt.category = 'subject_types'
+AND gt.code = s.subject_type
+AND s.subject_type_id IS NULL;
 
 -- Add FK constraint
 ALTER TABLE public.subjects
-  ADD CONSTRAINT fk_subjects_type_code
-  FOREIGN KEY (subject_type_code)
-  REFERENCES public.generic_types(code)
+  ADD CONSTRAINT fk_subjects_type_id
+  FOREIGN KEY (subject_type_id)
+  REFERENCES public.generic_types(id)
   ON DELETE RESTRICT;
 
--- Create index
-CREATE INDEX idx_subjects_type_code ON public.subjects(subject_type_code);
+-- Properties already have property_type_id UUID column pointing to property_types
+-- We need to update FK to point to generic_types instead
 
--- Add property_type_code column to properties (if not exists)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' 
-    AND table_name = 'properties' 
-    AND column_name = 'property_type_code'
-  ) THEN
-    ALTER TABLE public.properties ADD COLUMN property_type_code TEXT;
-  END IF;
-END $$;
+-- Drop old FK constraint if exists
+ALTER TABLE public.properties DROP CONSTRAINT IF EXISTS properties_property_type_id_fkey;
 
--- Migrate property_type values from property_types table
+-- Update property_type_id to point to generic_types.id (should already match if UUIDs were preserved)
+-- This is a safety check - if property_types.id was migrated to generic_types.id with COALESCE
 UPDATE public.properties p
-SET property_type_code = pt.code
+SET property_type_id = gt.id
 FROM public.property_types pt
+JOIN public.generic_types gt ON gt.category = 'property_types' AND gt.code = pt.code
 WHERE p.property_type_id = pt.id
-AND p.property_type_code IS NULL;
+AND p.property_type_id != gt.id;
 
--- Make property_type_code NOT NULL
+-- Add new FK constraint to generic_types
 ALTER TABLE public.properties
-  ALTER COLUMN property_type_code SET NOT NULL;
-
--- Add FK constraint
-ALTER TABLE public.properties
-  ADD CONSTRAINT fk_properties_type_code
-  FOREIGN KEY (property_type_code)
-  REFERENCES public.generic_types(code)
+  ADD CONSTRAINT fk_properties_type_generic
+  FOREIGN KEY (property_type_id)
+  REFERENCES public.generic_types(id)
+  ON DELETE RESTRICT
   ON DELETE RESTRICT;
 
 -- Create index
@@ -200,43 +196,31 @@ BEGIN
     AND table_name = 'units'
   ) THEN
     IF NOT EXISTS (
-      SELECT 1 FROM information_schema.columns 
-      WHERE table_schema = 'public' 
-      AND table_name = 'units' 
-      AND column_name = 'unit_type_code'
-    ) THEN
-      ALTER TABLE public.units ADD COLUMN unit_type_code TEXT;
-    END IF;
-    
-    -- Migrate unit_type values
-    UPDATE public.units u
-    SET unit_type_code = ut.code
-    FROM public.unit_types ut
-    WHERE u.unit_type_id = ut.id
-    AND u.unit_type_code IS NULL;
-    
-    -- Make unit_type_code NOT NULL
-    ALTER TABLE public.units
-      ALTER COLUMN unit_type_code SET NOT NULL;
-    
-    -- Add FK constraint
-    ALTER TABLE public.units
-      ADD CONSTRAINT fk_units_type_code
-      FOREIGN KEY (unit_type_code)
-      REFERENCES public.generic_types(code)
-      ON DELETE RESTRICT;
-    
-    -- Create index
-    CREATE INDEX idx_units_type_code ON public.units(unit_type_code);
-  END IF;
-END $$;
-
--- Add equipment_type_code column to equipment (if exists)
+      SELECT 1 FRid column to units (if exists)
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'public'
+    AND table_name = 'units'
+  ) THEN
+    -- Drop old FK if exists
+    ALTER TABLE public.units DROP CONSTRAINT IF EXISTS units_unit_type_id_fkey;
+    
+    -- Update unit_type_id to point to generic_types.id
+    UPDATE public.units u
+    SET unit_type_id = gt.id
+    FROM public.unit_types ut
+    JOIN public.generic_types gt ON gt.category = 'unit_types' AND gt.code = ut.code
+    WHERE u.unit_type_id = ut.id
+    AND u.unit_type_id != gt.id;
+    
+    -- Add new FK constraint to generic_types
+    ALTER TABLE public.units
+      ADD CONSTRAINT fk_units_type_generic
+      FOREIGN KEY (unit_type_id)
+      REFERENCES public.generic_types(id)
+      ON DELETE RESTRICT
     AND table_name = 'equipment'
   ) THEN
     IF NOT EXISTS (
@@ -252,43 +236,31 @@ BEGIN
     UPDATE public.equipment e
     SET equipment_type_code = et.code
     FROM public.equipment_types et
+    WHERE e.equipment_id column to equipment (if exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
+    AND table_name = 'equipment'
+  ) THEN
+    -- Drop old FK if exists
+    ALTER TABLE public.equipment DROP CONSTRAINT IF EXISTS equipment_equipment_type_id_fkey;
+    
+    -- Update equipment_type_id to point to generic_types.id
+    UPDATE public.equipment e
+    SET equipment_type_id = gt.id
+    FROM public.equipment_types et
+    JOIN public.generic_types gt ON gt.category = 'equipment_types' AND gt.code = et.code
     WHERE e.equipment_type_id = et.id
-    AND e.equipment_type_code IS NULL;
+    AND e.equipment_type_id != gt.id;
     
-    -- Make equipment_type_code NOT NULL
+    -- Add new FK constraint to generic_types
     ALTER TABLE public.equipment
-      ALTER COLUMN equipment_type_code SET NOT NULL;
-    
-    -- Add FK constraint
-    ALTER TABLE public.equipment
-      ADD CONSTRAINT fk_equipment_type_code
-      FOREIGN KEY (equipment_type_code)
-      REFERENCES public.generic_types(code)
-      ON DELETE RESTRICT;
-    
-    -- Create index
-    CREATE INDEX idx_equipment_type_code ON public.equipment(equipment_type_code);
-  END IF;
-END $$;
-
--- ============================================================================
--- RLS POLICIES
--- ============================================================================
-
-ALTER TABLE public.generic_types ENABLE ROW LEVEL SECURITY;
-
--- Policy: All authenticated users can read
-CREATE POLICY "generic_types_select"
-  ON public.generic_types
-  FOR SELECT
-  TO authenticated
-  USING (active = TRUE);
-
--- Policy: Only admins can modify
-CREATE POLICY "generic_types_admin_all"
-  ON public.generic_types
-  FOR ALL
-  TO authenticated
+      ADD CONSTRAINT fk_equipment_type_generic
+      FOREIGN KEY (equipment_type_id)
+      REFERENCES public.generic_types(id)
+      ON DELETE RESTRICT
   USING (
     EXISTS (
       SELECT 1 FROM public.app_admins
@@ -330,3 +302,11 @@ CREATE POLICY "generic_types_admin_all"
 
 -- Check properties migration
 -- SELECT property_type_code, COUNT(*) FROM public.properties GROUP BY property_type_code;
+  
+-- SELECT subject_type, subject_type_id, COUNT(*) FROM public.subjects GROUP BY subject_type, subject_type_id;
+
+-- Check properties migration (property_type_id should now point to generic_types)
+-- SELECT p.property_type_id, gt.category, gt.code, gt.name, COUNT(*) 
+-- FROM public.properties p
+-- JOIN public.generic_types gt ON p.property_type_id = gt.id
+-- GROUP BY p.property_type_id, gt.category, gt.code, gt.nam

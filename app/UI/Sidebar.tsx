@@ -166,13 +166,13 @@ export default function Sidebar({
           // Pro modul 040 (Nemovitosti) načteme počty podle typů a aktualizujeme children labels
           if (conf.id === '040-nemovitost' && Array.isArray(tiles)) {
             try {
-              // Načíst počty podle property_type_code
+              // Načíst počty podle property_type_id
               const counts = await getPropertyCountsByType(false)
-              const countsMap = new Map(counts.map((c) => [c.property_type_code, c.count]))
+              const countsMap = new Map(counts.map((c) => [c.property_type_id, c.count]))
 
               // Načíst property types z generic_types
               const propertyTypes = await listActiveByCategory('property_types')
-              const typesByCode = new Map(propertyTypes.map((t) => [t.code, t]))
+              const typesById = new Map(propertyTypes.map((t) => [t.id, t]))
 
               // Aktualizovat children v "Přehled nemovitostí" tile
               tiles = tiles.map((tile) => {
@@ -187,8 +187,9 @@ export default function Sidebar({
                           ?.children?.find((c: any) => c.id === child.id)
 
                         if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
-                          const propertyType = typesByCode.get(originalChild.propertyTypeCode)
-                          const count = propertyType ? (countsMap.get(propertyType.code) ?? 0) : 0
+                          // Najít property type podle code
+                          const propertyType = propertyTypes.find((t) => t.code === originalChild.propertyTypeCode)
+                          const count = propertyType ? (countsMap.get(propertyType.id) ?? 0) : 0
                           const typeLabel = propertyType?.name || child.label
                           const icon = propertyType?.icon || child.icon || 'building'
                           const color = propertyType?.color || null
