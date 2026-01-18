@@ -150,18 +150,8 @@ export default function Sidebar({
                           }
                         }
                         return child
-                      })
-                      .filter((child: any) => {
-                        // Filtrovat children - zobrazit jen pokud mají počet > 0
-                        const originalChild = conf.tiles
-                          .find((t: any) => t.id === 'landlords-list')
-                          ?.children?.find((c: any) => c.id === child.id)
-                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
-                          const count = countsMap.get(originalChild.subjectType) ?? 0
-                          return count > 0
-                        }
-                        return true
                       }),
+                      // Filtr odstraněn - zobrazíme všechny typy i s 0 záznamů
                   }
                 }
                 return tile
@@ -207,18 +197,8 @@ export default function Sidebar({
                           }
                         }
                         return child
-                      })
-                      .filter((child: any) => {
-                        // Filtrovat children - zobrazit jen pokud mají počet > 0
-                        const originalChild = conf.tiles
-                          .find((t: any) => t.id === 'tenants-list')
-                          ?.children?.find((c: any) => c.id === child.id)
-                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
-                          const count = countsMap.get(originalChild.subjectType) ?? 0
-                          return count > 0
-                        }
-                        return true
                       }),
+                      // Filtr odstraněn - zobrazíme všechny typy i s 0 záznamů
                   }
                 }
                 return tile
