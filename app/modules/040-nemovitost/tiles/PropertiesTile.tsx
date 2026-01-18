@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, type PropertiesListRow } from '@/app/lib/services/properties'
-import { loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
@@ -118,7 +118,18 @@ export default function PropertiesTile({
   // Column settings
   const [colsOpen, setColsOpen] = useState(false)
   const [sort, setSort] = useState<ListViewSortState>(null)
-  const [columns, setColumns] = useState<ListViewColumn[]>(BASE_COLUMNS)
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+
+  const columns = useMemo(() => {
+    return applyColumnPrefs(BASE_COLUMNS, colPrefs)
+  }, [colPrefs])
+
+  const fixedFirstKey = 'propertyTypeName'
+  const requiredKeys = ['displayName']
 
   // View mode (list only for now, later add read/edit/create)
   const viewMode: ViewMode = 'list'
@@ -129,13 +140,11 @@ export default function PropertiesTile({
     async function load() {
       const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
       if (prefs) {
-        if (prefs.colWidths) {
-          const updatedCols = BASE_COLUMNS.map((c) => ({
-            ...c,
-            width: prefs.colWidths?.[c.key] ?? c.width,
-          }))
-          setColumns(updatedCols)
-        }
+        setColPrefs({
+          colWidths: prefs.colWidths ?? {},
+          colOrder: prefs.colOrder ?? [],
+          colHidden: prefs.colHidden ?? [],
+        })
         if (prefs.sort) {
           setSort({ key: prefs.sort.key, dir: prefs.sort.dir })
         }
@@ -146,22 +155,15 @@ export default function PropertiesTile({
 
   // Save view prefs when changed
   const savePrefs = useCallback(() => {
-    const colWidths: Record<string, number> = {}
-    columns.forEach((c) => {
-      if (typeof c.width === 'number') {
-        colWidths[c.key] = c.width
-      }
-    })
-
     const prefs: ViewPrefs = {
       v: 1,
-      colWidths,
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
       sort: sort || null,
-      colOrder: [],
-      colHidden: [],
     }
     saveViewPrefs(VIEW_KEY, prefs)
-  }, [columns, sort])
+  }, [colPrefs, sort])
 
   useEffect(() => {
     savePrefs()
@@ -288,10 +290,8 @@ export default function PropertiesTile({
   }, [])
 
   // Column resize handler
-  const handleColumnResize = useCallback((columnKey: string, widthPx: number) => {
-    setColumns((prev) =>
-      prev.map((c) => (c.key === columnKey ? { ...c, width: widthPx } : c))
-    )
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
   }, [])
 
   // Apply sorting to rows
@@ -372,16 +372,31 @@ export default function PropertiesTile({
           </div>
         )}
 
-        {colsOpen && (
-          <ListViewColumnsDrawer
-            columns={columns}
-            onClose={() => setColsOpen(false)}
-            onApply={(newCols) => {
-              setColumns(newCols)
-              setColsOpen(false)
-            }}
-          />
-        )}
+        <ListViewColumnsDrawer
+          open={colsOpen}
+          onClose={() => setColsOpen(false)}
+          columns={BASE_COLUMNS}
+          fixedFirstKey={fixedFirstKey}
+          requiredKeys={requiredKeys}
+          value={{
+            order: colPrefs.colOrder ?? [],
+            hidden: colPrefs.colHidden ?? [],
+          }}
+          onChange={(next) => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: next.order,
+              colHidden: next.hidden,
+            }))
+          }}
+          onReset={() => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: [],
+              colHidden: [],
+            }))
+          }}
+        />
       </div>
     )
   }
