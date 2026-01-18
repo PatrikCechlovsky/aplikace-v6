@@ -5,7 +5,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { getUserDetail, listUsers, type UsersListRow } from '@/app/lib/services/users'
 import { fetchRoleTypes } from '@/app/modules/900-nastaveni/services/roleTypes'
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('InviteUserForm')
 import { fetchPermissionTypes } from '@/app/modules/900-nastaveni/services/permissionTypes'
+import InputWithHistory from '../../../UI/InputWithHistory'
 
 export type InviteMode = 'existing' | 'new'
 
@@ -177,13 +180,6 @@ export default function InviteUserForm({
   return (
     <div className="detail-form">
       <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Pozvat ke spolupráci</h3>
-
-        <div className="detail-form__hint" style={{ marginBottom: 10 }}>
-          Pozvánka slouží k přizvání uživatele do aplikace, aby mohl spolupracovat na tvých nemovitostech.
-          Později stejný mechanismus použijeme i pro pozvání nového pronajímatele (hlavní – platící entity).
-        </div>
-
         {inviteBlockedReason && (
           <div className="detail-form__hint" style={{ marginBottom: 10 }}>
             {inviteBlockedReason}
@@ -191,9 +187,10 @@ export default function InviteUserForm({
           </div>
         )}
 
+          {/* Režim - střední šířka */}
         {variant === 'standalone' && (
-          <div className="detail-form__grid detail-form__grid--narrow" style={{ marginBottom: 8 }}>
-            <div className="detail-form__field detail-form__field--span-4">
+          <div className="detail-form__grid detail-form__grid--narrow" style={{ marginBottom: 12 }}>
+            <div className="detail-form__field detail-form__field--span-2">
               <label className="detail-form__label">Režim</label>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', paddingTop: 8 }}>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -232,10 +229,11 @@ export default function InviteUserForm({
           </div>
         )}
 
-        {/* Jednosloupcový layout – stejné jako Detail (vše span-4) */}
+        {/* Hlavní formulář - optimalizované rozložení */}
         <div className="detail-form__grid detail-form__grid--narrow">
+          {/* Uživatel - střední šířka (pouze pokud existující) */}
           {mode === 'existing' && variant === 'standalone' && (
-            <div className="detail-form__field detail-form__field--span-4">
+            <div className="detail-form__field detail-form__field--span-2">
               <label className="detail-form__label">Uživatel</label>
               <select
                 className="detail-form__input"
@@ -272,7 +270,7 @@ export default function InviteUserForm({
                       }))
                     } catch (err) {
                       // necháme uživatele vybrat ručně
-                      console.warn('[InviteUserForm.getUserDetail] WARN', err)
+                      logger.warn('getUserDetail failed', err)
                     }
                   })()
                 }}
@@ -288,10 +286,17 @@ export default function InviteUserForm({
             </div>
           )}
 
-          <div className="detail-form__field detail-form__field--span-4">
-            <label className="detail-form__label">Email</label>
-            <input
+          {/* Email a Zobrazované jméno - vedle sebe, každé 280px */}
+          <div className="detail-form__field">
+            <label className="detail-form__label">
+              E-mail <span className="detail-form__required">*</span>
+            </label>
+            <InputWithHistory
+              historyId="invite.email"
               className={'detail-form__input' + (mode === 'existing' && variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
+              type="email"
+              maxLength={255}
+              size={30}
               value={v.email}
               readOnly={variant === 'existingOnly'}
               onChange={(e) => {
@@ -302,10 +307,14 @@ export default function InviteUserForm({
             />
           </div>
 
-          <div className="detail-form__field detail-form__field--span-4">
+          <div className="detail-form__field">
             <label className="detail-form__label">Zobrazované jméno</label>
-            <input
+            <InputWithHistory
+              historyId="invite.displayName"
               className={'detail-form__input' + (variant === 'existingOnly' ? ' detail-form__input--readonly' : '')}
+              type="text"
+              maxLength={50}
+              size={30}
               value={v.displayName}
               readOnly={variant === 'existingOnly'}
               onChange={(e) => {
@@ -316,8 +325,11 @@ export default function InviteUserForm({
             />
           </div>
 
-          <div className="detail-form__field detail-form__field--span-4">
-            <label className="detail-form__label">Role</label>
+          {/* Role a Oprávnění - vedle sebe */}
+          <div className="detail-form__field">
+            <label className="detail-form__label">
+              Role <span className="detail-form__required">*</span>
+            </label>
             <select
               className="detail-form__input"
               value={v.roleCode}
@@ -336,8 +348,10 @@ export default function InviteUserForm({
             </select>
           </div>
 
-          <div className="detail-form__field detail-form__field--span-4">
-            <label className="detail-form__label">Oprávnění</label>
+          <div className="detail-form__field">
+            <label className="detail-form__label">
+              Oprávnění <span className="detail-form__required">*</span>
+            </label>
             <select
               className="detail-form__input"
               value={v.permissionCode}
@@ -356,10 +370,12 @@ export default function InviteUserForm({
             </select>
           </div>
 
-          <div className="detail-form__field detail-form__field--span-4">
+          {/* Poznámka - střední šířka */}
+          <div className="detail-form__field detail-form__field--span-2">
             <label className="detail-form__label">Poznámka</label>
             <textarea
               className="detail-form__input"
+              maxLength={500}
               value={v.note}
               onChange={(e) => {
                 setV((p) => ({ ...p, note: e.target.value }))

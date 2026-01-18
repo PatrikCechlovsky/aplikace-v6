@@ -403,3 +403,62 @@ UI nastavení (vzhled a rozložení) se řídí jednotným tokem:
 - Tato pravidla jsou závazná pro celý projekt.
 - Platí pro veškerý nový i upravovaný kód.
 - Porušení pravidel je považováno za chybu návrhu nebo implementace.
+
+--------------------------------------------------------------------
+## DOPLNĚNÍ (2025-01-XX) – Historie hodnot v formulářových polích
+--------------------------------------------------------------------
+
+### Povinné použití historie v formulářích
+
+- **Všechna textová input pole** v formulářích musí používat komponentu `InputWithHistory`.
+- Historie automaticky ukládá posledních 5 hodnot pro každé pole.
+- Historie se zobrazuje jako HTML5 datalist při psaní do pole.
+
+### Implementace
+
+- Používá se komponenta `InputWithHistory` z `app/UI/InputWithHistory.tsx`.
+- Každé pole má unikátní `historyId` ve formátu `{modul}.{pole}` (např. `user.email`, `myAccount.phone`).
+- Historie se ukládá do localStorage při ztrátě focusu (blur).
+- V read-only režimu se historie nezobrazuje.
+
+### Pravidla pro historyId
+
+- Formát: `{kontext}.{názevPole}`
+- Příklady:
+  - `user.email` – email v formuláři uživatele
+  - `user.phone` – telefon v formuláři uživatele
+  - `myAccount.firstName` – jméno v Můj účet
+  - `invite.email` – email v pozvánce
+  - `genericType.{title}.code` – kód v generickém typu (dynamický podle title)
+
+### Kdy použít historii
+
+- **Použít:** Textová pole (text, email, tel), kde uživatel opakovaně zadává podobné hodnoty.
+- **Nepoužít:** Password pole, selecty, textarea (mimo speciálních případů), read-only pole.
+
+### Technické detaily
+
+- Utility: `app/lib/formHistory.ts` – funkce pro správu historie
+- Komponenta: `app/UI/InputWithHistory.tsx` – wrapper kolem inputu s historií
+- Storage: localStorage s prefixem `form_history_`
+- Maximální počet hodnot: 5 (konstanta `MAX_HISTORY_ITEMS`)
+
+### Příklad použití
+
+```tsx
+import InputWithHistory from '../../../UI/InputWithHistory'
+
+<InputWithHistory
+  historyId="user.email"
+  className="detail-form__input"
+  type="email"
+  value={val.email}
+  onChange={(e) => update({ email: e.target.value })}
+/>
+```
+
+### Závaznost
+
+- Při vytváření nových formulářů je **povinné** použít `InputWithHistory` pro všechna textová pole.
+- Při úpravě existujících formulářů je **povinné** nahradit standardní `<input>` za `<InputWithHistory>`.
+- Výjimky musí být výslovně zdokumentovány.

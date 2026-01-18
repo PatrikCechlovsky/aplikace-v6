@@ -13,6 +13,7 @@
  */
 
 import React from 'react'
+import TileLayout from '@/app/UI/TileLayout'
 import DetailAttachmentsSection, {
   type AttachmentsManagerApi,
   type AttachmentsManagerUiState,
@@ -43,17 +44,13 @@ export default function AttachmentsManagerFrame({
   onRegisterManagerApi,
   onManagerStateChange,
 }: AttachmentsManagerFrameProps) {
+  const title = entityLabel ? `Správa příloh: ${entityLabel}` : 'Správa příloh'
+  
   return (
-    <div className="detail-view__section">
-      <div className="detail-form">
-        <section className="detail-form__section">
-          <h2 className="detail-form__section-title">Správa příloh</h2>
-          <div className="detail-form__hint">
-            Toto je správa příloh (verze, upload, metadata). V detailu entity je záložka Přílohy vždy pouze read-only seznam.
-          </div>
-        </section>
-      </div>
-
+    <TileLayout
+      title={title}
+      description="Toto je správa příloh (verze, upload, metadata). V detailu entity je záložka Přílohy vždy pouze read-only seznam."
+    >
       <DetailAttachmentsSection
         entityType={entityType}
         entityId={entityId}
@@ -65,6 +62,6 @@ export default function AttachmentsManagerFrame({
         onRegisterManagerApi={onRegisterManagerApi}
         onManagerStateChange={onManagerStateChange}
       />
-    </div>
+    </TileLayout>
   )
 }

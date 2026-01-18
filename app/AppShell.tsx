@@ -19,7 +19,7 @@ import './styles/components/DetailAttachments.css'
 import './styles/components/ExcelMode.css'
 import './styles/components/DensityTypography.css'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import HomeButton from '@/app/UI/HomeButton'
@@ -27,11 +27,15 @@ import Sidebar, { type SidebarSelection } from '@/app/UI/Sidebar'
 import Breadcrumbs, { type BreadcrumbSegment } from '@/app/UI/Breadcrumbs'
 import HomeActions from '@/app/UI/HomeActions'
 import LoginPanel from '@/app/UI/LoginPanel'
+import ErrorBoundary from '@/app/UI/ErrorBoundary'
+import { SkeletonCentered } from '@/app/UI/SkeletonLoader'
 
 import { applyThemeToLayout, loadThemeFromLocalStorage } from '@/app/lib/themeSettings'
 import { applyIconDisplayToLayout, loadIconDisplayFromLocalStorage } from '@/app/lib/iconDisplaySettings'
 
 import { getCurrentSession, onAuthStateChange, logout } from '@/app/lib/services/auth'
+import { getLandlordCountsByType } from '@/app/lib/services/landlords'
+import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
 
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
@@ -39,6 +43,7 @@ import type { IconKey } from '@/app/UI/icons'
 import { TopMenu } from '@/app/UI/TopMenu'
 import CommonActions from '@/app/UI/CommonActions'
 import type { CommonActionId, CommonActionsUiState, ViewMode } from '@/app/UI/CommonActions'
+import '@/app/styles/components/TileLayout.css'
 
 type SessionUser = {
   id?: string | null
@@ -146,6 +151,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [modulesLoading, setModulesLoading] = useState(true)
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
   const [activeSelection, setActiveSelection] = useState<SidebarSelection | null>(null)
+  
+  // ✅ Flag pro home button - aby se nevolal confirmIfDirty znovu
+  const homeButtonClickRef = useRef(false)
 
   // Menu layout
   const [menuLayout, setMenuLayout] = useState<MenuLayout>('sidebar')
@@ -229,6 +237,27 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (!el) return
     el.classList.toggle('layout--topmenu', menuLayout === 'top')
   }, [menuLayout])
+
+  // ✅ Poslouchej změny menuLayout z AppViewSettingsTile
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    function onSettingsChanged() {
+      try {
+        const raw = window.localStorage.getItem('app-view-settings')
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (parsed.menuLayout === 'top' || parsed.menuLayout === 'sidebar') {
+          setMenuLayout(parsed.menuLayout as MenuLayout)
+        }
+      } catch {
+        // ignore
+      }
+    }
+    
+    window.addEventListener('app-view-settings-changed', onSettingsChanged)
+    return () => window.removeEventListener('app-view-settings-changed', onSettingsChanged)
+  }, [])
 
   // -------------------------
   // App view settings (table/cards + excel style + density)
@@ -375,17 +404,97 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           if (!cfg?.id) continue
           if (cfg.enabled === false) continue
 
-          loaded.push({
-            id: cfg.id,
-            label: cfg.label ?? cfg.id,
-            icon: cfg.icon,
-            order: cfg.order ?? 9999,
-            enabled: cfg.enabled ?? true,
-            tiles: cfg.tiles ?? [],
-            sections: cfg.sections ?? [],
-            introTitle: cfg.introTitle,
-            introText: cfg.introText,
-          })
+          // Pro modul 030 (Pronajímatelé) načteme počty podle typů a aktualizujeme labels + ikony
+          if (cfg.id === '030-pronajimatel' && Array.isArray(cfg.tiles)) {
+            try {
+              // Načíst počty podle typů
+              const counts = await getLandlordCountsByType(false)
+              const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+
+              // Načíst typy subjektů z modulu 900 pro ikony a barvy
+              const subjectTypes = await fetchSubjectTypes()
+              const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+
+              // Mapování typů subjektů na názvy (fallback, pokud není v DB)
+              const typeLabels: Record<string, string> = {
+                osoba: 'Osoba',
+                osvc: 'OSVČ',
+                firma: 'Firma',
+                spolek: 'Spolek',
+                statni: 'Státní',
+                zastupce: 'Zástupce',
+              }
+
+              // Aktualizovat tiles s počty, ikonami a filtrovat jen ty s počtem > 0
+              const updatedTiles = cfg.tiles
+                .map((tile: any) => {
+                  // Pokud je tile pro typ subjektu, aktualizovat label s počtem a ikonu z modulu 900
+                  if (tile.dynamicLabel && tile.subjectType) {
+                    const count = countsMap.get(tile.subjectType) ?? 0
+                    const typeDef = typesMap.get(tile.subjectType)
+                    const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
+                    const icon = typeDef?.icon || tile.icon || 'user' // Ikona z modulu 900 nebo fallback
+
+                    // Vrátit tile s aktualizovaným labelem a ikonou
+                    return {
+                      ...tile,
+                      label: `${typeLabel} (${count})`,
+                      icon: icon as IconKey,
+                      _count: count, // Uložit počet pro pozdější použití
+                      _color: typeDef?.color || null, // Uložit barvu pro pozdější použití
+                    }
+                  }
+                  return tile
+                })
+                .filter((tile: any) => {
+                  // Filtrovat tiles s dynamicLabel - zobrazit jen pokud mají počet > 0
+                  if (tile.dynamicLabel && tile.subjectType) {
+                    const count = countsMap.get(tile.subjectType) ?? 0
+                    return count > 0
+                  }
+                  return true // Ostatní tiles zobrazit vždy (Přehled pronajímatelů, Přidat pronajimatele)
+                })
+
+              loaded.push({
+                id: cfg.id,
+                label: cfg.label ?? cfg.id,
+                icon: cfg.icon,
+                order: cfg.order ?? 9999,
+                enabled: cfg.enabled ?? true,
+                tiles: updatedTiles,
+                sections: cfg.sections ?? [],
+                introTitle: cfg.introTitle,
+                introText: cfg.introText,
+              })
+            } catch (countErr) {
+              console.error('Chyba při načítání počtů pronajímatelů:', countErr)
+              // Fallback na původní konfiguraci bez počtů
+              loaded.push({
+                id: cfg.id,
+                label: cfg.label ?? cfg.id,
+                icon: cfg.icon,
+                order: cfg.order ?? 9999,
+                enabled: cfg.enabled ?? true,
+                tiles: cfg.tiles ?? [],
+                sections: cfg.sections ?? [],
+                introTitle: cfg.introTitle,
+                introText: cfg.introText,
+              })
+            }
+          } else {
+            // Ostatní moduly bez změn
+            loaded.push({
+              id: cfg.id,
+              label: cfg.label ?? cfg.id,
+              icon: cfg.icon,
+              order: cfg.order ?? 9999,
+              enabled: cfg.enabled ?? true,
+              tiles: cfg.tiles ?? [],
+              sections: cfg.sections ?? [],
+              introTitle: cfg.introTitle,
+              introText: cfg.introText,
+            })
+          }
         }
 
         loaded.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -401,7 +510,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isAuthenticated]) // Načíst počty až po autentizaci
 
   // Initial module
   useEffect(() => {
@@ -451,10 +560,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       current.moduleId !== target.moduleId || current.sectionId !== target.sectionId || current.tileId !== target.tileId
     if (!differs) return
 
-    if (!confirmIfDirty()) {
-      // keep unknown params here (we are reverting user navigation)
-      setUrlState(current, 'replace', true)
-      return
+    // ✅ FIX: Pokud změna přichází z home buttonu, přeskoč confirmIfDirty
+    if (homeButtonClickRef.current) {
+      homeButtonClickRef.current = false
+      // Pokračuj bez confirmIfDirty
+    } else {
+      if (!confirmIfDirty()) {
+        // keep unknown params here (we are reverting user navigation)
+        setUrlState(current, 'replace', true)
+        return
+      }
     }
 
     if (!target.moduleId) {
@@ -496,7 +611,31 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
       (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
 
-    if (sameSelection) return
+    // ✅ FIX: Pokud je stejná selection, ale máme otevřený detail (tile-specifické parametry),
+    // zavřeme detail a otevřeme seznam
+    if (sameSelection) {
+      const id = searchParams?.get('id')
+      const vm = searchParams?.get('vm')
+      const t = searchParams?.get('t')
+      // Zkontroluj, jestli máme tile-specifické parametry (id nebo vm, nebo t jiné než users-list)
+      const hasTileSpecificParams = id || vm || (t && t !== 'users-list')
+      if (hasTileSpecificParams) {
+        // Zavřeme detail - zahoďme tile-specifické parametry
+        // Použijeme keepOtherParams=false, což zahodí všechny parametry kromě m/s/t
+        setUrlState(
+          {
+            moduleId: selection.moduleId,
+            sectionId: selection.sectionId ?? null,
+            tileId: selection.tileId ?? null,
+          },
+          'replace',
+          false // keepOtherParams=false znamená zahodit tile-specifické parametry (id/vm/am/t)
+        )
+        resetCommonActions()
+      }
+      return
+    }
+
     if (!confirmIfDirty()) return
 
     const prevModule = activeSelection?.moduleId ?? null
@@ -531,29 +670,25 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
   function handleHomeClick() {
     if (!isAuthenticated) return
-    if (!confirmIfDirty('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')) return
-
-    setActiveModuleId(null)
-    setActiveSelection(null)
-    resetCommonActions()
-    router.replace('/')
-  }
-
-  function forceSidebarLayout() {
-    if (!confirmIfDirty()) return
-
-    setMenuLayout('sidebar')
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.localStorage.getItem('app-view-settings')
-        const parsed = raw ? JSON.parse(raw) : {}
-        const next = { ...parsed, menuLayout: 'sidebar' }
-        window.localStorage.setItem('app-view-settings', JSON.stringify(next))
-      } catch {
-        // ignore
-      }
+    
+    // ✅ FIX: Zkontroluj isDirty přímo z commonActionsUi
+    // Pokud je dirty v edit/create režimu, zeptej se uživatele
+    const hasDirtyChanges = commonActionsUi.isDirty && (commonActionsUi.viewMode === 'edit' || commonActionsUi.viewMode === 'create')
+    
+    if (hasDirtyChanges) {
+      const ok = window.confirm('Máš neuložené změny. Opravdu chceš odejít na úvodní stránku?')
+      if (!ok) return
     }
+
+    // ✅ FIX: Nastav flag, aby se v useEffect nevolal confirmIfDirty znovu
+    homeButtonClickRef.current = true
+    
+    // ✅ FIX: Nejdříve aktualizuj URL, pak teprve stav
+    // Tím se vyhneme dvojímu kliknutí - URL změna způsobí, že useEffect aktualizuje stav
+    setUrlState({ moduleId: null, sectionId: null, tileId: null }, 'replace', false)
+    resetCommonActions()
   }
+
 
   function getBreadcrumbSegments(): BreadcrumbSegment[] {
     const segments: BreadcrumbSegment[] = [{ label: 'Dashboard', icon: 'home' }]
@@ -589,7 +724,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (authLoading) {
       return (
         <div className="content content--center">
-          <p>Kontroluji přihlášení…</p>
+          <SkeletonCentered message="Kontroluji přihlášení…" />
         </div>
       )
     }
@@ -605,7 +740,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (modulesLoading) {
       return (
         <div className="content content--center">
-          <p>Načítám moduly aplikace…</p>
+          <SkeletonCentered message="Načítám moduly aplikace…" />
         </div>
       )
     }
@@ -643,10 +778,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     const selection = activeSelection
     if (!selection || (!selection.sectionId && !selection.tileId)) {
+      const title = activeModule.introTitle ?? activeModule.label
+      const description = activeModule.introText ?? 'Vyber položku v menu.'
       return (
-        <div className="content">
-          <h2>{activeModule.introTitle ?? activeModule.label}</h2>
-          <p>{activeModule.introText ?? 'Vyber položku v menu.'}</p>
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">{title}</h1>
+            {description && <p className="tile-layout__description">{description}</p>}
+          </div>
         </div>
       )
     }
@@ -654,14 +793,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (selection.sectionId && !selection.tileId) {
       const section = activeModule.sections?.find((s) => s.id === selection.sectionId)
       const title = section?.introTitle ?? section?.label ?? activeModule.label
-      const text = section?.introText ?? 'Vyber konkrétní položku v menu.'
+      const description = section?.introText ?? 'Vyber konkrétní položku v menu.'
       return (
-        <div className="content">
-          <h2>{activeModule.label}</h2>
-          <section className="content__section">
-            <h3 className="content__section-title">{title}</h3>
-            <p>{text}</p>
-          </section>
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">{title}</h1>
+            {description && <p className="tile-layout__description">{description}</p>}
+          </div>
         </div>
       )
     }
@@ -685,9 +823,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
 
     return (
-      <div className="content">
-        <h2>{activeModule.label}</h2>
-        <p>Modul nemá nakonfigurované tiles.</p>
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">{activeModule.label}</h1>
+          <p className="tile-layout__description">Modul nemá nakonfigurované tiles.</p>
+        </div>
       </div>
     )
   }
@@ -742,7 +882,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               disabled={!isAuthenticated}
               onLogout={handleLogout}
               displayName={displayName}
-              onForceSidebar={forceSidebarLayout}
+              onProfileClick={() => {
+                handleModuleSelect({ moduleId: '020-muj-ucet' })
+              }}
             />
           </div>
         </div>
@@ -796,7 +938,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         />
       </div>
 
-      <main className="layout__content">{renderContent()}</main>
+      <main className="layout__content">
+        <ErrorBoundary>
+          {renderContent()}
+        </ErrorBoundary>
+      </main>
     </div>
   )
 }

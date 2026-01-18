@@ -38,6 +38,9 @@ export type UsersListRow = {
   last_invite_sent_at?: string | null
   last_invite_expires_at?: string | null
   last_invite_status?: string | null
+
+  // permissions (načteno samostatně)
+  permission_codes?: string[]
 }
 
 export async function listUsers(params: UsersListParams = {}): Promise<UsersListRow[]> {
@@ -69,6 +72,7 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
         last_invite_status
       `
     )
+    .eq('is_user', true) // ✅ Filtrovat jen uživatele
     .order('display_name', { ascending: true })
     .limit(limit)
 
@@ -93,7 +97,37 @@ export async function listUsers(params: UsersListParams = {}): Promise<UsersList
   const { data, error } = await q
   if (error) throw new Error(error.message)
 
-  return (data ?? []) as unknown as UsersListRow[]
+  const rows = (data ?? []) as unknown as UsersListRow[]
+
+  // Načíst oprávnění pro všechny uživatele najednou
+  if (rows.length > 0) {
+    const userIds = rows.map((r) => r.id).filter(Boolean)
+    const { data: permData, error: permError } = await supabase
+      .from('subject_permissions')
+      .select('subject_id, permission_code')
+      .in('subject_id', userIds)
+
+    if (!permError && permData) {
+      // Seskupit oprávnění podle subject_id
+      const permMap = new Map<string, string[]>()
+      for (const p of permData) {
+        const sid = String(p?.subject_id ?? '')
+        const code = String(p?.permission_code ?? '').trim()
+        if (sid && code) {
+          const existing = permMap.get(sid) ?? []
+          existing.push(code)
+          permMap.set(sid, existing)
+        }
+      }
+
+      // Přiřadit oprávnění k řádkům
+      for (const row of rows) {
+        row.permission_codes = permMap.get(row.id) ?? []
+      }
+    }
+  }
+
+  return rows
 }
 /* =========================
    DETAIL SHAPE
@@ -118,6 +152,12 @@ export type SubjectRow = {
   first_name?: string | null
   last_name?: string | null
   login?: string | null
+  
+  // personal identification fields
+  birth_date?: string | null // DATE as ISO string
+  personal_id_number?: string | null // Rodné číslo
+  id_doc_type?: string | null // Typ dokladu: 'OP', 'PAS', 'RP', 'OTHER'
+  id_doc_number?: string | null // Číslo dokladu
 }
 
 export type UserDetailRow = {
@@ -133,7 +173,7 @@ export type UserDetailRow = {
 export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
   const { data: subject, error: subjectErr } = await supabase
     .from('subjects')
-    .select(
+      .select(
       `
         id,
         subject_type,
@@ -148,7 +188,17 @@ export async function getUserDetail(subjectId: string): Promise<UserDetailRow> {
         title_before,
         first_name,
         last_name,
-        login
+        login,
+        note,
+        birth_date,
+        personal_id_number,
+        id_doc_type,
+        id_doc_number,
+        street,
+        city,
+        zip,
+        house_number,
+        country
       `
     )
     .eq('id', subjectId)
@@ -206,10 +256,27 @@ export type SaveUserInput = {
   firstName?: string | null
   lastName?: string | null
   login?: string | null
+  note?: string | null
+  
+  // PERSONAL IDENTIFICATION
+  birthDate?: string | null // DATE as ISO string (YYYY-MM-DD)
+  personalIdNumber?: string | null // Rodné číslo
+  idDocType?: string | null // Typ dokladu: 'OP', 'PAS', 'RP', 'OTHER'
+  idDocNumber?: string | null // Číslo dokladu
+
+  // ADDRESS
+  street?: string | null
+  city?: string | null
+  zip?: string | null
+  houseNumber?: string | null
+  country?: string | null
 
   // ROLE + PERMISSIONS
   roleCode?: string | null
   permissionCodes?: string[]
+
+  // AUTH (pro "Můj účet" - nastaví auth_user_id)
+  authUserId?: string | null
 }
 
 /* =========================
@@ -255,13 +322,36 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
     phone: (input.phone ?? '').trim() || null,
     is_archived: input.isArchived ?? false,
 
+    // ✅ Role flags - uživatel je vždy is_user = true
+    is_user: true,
+
     title_before: (input.titleBefore ?? '').trim() || null,
     first_name: (input.firstName ?? '').trim() || null,
     last_name: (input.lastName ?? '').trim() || null,
     login: (input.login ?? '').trim() || null,
+    note: (input.note ?? '').trim() || null,
+    
+    // PERSONAL IDENTIFICATION
+    birth_date: input.birthDate ? (input.birthDate.trim() || null) : null,
+    personal_id_number: (input.personalIdNumber ?? '').trim() || null,
+    id_doc_type: (input.idDocType ?? '').trim() || null,
+    id_doc_number: (input.idDocNumber ?? '').trim() || null,
+
+    // ADDRESS
+    street: (input.street ?? '').trim() || null,
+    city: (input.city ?? '').trim() || null,
+    zip: (input.zip ?? '').trim() || null,
+    house_number: (input.houseNumber ?? '').trim() || null,
+    country: (input.country ?? '').trim() || null,
 
     // DB: subjects.origin_module je NOT NULL -> musí být vždy
     origin_module: '010',
+  }
+
+  // Nastavit auth_user_id pokud je poskytnut (pro "Můj účet")
+  // Nastavujeme i při UPDATE, ne jen při INSERT
+  if (input.authUserId) {
+    subjectPayload.auth_user_id = input.authUserId
   }
 
   // 1) save subject (insert/update)
@@ -272,7 +362,7 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
       .from('subjects')
       .insert(subjectPayload)
       .select(
-        `
+      `
         id,
         subject_type,
         display_name,
@@ -286,9 +376,14 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
         title_before,
         first_name,
         last_name,
-        login
+        login,
+        note,
+        birth_date,
+        personal_id_number,
+        id_doc_type,
+        id_doc_number
       `
-      )
+    )
       .single()
 
     if (error) throw new Error(error.message)
@@ -305,7 +400,7 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
       .update(subjectPayload)
       .eq('id', subjectId)
       .select(
-        `
+      `
         id,
         subject_type,
         display_name,
@@ -319,9 +414,10 @@ export async function saveUser(input: SaveUserInput): Promise<SubjectRow> {
         title_before,
         first_name,
         last_name,
-        login
+        login,
+        note
       `
-      )
+    )
       .single()
 
     if (error) throw new Error(error.message)

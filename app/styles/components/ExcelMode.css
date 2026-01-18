@@ -8,7 +8,60 @@
 */
 
 .layout.layout--excel {
+  /* Výchozí barva - přepíše se podle theme a accentu */
   --excel-grid: var(--color-border);
+}
+
+/* Ve světlém režimu: tmavší čáry s nádechem accent barvy pro lepší viditelnost */
+.layout.layout--excel.theme-light {
+  --excel-grid: #6b7280; /* Tmavší šedá - výraznější než výchozí border */
+}
+
+/* V tmavém režimu: světlejší čáry pro lepší viditelnost */
+.layout.layout--excel.theme-dark {
+  --excel-grid: #6b7280; /* Světlejší šedá - výraznější než výchozí border */
+}
+
+/* Respektování accent barvy - ve světlém režimu tmavší verze accentu */
+.layout.layout--excel.theme-light.accent-neutral {
+  --excel-grid: #4338ca; /* Tmavší fialová z accent-neutral */
+}
+
+.layout.layout--excel.theme-light.accent-grey {
+  --excel-grid: #374151; /* Tmavší šedá z accent-grey */
+}
+
+.layout.layout--excel.theme-light.accent-blue {
+  --excel-grid: #1d4ed8; /* Tmavší modrá z accent-blue */
+}
+
+.layout.layout--excel.theme-light.accent-green {
+  --excel-grid: #15803d; /* Tmavší zelená z accent-green */
+}
+
+.layout.layout--excel.theme-light.accent-purple {
+  --excel-grid: #7c3aed; /* Tmavší fialová z accent-purple */
+}
+
+/* V tmavém režimu: světlejší verze accentu */
+.layout.layout--excel.theme-dark.accent-neutral {
+  --excel-grid: #6366f1; /* Světlejší fialová z accent-neutral */
+}
+
+.layout.layout--excel.theme-dark.accent-grey {
+  --excel-grid: #9ca3af; /* Světlejší šedá z accent-grey */
+}
+
+.layout.layout--excel.theme-dark.accent-blue {
+  --excel-grid: #3b82f6; /* Světlejší modrá z accent-blue */
+}
+
+.layout.layout--excel.theme-dark.accent-green {
+  --excel-grid: #22c55e; /* Světlejší zelená z accent-green */
+}
+
+.layout.layout--excel.theme-dark.accent-purple {
+  --excel-grid: #c084fc; /* Světlejší fialová z accent-purple */
 }
 
 .layout.layout--excel table {
@@ -19,11 +72,74 @@
 /* Gridlines + density tokens applied */
 .layout.layout--excel table th,
 .layout.layout--excel table td {
-  border: 1px solid var(--excel-grid);
+  border: 1.5px solid var(--excel-grid); /* Zesíleno z 1px na 1.5px pro výraznější čáry */
   padding: var(--table-cell-py) var(--table-cell-px);
   height: var(--table-row-h);
   vertical-align: middle;
   font-size: var(--table-font);
+}
+
+/* ===== OHRANIČENÍ MEZI SIDEBAR/TOPMENU A CONTENT ===== */
+.layout.layout--excel .layout__sidebar {
+  border-right: 1.5px solid var(--excel-grid);
+}
+
+.layout.layout--excel.layout--topmenu .topmenu {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+/* ===== ODDĚLENÍ BREADCRUMBS + COMMON ACTIONS OD CONTENT ===== */
+.layout.layout--excel .layout__topbar {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+.layout.layout--excel .layout__actions {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+/* ===== ČÁRA POD COMMON ACTIONS ===== */
+.layout.layout--excel .common-actions {
+  border-bottom: 1.5px solid var(--excel-grid);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+/* ===== VODOROVNÉ ČÁRY V SIDEBARU (VÝRAZNĚJŠÍ) ===== */
+.layout.layout--excel .sidebar__row,
+.layout.layout--excel .sidebar__section-row,
+.layout.layout--excel .sidebar__sublink {
+  border-bottom: 1.5px solid var(--excel-grid);
+}
+
+/* ===== OHRANIČENÍ ZÁLOŽEK (TABS) ===== */
+.layout.layout--excel .detail-tabs__tab {
+  border: 1.5px solid var(--excel-grid);
+}
+
+.layout.layout--excel .detail-tabs__tab.is-active {
+  border-bottom-color: var(--color-surface);
+}
+
+/* ===== OHRANIČENÍ HOME BUTTON ===== */
+.layout.layout--excel .home-button {
+  border: 1.5px solid var(--excel-grid);
+}
+
+/* ===== OHRANIČENÍ FORMULÁŘOVÝCH SEKCI ===== */
+.layout.layout--excel .detail-form__section {
+  border: 1.5px solid var(--excel-grid);
+}
+
+/* ===== OHRANIČENÍ INPUT POLÍ ===== */
+.layout.layout--excel .detail-form__input,
+.layout.layout--excel .detail-form__select,
+.layout.layout--excel .detail-form__textarea {
+  border: 1.5px solid var(--excel-grid);
+}
+
+/* ===== OHRANIČENÍ CELÉ TABULKY (LISTVIEW) ===== */
+.layout.layout--excel .listview {
+  border: 1.5px solid var(--excel-grid);
 }
 
 /* Header styling */

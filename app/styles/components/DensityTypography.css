@@ -8,7 +8,7 @@
   --text-sm: 13px;
 
   /* Entity detail title */
-  --entity-title-font: 22px;
+  --entity-title-font: 19px;
 
   /* Tables / lists (comfortable) */
   --table-font: 16px;
@@ -35,7 +35,7 @@
   --text: 13px;
   --text-sm: 12px;
 
-  --entity-title-font: 20px;
+  --entity-title-font: 16px;
 
   /* Tables / lists (compact) */
   --table-font: 13.5px;
@@ -61,7 +61,7 @@
   --text: 12px;
   --text-sm: 11px;
 
-  --entity-title-font: 18px;
+  --entity-title-font: 13px;
 
   /* Tables / lists (mini) */
   --table-font: 12px;

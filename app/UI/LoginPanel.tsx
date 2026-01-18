@@ -10,7 +10,9 @@ import { login, register, resetPassword } from '../lib/services/auth'
 
 type Mode = 'login' | 'register' | 'reset'
 
-const RESET_REDIRECT_URL = 'https://aplikace-v6.vercel.app'
+import { env } from '@/app/lib/env'
+
+const RESET_REDIRECT_URL = env.APP_BASE_URL
 
 export default function LoginPanel() {
   const [mode, setMode] = useState<Mode>('login')

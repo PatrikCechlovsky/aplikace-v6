@@ -8,6 +8,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { getIcon, IconKey } from '@/app/UI/icons'
 import { APP_COLOR_PALETTE } from '@/app/lib/colorPalette'
+import createLogger from '@/app/lib/logger'
+import { SkeletonTable } from '@/app/UI/SkeletonLoader'
+import InputWithHistory from './InputWithHistory'
+const logger = createLogger('GenericTypeTile')
 
 export type GenericTypeItem = {
   code: string
@@ -116,7 +120,18 @@ export default function GenericTypeTile({
   const [saving, setSaving] = useState(false)
 
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
-  const [filter, setFilter] = useState('')
+  const [filterInput, setFilterInput] = useState('') // Okamžitá hodnota z inputu
+  const [filter, setFilter] = useState('') // Debounced hodnota pro vyhledávání
+  
+  // Debounce pro filter (500ms zpoždění)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilter(filterInput)
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [filterInput])
+  
   const [showArchived, setShowArchived] = useState(false)
   const [orderEditInfo, setOrderEditInfo] = useState<string | null>(null)
 
@@ -144,11 +159,7 @@ export default function GenericTypeTile({
     return items.findIndex((it) => it.code === selectedCode)
   }, [items, selectedCode])
 
-  // Pořadí z formuláře (i když ještě není uložené)
-  const currentSortOrder =
-    typeof form.sort_order === 'number' && Number.isFinite(form.sort_order)
-      ? form.sort_order
-      : undefined
+  // Pořadí z formuláře (i když ještě není uložené) - removed unused variable
 
   // Map sort_order → count (z existujících položek)
   const sortOrderCounts = useMemo(() => {
@@ -242,7 +253,7 @@ export default function GenericTypeTile({
           resetFormToNew(true)
         }
       } catch (e) {
-        console.error('GenericTypeTile – fetchItems failed', e)
+        logger.error('fetchItems failed', e)
         if (!isMounted) return
         setError('Nepodařilo se načíst data. Zkuste to prosím znovu.')
       } finally {
@@ -660,8 +671,8 @@ export default function GenericTypeTile({
               type="text"
               className="generic-type__filter-input"
               placeholder="Hledat podle názvu, kódu nebo popisu..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={filterInput}
+              onChange={(e) => setFilterInput(e.target.value)}
             />
 
             <div className="generic-type__list-toolbar-right">
@@ -677,7 +688,9 @@ export default function GenericTypeTile({
           </div>
 
           {loading ? (
-            <div className="generic-type__loading">Načítám číselník…</div>
+            <div className="generic-type__loading">
+              <SkeletonTable rows={5} columns={7} />
+            </div>
           ) : filteredItems.length === 0 ? (
             <div className="generic-type__empty">Nebyl nalezen žádný záznam.</div>
           ) : (
@@ -945,7 +958,8 @@ export default function GenericTypeTile({
               <label className="generic-type__label">
                 Kód <span className="generic-type__required">*</span>
               </label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.code`}
                 type="text"
                 className="generic-type__input"
                 value={form.code}
@@ -959,7 +973,8 @@ export default function GenericTypeTile({
               <label className="generic-type__label">
                 Název <span className="generic-type__required">*</span>
               </label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.name`}
                 type="text"
                 className="generic-type__input"
                 value={form.name}
@@ -969,7 +984,8 @@ export default function GenericTypeTile({
 
             <div className="generic-type__field">
               <label className="generic-type__label">Barva (HEX)</label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.color`}
                 type="text"
                 className="generic-type__input"
                 placeholder="#E74C3C"
@@ -1030,7 +1046,8 @@ export default function GenericTypeTile({
 
             <div className="generic-type__field">
               <label className="generic-type__label">Ikona (klíč z&nbsp;icons.ts)</label>
-              <input
+              <InputWithHistory
+                historyId={`genericType.${title}.icon`}
                 type="text"
                 className="generic-type__input"
                 placeholder="např. user, building, tenant…"

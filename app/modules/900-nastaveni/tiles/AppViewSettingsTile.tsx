@@ -8,6 +8,8 @@
    1) IMPORTS
    ========================= */
 import React, { useEffect, useState } from 'react'
+import PaletteCard from '@/app/UI/PaletteCard'
+import '@/app/styles/components/AppViewSettingsTile.css'
 
 /* =========================
    2) TYPES
@@ -59,38 +61,7 @@ function notifySettingsChanged() {
   window.dispatchEvent(new CustomEvent('app-view-settings-changed'))
 }
 
-type ChoiceCardProps = {
-  title: string
-  description?: string
-  selected: boolean
-  onSelect: () => void
-  icon?: React.ReactNode
-}
-
-function ChoiceCard({ title, description, selected, onSelect, icon }: ChoiceCardProps) {
-  return (
-    <button
-      type="button"
-      className={`palette-card ${selected ? 'palette-card--active' : ''}`}
-      onClick={onSelect}
-      aria-pressed={selected}
-    >
-      <div className="palette-card__header">
-        <span className="palette-card__title">{title}</span>
-        {selected ? <span className="palette-card__badge">Aktivní</span> : null}
-      </div>
-
-      {description ? <p className="palette-card__description">{description}</p> : null}
-
-      {/* Místo tří teček theme preview dáme jednoduchý “indikátor” – stejné rozměry */}
-      <div className="palette-card__preview">
-        <span className={`palette-preview ${selected ? 'palette-preview--active' : ''}`} />
-        <span className="palette-preview palette-preview--ghost" />
-        <span className="palette-preview palette-preview--ghost" />
-      </div>
-    </button>
-  )
-}
+// ChoiceCard je nyní nahrazena reusable PaletteCard komponentou
 
 
 /* =========================
@@ -121,121 +92,76 @@ const AppViewSettingsTile: React.FC = () => {
   }
 
   return (
-    <section className="generic-type">
-      <header className="generic-type__header">
-        <h1 className="generic-type__title">Vzhled a zobrazení</h1>
-        <p className="generic-type__description">
+    <section className="settings-tile">
+      <header className="settings-tile__header">
+        <h1 className="settings-tile__title">Vzhled a zobrazení</h1>
+        <p className="settings-tile__description">
           Nastavení umístění menu, stylu aplikace (Excel mřížka) a hustoty (výchozí / kompaktní / mini).
           Uloženo pro každého uživatele samostatně.
         </p>
       </header>
 
-      <div className="generic-type__body">
-        {/* Nastavení */}
-        <div className="generic-type__panel">
-          <h2 className="generic-type__panel-title">Nastavení</h2>
-
-          {/* Menu layout */}
-          <div className="generic-type__field-group">
-            <div className="settings-tile__section-title">Umístění hlavního menu</div>
-            <div className="avs-grid avs-grid--2">
-              <ChoiceCard
-                title="Sidebar vlevo"
-                description="Klasické rozložení s navigací vlevo."
-                selected={settings.menuLayout === 'sidebar'}
-                onSelect={() => updateSettings({ menuLayout: 'sidebar' })}
-              />
-              <ChoiceCard
-                title="Horní lišta (Excel styl)"
-                description="Navigace nahoře, víc místa na obsah."
-                selected={settings.menuLayout === 'top'}
-                onSelect={() => updateSettings({ menuLayout: 'top' })}
-              />
-            </div>
-          </div>
-
-          {/* UI style */}
-          <div className="generic-type__field-group">
-            <div className="generic-type__label">Styl aplikace</div>
-            <div className="avs-grid avs-grid--2">
-              <ChoiceCard
-                title="Standardní (moderní)"
-                description="Čistý vzhled bez mřížky v tabulkách."
-                selected={settings.uiStyle === 'default'}
-                onSelect={() => updateSettings({ uiStyle: 'default' })}
-              />
-              <ChoiceCard
-                title="Excel (mřížka + ohraničení)"
-                description="Tabulky s linkami jako v Excelu."
-                selected={settings.uiStyle === 'excel'}
-                onSelect={() => updateSettings({ uiStyle: 'excel' })}
-              />
-            </div>
-          </div>
-          {/* Density */}
-          <div className="generic-type__field-group">
-            <div className="generic-type__label">Hustota</div>
-            <div className="avs-grid avs-grid--3">
-              <ChoiceCard
-                title="Pohodlná"
-                description="Největší text a více prostoru."
-                selected={settings.density === 'comfortable'}
-                onSelect={() => updateSettings({ density: 'comfortable' })}
-              />
-              <ChoiceCard
-                title="Kompaktní"
-                description="Nižší řádky, rychlejší skenování."
-                selected={settings.density === 'compact'}
-                onSelect={() => updateSettings({ density: 'compact' })}
-              />
-              <ChoiceCard
-                title="Mini"
-                description="Nejhustší režim pro velké seznamy."
-                selected={settings.density === 'mini'}
-                onSelect={() => updateSettings({ density: 'mini' })}
-              />
-            </div>
+      <div className="settings-tile__section">
+        {/* 1) Umístění menu */}
+        <div className="avs-section">
+          <h2 className="avs-section__title">Umístění menu:</h2>
+          <div className="avs-section__grid">
+            <PaletteCard
+              title="Sidebar vlevo"
+              description="Klasické rozložení s navigací vlevo."
+              selected={settings.menuLayout === 'sidebar'}
+              onSelect={() => updateSettings({ menuLayout: 'sidebar' })}
+            />
+            <PaletteCard
+              title="Horní lišta (Excel styl)"
+              description="Navigace nahoře, víc místa na obsah."
+              selected={settings.menuLayout === 'top'}
+              onSelect={() => updateSettings({ menuLayout: 'top' })}
+            />
           </div>
         </div>
 
-        {/* Náhled tabulky */}
-        <div className="generic-type__panel">
-          <h2 className="generic-type__panel-title">Náhled tabulkového zobrazení</h2>
-          <p className="generic-type__panel-description">
-            Náhled používá stejné styly jako seznamy. Excel styl přidá mřížku a hustota upraví výšku řádků a typografii.
-          </p>
+        {/* 2) Grafické zobrazení */}
+        <div className="avs-section">
+          <h2 className="avs-section__title">Grafické zobrazení:</h2>
+          <div className="avs-section__grid">
+            <PaletteCard
+              title="Standardní (moderní)"
+              description="Čistý vzhled bez mřížky v tabulkách."
+              selected={settings.uiStyle === 'default'}
+              onSelect={() => updateSettings({ uiStyle: 'default' })}
+            />
+            <PaletteCard
+              title="Excel (mřížka + ohraničení)"
+              description="Tabulky s linkami jako v Excelu."
+              selected={settings.uiStyle === 'excel'}
+              onSelect={() => updateSettings({ uiStyle: 'excel' })}
+            />
+          </div>
+        </div>
 
-          <div className="generic-type__table-wrapper">
-            <table className="generic-type__table">
-              <thead>
-                <tr>
-                  <th>Kód</th>
-                  <th>Název</th>
-                  <th>Stav</th>
-                  <th>Poslední změna</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>USR-001</td>
-                  <td>Jan Novák</td>
-                  <td>Aktivní</td>
-                  <td>10. 12. 2025</td>
-                </tr>
-                <tr>
-                  <td>USR-002</td>
-                  <td>Firma Alfa s.r.o.</td>
-                  <td>Aktivní</td>
-                  <td>05. 12. 2025</td>
-                </tr>
-                <tr>
-                  <td>USR-003</td>
-                  <td>Testovací subjekt</td>
-                  <td>Neaktivní</td>
-                  <td>01. 12. 2025</td>
-                </tr>
-              </tbody>
-            </table>
+        {/* 3) Velikost buněk a textu */}
+        <div className="avs-section">
+          <h2 className="avs-section__title">Velikost buněk a textu:</h2>
+          <div className="avs-section__grid avs-section__grid--three">
+            <PaletteCard
+              title="Pohodlná"
+              description="Největší text a více prostoru."
+              selected={settings.density === 'comfortable'}
+              onSelect={() => updateSettings({ density: 'comfortable' })}
+            />
+            <PaletteCard
+              title="Kompaktní"
+              description="Nižší řádky, rychlejší skenování."
+              selected={settings.density === 'compact'}
+              onSelect={() => updateSettings({ density: 'compact' })}
+            />
+            <PaletteCard
+              title="Mini"
+              description="Nejhustší režim pro velké seznamy."
+              selected={settings.density === 'mini'}
+              onSelect={() => updateSettings({ density: 'mini' })}
+            />
           </div>
         </div>
       </div>

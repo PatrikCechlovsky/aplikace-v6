@@ -1,0 +1,139 @@
+/* FILE: app/styles/components/ErrorBoundary.css */
+/* PURPOSE: Styles for Error Boundary component */
+
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--bg-primary, #f5f5f5);
+}
+
+.error-boundary__content {
+  max-width: 600px;
+  width: 100%;
+  padding: 2rem;
+  background: var(--bg-secondary, #ffffff);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.error-boundary h2 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary, #333);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.error-boundary p {
+  margin: 0 0 2rem 0;
+  color: var(--text-secondary, #666);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.error-boundary__details {
+  margin: 1.5rem 0;
+  text-align: left;
+  background: var(--bg-tertiary, #f9f9f9);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.error-boundary__details summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+  margin-bottom: 0.5rem;
+}
+
+.error-boundary__details summary:hover {
+  color: var(--text-link, #0066cc);
+}
+
+.error-boundary__error {
+  margin: 0.5rem 0 0 0;
+  padding: 1rem;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-error, #d32f2f);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-boundary__button {
+  display: inline-block;
+  margin: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-on-primary, #ffffff);
+  background: var(--color-primary, #0066cc);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.error-boundary__button:hover {
+  background: var(--color-primary-hover, #0052a3);
+}
+
+.error-boundary__button:active {
+  background: var(--color-primary-active, #003d7a);
+}
+
+.error-boundary__button--secondary {
+  background: var(--color-secondary, #6c757d);
+}
+
+.error-boundary__button--secondary:hover {
+  background: var(--color-secondary-hover, #5a6268);
+}
+
+.error-boundary__button--secondary:active {
+  background: var(--color-secondary-active, #484f54);
+}
+
+/* Dark theme support */
+.theme-dark .error-boundary {
+  background: var(--bg-primary-dark, #1a1a1a);
+}
+
+.theme-dark .error-boundary__content {
+  background: var(--bg-secondary-dark, #2d2d2d);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+.theme-dark .error-boundary h2 {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+.theme-dark .error-boundary p {
+  color: var(--text-secondary-dark, #b0b0b0);
+}
+
+.theme-dark .error-boundary__details {
+  background: var(--bg-tertiary-dark, #252525);
+  border-color: var(--border-color-dark, #404040);
+}
+
+.theme-dark .error-boundary__details summary {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+.theme-dark .error-boundary__error {
+  background: var(--bg-primary-dark, #1a1a1a);
+  border-color: var(--border-color-dark, #404040);
+  color: var(--text-error-dark, #ff6b6b);
+}
+
+

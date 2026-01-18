@@ -47,85 +47,8 @@
   gap: 0.75rem;
 }
 
-/* Dlaždice/preset */
-
-.palette-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: left;
-  padding: 0.75rem 0.9rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-subtle);
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.1s ease;
-}
-
-.palette-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary-soft);
-  transform: translateY(-1px);
-}
-
-.palette-card:disabled,
-.palette-card[disabled] {
-  cursor: default;
-  opacity: 0.7;
-  transform: none;
-  box-shadow: none;
-}
-
-.palette-card--active {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-/* Hlavička v dlaždici */
-
-.palette-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
-}
-
-.palette-card__title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.palette-card__badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: var(--color-primary);
-  color: #ffffff;
-}
-
-/* Popisek */
-
-.palette-card__description {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-/* Barevný náhled (3 puntíky) */
-
-.palette-card__preview {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 0.25rem;
-}
+/* Dlaždice/preset - nyní používáme reusable PaletteCard komponentu */
+/* Styly jsou v app/styles/components/PaletteCard.css */
 
 .palette-preview {
   width: 18px;
@@ -134,27 +57,56 @@
   border: 1px solid rgba(15, 23, 42, 0.1);
 }
 
-/* ukázkové barvy pro jednotlivé accenty */
+/* ukázkové barvy pro jednotlivé accenty - podle světlého/tmavého režimu */
 
-.palette-preview--neutral.primary { background: #4f46e5; }
-.palette-preview--neutral.soft    { background: #e0e7ff; }
-.palette-preview--neutral.accent  { background: #111827; }
+/* NEUTRAL */
+.palette-preview--neutral.palette-preview--light.primary { background: #4f46e5; }
+.palette-preview--neutral.palette-preview--light.soft    { background: #e0e7ff; }
+.palette-preview--neutral.palette-preview--light.accent  { background: #f9fafb; }
 
-.palette-preview--grey.primary { background: #6b7280; }
-.palette-preview--grey.soft    { background: #e5e7eb; }
-.palette-preview--grey.accent  { background: #374151; }
+.palette-preview--neutral.palette-preview--dark.primary { background: #6366f1; }
+.palette-preview--neutral.palette-preview--dark.soft    { background: #312e81; }
+.palette-preview--neutral.palette-preview--dark.accent  { background: #0f172a; }
 
-.palette-preview--blue.primary { background: #2563eb; }
-.palette-preview--blue.soft    { background: #dbeafe; }
-.palette-preview--blue.accent  { background: #1d4ed8; }
+.palette-preview--neutral.palette-preview--auto.primary { background: #4f46e5; }
+.palette-preview--neutral.palette-preview--auto.soft    { background: #e0e7ff; }
+.palette-preview--neutral.palette-preview--auto.accent  { background: #111827; }
 
-.palette-preview--green.primary { background: #16a34a; }
-.palette-preview--green.soft    { background: #dcfce7; }
-.palette-preview--green.accent  { background: #15803d; }
+/* GREY */
+.palette-preview--grey.palette-preview--light.primary { background: #6b7280; }
+.palette-preview--grey.palette-preview--light.soft    { background: #e5e7eb; }
+.palette-preview--grey.palette-preview--light.accent  { background: #f9fafb; }
 
-.palette-preview--purple.primary { background: #a855f7; }
-.palette-preview--purple.soft    { background: #f3e8ff; }
-.palette-preview--purple.accent  { background: #7c3aed; }
+.palette-preview--grey.palette-preview--dark.primary { background: #9ca3af; }
+.palette-preview--grey.palette-preview--dark.soft    { background: #374151; }
+.palette-preview--grey.palette-preview--dark.accent  { background: #111827; }
+
+/* BLUE */
+.palette-preview--blue.palette-preview--light.primary { background: #2563eb; }
+.palette-preview--blue.palette-preview--light.soft    { background: #dbeafe; }
+.palette-preview--blue.palette-preview--light.accent  { background: #f0f9ff; }
+
+.palette-preview--blue.palette-preview--dark.primary { background: #3b82f6; }
+.palette-preview--blue.palette-preview--dark.soft    { background: #1e3a8a; }
+.palette-preview--blue.palette-preview--dark.accent  { background: #0f172a; }
+
+/* GREEN - hlavní barva podle světlého/tmavého režimu (zobrazuje skutečné barvy tématu) */
+.palette-preview--green.palette-preview--light.primary { background: #86efac; } /* světle zelená jako hlavní barva pro světlé téma */
+.palette-preview--green.palette-preview--light.soft    { background: #dcfce7; }
+.palette-preview--green.palette-preview--light.accent  { background: #f0fdf4; }
+
+.palette-preview--green.palette-preview--dark.primary { background: #15803d; } /* tmavě zelená jako hlavní barva pro tmavé téma */
+.palette-preview--green.palette-preview--dark.soft    { background: #065f46; }
+.palette-preview--green.palette-preview--dark.accent  { background: #022c22; }
+
+/* PURPLE */
+.palette-preview--purple.palette-preview--light.primary { background: #a855f7; }
+.palette-preview--purple.palette-preview--light.soft    { background: #f3e8ff; }
+.palette-preview--purple.palette-preview--light.accent  { background: #faf5ff; }
+
+.palette-preview--purple.palette-preview--dark.primary { background: #c084fc; }
+.palette-preview--purple.palette-preview--dark.soft    { background: #5b21b6; }
+.palette-preview--purple.palette-preview--dark.accent  { background: #0b0217; }
 
 
 .settings-tile__grid {
@@ -185,27 +137,38 @@
   color: var(--color-accent);
   font-weight: 600;
 }
-/* Automaticky samostatně */
+/* Automaticky samostatně - první řádek: 1 dlaždice (stejná šířka jako ostatní) */
 .settings-theme__grid-auto {
   margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-/* Seznam párů (řádky) */
+/* Seznam párů (řádky) - po dvou podle barvy */
 .settings-theme__pairs {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-/* Jeden pár: 2 karty vedle sebe, na mobilu pod sebou */
+/* Jeden pár: 2 karty vedle sebe (světlé + tmavé), na mobilu pod sebou */
 .settings-theme__pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 640px) {
   .settings-theme__pair {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  
+  .settings-theme__pair .palette-card,
+  .settings-theme__grid-auto .palette-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 }
 /* malý pomocný preview pro ChoiceCard (není závislý na accent paletě) */

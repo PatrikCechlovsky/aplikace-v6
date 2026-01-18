@@ -1,0 +1,140 @@
+/* FILE: app/styles/components/SkeletonLoader.css */
+/* PURPOSE: Styles for skeleton loader components */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg, #f0f0f0) 25%,
+    var(--skeleton-shine, #e0e0e0) 50%,
+    var(--skeleton-bg, #f0f0f0) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton--text {
+  height: 1rem;
+  border-radius: 4px;
+}
+
+.skeleton--circle {
+  border-radius: 50%;
+}
+
+.skeleton--rect {
+  border-radius: 4px;
+}
+
+.skeleton--card {
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-card {
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary, #ffffff);
+}
+
+.skeleton-card__content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-table {
+  width: 100%;
+}
+
+.skeleton-table__header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  padding: 0.75rem;
+  border-bottom: 2px solid var(--border-color, #e0e0e0);
+  background: var(--bg-tertiary, #f5f5f5);
+}
+
+.skeleton-table__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-table__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.skeleton-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.skeleton-centered__spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skeleton-centered__message {
+  margin: 0;
+  color: var(--text-secondary, #666);
+  font-size: 0.9rem;
+}
+
+/* Dark theme support */
+.theme-dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg-dark, #2a2a2a) 25%,
+    var(--skeleton-shine-dark, #3a3a3a) 50%,
+    var(--skeleton-bg-dark, #2a2a2a) 75%
+  );
+  background-size: 200% 100%;
+}
+
+.theme-dark .skeleton-card {
+  border-color: var(--border-color-dark, #404040);
+  background: var(--bg-secondary-dark, #2d2d2d);
+}
+
+.theme-dark .skeleton-table__header {
+  border-color: var(--border-color-dark, #404040);
+  background: var(--bg-tertiary-dark, #252525);
+}
+
+.theme-dark .skeleton-table__row {
+  border-color: var(--border-color-dark, #404040);
+}
+
+.theme-dark .skeleton-centered__message {
+  color: var(--text-secondary-dark, #b0b0b0);
+}
+
+

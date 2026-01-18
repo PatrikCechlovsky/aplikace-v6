@@ -3,10 +3,14 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import EntityDetailFrame from '@/app/UI/EntityDetailFrame'
 import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('InviteUserFrame')
 import InviteUserForm, { type InviteFormValue } from './InviteUserForm'
 import { sendInvite, type InviteResult } from '@/app/lib/services/invites'
+import { useToast } from '@/app/UI/Toast'
+import '@/app/styles/components/TileLayout.css'
+import '@/app/styles/components/InviteUserFrame.css'
 
 type Props = {
   presetSubjectId?: string | null
@@ -15,9 +19,10 @@ type Props = {
 }
 
 export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegisterSubmit }: Props) {
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState<'invite' | 'system'>('invite')
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null)
-  const [isSending, setIsSending] = useState(false)
+  const [_isSending, setIsSending] = useState(false) // Used for future loading state
 
   const currentRef = useRef<InviteFormValue>({
     mode: presetSubjectId ? 'existing' : 'new',
@@ -48,7 +53,7 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
     try {
       // ✅ blokace opakovaného klikání/odeslání, když už máme výsledek
       if (inviteResult?.inviteId) {
-        alert('Pozvánka už byla založena. Pokud chceš poslat další, vrať se a založ novou pozvánku.')
+        toast.showWarning('Pozvánka už byla založena. Pokud chceš poslat další, vrať se a založ novou pozvánku.')
         setActiveTab('system')
         return true
       }
@@ -56,19 +61,19 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       const v = currentRef.current
 
       if (v.mode === 'existing' && !v.subjectId) {
-        alert('Vyber existujícího uživatele.')
+        toast.showWarning('Vyber existujícího uživatele.')
         return false
       }
       if (v.mode === 'new' && !v.email?.trim()) {
-        alert('Email je povinný.')
+        toast.showWarning('Email je povinný.')
         return false
       }
       if (!v.roleCode?.trim()) {
-        alert('Role je povinná.')
+        toast.showWarning('Role je povinná.')
         return false
       }
       if (!v.permissionCode?.trim()) {
-        alert('Oprávnění je povinné.')
+        toast.showWarning('Oprávnění je povinné.')
         return false
       }
 
@@ -79,11 +84,11 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       setActiveTab('system')
       onDirtyChange?.(false)
 
-      alert('Pozvánka byla založena ✅') // jasný feedback (můžeš později nahradit toastem)
+      toast.showSuccess('Pozvánka byla založena')
       return true
     } catch (e: any) {
-      console.error('[InviteUserFrame.sendInvite] ERROR', e)
-      alert(e?.message ?? 'Chyba při odeslání pozvánky')
+      logger.error('sendInvite failed', e)
+      toast.showError(e?.message ?? 'Chyba při odeslání pozvánky')
       return false
     } finally {
       setIsSending(false)
@@ -103,8 +108,18 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
   }, [inviteResult])
 
   return (
-    <EntityDetailFrame title="Pozvat uživatele">
-      <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
+    <div className="tile-layout">
+      <div className="tile-layout__header">
+        <h1 className="tile-layout__title">Pozvat uživatele</h1>
+        <p className="tile-layout__description">
+          Pozvánka slouží k přizvání uživatele do aplikace, aby mohl spolupracovat na tvých nemovitostech.
+        </p>
+      </div>
+      <div className="tile-layout__content">
+      {/* Zobrazit záložky jen když je více než jedna (když je inviteResult) */}
+      {tabItems.length > 1 && (
+        <DetailTabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as any)} />
+      )}
 
       {activeTab === 'invite' && (
         <InviteUserForm
@@ -118,10 +133,10 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
       )}
 
       {activeTab === 'system' && inviteResult && (
-        <div style={{ padding: 12 }}>
-          <h3 style={{ marginTop: 0 }}>Výsledek</h3>
+        <div className="invite-user-frame__result-container">
+          <h3 className="invite-user-frame__result-title">Výsledek</h3>
 
-          <div style={{ padding: 10, border: '1px solid #ddd', borderRadius: 8 }}>
+          <div className="invite-user-frame__result-box">
             <div>
               <b>Status:</b> {inviteResult.status ?? '—'}
             </div>
@@ -154,17 +169,18 @@ export default function InviteUserFrame({ presetSubjectId, onDirtyChange, onRegi
               </div>
             )}
             {inviteResult.message && (
-              <div style={{ marginTop: 8 }}>
+              <div className="invite-user-frame__result-message">
                 <b>Poznámka:</b> {inviteResult.message}
               </div>
             )}
           </div>
 
-          <div style={{ marginTop: 12, opacity: 0.8 }}>
+          <div className="invite-user-frame__result-note">
             Teď už nejde „nepoznat“, že pozvánka proběhla. Opakované klikání je zablokované.
           </div>
         </div>
       )}
-    </EntityDetailFrame>
+      </div>
+    </div>
   )
 }

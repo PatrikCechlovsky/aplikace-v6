@@ -20,11 +20,17 @@ import UserDetailFrame from '@/app/modules/010-sprava-uzivatelu/forms/UserDetail
 import InviteUserFrame from '../forms/InviteUserFrame'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listUsers, type UsersListRow } from '@/app/lib/services/users'
+import { getLatestInviteForSubject } from '@/app/lib/services/invites'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import { fetchRoleTypes, type RoleTypeRow } from '@/app/modules/900-nastaveni/services/roleTypes'
+import { listPermissionTypes, type PermissionTypeRow } from '@/app/lib/services/permissions'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import { SkeletonTable } from '@/app/UI/SkeletonLoader'
+import { useToast } from '@/app/UI/Toast'
+import '@/app/styles/components/TileLayout.css'
 
-const __typecheck_commonaction: CommonActionId = 'attachments'
+// Type check for CommonActionId - removed unused variable
 
 // =====================
 // 2) TYPES
@@ -44,6 +50,9 @@ type UiUser = {
   roleLabel: string
   roleOrderIndex?: number | null
   roleColor?: string | null
+
+  permissionCodes?: string[]
+  permissionLabel: string
 
   createdAt: string
   isArchived?: boolean
@@ -68,17 +77,14 @@ type LocalViewMode = ViewMode | 'list' | 'invite' | 'attachments-manager'
 // =====================
 // 3) HELPERS
 // =====================
-const DEBUG = true
-const dbg = (...args: any[]) => {
-  if (!DEBUG) return
-  // eslint-disable-next-line no-console
-  console.log('[010 UsersTile]', ...args)
-}
+import createLogger from '@/app/lib/logger'
+const logger = createLogger('010 UsersTile')
 
 const VIEW_KEY = '010.users.list'
 
 const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'roleLabel', label: 'Role', width: 160, sortable: true },
+  { key: 'permissionLabel', label: 'Oprávnění', width: 180, sortable: true },
   { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
   { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
   { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
@@ -142,6 +148,45 @@ function resolveRoleMeta(roleCode: string | null | undefined, map: Record<string
   return map[c] ?? { label: roleCodeToLabel(c), color: null, orderIndex: null }
 }
 
+type PermissionMeta = {
+  label: string
+  color: string | null
+  orderIndex: number | null
+}
+
+function buildPermissionMetaMap(rows: PermissionTypeRow[]): Record<string, PermissionMeta> {
+  const map: Record<string, PermissionMeta> = {}
+  for (const r of rows ?? []) {
+    const code = String((r as any).code ?? '').trim().toLowerCase()
+    if (!code) continue
+
+    const name = String((r as any).name ?? '').trim()
+    const color = ((r as any).color ?? null) as string | null
+    const orderIndexRaw = (r as any).order_index
+    const orderIndex = typeof orderIndexRaw === 'number' && Number.isFinite(orderIndexRaw) ? orderIndexRaw : null
+
+    map[code] = {
+      label: name || String((r as any).code ?? code),
+      color: color && String(color).trim() ? String(color).trim() : null,
+      orderIndex,
+    }
+  }
+  return map
+}
+
+function resolvePermissionLabel(permissionCodes: string[] | null | undefined, map: Record<string, PermissionMeta>): string {
+  if (!permissionCodes || permissionCodes.length === 0) return '—'
+  const labels = permissionCodes
+    .map((code) => {
+      const c = String(code ?? '').trim().toLowerCase()
+      if (!c) return null
+      const meta = map[c]
+      return meta?.label ?? code
+    })
+    .filter((x): x is string => !!x)
+  return labels.length > 0 ? labels.join(', ') : '—'
+}
+
 function formatDateShort(v: any): string {
   const s = String(v ?? '').trim()
   if (!s) return ''
@@ -150,15 +195,12 @@ function formatDateShort(v: any): string {
   return s
 }
 
-function dateSortValue(v: any): number {
-  const s = String(v ?? '').trim()
-  if (!s) return 0
-  const t = Date.parse(s)
-  return Number.isFinite(t) ? t : 0
-}
+// Removed unused function dateSortValue
 
-function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUser {
+function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>, permissionMap: Record<string, PermissionMeta>): UiUser {
   const meta = resolveRoleMeta((row as any).role_code, roleMap)
+  const permissionCodes = (row as any).permission_codes ?? []
+  const permissionLabel = resolvePermissionLabel(permissionCodes, permissionMap)
   return {
     id: row.id,
     displayName: (row as any).display_name ?? '',
@@ -173,6 +215,9 @@ function mapRowToUi(row: UsersListRow, roleMap: Record<string, RoleMeta>): UiUse
     roleLabel: meta.label,
     roleOrderIndex: meta.orderIndex,
     roleColor: meta.color,
+
+    permissionCodes,
+    permissionLabel,
 
     createdAt: (row as any).created_at ?? '',
     isArchived: !!(row as any).is_archived,
@@ -198,6 +243,8 @@ function toRow(u: UiUser): ListViewRow<UiUser> {
         <span className="generic-type__name-main">{u.roleLabel || '—'}</span>
       ),
 
+      permissionLabel: <span className="generic-type__name-main">{u.permissionLabel || '—'}</span>,
+
       displayName: u.displayName,
       lastName: u.lastName ?? '',
       firstName: u.firstName ?? '',
@@ -220,6 +267,9 @@ function getSortValue(u: UiUser, key: string): string | number {
   switch (key) {
     case 'roleLabel':
       return u.roleOrderIndex ?? 999999
+
+    case 'permissionLabel':
+      return norm(u.permissionLabel)
 
     case 'displayName':
       return norm(u.displayName)
@@ -262,6 +312,7 @@ export default function UsersTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: UsersTileProps) {
+  const toast = useToast()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -271,7 +322,18 @@ export default function UsersTile({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [filterText, setFilterText] = useState('')
+  const [filterInput, setFilterInput] = useState('') // Okamžitá hodnota z inputu
+  const [filterText, setFilterText] = useState('') // Debounced hodnota pro vyhledávání
+  
+  // Debounce pro filterText (500ms zpoždění)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilterText(filterInput)
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [filterInput])
+  
   const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -287,6 +349,10 @@ export default function UsersTile({
   const roleTypeMap = useMemo(() => buildRoleMetaMap(roleTypes), [roleTypes])
   const roleTypeMapRef = useRef<Record<string, RoleMeta>>({})
 
+  const [permissionTypes, setPermissionTypes] = useState<PermissionTypeRow[]>([])
+  const permissionTypeMap = useMemo(() => buildPermissionMetaMap(permissionTypes), [permissionTypes])
+  const permissionTypeMapRef = useRef<Record<string, PermissionMeta>>({})
+
   const submitRef = useRef<null | (() => Promise<UiUser | null>)>(null)
   const inviteSubmitRef = useRef<null | (() => Promise<boolean>)>(null)
 
@@ -299,6 +365,7 @@ export default function UsersTile({
   const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
     hasSelection: false,
     isDirty: false,
+    mode: 'list',
   })
 
   // ✅ DEFAULT sort pro Users (Role -> order_index)
@@ -369,6 +436,7 @@ export default function UsersTile({
   useEffect(() => {
     if (!prefsLoadedRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    if (!sort) return
   
     const persistSort: ViewPrefsSortState =
       sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir ? null : (sort as ViewPrefsSortState)
@@ -424,7 +492,7 @@ export default function UsersTile({
       const nextUrl = qs ? `${pathname}?${qs}` : pathname
       const currentUrl = searchKey ? `${pathname}?${searchKey}` : pathname
 
-      dbg('setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
+      logger.debug('setUrl()', { mode, next, searchKey, currentUrl, nextUrl, willNavigate: nextUrl !== currentUrl })
 
       if (nextUrl === currentUrl) return
 
@@ -451,10 +519,9 @@ export default function UsersTile({
       setError(null)
       try {
         const rows = await listUsers({ searchText: filterText, includeArchived: showArchived })
-        setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current)))
+        setUsers(rows.map((r) => mapRowToUi(r, roleTypeMapRef.current, permissionTypeMapRef.current)))
       } catch (e: any) {
-        // eslint-disable-next-line no-console
-        console.error('[UsersTile.listUsers] ERROR', e)
+        logger.error('listUsers failed', e)
         setError(e?.message ?? 'Chyba načtení uživatelů')
       } finally {
         setLoading(false)
@@ -477,8 +544,7 @@ export default function UsersTile({
         const rows = await fetchRoleTypes()
         setRoleTypes(rows)
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[UsersTile.fetchRoleTypes] WARN', e)
+        logger.warn('fetchRoleTypes failed', e)
       }
     })()
     roleTypesInFlightRef.current = p
@@ -489,17 +555,129 @@ export default function UsersTile({
     }
   }, [])
 
+  const permissionTypesInFlightRef = useRef<Promise<void> | null>(null)
+  const loadPermissionTypes = useCallback(async () => {
+    if (permissionTypesInFlightRef.current) return permissionTypesInFlightRef.current
+    const p = (async () => {
+      try {
+        const rows = await listPermissionTypes()
+        setPermissionTypes(rows)
+      } catch (e) {
+        logger.warn('listPermissionTypes failed', e)
+      }
+    })()
+    permissionTypesInFlightRef.current = p
+    try {
+      await p
+    } finally {
+      if (permissionTypesInFlightRef.current === p) permissionTypesInFlightRef.current = null
+    }
+  }, [])
+
   useEffect(() => {
     roleTypeMapRef.current = roleTypeMap
   }, [roleTypeMap])
 
   useEffect(() => {
+    permissionTypeMapRef.current = permissionTypeMap
+  }, [permissionTypeMap])
+
+  useEffect(() => {
     void loadRoleTypes()
-  }, [loadRoleTypes])
+    void loadPermissionTypes()
+  }, [loadRoleTypes, loadPermissionTypes])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  // ✅ Synchronizace URL parametrů s viewMode a detailUser
+  useEffect(() => {
+    const t = searchParams?.get('t')?.trim() ?? null
+    const id = searchParams?.get('id')?.trim() ?? null
+    const vm = searchParams?.get('vm')?.trim() ?? null
+    const am = searchParams?.get('am')?.trim() ?? null
+
+    // Pokud není t nebo je t=users-list a není id ani vm ani am, zobraz seznam
+    if (!t || (t === 'users-list' && !id && !vm && !am)) {
+      if (viewMode !== 'list') {
+        setViewMode('list')
+        setDetailUser(null)
+        setIsDirty(false)
+      }
+      return
+    }
+
+    // Pokud je t=invite-user, zobraz invite
+    if (t === 'invite-user') {
+      if (viewMode !== 'invite') {
+        setViewMode('invite')
+        setInvitePresetSubjectId(id)
+        setIsDirty(false)
+      }
+      return
+    }
+
+    // Pokud je t=attachments-manager, zobraz attachments manager
+    if (t === 'attachments-manager') {
+      if (viewMode !== 'attachments-manager') {
+        setViewMode('attachments-manager')
+        setAttachmentsManagerSubjectId(id)
+        setIsDirty(false)
+      }
+      return
+    }
+
+    // ✅ Pokud je t=users-list a am=1, zobraz attachments manager (priorita před detailem)
+    if (t === 'users-list' && id && am === '1') {
+      if (viewMode !== 'attachments-manager' || attachmentsManagerSubjectId !== id) {
+        setViewMode('attachments-manager')
+        setAttachmentsManagerSubjectId(id)
+        setIsDirty(false)
+        // Zajisti, že máme detailUser pro případ návratu
+        const user = users.find((u) => u.id === id) ?? detailUser
+        if (user && user.id === id) {
+          setDetailUser(user)
+        }
+      }
+      return
+    }
+
+    // Pokud je t=users-list a je id, zobraz detail
+    if (t === 'users-list' && id) {
+      const viewModeFromUrl = (vm === 'edit' ? 'edit' : vm === 'create' ? 'create' : 'read') as ViewMode
+      
+      // Pokud už máme detailUser s tímto id, jen aktualizuj viewMode
+      if (detailUser?.id === id && viewMode !== viewModeFromUrl) {
+        setViewMode(viewModeFromUrl as any)
+        setIsDirty(false)
+        return
+      }
+
+      // Pokud už máme správný viewMode a detailUser, nic nedělej
+      if (detailUser?.id === id && viewMode === viewModeFromUrl) {
+        return
+      }
+
+      // Najdi uživatele v seznamu
+      const user = users.find((u) => u.id === id)
+      if (user) {
+        setDetailUser(user)
+        setViewMode(viewModeFromUrl as any)
+        setDetailInitialSectionId('detail')
+        setDetailActiveSectionId('detail')
+        setIsDirty(false)
+      } else if (id === 'new') {
+        // Nový uživatel
+        setDetailUser({ id: 'new', displayName: '', email: '', roleLabel: '', permissionLabel: '', createdAt: '' } as UiUser)
+        setViewMode('create')
+        setDetailInitialSectionId('detail')
+        setDetailActiveSectionId('detail')
+        setIsDirty(false)
+      }
+      return
+    }
+  }, [searchKey, users]) // ✅ Pouze searchKey a users jako dependency - viewMode a detailUser jsou výsledek, ne vstup
   
   // ✅ když se načtou roleTypes (barvy + order), přepočítej již načtené users
   useEffect(() => {
@@ -520,6 +698,23 @@ export default function UsersTile({
     })
   }, [roleTypeMap])
 
+  // ✅ když se načtou permissionTypes, přepočítej již načtené users
+  useEffect(() => {
+    if (!permissionTypeMap || Object.keys(permissionTypeMap).length === 0) return
+  
+    setUsers((prev) => {
+      if (!prev?.length) return prev
+  
+      return prev.map((u) => {
+        const permissionLabel = resolvePermissionLabel(u.permissionCodes ?? null, permissionTypeMap)
+        return {
+          ...u,
+          permissionLabel,
+        }
+      })
+    })
+  }, [permissionTypeMap])
+
   // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
   const baseOrderIndex = useMemo(() => {
     const m = new Map<string, number>()
@@ -529,6 +724,15 @@ export default function UsersTile({
 
   // ✅ sortedUsers (DEFAULT = roleOrderIndex ASC, email ASC)
   const sortedUsers = useMemo(() => {
+    if (!sort) {
+      // Default sort when sort is null
+      return [...users].sort((a, b) => {
+        const ao = a.roleOrderIndex ?? 999999
+        const bo = b.roleOrderIndex ?? 999999
+        if (ao !== bo) return ao - bo
+        return (a.email ?? '').localeCompare(b.email ?? '', 'cs')
+      })
+    }
     const key = String(sort.key ?? '').trim()
     const dir = sort.dir === 'desc' ? -1 : 1
     const arr = [...users]
@@ -624,7 +828,12 @@ export default function UsersTile({
   // CommonActions list
   // -------------------------
   const commonActions = useMemo<CommonActionId[]>(() => {
-    const LIST: CommonActionId[] = ['add', 'view', 'edit', 'invite', 'columnSettings', 'close']
+    // Pořadí jako v pronajimatelích: add, detail, edit/uložit, sloupce, zavřít
+    // Ale read/edit/invite jen když je vybrán řádek (selectedId)
+    const LIST_BASE: CommonActionId[] = ['add']
+    const LIST_SELECTED: CommonActionId[] = ['view', 'edit', 'invite'] // Detail, Edit, Odeslat pozvánku jen když je vybrán řádek
+    const LIST_ALWAYS: CommonActionId[] = ['columnSettings', 'close']
+
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
     const READ_DEFAULT: CommonActionId[] = ['edit', 'invite', 'close']
     const EDIT_DEFAULT: CommonActionId[] = ['save', 'invite', 'close']
@@ -640,11 +849,30 @@ export default function UsersTile({
       return hasClose ? ([...filtered, 'attachments', 'close'] as CommonActionId[]) : ([...filtered, 'attachments'] as CommonActionId[])
     }
 
-    if (viewMode === 'list') return withAttachmentsBeforeClose(LIST)
+    if (viewMode === 'list') {
+      // V list mode: add, (view, edit, invite jen když je selectedId), columnSettings, close, attachments
+      const listActions: CommonActionId[] = [...LIST_BASE]
+      if (selectedId) {
+        listActions.push(...LIST_SELECTED)
+      }
+      listActions.push(...LIST_ALWAYS)
+      return withAttachmentsBeforeClose(listActions)
+    }
     if (viewMode === 'invite') return INVITE
 
     if (viewMode === 'attachments-manager') {
-      return ['attachmentsAdd', 'attachmentsEdit', 'attachmentsSave', 'attachmentsNewVersion', 'attachmentsHistory', 'columnSettings', 'close']
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') {
+        return ['save', 'close']
+      }
+      if (mode === 'edit') {
+        return ['save', 'attachmentsNewVersion', 'close']
+      }
+      if (mode === 'read') {
+        return ['edit', 'close']
+      }
+      // mode === 'list'
+      return ['add', 'view', 'edit', 'columnSettings', 'close']
     }
 
     if (viewMode === 'read') {
@@ -654,7 +882,7 @@ export default function UsersTile({
 
     if (viewMode === 'edit') return withAttachmentsBeforeClose(EDIT_DEFAULT)
     return withAttachmentsBeforeClose(CREATE_DEFAULT)
-  }, [viewMode, detailActiveSectionId])
+  }, [viewMode, selectedId, detailActiveSectionId, attachmentsManagerUi.mode])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
@@ -675,12 +903,11 @@ export default function UsersTile({
   // -------------------------
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
-    dbg('register common action handler')
+    logger.debug('register common action handler')
 
     const handler = async (actionId: CommonActionId) => {
-      dbg('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
+      logger.debug('action click', actionId, { viewMode, isDirty, selectedId, detailUserId: detailUser?.id ?? null, searchKey })
 
-      // ATTACHMENTS MANAGER ACTIONS
       // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
         // ✅ Close NECHCEME sežrat tady – musí propadnout níž do společného CLOSE bloku
@@ -690,28 +917,28 @@ export default function UsersTile({
           const api = attachmentsManagerApiRef.current
           if (!api) return
       
-          if (actionId === 'attachmentsAdd') {
+          if (actionId === 'add') {
             api.add()
             return
           }
       
-          if (actionId === 'attachmentsEdit') {
-            api.editMeta()
+          if (actionId === 'view') {
+            api.view()
             return
           }
       
-          if (actionId === 'attachmentsSave') {
+          if (actionId === 'edit') {
+            api.edit()
+            return
+          }
+      
+          if (actionId === 'save') {
             await api.save()
             return
           }
       
           if (actionId === 'attachmentsNewVersion') {
             api.newVersion()
-            return
-          }
-      
-          if (actionId === 'attachmentsHistory') {
-            api.history()
             return
           }
       
@@ -736,10 +963,23 @@ export default function UsersTile({
         const sp = new URLSearchParams(searchKey)
         const t = sp.get('t')?.trim() ?? null
 
-        dbg('close branch start', { t, viewMode })
+        logger.debug('close branch start', { t, viewMode })
 
         if (String(viewMode) === 'attachments-manager') {
-          dbg('close -> attachments-manager back to detail')
+          const mode = attachmentsManagerUi.mode ?? 'list'
+          
+          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
+          if (mode === 'read' || mode === 'edit') {
+            logger.debug('close -> attachments-manager read/edit mode -> list mode')
+            const api = attachmentsManagerApiRef.current
+            if (api?.close) {
+              api.close()
+            }
+            return
+          }
+          
+          // Pokud jsme v list mode, vrátit se zpět do detailu entity
+          logger.debug('close -> attachments-manager back to detail')
         
           const backId = attachmentsManagerSubjectId ?? detailUser?.id ?? null
           if (!backId) {
@@ -761,18 +1001,18 @@ export default function UsersTile({
         }
 
         if (t === 'invite-user') {
-          dbg('close -> closeListToModule (t=invite-user)')
+          logger.debug('close -> closeListToModule (t=invite-user)')
           closeListToModule()
           return
         }
 
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
-          dbg('close -> closeToList (detail)')
+          logger.debug('close -> closeToList (detail)')
           closeToList()
           return
         }
 
-        dbg('close -> closeListToModule (list)')
+        logger.debug('close -> closeListToModule (list)')
         closeListToModule()
         return
       }
@@ -780,9 +1020,9 @@ export default function UsersTile({
       // ATTACHMENTS open manager
       if (actionId === 'attachments') {
         if (viewMode === 'list') {
-          dbg('attachments -> list', { selectedId })
+          logger.debug('attachments -> list', { selectedId })
           if (!selectedId) {
-            alert('Nejdřív vyber uživatele v seznamu.')
+            toast.showWarning('Nejdřív vyber uživatele v seznamu.')
             return
           }
           setAttachmentsManagerSubjectId(selectedId)
@@ -794,11 +1034,11 @@ export default function UsersTile({
 
         if (detailActiveSectionId === 'invite') return
         if (isDirty) {
-          alert('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
           return
         }
         if (!detailUser?.id || !detailUser.id.trim() || detailUser.id === 'new') {
-          alert('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+          toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
           return
         }
 
@@ -823,6 +1063,7 @@ export default function UsersTile({
             displayName: '',
             email: '',
             roleLabel: '',
+            permissionLabel: '',
             createdAt: new Date().toISOString(),
           }
 
@@ -860,7 +1101,7 @@ export default function UsersTile({
           }
 
           if (u.firstLoginAt) {
-            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+            toast.showWarning('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
             return
           }
 
@@ -888,10 +1129,43 @@ export default function UsersTile({
       if (viewMode === 'read') {
         if (detailActiveSectionId === 'invite' && actionId === 'sendInvite') {
           if (!inviteSubmitRef.current) return
+          
+          // Kontrola povinných polí
+          if (!detailUser?.email?.trim()) {
+            toast.showWarning('Email je povinný pro odeslání pozvánky.')
+            return
+          }
+          
+          if (!detailUser?.roleCode?.trim()) {
+            toast.showWarning('Role je povinná pro odeslání pozvánky.')
+            return
+          }
+          
+          // Načíst informace o existující pozvánce pro zobrazení správné zprávy
+          let latestInvite: any = null
+          try {
+            if (detailUser?.id) {
+              latestInvite = await getLatestInviteForSubject(detailUser.id)
+            }
+          } catch (e) {
+            // Ignorovat chybu, pokračovat s prázdnou pozvánkou
+          }
+          
+          // Potvrzení před odesláním
+          let confirmMessage = 'Chcete odeslat pozvánku?'
+          if (latestInvite && (latestInvite.status === 'pending' || latestInvite.status === 'sent')) {
+            const validUntil = latestInvite.expires_at || latestInvite.valid_until
+            const validUntilStr = validUntil ? formatDateTime(validUntil) : '—'
+            confirmMessage = `Pozvánka je platná 7 dní a je již odeslaná, platí do ${validUntilStr}. Chcete odeslat novou?`
+          }
+          
+          if (!window.confirm(confirmMessage)) return
+          
           const ok = await inviteSubmitRef.current()
           if (!ok) return
           setIsDirty(false)
           await load()
+          toast.showSuccess('Pozvánka odeslána')
           return
         }
 
@@ -906,17 +1180,17 @@ export default function UsersTile({
       if (viewMode === 'edit' || viewMode === 'create') {
         if (actionId === 'invite') {
           if (isDirty) {
-            alert('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
+            toast.showWarning('Máš neuložené změny. Nejdřív ulož změny a pak pošli pozvánku.')
             return
           }
 
           if (!detailUser?.id?.trim() || detailUser.id === 'new') {
-            alert('Nejdřív ulož záznam, aby šla poslat pozvánka.')
+            toast.showWarning('Nejdřív ulož záznam, aby šla poslat pozvánka.')
             return
           }
 
           if ((detailUser as any)?.firstLoginAt) {
-            alert('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
+            toast.showWarning('Uživatel se již přihlásil – pozvánku nelze poslat znovu.')
             return
           }
 
@@ -926,7 +1200,7 @@ export default function UsersTile({
 
         if (actionId === 'save') {
           if (!submitRef.current) {
-            alert('Chybí submit handler (submitRef).')
+            toast.showError('Chybí submit handler (submitRef).')
             return
           }
 
@@ -943,12 +1217,16 @@ export default function UsersTile({
           setUrl({ t: 'users-list', id: savedUser.id, vm: 'read', am: null }, 'replace')
 
           if (wasCreate) {
-            const ask = confirm('Uživatel uložen. Chceš teď odeslat pozvánku?')
-            if (ask) {
+            // Zobraz toast s akčním tlačítkem místo blocking modalu
+            toast.showSuccess('Uživatel uložen', 8000, {
+              label: 'Odeslat pozvánku',
+              primary: true,
+              onClick: () => {
               setDetailInitialSectionId('invite')
               setDetailActiveSectionId('invite')
               setPendingSendInviteAfterCreate(true)
-            }
+              },
+            })
           }
 
           return
@@ -991,12 +1269,12 @@ export default function UsersTile({
       if (ok) {
         setIsDirty(false)
         await load()
-        alert('Pozvánka odeslána ✅')
+        toast.showSuccess('Pozvánka odeslána')
       }
     }
 
     void run()
-  }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load])
+  }, [pendingSendInviteAfterCreate, viewMode, detailActiveSectionId, load, toast])
   
   
   // =====================
@@ -1004,15 +1282,25 @@ export default function UsersTile({
   // =====================
   if (viewMode === 'list') {
     return (
-      <div>
-        {error && <div style={{ padding: 8, color: 'crimson' }}>{error}</div>}
-        {loading && <div style={{ padding: 8 }}>Načítám…</div>}
-
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">Přehled uživatelů</h1>
+          <p className="tile-layout__description">
+            Seznam všech uživatelů v systému. Můžeš filtrovat, řadit a spravovat uživatele.
+          </p>
+        </div>
+        {error && <div style={{ padding: '0 1.5rem 0.5rem', color: 'crimson' }}>{error}</div>}
+        {loading ? (
+          <div className="tile-layout__content">
+            <SkeletonTable rows={8} columns={columns.length} />
+          </div>
+        ) : (
+          <div className="tile-layout__content">
         <ListView<UiUser>
           columns={columns}
           rows={listRows}
-          filterValue={filterText}
-          onFilterChange={setFilterText}
+          filterValue={filterInput}
+          onFilterChange={setFilterInput}
           showArchived={showArchived}
           onShowArchivedChange={setShowArchived}
           selectedId={selectedId ?? null}
@@ -1026,6 +1314,8 @@ export default function UsersTile({
           onSortChange={handleSortChange}
           onColumnResize={handleColumnResize}
         />
+          </div>
+        )}
 
         <ListViewColumnsDrawer
           open={colsOpen}

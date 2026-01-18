@@ -1,0 +1,71 @@
+/* app/styles/components/AppViewSettingsTile.css */
+
+/* =========================================
+   APP VIEW SETTINGS TILE – VZHLED A ZOBRAZENÍ
+   ========================================= */
+
+/* Sekce s nadpisem */
+.avs-section {
+  margin-bottom: 2rem;
+}
+
+.avs-section:last-child {
+  margin-bottom: 0;
+}
+
+.avs-section__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.75rem 0;
+}
+
+/* Grid pro dlaždice v sekci */
+.avs-section__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 600px;
+  align-items: stretch;
+}
+
+/* Grid se 2 dlaždicemi (50% každá) */
+.avs-section__grid > * {
+  flex: 0 0 calc(50% - 6px); /* 50% šířky minus polovina gapu */
+}
+
+/* Grid se 3 dlaždicemi (33.333% každá) */
+.avs-section__grid--three > * {
+  flex: 0 0 calc(33.333% - 8px); /* 33.333% šířky minus část gapu */
+}
+
+/* Na menších obrazovkách: 2 sloupce */
+@media (max-width: 600px) {
+  .avs-section__grid > * {
+    flex: 0 0 calc(50% - 6px);
+  }
+  
+  .avs-section__grid--three > * {
+    flex: 0 0 calc(50% - 6px);
+  }
+  
+  /* Třetí dlaždice v 3-sloupcovém gridu zabere oba sloupce */
+  .avs-section__grid--three > :nth-child(3) {
+    flex: 0 0 100%;
+  }
+}
+
+/* Na mobilu všechno pod sebou */
+@media (max-width: 400px) {
+  .avs-section__grid > *,
+  .avs-section__grid--three > * {
+    flex: 0 0 100% !important;
+  }
+  
+  .avs-section__grid .palette-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+

@@ -74,7 +74,7 @@
 }
 
 .sidebar__label {
-  font-size: 14px;
+  font-size: 16px; /* Comfortable */
   white-space: nowrap;
 }
 
@@ -136,7 +136,7 @@
 }
 
 .sidebar__section-label {
-  font-size: 14px;
+  font-size: 16px; /* Comfortable */
   white-space: nowrap;
 }
 
@@ -164,7 +164,7 @@
 }
 
 .sidebar__sublabel {
-  font-size: 14px;
+  font-size: 16px; /* Comfortable */
   white-space: nowrap;
 }
 
@@ -195,7 +195,7 @@
 
 /* Level 1 */
 .layout.layout--density-compact .sidebar__label {
-  font-size: 12px;
+  font-size: 13px; /* Compact */
 }
 
 .layout.layout--density-compact .sidebar__icon {
@@ -214,7 +214,7 @@
 
 /* Level 2 (DŮLEŽITÉ: vlastní třídy) */
 .layout.layout--density-compact .sidebar__section-label {
-  font-size: 12px;
+  font-size: 13px; /* Compact */
 }
 
 .layout.layout--density-compact .sidebar__section-icon {
@@ -227,7 +227,7 @@
 
 /* Level 3 (DŮLEŽITÉ: vlastní třídy) */
 .layout.layout--density-compact .sidebar__sublabel {
-  font-size: 12px;
+  font-size: 13px; /* Compact */
 }
 
 .layout.layout--density-compact .sidebar__subicon {

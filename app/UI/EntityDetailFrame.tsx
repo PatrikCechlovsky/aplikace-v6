@@ -112,8 +112,7 @@ export default function EntityDetailFrame({
         }
 
         .entity-detail__header {
-          max-width: 960px;
-          margin: 0 auto 12px;
+          margin: 0;
         }
 
         .entity-detail__title {
@@ -131,8 +130,7 @@ export default function EntityDetailFrame({
 
         /* ZÁKLAD – jen formulář uprostřed, bez pravého panelu */
         .entity-detail__body {
-          max-width: 960px;
-          margin: 0 auto;
+          width: 100%;
         }
 
         .entity-detail__main {

@@ -22,6 +22,7 @@ import {
   type AttachmentRow,
   type UserNameMap,
 } from '@/app/lib/attachments'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 
 export type AttachmentOverviewProps = {
   entityType: string
@@ -32,23 +33,6 @@ export type AttachmentOverviewProps = {
   showFilter?: boolean
   /** zobrazit toggle archivovaných (default true) */
   showArchivedToggle?: boolean
-}
-
-function formatDt(s?: string | null) {
-  if (!s) return '—'
-  try {
-    const d = new Date(s)
-    if (Number.isNaN(d.getTime())) return s
-    return d.toLocaleString('cs-CZ', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return s
-  }
 }
 
 function mergeNameMaps(a: UserNameMap, b: UserNameMap): UserNameMap {
@@ -267,7 +251,7 @@ export default function AttachmentOverview({
 
                     <div className="detail-attachments__cell" role="cell">
                       <div className="detail-attachments__meta">
-                        <div>{formatDt(r.version_created_at ?? r.created_at)}</div>
+                        <div>{formatDateTime(r.version_created_at ?? r.created_at)}</div>
                         <div className="detail-attachments__muted">{uploadedName}</div>
                       </div>
                     </div>

@@ -5,11 +5,7 @@ type Props = {
   disabled?: boolean
   onLogout?: () => void
   displayName?: string | null
-  /**
-   * Nouzové tlačítko – vynucené přepnutí layoutu zpět na sidebar.
-   * Není povinné, AppShell ho může předat jen pro testování.
-   */
-  onForceSidebar?: () => void
+  onProfileClick?: () => void
 }
 
 type HomeActionConfig = {
@@ -28,9 +24,17 @@ export default function HomeActions({
   disabled = false,
   onLogout,
   displayName,
-  onForceSidebar,
+  onProfileClick,
 }: Props) {
   const name = displayName || 'Uživatel'
+
+  const handleActionClick = (actionId: string) => {
+    if (disabled) return
+    if (actionId === 'profile' && onProfileClick) {
+      onProfileClick()
+    }
+    // TODO: Další akce (search, notifications) budou implementovány později
+  }
 
   return (
     <div className={`home-actions ${disabled ? 'is-disabled' : ''}`}>
@@ -46,6 +50,8 @@ export default function HomeActions({
           className="home-actions__icon"
           disabled={disabled}
           type="button"
+          onClick={() => handleActionClick(action.id)}
+          title={action.label}
         >
           <span className="home-actions__icon-emoji" aria-hidden="true">
             {action.icon}
@@ -53,22 +59,6 @@ export default function HomeActions({
           <span className="home-actions__label">{action.label}</span>
         </button>
       ))}
-
-      {/* Nouzové tlačítko pro přepnutí layoutu zpět na sidebar */}
-      {onForceSidebar && (
-        <button
-          className="home-actions__icon"
-          disabled={disabled}
-          type="button"
-          title="Přepnout zobrazení zpět na sidebar"
-          onClick={disabled ? undefined : onForceSidebar}
-        >
-          <span className="home-actions__icon-emoji" aria-hidden="true">
-            📋
-          </span>
-          <span className="home-actions__label">Sidebar</span>
-        </button>
-      )}
 
       {/* Odhlášení – klasické textové tlačítko */}
       <button
