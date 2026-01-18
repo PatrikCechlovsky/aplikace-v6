@@ -16,8 +16,7 @@ import { uiConfig } from '../lib/uiConfig'
 import { getLandlordCountsByType } from '@/app/lib/services/landlords'
 import { getTenantCountsByType } from '@/app/lib/services/tenants'
 import { getPropertyCountsByType } from '@/app/lib/services/properties'
-import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
-import { supabase } from '@/app/lib/supabaseClient'
+import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 
 /**
  * 3. úroveň – konkrétní položky (např. „Typy subjektů“).
@@ -124,8 +123,8 @@ export default function Sidebar({
               const counts = await getLandlordCountsByType(false)
               const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
 
-              // Načíst typy subjektů z modulu 900 pro ikony
-              const subjectTypes = await fetchSubjectTypes()
+              // Načíst typy subjektů z generic_types
+              const subjectTypes = await listActiveByCategory('subject_types')
               const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
 
               // Aktualizovat children v "Přehled pronajímatelů" tile
@@ -167,18 +166,13 @@ export default function Sidebar({
           // Pro modul 040 (Nemovitosti) načteme počty podle typů a aktualizujeme children labels
           if (conf.id === '040-nemovitost' && Array.isArray(tiles)) {
             try {
-              // Načíst počty podle property_type_id
+              // Načíst počty podle property_type_code
               const counts = await getPropertyCountsByType(false)
-              const countsMap = new Map(counts.map((c) => [c.property_type_id, c.count]))
+              const countsMap = new Map(counts.map((c) => [c.property_type_code, c.count]))
 
-              // Načíst property types z databáze pro mapování id -> code a metadata
-              const { data: propertyTypes } = await supabase
-                .from('property_types')
-                .select('id, code, name, icon, color')
-                .order('order_index')
-
-              // Vytvořit mapu code -> property type pro rychlé vyhledávání
-              const typesByCode = new Map(propertyTypes?.map((t) => [t.code, t]) ?? [])
+              // Načíst property types z generic_types
+              const propertyTypes = await listActiveByCategory('property_types')
+              const typesByCode = new Map(propertyTypes.map((t) => [t.code, t]))
 
               // Aktualizovat children v "Přehled nemovitostí" tile
               tiles = tiles.map((tile) => {
@@ -193,11 +187,8 @@ export default function Sidebar({
                           ?.children?.find((c: any) => c.id === child.id)
 
                         if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
-                          // Najít property type podle code
                           const propertyType = typesByCode.get(originalChild.propertyTypeCode)
-                          const count = propertyType 
-                            ? (countsMap.get(propertyType.id) ?? 0)
-                            : 0
+                          const count = propertyType ? (countsMap.get(propertyType.code) ?? 0) : 0
                           const typeLabel = propertyType?.name || child.label
                           const icon = propertyType?.icon || child.icon || 'building'
                           const color = propertyType?.color || null
@@ -227,8 +218,8 @@ export default function Sidebar({
               const counts = await getTenantCountsByType(false)
               const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
 
-              // Načíst typy subjektů z modulu 900 pro ikony
-              const subjectTypes = await fetchSubjectTypes()
+              // Načíst typy subjektů z generic_types
+              const subjectTypes = await listActiveByCategory('subject_types')
               const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
 
               // Aktualizovat children v "Přehled nájemníků" tile
