@@ -212,11 +212,11 @@ BEGIN
     -- Add temporary code column
     ALTER TABLE public.units ADD COLUMN IF NOT EXISTS unit_type_code_temp TEXT;
     
-    -- Copy code from unit_types
+    -- Copy code from unit_types (using code as PK, not id)
     UPDATE public.units u
     SET unit_type_code_temp = ut.code
     FROM public.unit_types ut
-    WHERE u.unit_type_id = ut.id;
+    WHERE u.unit_type_id::text = ut.code;
     
     -- Update unit_type_id to new UUID from generic_types
     UPDATE public.units u
@@ -251,11 +251,11 @@ BEGIN
     -- Add temporary code column
     ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS equipment_type_code_temp TEXT;
     
-    -- Copy code from equipment_types
+    -- Copy code from equipment_types (using code as PK, not id)
     UPDATE public.equipment e
     SET equipment_type_code_temp = et.code
     FROM public.equipment_types et
-    WHERE e.equipment_type_id = et.id;
+    WHERE e.equipment_type_id::text = et.code;
     
     -- Update equipment_type_id to new UUID from generic_types
     UPDATE public.equipment e
