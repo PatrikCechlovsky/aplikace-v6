@@ -269,7 +269,11 @@ export default function PropertiesTile({
       })
       
       console.log('🔍 PropertiesTile: Načteno', data.length, 'nemovitostí')
-      setProperties(data.map(mapRowToUi))
+      const mapped = data.map(mapRowToUi)
+      console.log('🔍 PropertiesTile: Mapované:', mapped.length, 'řádků')
+      console.log('🔍 PropertiesTile: Volám setProperties s', mapped.length, 'items')
+      setProperties(mapped)
+      console.log('🔍 PropertiesTile: setProperties HOTOVO')
     } catch (err: any) {
       console.error('❌ PropertiesTile: Chyba při načítání:', err)
       logger.error('Failed to load properties', err)
@@ -283,6 +287,11 @@ export default function PropertiesTile({
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // Debug: sleduj změny properties
+  useEffect(() => {
+    console.log('🔍 PropertiesTile: properties state se změnil, nová délka:', properties.length)
+  }, [properties])
 
   // Row handlers
   const handleRowClick = useCallback((row: ListViewRow<UiProperty>) => {
