@@ -235,6 +235,8 @@ export default function PropertiesTile({
           <ListView
             columns={BASE_COLUMNS}
             rows={properties.map(toRow)}
+            filterValue={filterText}
+            onFilterChange={setFilterText}
             onRowClick={handleRowClick}
             selectedId={selectedId}
           />
