@@ -204,17 +204,38 @@ CREATE POLICY "equipment_catalog_select"
   TO authenticated
   USING (TRUE);
 
--- Policy: Only admins and landlords can manage catalog
-CREATE POLICY "equipment_catalog_manage"
+-- Policy: Landlords can insert equipment
+CREATE POLICY "equipment_catalog_landlord_insert"
   ON public.equipment_catalog
-  FOR ALL
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.subjects
+      WHERE auth_user_id = auth.uid()
+      AND is_landlord = TRUE
+    )
+  );
+
+-- Policy: Landlords can update equipment
+CREATE POLICY "equipment_catalog_landlord_update"
+  ON public.equipment_catalog
+  FOR UPDATE
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.app_admins
-      WHERE user_id = auth.uid()
+      SELECT 1 FROM public.subjects
+      WHERE auth_user_id = auth.uid()
+      AND is_landlord = TRUE
     )
-    OR
+  );
+
+-- Policy: Landlords can delete equipment
+CREATE POLICY "equipment_catalog_landlord_delete"
+  ON public.equipment_catalog
+  FOR DELETE
+  TO authenticated
+  USING (
     EXISTS (
       SELECT 1 FROM public.subjects
       WHERE auth_user_id = auth.uid()
@@ -255,10 +276,40 @@ CREATE POLICY "unit_equipment_landlord_select"
     )
   );
 
--- Policy: Landlords can manage equipment of their units
-CREATE POLICY "unit_equipment_landlord_manage"
+-- Policy: Landlords can insert equipment to their units
+CREATE POLICY "unit_equipment_landlord_insert"
   ON public.unit_equipment
-  FOR ALL
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      JOIN public.units un ON un.property_id = p.id
+      WHERE s.auth_user_id = auth.uid()
+      AND un.id = unit_equipment.unit_id
+    )
+  );
+
+-- Policy: Landlords can update equipment of their units
+CREATE POLICY "unit_equipment_landlord_update"
+  ON public.unit_equipment
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      JOIN public.units un ON un.property_id = p.id
+      WHERE s.auth_user_id = auth.uid()
+      AND un.id = unit_equipment.unit_id
+    )
+  );
+
+-- Policy: Landlords can delete equipment from their units
+CREATE POLICY "unit_equipment_landlord_delete"
+  ON public.unit_equipment
+  FOR DELETE
   TO authenticated
   USING (
     EXISTS (
@@ -305,10 +356,38 @@ CREATE POLICY "property_equipment_landlord_select"
     )
   );
 
--- Policy: Landlords can manage equipment of their properties
-CREATE POLICY "property_equipment_landlord_manage"
+-- Policy: Landlords can insert equipment to their properties
+CREATE POLICY "property_equipment_landlord_insert"
   ON public.property_equipment
-  FOR ALL
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
+      AND p.id = property_equipment.property_id
+    )
+  );
+
+-- Policy: Landlords can update equipment of their properties
+CREATE POLICY "property_equipment_landlord_update"
+  ON public.property_equipment
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.subjects s
+      JOIN public.properties p ON p.landlord_id = s.id
+      WHERE s.auth_user_id = auth.uid()
+      AND p.id = property_equipment.property_id
+    )
+  );
+
+-- Policy: Landlords can delete equipment from their properties
+CREATE POLICY "property_equipment_landlord_delete"
+  ON public.property_equipment
+  FOR DELETE
   TO authenticated
   USING (
     EXISTS (
