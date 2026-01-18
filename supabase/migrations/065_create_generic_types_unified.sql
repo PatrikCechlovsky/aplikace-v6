@@ -190,16 +190,16 @@ BEGIN
     -- Drop old FK if exists
     ALTER TABLE public.units DROP CONSTRAINT IF EXISTS units_unit_type_id_fkey;
     
-    -- Add temporary code column
+    -- Add temporary code column to store current TEXT values
     ALTER TABLE public.units ADD COLUMN IF NOT EXISTS unit_type_code_temp TEXT;
     
-    -- Copy code from unit_types (using code as PK, not id)
-    UPDATE public.units u
-    SET unit_type_code_temp = ut.code
-    FROM public.unit_types ut
-    WHERE u.unit_type_id::text = ut.code;
+    -- Copy current unit_type_id values (TEXT) to temp column
+    UPDATE public.units SET unit_type_code_temp = unit_type_id;
     
-    -- Update unit_type_id to new UUID from generic_types
+    -- Change unit_type_id column type from TEXT to UUID
+    ALTER TABLE public.units ALTER COLUMN unit_type_id TYPE UUID USING NULL;
+    
+    -- Update unit_type_id to new UUID from generic_types (lookup by code)
     UPDATE public.units u
     SET unit_type_id = gt.id
     FROM public.generic_types gt
@@ -229,16 +229,16 @@ BEGIN
     -- Drop old FK if exists
     ALTER TABLE public.equipment DROP CONSTRAINT IF EXISTS equipment_equipment_type_id_fkey;
     
-    -- Add temporary code column
+    -- Add temporary code column to store current TEXT values
     ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS equipment_type_code_temp TEXT;
     
-    -- Copy code from equipment_types (using code as PK, not id)
-    UPDATE public.equipment e
-    SET equipment_type_code_temp = et.code
-    FROM public.equipment_types et
-    WHERE e.equipment_type_id::text = et.code;
+    -- Copy current equipment_type_id values (TEXT) to temp column
+    UPDATE public.equipment SET equipment_type_code_temp = equipment_type_id;
     
-    -- Update equipment_type_id to new UUID from generic_types
+    -- Change equipment_type_id column type from TEXT to UUID
+    ALTER TABLE public.equipment ALTER COLUMN equipment_type_id TYPE UUID USING NULL;
+    
+    -- Update equipment_type_id to new UUID from generic_types (lookup by code)
     UPDATE public.equipment e
     SET equipment_type_id = gt.id
     FROM public.generic_types gt
