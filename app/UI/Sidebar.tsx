@@ -28,8 +28,7 @@ interface SidebarTile {
   id: string
   label: string
   sectionId?: string | null
-  icon?: string | null
-  children?: SidebarTile[]
+  icon?: string | null  color?: string | null  children?: SidebarTile[]
 }
 
 /**
@@ -199,11 +198,13 @@ export default function Sidebar({
                             : 0
                           const typeLabel = propertyType?.name || child.label
                           const icon = propertyType?.icon || child.icon || 'building'
+                          const color = propertyType?.color || null
 
                           return {
                             ...child,
                             label: `${typeLabel} (${count})`,
                             icon: icon,
+                            color: color,
                           }
                         }
                         return child
@@ -655,7 +656,10 @@ export default function Sidebar({
                                             }}
                                           >
                                             {showIcons && child.icon && (
-                                              <span className="sidebar__subsubicon">
+                                              <span 
+                                                className="sidebar__subsubicon"
+                                                style={child.color ? { color: child.color } : undefined}
+                                              >
                                                 {getIcon(child.icon as any)}
                                               </span>
                                             )}

@@ -71,15 +71,7 @@ function toRow(p: UiProperty): ListViewRow<UiProperty> {
     id: p.id,
     data: {
       propertyTypeName: p.propertyTypeColor ? (
-        <span style={{ 
-          backgroundColor: p.propertyTypeColor,
-          color: '#fff',
-          padding: '4px 12px',
-          borderRadius: '4px',
-          fontSize: '0.875rem',
-          fontWeight: 500,
-          display: 'inline-block',
-        }}>
+        <span className="generic-type__name-badge" style={{ backgroundColor: p.propertyTypeColor }}>
           {p.propertyTypeName}
         </span>
       ) : (
