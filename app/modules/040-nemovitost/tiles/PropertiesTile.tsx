@@ -34,6 +34,7 @@ type UiProperty = {
   id: string
   displayName: string
   propertyTypeName: string
+  propertyTypeIcon: string | null
   propertyTypeColor: string | null
   propertyTypeOrderIndex: number | null
   landlordName: string | null
@@ -54,8 +55,9 @@ function mapRowToUi(row: PropertiesListRow): UiProperty {
     id: row.id,
     displayName: row.display_name || '—',
     propertyTypeName: row.property_type_name || '—',
+    propertyTypeIcon: row.property_type_icon || null,
     propertyTypeColor: row.property_type_color || null,
-    propertyTypeOrderIndex: null, // TODO: pokud bude v property_types sort_order
+    propertyTypeOrderIndex: row.property_type_order_index ?? null,
     landlordName: row.landlord_name || '—',
     fullAddress: addressParts.join(', ') || '—',
     buildingArea: row.building_area,
@@ -75,10 +77,19 @@ function toRow(p: UiProperty): ListViewRow<UiProperty> {
           padding: '2px 8px',
           borderRadius: '4px',
           fontSize: '0.875rem',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
         }}>
+          {p.propertyTypeIcon && <span>{p.propertyTypeIcon}</span>}
           {p.propertyTypeName}
         </span>
-      ) : p.propertyTypeName,
+      ) : (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          {p.propertyTypeIcon && <span>{p.propertyTypeIcon}</span>}
+          {p.propertyTypeName}
+        </span>
+      ),
       displayName: p.displayName,
       fullAddress: p.fullAddress,
       landlordName: p.landlordName,
@@ -117,7 +128,8 @@ export default function PropertiesTile({
   
   // Column settings
   const [colsOpen, setColsOpen] = useState(false)
-  const [sort, setSort] = useState<ListViewSortState>(null)
+  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'propertyTypeName', dir: 'asc' }), [])
+  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
     colOrder: [],
@@ -143,15 +155,14 @@ export default function PropertiesTile({
         setColPrefs({
           colWidths: prefs.colWidths ?? {},
           colOrder: prefs.colOrder ?? [],
-          colHidden: prefs.colHidden ?? [],
+          colHidden: prefs.colHidden ?? {},
         })
-        if (prefs.sort) {
-          setSort({ key: prefs.sort.key, dir: prefs.sort.dir })
-        }
+        const loadedSort = prefs.sort ? { key: prefs.sort.key, dir: prefs.sort.dir } : null
+        setSort(loadedSort ? loadedSort : DEFAULT_SORT)
       }
     }
     load()
-  }, [])
+  }, [DEFAULT_SORT])
 
   // Save view prefs when changed
   const savePrefs = useCallback(() => {
@@ -160,10 +171,11 @@ export default function PropertiesTile({
       colWidths: colPrefs.colWidths ?? {},
       colOrder: colPrefs.colOrder ?? [],
       colHidden: colPrefs.colHidden ?? [],
-      sort: sort || null,
+      // Save sort only if different from default
+      sort: sort && (sort.key !== DEFAULT_SORT.key || sort.dir !== DEFAULT_SORT.dir) ? sort : null,
     }
     saveViewPrefs(VIEW_KEY, prefs)
-  }, [colPrefs, sort])
+  }, [colPrefs, sort, DEFAULT_SORT])
 
   useEffect(() => {
     savePrefs()
@@ -286,8 +298,8 @@ export default function PropertiesTile({
 
   // Sort handler
   const handleSortChange = useCallback((nextSort: ListViewSortState) => {
-    setSort(nextSort)
-  }, [])
+    setSort(nextSort ?? DEFAULT_SORT)
+  }, [DEFAULT_SORT])
 
   // Column resize handler
   const handleColumnResize = useCallback((key: string, px: number) => {
@@ -300,6 +312,20 @@ export default function PropertiesTile({
 
     if (sort) {
       sorted.sort((a, b) => {
+        // Special handling for propertyTypeName - use order_index
+        if (sort.key === 'propertyTypeName') {
+          const aOrder = a.propertyTypeOrderIndex ?? 999
+          const bOrder = b.propertyTypeOrderIndex ?? 999
+          
+          if (aOrder !== bOrder) {
+            return sort.dir === 'asc' ? aOrder - bOrder : bOrder - aOrder
+          }
+          // Same order_index -> fallback to name
+          return sort.dir === 'asc'
+            ? a.propertyTypeName.localeCompare(b.propertyTypeName, 'cs')
+            : b.propertyTypeName.localeCompare(a.propertyTypeName, 'cs')
+        }
+
         const aVal = (a as any)[sort.key]
         const bVal = (b as any)[sort.key]
 

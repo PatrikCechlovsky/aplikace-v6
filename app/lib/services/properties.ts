@@ -48,6 +48,7 @@ export type PropertiesListRow = {
   property_type_name?: string | null
   property_type_icon?: string | null
   property_type_color?: string | null
+  property_type_order_index?: number | null
   units_count?: number
 }
 
@@ -79,7 +80,7 @@ export async function listProperties(params: PropertiesListParams = {}): Promise
         is_archived,
         created_at,
         landlord:subjects!properties_landlord_id_fkey(display_name),
-        property_type:property_types!properties_property_type_id_fkey(name, icon, color)
+        property_type:property_types!properties_property_type_id_fkey(name, icon, color, order_index)
       `
     )
     .order('display_name', { ascending: true, nullsFirst: false })
@@ -148,6 +149,7 @@ export async function listProperties(params: PropertiesListParams = {}): Promise
       property_type_name: propertyType?.name ?? null,
       property_type_icon: propertyType?.icon ?? null,
       property_type_color: propertyType?.color ?? null,
+      property_type_order_index: propertyType?.order_index ?? null,
       units_count: unitCounts[row.id] || 0,
     }
   })
