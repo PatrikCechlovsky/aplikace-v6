@@ -228,18 +228,23 @@ export default function PropertiesTile({
         />
       </div>
       
-      <ListView
-        columns={BASE_COLUMNS}
-        rows={properties.map(toRow)}
-        onRowClick={handleRowClick}
-        selectedId={selectedId}
-        loading={loading}
-      />
-      
-      {properties.length === 0 && !loading && (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-          {filterText ? 'Žádné nemovitosti nenalezeny' : 'Zatím nemáte žádné nemovitosti'}
-        </div>
+      {loading ? (
+        <SkeletonTable rows={8} columns={BASE_COLUMNS.length} />
+      ) : (
+        <>
+          <ListView
+            columns={BASE_COLUMNS}
+            rows={properties.map(toRow)}
+            onRowClick={handleRowClick}
+            selectedId={selectedId}
+          />
+          
+          {properties.length === 0 && (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+              {filterText ? 'Žádné nemovitosti nenalezeny' : 'Zatím nemáte žádné nemovitosti'}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
