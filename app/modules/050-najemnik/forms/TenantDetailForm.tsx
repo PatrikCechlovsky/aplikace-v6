@@ -47,6 +47,7 @@ export type TenantFormValue = {
   // Role flags
   isUser: boolean
   isLandlord: boolean
+  isLandlordDelegate: boolean
   isTenant: boolean
   isTenantDelegate: boolean
   isMaintenance: boolean
@@ -192,6 +193,7 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
       // Role flags
       isUser: !!tenant.isUser,
       isLandlord: !!tenant.isLandlord,
+      isLandlordDelegate: !!tenant.isLandlordDelegate,
       isTenant: tenant.isTenant !== undefined ? !!tenant.isTenant : true, // Default true protože editujeme nájemníka
       isTenantDelegate: !!tenant.isTenantDelegate,
       isMaintenance: !!tenant.isMaintenance,
