@@ -109,6 +109,7 @@ export default function PropertiesTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: PropertiesTileProps) {
+  console.log('🔍 PropertiesTile: Renderuji s propertyTypeCode:', propertyTypeCode)
   const toast = useToast()
 
   const [properties, setProperties] = useState<UiProperty[]>([])
@@ -257,6 +258,7 @@ export default function PropertiesTile({
   // Load data
   const loadData = useCallback(async () => {
     try {
+      console.log('🔍 PropertiesTile: Načítám data, filterText:', filterText, 'propertyTypeId:', propertyTypeId)
       setLoading(true)
       setError(null)
       
@@ -266,8 +268,10 @@ export default function PropertiesTile({
         includeArchived: showArchived,
       })
       
+      console.log('🔍 PropertiesTile: Načteno', data.length, 'nemovitostí')
       setProperties(data.map(mapRowToUi))
     } catch (err: any) {
+      console.error('❌ PropertiesTile: Chyba při načítání:', err)
       logger.error('Failed to load properties', err)
       setError(err.message || 'Nepodařilo se načíst nemovitosti')
       toast.showError('Chyba při načítání nemovitostí')
@@ -351,6 +355,8 @@ export default function PropertiesTile({
       // TODO: Get property type name from loaded data
       return `Přehled nemovitostí - ${propertyTypeCode}`
     }
+  console.log('🔍 PropertiesTile: State - loading:', loading, 'properties:', properties.length, 'error:', error, 'viewMode:', viewMode)
+
     return 'Přehled nemovitostí'
   }, [propertyTypeCode])
 
