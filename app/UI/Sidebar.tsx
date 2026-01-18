@@ -28,7 +28,9 @@ interface SidebarTile {
   id: string
   label: string
   sectionId?: string | null
-  icon?: string | null  color?: string | null  children?: SidebarTile[]
+  icon?: string | null
+  color?: string | null
+  children?: SidebarTile[]
 }
 
 /**
