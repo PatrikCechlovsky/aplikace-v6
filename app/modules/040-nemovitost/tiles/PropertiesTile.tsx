@@ -168,7 +168,7 @@ export default function PropertiesTile({
     } catch (err: any) {
       logger.error('Failed to load properties', err)
       setError(err.message || 'Nepodařilo se načíst nemovitosti')
-      toast?.show('Chyba při načítání nemovitostí', 'error')
+      toast.showError('Chyba při načítání nemovitostí')
     } finally {
       setLoading(false)
     }
@@ -184,7 +184,7 @@ export default function PropertiesTile({
     
     const handler = (actionId: CommonActionId) => {
       if (actionId === 'add') {
-        toast?.show('Vytvoření nemovitosti - v implementaci', 'info')
+        toast.showInfo('Vytvoření nemovitosti - v implementaci')
       }
     }
     
@@ -193,7 +193,7 @@ export default function PropertiesTile({
 
   const handleRowClick = useCallback((row: ListViewRow<UiProperty>) => {
     setSelectedId(row.id)
-    toast?.show(`Detail nemovitosti: ${row.raw.displayName} - v implementaci`, 'info')
+    toast.showInfo(`Detail nemovitosti: ${row.raw.displayName} - v implementaci`)
   }, [toast])
 
   if (loading && properties.length === 0) {
