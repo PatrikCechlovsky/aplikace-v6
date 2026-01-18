@@ -662,7 +662,8 @@ export default function Sidebar({
                                                 className="sidebar__subsubicon"
                                                 style={child.color ? { color: child.color } : undefined}
                                               >
-                                                {getIcon(child.icon as any)}
+                                                {/* Pokud je icon emoji (např. 🏠), zobraz přímo, jinak použij getIcon() */}
+                                                {/\p{Emoji}/u.test(child.icon) ? child.icon : getIcon(child.icon as any)}
                                               </span>
                                             )}
                                             <span className="sidebar__subsublabel">

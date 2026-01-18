@@ -114,6 +114,27 @@ export default function PropertiesTile({
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [propertyTypeId, setPropertyTypeId] = useState<string | null>(null)
   
+  // Property types pro mapování code -> name
+  const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null; color: string | null }>>([])
+  
+  // Load property types
+  useEffect(() => {
+    async function loadTypes() {
+      const { data, error } = await supabase
+        .from('property_types')
+        .select('id, code, name, icon, color')
+        .order('order_index')
+      
+      if (error) {
+        console.error('Chyba při načítání property_types:', error)
+        return
+      }
+      
+      setPropertyTypes(data || [])
+    }
+    loadTypes()
+  }, [])
+  
   // Column settings
   const [colsOpen, setColsOpen] = useState(false)
   const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'propertyTypeName', dir: 'asc' }), [])
@@ -352,12 +373,13 @@ export default function PropertiesTile({
 
   // Page title based on filter
   const pageTitle = useMemo(() => {
-    if (propertyTypeCode) {
-      // TODO: Get property type name from loaded data
-      return `Přehled nemovitostí - ${propertyTypeCode}`
-    }
-    return 'Přehled nemovitostí'
-  }, [propertyTypeCode])
+    if (!propertyTypeCode) return 'Přehled nemovitostí'
+    
+    // Najít typ z načtených typů
+    const typeMeta = propertyTypes.find(t => t.code === propertyTypeCode)
+    const typeName = typeMeta?.name || propertyTypeCode
+    return `Přehled nemovitostí - ${typeName}`
+  }, [propertyTypeCode, propertyTypes])
 
   console.log('🔍 PropertiesTile: State - loading:', loading, 'properties:', properties.length, 'error:', error, 'viewMode:', viewMode)
 
