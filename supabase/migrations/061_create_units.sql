@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.units (
   
   -- Relations
   property_id UUID NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
-  unit_type_id UUID NOT NULL REFERENCES public.generic_types(id) ON DELETE RESTRICT,
+  unit_type_id TEXT NOT NULL REFERENCES public.unit_types(code) ON DELETE RESTRICT,
   
   -- Basic info
   display_name TEXT NOT NULL,
@@ -101,11 +101,11 @@ SELECT
     AND usr.is_archived = FALSE
   ) AS user_count,
   -- Unit type info
-  gt.label AS unit_type_name,
-  gt.icon AS unit_type_icon
+  ut.name AS unit_type_name,
+  ut.icon AS unit_type_icon
 FROM public.units u
 JOIN public.properties p ON u.property_id = p.id
-JOIN public.generic_types gt ON u.unit_type_id = gt.id
+JOIN public.unit_types ut ON u.unit_type_id = ut.code
 WHERE u.is_archived = FALSE;
 
 COMMENT ON VIEW public.v_units_list IS 'Seznam jednotek s read-only poli z nemovitosti a vypočítanými hodnotami';

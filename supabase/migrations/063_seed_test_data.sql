@@ -21,12 +21,12 @@ DECLARE
   typ_pozemek UUID;
   
   -- Unit type IDs
-  typ_unit_byt UUID;
-  typ_unit_pokoj UUID;
-  typ_unit_garaz UUID;
-  typ_unit_dilna UUID;
-  typ_unit_kancelar UUID;
-  typ_unit_sklad UUID;
+  typ_unit_byt TEXT;
+  typ_unit_pokoj TEXT;
+  typ_unit_garaz TEXT;
+  typ_unit_dilna TEXT;
+  typ_unit_kancelar TEXT;
+  typ_unit_sklad TEXT;
   
   -- Created property IDs (for units)
   prop_rodinny1_id UUID;
@@ -46,43 +46,32 @@ BEGIN
   SELECT id INTO landlord2_id FROM public.subjects 
   WHERE email = 'marie.svobodova.osvc@test.cz' LIMIT 1;
   
-  -- Get property type IDs
-  SELECT id INTO typ_rodinny_dum FROM public.generic_types 
-  WHERE category = 'property_types' AND label = 'Rodinný dům' LIMIT 1;
+  -- Get property type IDs (UUID from property_types)
+  SELECT id INTO typ_rodinny_dum FROM public.property_types 
+  WHERE code = 'rodinny_dum' LIMIT 1;
   
-  SELECT id INTO typ_bytovy_dum FROM public.generic_types 
-  WHERE category = 'property_types' AND label = 'Bytový dům' LIMIT 1;
+  SELECT id INTO typ_bytovy_dum FROM public.property_types 
+  WHERE code = 'bytovy_dum' LIMIT 1;
   
-  SELECT id INTO typ_byt FROM public.generic_types 
-  WHERE category = 'property_types' AND label = 'Byt' LIMIT 1;
+  SELECT id INTO typ_byt FROM public.property_types 
+  WHERE code = 'jiny_objekt' LIMIT 1;
   
-  SELECT id INTO typ_garaz FROM public.generic_types 
-  WHERE category = 'property_types' AND label = 'Garáž' LIMIT 1;
+  SELECT id INTO typ_garaz FROM public.property_types 
+  WHERE code = 'jiny_objekt' LIMIT 1;
   
-  SELECT id INTO typ_komercni FROM public.generic_types 
-  WHERE category = 'property_types' AND label = 'Komerční prostor' LIMIT 1;
+  SELECT id INTO typ_komercni FROM public.property_types 
+  WHERE code = 'admin_budova' LIMIT 1;
   
-  SELECT id INTO typ_pozemek FROM public.generic_types 
-  WHERE category = 'property_types' AND label = 'Pozemek' LIMIT 1;
+  SELECT id INTO typ_pozemek FROM public.property_types 
+  WHERE code = 'pozemek' LIMIT 1;
   
-  -- Get unit type IDs
-  SELECT id INTO typ_unit_byt FROM public.generic_types 
-  WHERE category = 'unit_types' AND label = 'Byt' LIMIT 1;
-  
-  SELECT id INTO typ_unit_pokoj FROM public.generic_types 
-  WHERE category = 'unit_types' AND label = 'Pokoj' LIMIT 1;
-  
-  SELECT id INTO typ_unit_garaz FROM public.generic_types 
-  WHERE category = 'unit_types' AND label = 'Garáž' LIMIT 1;
-  
-  SELECT id INTO typ_unit_dilna FROM public.generic_types 
-  WHERE category = 'unit_types' AND label = 'Dílna' LIMIT 1;
-  
-  SELECT id INTO typ_unit_kancelar FROM public.generic_types 
-  WHERE category = 'unit_types' AND label = 'Kancelář' LIMIT 1;
-  
-  SELECT id INTO typ_unit_sklad FROM public.generic_types 
-  WHERE category = 'unit_types' AND label = 'Sklad' LIMIT 1;
+  -- Unit type codes (TEXT - direct reference)
+  typ_unit_byt := 'byt';
+  typ_unit_pokoj := 'jina_jednotka';
+  typ_unit_garaz := 'garaz';
+  typ_unit_dilna := 'jina_jednotka';
+  typ_unit_kancelar := 'kancelar';
+  typ_unit_sklad := 'sklad';
 
 -- ============================================================================
 -- PROPERTIES (12 records - 2x each type)

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.equipment_catalog (
   
   -- Basic info
   equipment_name TEXT NOT NULL,
-  equipment_type_id UUID NOT NULL REFERENCES public.generic_types(id) ON DELETE RESTRICT,
+  equipment_type_id TEXT NOT NULL REFERENCES public.equipment_types(code) ON DELETE RESTRICT,
   
   -- Pricing
   purchase_price NUMERIC(12,2),
@@ -146,13 +146,13 @@ SELECT
   ec.equipment_type_id,
   ec.purchase_price,
   ec.purchase_date,
-  gt.label AS equipment_type_name,
-  gt.icon AS equipment_type_icon,
+  et.name AS equipment_type_name,
+  et.icon AS equipment_type_icon,
   -- Calculated total price
   ROUND(ec.purchase_price * ue.quantity, 2) AS total_price
 FROM public.unit_equipment ue
 JOIN public.equipment_catalog ec ON ue.equipment_id = ec.id
-JOIN public.generic_types gt ON ec.equipment_type_id = gt.id
+JOIN public.equipment_types et ON ec.equipment_type_id = et.code
 WHERE ue.is_archived = FALSE;
 
 COMMENT ON VIEW public.v_unit_equipment_list IS 'Seznam vybavení jednotek s vypočítanou celkovou cenou';
@@ -168,13 +168,13 @@ SELECT
   ec.equipment_type_id,
   ec.purchase_price,
   ec.purchase_date,
-  gt.label AS equipment_type_name,
-  gt.icon AS equipment_type_icon,
+  et.name AS equipment_type_name,
+  et.icon AS equipment_type_icon,
   -- Calculated total price
   ROUND(ec.purchase_price * pe.quantity, 2) AS total_price
 FROM public.property_equipment pe
 JOIN public.equipment_catalog ec ON pe.equipment_id = ec.id
-JOIN public.generic_types gt ON ec.equipment_type_id = gt.id
+JOIN public.equipment_types et ON ec.equipment_type_id = et.code
 WHERE pe.is_archived = FALSE;
 
 COMMENT ON VIEW public.v_property_equipment_list IS 'Seznam vybavení nemovitostí s vypočítanou celkovou cenou';

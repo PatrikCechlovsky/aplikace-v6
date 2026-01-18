@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.properties (
   
   -- Relations
   landlord_id UUID NOT NULL REFERENCES public.subjects(id) ON DELETE RESTRICT,
-  property_type_id UUID NOT NULL REFERENCES public.generic_types(id) ON DELETE RESTRICT,
+  property_type_id UUID NOT NULL REFERENCES public.property_types(id) ON DELETE RESTRICT,
   
   -- Basic info
   display_name TEXT NOT NULL,
