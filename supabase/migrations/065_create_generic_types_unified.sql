@@ -65,10 +65,10 @@ SELECT
   active
 FROM public.subject_types;
 
--- Migrate property_types
+-- Migrate property_types (HAS id column - preserve UUIDs!)
 INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
-  gen_random_uuid(),
+  id,  -- property_types HAS id UUID column - preserve it!
   'property_types' AS category,
   code,
   name,
@@ -76,7 +76,7 @@ SELECT
   color,
   icon,
   order_index,
-  TRUE AS active
+  COALESCE(active, TRUE) AS active
 FROM public.property_types;
 
 -- Migrate unit_types
@@ -171,27 +171,8 @@ CREATE INDEX idx_subjects_type_id ON public.subjects(subject_type_id);
 -- Drop old FK constraint if exists
 ALTER TABLE public.properties DROP CONSTRAINT IF EXISTS properties_property_type_id_fkey;
 
--- Create temporary mapping: old property_types.id -> code -> new generic_types.id
--- Step 1: Add temporary code column to properties
-ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS property_type_code_temp TEXT;
-
--- Step 2: Copy code from property_types to properties
-UPDATE public.properties p
-SET property_type_code_temp = pt.code
-FROM public.property_types pt
-WHERE p.property_type_id = pt.id;
-
--- Step 3: Update property_type_id to new UUID from generic_types
-UPDATE public.properties p
-SET property_type_id = gt.id
-FROM public.generic_types gt
-WHERE gt.category = 'property_types' 
-AND gt.code = p.property_type_code_temp;
-
--- Step 4: Drop temporary column
-ALTER TABLE public.properties DROP COLUMN property_type_code_temp;
-
--- Add new FK constraint to generic_types
+-- property_types HAS id column, so property_type_id already points to correct UUID
+-- Just add new FK constraint to generic_types (id values were preserved in INSERT)
 ALTER TABLE public.properties
   ADD CONSTRAINT fk_properties_type_generic
   FOREIGN KEY (property_type_id)
