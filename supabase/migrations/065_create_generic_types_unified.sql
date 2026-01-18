@@ -65,10 +65,10 @@ SELECT
   active
 FROM public.subject_types;
 
--- Migrate property_types (preserve existing UUIDs if they have id column)
+-- Migrate property_types
 INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
-  COALESCE(id, gen_random_uuid()),
+  gen_random_uuid(),
   'property_types' AS category,
   code,
   name,
@@ -82,7 +82,7 @@ FROM public.property_types;
 -- Migrate unit_types
 INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
-  COALESCE(id, gen_random_uuid()),
+  gen_random_uuid(),
   'unit_types' AS category,
   code,
   name,
@@ -96,7 +96,7 @@ FROM public.unit_types;
 -- Migrate equipment_types
 INSERT INTO public.generic_types (id, category, code, name, description, color, icon, order_index, active)
 SELECT 
-  COALESCE(id, gen_random_uuid()),
+  gen_random_uuid(),
   'equipment_types' AS category,
   code,
   name,
@@ -171,13 +171,25 @@ CREATE INDEX idx_subjects_type_id ON public.subjects(subject_type_id);
 -- Drop old FK constraint if exists
 ALTER TABLE public.properties DROP CONSTRAINT IF EXISTS properties_property_type_id_fkey;
 
--- Update property_type_id to point to generic_types.id (should already match if UUIDs were preserved)
+-- Create temporary mapping: old property_types.id -> code -> new generic_types.id
+-- Step 1: Add temporary code column to properties
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS property_type_code_temp TEXT;
+
+-- Step 2: Copy code from property_types to properties
+UPDATE public.properties p
+SET property_type_code_temp = pt.code
+FROM public.property_types pt
+WHERE p.property_type_id = pt.id;
+
+-- Step 3: Update property_type_id to new UUID from generic_types
 UPDATE public.properties p
 SET property_type_id = gt.id
-FROM public.property_types pt
-JOIN public.generic_types gt ON gt.category = 'property_types' AND gt.code = pt.code
-WHERE p.property_type_id = pt.id
-AND p.property_type_id != gt.id;
+FROM public.generic_types gt
+WHERE gt.category = 'property_types' 
+AND gt.code = p.property_type_code_temp;
+
+-- Step 4: Drop temporary column
+ALTER TABLE public.properties DROP COLUMN property_type_code_temp;
 
 -- Add new FK constraint to generic_types
 ALTER TABLE public.properties
@@ -197,13 +209,24 @@ BEGIN
     -- Drop old FK if exists
     ALTER TABLE public.units DROP CONSTRAINT IF EXISTS units_unit_type_id_fkey;
     
-    -- Update unit_type_id to point to generic_types.id
+    -- Add temporary code column
+    ALTER TABLE public.units ADD COLUMN IF NOT EXISTS unit_type_code_temp TEXT;
+    
+    -- Copy code from unit_types
+    UPDATE public.units u
+    SET unit_type_code_temp = ut.code
+    FROM public.unit_types ut
+    WHERE u.unit_type_id = ut.id;
+    
+    -- Update unit_type_id to new UUID from generic_types
     UPDATE public.units u
     SET unit_type_id = gt.id
-    FROM public.unit_types ut
-    JOIN public.generic_types gt ON gt.category = 'unit_types' AND gt.code = ut.code
-    WHERE u.unit_type_id = ut.id
-    AND u.unit_type_id != gt.id;
+    FROM public.generic_types gt
+    WHERE gt.category = 'unit_types' 
+    AND gt.code = u.unit_type_code_temp;
+    
+    -- Drop temporary column
+    ALTER TABLE public.units DROP COLUMN unit_type_code_temp;
     
     -- Add new FK constraint to generic_types
     ALTER TABLE public.units
@@ -225,13 +248,24 @@ BEGIN
     -- Drop old FK if exists
     ALTER TABLE public.equipment DROP CONSTRAINT IF EXISTS equipment_equipment_type_id_fkey;
     
-    -- Update equipment_type_id to point to generic_types.id
+    -- Add temporary code column
+    ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS equipment_type_code_temp TEXT;
+    
+    -- Copy code from equipment_types
+    UPDATE public.equipment e
+    SET equipment_type_code_temp = et.code
+    FROM public.equipment_types et
+    WHERE e.equipment_type_id = et.id;
+    
+    -- Update equipment_type_id to new UUID from generic_types
     UPDATE public.equipment e
     SET equipment_type_id = gt.id
-    FROM public.equipment_types et
-    JOIN public.generic_types gt ON gt.category = 'equipment_types' AND gt.code = et.code
-    WHERE e.equipment_type_id = et.id
-    AND e.equipment_type_id != gt.id;
+    FROM public.generic_types gt
+    WHERE gt.category = 'equipment_types' 
+    AND gt.code = e.equipment_type_code_temp;
+    
+    -- Drop temporary column
+    ALTER TABLE public.equipment DROP COLUMN equipment_type_code_temp;
     
     -- Add new FK constraint to generic_types
     ALTER TABLE public.equipment
