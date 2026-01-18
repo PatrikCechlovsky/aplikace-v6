@@ -42,6 +42,7 @@ export default {
       label: 'Přehled pronajímatelů',
       icon: 'list-alt',
       component: LandlordsTile,
+      href: '/modules/030-pronajimatel',
       order: 10,
       // Dynamické children - typy pronajímatelů jako filtry
       children: [

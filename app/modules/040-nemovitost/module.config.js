@@ -41,6 +41,7 @@ export default {
       label: 'Přehled nemovitostí',
       icon: 'list-alt',
       component: PropertiesTile,
+      href: '/modules/040-nemovitost',
       order: 10,
       children: [
         // 3. ÚROVEŇ – Filtry podle typu nemovitosti
@@ -110,6 +111,7 @@ export default {
       label: 'Přehled jednotek',
       icon: 'list-alt',
       component: UnitsTile,
+      href: '/modules/040-nemovitost',
       order: 20,
       children: [
         // 3. ÚROVEŇ – Filtry podle typu jednotky
