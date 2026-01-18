@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, type PropertiesListRow } from '@/app/lib/services/properties'
-import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import { loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
@@ -126,23 +126,39 @@ export default function PropertiesTile({
 
   // Load view prefs
   useEffect(() => {
-    const prefs = loadViewPrefs(VIEW_KEY)
-    if (prefs) {
-      if (prefs.columns) {
-        setColumns(applyColumnPrefs(BASE_COLUMNS, prefs.columns))
-      }
-      if (prefs.sort) {
-        const s: ViewPrefsSortState = prefs.sort as any
-        setSort({ key: s.key, dir: s.dir })
+    async function load() {
+      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+      if (prefs) {
+        if (prefs.colWidths) {
+          const updatedCols = BASE_COLUMNS.map((c) => ({
+            ...c,
+            width: prefs.colWidths?.[c.key] ?? c.width,
+          }))
+          setColumns(updatedCols)
+        }
+        if (prefs.sort) {
+          setSort({ key: prefs.sort.key, dir: prefs.sort.dir })
+        }
       }
     }
+    load()
   }, [])
 
   // Save view prefs when changed
   const savePrefs = useCallback(() => {
+    const colWidths: Record<string, number> = {}
+    columns.forEach((c) => {
+      if (typeof c.width === 'number') {
+        colWidths[c.key] = c.width
+      }
+    })
+
     const prefs: ViewPrefs = {
-      columns: columns.map((c) => ({ key: c.key, width: c.width, visible: true })),
-      sort: sort ? { key: sort.key, dir: sort.dir } : undefined,
+      v: 1,
+      colWidths,
+      sort: sort || null,
+      colOrder: [],
+      colHidden: [],
     }
     saveViewPrefs(VIEW_KEY, prefs)
   }, [columns, sort])
