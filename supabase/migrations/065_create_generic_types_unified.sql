@@ -187,6 +187,9 @@ BEGIN
     WHERE table_schema = 'public'
     AND table_name = 'units'
   ) THEN
+    -- Drop view that depends on unit_type_id column
+    DROP VIEW IF EXISTS public.v_units_list CASCADE;
+    
     -- Drop old FK if exists
     ALTER TABLE public.units DROP CONSTRAINT IF EXISTS units_unit_type_id_fkey;
     
@@ -215,6 +218,29 @@ BEGIN
       FOREIGN KEY (unit_type_id)
       REFERENCES public.generic_types(id)
       ON DELETE RESTRICT;
+      
+    -- Recreate view with updated JOIN (now using UUID)
+    CREATE OR REPLACE VIEW public.v_units_list AS
+    SELECT 
+      u.*,
+      -- Property info (read-only)
+      p.display_name AS property_name,
+      p.landlord_id,
+      p.property_type_id,
+      p.build_year AS property_build_year,
+      p.reconstruction_year AS property_reconstruction_year,
+      -- Calculated fields (read-only)
+      ROUND((u.area / NULLIF(p.building_area, 0)) * 100, 2) AS area_ratio_percent,
+      0 AS user_count,
+      -- Unit type info from generic_types
+      gt.name AS unit_type_name,
+      gt.icon AS unit_type_icon
+    FROM public.units u
+    JOIN public.properties p ON u.property_id = p.id
+    JOIN public.generic_types gt ON u.unit_type_id = gt.id AND gt.category = 'unit_types'
+    WHERE u.is_archived = FALSE;
+    
+    COMMENT ON VIEW public.v_units_list IS 'Seznam jednotek s read-only poli z nemovitosti a vypočítanými hodnotami';
   END IF;
 END $$;
 
