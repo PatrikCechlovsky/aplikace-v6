@@ -101,7 +101,7 @@ export default function PropertiesTile({
   const [error, setError] = useState<string | null>(null)
   const [filterInput, setFilterInput] = useState('')
   const [filterText, setFilterText] = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [propertyTypeId, setPropertyTypeId] = useState<string | null>(null)
 
   // Debounce filter
