@@ -364,10 +364,10 @@ export default function PropertiesTile({
       // TODO: Get property type name from loaded data
       return `Přehled nemovitostí - ${propertyTypeCode}`
     }
-  console.log('🔍 PropertiesTile: State - loading:', loading, 'properties:', properties.length, 'error:', error, 'viewMode:', viewMode)
-
     return 'Přehled nemovitostí'
   }, [propertyTypeCode])
+
+  console.log('🔍 PropertiesTile: State - loading:', loading, 'properties:', properties.length, 'error:', error, 'viewMode:', viewMode)
 
   if (viewMode === 'list') {
     return (
