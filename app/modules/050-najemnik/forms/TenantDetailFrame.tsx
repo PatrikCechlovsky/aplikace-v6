@@ -63,6 +63,7 @@ export type UiTenant = {
   // Role flags
   isUser?: boolean | null
   isLandlord?: boolean | null
+  isLandlordDelegate?: boolean | null
   isTenant?: boolean | null
   isTenantDelegate?: boolean | null
   isMaintenance?: boolean | null
