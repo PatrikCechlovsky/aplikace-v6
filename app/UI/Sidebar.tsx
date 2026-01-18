@@ -176,7 +176,8 @@ export default function Sidebar({
                 .select('id, code, name, icon, color')
                 .order('order_index')
 
-              const typesMap = new Map(propertyTypes?.map((t) => [t.id, t]) ?? [])
+              // Vytvořit mapu code -> property type pro rychlé vyhledávání
+              const typesByCode = new Map(propertyTypes?.map((t) => [t.code, t]) ?? [])
 
               // Aktualizovat children v "Přehled nemovitostí" tile
               tiles = tiles.map((tile) => {
@@ -192,9 +193,7 @@ export default function Sidebar({
 
                         if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
                           // Najít property type podle code
-                          const propertyType = propertyTypes?.find(
-                            (pt) => pt.code === originalChild.propertyTypeCode
-                          )
+                          const propertyType = typesByCode.get(originalChild.propertyTypeCode)
                           const count = propertyType 
                             ? (countsMap.get(propertyType.id) ?? 0)
                             : 0
