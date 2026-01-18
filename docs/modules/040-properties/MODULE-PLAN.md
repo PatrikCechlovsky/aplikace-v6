@@ -197,12 +197,12 @@
 |--------|-----|-------|----------|
 | **Typ nemovitosti** | generic_type | `property_types` | Již existuje v modulu 900 |
 | **Typ jednotky** | generic_type | `unit_types` | Již existuje v modulu 900 |
-| **Stav jednotky** | generic_type | `unit_statuses` | Nový v modulu 900 (Obsazená, Volná, Rezervovaná...) |
-| **Kraj** | generic_type | `regions` | Nový v modulu 900 (české kraje) |
-| **Země** | generic_type | `countries` | Nový v modulu 900 (CZ, SK, AT, DE...) |
-| **Typ místnosti** | generic_type | `room_types` | Nový v modulu 900 (Kuchyně, Koupelna, Obývací pokoj...) |
 | **Kategorie vybavení** | generic_type | `equipment_types` | Nový v modulu 900 (Kuchyně, Koupelna, Elektro, Nábytek...) |
-| **Stav vybavení** | generic_type | `equipment_states` | Nový v modulu 900 (Nové, Běžné, Poškozené, K výměně) |
+| **Stav jednotky** | fixed | hardcoded array | 🔴 Obsazená, 🟢 Volná, Rezervovaná, V rekonstrukci |
+| **Kraj** | fixed | hardcoded array | 14 českých krajů (Praha, Středočeský...) |
+| **Země** | fixed | hardcoded array | ISO kódy: CZ, SK, AT, DE, PL... |
+| **Typ místnosti** | fixed | hardcoded array | Kuchyně, Koupelna, Obývací pokoj, Ložnice, Chodba, WC, Balkon |
+| **Stav vybavení** | fixed | hardcoded array | Nové, Běžné, Poškozené, K výměně |
 | **Vlastník (pronajímatel)** | lookup | `subjects` WHERE has_role('landlord') | Dynamický lookup |
 | **Nájemník** | lookup | `subjects` WHERE has_role('tenant') | Dynamický lookup |
 | **Typ vybavení (katalog)** | lookup | `equipment_catalog` | Dynamický lookup |
@@ -219,29 +219,62 @@
 
 ## 3.3 Generic types – NOVÉ (je potřeba vytvořit v modulu 900)
 
-⏳ **UnitStatusesTile** (Stav jednotky)
-- Tabulka: `unit_statuses`
-- Příklady: 🔴 Obsazená, 🟢 Volná, Rezervovaná, V rekonstrukci
-
-⏳ **RegionsTile** (Kraje)
-- Tabulka: `regions`
-- Příklady: Praha, Středočeský, Jihomoravský...
-
-⏳ **CountriesTile** (Země)
-- Tabulka: `countries`
-- Příklady: CZ (Česko), SK (Slovensko), AT (Rakousko)...
-
-⏳ **RoomTypesTile** (Typ místnosti)
-- Tabulka: `room_types`
-- Příklady: Kuchyně, Koupelna, Obývací pokoj, Chodba...
-
 ⏳ **EquipmentTypesTile** (Kategorie vybavení)
 - Tabulka: `equipment_types`
 - Příklady: Kuchyně, Koupelna, Elektro, Nábytek, Podlaha...
+- **Důvod generic:** Každý uživatel může kategorizovat vybavení jinak
 
-⏳ **EquipmentStatesTile** (Stav vybavení)
-- Tabulka: `equipment_states`
-- Příklady: Nové, Běžné, Poškozené, K výměně
+## 3.4 Fixed selects (hardcoded v kódu)
+
+Tyto selecty budou **pevně v kódu** (constants), protože se nemění:
+
+✅ **UNIT_STATUSES** (Stav jednotky)
+```typescript
+const UNIT_STATUSES = [
+  { code: 'occupied', label: '🔴 Obsazená', color: 'red' },
+  { code: 'vacant', label: '🟢 Volná', color: 'green' },
+  { code: 'reserved', label: 'Rezervovaná', color: 'orange' },
+  { code: 'renovation', label: 'V rekonstrukci', color: 'gray' }
+]
+```
+
+✅ **REGIONS** (České kraje)
+```typescript
+const REGIONS = [
+  'Praha', 'Středočeský', 'Jihočeský', 'Plzeňský', 'Karlovarský',
+  'Ústecký', 'Liberecký', 'Královéhradecký', 'Pardubický',
+  'Vysočina', 'Jihomoravský', 'Olomoucký', 'Zlínský', 'Moravskoslezský'
+]
+```
+
+✅ **COUNTRIES** (ISO kódy zemí)
+```typescript
+const COUNTRIES = [
+  { code: 'CZ', label: 'Česko' },
+  { code: 'SK', label: 'Slovensko' },
+  { code: 'AT', label: 'Rakousko' },
+  { code: 'DE', label: 'Německo' },
+  { code: 'PL', label: 'Polsko' }
+]
+```
+
+✅ **ROOM_TYPES** (Typ místnosti)
+```typescript
+const ROOM_TYPES = [
+  'Kuchyně', 'Koupelna', 'Obývací pokoj', 'Ložnice',
+  'Chodba', 'WC', 'Balkon', 'Terasa', 'Sklep'
+]
+```
+
+✅ **EQUIPMENT_STATES** (Stav vybavení)
+```typescript
+const EQUIPMENT_STATES = [
+  { code: 'new', label: 'Nové' },
+  { code: 'normal', label: 'Běžné' },
+  { code: 'damaged', label: 'Poškozené' },
+  { code: 'replacement', label: 'K výměně' }
+]
+```
 
 ---
 
@@ -594,9 +627,9 @@ V detailu nemovitosti (záložka "Jednotky")
 4. ⏳ Migrace 062: Vytvoření tabulky `equipment_catalog`
 5. ⏳ Migrace 063: Vytvoření tabulky `unit_equipment`
 6. ⏳ Migrace 064: Vytvoření tabulky `property_equipment`
-7. ⏳ Migrace 065: RLS policies pro všechny tabulky
-8. ⏳ Migrace 066: Indexy a triggery
-9. ⏳ Migrace 067: Nové generic types (unit_statuses, regions, countries, room_types, equipment_types, equipment_states)
+7. ⏳ Migrace 065: Nový generic type `equipment_types` (jediný nový)
+8. ⏳ Migrace 066: RLS policies pro všechny tabulky
+9. ⏳ Migrace 067: Indexy a triggery
 
 ## Fáze 2: Services
 1. ⏳ `app/lib/services/properties.ts`
@@ -654,13 +687,11 @@ V detailu nemovitosti (záložka "Jednotky")
    - Tile pro správu katalogu v modulu 900
 
 ## Fáze 8: Generic Types v modulu 900
-1. ⏳ Vytvoření nových GenericTypeTile:
-   - `UnitStatusesTile.tsx`
-   - `RegionsTile.tsx`
-   - `CountriesTile.tsx`
-   - `RoomTypesTile.tsx`
-   - `EquipmentTypesTile.tsx`
-   - `EquipmentStatesTile.tsx`
+1. ⏳ Vytvoření nového GenericTypeTile:
+   - `EquipmentTypesTile.tsx` (jediný nový)
+
+2. ⏳ Vytvoření constants souboru:
+   - `app/lib/constants/properties.ts` (unit statuses, regions, countries, room types, equipment states)
 
 ## Fáze 9: Testování
 1. ⏳ Vytvoření testovacích dat (seed migrace)
@@ -712,13 +743,15 @@ V detailu nemovitosti (záložka "Jednotky")
 - **Property Equipment** – společné vybavení nemovitosti (gril, sekačka...)
 - Pole: název, typ, počet kusů, cena, datum instalace, revize, životnost, stav, fotka
 
-✅ **Nové Generic Types (v modulu 900):**
-- `unit_statuses` – Stav jednotky
-- `regions` – České kraje
-- `countries` – Země (CZ, SK, AT...)
-- `room_types` – Typ místnosti (kuchyně, koupelna...)
-- `equipment_types` – Kategorie vybavení
-- `equipment_states` – Stav vybavení (nové, běžné, poškozené...)
+✅ **Nový Generic Type (v modulu 900):**
+- `equipment_types` – Kategorie vybavení (jediný nový)
+
+✅ **Fixed selects (constants v kódu):**
+- `unit_statuses` – Stav jednotky (🔴 Obsazená, 🟢 Volná, Rezervovaná, V rekonstrukci)
+- `regions` – České kraje (14 krajů)
+- `countries` – Země (CZ, SK, AT, DE, PL...)
+- `room_types` – Typ místnosti (Kuchyně, Koupelna, Obývací pokoj...)
+- `equipment_states` – Stav vybavení (Nové, Běžné, Poškozené, K výměně)
 
 ✅ **Dynamické tiles podle typů:**
 - Každý typ nemovitosti má vlastní tile (Rodinný dům, Bytový dům...)
