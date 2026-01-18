@@ -138,7 +138,7 @@ export default function PropertiesTile({
   // Register common actions
   useEffect(() => {
     if (onRegisterCommonActions) {
-      onRegisterCommonActions(['add', 'refresh', 'filter'])
+      onRegisterCommonActions(['add'])
     }
   }, [onRegisterCommonActions])
 
@@ -183,21 +183,13 @@ export default function PropertiesTile({
     if (!onRegisterCommonActionHandler) return
     
     const handler = (actionId: CommonActionId) => {
-      switch (actionId) {
-        case 'add':
-          toast?.show('Vytvoření nemovitosti - v implementaci', 'info')
-          break
-        case 'refresh':
-          loadData()
-          break
-        case 'filter':
-          // Filter is handled by filterInput state
-          break
+      if (actionId === 'add') {
+        toast?.show('Vytvoření nemovitosti - v implementaci', 'info')
       }
     }
     
     onRegisterCommonActionHandler(handler)
-  }, [onRegisterCommonActionHandler, loadData, toast])
+  }, [onRegisterCommonActionHandler, toast])
 
   const handleRowClick = useCallback((row: ListViewRow<UiProperty>) => {
     setSelectedId(row.id)
