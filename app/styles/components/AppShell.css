@@ -6,7 +6,7 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 310px 1fr;
   grid-template-rows: auto auto 1fr;
   height: 100vh;
   overflow: hidden; /* ✅ ořezává app – scroll je jen v contentu */
