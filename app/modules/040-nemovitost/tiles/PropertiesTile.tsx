@@ -48,7 +48,7 @@ function mapRowToUi(row: PropertiesListRow): UiProperty {
     id: row.id,
     displayName: row.display_name || '—',
     propertyTypeName: row.property_type_name || '—',
-    propertyTypeColor: row.property_type_color,
+    propertyTypeColor: row.property_type_color || null,
     landlordName: row.landlord_name || '—',
     fullAddress: addressParts.join(', ') || '—',
     buildingArea: row.building_area,
