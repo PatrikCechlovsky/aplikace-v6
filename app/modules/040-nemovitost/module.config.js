@@ -4,6 +4,7 @@
 
 import PropertiesTile from './tiles/PropertiesTile'
 import PropertyTypeTile from './tiles/PropertyTypeTile'
+import CreatePropertyTile from './tiles/CreatePropertyTile'
 import UnitsTile from './tiles/UnitsTile'
 import UnitTypeTile from './tiles/UnitTypeTile'
 import CreateUnitTile from './tiles/CreateUnitTile'
@@ -124,7 +125,7 @@ export default {
       id: 'properties-add',
       label: 'Přidat nemovitost',
       icon: 'plus',
-      component: null, // TODO: Add mode
+      component: CreatePropertyTile,
       order: 15,
     },
 
