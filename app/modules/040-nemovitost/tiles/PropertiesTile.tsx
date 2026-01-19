@@ -152,17 +152,37 @@ export default function PropertiesTile({
           displayName: property.displayName,
           propertyTypeId: property.propertyTypeId,
           landlordId: null,
-          buildingArea: property.buildingArea,
-          landArea: null,
+          internalCode: null,
+          
+          // Address
           street: null,
+          houseNumber: null,
           city: null,
           zip: null,
-          houseNumber: null,
           country: 'CZ',
           region: null,
+          
+          // Areas
+          landArea: null,
+          builtUpArea: null,
+          buildingArea: property.buildingArea,
+          numberOfFloors: null,
+          
+          // Dates
+          buildYear: null,
+          reconstructionYear: null,
+          
+          // Cadastre
           cadastralArea: null,
           parcelNumber: null,
+          lvNumber: null,
+          
+          // Metadata
           note: null,
+          originModule: null,
+          isArchived: property.isArchived,
+          createdAt: null,
+          updatedAt: null,
         }
         setDetailProperty(detailUi)
       } else if (id === 'new') {
@@ -173,17 +193,37 @@ export default function PropertiesTile({
           displayName: '',
           propertyTypeId: typeFromUrl,
           landlordId: null,
-          buildingArea: null,
-          landArea: null,
+          internalCode: null,
+          
+          // Address
           street: null,
+          houseNumber: null,
           city: null,
           zip: null,
-          houseNumber: null,
           country: 'CZ',
           region: null,
+          
+          // Areas
+          landArea: null,
+          builtUpArea: null,
+          buildingArea: null,
+          numberOfFloors: null,
+          
+          // Dates
+          buildYear: null,
+          reconstructionYear: null,
+          
+          // Cadastre
           cadastralArea: null,
           parcelNumber: null,
+          lvNumber: null,
+          
+          // Metadata
           note: null,
+          originModule: null,
+          isArchived: false,
+          createdAt: null,
+          updatedAt: null,
         }
         setDetailProperty(newProperty)
       }
