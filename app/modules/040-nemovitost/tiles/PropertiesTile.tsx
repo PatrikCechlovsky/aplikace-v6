@@ -127,76 +127,11 @@ export default function PropertiesTile({
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null; color: string | null }>>([])
   const [selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
 
-  // Detail state
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [detailProperty, setDetailProperty] = useState<PropertyForDetail | null>(null)
-  const [isDirty, setIsDirty] = useState(false)
-  const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
-  
-  // ✅ URL state management + detail setup
-  // FIX: searchParams object creates new reference every render → use searchParams.toString()
-  const searchParamsString = searchParams?.toString() ?? ''
-  
-  useEffect(() => {
-    console.log('[PropertiesTile] useEffect [searchParamsString] triggered - FIXED REFERENCE ISSUE!')
-    const id = searchParams?.get('id') ?? null
-    const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
-    console.log('[PropertiesTile] URL params:', { id, vm, searchParamsString })
-
-    setSelectedId(id)
-    setViewMode(id ? vm : 'list')
-    console.log('[PropertiesTile] Set viewMode to:', id ? vm : 'list')
-
-    // PropertyDetailFrame si načte detail SÁM podle ID - nepotřebujeme properties.find() tady!
-    // Tím ELIMINUJEME loop způsobený změnou properties array při načítání dat
-    if (id && vm !== 'list') {
-      if (id === 'new') {
-        // Nová nemovitost - zkontrolovat type z URL
-        const typeFromUrl = searchParams?.get('type')?.trim() ?? null
-        const newProperty: PropertyForDetail = {
-          id: 'new',
-          displayName: '',
-          propertyTypeId: typeFromUrl,
-          landlordId: null,
-          internalCode: null,
-          
-          // Address
-          street: null,
-          houseNumber: null,
-          city: null,
-          zip: null,
-          country: 'CZ',
-          region: null,
-          
-          // Areas
-          landArea: null,
-          builtUpArea: null,
-          buildingArea: null,
-          numberOfFloors: null,
-          
-          // Dates
-          buildYear: null,
-          reconstructionYear: null,
-          
-          // Cadastre
-          cadastralArea: null,
-          parcelNumber: null,
-          lvNumber: null,
-          
-          // Metadata
-          note: null,
-          originModule: null,
-          isArchived: false,
-          createdAt: null,
-          updatedAt: null,
-        }
-        setDetailProperty(newProperty)
-      }
-    } else {
-      // List mode - clear detail
-      setDetailProperty(null)
-    }
-  }, [searchParamsString, searchParams])  // FIX: searchParamsString prevents loop, searchParams needed for .get() calls
+  // NUCLEAR FIX: PropertiesTile je POUZE LIST VIEW
+  // Žádný detail, žádný create mode - to bude na separátních tiles
+  const [viewMode] = useState<ViewMode>('list')
+  const [detailProperty] = useState<PropertyForDetail | null>(null)
+  const [isDirty] = useState(false)
 
   // Load property types
   useEffect(() => {
