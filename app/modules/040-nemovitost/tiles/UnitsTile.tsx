@@ -5,7 +5,7 @@
 // URL state: t=units-list, id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listUnits, type UnitsListRow } from '@/app/lib/services/units'
@@ -128,7 +128,6 @@ export default function UnitsTile({
 }: UnitsTileProps) {
   console.log('🔍 UnitsTile: Renderuji s filtry:', { propertyId, unitTypeCode, status })
   const toast = useToast()
-  const router = useRouter()
 
   const [units, setUnits] = useState<UiUnitRow[]>([])
   const [loading, setLoading] = useState(false)

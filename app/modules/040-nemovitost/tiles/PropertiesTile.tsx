@@ -5,7 +5,6 @@
 // URL state: t=properties-list, id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, type PropertiesListRow } from '@/app/lib/services/properties'
@@ -108,7 +107,6 @@ export default function PropertiesTile({
 }: PropertiesTileProps): JSX.Element {
   console.log('🔍 PropertiesTile: Renderuji s propertyTypeCode:', propertyTypeCode)
   const toast = useToast()
-  const router = useRouter()
 
   const [properties, setProperties] = useState<UiProperty[]>([])
   const [loading, setLoading] = useState(false)
