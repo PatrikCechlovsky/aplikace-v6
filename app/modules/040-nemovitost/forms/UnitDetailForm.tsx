@@ -57,16 +57,6 @@ function safeNumber(v: any): number | null {
   return isNaN(num) ? null : num
 }
 
-// Validace PSČ
-function validateZip(value: string): string | null {
-  if (!value) return null
-  const cleaned = value.replace(/\s+/g, '')
-  if (!/^\d{5}$/.test(cleaned)) {
-    return 'PSČ musí mít 5 číslic'
-  }
-  return null
-}
-
 // =====================
 // COMPONENT
 // =====================
