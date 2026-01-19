@@ -647,22 +647,15 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     // ✅ AUTO-SELECT: Pokud není vybrán tile, ale modul má tiles, automaticky vyber první
     let finalSelection = { ...selection }
     if (!selection.tileId && !selection.sectionId) {
-      console.log('🔍 AppShell: Auto-select - hledám první tile pro modul:', selection.moduleId)
       const targetModule = modules.find(m => m.id === selection.moduleId)
-      console.log('🔍 AppShell: Nalezený modul:', targetModule?.label, 'tiles count:', targetModule?.tiles?.length)
       if (targetModule?.tiles && targetModule.tiles.length > 0) {
         const firstTile = targetModule.tiles.find(t => t.component) || targetModule.tiles[0]
-        console.log('🔍 AppShell: První tile:', firstTile?.id, firstTile?.label)
         if (firstTile) {
           finalSelection.tileId = firstTile.id
-          console.log('✅ AppShell: Auto-vybrán tile:', firstTile.id)
         }
-      } else {
-        console.warn('⚠️ AppShell: Modul nemá žádné tiles!')
       }
     }
-
-    console.log('🔍 AppShell: Final selection:', finalSelection)
+    }
 
     const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null
@@ -846,8 +839,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       }
       
       const tile = findTileRecursive(activeModule.tiles, selection.tileId)
-      console.log('🔍 AppShell: Hledám tile s id:', selection.tileId)
-      console.log('🔍 AppShell: Nalezený tile:', tile?.label, 'má component?', !!tile?.component)
       if (tile) {
         const TileComponent = tile.component
         if (!TileComponent) {
@@ -861,7 +852,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             </div>
           )
         }
-        console.log('✅ AppShell: Renderuji TileComponent:', tile.label)
         return (
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
