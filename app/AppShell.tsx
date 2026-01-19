@@ -665,8 +665,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     const moduleChanged = prevModule !== nextModule
     const tileChanged = prevTile !== nextTile
 
-    console.log('🔍 AppShell: moduleChanged:', moduleChanged, 'tileChanged:', tileChanged)
-
     setActiveModuleId(finalSelection.moduleId)
     setActiveSelection(finalSelection)
 
