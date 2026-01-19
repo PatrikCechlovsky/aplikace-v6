@@ -134,19 +134,37 @@ export default function PropertiesTile({
   const [isDirty, setIsDirty] = useState(false)
   const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
   
-  // URL state management - parsovat id a vm z URL (stejně jako LandlordsTile)
+  // ✅ KROK 1: URL state management - POUZE parsování, žádné další setState!
   useEffect(() => {
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
-
-    // Pokud je vm=create a id=new, resetovat výběr typu (ale NE detailProperty - to způsobuje loop)
-    if (vm === 'create' && id === 'new') {
-      setSelectedTypeForCreate(null)
-    }
   }, [searchParams])
+  
+  // ✅ KROK 2: Detail management - reaguje na změny selectedId/viewMode (JAKO v LandlordsTile)
+  useEffect(() => {
+    if (!selectedId || viewMode === 'list') {
+      setDetailProperty(null)
+      setSelectedTypeForCreate(null)
+      return
+    }
+    
+    // Pokud je id=new a viewMode=create, resetovat výběr typu
+    if (selectedId === 'new' && viewMode === 'create') {
+      setSelectedTypeForCreate(null)
+      setDetailProperty(null) // Prázdný detail pro create
+      return
+    }
+    
+    // Načíst existující nemovitost
+    const property = properties.find((p) => p.id === selectedId)
+    if (property) {
+      // TODO: Načíst detail z DB a vytvořit PropertyForDetail
+      setDetailProperty(null) // Placeholder - PropertyDetailFrame si načte detail sám
+    }
+  }, [selectedId, viewMode, properties])
 
   // Load property types
   useEffect(() => {
