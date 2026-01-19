@@ -12,6 +12,7 @@ import { getUnitDetail, saveUnit, type SaveUnitInput } from '@/app/lib/services/
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
+import { supabase } from '@/app/lib/supabaseClient'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -120,6 +121,27 @@ export default function UnitDetailFrame({
   const [formValue, setFormValue] = useState<UnitFormValue>(() => buildInitialFormValue(unit))
   const formValueRef = useRef<UnitFormValue>(formValue)
   
+  const [unitTypes, setUnitTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null }>>([])
+  const [selectedUnitTypeId, setSelectedUnitTypeId] = useState<string | null>(unit.unitTypeId)
+  
+  // Load unit types from generic_types
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('generic_types')
+          .select('id, code, name, icon')
+          .eq('category', 'unit_types')
+          .eq('active', true)
+          .order('order_index')
+        
+        setUnitTypes(data || [])
+      } catch (err) {
+        logger.error('Failed to load unit types', err)
+      }
+    })()
+  }, [])
+  
   useEffect(() => {
     formValueRef.current = formValue
   }, [formValue])
@@ -187,6 +209,15 @@ export default function UnitDetailFrame({
     const isDirty = currentSnap !== initialSnapshotRef.current
     onDirtyChange?.(isDirty)
   }, [onDirtyChange])
+  
+  // Update formValue when unitTypeId changes
+  useEffect(() => {
+    if (selectedUnitTypeId !== formValue.unitTypeId) {
+      const updated = { ...formValue, unitTypeId: selectedUnitTypeId || '' }
+      setFormValue(updated)
+      markDirtyIfChanged(updated)
+    }
+  }, [selectedUnitTypeId, formValue, markDirtyIfChanged])
   
   // Submit handler
   const handleSubmit = useCallback(async (): Promise<UiUnit | null> => {
@@ -281,12 +312,58 @@ export default function UnitDetailFrame({
   
   // System blocks for metadata
   const systemBlocks = useMemo(() => {
+    const currentUnitType = unitTypes.find((t) => t.id === selectedUnitTypeId)
+    
     return [
       {
         title: 'Metadata',
         visible: true,
         content: (
           <div className="detail-form">
+            <div className="detail-form__field">              <label className="detail-form__label">Typ jednotky</label>
+              {readOnly ? (
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={currentUnitType?.name || '—'}
+                  readOnly
+                />
+              ) : (
+                <select
+                  className="detail-form__input"
+                  value={selectedUnitTypeId || ''}
+                  onChange={(e) => setSelectedUnitTypeId(e.target.value || null)}
+                >
+                  <option value="">— vyberte typ jednotky —</option>
+                  {unitTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.icon ? `${type.icon} ` : ''}{type.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="detail-form__field">              <label className="detail-form__label">Typ jednotky</label>
+              {readOnly ? (
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={currentUnitType?.name || '—'}
+                  readOnly
+                />
+              ) : (
+                <select
+                  className="detail-form__input"
+                  value={selectedUnitTypeId || ''}
+                  onChange={(e) => setSelectedUnitTypeId(e.target.value || null)}
+                >
+                  <option value="">— vyberte typ jednotky —</option>
+                  {unitTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.icon ? `${type.icon} ` : ''}{type.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
             <div className="detail-form__field">
               <label className="detail-form__label">Vytvořeno</label>
               <input
@@ -320,7 +397,7 @@ export default function UnitDetailFrame({
         ),
       },
     ]
-  }, [resolvedUnit, formValue, readOnly, markDirtyIfChanged])
+  }, [resolvedUnit, formValue, readOnly, markDirtyIfChanged, unitTypes, selectedUnitTypeId])
   
   const sectionIds: DetailSectionId[] = ['detail', 'system']
   
