@@ -78,22 +78,22 @@ export default function CreatePropertyTile({
 
   // Registrace CommonActions
   useEffect(() => {
+    if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
+    
     const actions: CommonActionId[] = []
-    if (!selectedPropertyType) {
-      // Pokud není vybrán typ, žádné akce
-    } else {
-      // Pokud je vybrán typ, zobrazit save a close
+    if (selectedPropertyType) {
       actions.push('save', 'close')
     }
-    onRegisterCommonActions?.(actions)
-    onRegisterCommonActionsState?.({
+    
+    onRegisterCommonActions(actions)
+    onRegisterCommonActionsState({
       viewMode: 'create',
       hasSelection: false,
       isDirty,
     })
   }, [selectedPropertyType, isDirty])
-  // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies,
-  // protože jsou stabilní (useCallback v AppShell) a jejich přidání způsobuje re-render smyčku
+  // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
+  // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
   // CommonActions handler
   useEffect(() => {
