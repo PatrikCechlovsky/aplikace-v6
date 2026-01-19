@@ -372,8 +372,10 @@ export default function PropertiesTile({
 
   // Handle common actions
   useEffect(() => {
+    console.log('🔄 ACTION HANDLER useEffect SPUŠTĚN - viewMode:', viewMode, 'selectedId:', selectedId, 'onRegister defined:', !!onRegisterCommonActionHandler)
     if (!onRegisterCommonActionHandler) return
     
+    console.log('✅ REGISTRUJI ACTION HANDLER')
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       console.log('🎬 ACTION HANDLER ZAVOLÁN:', id, 'viewMode:', viewMode, 'selectedId:', selectedId)
       
