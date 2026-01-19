@@ -289,6 +289,7 @@ export default function PropertiesTile({
         if (!selectedId) {
           toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
           return
+        }
         setViewMode('read')
         setIsDirty(false)
         return
@@ -320,7 +321,6 @@ export default function PropertiesTile({
         } else {
           toast.showWarning('Save handler není nastaven')
         }
-        toast.showInfo('Uložení nemovitosti - implementace PropertyDetailFrame probíhá')
         return
       }
 
