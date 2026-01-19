@@ -325,6 +325,46 @@ export async function saveUnit(input: SaveUnitInput): Promise<UnitDetailRow> {
 }
 
 /* =========================
+   COUNTS
+   ========================= */
+
+export type UnitCountByType = {
+  unit_type_id: string | null
+  count: number
+}
+
+/**
+ * Vrátí počty jednotek seskupené podle unit_type_id.
+ * @param includeArchived - pokud true, počítá i archivované
+ */
+export async function getUnitCountsByType(includeArchived = false): Promise<UnitCountByType[]> {
+  let q = supabase
+    .from('units')
+    .select('unit_type_id', { count: 'exact', head: false })
+
+  if (!includeArchived) {
+    q = q.or('is_archived.is.null,is_archived.eq.false')
+  }
+
+  const { data, error } = await q
+
+  if (error) throw new Error(error.message)
+  if (!data) return []
+
+  // Seskupit podle unit_type_id
+  const countsMap = new Map<string | null, number>()
+  for (const row of data) {
+    const typeId = row.unit_type_id
+    countsMap.set(typeId, (countsMap.get(typeId) ?? 0) + 1)
+  }
+
+  return Array.from(countsMap.entries()).map(([unit_type_id, count]) => ({
+    unit_type_id,
+    count,
+  }))
+}
+
+/* =========================
    DELETE (SOFT)
    ========================= */
 

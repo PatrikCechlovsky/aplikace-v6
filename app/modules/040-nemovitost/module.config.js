@@ -5,6 +5,7 @@
 import PropertiesTile from './tiles/PropertiesTile'
 import PropertyTypeTile from './tiles/PropertyTypeTile'
 import UnitsTile from './tiles/UnitsTile'
+import UnitTypeTile from './tiles/UnitTypeTile'
 import EquipmentTile from './tiles/EquipmentTile'
 
 // Factory funkce pro vytvoření PropertyTypeTile s přednastaveným typem
@@ -16,6 +17,15 @@ function createPropertyTypeTile(propertyTypeCode) {
   return WrappedComponent
 }
 
+// Factory funkce pro vytvoření UnitTypeTile s přednastaveným typem
+function createUnitTypeTile(unitTypeCode) {
+  const WrappedComponent = function UnitTypeTileWrapper(props) {
+    return UnitTypeTile({ ...props, unitTypeCode })
+  }
+  WrappedComponent.displayName = `UnitTypeTile_${unitTypeCode}`
+  return WrappedComponent
+}
+
 // Očekávané typy nemovitostí (podle CSV a migration 002)
 const EXPECTED_PROPERTY_TYPES = [
   'rodinny_dum',
@@ -24,6 +34,13 @@ const EXPECTED_PROPERTY_TYPES = [
   'jiny_objekt',
   'pozemek',
   'prumyslovy_objekt',
+]
+
+// Očekávané typy jednotek (podle CSV a migration 002)
+const EXPECTED_UNIT_TYPES = [
+  'byt',
+  'puda',
+  'garaz',
 ]
 
 export default {
@@ -115,25 +132,25 @@ export default {
         // 3. ÚROVEŇ – Filtry podle typu jednotky
         {
           id: 'units-type-byt',
-          label: 'Byt (0)',
+          label: 'Byt',
           icon: 'door-open',
-          component: null, // TODO: UnitTypeTile
+          component: createUnitTypeTile('byt'),
           unitTypeCode: 'byt',
           dynamicLabel: true,
         },
         {
           id: 'units-type-puda',
-          label: 'Půda (0)',
+          label: 'Půda',
           icon: 'home',
-          component: null, // TODO: UnitTypeTile
+          component: createUnitTypeTile('puda'),
           unitTypeCode: 'puda',
           dynamicLabel: true,
         },
         {
           id: 'units-type-garaz',
-          label: 'Garáž (0)',
+          label: 'Garáž',
           icon: 'car',
-          component: null, // TODO: UnitTypeTile
+          component: createUnitTypeTile('garaz'),
           unitTypeCode: 'garaz',
           dynamicLabel: true,
         },

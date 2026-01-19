@@ -304,6 +304,35 @@ postgres,public,documents,created_at,7,timestamp with time zone,null,null,null,f
 postgres,public,documents,created_by,8,uuid,null,null,null,true,auth.uid(),false
 postgres,public,documents,updated_at,9,timestamp with time zone,null,null,null,true,null,false
 postgres,public,documents,updated_by,10,uuid,null,null,null,true,null,false
+postgres,public,equipment_catalog,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,equipment_catalog,equipment_name,2,text,null,null,null,false,null,false
+postgres,public,equipment_catalog,equipment_type_id,3,text,null,null,null,false,null,false
+postgres,public,equipment_catalog,purchase_price,4,numeric,null,12,2,true,null,false
+postgres,public,equipment_catalog,purchase_date,5,date,null,null,null,true,null,false
+postgres,public,equipment_catalog,origin_module,6,text,null,null,null,true,'040-nemovitost'::text,false
+postgres,public,equipment_catalog,created_at,7,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,equipment_catalog,updated_at,8,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,equipment_catalog,is_archived,9,boolean,null,null,null,true,false,false
+postgres,public,equipment_types,code,1,text,null,null,null,false,null,false
+postgres,public,equipment_types,name,2,text,null,null,null,false,null,false
+postgres,public,equipment_types,description,3,text,null,null,null,true,null,false
+postgres,public,equipment_types,color,4,text,null,null,null,true,null,false
+postgres,public,equipment_types,icon,5,text,null,null,null,true,null,false
+postgres,public,equipment_types,order_index,6,integer,null,32,0,true,0,false
+postgres,public,equipment_types,active,7,boolean,null,null,null,true,true,false
+postgres,public,equipment_types,created_at,8,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,equipment_types,updated_at,9,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,generic_types,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,generic_types,category,2,text,null,null,null,false,null,false
+postgres,public,generic_types,code,3,text,null,null,null,false,null,false
+postgres,public,generic_types,name,4,text,null,null,null,false,null,false
+postgres,public,generic_types,description,5,text,null,null,null,true,null,false
+postgres,public,generic_types,color,6,text,null,null,null,true,null,false
+postgres,public,generic_types,icon,7,text,null,null,null,true,null,false
+postgres,public,generic_types,order_index,8,integer,null,32,0,true,0,false
+postgres,public,generic_types,active,9,boolean,null,null,null,true,true,false
+postgres,public,generic_types,created_at,10,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,generic_types,updated_at,11,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,meta_field_catalog,database_name,1,text,null,null,null,true,null,false
 postgres,public,meta_field_catalog,table_schema,2,text,null,null,null,true,null,false
 postgres,public,meta_field_catalog,table_name,3,text,null,null,null,true,null,false
@@ -336,6 +365,41 @@ postgres,public,permission_types,icon,4,text,null,null,null,true,null,false
 postgres,public,permission_types,order_index,5,integer,null,32,0,true,null,false
 postgres,public,permission_types,active,6,boolean,null,null,null,false,true,false
 postgres,public,permission_types,description,7,text,null,null,null,true,null,false
+postgres,public,properties,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,properties,landlord_id,2,uuid,null,null,null,false,null,false
+postgres,public,properties,property_type_id,3,uuid,null,null,null,false,null,false
+postgres,public,properties,display_name,4,text,null,null,null,false,null,false
+postgres,public,properties,internal_code,5,text,null,null,null,true,null,false
+postgres,public,properties,street,6,text,null,null,null,true,null,false
+postgres,public,properties,house_number,7,text,null,null,null,true,null,false
+postgres,public,properties,city,8,text,null,null,null,true,null,false
+postgres,public,properties,zip,9,text,null,null,null,true,null,false
+postgres,public,properties,country,10,text,null,null,null,true,'CZ'::text,false
+postgres,public,properties,region,11,text,null,null,null,true,null,false
+postgres,public,properties,land_area,12,numeric,null,10,2,true,null,false
+postgres,public,properties,built_up_area,13,numeric,null,10,2,true,null,false
+postgres,public,properties,building_area,14,numeric,null,10,2,true,null,false
+postgres,public,properties,number_of_floors,15,integer,null,32,0,true,null,false
+postgres,public,properties,build_year,16,integer,null,32,0,true,null,false
+postgres,public,properties,reconstruction_year,17,integer,null,32,0,true,null,false
+postgres,public,properties,cadastral_area,18,text,null,null,null,true,null,false
+postgres,public,properties,parcel_number,19,text,null,null,null,true,null,false
+postgres,public,properties,lv_number,20,text,null,null,null,true,null,false
+postgres,public,properties,note,21,text,null,null,null,true,null,false
+postgres,public,properties,origin_module,22,text,null,null,null,true,'040-nemovitost'::text,false
+postgres,public,properties,created_at,23,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,properties,updated_at,24,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,properties,is_archived,25,boolean,null,null,null,true,false,false
+postgres,public,property_equipment,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,property_equipment,property_id,2,uuid,null,null,null,false,null,false
+postgres,public,property_equipment,equipment_id,3,uuid,null,null,null,false,null,false
+postgres,public,property_equipment,quantity,4,integer,null,32,0,true,1,false
+postgres,public,property_equipment,state,5,text,null,null,null,true,'good'::text,false
+postgres,public,property_equipment,installation_date,6,date,null,null,null,true,null,false
+postgres,public,property_equipment,note,7,text,null,null,null,true,null,false
+postgres,public,property_equipment,created_at,8,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,property_equipment,updated_at,9,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,property_equipment,is_archived,10,boolean,null,null,null,true,false,false
 postgres,public,property_types,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,property_types,code,2,text,null,null,null,false,null,false
 postgres,public,property_types,name,3,text,null,null,null,false,null,false
@@ -436,6 +500,17 @@ postgres,public,subjects,is_landlord,45,boolean,null,null,null,true,false,false
 postgres,public,subjects,is_tenant,46,boolean,null,null,null,true,false,false
 postgres,public,subjects,is_user,47,boolean,null,null,null,true,false,false
 postgres,public,subjects,is_delegate,48,boolean,null,null,null,true,false,false
+postgres,public,subjects,subject_type_id,49,uuid,null,null,null,true,null,false
+postgres,public,tenant_users,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,tenant_users,tenant_id,2,uuid,null,null,null,false,null,false
+postgres,public,tenant_users,first_name,3,text,null,null,null,false,null,false
+postgres,public,tenant_users,last_name,4,text,null,null,null,false,null,false
+postgres,public,tenant_users,birth_date,5,date,null,null,null,false,null,false
+postgres,public,tenant_users,note,6,text,null,null,null,true,null,false
+postgres,public,tenant_users,is_archived,7,boolean,null,null,null,false,false,false
+postgres,public,tenant_users,created_at,8,timestamp with time zone,null,null,null,false,now(),false
+postgres,public,tenant_users,updated_at,9,timestamp with time zone,null,null,null,false,now(),false
+postgres,public,tenant_users,created_by,10,uuid,null,null,null,true,null,false
 postgres,public,ui_view_prefs,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,ui_view_prefs,client_id,2,uuid,null,null,null,false,null,false
 postgres,public,ui_view_prefs,user_id,3,uuid,null,null,null,false,null,false
@@ -446,6 +521,16 @@ postgres,public,ui_view_prefs,col_hidden,7,ARRAY,null,null,null,true,null,false
 postgres,public,ui_view_prefs,created_at,8,timestamp with time zone,null,null,null,false,now(),false
 postgres,public,ui_view_prefs,updated_at,9,timestamp with time zone,null,null,null,false,now(),false
 postgres,public,ui_view_prefs,prefs,10,jsonb,null,null,null,true,null,false
+postgres,public,unit_equipment,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,unit_equipment,unit_id,2,uuid,null,null,null,false,null,false
+postgres,public,unit_equipment,equipment_id,3,uuid,null,null,null,false,null,false
+postgres,public,unit_equipment,quantity,4,integer,null,32,0,true,1,false
+postgres,public,unit_equipment,state,5,text,null,null,null,true,'good'::text,false
+postgres,public,unit_equipment,installation_date,6,date,null,null,null,true,null,false
+postgres,public,unit_equipment,note,7,text,null,null,null,true,null,false
+postgres,public,unit_equipment,created_at,8,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,unit_equipment,updated_at,9,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,unit_equipment,is_archived,10,boolean,null,null,null,true,false,false
 postgres,public,unit_types,code,1,text,null,null,null,false,null,false
 postgres,public,unit_types,name,2,text,null,null,null,false,null,false
 postgres,public,unit_types,description,3,text,null,null,null,true,null,false
@@ -453,6 +538,27 @@ postgres,public,unit_types,color,4,text,null,null,null,true,null,false
 postgres,public,unit_types,icon,5,text,null,null,null,true,null,false
 postgres,public,unit_types,order_index,6,integer,null,32,0,true,null,false
 postgres,public,unit_types,active,7,boolean,null,null,null,true,true,false
+postgres,public,units,id,1,uuid,null,null,null,false,gen_random_uuid(),false
+postgres,public,units,property_id,2,uuid,null,null,null,false,null,false
+postgres,public,units,display_name,4,text,null,null,null,false,null,false
+postgres,public,units,internal_code,5,text,null,null,null,true,null,false
+postgres,public,units,street,6,text,null,null,null,true,null,false
+postgres,public,units,house_number,7,text,null,null,null,true,null,false
+postgres,public,units,city,8,text,null,null,null,true,null,false
+postgres,public,units,zip,9,text,null,null,null,true,null,false
+postgres,public,units,country,10,text,null,null,null,true,'CZ'::text,false
+postgres,public,units,region,11,text,null,null,null,true,null,false
+postgres,public,units,floor,12,integer,null,32,0,true,null,false
+postgres,public,units,door_number,13,text,null,null,null,true,null,false
+postgres,public,units,area,14,numeric,null,10,2,true,null,false
+postgres,public,units,rooms,15,numeric,null,3,1,true,null,false
+postgres,public,units,status,16,text,null,null,null,true,'available'::text,false
+postgres,public,units,note,17,text,null,null,null,true,null,false
+postgres,public,units,origin_module,18,text,null,null,null,true,'040-nemovitost'::text,false
+postgres,public,units,created_at,19,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,units,updated_at,20,timestamp with time zone,null,null,null,true,now(),false
+postgres,public,units,is_archived,21,boolean,null,null,null,true,false,false
+postgres,public,units,unit_type_id,23,uuid,null,null,null,true,null,false
 postgres,public,user_theme_settings,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,user_theme_settings,user_id,2,uuid,null,null,null,false,null,false
 postgres,public,user_theme_settings,theme_mode,3,text,null,null,null,false,'auto'::text,false
@@ -479,6 +585,23 @@ postgres,public,v_document_latest_version,version_created_at,18,timestamp with t
 postgres,public,v_document_latest_version,version_created_by,19,uuid,null,null,null,true,null,false
 postgres,public,v_document_latest_version,version_created_by_name,20,text,null,null,null,true,null,false
 postgres,public,v_document_latest_version,version_is_archived,21,boolean,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,id,1,uuid,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,property_id,2,uuid,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_id,3,uuid,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,quantity,4,integer,null,32,0,true,null,false
+postgres,public,v_property_equipment_list,state,5,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,installation_date,6,date,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,note,7,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,created_at,8,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,updated_at,9,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,is_archived,10,boolean,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_name,11,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_type_id,12,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,purchase_price,13,numeric,null,12,2,true,null,false
+postgres,public,v_property_equipment_list,purchase_date,14,date,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_type_name,15,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_type_icon,16,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,total_price,17,numeric,null,null,null,true,null,false
 postgres,public,v_subject_invite_latest,subject_id,1,uuid,null,null,null,true,null,false
 postgres,public,v_subject_invite_latest,invite_id,2,uuid,null,null,null,true,null,false
 postgres,public,v_subject_invite_latest,status,3,text,null,null,null,true,null,false
@@ -497,6 +620,53 @@ postgres,public,v_subject_invite_state,invite_state,7,text,null,null,null,true,n
 postgres,public,v_subject_public,id,1,uuid,null,null,null,true,null,false
 postgres,public,v_subject_public,auth_user_id,2,uuid,null,null,null,true,null,false
 postgres,public,v_subject_public,display_name,3,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,id,1,uuid,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,unit_id,2,uuid,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_id,3,uuid,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,quantity,4,integer,null,32,0,true,null,false
+postgres,public,v_unit_equipment_list,state,5,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,installation_date,6,date,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,note,7,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,created_at,8,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,updated_at,9,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,is_archived,10,boolean,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_name,11,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_type_id,12,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,purchase_price,13,numeric,null,12,2,true,null,false
+postgres,public,v_unit_equipment_list,purchase_date,14,date,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_type_name,15,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_type_icon,16,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,total_price,17,numeric,null,null,null,true,null,false
+postgres,public,v_units_list,id,1,uuid,null,null,null,true,null,false
+postgres,public,v_units_list,property_id,2,uuid,null,null,null,true,null,false
+postgres,public,v_units_list,display_name,3,text,null,null,null,true,null,false
+postgres,public,v_units_list,internal_code,4,text,null,null,null,true,null,false
+postgres,public,v_units_list,street,5,text,null,null,null,true,null,false
+postgres,public,v_units_list,house_number,6,text,null,null,null,true,null,false
+postgres,public,v_units_list,city,7,text,null,null,null,true,null,false
+postgres,public,v_units_list,zip,8,text,null,null,null,true,null,false
+postgres,public,v_units_list,country,9,text,null,null,null,true,null,false
+postgres,public,v_units_list,region,10,text,null,null,null,true,null,false
+postgres,public,v_units_list,floor,11,integer,null,32,0,true,null,false
+postgres,public,v_units_list,door_number,12,text,null,null,null,true,null,false
+postgres,public,v_units_list,area,13,numeric,null,10,2,true,null,false
+postgres,public,v_units_list,rooms,14,numeric,null,3,1,true,null,false
+postgres,public,v_units_list,status,15,text,null,null,null,true,null,false
+postgres,public,v_units_list,note,16,text,null,null,null,true,null,false
+postgres,public,v_units_list,origin_module,17,text,null,null,null,true,null,false
+postgres,public,v_units_list,created_at,18,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_units_list,updated_at,19,timestamp with time zone,null,null,null,true,null,false
+postgres,public,v_units_list,is_archived,20,boolean,null,null,null,true,null,false
+postgres,public,v_units_list,unit_type_id,21,uuid,null,null,null,true,null,false
+postgres,public,v_units_list,property_name,22,text,null,null,null,true,null,false
+postgres,public,v_units_list,landlord_id,23,uuid,null,null,null,true,null,false
+postgres,public,v_units_list,property_type_id,24,uuid,null,null,null,true,null,false
+postgres,public,v_units_list,property_build_year,25,integer,null,32,0,true,null,false
+postgres,public,v_units_list,property_reconstruction_year,26,integer,null,32,0,true,null,false
+postgres,public,v_units_list,area_ratio_percent,27,numeric,null,null,null,true,null,false
+postgres,public,v_units_list,user_count,28,integer,null,32,0,true,null,false
+postgres,public,v_units_list,unit_type_name,29,text,null,null,null,true,null,false
+postgres,public,v_units_list,unit_type_icon,30,text,null,null,null,true,null,false
 postgres,public,v_user_permissions,subject_id,1,uuid,null,null,null,true,null,false
 postgres,public,v_user_permissions,permission_code,2,text,null,null,null,true,null,false
 postgres,public,v_users_detail,id,1,uuid,null,null,null,true,null,false

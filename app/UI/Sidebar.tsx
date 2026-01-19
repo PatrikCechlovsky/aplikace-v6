@@ -16,6 +16,7 @@ import { uiConfig } from '../lib/uiConfig'
 import { getLandlordCountsByType } from '@/app/lib/services/landlords'
 import { getTenantCountsByType } from '@/app/lib/services/tenants'
 import { getPropertyCountsByType } from '@/app/lib/services/properties'
+import { getUnitCountsByType } from '@/app/lib/services/units'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 
 /**
@@ -204,10 +205,66 @@ export default function Sidebar({
                       }),
                   }
                 }
+
+                // Aktualizovat children v "Přehled jednotek" tile
+                if (tile.id === 'units-list' && tile.children) {
+                  // Načíst počty jednotek podle unit_type_id
+                  const unitCountsPromise = getUnitCountsByType(false).then(counts => {
+                    const unitCountsMap = new Map(counts.map((c) => [c.unit_type_id, c.count]))
+                    const unitTypes = listActiveByCategory('unit_types')
+                    
+                    return { unitCountsMap, unitTypesPromise: unitTypes }
+                  })
+
+                  // Toto musí být synchronní, takže načteme data v předchozím bloku
+                  // Použijeme samostatný try-catch pro units
+                  return tile
+                }
+
                 return tile
               })
             } catch (countErr) {
               console.error('Sidebar: Chyba při načítání počtů nemovitostí:', countErr)
+            }
+
+            // Samostatně zpracovat jednotky
+            try {
+              const unitCounts = await getUnitCountsByType(false)
+              const unitCountsMap = new Map(unitCounts.map((c) => [c.unit_type_id, c.count]))
+              const unitTypes = await listActiveByCategory('unit_types')
+
+              tiles = tiles.map((tile) => {
+                if (tile.id === 'units-list' && tile.children) {
+                  return {
+                    ...tile,
+                    children: tile.children
+                      .map((child: any) => {
+                        const originalChild = conf.tiles
+                          .find((t: any) => t.id === 'units-list')
+                          ?.children?.find((c: any) => c.id === child.id)
+
+                        if (originalChild?.dynamicLabel && originalChild?.unitTypeCode) {
+                          const unitType = unitTypes.find((t) => t.code === originalChild.unitTypeCode)
+                          const count = unitType ? (unitCountsMap.get(unitType.id) ?? 0) : 0
+                          const typeLabel = unitType?.name || child.label
+                          const icon = unitType?.icon || child.icon || 'building'
+                          const color = unitType?.color || null
+
+                          return {
+                            ...child,
+                            label: `${typeLabel} (${count})`,
+                            icon: icon,
+                            color: color,
+                          }
+                        }
+                        return child
+                      }),
+                  }
+                }
+                return tile
+              })
+            } catch (countErr) {
+              console.error('Sidebar: Chyba při načítání počtů jednotek:', countErr)
             }
           }
 
