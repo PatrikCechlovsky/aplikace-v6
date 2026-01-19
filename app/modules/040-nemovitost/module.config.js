@@ -39,8 +39,14 @@ const EXPECTED_PROPERTY_TYPES = [
 // Očekávané typy jednotek (podle CSV a migration 002)
 const EXPECTED_UNIT_TYPES = [
   'byt',
+  'kancelar',
+  'obchod',
   'puda',
+  'sklep',
   'garaz',
+  'sklad',
+  'zahrada',
+  'jina_jednotka',
 ]
 
 export default {
@@ -133,9 +139,25 @@ export default {
         {
           id: 'units-type-byt',
           label: 'Byt',
-          icon: 'door-open',
+          icon: 'home',
           component: createUnitTypeTile('byt'),
           unitTypeCode: 'byt',
+          dynamicLabel: true,
+        },
+        {
+          id: 'units-type-kancelar',
+          label: 'Kancelář',
+          icon: 'briefcase',
+          component: createUnitTypeTile('kancelar'),
+          unitTypeCode: 'kancelar',
+          dynamicLabel: true,
+        },
+        {
+          id: 'units-type-obchod',
+          label: 'Obchodní prostor',
+          icon: 'shopping-cart',
+          component: createUnitTypeTile('obchod'),
+          unitTypeCode: 'obchod',
           dynamicLabel: true,
         },
         {
@@ -147,11 +169,43 @@ export default {
           dynamicLabel: true,
         },
         {
+          id: 'units-type-sklep',
+          label: 'Sklep',
+          icon: 'archive',
+          component: createUnitTypeTile('sklep'),
+          unitTypeCode: 'sklep',
+          dynamicLabel: true,
+        },
+        {
           id: 'units-type-garaz',
-          label: 'Garáž',
+          label: 'Garáž/Parking',
           icon: 'car',
           component: createUnitTypeTile('garaz'),
           unitTypeCode: 'garaz',
+          dynamicLabel: true,
+        },
+        {
+          id: 'units-type-sklad',
+          label: 'Sklad',
+          icon: 'warehouse',
+          component: createUnitTypeTile('sklad'),
+          unitTypeCode: 'sklad',
+          dynamicLabel: true,
+        },
+        {
+          id: 'units-type-zahrada',
+          label: 'Zahrada',
+          icon: 'tree',
+          component: createUnitTypeTile('zahrada'),
+          unitTypeCode: 'zahrada',
+          dynamicLabel: true,
+        },
+        {
+          id: 'units-type-jina',
+          label: 'Jiná jednotka',
+          icon: 'grid',
+          component: createUnitTypeTile('jina_jednotka'),
+          unitTypeCode: 'jina_jednotka',
           dynamicLabel: true,
         },
       ],
