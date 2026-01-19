@@ -130,9 +130,6 @@ export default function UnitsTile({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  const [filterInput, setFilterInput] = useState('')
-  const [filterText, setFilterText] = useState('')
-  const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [unitTypeId, setUnitTypeId] = useState<string | null>(null)
   
