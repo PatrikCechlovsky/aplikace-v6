@@ -16,7 +16,7 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
-import { getIcon } from '@/app/UI/icons'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 import PropertyDetailFrame, { type UiProperty as PropertyForDetail } from '../components/PropertyDetailFrame'
 
 import '@/app/styles/components/TileLayout.css'
@@ -692,6 +692,102 @@ export default function PropertiesTile({
   }, [selectedId, properties])
 
   if (viewMode !== 'list') {
+    // Pro create režim: pokud není vybrán typ nemovitosti, zobrazit VÝBĚR TYPU (TILE SELECTOR)
+    const needsTypeSelection = viewMode === 'create' && !selectedTypeForCreate && !detailProperty?.propertyTypeId
+
+    if (needsTypeSelection) {
+      // TILE SELECTOR pro výběr typu nemovitosti (6 dlaždic)
+      return (
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">Nová nemovitost</h1>
+            <p className="tile-layout__description">Vyberte typ nemovitosti pro vytvoření nového záznamu</p>
+          </div>
+          <div className="tile-layout__content" style={{ padding: '1.5rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem',
+              }}
+            >
+              {propertyTypes.map((type) => {
+                const isSelected = selectedTypeForCreate === type.id
+                const iconKey = (type.icon?.trim() || 'home') as IconKey
+                const icon = getIcon(iconKey)
+                const color = type.color?.trim() || '#666666'
+
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    className={`palette-card ${isSelected ? 'palette-card--active' : ''}`}
+                    onClick={() => {
+                      setSelectedTypeForCreate(type.id)
+                      // Nastavit propertyTypeId do detailProperty
+                      const updatedProperty: PropertyForDetail = detailProperty
+                        ? {
+                            ...detailProperty,
+                            propertyTypeId: type.id,
+                          }
+                        : {
+                            id: 'new',
+                            landlordId: null,
+                            propertyTypeId: type.id,
+                            displayName: null,
+                            internalCode: null,
+                            street: null,
+                            houseNumber: null,
+                            city: null,
+                            zip: null,
+                            country: 'CZ',
+                            region: null,
+                            landArea: null,
+                            builtUpArea: null,
+                            buildingArea: null,
+                            numberOfFloors: null,
+                            buildYear: null,
+                            reconstructionYear: null,
+                            cadastralArea: null,
+                            parcelNumber: null,
+                            lvNumber: null,
+                            note: null,
+                            originModule: '040-nemovitost',
+                            isArchived: false,
+                            createdAt: null,
+                            updatedAt: null,
+                          }
+                      setDetailProperty(updatedProperty)
+                      setIsDirty(false)
+                    }}
+                    style={{
+                      backgroundColor: isSelected ? color : 'var(--color-surface-subtle)',
+                      borderColor: color,
+                      borderWidth: '2px',
+                      borderStyle: 'solid',
+                      padding: '1.5rem',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <span style={{ fontSize: '2rem' }}>{icon}</span>
+                    <span style={{ fontWeight: '500', color: isSelected ? '#fff' : 'var(--color-text-primary)' }}>
+                      {type.name}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     // Build PropertyForDetail object
     let propertyForDetail: PropertyForDetail | null = null
 
