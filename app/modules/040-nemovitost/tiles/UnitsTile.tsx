@@ -276,9 +276,9 @@ export default function UnitsTile({
       
       switch (id) {
         case 'add':
-          // Přesměrovat na CreateUnitTile (výběr typu)
-          router.push('/modules/040-nemovitost?t=units-add')
-          break
+          // Přepnout z units-overview na units-add (výběr typu)
+          router.replace('/modules/040-nemovitost?t=units-add')
+          return
         
         case 'view':
           if (selectedId) {

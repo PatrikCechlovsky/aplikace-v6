@@ -282,8 +282,8 @@ export default function PropertiesTile({
       }
 
       if (id === 'add') {
-        // Přesměrovat na CreatePropertyTile (výběr typu)
-        router.push('/modules/040-nemovitost?t=properties-add')
+        // Přepnout z properties-overview na properties-add (výběr typu)
+        router.replace('/modules/040-nemovitost?t=properties-add')
         return
       }
 
