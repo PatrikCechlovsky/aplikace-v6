@@ -314,7 +314,7 @@ export default function UnitDetailFrame({
   const detailViewMode: DetailViewMode = useMemo(() => {
     if (viewMode === 'create') return 'create'
     if (viewMode === 'edit') return 'edit'
-    return 'read'
+    return 'view'
   }, [viewMode])
   
   const handleFieldChange = useCallback((fieldName: string, value: any) => {
