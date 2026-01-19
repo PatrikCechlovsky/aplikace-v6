@@ -229,7 +229,7 @@ export default function UnitsTile({
   useEffect(() => {
     const actions: CommonActionId[] = []
     if (viewMode === 'list') {
-      actions.push('add', 'refresh', 'filter')
+      actions.push('add', 'columnSettings')
       if (selectedId) {
         actions.push('view', 'edit')
       }
