@@ -134,37 +134,65 @@ export default function PropertiesTile({
   const [isDirty, setIsDirty] = useState(false)
   const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
   
-  // ✅ KROK 1: URL state management - POUZE parsování, žádné další setState!
+  // ✅ URL state management + detail setup (PŘESNĚ jako LandlordsTile - JEDEN useEffect!)
   useEffect(() => {
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
-  }, [searchParams])
-  
-  // ✅ KROK 2: Detail management - reaguje na změny selectedId/viewMode (JAKO v LandlordsTile)
-  useEffect(() => {
-    if (!selectedId || viewMode === 'list') {
+
+    // Pokud je id a nejde o list mode, najdi nemovitost a otevři detail
+    if (id && vm !== 'list') {
+      const property = properties.find((p) => p.id === id)
+      if (property) {
+        // PropertyDetailFrame si načte detail sám (jako LandlordDetailFrame)
+        const detailUi: PropertyForDetail = {
+          id: property.id,
+          displayName: property.displayName,
+          propertyTypeId: property.propertyTypeId,
+          landlordId: null,
+          buildingArea: property.buildingArea,
+          landArea: null,
+          street: null,
+          city: null,
+          zip: null,
+          houseNumber: null,
+          country: 'CZ',
+          region: null,
+          cadastralArea: null,
+          parcelNumber: null,
+          note: null,
+        }
+        setDetailProperty(detailUi)
+      } else if (id === 'new') {
+        // Nová nemovitost - zkontrolovat type z URL
+        const typeFromUrl = searchParams?.get('type')?.trim() ?? null
+        const newProperty: PropertyForDetail = {
+          id: 'new',
+          displayName: '',
+          propertyTypeId: typeFromUrl,
+          landlordId: null,
+          buildingArea: null,
+          landArea: null,
+          street: null,
+          city: null,
+          zip: null,
+          houseNumber: null,
+          country: 'CZ',
+          region: null,
+          cadastralArea: null,
+          parcelNumber: null,
+          note: null,
+        }
+        setDetailProperty(newProperty)
+      }
+    } else {
+      // List mode - vymazat detail
       setDetailProperty(null)
       setSelectedTypeForCreate(null)
-      return
     }
-    
-    // Pokud je id=new a viewMode=create, resetovat výběr typu
-    if (selectedId === 'new' && viewMode === 'create') {
-      setSelectedTypeForCreate(null)
-      setDetailProperty(null) // Prázdný detail pro create
-      return
-    }
-    
-    // Načíst existující nemovitost
-    const property = properties.find((p) => p.id === selectedId)
-    if (property) {
-      // TODO: Načíst detail z DB a vytvořit PropertyForDetail
-      setDetailProperty(null) // Placeholder - PropertyDetailFrame si načte detail sám
-    }
-  }, [selectedId, viewMode, properties])
+  }, [searchParams, properties])
 
   // Load property types
   useEffect(() => {
