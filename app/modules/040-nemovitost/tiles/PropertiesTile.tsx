@@ -35,6 +35,7 @@ const BASE_COLUMNS: ListViewColumn[] = [
 type UiProperty = {
   id: string
   displayName: string
+  propertyTypeId: string | null
   propertyTypeName: string
   propertyTypeIcon: string | null
   propertyTypeColor: string | null
@@ -56,6 +57,7 @@ function mapRowToUi(row: PropertiesListRow): UiProperty {
   return {
     id: row.id,
     displayName: row.display_name || '—',
+    propertyTypeId: row.property_type_id || null,
     propertyTypeName: row.property_type_name || '—',
     propertyTypeIcon: row.property_type_icon || null,
     propertyTypeColor: row.property_type_color || null,
@@ -495,7 +497,7 @@ export default function PropertiesTile({
       propertyForDetail = {
         id: selectedProperty.id,
         landlordId: null, // will be loaded by PropertyDetailFrame
-        propertyTypeId: null, // will be loaded by PropertyDetailFrame
+        propertyTypeId: selectedProperty.propertyTypeId,
         displayName: selectedProperty.displayName,
         internalCode: null,
         
