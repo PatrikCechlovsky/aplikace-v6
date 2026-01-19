@@ -423,7 +423,7 @@ export default function UnitsTile({
   // Sort handler
   const handleSortChange = useCallback((newSort: ListViewSortState) => {
     setSort(newSort)
-    logger.log(`Sort changed: ${newSort.key} ${newSort.dir}`)
+    logger.log(`Sort changed: ${newSort?.key} ${newSort?.dir}`)
   }, [])
 
   // Sorted rows
