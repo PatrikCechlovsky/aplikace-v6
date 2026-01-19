@@ -230,7 +230,7 @@ export default function PropertiesTile({
       // List mode - clear detail
       setDetailProperty(null)
     }
-  }, [searchParams])
+  }, [searchParams, properties])
 
   // Load property types
   useEffect(() => {
