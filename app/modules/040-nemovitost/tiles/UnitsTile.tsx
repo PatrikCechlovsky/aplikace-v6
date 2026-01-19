@@ -190,12 +190,6 @@ export default function UnitsTile({
     savePrefs()
   }, [savePrefs])
 
-  // Debounce filter
-  useEffect(() => {
-    const timer = setTimeout(() => setFilterText(filterInput), 500)
-    return () => clearTimeout(timer)
-  }, [filterInput])
-
   // Load unit type UUID from code
   useEffect(() => {
     if (!unitTypeCode) {
