@@ -15,7 +15,7 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
-import { getIcon, type IconKey } from '@/app/UI/icons'
+import { getIcon } from '@/app/UI/icons'
 import PropertyDetailFrame, { type UiProperty as PropertyForDetail } from '../components/PropertyDetailFrame'
 
 import '@/app/styles/components/TileLayout.css'
