@@ -492,13 +492,24 @@ export default function UnitsTile({
                 columns={BASE_COLUMNS}
                 fixedFirstKey={fixedFirstKey}
                 requiredKeys={requiredKeys}
-                currentWidths={colPrefs.colWidths ?? {}}
-                currentOrder={colPrefs.colOrder ?? []}
-                currentHidden={colPrefs.colHidden ?? []}
-                onApply={(widths, order, hidden) => {
-                  setColPrefs({ colWidths: widths, colOrder: order, colHidden: hidden })
-                  setColsOpen(false)
-                  toast.showSuccess('Nastavení sloupců uloženo')
+                value={{
+                  order: colPrefs.colOrder ?? [],
+                  hidden: colPrefs.colHidden ?? [],
+                }}
+                onChange={(next) => {
+                  setColPrefs((p) => ({
+                    ...p,
+                    colOrder: next.order,
+                    colHidden: next.hidden,
+                  }))
+                }}
+                onReset={() => {
+                  setColPrefs({
+                    colWidths: {},
+                    colOrder: [],
+                    colHidden: [],
+                  })
+                  toast.showInfo('Nastavení sloupců resetováno')
                 }}
               />
             </>
