@@ -283,7 +283,11 @@ export default function PropertiesTile({
 
       if (id === 'add') {
         // Přepnout z properties-overview na properties-add (výběr typu)
-        router.replace('/modules/040-nemovitost?t=properties-add')
+        console.log('🔵 PropertiesTile: Handler ADD called')
+        const newUrl = new URL(window.location.href)
+        newUrl.searchParams.set('t', 'properties-add')
+        console.log('🔵 PropertiesTile: New URL:', newUrl.toString())
+        window.location.href = newUrl.toString()
         return
       }
 

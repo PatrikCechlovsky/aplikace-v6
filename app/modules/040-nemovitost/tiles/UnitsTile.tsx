@@ -277,7 +277,11 @@ export default function UnitsTile({
       switch (id) {
         case 'add':
           // Přepnout z units-overview na units-add (výběr typu)
-          router.replace('/modules/040-nemovitost?t=units-add')
+          console.log('🔵 UnitsTile: Handler ADD called')
+          const newUrl = new URL(window.location.href)
+          newUrl.searchParams.set('t', 'units-add')
+          console.log('🔵 UnitsTile: New URL:', newUrl.toString())
+          window.location.href = newUrl.toString()
           return
         
         case 'view':
