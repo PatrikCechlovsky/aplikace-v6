@@ -108,7 +108,6 @@ export default function PropertiesTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: PropertiesTileProps): JSX.Element {
-  console.log('🔍 PropertiesTile: Renderuji s propertyTypeCode:', propertyTypeCode)
   const toast = useToast()
   const router = useRouter()
   const pathname = usePathname()
@@ -129,28 +128,15 @@ export default function PropertiesTile({
   const [selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
 
   // Detail state
-  const [_viewMode, _setViewMode] = useState<ViewMode>('list')
-  const setViewMode = useCallback((newMode: ViewMode) => {
-    console.trace('💥 setViewMode ZAVOLÁNO:', newMode, 'z:', new Error().stack?.split('\n')[2])
-    _setViewMode(newMode)
-  }, [])
-  const viewMode = _viewMode
-  
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [detailProperty, setDetailProperty] = useState<PropertyForDetail | null>(null)
   const [isDirty, setIsDirty] = useState(false)
   const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
   
-  // 🔍 DEBUG: sleduj dependencies action handler useEffect
-  const prevDeps = React.useRef<any>({})
-  
-  // ✅ URL state management + detail setup (PŘESNĚ jako LandlordsTile - JEDEN useEffect!)
+  // ✅ URL state management + detail setup
   useEffect(() => {
-    console.log('🔥 URL useEffect SPUŠTĚN - searchParams:', searchParams?.toString(), 'properties.length:', properties.length)
-    
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
-
-    console.log('🔥 URL parsed: id=', id, 'vm=', vm)
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
@@ -241,11 +227,10 @@ export default function PropertiesTile({
         setDetailProperty(newProperty)
       }
     } else {
-      // List mode - vymazat detail
-      console.log('🔥 List mode - nastavuji detailProperty na null')
+      // List mode - clear detail
       setDetailProperty(null)
     }
-  }, [searchParams])  // ← BEZ properties! Testujeme, jestli to pomůže
+  }, [searchParams])
 
   // Load property types
   useEffect(() => {
@@ -375,37 +360,9 @@ export default function PropertiesTile({
 
   // Handle common actions
   useEffect(() => {
-    // 🔍 DEBUG: zjistit, která dependency se změnila
-    const deps = {
-      onRegister: !!onRegisterCommonActionHandler,
-      viewMode,
-      selectedId,
-      isDirty,
-      toast: !!toast,
-      router: !!router,
-      pathname,
-      searchParams: searchParams?.toString()
-    }
-    
-    if (prevDeps.current.logged) {
-      const changes = Object.keys(deps).filter(key => {
-        const oldVal = (prevDeps.current as any)[key]
-        const newVal = (deps as any)[key]
-        return oldVal !== newVal
-      })
-      console.log('🔄 ACTION HANDLER useEffect SPUŠTĚN - změnily se dependencies:', changes.join(', '), 'values:', JSON.stringify(deps))
-    } else {
-      console.log('🔄 ACTION HANDLER useEffect SPUŠTĚN - PRVNÍ RENDER - deps:', JSON.stringify(deps))
-    }
-    
-    prevDeps.current = { ...deps, logged: true }
-    
     if (!onRegisterCommonActionHandler) return
     
-    console.log('✅ REGISTRUJI ACTION HANDLER (pathname:', pathname, 'searchParams:', searchParams?.toString(), ')')
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
-      console.log('🎬 ACTION HANDLER ZAVOLÁN:', id, 'viewMode:', viewMode, 'selectedId:', selectedId)
-      
       if (id === 'close') {
         if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
@@ -515,12 +472,11 @@ export default function PropertiesTile({
         return
       }
     })
-  }, [onRegisterCommonActionHandler, viewMode, selectedId, isDirty, toast, router, pathname, searchParams])
+  }, [onRegisterCommonActionHandler, viewMode, selectedId, isDirty, toast, router, pathname])
 
   // Load data
   const loadData = useCallback(async () => {
     try {
-      console.log('🔍 PropertiesTile: Načítám data, filterText:', filterText, 'propertyTypeId:', propertyTypeId)
       setLoading(true)
       setError(null)
       
@@ -530,14 +486,8 @@ export default function PropertiesTile({
         includeArchived: showArchived,
       })
       
-      console.log('🔍 PropertiesTile: Načteno', data.length, 'nemovitostí')
-      const mapped = data.map(mapRowToUi)
-      console.log('🔍 PropertiesTile: Mapované:', mapped.length, 'řádků')
-      console.log('🔍 PropertiesTile: Volám setProperties s', mapped.length, 'items')
-      setProperties(mapped)
-      console.log('🔍 PropertiesTile: setProperties HOTOVO')
+      setProperties(data.map(mapRowToUi))
     } catch (err: any) {
-      console.error('❌ PropertiesTile: Chyba při načítání:', err)
       logger.error('Failed to load properties', err)
       setError(err.message || 'Nepodařilo se načíst nemovitosti')
       toast.showError('Chyba při načítání nemovitostí')
@@ -549,11 +499,6 @@ export default function PropertiesTile({
   useEffect(() => {
     loadData()
   }, [loadData])
-
-  // Debug: sleduj změny properties
-  useEffect(() => {
-    console.log('🔍 PropertiesTile: properties state se změnil, nová délka:', properties.length)
-  }, [properties])
 
   // Row handlers
   const handleRowClick = useCallback((row: ListViewRow<UiProperty>) => {
@@ -629,8 +574,6 @@ export default function PropertiesTile({
     const typeName = typeMeta?.name || propertyTypeCode
     return `Přehled nemovitostí - ${typeName}`
   }, [propertyTypeCode, propertyTypes])
-
-  console.log('🔍 PropertiesTile: State - loading:', loading, 'properties:', properties.length, 'error:', error, 'viewMode:', viewMode)
 
   // Create mode - výběr typu nemovitosti (MUSÍ být PŘED blokem viewMode !== 'list')
   if (viewMode === 'create' && !selectedTypeForCreate && !detailProperty?.propertyTypeId) {
