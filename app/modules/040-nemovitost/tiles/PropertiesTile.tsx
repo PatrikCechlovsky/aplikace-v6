@@ -364,10 +364,8 @@ export default function PropertiesTile({
     loadData()
   }, [loadData])
 
-  //setSelectedId(property.id)
-    setViewMode('read')
-    setIsDirty(false)
-  }, [(() => {
+  // Debug: sleduj změny properties
+  useEffect(() => {
     console.log('🔍 PropertiesTile: properties state se změnil, nová délka:', properties.length)
   }, [properties])
 
