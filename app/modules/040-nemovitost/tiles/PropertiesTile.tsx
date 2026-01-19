@@ -375,6 +375,8 @@ export default function PropertiesTile({
     if (!onRegisterCommonActionHandler) return
     
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      console.log('🎬 ACTION HANDLER ZAVOLÁN:', id, 'viewMode:', viewMode, 'selectedId:', selectedId)
+      
       if (id === 'close') {
         if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
