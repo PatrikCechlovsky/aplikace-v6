@@ -473,7 +473,7 @@ export default function PropertiesTile({
       propertyForDetail = {
         id: 'new',
         landlordId: null,
-        propertyTypeId: _selectedTypeForCreate,
+        propertyTypeId: selectedTypeForCreate,
         displayName: null,
         internalCode: null,
         
