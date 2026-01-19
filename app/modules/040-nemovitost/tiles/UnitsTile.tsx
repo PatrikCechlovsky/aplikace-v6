@@ -427,6 +427,11 @@ export default function UnitsTile({
     setSort(newSort)
     logger.log(`Sort changed: ${newSort?.key} ${newSort?.dir}`)
   }, [])
+  
+  // Column resize handler
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+  }, [])
 
   // Sorted rows
   const sortedRows = useMemo(() => {
