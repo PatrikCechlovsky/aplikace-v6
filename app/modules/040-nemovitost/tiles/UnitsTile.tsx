@@ -19,6 +19,7 @@ import type { DetailSectionId } from '@/app/UI/DetailView'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 
 import '@/app/styles/components/TileLayout.css'
+import '@/app/styles/components/PaletteCard.css'
 
 const logger = createLogger('040 UnitsTile')
 
@@ -136,6 +137,10 @@ export default function UnitsTile({
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [unitTypeId, setUnitTypeId] = useState<string | null>(null)
   
+  // Unit types for create mode type selector
+  const [unitTypes, setUnitTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null; color: string | null }>>([])
+  const [selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
+  
   // Detail state
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [detailUnit, setDetailUnit] = useState<UiUnit | null>(null)
@@ -192,6 +197,24 @@ export default function UnitsTile({
   useEffect(() => {
     savePrefs()
   }, [savePrefs])
+
+  // Load unit types for create mode type selector
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('generic_types')
+          .select('id, code, name, icon, color')
+          .eq('category', 'unit_types')
+          .eq('active', true)
+          .order('order_index')
+        
+        setUnitTypes(data || [])
+      } catch (err) {
+        logger.error('Failed to load unit types', err)
+      }
+    })()
+  }, [])
 
   // Load unit type UUID from code
   useEffect(() => {
@@ -255,29 +278,9 @@ export default function UnitsTile({
       
       switch (id) {
         case 'add':
-          setDetailUnit({
-            id: 'new',
-            propertyId: propertyId || null,
-            unitTypeId: unitTypeId || null,
-            displayName: null,
-            internalCode: null,
-            street: null,
-            houseNumber: null,
-            city: null,
-            zip: null,
-            country: 'CZ',
-            region: null,
-            floor: null,
-            doorNumber: null,
-            area: null,
-            rooms: null,
-            status: 'available',
-            note: null,
-            originModule: '040-nemovitost',
-            isArchived: false,
-            createdAt: null,
-            updatedAt: null,
-          })
+          // Reset type selection and show type selector
+          setSelectedTypeForCreate(null)
+          setDetailUnit(null)
           setViewMode('create')
           setSelectedId(null)
           setIsDirty(false)
@@ -423,6 +426,35 @@ export default function UnitsTile({
     logger.log(`Selected unit: ${row.id}`)
   }, [])
 
+  // Type selector handler for create mode
+  const handleTypeSelect = useCallback((typeId: string) => {
+    setSelectedTypeForCreate(typeId)
+    // Create new unit with selected type
+    setDetailUnit({
+      id: 'new',
+      propertyId: propertyId || null,
+      unitTypeId: typeId,
+      displayName: null,
+      internalCode: null,
+      street: null,
+      houseNumber: null,
+      city: null,
+      zip: null,
+      country: 'CZ',
+      region: null,
+      floor: null,
+      doorNumber: null,
+      area: null,
+      rooms: null,
+      status: 'available',
+      note: null,
+      originModule: '040-nemovitost',
+      isArchived: false,
+      createdAt: null,
+      updatedAt: null,
+    })
+  }, [propertyId])
+
   // Sort handler
   const handleSortChange = useCallback((newSort: ListViewSortState) => {
     setSort(newSort)
@@ -536,6 +568,58 @@ export default function UnitsTile({
             })
           }}
         />
+      </div>
+    )
+  }
+
+  // Create mode: show type selector if no type selected yet
+  if (viewMode === 'create' && !selectedTypeForCreate) {
+    return (
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">Nová jednotka</h1>
+          <p className="tile-layout__description">Vyberte typ jednotky</p>
+        </div>
+        <div className="tile-layout__content" style={{ padding: '1.5rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+            }}
+          >
+            {unitTypes.map((type) => {
+              const color = type.color || '#666666'
+              
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  className="palette-card"
+                  onClick={() => handleTypeSelect(type.id)}
+                  style={{
+                    backgroundColor: 'var(--color-surface-subtle)',
+                    borderColor: color,
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    padding: '1.5rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                    {type.icon || '📦'}
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                    {type.name}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
     )
   }
