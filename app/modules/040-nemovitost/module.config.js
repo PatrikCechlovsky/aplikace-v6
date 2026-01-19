@@ -6,6 +6,7 @@ import PropertiesTile from './tiles/PropertiesTile'
 import PropertyTypeTile from './tiles/PropertyTypeTile'
 import UnitsTile from './tiles/UnitsTile'
 import UnitTypeTile from './tiles/UnitTypeTile'
+import CreateUnitTile from './tiles/CreateUnitTile'
 import EquipmentTile from './tiles/EquipmentTile'
 
 // Factory funkce pro vytvoření PropertyTypeTile s přednastaveným typem
@@ -216,7 +217,7 @@ export default {
       id: 'units-add',
       label: 'Přidat jednotku',
       icon: 'plus',
-      component: null, // TODO: Add mode
+      component: CreateUnitTile,
       order: 25,
     },
 
