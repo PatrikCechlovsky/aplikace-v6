@@ -393,11 +393,9 @@ export default function UnitsTile({
     
     try {
       const rows = await listUnits({
-        searchText: filterText,
         propertyId: propertyId || undefined,
         unitTypeId: unitTypeId || undefined,
         status: status || undefined,
-        includeArchived: showArchived,
       })
       
       const mapped = rows.map(mapRowToUi)
@@ -410,7 +408,7 @@ export default function UnitsTile({
     } finally {
       setLoading(false)
     }
-  }, [filterText, propertyId, unitTypeId, status, showArchived, toast])
+  }, [propertyId, unitTypeId, status, toast])
 
   useEffect(() => {
     fetchUnits()
