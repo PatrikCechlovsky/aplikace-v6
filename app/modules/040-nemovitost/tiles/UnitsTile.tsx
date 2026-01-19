@@ -385,18 +385,6 @@ export default function UnitsTile({
           setIsDirty(false)
           break
         
-        case 'refresh':
-          await fetchUnits()
-          toast.showSuccess('Seznam jednotek obnoven')
-          break
-        
-        case 'filter':
-          setFilterInput('')
-          setFilterText('')
-          setShowArchived(false)
-          toast.showInfo('Filtry resetovány')
-          break
-        
         case 'columnSettings':
           setColsOpen(true)
           break
