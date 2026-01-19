@@ -206,21 +206,6 @@ export default function Sidebar({
                   }
                 }
 
-                // Aktualizovat children v "Přehled jednotek" tile
-                if (tile.id === 'units-list' && tile.children) {
-                  // Načíst počty jednotek podle unit_type_id
-                  const unitCountsPromise = getUnitCountsByType(false).then(counts => {
-                    const unitCountsMap = new Map(counts.map((c) => [c.unit_type_id, c.count]))
-                    const unitTypes = listActiveByCategory('unit_types')
-                    
-                    return { unitCountsMap, unitTypesPromise: unitTypes }
-                  })
-
-                  // Toto musí být synchronní, takže načteme data v předchozím bloku
-                  // Použijeme samostatný try-catch pro units
-                  return tile
-                }
-
                 return tile
               })
             } catch (countErr) {
