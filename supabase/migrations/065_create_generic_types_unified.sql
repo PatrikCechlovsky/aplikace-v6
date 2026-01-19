@@ -160,12 +160,16 @@ AND gt.code = s.subject_type;
 
 -- Add FK constraint for subjects
 ALTER TABLE public.subjects
+  DROP CONSTRAINT IF EXISTS fk_subjects_type_id;
+
+ALTER TABLE public.subjects
   ADD CONSTRAINT fk_subjects_type_id
   FOREIGN KEY (subject_type_id)
   REFERENCES public.generic_types(id)
   ON DELETE RESTRICT;
 
 -- Create index for subjects
+DROP INDEX IF EXISTS public.idx_subjects_type_id;
 CREATE INDEX idx_subjects_type_id ON public.subjects(subject_type_id);
 
 -- PROPERTIES: Update FK to point to generic_types
