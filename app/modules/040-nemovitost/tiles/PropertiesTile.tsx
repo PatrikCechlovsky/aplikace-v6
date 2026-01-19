@@ -135,11 +135,14 @@ export default function PropertiesTile({
   
   // ✅ URL state management + detail setup
   useEffect(() => {
+    console.log('[PropertiesTile] useEffect [searchParams, properties] triggered')
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
+    console.log('[PropertiesTile] URL params:', { id, vm, propertiesCount: properties.length })
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
+    console.log('[PropertiesTile] Set viewMode to:', id ? vm : 'list')
 
     // Pokud je id a nejde o list mode, najdi nemovitost a otevři detail
     if (id && vm !== 'list') {
