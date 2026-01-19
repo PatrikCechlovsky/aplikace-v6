@@ -186,7 +186,7 @@ export default function PropertyDetailFormComponent({
             <option value="">— vyberte typ —</option>
             {propertyTypes.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.icon ? `${t.icon} ` : ''}{t.name}
+                {t.name}
               </option>
             ))}
           </select>
