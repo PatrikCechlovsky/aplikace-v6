@@ -140,6 +140,9 @@ export default function PropertiesTile({
   const [isDirty, setIsDirty] = useState(false)
   const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
   
+  // 🔍 DEBUG: sleduj dependencies action handler useEffect
+  const prevDeps = React.useRef<any>({})
+  
   // ✅ URL state management + detail setup (PŘESNĚ jako LandlordsTile - JEDEN useEffect!)
   useEffect(() => {
     console.log('🔥 URL useEffect SPUŠTĚN - searchParams:', searchParams?.toString(), 'properties.length:', properties.length)
@@ -372,10 +375,34 @@ export default function PropertiesTile({
 
   // Handle common actions
   useEffect(() => {
-    console.log('🔄 ACTION HANDLER useEffect SPUŠTĚN - viewMode:', viewMode, 'selectedId:', selectedId, 'onRegister defined:', !!onRegisterCommonActionHandler)
+    // 🔍 DEBUG: zjistit, která dependency se změnila
+    const deps = {
+      onRegister: !!onRegisterCommonActionHandler,
+      viewMode,
+      selectedId,
+      isDirty,
+      toast: !!toast,
+      router: !!router,
+      pathname,
+      searchParams: searchParams?.toString()
+    }
+    
+    if (prevDeps.current.logged) {
+      const changes = Object.keys(deps).filter(key => {
+        const oldVal = (prevDeps.current as any)[key]
+        const newVal = (deps as any)[key]
+        return oldVal !== newVal
+      })
+      console.log('🔄 ACTION HANDLER useEffect SPUŠTĚN - změnily se dependencies:', changes.join(', '), 'values:', JSON.stringify(deps))
+    } else {
+      console.log('🔄 ACTION HANDLER useEffect SPUŠTĚN - PRVNÍ RENDER - deps:', JSON.stringify(deps))
+    }
+    
+    prevDeps.current = { ...deps, logged: true }
+    
     if (!onRegisterCommonActionHandler) return
     
-    console.log('✅ REGISTRUJI ACTION HANDLER')
+    console.log('✅ REGISTRUJI ACTION HANDLER (pathname:', pathname, 'searchParams:', searchParams?.toString(), ')')
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       console.log('🎬 ACTION HANDLER ZAVOLÁN:', id, 'viewMode:', viewMode, 'selectedId:', selectedId)
       
