@@ -142,10 +142,9 @@ export default function PropertiesTile({
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
 
-    // Pokud je vm=create a nemáme detailProperty, resetovat výběr typu
+    // Pokud je vm=create a id=new, resetovat výběr typu (ale NE detailProperty - to způsobuje loop)
     if (vm === 'create' && id === 'new') {
       setSelectedTypeForCreate(null)
-      setDetailProperty(null)
     }
   }, [searchParams])
 
