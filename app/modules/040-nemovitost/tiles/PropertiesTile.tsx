@@ -135,59 +135,19 @@ export default function PropertiesTile({
   
   // ✅ URL state management + detail setup
   useEffect(() => {
-    console.log('[PropertiesTile] useEffect [searchParams, properties] triggered')
+    console.log('[PropertiesTile] useEffect [searchParams] triggered - PROPERTIES REMOVED FROM DEPS!')
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
-    console.log('[PropertiesTile] URL params:', { id, vm, propertiesCount: properties.length })
+    console.log('[PropertiesTile] URL params:', { id, vm })
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
     console.log('[PropertiesTile] Set viewMode to:', id ? vm : 'list')
 
-    // Pokud je id a nejde o list mode, najdi nemovitost a otevři detail
+    // PropertyDetailFrame si načte detail SÁM podle ID - nepotřebujeme properties.find() tady!
+    // Tím ELIMINUJEME loop způsobený změnou properties array při načítání dat
     if (id && vm !== 'list') {
-      const property = properties.find((p) => p.id === id)
-      if (property) {
-        // PropertyDetailFrame si načte detail sám (jako LandlordDetailFrame)
-        const detailUi: PropertyForDetail = {
-          id: property.id,
-          displayName: property.displayName,
-          propertyTypeId: property.propertyTypeId,
-          landlordId: null,
-          internalCode: null,
-          
-          // Address
-          street: null,
-          houseNumber: null,
-          city: null,
-          zip: null,
-          country: 'CZ',
-          region: null,
-          
-          // Areas
-          landArea: null,
-          builtUpArea: null,
-          buildingArea: property.buildingArea,
-          numberOfFloors: null,
-          
-          // Dates
-          buildYear: null,
-          reconstructionYear: null,
-          
-          // Cadastre
-          cadastralArea: null,
-          parcelNumber: null,
-          lvNumber: null,
-          
-          // Metadata
-          note: null,
-          originModule: null,
-          isArchived: property.isArchived,
-          createdAt: null,
-          updatedAt: null,
-        }
-        setDetailProperty(detailUi)
-      } else if (id === 'new') {
+      if (id === 'new') {
         // Nová nemovitost - zkontrolovat type z URL
         const typeFromUrl = searchParams?.get('type')?.trim() ?? null
         const newProperty: PropertyForDetail = {
@@ -233,7 +193,7 @@ export default function PropertiesTile({
       // List mode - clear detail
       setDetailProperty(null)
     }
-  }, [searchParams, properties])
+  }, [searchParams])  // POUZE searchParams! properties způsobovalo loop při load dat
 
   // Load property types
   useEffect(() => {
