@@ -172,7 +172,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const registerCommonActions = useCallback((actions: CommonActionId[]) => {
     setCommonActions((prev) => {
       // Kontrola jestli se pole změnilo (délka + obsah)
-      if (prev.length === actions.length && prev.every((a, i) => a === actions[i])) {
+      if (prev && prev.length === actions.length && prev.every((a, i) => a === actions[i])) {
         return prev // Nezměnilo se → neměnit state → žádný re-render
       }
       return actions
