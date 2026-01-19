@@ -451,6 +451,12 @@ export default function UnitsTile({
   }, [units, sort])
 
   const viewRows = sortedRows.map(toRow)
+  
+  // Page title
+  const pageTitle = useMemo(() => {
+    if (!unitTypeCode) return 'Přehled jednotek'
+    return `Přehled jednotek - ${unitTypeCode}`
+  }, [unitTypeCode])
 
   // Detail callbacks
   const handleDetailSaved = useCallback((saved: UiUnit) => {
@@ -458,66 +464,79 @@ export default function UnitsTile({
     setSelectedId(saved.id)
     fetchUnits()
   }, [fetchUnits])
+  
+  console.log('🔍 UnitsTile: State - loading:', loading, 'units:', units.length, 'error:', error, 'viewMode:', viewMode)
+
+  if (viewMode === 'list') {
+    return (
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">{pageTitle}</h1>
+          <p className="tile-layout__description">
+            Seznam všech jednotek. Můžeš filtrovat, řadit a spravovat jednotky.
+          </p>
+        </div>
+        {error && <div style={{ padding: '0 1.5rem 0.5rem', color: 'crimson' }}>{error}</div>}
+        {loading ? (
+          <div className="tile-layout__content">
+            <SkeletonTable rows={8} columns={columns.length} />
+          </div>
+        ) : (
+          <div className="tile-layout__content">
+            <ListView
+              columns={columns}
+              rows={viewRows}
+              filterValue={filterInput}
+              onFilterChange={setFilterInput}
+              showArchived={showArchived}
+              onShowArchivedChange={setShowArchived}
+              selectedId={selectedId ?? null}
+              onRowClick={handleRowClick}
+              sort={sort}
+              onSortChange={handleSortChange}
+              onColumnResize={handleColumnResize}
+            />
+            
+            {units.length === 0 && (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                {filterInput ? 'Žádné jednotky nenalezeny' : 'Zatím nemáte žádné jednotky'}
+              </div>
+            )}
+          </div>
+        )}
+
+        <ListViewColumnsDrawer
+          open={colsOpen}
+          onClose={() => setColsOpen(false)}
+          columns={BASE_COLUMNS}
+          fixedFirstKey={fixedFirstKey}
+          requiredKeys={requiredKeys}
+          value={{
+            order: colPrefs.colOrder ?? [],
+            hidden: colPrefs.colHidden ?? [],
+          }}
+          onChange={(next) => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: next.order,
+              colHidden: next.hidden,
+            }))
+          }}
+          onReset={() => {
+            setColPrefs({
+              colWidths: {},
+              colOrder: [],
+              colHidden: [],
+            })
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="tile-layout">
-      {viewMode === 'list' && (
-        <>
-          {loading && <SkeletonTable rows={5} columns={7} />}
-          
-          {error && (
-            <div className="error-message" style={{ padding: '20px', color: '#ef4444' }}>
-              ❌ {error}
-            </div>
-          )}
-          
-          {!loading && !error && (
-            <>
-              <ListView
-                rows={viewRows}
-                columns={columns}
-                filterValue={filterInput}
-                onFilterChange={setFilterInput}
-                showArchived={showArchived}
-                onShowArchivedChange={setShowArchived}
-                sort={sort}
-                onSortChange={handleSortChange}
-                onRowClick={handleRowClick}
-                selectedId={selectedId}
-              />
-              
-              <ListViewColumnsDrawer
-                open={colsOpen}
-                onClose={() => setColsOpen(false)}
-                columns={BASE_COLUMNS}
-                fixedFirstKey={fixedFirstKey}
-                requiredKeys={requiredKeys}
-                value={{
-                  order: colPrefs.colOrder ?? [],
-                  hidden: colPrefs.colHidden ?? [],
-                }}
-                onChange={(next) => {
-                  setColPrefs((p) => ({
-                    ...p,
-                    colOrder: next.order,
-                    colHidden: next.hidden,
-                  }))
-                }}
-                onReset={() => {
-                  setColPrefs({
-                    colWidths: {},
-                    colOrder: [],
-                    colHidden: [],
-                  })
-                  toast.showInfo('Nastavení sloupců resetováno')
-                }}
-              />
-            </>
-          )}
-        </>
-      )}
-      
-      {viewMode !== 'list' && detailUnit && (
+      {detailUnit && (
         <UnitDetailFrame
           unit={detailUnit}
           viewMode={viewMode}
