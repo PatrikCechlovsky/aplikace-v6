@@ -458,6 +458,101 @@ export default function PropertiesTile({
 
   console.log('🔍 PropertiesTile: State - loading:', loading, 'properties:', properties.length, 'error:', error, 'viewMode:', viewMode)
 
+  // Create mode - výběr typu nemovitosti (MUSÍ být PŘED blokem viewMode !== 'list')
+  if (viewMode === 'create' && !selectedTypeForCreate && !detailProperty?.propertyTypeId) {
+    const EXPECTED_PROPERTY_TYPES = ['rodinny_dum', 'bytovy_dum', 'admin_budova', 'jiny_objekt', 'pozemek', 'prumyslovy_objekt']
+    const availableTypes = propertyTypes.filter((t) => EXPECTED_PROPERTY_TYPES.includes(t.code))
+
+    return (
+      <div className="tile-layout">
+        <div className="tile-layout__header">
+          <h1 className="tile-layout__title">Nová nemovitost</h1>
+          <p className="tile-layout__description">Vyberte typ nemovitosti</p>
+        </div>
+        <div className="tile-layout__content" style={{ padding: '1.5rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+            }}
+          >
+            {availableTypes.map((type) => {
+              const isSelected = selectedTypeForCreate === type.code
+              const iconKey = (type.icon?.trim() || 'home') as any
+              const icon = getIcon(iconKey)
+              const color = type.color?.trim() || '#666666'
+
+              return (
+                <button
+                  key={type.code}
+                  type="button"
+                  className={`palette-card ${isSelected ? 'palette-card--active' : ''}`}
+                  style={{
+                    borderColor: color,
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    padding: '1.5rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                  onClick={() => {
+                    setSelectedTypeForCreate(type.code)
+                    // Vytvořit novou nemovitost s vybraným typem
+                    const newProperty: PropertyForDetail = {
+                      id: 'new',
+                      landlordId: null,
+                      propertyTypeId: type.id,
+                      displayName: '',
+                      internalCode: null,
+                      street: null,
+                      houseNumber: null,
+                      city: null,
+                      zip: null,
+                      country: 'CZ',
+                      region: null,
+                      landArea: null,
+                      builtUpArea: null,
+                      buildingArea: null,
+                      numberOfFloors: null,
+                      buildYear: null,
+                      reconstructionYear: null,
+                      cadastralArea: null,
+                      parcelNumber: null,
+                      lvNumber: null,
+                      note: null,
+                      originModule: null,
+                      isArchived: false,
+                      createdAt: null,
+                      updatedAt: null,
+                    }
+                    setDetailProperty(newProperty)
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    <span style={{ fontSize: '2rem' }}>{icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{type.name}</div>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Detail/Edit/Create modes
   const selectedProperty = useMemo(() => {
     if (!selectedId) return null
@@ -556,128 +651,6 @@ export default function PropertiesTile({
         onDirtyChange={setIsDirty}
         onSaved={(saved) => {
           setSelectedId(saved.id)
-          loadData()
-        }}
-      />
-    )
-  }
-
-  // Create mode - výběr typu nemovitosti
-  if (viewMode === 'create' && !selectedTypeForCreate && !detailProperty?.propertyTypeId) {
-    const EXPECTED_PROPERTY_TYPES = ['rodinny_dum', 'bytovy_dum', 'admin_budova', 'jiny_objekt', 'pozemek', 'prumyslovy_objekt']
-    const availableTypes = propertyTypes.filter((t) => EXPECTED_PROPERTY_TYPES.includes(t.code))
-
-    return (
-      <div className="tile-layout">
-        <div className="tile-layout__header">
-          <h1 className="tile-layout__title">Nová nemovitost</h1>
-          <p className="tile-layout__description">Vyberte typ nemovitosti</p>
-        </div>
-        <div className="tile-layout__content" style={{ padding: '1.5rem' }}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {availableTypes.map((type) => {
-              const isSelected = selectedTypeForCreate === type.code
-              const iconKey = (type.icon?.trim() || 'home') as any
-              const icon = getIcon(iconKey)
-              const color = type.color?.trim() || '#666666'
-
-              return (
-                <button
-                  key={type.code}
-                  type="button"
-                  className={`palette-card ${isSelected ? 'palette-card--active' : ''}`}
-                  style={{
-                    borderColor: color,
-                    borderWidth: '2px',
-                    borderStyle: 'solid',
-                    padding: '1.5rem',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.2s',
-                  }}
-                  onClick={() => {
-                    setSelectedTypeForCreate(type.code)
-                    // Vytvořit novou nemovitost s vybraným typem
-                    const newProperty: PropertyForDetail = {
-                      id: 'new',
-                      landlordId: null,
-                      propertyTypeId: type.id,
-                      displayName: '',
-                      internalCode: null,
-                      street: null,
-                      houseNumber: null,
-                      city: null,
-                      zip: null,
-                      country: 'CZ',
-                      region: null,
-                      landArea: null,
-                      builtUpArea: null,
-                      buildingArea: null,
-                      numberOfFloors: null,
-                      buildYear: null,
-                      reconstructionYear: null,
-                      cadastralArea: null,
-                      parcelNumber: null,
-                      lvNumber: null,
-                      note: null,
-                      originModule: null,
-                      isArchived: false,
-                      createdAt: null,
-                      updatedAt: null,
-                    }
-                    setDetailProperty(newProperty)
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <span style={{ fontSize: '2rem' }}>{icon}</span>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{type.name}</div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Create/Edit/Read mode - zobrazit PropertyDetailFrame
-  if (viewMode === 'create' || viewMode === 'edit' || viewMode === 'read') {
-    if (!detailProperty) {
-      return <div className="tile-layout">Načítání...</div>
-    }
-    
-    return (
-      <PropertyDetailFrame
-        property={detailProperty}
-        viewMode={viewMode}
-        initialSectionId="detail"
-        onActiveSectionChange={() => {}}
-        onRegisterSubmit={(fn) => {
-          submitHandlerRef.current = fn
-        }}
-        onDirtyChange={setIsDirty}
-        onSaved={(saved) => {
-          toast.showSuccess('Nemovitost byla úspěšně uložena')
-          setViewMode('read')
-          setSelectedId(saved.id)
-          setIsDirty(false)
           loadData()
         }}
       />
