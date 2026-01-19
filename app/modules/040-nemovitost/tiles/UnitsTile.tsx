@@ -478,7 +478,6 @@ export default function UnitsTile({
                 onSortChange={handleSortChange}
                 onRowClick={handleRowClick}
                 selectedId={selectedId}
-                fixedFirstKey={fixedFirstKey}
               />
               
               <ListViewColumnsDrawer
