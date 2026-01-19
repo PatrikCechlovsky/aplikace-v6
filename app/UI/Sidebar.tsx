@@ -218,7 +218,7 @@ export default function Sidebar({
               const unitCountsMap = new Map(unitCounts.map((c) => [c.unit_type_id, c.count]))
               const unitTypes = await listActiveByCategory('unit_types')
 
-              tiles = tiles.map((tile) => {
+              tiles = tiles.map((tile: any) => {
                 if (tile.id === 'units-list' && tile.children) {
                   return {
                     ...tile,
