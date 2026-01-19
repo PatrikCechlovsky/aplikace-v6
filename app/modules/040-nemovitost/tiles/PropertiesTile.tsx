@@ -121,8 +121,10 @@ export default function PropertiesTile({
   useEffect(() => {
     async function loadTypes() {
       const { data, error } = await supabase
-        .from('property_types')
+        .from('generic_types')
         .select('id, code, name, icon, color')
+        .eq('category', 'property_types')
+        .eq('active', true)
         .order('order_index')
       
       if (error) {
@@ -206,8 +208,9 @@ export default function PropertiesTile({
     async function loadPropertyTypeId() {
       try {
         const { data } = await supabase
-          .from('property_types')
+          .from('generic_types')
           .select('id, name')
+          .eq('category', 'property_types')
           .eq('code', propertyTypeCode)
           .single()
         

@@ -80,7 +80,7 @@ export async function listProperties(params: PropertiesListParams = {}): Promise
         is_archived,
         created_at,
         landlord:subjects!properties_landlord_id_fkey(display_name),
-        property_type:property_types!properties_property_type_id_fkey(name, icon, color, order_index)
+        property_type:generic_types!fk_properties_type_generic(name, icon, color, order_index)
       `
     )
     .order('display_name', { ascending: true, nullsFirst: false })
@@ -213,7 +213,7 @@ export async function getPropertyDetail(id: string): Promise<{ property: Propert
       `
         *,
         landlord:subjects!properties_landlord_id_fkey(display_name),
-        property_type:property_types!properties_property_type_id_fkey(name, code)
+        property_type:generic_types!fk_properties_type_generic(name, code)
       `
     )
     .eq('id', id)
@@ -312,7 +312,7 @@ export async function saveProperty(input: SavePropertyInput): Promise<PropertyDe
         `
           *,
           landlord:subjects!properties_landlord_id_fkey(display_name),
-          property_type:property_types!properties_property_type_id_fkey(name, code)
+          property_type:generic_types!fk_properties_type_generic(name, code)
         `
       )
       .single()
@@ -337,7 +337,7 @@ export async function saveProperty(input: SavePropertyInput): Promise<PropertyDe
         `
           *,
           landlord:subjects!properties_landlord_id_fkey(display_name),
-          property_type:property_types!properties_property_type_id_fkey(name, code)
+          property_type:generic_types!fk_properties_type_generic(name, code)
         `
       )
       .single()
