@@ -246,19 +246,15 @@ export default function UnitsTile({
   useEffect(() => {
     const actions: CommonActionId[] = []
     if (viewMode === 'list') {
-      actions.push('add', 'columnSettings')
+      actions.push('add')
       if (selectedId) {
         actions.push('view', 'edit')
       }
-      actions.push('columnSettings')
-    } else {
-      // Detail mode
-      actions.push('close')
-      if (viewMode === 'edit' || viewMode === 'create') {
-        actions.push('save', 'cancel')
-      } else if (viewMode === 'read') {
-        actions.push('edit')
-      }
+      actions.push('columnSettings', 'close')
+    } else if (viewMode === 'edit' || viewMode === 'create') {
+      actions.push('save', 'attachments', 'close')
+    } else if (viewMode === 'read') {
+      actions.push('edit', 'close')
     }
 
     onRegisterCommonActions?.(actions)
@@ -359,27 +355,28 @@ export default function UnitsTile({
             const saved = await submitDetailFnRef.current()
             if (saved) {
               setViewMode('read')
+              setDetailUnit(saved)
               setSelectedId(saved.id)
+              setIsDirty(false)
               await fetchUnits()
             }
           }
           break
         
-        case 'cancel':
-          if (viewMode === 'create') {
-            setViewMode('list')
-            setDetailUnit(null)
-          } else {
-            setViewMode('read')
-            setIsDirty(false)
-          }
-          break
-        
         case 'close':
+          if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
+            const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+            if (!ok) return
+          }
           setViewMode('list')
           setDetailUnit(null)
           setSelectedId(null)
+          setSelectedTypeForCreate(null)
           setIsDirty(false)
+          break
+        
+        case 'attachments':
+          toast.showWarning('Přílohy zatím nejsou implementované')
           break
         
         case 'columnSettings':
@@ -530,6 +527,35 @@ export default function UnitsTile({
               onShowArchivedChange={setShowArchived}
               selectedId={selectedId ?? null}
               onRowClick={handleRowClick}
+              onRowDoubleClick={(row) => {
+                const unit = row.raw
+                if (!unit) return
+                setDetailUnit({
+                  id: unit.id,
+                  propertyId: unit.propertyId,
+                  unitTypeId: unit.unitTypeId,
+                  displayName: unit.displayName,
+                  internalCode: null,
+                  street: null,
+                  houseNumber: null,
+                  city: null,
+                  zip: null,
+                  country: 'CZ',
+                  region: null,
+                  floor: unit.floor,
+                  doorNumber: null,
+                  area: unit.area,
+                  rooms: unit.rooms,
+                  status: unit.status,
+                  note: null,
+                  originModule: '040-nemovitost',
+                  isArchived: unit.isArchived,
+                  createdAt: null,
+                  updatedAt: null,
+                })
+                setViewMode('read')
+                setIsDirty(false)
+              }}
               sort={sort}
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
