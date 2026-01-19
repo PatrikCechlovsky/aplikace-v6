@@ -1,13 +1,13 @@
 // FILE: app/modules/040-nemovitost/components/UnitDetailFrame.tsx
 // PURPOSE: Detail view pro jednotku (read/edit mode) s tabs
-// NOTES: Podobné jako LandlordDetailFrame - Info tab s DetailView, další tabs placeholder
+// NOTES: Podobné jako LandlordDetailFrame - používá DetailView s ctx
 
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
-import { UnitDetailFormSections } from '../forms/UnitDetailForm'
+import UnitDetailForm, { type UnitFormValue } from '../forms/UnitDetailForm'
 import { getUnitDetail, saveUnit, type SaveUnitInput } from '@/app/lib/services/units'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
@@ -52,34 +52,6 @@ export type UiUnit = {
   updatedAt: string | null
 }
 
-type UnitFormValue = {
-  displayName: string
-  internalCode: string
-  propertyId: string
-  unitTypeId: string
-  
-  street: string
-  houseNumber: string
-  city: string
-  zip: string
-  country: string
-  region: string
-  
-  floor: number | null
-  doorNumber: string
-  area: number | null
-  rooms: number | null
-  status: string
-  
-  note: string
-  originModule: string
-  isArchived: boolean
-  
-  // Read-only fields (zobrazí se, ale nejdou editovat)
-  createdAt?: string
-  updatedAt?: string
-}
-
 type Props = {
   unit: UiUnit
   viewMode: ViewMode
@@ -117,9 +89,6 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     note: u.note || '',
     originModule: u.originModule || '040-nemovitost',
     isArchived: u.isArchived || false,
-    
-    createdAt: u.createdAt || undefined,
-    updatedAt: u.updatedAt || undefined,
   }
 }
 
@@ -154,14 +123,6 @@ export default function UnitDetailFrame({
   useEffect(() => {
     formValueRef.current = formValue
   }, [formValue])
-  
-  // Read-only metadata rozšíření
-  const metadataExtras = useMemo(() => {
-    return {
-      created_at: resolvedUnit.createdAt ? formatDateTime(resolvedUnit.createdAt) : '—',
-      updated_at: resolvedUnit.updatedAt ? formatDateTime(resolvedUnit.updatedAt) : '—',
-    }
-  }, [resolvedUnit])
   
   // Load unit detail (pokud není new)
   useEffect(() => {
@@ -221,13 +182,11 @@ export default function UnitDetailFrame({
   }, [unit.id, toast])
   
   // Dirty tracking
-  useEffect(() => {
-    if (firstRenderRef.current) return
-    
-    const currentSnap = JSON.stringify(formValue)
+  const markDirtyIfChanged = useCallback((val: UnitFormValue) => {
+    const currentSnap = JSON.stringify(val)
     const isDirty = currentSnap !== initialSnapshotRef.current
     onDirtyChange?.(isDirty)
-  }, [formValue, onDirtyChange])
+  }, [onDirtyChange])
   
   // Submit handler
   const handleSubmit = useCallback(async (): Promise<UiUnit | null> => {
@@ -317,24 +276,98 @@ export default function UnitDetailFrame({
     return 'view'
   }, [viewMode])
   
-  const handleFieldChange = useCallback((fieldName: string, value: any) => {
-    setFormValue((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }))
-  }, [])
+  const readOnly = detailViewMode === 'view'
+  const unitName = formValue.displayName || 'Nová jednotka'
+  
+  // System blocks for metadata
+  const systemBlocks = useMemo(() => {
+    return [
+      {
+        title: 'Metadata',
+        visible: true,
+        content: (
+          <div className="detail-form">
+            <div className="detail-form__field">
+              <label className="detail-form__label">Vytvořeno</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={resolvedUnit.createdAt ? formatDateTime(resolvedUnit.createdAt) : '—'}
+                readOnly
+              />
+            </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Aktualizováno</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={resolvedUnit.updatedAt ? formatDateTime(resolvedUnit.updatedAt) : '—'}
+                readOnly
+              />
+            </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Archivováno</label>
+              <input
+                type="checkbox"
+                checked={formValue.isArchived}
+                onChange={(e) => {
+                  const updated = { ...formValue, isArchived: e.target.checked }
+                  setFormValue(updated)
+                  markDirtyIfChanged(updated)
+                }}
+                disabled={readOnly}
+              />
+            </div>
+          </div>
+        ),
+      },
+    ]
+  }, [resolvedUnit, formValue, readOnly, markDirtyIfChanged])
+  
+  const sectionIds: DetailSectionId[] = ['detail', 'system']
   
   return (
-    <div className="detail-frame">
-      <DetailView
-        sections={UnitDetailFormSections}
-        value={formValue}
-        mode={detailViewMode}
-        onChange={handleFieldChange}
-        initialSectionId={initialSectionId}
-        onActiveSectionChange={onActiveSectionChange}
-        metadataExtras={metadataExtras}
-      />
+    <div className="tile-layout">
+      <div className="tile-layout__header">
+        <h1 className="tile-layout__title">
+          {detailViewMode === 'create' ? 'Nová jednotka' : 
+           detailViewMode === 'edit' ? `Editace: ${unitName}` : 
+           unitName}
+        </h1>
+      </div>
+      <div className="tile-layout__content">
+        <DetailView
+          mode={detailViewMode}
+          sectionIds={sectionIds}
+          initialActiveId={initialSectionId ?? 'detail'}
+          onActiveSectionChange={onActiveSectionChange}
+          ctx={{
+            entityType: 'units',
+            entityId: resolvedUnit.id === 'new' ? 'new' : resolvedUnit.id || undefined,
+            entityLabel: resolvedUnit.displayName ?? null,
+            showSystemEntityHeader: false,
+            mode: detailViewMode,
+            
+            detailContent: (
+              <UnitDetailForm
+                key={`form-${resolvedUnit.id}`}
+                unit={formValue}
+                readOnly={readOnly}
+                onDirtyChange={(dirty) => {
+                  if (dirty) {
+                    markDirtyIfChanged(formValue)
+                  }
+                }}
+                onValueChange={(val) => {
+                  setFormValue(val)
+                  formValueRef.current = val
+                  markDirtyIfChanged(val)
+                }}
+              />
+            ),
+            
+            systemBlocks,
+          } as any}
+        />
+      </div>
     </div>
   )
 }
