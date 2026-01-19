@@ -127,6 +127,7 @@ export default function UnitDetailForm({
         <div className="detail-form__field">
           <label className="detail-form__label">Název jednotky *</label>
           <InputWithHistory
+            historyId="unit-display-name"
             className={inputClass}
             value={formValue.displayName}
             onChange={(e) => handleChange('displayName', e.target.value)}
@@ -138,6 +139,7 @@ export default function UnitDetailForm({
         <div className="detail-form__field">
           <label className="detail-form__label">Interní kód</label>
           <InputWithHistory
+            historyId="unit-internal-code"
             className={inputClass}
             value={formValue.internalCode}
             onChange={(e) => handleChange('internalCode', e.target.value)}
@@ -166,6 +168,7 @@ export default function UnitDetailForm({
         <div className="detail-form__field">
           <label className="detail-form__label">Číslo dveří</label>
           <InputWithHistory
+            historyId="unit-door-number"
             className={inputClass}
             value={formValue.doorNumber}
             onChange={(e) => handleChange('doorNumber', e.target.value)}
