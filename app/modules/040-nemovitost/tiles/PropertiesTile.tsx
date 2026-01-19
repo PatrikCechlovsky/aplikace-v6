@@ -129,7 +129,13 @@ export default function PropertiesTile({
   const [selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
 
   // Detail state
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [_viewMode, _setViewMode] = useState<ViewMode>('list')
+  const setViewMode = useCallback((newMode: ViewMode) => {
+    console.trace('💥 setViewMode ZAVOLÁNO:', newMode, 'z:', new Error().stack?.split('\n')[2])
+    _setViewMode(newMode)
+  }, [])
+  const viewMode = _viewMode
+  
   const [detailProperty, setDetailProperty] = useState<PropertyForDetail | null>(null)
   const [isDirty, setIsDirty] = useState(false)
   const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
