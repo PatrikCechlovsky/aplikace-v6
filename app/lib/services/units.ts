@@ -218,9 +218,9 @@ export async function getUnitDetail(id: string): Promise<{ unit: UnitDetailRow }
 
 export type SaveUnitInput = {
   id?: string | null // pokud je null/undefined = INSERT, jinak UPDATE
-  property_id: string
-  unit_type_id: string
-  display_name: string
+  property_id: string | null
+  unit_type_id: string | null
+  display_name: string | null
   internal_code?: string | null
   
   // address (inherited or override)
@@ -242,6 +242,7 @@ export type SaveUnitInput = {
   note?: string | null
   
   // metadata
+  origin_module?: string | null
   is_archived?: boolean
 }
 
@@ -265,6 +266,7 @@ export async function saveUnit(input: SaveUnitInput): Promise<UnitDetailRow> {
     rooms: input.rooms ?? null,
     status: input.status ?? 'available',
     note: input.note ?? null,
+    origin_module: input.origin_module ?? '040-nemovitost',
     is_archived: input.is_archived ?? false,
   }
 
