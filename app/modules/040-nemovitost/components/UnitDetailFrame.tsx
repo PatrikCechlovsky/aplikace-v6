@@ -215,7 +215,7 @@ export default function UnitDetailFrame({
         firstRenderRef.current = false
       } catch (err) {
         logger.error('Failed to load unit detail', err)
-        toast.error('Chyba při načítání detailu jednotky')
+        toast.showError('Chyba při načítání detailu jednotky')
       }
     })()
   }, [unit.id, toast])
@@ -294,13 +294,13 @@ export default function UnitDetailFrame({
       initialSnapshotRef.current = JSON.stringify(newInitial)
       onDirtyChange?.(false)
       
-      toast.success(isNew ? 'Jednotka vytvořena' : 'Jednotka uložena')
+      toast.showSuccess(isNew ? 'Jednotka vytvořena' : 'Jednotka uložena')
       onSaved?.(saved)
       
       return saved
     } catch (err) {
       logger.error('Failed to save unit', err)
-      toast.error(err instanceof Error ? err.message : 'Chyba při ukládání jednotky')
+      toast.showError(err instanceof Error ? err.message : 'Chyba při ukládání jednotky')
       return null
     }
   }, [resolvedUnit, formValue, toast, onDirtyChange, onSaved])

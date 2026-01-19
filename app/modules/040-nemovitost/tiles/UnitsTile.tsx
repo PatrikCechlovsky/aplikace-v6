@@ -387,14 +387,14 @@ export default function UnitsTile({
         
         case 'refresh':
           await fetchUnits()
-          toast.success('Seznam jednotek obnoven')
+          toast.showSuccess('Seznam jednotek obnoven')
           break
         
         case 'filter':
           setFilterInput('')
           setFilterText('')
           setShowArchived(false)
-          toast.info('Filtry resetovány')
+          toast.showInfo('Filtry resetovány')
           break
         
         case 'columnSettings':
@@ -427,7 +427,7 @@ export default function UnitsTile({
     } catch (err) {
       logger.error('Failed to fetch units', err)
       setError(err instanceof Error ? err.message : 'Neznámá chyba')
-      toast.error('Chyba při načítání jednotek')
+      toast.showError('Chyba při načítání jednotek')
     } finally {
       setLoading(false)
     }
@@ -516,7 +516,7 @@ export default function UnitsTile({
                 onApply={(widths, order, hidden) => {
                   setColPrefs({ colWidths: widths, colOrder: order, colHidden: hidden })
                   setColsOpen(false)
-                  toast.success('Nastavení sloupců uloženo')
+                  toast.showSuccess('Nastavení sloupců uloženo')
                 }}
               />
             </>
