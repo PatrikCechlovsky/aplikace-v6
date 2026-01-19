@@ -117,6 +117,11 @@ export default function PropertiesTile({
   
   // Property types pro mapování code -> name
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null; color: string | null }>>([])
+  const [selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
+  
+  // Detail state
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [isDirty, setIsDirty] = useState(false)
   
   // Load property types
   useEffect(() => {
@@ -154,10 +159,6 @@ export default function PropertiesTile({
 
   const fixedFirstKey = 'propertyTypeName'
   const requiredKeys = ['displayName']
-
-  // View mode (list only for now, later add read/edit/create)
-  const viewMode: ViewMode = 'list'
-  const isDirty = false
 
   // Load view prefs
   useEffect(() => {
@@ -234,6 +235,10 @@ export default function PropertiesTile({
         actions.push('view', 'edit')
       }
       actions.push('columnSettings', 'close')
+    } else if (viewMode === 'edit' || viewMode === 'create') {
+      actions.push('save', 'attachments', 'close')
+    } else if (viewMode === 'read') {
+      actions.push('edit', 'close')
     }
 
     onRegisterCommonActions?.(actions)
@@ -250,8 +255,18 @@ export default function PropertiesTile({
     
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       if (id === 'close') {
-        // TODO: Close tile or go back to module
-        toast.showInfo('Zavřít - v implementaci')
+        if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
+          const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+          if (!ok) return
+        }
+        if (viewMode !== 'list') {
+          setViewMode('list')
+          setSelectedId(null)
+          setSelectedTypeForCreate(null)
+          setIsDirty(false)
+        } else {
+          toast.showInfo('Zavřít modul - v implementaci')
+        }
         return
       }
 
@@ -261,16 +276,46 @@ export default function PropertiesTile({
       }
 
       if (id === 'add') {
-        toast.showInfo('Vytvoření nemovitosti - v implementaci')
+        setSelectedTypeForCreate(null)
+        setViewMode('create')
+        setSelectedId(null)
+        setIsDirty(false)
         return
       }
 
-      if (id === 'view' || id === 'edit') {
-        toast.showInfo(`${id === 'view' ? 'Detail' : 'Úprava'} nemovitosti - v implementaci`)
+      if (id === 'view') {
+        if (!selectedId) {
+          toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
+          return
+        }
+        toast.showInfo('Detail nemovitosti - implementace PropertyDetailFrame probíhá')
+        return
+      }
+
+      if (id === 'edit') {
+        if (viewMode === 'read') {
+          setViewMode('edit')
+          return
+        }
+        if (!selectedId) {
+          toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
+          return
+        }
+        toast.showInfo('Úprava nemovitosti - implementace PropertyDetailFrame probíhá')
+        return
+      }
+
+      if (id === 'save') {
+        toast.showInfo('Uložení nemovitosti - implementace PropertyDetailFrame probíhá')
+        return
+      }
+
+      if (id === 'attachments') {
+        toast.showWarning('Přílohy zatím nejsou implementované')
         return
       }
     })
-  }, [onRegisterCommonActionHandler, toast])
+  }, [onRegisterCommonActionHandler, viewMode, selectedId, isDirty, toast])
 
   // Load data
   const loadData = useCallback(async () => {
