@@ -39,11 +39,14 @@ export default function CreatePropertyTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
 }: Props) {
+  console.log('🎨 CreatePropertyTile: Rendering...')
   const toast = useToast()
   const router = useRouter()
   const [propertyTypes, setPropertyTypes] = useState<GenericTypeRow[]>([])
   const [selectedPropertyType, setSelectedPropertyType] = useState<string | null>(null)
   const [detailProperty, setDetailProperty] = useState<DetailUiProperty | null>(null)
+  
+  console.log('🎨 CreatePropertyTile: propertyTypes.length =', propertyTypes.length, 'selectedPropertyType =', selectedPropertyType)
   const [isDirty, setIsDirty] = useState(false)
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
 
@@ -167,6 +170,7 @@ export default function CreatePropertyTile({
 
   // Pokud není vybrán typ nemovitosti, zobrazit výběr typu (6 dlaždic)
   if (!selectedPropertyType || !detailProperty) {
+    console.log('🎨 CreatePropertyTile: Rendering type selector. propertyTypes:', propertyTypes.length)
     return (
       <div className="tile-layout">
         <div className="tile-layout__header">
