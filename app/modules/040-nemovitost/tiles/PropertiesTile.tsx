@@ -117,8 +117,8 @@ export default function PropertiesTile({
   
   // Property types pro mapování code -> name
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null; color: string | null }>>([])
-  const [selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
-  
+  const [_selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
+
   // Detail state
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [isDirty, setIsDirty] = useState(false)
