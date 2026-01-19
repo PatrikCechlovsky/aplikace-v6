@@ -14,6 +14,7 @@ import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
+import { getContrastTextColor } from '@/app/lib/colorUtils'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -71,7 +72,7 @@ function toRow(p: UiProperty): ListViewRow<UiProperty> {
     id: p.id,
     data: {
       propertyTypeName: p.propertyTypeColor ? (
-        <span className="generic-type__name-badge" style={{ backgroundColor: p.propertyTypeColor }}>
+        <span className="generic-type__name-badge" style={{ backgroundColor: p.propertyTypeColor, color: getContrastTextColor(p.propertyTypeColor) }}>
           {p.propertyTypeName}
         </span>
       ) : (

@@ -16,6 +16,7 @@ import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import UnitDetailFrame, { type UiUnit } from '../components/UnitDetailFrame'
 import type { DetailSectionId } from '@/app/UI/DetailView'
+import { getContrastTextColor } from '@/app/lib/colorUtils'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -82,7 +83,7 @@ function toRow(u: UiUnitRow): ListViewRow<UiUnitRow> {
     id: u.id,
     data: {
       unitTypeName: u.unitTypeColor ? (
-        <span className="generic-type__name-badge" style={{ backgroundColor: u.unitTypeColor }}>
+        <span className="generic-type__name-badge" style={{ backgroundColor: u.unitTypeColor, color: getContrastTextColor(u.unitTypeColor) }}>
           {u.unitTypeName}
         </span>
       ) : (
