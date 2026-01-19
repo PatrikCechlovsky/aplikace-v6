@@ -202,10 +202,11 @@ BEGIN
     ALTER TABLE public.units ADD COLUMN IF NOT EXISTS unit_type_id_new UUID;
     
     -- Populate new UUID column with lookup from generic_types
+    -- Note: unit_type_id may already be UUID, so cast to TEXT for comparison
     UPDATE public.units u
     SET unit_type_id_new = gt.id
     FROM public.generic_types gt
-    WHERE gt.category = 'unit_types' AND gt.code = u.unit_type_id;
+    WHERE gt.category = 'unit_types' AND gt.code = u.unit_type_id::text;
     
     -- Drop old TEXT column
     ALTER TABLE public.units DROP COLUMN unit_type_id;
@@ -260,10 +261,11 @@ BEGIN
     ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS equipment_type_id_new UUID;
     
     -- Populate new UUID column with lookup from generic_types
+    -- Note: equipment_type_id may already be UUID, so cast to TEXT for comparison
     UPDATE public.equipment e
     SET equipment_type_id_new = gt.id
     FROM public.generic_types gt
-    WHERE gt.category = 'equipment_types' AND gt.code = e.equipment_type_id;
+    WHERE gt.category = 'equipment_types' AND gt.code = e.equipment_type_id::text;
     
     -- Drop old TEXT column
     ALTER TABLE public.equipment DROP COLUMN equipment_type_id;
