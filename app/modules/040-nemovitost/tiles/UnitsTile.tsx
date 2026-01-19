@@ -461,7 +461,7 @@ export default function UnitsTile({
     <div className="tile-layout">
       {viewMode === 'list' && (
         <>
-          {loading && <SkeletonTable rows={5} cols={7} />}
+          {loading && <SkeletonTable rows={5} columns={7} />}
           
           {error && (
             <div className="error-message" style={{ padding: '20px', color: '#ef4444' }}>
