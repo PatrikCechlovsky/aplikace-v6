@@ -6,7 +6,6 @@
 
 import React, { useCallback, useEffect, useRef } from 'react'
 import InputWithHistory from '@/app/UI/InputWithHistory'
-import { useToast } from '@/app/UI/Toast'
 
 // =====================
 // TYPES
@@ -67,7 +66,6 @@ export default function UnitDetailForm({
   onDirtyChange,
   onValueChange,
 }: UnitDetailFormProps) {
-  const toast = useToast()
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
   
