@@ -655,7 +655,6 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         }
       }
     }
-    }
 
     const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null
