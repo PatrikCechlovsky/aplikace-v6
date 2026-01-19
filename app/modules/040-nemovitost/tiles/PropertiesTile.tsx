@@ -15,6 +15,7 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
+import PropertyDetailFrame, { type UiProperty as PropertyForDetail } from '../components/PropertyDetailFrame'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -101,7 +102,7 @@ export default function PropertiesTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
-}: PropertiesTileProps) {
+}: PropertiesTileProps): JSX.Element {
   console.log('🔍 PropertiesTile: Renderuji s propertyTypeCode:', propertyTypeCode)
   const toast = useToast()
 
@@ -122,6 +123,7 @@ export default function PropertiesTile({
   // Detail state
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [isDirty, setIsDirty] = useState(false)
+  const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
   
   // Load property types
   useEffect(() => {
@@ -287,8 +289,8 @@ export default function PropertiesTile({
         if (!selectedId) {
           toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
           return
-        }
-        toast.showInfo('Detail nemovitosti - implementace PropertyDetailFrame probíhá')
+        setViewMode('read')
+        setIsDirty(false)
         return
       }
 
@@ -301,11 +303,23 @@ export default function PropertiesTile({
           toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
           return
         }
-        toast.showInfo('Úprava nemovitosti - implementace PropertyDetailFrame probíhá')
+        setViewMode('edit')
+        setIsDirty(false)
         return
       }
 
       if (id === 'save') {
+        if (submitHandlerRef.current) {
+          const savedProperty = await submitHandlerRef.current()
+          if (savedProperty) {
+            setViewMode('read')
+            setSelectedId(savedProperty.id)
+            setIsDirty(false)
+            await loadData()
+          }
+        } else {
+          toast.showWarning('Save handler není nastaven')
+        }
         toast.showInfo('Uložení nemovitosti - implementace PropertyDetailFrame probíhá')
         return
       }
@@ -350,8 +364,10 @@ export default function PropertiesTile({
     loadData()
   }, [loadData])
 
-  // Debug: sleduj změny properties
-  useEffect(() => {
+  //setSelectedId(property.id)
+    setViewMode('read')
+    setIsDirty(false)
+  }, [(() => {
     console.log('🔍 PropertiesTile: properties state se změnil, nová délka:', properties.length)
   }, [properties])
 
@@ -432,74 +448,174 @@ export default function PropertiesTile({
 
   console.log('🔍 PropertiesTile: State - loading:', loading, 'properties:', properties.length, 'error:', error, 'viewMode:', viewMode)
 
-  if (viewMode === 'list') {
-    return (
-      <div className="tile-layout">
-        <div className="tile-layout__header">
-          <h1 className="tile-layout__title">{pageTitle}</h1>
-          <p className="tile-layout__description">
-            Seznam všech nemovitostí. Můžeš filtrovat, řadit a spravovat nemovitosti.
-          </p>
-        </div>
-        {error && <div style={{ padding: '0 1.5rem 0.5rem', color: 'crimson' }}>{error}</div>}
-        {loading ? (
-          <div className="tile-layout__content">
-            <SkeletonTable rows={8} columns={columns.length} />
-          </div>
-        ) : (
-          <div className="tile-layout__content">
-            <ListView
-              columns={columns}
-              rows={rows}
-              filterValue={filterInput}
-              onFilterChange={setFilterInput}
-              showArchived={showArchived}
-              onShowArchivedChange={setShowArchived}
-              selectedId={selectedId ?? null}
-              onRowClick={handleRowClick}
-              onRowDoubleClick={handleRowDoubleClick}
-              sort={sort}
-              onSortChange={handleSortChange}
-              onColumnResize={handleColumnResize}
-            />
-            
-            {properties.length === 0 && (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-                {filterInput ? 'Žádné nemovitosti nenalezeny' : 'Zatím nemáte žádné nemovitosti'}
-              </div>
-            )}
-          </div>
-        )}
+  // Detail/Edit/Create modes
+  const selectedProperty = useMemo(() => {
+    if (!selectedId) return null
+    return properties.find(p => p.id === selectedId)
+  }, [selectedId, properties])
 
-        <ListViewColumnsDrawer
-          open={colsOpen}
-          onClose={() => setColsOpen(false)}
-          columns={BASE_COLUMNS}
-          fixedFirstKey={fixedFirstKey}
-          requiredKeys={requiredKeys}
-          value={{
-            order: colPrefs.colOrder ?? [],
-            hidden: colPrefs.colHidden ?? [],
-          }}
-          onChange={(next) => {
-            setColPrefs((p) => ({
-              ...p,
-              colOrder: next.order,
-              colHidden: next.hidden,
-            }))
-          }}
-          onReset={() => {
-            setColPrefs((p) => ({
-              ...p,
-              colOrder: [],
-              colHidden: [],
-            }))
-          }}
-        />
-      </div>
+  if (viewMode !== 'list') {
+    // Build PropertyForDetail object
+    let propertyForDetail: PropertyForDetail | null = null
+
+    if (viewMode === 'create') {
+      // New property - empty object with pre-filled type if selected
+      propertyForDetail = {
+        id: 'new',
+        landlordId: null,
+        propertyTypeId: _selectedTypeForCreate,
+        displayName: null,
+        internalCode: null,
+        
+        street: null,
+        houseNumber: null,
+        city: null,
+        zip: null,
+        country: 'CZ',
+        region: null,
+        
+        landArea: null,
+        builtUpArea: null,
+        buildingArea: null,
+        numberOfFloors: null,
+        
+        buildYear: null,
+        reconstructionYear: null,
+        
+        cadastralArea: null,
+        parcelNumber: null,
+        lvNumber: null,
+        
+        note: null,
+        originModule: '040-nemovitost',
+        isArchived: false,
+        createdAt: null,
+        updatedAt: null,
+      }
+    } else if (selectedProperty) {
+      // Existing property - map from UiProperty to PropertyForDetail
+      propertyForDetail = {
+        id: selectedProperty.id,
+        landlordId: null, // will be loaded by PropertyDetailFrame
+        propertyTypeId: null, // will be loaded by PropertyDetailFrame
+        displayName: selectedProperty.displayName,
+        internalCode: null,
+        
+        street: null,
+        houseNumber: null,
+        city: null,
+        zip: null,
+        country: null,
+        region: null,
+        
+        landArea: selectedProperty.buildingArea,
+        builtUpArea: null,
+        buildingArea: selectedProperty.buildingArea,
+        numberOfFloors: null,
+        
+        buildYear: null,
+        reconstructionYear: null,
+        
+        cadastralArea: null,
+        parcelNumber: null,
+        lvNumber: null,
+        
+        note: null,
+        originModule: '040-nemovitost',
+        isArchived: selectedProperty.isArchived,
+        createdAt: null,
+        updatedAt: null,
+      }
+    }
+
+    if (!propertyForDetail) {
+      return (
+        <div className="tile-layout">
+          <p style={{ padding: '2rem' }}>Nemovitost nenalezena</p>
+        </div>
+      )
+    }
+
+    return (
+      <PropertyDetailFrame
+        property={propertyForDetail}
+        viewMode={viewMode}
+        onRegisterSubmit={(fn) => {
+          submitHandlerRef.current = fn
+        }}
+        onDirtyChange={setIsDirty}
+        onSaved={(saved) => {
+          setSelectedId(saved.id)
+          loadData()
+        }}
+      />
     )
   }
 
-  // TODO: Add read/edit/create modes here
-  return <div>Mode {viewMode} - v implementaci</div>
+  // List mode
+  return (
+    <div className="tile-layout">
+      <div className="tile-layout__header">
+        <h1 className="tile-layout__title">{pageTitle}</h1>
+        <p className="tile-layout__description">
+          Seznam všech nemovitostí. Můžeš filtrovat, řadit a spravovat nemovitosti.
+        </p>
+      </div>
+      {error && <div style={{ padding: '0 1.5rem 0.5rem', color: 'crimson' }}>{error}</div>}
+      {loading ? (
+        <div className="tile-layout__content">
+          <SkeletonTable rows={8} columns={columns.length} />
+        </div>
+      ) : (
+        <div className="tile-layout__content">
+          <ListView
+            columns={columns}
+            rows={rows}
+            filterValue={filterInput}
+            onFilterChange={setFilterInput}
+            showArchived={showArchived}
+            onShowArchivedChange={setShowArchived}
+            selectedId={selectedId ?? null}
+            onRowClick={handleRowClick}
+            onRowDoubleClick={handleRowDoubleClick}
+            sort={sort}
+            onSortChange={handleSortChange}
+            onColumnResize={handleColumnResize}
+          />
+          
+          {properties.length === 0 && (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+              {filterInput ? 'Žádné nemovitosti nenalezeny' : 'Zatím nemáte žádné nemovitosti'}
+            </div>
+          )}
+        </div>
+      )}
+
+      <ListViewColumnsDrawer
+        open={colsOpen}
+        onClose={() => setColsOpen(false)}
+        columns={BASE_COLUMNS}
+        fixedFirstKey={fixedFirstKey}
+        requiredKeys={requiredKeys}
+        value={{
+          order: colPrefs.colOrder ?? [],
+          hidden: colPrefs.colHidden ?? [],
+        }}
+        onChange={(next) => {
+          setColPrefs((p) => ({
+            ...p,
+            colOrder: next.order,
+            colHidden: next.hidden,
+          }))
+        }}
+        onReset={() => {
+          setColPrefs((p) => ({
+            ...p,
+            colOrder: [],
+            colHidden: [],
+          }))
+        }}
+      />
+    </div>
+  )
 }
