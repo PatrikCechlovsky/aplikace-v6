@@ -168,7 +168,7 @@ export default function UnitsTile({
         setColPrefs({
           colWidths: prefs.colWidths ?? {},
           colOrder: prefs.colOrder ?? [],
-          colHidden: prefs.colHidden ?? {},
+          colHidden: prefs.colHidden ?? [],
         })
         const loadedSort = prefs.sort ? { key: prefs.sort.key, dir: prefs.sort.dir } : null
         setSort(loadedSort ? loadedSort : DEFAULT_SORT)
