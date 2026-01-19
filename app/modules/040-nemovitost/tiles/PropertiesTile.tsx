@@ -386,10 +386,40 @@ export default function PropertiesTile({
       }
 
       if (id === 'add') {
-        // Vytvořit novou nemovitost s výběrem typu (stejný pattern jako LandlordsTile)
+        // Vytvořit novou nemovitost - PATTERN Z LANDLORDSTILE: NEJDŘÍV NASTAVIT STATE, PAK URL
         setSelectedTypeForCreate(null) // Reset výběru typu
+        const newProperty: PropertyForDetail = {
+          id: 'new',
+          displayName: '',
+          propertyTypeId: null,
+          landlordId: null,
+          internalCode: null,
+          street: null,
+          houseNumber: null,
+          city: null,
+          zip: null,
+          country: 'CZ',
+          region: null,
+          landArea: null,
+          builtUpArea: null,
+          buildingArea: null,
+          numberOfFloors: null,
+          buildYear: null,
+          reconstructionYear: null,
+          cadastralArea: null,
+          parcelNumber: null,
+          lvNumber: null,
+          note: null,
+          originModule: null,
+          isArchived: false,
+          createdAt: null,
+          updatedAt: null,
+        }
+        setDetailProperty(newProperty) // ← NASTAV STATE PŘED ZMĚNOU URL!
+        setViewMode('create')
+        setSelectedId('new')
         setIsDirty(false)
-        // Použít router.push místo window.location.href (bez reloadu)
+        // Pak teprve změň URL
         const params = new URLSearchParams(searchParams?.toString())
         params.set('t', 'properties-list')
         params.set('id', 'new')
@@ -442,7 +472,7 @@ export default function PropertiesTile({
         return
       }
     })
-  }, [onRegisterCommonActionHandler, viewMode, selectedId, isDirty, toast])
+  }, [onRegisterCommonActionHandler, viewMode, selectedId, isDirty, toast, router, pathname, searchParams, loadData])
 
   // Load data
   const loadData = useCallback(async () => {
