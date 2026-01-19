@@ -140,7 +140,7 @@ export default function UnitsTile({
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [detailUnit, setDetailUnit] = useState<UiUnit | null>(null)
   const [isDirty, setIsDirty] = useState(false)
-  const [activeSectionId, setActiveSectionId] = useState<DetailSectionId>('basic')
+  const [activeSectionId, setActiveSectionId] = useState<DetailSectionId>('detail')
   const submitDetailFnRef = React.useRef<(() => Promise<UiUnit | null>) | null>(null)
   
   // Column settings
