@@ -179,7 +179,7 @@ export default {
         },
         {
           id: 'units-type-garaz',
-          label: 'Garáž/Parking',
+          label: 'Garáž - Parking',
           icon: 'car',
           component: createUnitTypeTile('garaz'),
           unitTypeCode: 'garaz',
