@@ -130,6 +130,8 @@ export default function UnitsTile({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  const [filterInput, setFilterInput] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [unitTypeId, setUnitTypeId] = useState<string | null>(null)
   
@@ -474,6 +476,10 @@ export default function UnitsTile({
               <ListView
                 rows={viewRows}
                 columns={columns}
+                filterValue={filterInput}
+                onFilterChange={setFilterInput}
+                showArchived={showArchived}
+                onShowArchivedChange={setShowArchived}
                 sort={sort}
                 onSortChange={handleSortChange}
                 onRowClick={handleRowClick}
