@@ -91,7 +91,9 @@ export default function CreateUnitTile({
       hasSelection: false,
       isDirty,
     })
-  }, [selectedUnitType, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [selectedUnitType, isDirty])
+  // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies,
+  // protože jsou stabilní (useCallback v AppShell) a jejich přidání způsobuje re-render smyčku
 
   // CommonActions handler
   useEffect(() => {
@@ -120,7 +122,8 @@ export default function CreateUnitTile({
         return
       }
     })
-  }, [onRegisterCommonActionHandler, isDirty, router, toast])
+  }, [isDirty, router, toast])
+  // POZNÁMKA: onRegisterCommonActionHandler není v dependencies (stabilní funkce z AppShell)
 
   const handleTypeSelect = useCallback(
     (typeCode: string) => {
