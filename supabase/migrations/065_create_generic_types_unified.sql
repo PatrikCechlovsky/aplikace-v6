@@ -150,12 +150,13 @@ BEGIN
 END $$;
 
 -- Migrate subject_type values (lookup generic_types.id by code)
+-- Update ALL subjects, even if they already have subject_type_id
+-- (old UUIDs don't match new generic_types UUIDs)
 UPDATE public.subjects s
 SET subject_type_id = gt.id
 FROM public.generic_types gt
 WHERE gt.category = 'subject_types'
-AND gt.code = s.subject_type
-AND s.subject_type_id IS NULL;
+AND gt.code = s.subject_type;
 
 -- Add FK constraint for subjects
 ALTER TABLE public.subjects
