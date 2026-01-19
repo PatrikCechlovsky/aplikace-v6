@@ -459,7 +459,8 @@ export default function PropertiesTile({
             setViewMode('read')
             setSelectedId(savedProperty.id)
             setIsDirty(false)
-            await loadData()
+            // Reload data po uložení (bez čekání na completion)
+            void loadData()
           }
         } else {
           toast.showWarning('Save handler není nastaven')
@@ -472,7 +473,7 @@ export default function PropertiesTile({
         return
       }
     })
-  }, [onRegisterCommonActionHandler, viewMode, selectedId, isDirty, toast, router, pathname, searchParams, loadData])
+  }, [onRegisterCommonActionHandler, viewMode, selectedId, isDirty, toast, router, pathname, searchParams])
 
   // Load data
   const loadData = useCallback(async () => {
