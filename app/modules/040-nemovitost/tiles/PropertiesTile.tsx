@@ -134,11 +134,14 @@ export default function PropertiesTile({
   const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
   
   // ✅ URL state management + detail setup
+  // FIX: searchParams object creates new reference every render → use searchParams.toString()
+  const searchParamsString = searchParams?.toString() ?? ''
+  
   useEffect(() => {
-    console.log('[PropertiesTile] useEffect [searchParams] triggered - PROPERTIES REMOVED FROM DEPS!')
+    console.log('[PropertiesTile] useEffect [searchParamsString] triggered - FIXED REFERENCE ISSUE!')
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
-    console.log('[PropertiesTile] URL params:', { id, vm })
+    console.log('[PropertiesTile] URL params:', { id, vm, searchParamsString })
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
@@ -193,7 +196,7 @@ export default function PropertiesTile({
       // List mode - clear detail
       setDetailProperty(null)
     }
-  }, [searchParams])  // POUZE searchParams! properties způsobovalo loop při load dat
+  }, [searchParamsString, searchParams])  // FIX: searchParamsString prevents loop, searchParams needed for .get() calls
 
   // Load property types
   useEffect(() => {
