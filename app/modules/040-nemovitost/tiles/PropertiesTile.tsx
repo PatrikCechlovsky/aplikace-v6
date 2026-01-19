@@ -136,8 +136,12 @@ export default function PropertiesTile({
   
   // ✅ URL state management + detail setup (PŘESNĚ jako LandlordsTile - JEDEN useEffect!)
   useEffect(() => {
+    console.log('🔥 URL useEffect SPUŠTĚN - searchParams:', searchParams?.toString(), 'properties.length:', properties.length)
+    
     const id = searchParams?.get('id') ?? null
     const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
+
+    console.log('🔥 URL parsed: id=', id, 'vm=', vm)
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
@@ -229,9 +233,10 @@ export default function PropertiesTile({
       }
     } else {
       // List mode - vymazat detail
+      console.log('🔥 List mode - nastavuji detailProperty na null')
       setDetailProperty(null)
     }
-  }, [searchParams, properties])
+  }, [searchParams])  // ← BEZ properties! Testujeme, jestli to pomůže
 
   // Load property types
   useEffect(() => {
