@@ -5,6 +5,7 @@
 // URL state: t=properties-list, id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, type PropertiesListRow } from '@/app/lib/services/properties'
@@ -109,6 +110,9 @@ export default function PropertiesTile({
 }: PropertiesTileProps): JSX.Element {
   console.log('🔍 PropertiesTile: Renderuji s propertyTypeCode:', propertyTypeCode)
   const toast = useToast()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const [properties, setProperties] = useState<UiProperty[]>([])
   const [loading, setLoading] = useState(false)
@@ -130,6 +134,21 @@ export default function PropertiesTile({
   const [isDirty, setIsDirty] = useState(false)
   const submitHandlerRef = React.useRef<(() => Promise<PropertyForDetail | null>) | null>(null)
   
+  // URL state management - parsovat id a vm z URL (stejně jako LandlordsTile)
+  useEffect(() => {
+    const id = searchParams?.get('id') ?? null
+    const vm = (searchParams?.get('vm') ?? 'list') as ViewMode
+
+    setSelectedId(id)
+    setViewMode(id ? vm : 'list')
+
+    // Pokud je vm=create a nemáme detailProperty, resetovat výběr typu
+    if (vm === 'create' && id === 'new') {
+      setSelectedTypeForCreate(null)
+      setDetailProperty(null)
+    }
+  }, [searchParams])
+
   // Load property types
   useEffect(() => {
     async function loadTypes() {
@@ -285,15 +304,13 @@ export default function PropertiesTile({
       if (id === 'add') {
         // Vytvořit novou nemovitost s výběrem typu (stejný pattern jako LandlordsTile)
         setSelectedTypeForCreate(null) // Reset výběru typu
-        setViewMode('create')
-        setSelectedId('new')
         setIsDirty(false)
-        // Zůstat v properties-list, jen změnit parametry
-        const newUrl = new URL(window.location.href)
-        newUrl.searchParams.set('t', 'properties-list')
-        newUrl.searchParams.set('id', 'new')
-        newUrl.searchParams.set('vm', 'create')
-        window.location.href = newUrl.toString()
+        // Použít router.push místo window.location.href (bez reloadu)
+        const params = new URLSearchParams(searchParams?.toString())
+        params.set('t', 'properties-list')
+        params.set('id', 'new')
+        params.set('vm', 'create')
+        router.push(`${pathname}?${params.toString()}`)
         return
       }
 
