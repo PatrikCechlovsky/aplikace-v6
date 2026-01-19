@@ -230,7 +230,6 @@ export default function PropertiesTile({
     } else {
       // List mode - vymazat detail
       setDetailProperty(null)
-      setSelectedTypeForCreate(null)
     }
   }, [searchParams, properties])
 
