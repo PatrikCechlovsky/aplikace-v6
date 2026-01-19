@@ -5,6 +5,7 @@
 // URL state: t=units-list, id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listUnits, type UnitsListRow } from '@/app/lib/services/units'
@@ -127,6 +128,7 @@ export default function UnitsTile({
 }: UnitsTileProps) {
   console.log('🔍 UnitsTile: Renderuji s filtry:', { propertyId, unitTypeCode, status })
   const toast = useToast()
+  const router = useRouter()
 
   const [units, setUnits] = useState<UiUnitRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -274,12 +276,8 @@ export default function UnitsTile({
       
       switch (id) {
         case 'add':
-          // Reset type selection and show type selector
-          setSelectedTypeForCreate(null)
-          setDetailUnit(null)
-          setViewMode('create')
-          setSelectedId(null)
-          setIsDirty(false)
+          // Přesměrovat na CreateUnitTile (výběr typu)
+          router.push('/modules/040-nemovitost?t=units-add')
           break
         
         case 'view':
