@@ -54,7 +54,7 @@ export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}):
         purchase_date,
         is_archived,
         created_at,
-        equipment_type:equipment_types!equipment_catalog_equipment_type_id_fkey(name, icon, color)
+        equipment_type:generic_types!fk_equipment_type_generic(name, icon, color)
       `
     )
     .order('equipment_name', { ascending: true })
@@ -113,7 +113,7 @@ export async function getEquipmentDetail(id: string): Promise<{ equipment: Equip
     .select(
       `
         *,
-        equipment_type:equipment_types!equipment_catalog_equipment_type_id_fkey(name, code)
+        equipment_type:generic_types!fk_equipment_type_generic(name, code)
       `
     )
     .eq('id', id)
@@ -161,7 +161,7 @@ export async function saveEquipment(input: SaveEquipmentInput): Promise<Equipmen
       .select(
         `
           *,
-          equipment_type:equipment_types!equipment_catalog_equipment_type_id_fkey(name, code)
+          equipment_type:generic_types!fk_equipment_type_generic(name, code)
         `
       )
       .single()
@@ -183,7 +183,7 @@ export async function saveEquipment(input: SaveEquipmentInput): Promise<Equipmen
       .select(
         `
           *,
-          equipment_type:equipment_types!equipment_catalog_equipment_type_id_fkey(name, code)
+          equipment_type:generic_types!fk_equipment_type_generic(name, code)
         `
       )
       .single()

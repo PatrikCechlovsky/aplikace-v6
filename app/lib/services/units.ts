@@ -85,7 +85,7 @@ export async function listUnits(params: UnitsListParams = {}): Promise<UnitsList
         is_archived,
         created_at,
         property:properties!units_property_id_fkey(display_name),
-        unit_type:unit_types!units_unit_type_id_fkey(name, icon, color)
+        unit_type:generic_types!fk_units_type_generic(name, icon, color)
       `
     )
     .order('display_name', { ascending: true, nullsFirst: false })
@@ -190,7 +190,7 @@ export async function getUnitDetail(id: string): Promise<{ unit: UnitDetailRow }
       `
         *,
         property:properties!units_property_id_fkey(display_name),
-        unit_type:unit_types!units_unit_type_id_fkey(name, code)
+        unit_type:generic_types!fk_units_type_generic(name, code)
       `
     )
     .eq('id', id)
@@ -277,7 +277,7 @@ export async function saveUnit(input: SaveUnitInput): Promise<UnitDetailRow> {
         `
           *,
           property:properties!units_property_id_fkey(display_name),
-          unit_type:unit_types!units_unit_type_id_fkey(name, code)
+          unit_type:generic_types!fk_units_type_generic(name, code)
         `
       )
       .single()
@@ -302,7 +302,7 @@ export async function saveUnit(input: SaveUnitInput): Promise<UnitDetailRow> {
         `
           *,
           property:properties!units_property_id_fkey(display_name),
-          unit_type:unit_types!units_unit_type_id_fkey(name, code)
+          unit_type:generic_types!fk_units_type_generic(name, code)
         `
       )
       .single()
