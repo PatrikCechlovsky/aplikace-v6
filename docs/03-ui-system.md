@@ -1666,3 +1666,165 @@ Pozvání uživatele je administrátorská akce:
 - Pravidla platí pro všechny moduly a entity aplikace.
 - Jsou závazná i pro budoucí rozšiřování UI systému.
 - Porušení těchto zásad je považováno za chybu návrhu UI.
+
+---
+
+## 11. Navigation Pattern: onNavigate Callback
+
+### 11.1 Účel
+
+Pattern **onNavigate callback** umožňuje tiles navigovat na jiné tiles v rámci stejného modulu.
+
+**Hlavní výhody:**
+- Odstranění duplicitního create kódu z list tiles
+- Automatické zavírání Sidebar filtrů při navigaci
+- Čistá separace UI stavů (list × create × detail)
+- Centrální navigační logika v AppShell
+- TypeScript type safety
+
+### 11.2 Implementace v AppShell
+
+AppShell předává všem tiles callback `onNavigate`:
+
+```typescript
+<TileComponent
+  key={`${selection.tileId}-${tileRenderKey}`}
+  onRegisterCommonActions={registerCommonActions}
+  onRegisterCommonActionsState={registerCommonActionsUi}
+  onRegisterCommonActionHandler={registerCommonActionHandler}
+  onNavigate={(tileId: string) => {
+    // Naviguj na jiný tile v rámci stejného modulu
+    handleModuleSelect({ moduleId: selection.moduleId, tileId })
+  }}
+/>
+```
+
+**Chování:**
+- Callback volá standardní `handleModuleSelect`
+- URL se aktualizuje: `/?m=module-id&t=target-tile-id`
+- Sidebar se automaticky synchronizuje (zavře children)
+- Force remount mechanismus funguje korektně
+
+### 11.3 Použití v Tiles
+
+**Pattern pro List → Add navigaci:**
+
+```typescript
+// 1. Přidat onNavigate do interface
+type YourTileProps = {
+  onRegisterCommonActions?: (actions: CommonActionId[]) => void
+  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onNavigate?: (tileId: string) => void // ✅ Callback pro navigaci
+}
+
+// 2. Přidat do destructuringu
+export default function YourTile({
+  onRegisterCommonActions,
+  onRegisterCommonActionsState,
+  onRegisterCommonActionHandler,
+  onNavigate, // ✅ Accept callback
+}: YourTileProps) {
+
+// 3. Použít v add handler
+if (id === 'add') {
+  onNavigate?.('create-entity-name') // ✅ Naviguj na create tile
+  return
+}
+```
+
+### 11.4 Výhody oproti lokálnímu create mode
+
+**PŘED (lokální create mode):**
+```typescript
+if (id === 'add') {
+  // 40+ řádků vytváření prázdné entity
+  const newEntity: DetailEntity = {
+    id: 'new',
+    displayName: '',
+    email: null,
+    // ... 20+ dalších properties
+  }
+  setDetailEntity(newEntity)
+  setViewMode('create')
+  setSelectedId('new')
+  setIsDirty(false)
+  setUrl({ id: 'new', vm: 'create' }, 'push')
+  return
+}
+```
+
+**PO (onNavigate pattern):**
+```typescript
+if (id === 'add') {
+  onNavigate?.('create-entity-name') // ✅ 3 řádky
+  return
+}
+```
+
+**Ušetřeno:**
+- 40+ řádků duplicitního kódu v každém list tile
+- Složitá state management logika
+- Manuální URL updates
+- Riziko inconsistentního chování
+
+### 11.5 UX Flow
+
+**Chování z pohledu uživatele:**
+
+1. Uživatel v seznamu (např. "Přehled pronajímatelů")
+2. V Sidebaru otevřené filtry (Osoba, OSVČ, Firma...)
+3. Klik na **+ (Přidat)** v CommonActions
+4. ✅ Seznam se zavře
+5. ✅ Sidebar filtry se automaticky zavřou
+6. ✅ Otevře se create tile "Přidat pronajímatele"
+7. ✅ Čistá obrazovka bez otevřených sekcí
+
+**Zpět na seznam:**
+- Klik na "Přehled pronajímatelů" v Sidebaru nebo breadcrumbs
+- Seznam se znovu načte (včetně filtrů s počty)
+
+### 11.6 Implementované moduly
+
+| Modul | List Tile | Create Tile | Status |
+|-------|-----------|-------------|--------|
+| 030 Pronajímatelé | `landlords-list` | `create-landlord` | ✅ Implementováno |
+| 050 Nájemníci | `tenants-list` | `create-tenant` | ✅ Implementováno |
+| 040 Nemovitosti | `properties-list` | `create-property` | ⏳ Připraveno |
+
+### 11.7 Edge Cases
+
+**⚠️ onNavigate není definováno:**
+- Použití optional chaining: `onNavigate?.('tile-id')`
+- Graceful fallback – nic se nestane
+- Legacy kompatibilita
+
+**⚠️ Neexistující target tile:**
+- `handleModuleSelect` nenajde tile → console.error
+- UI zůstane stabilní
+
+**⚠️ Dirty state při navigaci:**
+- `handleModuleSelect` volá `confirmIfDirty()`
+- Pokud jsou neuložené změny → dialog potvrzení
+- Uživatel může zrušit navigaci
+
+### 11.8 Budoucí rozšíření
+
+**Možnosti rozšíření pattern:**
+- onNavigate s parametry: `onNavigate(tileId, params)`
+- Edit navigace: `onNavigate('detail-tile', { id: '123', vm: 'edit' })`
+- Related entities: `onNavigate('units-list', { propertyId: 'abc' })`
+- Cross-module navigation (pokud bude potřeba)
+
+### 11.9 Reference
+
+**Detailní dokumentace:**
+- [CHANGELOG-NAVIGATION-PATTERN-LIST-TO-ADD.md](changelogs/CHANGELOG-NAVIGATION-PATTERN-LIST-TO-ADD.md)
+
+**Příklady implementace:**
+- [LandlordsTile.tsx](../app/modules/030-pronajimatel/tiles/LandlordsTile.tsx)
+- [TenantsTile.tsx](../app/modules/050-najemnik/tiles/TenantsTile.tsx)
+
+**Commity:**
+- `2b892f1` - feat: tlačítko Přidat naviguje na create-landlord tile
+- `275b4a9` - feat: tlačítko Přidat naviguje na create-tenant tile + zavírá Sidebar přehledy
