@@ -127,7 +127,7 @@ export default function PropertiesTile({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  const [showArchived] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
   const [propertyTypeId, setPropertyTypeId] = useState<string | null>(null)
   
   // Property types pro mapování code -> name
@@ -284,6 +284,16 @@ export default function PropertiesTile({
         <p className="tile-layout__description">
           Seznam všech nemovitostí. Můžeš filtrovat, řadit a spravovat nemovitosti.
         </p>
+        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+            />
+            <span>Zobrazit archivované</span>
+          </label>
+        </div>
       </div>
 
       <div className="tile-layout__content">
