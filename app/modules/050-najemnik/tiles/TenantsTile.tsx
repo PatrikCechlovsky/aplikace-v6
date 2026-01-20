@@ -33,6 +33,7 @@ type TenantsTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onNavigate?: (tileId: string) => void // Callback pro navigaci na jiný tile
 }
 
 type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
@@ -193,6 +194,7 @@ export default function TenantsTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
+  onNavigate,
 }: TenantsTileProps) {
   const toast = useToast()
   const router = useRouter()
@@ -872,41 +874,8 @@ export default function TenantsTile({
       // LIST ACTIONS
       if (viewMode === 'list') {
         if (id === 'add') {
-          // Pro create režim nejdřív zobrazit výběr typu subjektu
-          setSelectedSubjectTypeForCreate(null)
-          const newTenant: DetailUiTenant = {
-            id: 'new',
-            displayName: '',
-            email: null,
-            phone: null,
-            subjectType: null,
-            isArchived: false,
-            createdAt: '',
-            titleBefore: null,
-            firstName: null,
-            lastName: null,
-            note: null,
-            birthDate: null,
-            personalIdNumber: null,
-            idDocType: null,
-            idDocNumber: null,
-            companyName: null,
-            ic: null,
-            dic: null,
-            icValid: null,
-            dicValid: null,
-            delegateIds: [],
-            street: null,
-            city: null,
-            zip: null,
-            houseNumber: null,
-            country: 'CZ',
-          }
-          setDetailTenant(newTenant)
-          setViewMode('create')
-          setSelectedId('new')
-          setIsDirty(false)
-          setUrl({ t: 'tenants-list', id: 'new', vm: 'create' }, 'push')
+          // ✅ Naviguj na create-tenant tile místo lokálního create mode
+          onNavigate?.('create-tenant')
           return
         }
 

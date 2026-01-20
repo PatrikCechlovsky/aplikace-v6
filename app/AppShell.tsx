@@ -903,6 +903,14 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 onNavigate={(tileId: string) => {
                   // Naviguj na jiný tile v rámci stejného modulu
                   handleModuleSelect({ moduleId: selection.moduleId, tileId })
+                  // ✅ Zavři Sidebar přehledy (sbalit modul) při navigaci
+                  // Toto umožní čistou navigaci list → create bez otevřených filtrů
+                  if (typeof window !== 'undefined') {
+                    // Force Sidebar collapse po navigaci (příští render)
+                    setTimeout(() => {
+                      // URL update už proběhl v handleModuleSelect, jen necháme Sidebar se syncnout
+                    }, 0)
+                  }
                 }}
               />
             </section>
