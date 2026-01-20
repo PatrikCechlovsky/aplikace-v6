@@ -350,16 +350,27 @@ export default function Sidebar({
     
     // ✅ Správa expandedTileId (3. úroveň - children filtry)
     if (activeSelection?.tileId) {
-      // Najdi aktivní tile v modulech
       const activeModule = modules.find(m => m.id === activeModuleId)
-      const activeTile = activeModule?.tiles?.find(t => t.id === activeSelection.tileId)
       
-      // Pokud aktivní tile MÁ children → otevři je (expandedTileId = tileId)
-      if (activeTile?.children && activeTile.children.length > 0) {
-        setExpandedTileId(activeSelection.tileId)
+      // 1. Zjisti, jestli aktivní tile JE child nějakého parent tile
+      const parentTile = activeModule?.tiles?.find(t => 
+        t.children?.some(c => c.id === activeSelection.tileId)
+      )
+      
+      if (parentTile) {
+        // Aktivní tile JE child → nech parent otevřený (expandedTileId = parentTileId)
+        setExpandedTileId(parentTile.id)
       } else {
-        // Aktivní tile NEMÁ children (např. create-landlord) → zavři otevřené children
-        setExpandedTileId(null)
+        // Aktivní tile NENÍ child → je to root tile
+        const activeTile = activeModule?.tiles?.find(t => t.id === activeSelection.tileId)
+        
+        // Pokud má vlastní children → otevři je
+        if (activeTile?.children && activeTile.children.length > 0) {
+          setExpandedTileId(activeSelection.tileId)
+        } else {
+          // Nemá children ani není child → zavři všechno
+          setExpandedTileId(null)
+        }
       }
     } else {
       // Žádný aktivní tile → zavři children
