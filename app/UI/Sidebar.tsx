@@ -348,21 +348,24 @@ export default function Sidebar({
       setExpandedSectionId(null)
     }
     
-    // ✅ FIX: Resetovat expandedTileId když se změní activeSelection.tileId
-    // To zajistí, že při navigaci na jiný tile (např. create-landlord) se zavřou otevřené children filtry
-    // Ignoruj pokud aktivní tile má children A uživatel naviguje na child (pak nech otevřené)
-    const isNavigatingToChild = activeSelection?.tileId && 
-      modules.some(m => m.id === activeModuleId && 
-        m.tiles?.some(t => t.id === expandedTileId && 
-          t.children?.some(c => c.id === activeSelection.tileId)
-        )
-      )
-    
-    if (!isNavigatingToChild) {
-      // Zavři children když navigujeme na root tile (např. create-landlord)
+    // ✅ Správa expandedTileId (3. úroveň - children filtry)
+    if (activeSelection?.tileId) {
+      // Najdi aktivní tile v modulech
+      const activeModule = modules.find(m => m.id === activeModuleId)
+      const activeTile = activeModule?.tiles?.find(t => t.id === activeSelection.tileId)
+      
+      // Pokud aktivní tile MÁ children → otevři je (expandedTileId = tileId)
+      if (activeTile?.children && activeTile.children.length > 0) {
+        setExpandedTileId(activeSelection.tileId)
+      } else {
+        // Aktivní tile NEMÁ children (např. create-landlord) → zavři otevřené children
+        setExpandedTileId(null)
+      }
+    } else {
+      // Žádný aktivní tile → zavři children
       setExpandedTileId(null)
     }
-  }, [activeModuleId, activeSelection?.sectionId, activeSelection?.tileId, modules, expandedTileId])
+  }, [activeModuleId, activeSelection?.sectionId, activeSelection?.tileId, modules])
 
   const showIcons = uiConfig.showSidebarIcons
 
