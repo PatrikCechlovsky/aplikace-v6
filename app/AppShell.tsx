@@ -126,7 +126,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       setOrDelete('t', next.tileId ?? null)
 
       const qs = sp.toString()
-      const basePath = next.moduleId ? `/modules/${next.moduleId}` : '/'
+      const basePath = next.moduleId ? `/${next.moduleId}` : '/'
       const nextUrl = qs ? `${basePath}?${qs}` : basePath
 
       const currentQs = searchParams?.toString() ?? ''
@@ -735,9 +735,32 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       }
     }
 
-    // Vždy zobrazit tile pokud existuje (i když není section)
+    // Zobrazit tile pokud existuje
     if (selection?.tileId && activeModule.tiles?.length) {
-      const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
+      // Najít tile - může být parent nebo child
+      let tile = activeModule.tiles.find((t) => t.id === selection.tileId)
+      let parentTile = null
+      
+      // Pokud tile nebyl nalezen na první úrovni, hledat v children
+      if (!tile) {
+        for (const t of activeModule.tiles) {
+          if (t.children) {
+            const childTile = t.children.find((c) => c.id === selection.tileId)
+            if (childTile) {
+              parentTile = t
+              tile = childTile
+              break
+            }
+          }
+        }
+      }
+      
+      // Pokud je to child tile, přidat nejdřív parent
+      if (parentTile) {
+        segments.push({ label: parentTile.label, icon: parentTile.icon })
+      }
+      
+      // Přidat samotný tile
       if (tile) {
         segments.push({ label: tile.label, icon: tile.icon })
       }
