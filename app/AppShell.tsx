@@ -725,14 +725,21 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     segments.push({ label: activeModule.label, icon: activeModule.icon })
 
     const selection = activeSelection
+    
+    // Pokud má modul SECTIONS (např. Nastavení):
     if (selection?.sectionId && activeModule.sections?.length) {
       const section = activeModule.sections.find((s) => s.id === selection.sectionId)
-      if (section) segments.push({ label: section.label, icon: section.icon })
+      if (section) {
+        segments.push({ label: section.label, icon: section.icon })
+      }
     }
 
+    // Vždy zobrazit tile pokud existuje (i když není section)
     if (selection?.tileId && activeModule.tiles?.length) {
       const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
-      if (tile) segments.push({ label: tile.label, icon: tile.icon })
+      if (tile) {
+        segments.push({ label: tile.label, icon: tile.icon })
+      }
     }
 
     return segments
