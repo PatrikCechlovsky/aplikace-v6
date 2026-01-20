@@ -153,6 +153,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
   const [activeSelection, setActiveSelection] = useState<SidebarSelection | null>(null)
   
+  // ✅ Counter pro force remount tile při opakovaném kliknutí
+  const [tileRenderKey, setTileRenderKey] = useState(0)
+  
   // ✅ Flag pro home button - aby se nevolal confirmIfDirty znovu
   const homeButtonClickRef = useRef(false)
 
@@ -639,7 +642,17 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           false // keepOtherParams=false znamená zahodit tile-specifické parametry (id/vm/am/t)
         )
         resetCommonActions()
+        return
       }
+      
+      // ✅ FIX: Pokud klikneš na stejný tile znovu (bez detail params)
+      // → force remount tile (aby se CommonActions znovu zaregistroval)
+      if (selection.tileId) {
+        setTileRenderKey(prev => prev + 1)
+        resetCommonActions()
+        return
+      }
+      
       return
     }
 
@@ -884,6 +897,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
               <TileComponent
+                key={`${selection.tileId}-${tileRenderKey}`}
                 onRegisterCommonActions={registerCommonActions}
                 onRegisterCommonActionsState={registerCommonActionsUi}
                 onRegisterCommonActionHandler={registerCommonActionHandler}
