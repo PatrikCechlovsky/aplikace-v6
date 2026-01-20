@@ -181,6 +181,8 @@ export default function PropertiesTile({
 
   // Register common actions
   useEffect(() => {
+    if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
+    
     const actions: CommonActionId[] = []
     if (viewMode === 'list') {
       actions.push('add')
@@ -194,13 +196,15 @@ export default function PropertiesTile({
       actions.push('edit', 'close')
     }
 
-    onRegisterCommonActions?.(actions)
-    onRegisterCommonActionsState?.({
+    onRegisterCommonActions(actions)
+    onRegisterCommonActionsState({
       viewMode,
       hasSelection: !!selectedId,
       isDirty,
     })
-  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty])
+  // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
+  // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
   // Close handlers
   const closeListToModule = useCallback(() => {
