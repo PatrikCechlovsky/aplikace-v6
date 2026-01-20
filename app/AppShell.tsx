@@ -655,6 +655,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       // ✅ FIX: Pokud klikneš na stejný tile znovu (bez detail params)
       // → force remount tile (aby se CommonActions znovu zaregistroval)
       if (selection.tileId) {
+        console.log('⚡ Force remount - incrementing tileRenderKey from', tileRenderKey, 'to', tileRenderKey + 1)
         setTileRenderKey(prev => prev + 1)
         // NEMAŽ CommonActions - nechej staré, tile se remountuje a přepíše je
         return
