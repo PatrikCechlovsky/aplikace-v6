@@ -84,13 +84,27 @@
 
 .detail-attachments__panel-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 sloupce: Název a Popis vedle sebe */
+  grid-template-columns: 1fr; /* Mobile first - jeden sloupec */
   gap: 12px 16px;
+}
+
+/* Desktop - dva sloupce (stejně jako detail-form__grid--narrow) */
+@media (min-width: 768px) {
+  .detail-attachments__panel-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Extra large screens - fixní šířky pro lepší čitelnost */
+@media (min-width: 1200px) {
+  .detail-attachments__panel-grid {
+    grid-template-columns: 280px 280px;
+  }
 }
 
 /* Soubor na novém řádku (span přes oba sloupce) */
 .detail-attachments__panel-grid .detail-form__field--span-6 {
-  grid-column: 1 / -1; /* Přes oba sloupce */
+  grid-column: 1 / -1; /* Přes všechny sloupce */
 }
 
 .detail-attachments__meta-actions {
