@@ -2,7 +2,7 @@
 
 // FILE: app/modules/040-nemovitost/tiles/PropertiesTile.tsx
 // PURPOSE: List + detail nemovitostí - stejné chování jako LandlordsTile
-// URL state: t=properties-list, id + vm (detail: read/edit/create)
+// URL state: t=properties-list, id + vm (detail: read/edit/create), am=1 (attachments manager)
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -16,10 +16,14 @@ import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 import type { DetailSectionId } from '@/app/UI/DetailView'
+import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
+import type { AttachmentsManagerUiState, AttachmentsManagerApi } from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 import '@/app/styles/components/TileLayout.css'
 
 const logger = createLogger('040 PropertiesTile')
+
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
 
 const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'propertyTypeName', label: 'Typ', width: 160, sortable: true },
@@ -119,8 +123,6 @@ type PropertiesTileProps = {
   onNavigate?: (tileId: string) => void
 }
 
-type LocalViewMode = ViewMode | 'list'
-
 export default function PropertiesTile({
   propertyTypeCode,
   onRegisterCommonActions,
@@ -149,6 +151,15 @@ export default function PropertiesTile({
   const [isDirty, setIsDirty] = useState(false)
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<DetailSectionId>('detail')
   const submitRef = useRef<(() => Promise<DetailUiProperty | null>) | null>(null)
+
+  // Attachments manager state
+  const [attachmentsManagerPropertyId, setAttachmentsManagerPropertyId] = useState<string | null>(null)
+  const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
+    hasSelection: false,
+    isDirty: false,
+    mode: 'list',
+  })
+  const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
 
   // Load property types
   useEffect(() => {
@@ -187,22 +198,49 @@ export default function PropertiesTile({
     if (viewMode === 'list') {
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit')
+        actions.push('view', 'edit', 'attachments')
       }
       actions.push('columnSettings', 'close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
       actions.push('save', 'close')
     } else if (viewMode === 'read') {
-      actions.push('edit', 'close')
+      actions.push('edit', 'attachments', 'close')
+    } else if (viewMode === 'attachments-manager') {
+      // Attachments manager má vlastní actions
+      const managerActions: CommonActionId[] = []
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') {
+        managerActions.push('save', 'close')
+      } else if (mode === 'edit') {
+        managerActions.push('save', 'attachmentsNewVersion', 'close')
+      } else if (mode === 'read') {
+        managerActions.push('edit', 'close')
+      } else {
+        // mode === 'list'
+        managerActions.push('add', 'view', 'edit', 'columnSettings', 'close')
+      }
+      onRegisterCommonActions(managerActions)
+      onRegisterCommonActionsState({
+        viewMode: 'read', // Mapped viewMode
+        hasSelection: attachmentsManagerUi.hasSelection,
+        isDirty: attachmentsManagerUi.isDirty,
+      })
+      return
     }
 
     onRegisterCommonActions(actions)
+    
+    const mappedViewMode: ViewMode = 
+      (viewMode as string) === 'list' ? 'list' : 
+      viewMode === 'edit' ? 'edit' : 
+      viewMode === 'create' ? 'create' : 'read'
+    
     onRegisterCommonActionsState({
-      viewMode,
+      viewMode: mappedViewMode,
       hasSelection: !!selectedId,
       isDirty,
     })
-  }, [viewMode, selectedId, isDirty])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi])
   // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
   // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
@@ -345,6 +383,18 @@ export default function PropertiesTile({
           void openDetail(p, id === 'edit' ? 'edit' : 'read', 'detail')
           return
         }
+
+        if (id === 'attachments') {
+          if (!selectedId) {
+            toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
+            return
+          }
+          setAttachmentsManagerPropertyId(selectedId)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          return
+        }
+
         return
       }
 
@@ -372,10 +422,67 @@ export default function PropertiesTile({
           setViewMode('edit')
           return
         }
+
+        if (id === 'attachments') {
+          if (isDirty) {
+            toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+            return
+          }
+          if (!detailProperty?.id || detailProperty.id === 'new') {
+            toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+            return
+          }
+          setAttachmentsManagerPropertyId(detailProperty.id)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          return
+        }
+
+        return
+      }
+
+      // ATTACHMENTS MANAGER ACTIONS
+      if (viewMode === 'attachments-manager') {
+        const api = attachmentsManagerApiRef.current
+        
+        if (id === 'close' as CommonActionId) {
+          // Vrátit se na detail na záložku attachments
+          setViewMode('read')
+          setDetailInitialSectionId('attachments')
+          setAttachmentsManagerPropertyId(null)
+          return
+        }
+
+        if (!api) return
+
+        if (id === 'add') {
+          api.add()
+          return
+        }
+        if (id === 'save') {
+          void api.save()
+          return
+        }
+        if (id === 'view' || id === 'detail') {
+          api.view()
+          return
+        }
+        if (id === 'edit') {
+          api.edit()
+          return
+        }
+        if (id === 'attachmentsNewVersion') {
+          api.newVersion()
+          return
+        }
+        if ((id as string) === 'columnSettings') {
+          api.columnSettings()
+          return
+        }
         return
       }
     })
-  }, [viewMode, selectedId, isDirty, properties, openDetail, loadData, closeListToModule, closeToList])
+  }, [viewMode, selectedId, isDirty, properties, openDetail, loadData, closeListToModule, closeToList, detailProperty, attachmentsManagerApiRef])
   // POZNÁMKA: onRegisterCommonActionHandler, onNavigate, toast NEJSOU v dependencies!
   // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
@@ -473,6 +580,27 @@ export default function PropertiesTile({
           )}
         </div>
       </div>
+    )
+  }
+
+  // ATTACHMENTS MANAGER VIEW
+  if (viewMode === 'attachments-manager' && attachmentsManagerPropertyId) {
+    const property = properties.find((p) => p.id === attachmentsManagerPropertyId) ?? detailProperty
+    const label = property?.displayName || 'Nemovitost'
+    
+    return (
+      <AttachmentsManagerFrame
+        entityType="properties"
+        entityId={attachmentsManagerPropertyId}
+        entityLabel={label}
+        canManage={true}
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
+        }}
+        onManagerStateChange={(state) => {
+          setAttachmentsManagerUi(state)
+        }}
+      />
     )
   }
 

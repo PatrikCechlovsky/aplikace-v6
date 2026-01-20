@@ -406,7 +406,7 @@ export default function PropertyDetailFrame({
     ]
   }, [resolvedProperty, formValue, detailViewMode, markDirtyIfChanged, propertyTypes, selectedPropertyTypeId])
   
-  const sectionIds: DetailSectionId[] = ['detail', 'system']
+  const sectionIds: DetailSectionId[] = ['detail', 'attachments', 'system']
   
   return (
     <div className="tile-layout">

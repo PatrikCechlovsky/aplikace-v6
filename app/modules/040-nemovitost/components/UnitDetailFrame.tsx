@@ -399,7 +399,7 @@ export default function UnitDetailFrame({
     ]
   }, [resolvedUnit, formValue, readOnly, markDirtyIfChanged, unitTypes, selectedUnitTypeId])
   
-  const sectionIds: DetailSectionId[] = ['detail', 'system']
+  const sectionIds: DetailSectionId[] = ['detail', 'attachments', 'system']
   
   return (
     <div className="tile-layout">

@@ -2,9 +2,9 @@
 
 // FILE: app/modules/040-nemovitost/tiles/UnitsTile.tsx
 // PURPOSE: Seznam jednotek s filtry + detail - podobné chování jako PropertiesTile
-// URL state: t=units-list, id + vm (detail: read/edit/create)
+// URL state: t=units-list, id + vm (detail: read/edit/create), am=1 (attachments manager)
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
@@ -18,11 +18,15 @@ import { supabase } from '@/app/lib/supabaseClient'
 import UnitDetailFrame, { type UiUnit } from '../components/UnitDetailFrame'
 import type { DetailSectionId } from '@/app/UI/DetailView'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
+import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
+import type { AttachmentsManagerUiState, AttachmentsManagerApi } from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/PaletteCard.css'
 
 const logger = createLogger('040 UnitsTile')
+
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
 
 const VIEW_KEY = '040.units.list'
 
@@ -146,11 +150,20 @@ export default function UnitsTile({
   const [selectedTypeForCreate, setSelectedTypeForCreate] = useState<string | null>(null)
   
   // Detail state
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailUnit, setDetailUnit] = useState<UiUnit | null>(null)
   const [isDirty, setIsDirty] = useState(false)
   const [activeSectionId, setActiveSectionId] = useState<DetailSectionId>('detail')
   const submitDetailFnRef = React.useRef<(() => Promise<UiUnit | null>) | null>(null)
+  
+  // Attachments manager state
+  const [attachmentsManagerUnitId, setAttachmentsManagerUnitId] = useState<string | null>(null)
+  const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
+    hasSelection: false,
+    isDirty: false,
+    mode: 'list',
+  })
+  const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
   
   // Column settings
   const [colsOpen, setColsOpen] = useState(false)
@@ -265,22 +278,49 @@ export default function UnitsTile({
     if (viewMode === 'list') {
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit')
+        actions.push('view', 'edit', 'attachments')
       }
       actions.push('columnSettings', 'close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
-      actions.push('save', 'attachments', 'close')
+      actions.push('save', 'close')
     } else if (viewMode === 'read') {
-      actions.push('edit', 'close')
+      actions.push('edit', 'attachments', 'close')
+    } else if (viewMode === 'attachments-manager') {
+      // Attachments manager má vlastní actions
+      const managerActions: CommonActionId[] = []
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') {
+        managerActions.push('save', 'close')
+      } else if (mode === 'edit') {
+        managerActions.push('save', 'attachmentsNewVersion', 'close')
+      } else if (mode === 'read') {
+        managerActions.push('edit', 'close')
+      } else {
+        // mode === 'list'
+        managerActions.push('add', 'view', 'edit', 'columnSettings', 'close')
+      }
+      onRegisterCommonActions?.(managerActions)
+      onRegisterCommonActionsState?.({
+        viewMode: 'read',
+        hasSelection: attachmentsManagerUi.hasSelection,
+        isDirty: attachmentsManagerUi.isDirty,
+      })
+      return
     }
 
     onRegisterCommonActions?.(actions)
+    
+    const mappedViewMode: ViewMode = 
+      (viewMode as string) === 'list' ? 'list' : 
+      viewMode === 'edit' ? 'edit' : 
+      viewMode === 'create' ? 'create' : 'read'
+    
     onRegisterCommonActionsState?.({
-      viewMode,
+      viewMode: mappedViewMode,
       hasSelection: !!selectedId,
       isDirty,
     })
-  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi, onRegisterCommonActions, onRegisterCommonActionsState])
 
   // Handle common actions
   useEffect(() => {
@@ -377,6 +417,14 @@ export default function UnitsTile({
           break
         
         case 'close':
+          if (viewMode === 'attachments-manager') {
+            // Zavřít attachments manager, vrátit se na detail
+            setViewMode('read')
+            setActiveSectionId('attachments')
+            setAttachmentsManagerUnitId(null)
+            break
+          }
+
           if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
             const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
             if (!ok) return
@@ -389,7 +437,64 @@ export default function UnitsTile({
           break
         
         case 'attachments':
-          toast.showWarning('Přílohy zatím nejsou implementované')
+          if (viewMode === 'list') {
+            if (!selectedId) {
+              toast.showWarning('Nejdřív vyber jednotku v seznamu.')
+              return
+            }
+            setAttachmentsManagerUnitId(String(selectedId))
+            setViewMode('attachments-manager')
+            setIsDirty(false)
+            break
+          }
+
+          if (viewMode === 'read') {
+            if (isDirty) {
+              toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+              return
+            }
+            if (!detailUnit?.id || detailUnit.id === 'new') {
+              toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+              return
+            }
+            setAttachmentsManagerUnitId(detailUnit.id)
+            setViewMode('attachments-manager')
+            setIsDirty(false)
+            break
+          }
+          break
+        
+        case 'add':
+          if (viewMode === 'attachments-manager') {
+            const api = attachmentsManagerApiRef.current
+            if (api) api.add()
+            break
+          }
+          // Pro list mode - přidat novou jednotku (implementováno později)
+          break
+        
+        case 'view':
+        case 'detail':
+          if (viewMode === 'attachments-manager') {
+            const api = attachmentsManagerApiRef.current
+            if (api) api.view()
+            break
+          }
+          break
+        
+        case 'edit':
+          if (viewMode === 'attachments-manager') {
+            const api = attachmentsManagerApiRef.current
+            if (api) api.edit()
+            break
+          }
+          break
+        
+        case 'attachmentsNewVersion':
+          if (viewMode === 'attachments-manager') {
+            const api = attachmentsManagerApiRef.current
+            if (api) api.newVersion()
+          }
           break
         
         case 'columnSettings':
@@ -400,7 +505,7 @@ export default function UnitsTile({
           logger.warn(`Unknown action: ${id}`)
       }
     })
-  }, [selectedId, units, detailUnit, viewMode, propertyId, unitTypeId, onRegisterCommonActionHandler, toast, closeListToModule, closeToList])
+  }, [selectedId, units, detailUnit, viewMode, propertyId, unitTypeId, isDirty, onRegisterCommonActionHandler, toast, closeListToModule, closeToList, attachmentsManagerApiRef])
 
   // Fetch units
   const fetchUnits = useCallback(async () => {
@@ -663,12 +768,33 @@ export default function UnitsTile({
     )
   }
 
+  // ATTACHMENTS MANAGER VIEW
+  if (viewMode === 'attachments-manager' && attachmentsManagerUnitId) {
+    const unit = units.find((u) => u.id === attachmentsManagerUnitId) ?? detailUnit
+    const label = unit?.displayName || 'Jednotka'
+    
+    return (
+      <AttachmentsManagerFrame
+        entityType="units"
+        entityId={attachmentsManagerUnitId}
+        entityLabel={label}
+        canManage={true}
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
+        }}
+        onManagerStateChange={(state) => {
+          setAttachmentsManagerUi(state)
+        }}
+      />
+    )
+  }
+
   return (
     <div className="tile-layout">
       {detailUnit && (
         <UnitDetailFrame
           unit={detailUnit}
-          viewMode={viewMode}
+          viewMode={((viewMode as string) === 'list' || (viewMode as string) === 'attachments-manager') ? 'read' : viewMode as ViewMode}
           initialSectionId={activeSectionId}
           onActiveSectionChange={setActiveSectionId}
           onRegisterSubmit={(fn) => { submitDetailFnRef.current = fn }}
