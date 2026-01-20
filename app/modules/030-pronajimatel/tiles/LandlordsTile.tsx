@@ -902,26 +902,6 @@ export default function LandlordsTile({
               sort={sort}
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
-              toolbarRight={
-                !propSubjectTypeFilter ? (
-                  <select
-                    value={subjectTypeFilter || ''}
-                    onChange={(e) => {
-                      const val = e.target.value || null
-                      // Změnit URL na landlords-type-{typ} nebo landlords-list
-                      setUrl({ t: val ? `landlords-type-${val}` : 'landlords-list' })
-                    }}
-                    style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
-                  >
-                    <option value="">Všechny typy</option>
-                    {subjectTypes.map((type) => (
-                      <option key={type.code} value={type.code}>
-                        {type.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : null
-              }
               emptyText="Žádní pronajímatelé."
             />
           </div>

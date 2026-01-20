@@ -284,16 +284,6 @@ export default function PropertiesTile({
         <p className="tile-layout__description">
           Seznam všech nemovitostí. Můžeš filtrovat, řadit a spravovat nemovitosti.
         </p>
-        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
-            />
-            <span>Zobrazit archivované</span>
-          </label>
-        </div>
       </div>
 
       <div className="tile-layout__content">
@@ -312,13 +302,15 @@ export default function PropertiesTile({
           <ListView
             columns={columns}
             rows={rows}
+            filterValue=""
+            onFilterChange={() => {}}
+            showArchived={showArchived}
+            onShowArchivedChange={setShowArchived}
+            selectedId={null}
             onRowClick={handleRowClick}
             onRowDoubleClick={handleRowDoubleClick}
             sort={sort}
             onSortChange={handleSortChange}
-            selectedId={null}
-            filterValue=""
-            onFilterChange={() => {}}
           />
         )}
       </div>
