@@ -621,6 +621,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
       (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
 
+    console.log('🔍 handleModuleSelect:', { 
+      selection, 
+      sameSelection, 
+      tileRenderKey,
+      searchParams: Object.fromEntries(searchParams?.entries() || [])
+    })
+
     // ✅ FIX: Pokud je stejná selection, ale máme otevřený detail (tile-specifické parametry),
     // zavřeme detail a otevřeme seznam
     if (sameSelection) {
@@ -649,7 +656,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       // → force remount tile (aby se CommonActions znovu zaregistroval)
       if (selection.tileId) {
         setTileRenderKey(prev => prev + 1)
-        resetCommonActions()
+        // NEMAŽ CommonActions - nechej staré, tile se remountuje a přepíše je
         return
       }
       
