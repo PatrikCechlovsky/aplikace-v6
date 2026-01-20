@@ -191,7 +191,7 @@ export default function PropertiesTile({
     
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       if (id === 'add') {
-        onNavigate?.('properties-add')
+        onNavigate?.('create-property')
         return
       }
 

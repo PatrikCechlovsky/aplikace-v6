@@ -122,7 +122,7 @@ export default {
 
     // === PŘIDAT NEMOVITOST ===
     {
-      id: 'properties-add',
+      id: 'create-property',
       label: 'Přidat nemovitost',
       icon: 'plus',
       component: CreatePropertyTile,
@@ -215,7 +215,7 @@ export default {
 
     // === PŘIDAT JEDNOTKU ===
     {
-      id: 'units-add',
+      id: 'create-unit',
       label: 'Přidat jednotku',
       icon: 'plus',
       component: CreateUnitTile,
