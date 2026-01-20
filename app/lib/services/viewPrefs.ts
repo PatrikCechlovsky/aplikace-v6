@@ -115,7 +115,15 @@ export async function loadViewPrefs(viewKey: string, defaults: ViewPrefs): Promi
     if (!auth?.user?.id) return merged
 
     const { data, error } = await supabase.from('ui_view_prefs').select('prefs').eq('view_key', viewKey).maybeSingle()
-    if (error) throw error
+    
+    // Silently ignore errors (table may not exist yet)
+    if (error) {
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[viewPrefs] Table ui_view_prefs not ready:', error.message)
+      }
+      return merged
+    }
 
     const prefsFromDb = (data as any)?.prefs as ViewPrefs | null | undefined
     merged = mergePrefs(merged, prefsFromDb ?? null)
@@ -125,7 +133,8 @@ export async function loadViewPrefs(viewKey: string, defaults: ViewPrefs): Promi
     }
 
     return merged
-  } catch {
+  } catch (err) {
+    // Silently fallback to localStorage
     return merged
   }
 }
@@ -158,8 +167,18 @@ export async function saveViewPrefs(viewKey: string, prefs: ViewPrefs): Promise<
       { onConflict: 'user_id,view_key' }
     )
 
-    if (error) throw error
-  } catch {
-    // ignore (RLS/table not ready)
+    // Silently ignore errors (table may not exist yet)
+    if (error) {
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[viewPrefs] Failed to save to DB:', error.message)
+      }
+      return
+    }
+  } catch (err) {
+    // Silently ignore (RLS/table not ready)
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[viewPrefs] Exception saving prefs:', err)
+    }
   }
 }
