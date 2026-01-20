@@ -633,9 +633,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     if (sameSelection) {
       const id = searchParams?.get('id')
       const vm = searchParams?.get('vm')
-      const t = searchParams?.get('t')
-      // Zkontroluj, jestli máme tile-specifické parametry (id nebo vm, nebo t jiné než users-list)
-      const hasTileSpecificParams = id || vm || (t && t !== 'users-list')
+      // Zkontroluj, jestli máme tile-specifické parametry (pouze id nebo vm, NE t!)
+      // Parametr 't' (tileId) je normální navigační parametr, ne detail-specific
+      const hasTileSpecificParams = id || vm
       if (hasTileSpecificParams) {
         // Zavřeme detail - zahoďme tile-specifické parametry
         // Použijeme keepOtherParams=false, což zahodí všechny parametry kromě m/s/t
