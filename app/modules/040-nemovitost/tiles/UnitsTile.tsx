@@ -277,8 +277,8 @@ export default function UnitsTile({
       
       switch (id) {
         case 'add':
-          // ✅ Naviguj na create-unit tile pomocí onNavigate callback
-          onNavigate?.('create-unit')
+          // ✅ Naviguj na units-add tile pomocí onNavigate callback
+          onNavigate?.('units-add')
           return
         
         case 'view':
