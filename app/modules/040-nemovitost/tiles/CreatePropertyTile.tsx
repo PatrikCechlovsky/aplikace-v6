@@ -57,7 +57,9 @@ export default function CreatePropertyTile({
     let mounted = true
     ;(async () => {
       try {
+        logger.log('🔍 Fetching property types...')
         const types = await listActiveByCategory('property_types')
+        logger.log('🔍 Loaded property types:', types.length, types.map(t => t.code))
         if (!mounted) return
 
         // Filtrovat jen očekávané typy a seřadit podle EXPECTED_PROPERTY_TYPES
@@ -65,6 +67,7 @@ export default function CreatePropertyTile({
           types.find((t) => t.code === code)
         ).filter((t): t is GenericTypeRow => !!t)
 
+        logger.log('🔍 Filtered property types:', filtered.length, filtered.map(t => t.code))
         setPropertyTypes(filtered)
       } catch (err: any) {
         logger.error('fetchPropertyTypes failed', err)
