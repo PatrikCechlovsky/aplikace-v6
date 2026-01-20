@@ -667,7 +667,7 @@ export default function Sidebar({
                                 {isTileOpen && hasChildren && (
                                   <ul className="sidebar__subsublist">
                                     {t.children!.map((child) => {
-                                      const childHref = `/modules/${m.id}`
+                                      const childHref = `/${m.id}?m=${m.id}&t=${child.id}`
                                       const isActiveChild =
                                         activeSelection?.moduleId === m.id &&
                                         activeSelection?.tileId === child.id
