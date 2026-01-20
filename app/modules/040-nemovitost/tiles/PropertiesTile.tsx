@@ -272,6 +272,7 @@ export default function PropertiesTile({
   // Load data
   const loadData = useCallback(async () => {
     try {
+      logger.log('🔍 loadData: Starting...', { propertyTypeId, showArchived })
       setLoading(true)
       setError(null)
       
@@ -281,12 +282,14 @@ export default function PropertiesTile({
         includeArchived: showArchived,
       })
       
+      logger.log('🔍 loadData: Loaded', data.length, 'properties')
       setProperties(data.map(mapRowToUi))
     } catch (err: any) {
       logger.error('Failed to load properties', err)
       setError(err?.message || 'Chyba při načítání')
       toast.showError('Chyba při načítání nemovitostí')
     } finally {
+      logger.log('🔍 loadData: Done')
       setLoading(false)
     }
   }, [propertyTypeId, showArchived, toast])
