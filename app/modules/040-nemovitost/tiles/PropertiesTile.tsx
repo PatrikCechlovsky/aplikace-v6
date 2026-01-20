@@ -5,6 +5,7 @@
 // URL state: t=properties-list, id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, getPropertyDetail, type PropertiesListRow } from '@/app/lib/services/properties'
@@ -128,6 +129,7 @@ export default function PropertiesTile({
   onNavigate,
 }: PropertiesTileProps): JSX.Element {
   const toast = useToast()
+  const router = useRouter()
 
   const [properties, setProperties] = useState<UiProperty[]>([])
   const [loading, setLoading] = useState(false)
@@ -198,6 +200,20 @@ export default function PropertiesTile({
       isDirty,
     })
   }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+
+  // Close handlers
+  const closeListToModule = useCallback(() => {
+    router.push('/')
+  }, [router])
+
+  const closeToList = useCallback(() => {
+    setDetailProperty(null)
+    setDetailInitialSectionId('detail')
+    submitRef.current = null
+    setIsDirty(false)
+    setViewMode('list')
+    setSelectedId(null)
+  }, [])
 
   // Open detail
   const openDetail = useCallback(
@@ -287,10 +303,11 @@ export default function PropertiesTile({
           if (!ok) return
         }
 
-        setViewMode('list')
-        setDetailProperty(null)
-        setSelectedId(null)
-        setIsDirty(false)
+        if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
+          closeToList()
+        } else {
+          closeListToModule()
+        }
         return
       }
 
@@ -350,7 +367,7 @@ export default function PropertiesTile({
         return
       }
     })
-  }, [viewMode, selectedId, isDirty, properties, onRegisterCommonActionHandler, onNavigate, openDetail, toast, loadData])
+  }, [viewMode, selectedId, isDirty, properties, onRegisterCommonActionHandler, onNavigate, openDetail, toast, loadData, closeListToModule, closeToList])
 
   // Load data on mount and filter change
   useEffect(() => {

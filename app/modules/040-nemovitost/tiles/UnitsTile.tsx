@@ -5,7 +5,7 @@
 // URL state: t=units-list, id + vm (detail: read/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-
+import { useRouter } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listUnits, type UnitsListRow } from '@/app/lib/services/units'
@@ -130,6 +130,7 @@ export default function UnitsTile({
 }: UnitsTileProps) {
   console.log('🔍 UnitsTile: Renderuji s filtry:', { propertyId, unitTypeCode, status })
   const toast = useToast()
+  const router = useRouter()
 
   const [units, setUnits] = useState<UiUnitRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -200,6 +201,19 @@ export default function UnitsTile({
   useEffect(() => {
     savePrefs()
   }, [savePrefs])
+
+  // Close handlers
+  const closeListToModule = useCallback(() => {
+    router.push('/')
+  }, [router])
+
+  const closeToList = useCallback(() => {
+    setDetailUnit(null)
+    setViewMode('list')
+    setSelectedId(null)
+    setSelectedTypeForCreate(null)
+    setIsDirty(false)
+  }, [])
 
   // Load unit types for create mode type selector
   useEffect(() => {
@@ -367,11 +381,11 @@ export default function UnitsTile({
             const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
             if (!ok) return
           }
-          setViewMode('list')
-          setDetailUnit(null)
-          setSelectedId(null)
-          setSelectedTypeForCreate(null)
-          setIsDirty(false)
+          if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
+            closeToList()
+          } else {
+            closeListToModule()
+          }
           break
         
         case 'attachments':
@@ -386,7 +400,7 @@ export default function UnitsTile({
           logger.warn(`Unknown action: ${id}`)
       }
     })
-  }, [selectedId, units, detailUnit, viewMode, propertyId, unitTypeId, onRegisterCommonActionHandler, toast])
+  }, [selectedId, units, detailUnit, viewMode, propertyId, unitTypeId, onRegisterCommonActionHandler, toast, closeListToModule, closeToList])
 
   // Fetch units
   const fetchUnits = useCallback(async () => {
