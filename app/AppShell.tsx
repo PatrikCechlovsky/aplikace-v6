@@ -57,6 +57,7 @@ type ModuleTileConfig = {
   component: React.ComponentType<any>
   icon?: IconKey
   sectionId?: string
+  children?: ModuleTileConfig[]
 }
 
 type ModuleSectionConfig = {
@@ -959,6 +960,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 label: t.label ?? t.id,
                 icon: t.icon ?? null,
                 sectionId: t.sectionId ?? null,
+                children: (t.children ?? []).map((c) => ({
+                  id: c.id,
+                  label: c.label ?? c.id,
+                  icon: c.icon ?? null,
+                })),
               })),
             }))}
             activeModuleId={activeModuleId ?? undefined}
