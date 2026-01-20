@@ -1790,7 +1790,8 @@ if (id === 'add') {
 |-------|-----------|-------------|--------|
 | 030 Pronajímatelé | `landlords-list` | `create-landlord` | ✅ Implementováno |
 | 050 Nájemníci | `tenants-list` | `create-tenant` | ✅ Implementováno |
-| 040 Nemovitosti | `properties-list` | `create-property` | ⏳ Připraveno |
+| 040 Nemovitosti | `properties-list` | `create-property` | ✅ Implementováno |
+| 040 Jednotky | `units-list` | `create-unit` | ✅ Implementováno |
 
 ### 11.7 Edge Cases
 

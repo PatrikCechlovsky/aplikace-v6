@@ -90,7 +90,10 @@ if (id === 'add') {
 
 ## ⏭️ Další moduly
 
-- [ ] 040 Nemovitosti
+- [x] 030 Pronajímatelé ✅
+- [x] 050 Nájemníci ✅  
+- [x] 040 Nemovitosti ✅
+- [x] 040 Jednotky ✅
 - [ ] 060 Smlouvy
 - [ ] 070 Služby
 - [ ] 080 Platby

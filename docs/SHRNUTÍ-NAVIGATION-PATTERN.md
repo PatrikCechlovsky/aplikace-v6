@@ -105,7 +105,8 @@ if (id === 'add') {
 |-------|-----------|-------------|--------|
 | **030 Pronajímatelé** | LandlordsTile | `onNavigate('create-landlord')` | ✅ Hotovo |
 | **050 Nájemníci** | TenantsTile | `onNavigate('create-tenant')` | ✅ Hotovo |
-| 040 Nemovitosti | PropertiesTile | - | ⏳ Připraveno |
+| **040 Nemovitosti** | PropertiesTile | `onNavigate('create-property')` | ✅ Hotovo |
+| **040 Jednotky** | UnitsTile | `onNavigate('create-unit')` | ✅ Hotovo |
 | 060 Smlouvy | ContractsTile | - | ⏳ Připraveno |
 
 ---
@@ -174,7 +175,8 @@ tiles: [
 ## ⏭️ Další kroky
 
 ### Priority 1: Aplikace na zbývající moduly
-- [ ] 040 Nemovitosti - PropertiesTile
+- [x] **040 Nemovitosti** - PropertiesTile
+- [x] **040 Jednotky** - UnitsTile
 - [ ] 060 Smlouvy - ContractsTile
 - [ ] 070 Služby - ServicesTile
 - [ ] 080 Platby - PaymentsTile
@@ -194,11 +196,11 @@ tiles: [
 ## 📊 Metriky
 
 | Metrika | Hodnota |
-|---------|---------|
-| **Odstraněno řádků kódu** | 80+ |
-| **Implementované moduly** | 2 |
-| **Připravené moduly** | 4+ |
+|---------|---------|120+ |
+| **Implementované moduly** | 4 (030, 050, 040×2) |
+| **Připravené moduly** | 3+ |
 | **Vytvořené dokumenty** | 3 |
+| **Commity** | 3umenty** | 3 |
 | **Commity** | 2 |
 | **Status** | ✅ Production Ready |
 
