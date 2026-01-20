@@ -183,10 +183,17 @@ export function TopMenu({
   }
 
   function handleSectionClick(sectionId: string) {
-    onSelectSection(sectionId)
-    // ✅ Zavřít popover po kliknutí na section (navigace na section)
-    setOpenModuleId(null)
-    setView({ kind: 'root' })
+    const sectionHasTiles = tiles.some((t) => (t.sectionId ?? null) === sectionId)
+    
+    if (sectionHasTiles) {
+      // Section má tiles → zobrazit další úroveň (jako v Sidebaru)
+      setView({ kind: 'sectionTiles', sectionId })
+    } else {
+      // Section nemá tiles → navigovat a zavřít
+      onSelectSection(sectionId)
+      setOpenModuleId(null)
+      setView({ kind: 'root' })
+    }
   }
 
   function handleTileClick(tileId: string) {
