@@ -900,6 +900,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 onRegisterCommonActions={registerCommonActions}
                 onRegisterCommonActionsState={registerCommonActionsUi}
                 onRegisterCommonActionHandler={registerCommonActionHandler}
+                onNavigate={(tileId: string) => {
+                  // Naviguj na jiný tile v rámci stejného modulu
+                  handleModuleSelect({ moduleId: selection.moduleId, tileId })
+                }}
               />
             </section>
           </div>

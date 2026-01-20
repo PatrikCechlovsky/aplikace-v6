@@ -30,6 +30,7 @@ type LandlordsTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onNavigate?: (tileId: string) => void // Callback pro navigaci na jiný tile
 }
 
 type LocalViewMode = ViewMode | 'list'
@@ -190,6 +191,7 @@ export default function LandlordsTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
+  onNavigate,
 }: LandlordsTileProps) {
   const toast = useToast()
   const router = useRouter()
@@ -681,41 +683,8 @@ export default function LandlordsTile({
       // LIST ACTIONS
       if (viewMode === 'list') {
         if (id === 'add') {
-          // Pro create režim nejdřív zobrazit výběr typu subjektu
-          setSelectedSubjectTypeForCreate(null)
-          const newLandlord: DetailUiLandlord = {
-            id: 'new',
-            displayName: '',
-            email: null,
-            phone: null,
-            subjectType: null,
-            isArchived: false,
-            createdAt: '',
-            titleBefore: null,
-            firstName: null,
-            lastName: null,
-            note: null,
-            birthDate: null,
-            personalIdNumber: null,
-            idDocType: null,
-            idDocNumber: null,
-            companyName: null,
-            ic: null,
-            dic: null,
-            icValid: null,
-            dicValid: null,
-            delegateIds: [],
-            street: null,
-            city: null,
-            zip: null,
-            houseNumber: null,
-            country: 'CZ',
-          }
-          setDetailLandlord(newLandlord)
-          setViewMode('create')
-          setSelectedId('new')
-          setIsDirty(false)
-          setUrl({ t: 'landlords-list', id: 'new', vm: 'create' }, 'push')
+          // Naviguj na tile create-landlord
+          onNavigate?.('create-landlord')
           return
         }
 
