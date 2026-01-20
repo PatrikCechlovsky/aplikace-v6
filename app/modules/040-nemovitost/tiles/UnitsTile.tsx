@@ -116,6 +116,7 @@ type UnitsTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onNavigate?: (tileId: string) => void
 }
 
 export default function UnitsTile({
@@ -125,6 +126,7 @@ export default function UnitsTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
+  onNavigate,
 }: UnitsTileProps) {
   console.log('🔍 UnitsTile: Renderuji s filtry:', { propertyId, unitTypeCode, status })
   const toast = useToast()
@@ -275,12 +277,8 @@ export default function UnitsTile({
       
       switch (id) {
         case 'add':
-          // Přepnout z units-overview na units-add (výběr typu)
-          console.log('🔵 UnitsTile: Handler ADD called')
-          const newUrl = new URL(window.location.href)
-          newUrl.searchParams.set('t', 'units-add')
-          console.log('🔵 UnitsTile: New URL:', newUrl.toString())
-          window.location.href = newUrl.toString()
+          // ✅ Naviguj na create-unit tile pomocí onNavigate callback
+          onNavigate?.('create-unit')
           return
         
         case 'view':

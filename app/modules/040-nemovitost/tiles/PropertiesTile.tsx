@@ -113,6 +113,7 @@ type PropertiesTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: 'list'; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onNavigate?: (tileId: string) => void
 }
 
 export default function PropertiesTile({
@@ -120,6 +121,7 @@ export default function PropertiesTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
+  onNavigate,
 }: PropertiesTileProps): JSX.Element {
   const toast = useToast()
 
@@ -189,7 +191,7 @@ export default function PropertiesTile({
     
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       if (id === 'add') {
-        toast.showInfo('Přidání nemovitosti - implementace v další verzi')
+        onNavigate?.('create-property')
         return
       }
 

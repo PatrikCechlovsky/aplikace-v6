@@ -347,7 +347,22 @@ export default function Sidebar({
     } else {
       setExpandedSectionId(null)
     }
-  }, [activeModuleId, activeSelection?.sectionId])
+    
+    // ✅ FIX: Resetovat expandedTileId když se změní activeSelection.tileId
+    // To zajistí, že při navigaci na jiný tile (např. create-landlord) se zavřou otevřené children filtry
+    // Ignoruj pokud aktivní tile má children A uživatel naviguje na child (pak nech otevřené)
+    const isNavigatingToChild = activeSelection?.tileId && 
+      modules.some(m => m.id === activeModuleId && 
+        m.tiles?.some(t => t.id === expandedTileId && 
+          t.children?.some(c => c.id === activeSelection.tileId)
+        )
+      )
+    
+    if (!isNavigatingToChild) {
+      // Zavři children když navigujeme na root tile (např. create-landlord)
+      setExpandedTileId(null)
+    }
+  }, [activeModuleId, activeSelection?.sectionId, activeSelection?.tileId, modules, expandedTileId])
 
   const showIcons = uiConfig.showSidebarIcons
 
