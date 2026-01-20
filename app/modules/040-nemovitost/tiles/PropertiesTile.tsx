@@ -128,6 +128,7 @@ export default function PropertiesTile({
   onRegisterCommonActionHandler,
   onNavigate,
 }: PropertiesTileProps): JSX.Element {
+  console.log('🎨 PropertiesTile: Rendering with propertyTypeCode:', propertyTypeCode)
   const toast = useToast()
   const router = useRouter()
 
