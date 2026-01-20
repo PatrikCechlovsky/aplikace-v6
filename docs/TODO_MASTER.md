@@ -33,12 +33,25 @@ Poznámka:
 ## 1) Kritické problémy / stabilita
 
 - [x] Opravit blikání UI / request stormy (useSearchParams → stabilní klíč přes toString)
+- [x] Menu accordion behavior - pouze jeden modul/sekce otevřený najednou (20.1.2026)
+- [x] Unifikovat kliknutí v menu - šipka = label (navigate + toggle) (20.1.2026)
+- [x] Auto-expand menu pokud má další úroveň (20.1.2026)
 - [ ] Zamezit opakovaným fetchům v dalších modulech (anti-storm pattern jako standard)
 - [ ] Zkontrolovat, že nikde nevzniká loop přes router/query state
 
 ---
 
-## 2) CommonActions (globální akce)
+## 2) Menu & Navigace
+
+- [ ] **Module Overview Pages** - dlaždice při kliknutí na modul (např. "Přehled nemovitostí (12)", "Přidat nemovitost")
+  - Zatím modul naviguje rovnou na první tile
+  - TODO: Vytvořit TileLayout komponenty pro overview každého modulu
+  - Vzor: Home page dlaždice (Welcome, Rychlé akce, atd.)
+  - Priority: Střední (UX improvement)
+  
+---
+
+## 3) CommonActions (globální akce)
 
 - [ ] Dokončit jednotná pravidla viditelnosti (mode/selection/permission)
 - [ ] Zamezit ztrátě neuložených dat při navigaci (confirm)

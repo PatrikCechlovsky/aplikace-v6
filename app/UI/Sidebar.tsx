@@ -82,12 +82,10 @@ export default function Sidebar({
   const [modules, setModules] = useState<ModuleConfig[]>([])
   const [loading, setLoading] = useState(true)
 
-  // rozbalené moduly (1. úroveň)
-  const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([])
-  // rozbalené sekce (2. úroveň)
-  const [expandedSectionIds, setExpandedSectionIds] = useState<string[]>([])
-  // rozbalené tiles (3. úroveň - pro tiles s children)
-  const [expandedTileIds, setExpandedTileIds] = useState<string[]>([])
+  // ACCORDION: pouze jeden modul/sekce/tile otevřený najednou
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null)
+  const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null)
+  const [expandedTileId, setExpandedTileId] = useState<string | null>(null)
 
   // Načtení modulů z module.config.js
   useEffect(() => {
@@ -334,46 +332,43 @@ export default function Sidebar({
   useEffect(() => {
     if (!activeModuleId) {
       // Pokud není aktivní modul, zavřeme všechna menu
-      setExpandedModuleIds([])
-      setExpandedSectionIds([])
+      setExpandedModuleId(null)
+      setExpandedSectionId(null)
+      setExpandedTileId(null)
       return
     }
 
-    // Otevřeme aktivní modul a zavřeme ostatní
-    setExpandedModuleIds([activeModuleId])
+    // ACCORDION: Otevřeme aktivní modul (pouze jeden)
+    setExpandedModuleId(activeModuleId)
     
-    // Pokud má aktivní modul sekci, otevřeme ji a zavřeme ostatní
+    // Pokud má aktivní modul sekci, otevřeme ji (pouze jednu)
     if (activeSelection?.sectionId) {
-      setExpandedSectionIds([activeSelection.sectionId])
+      setExpandedSectionId(activeSelection.sectionId)
     } else {
-      setExpandedSectionIds([])
+      setExpandedSectionId(null)
     }
   }, [activeModuleId, activeSelection?.sectionId])
 
   const showIcons = uiConfig.showSidebarIcons
 
+  // ACCORDION: Otevře/zavře modul (pouze jeden může být otevřený)
   function toggleModule(moduleId: string) {
-    setExpandedModuleIds((prev) =>
-      prev.includes(moduleId)
-        ? prev.filter((id) => id !== moduleId)
-        : [...prev, moduleId],
-    )
+    setExpandedModuleId((prev) => (prev === moduleId ? null : moduleId))
+    // Zavřít podsekce když zavíráme modul
+    if (expandedModuleId === moduleId) {
+      setExpandedSectionId(null)
+      setExpandedTileId(null)
+    }
   }
 
+  // ACCORDION: Otevře/zavře sekci (pouze jedna může být otevřená)
   function toggleSection(sectionId: string) {
-    setExpandedSectionIds((prev) =>
-      prev.includes(sectionId)
-        ? prev.filter((id) => id !== sectionId)
-        : [...prev, sectionId],
-    )
+    setExpandedSectionId((prev) => (prev === sectionId ? null : sectionId))
   }
 
+  // ACCORDION: Otevře/zavře tile (pouze jeden může být otevřený)
   function toggleTile(tileId: string) {
-    setExpandedTileIds((prev) =>
-      prev.includes(tileId)
-        ? prev.filter((id) => id !== tileId)
-        : [...prev, tileId],
-    )
+    setExpandedTileId((prev) => (prev === tileId ? null : tileId))
   }
 
   /**
@@ -433,8 +428,7 @@ export default function Sidebar({
             {modules.map((m) => {
               const hasSections = !!m.sections && m.sections.length > 0
               const hasTiles = !!m.tiles && m.tiles.length > 0
-              const isExpanded = expandedModuleIds.includes(m.id)
-              const moduleHref = `/modules/${m.id}`
+              const isExpanded = expandedModuleId === m.id
 
               return (
                 <li key={m.id} className="sidebar__item">
@@ -445,6 +439,14 @@ export default function Sidebar({
                       (isModuleActive(m) ? ' sidebar__row--active' : '') +
                       (disabled ? ' sidebar__row--disabled' : '')
                     }
+                    onClick={(e) => {
+                      // Kliknutí kdekoli na řádek = navigate + auto-expand (pokud má children)
+                      handleSelect({ moduleId: m.id }, e)
+                      if (hasSections || hasTiles) {
+                        toggleModule(m.id)
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
                   >
                     {(hasSections || hasTiles) && (
                       <button
@@ -453,7 +455,11 @@ export default function Sidebar({
                           'sidebar__toggle' +
                           (isExpanded ? ' sidebar__toggle--open' : '')
                         }
-                        onClick={() => toggleModule(m.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSelect({ moduleId: m.id }, e)
+                          toggleModule(m.id)
+                        }}
                         aria-label={
                           isExpanded ? 'Skrýt podmenu' : 'Zobrazit podmenu'
                         }
@@ -462,24 +468,14 @@ export default function Sidebar({
                       </button>
                     )}
 
-                    <Link
-                      href={moduleHref}
-                      className="sidebar__link"
-                      onClick={(e) => {
-                        handleSelect({ moduleId: m.id }, e)
-                        // po kliknutí na modul ho i rozbalíme
-                        if (!isExpanded) {
-                          toggleModule(m.id)
-                        }
-                      }}
-                    >
+                    <div className="sidebar__link" style={{ flex: 1 }}>
                       {showIcons && m.icon && (
                         <span className="sidebar__icon">
                           {getIcon(m.icon as any)}
                         </span>
                       )}
                       <span className="sidebar__label">{m.label}</span>
-                    </Link>
+                    </div>
                   </div>
 
                   {/* 2. + 3. úroveň – sekce + tiles */}
@@ -494,8 +490,7 @@ export default function Sidebar({
                                 (t) => t.sectionId === section.id,
                               ) ?? []
 
-                            const isSectionOpen =
-                              expandedSectionIds.includes(section.id)
+                            const isSectionOpen = expandedSectionId === section.id
 
                             return (
                               <li
@@ -515,8 +510,12 @@ export default function Sidebar({
                                       moduleId: m.id,
                                       sectionId: section.id,
                                     })
-                                    toggleSection(section.id)
+                                    // Auto-expand pokud má tiles
+                                    if (sectionTiles.length > 0) {
+                                      toggleSection(section.id)
+                                    }
                                   }}
+                                  style={{ cursor: 'pointer' }}
                                 >
                                   {sectionTiles.length > 0 && (
                                     <button
@@ -529,6 +528,10 @@ export default function Sidebar({
                                       }
                                       onClick={(e) => {
                                         e.stopPropagation()
+                                        handleSelect({
+                                          moduleId: m.id,
+                                          sectionId: section.id,
+                                        })
                                         toggleSection(section.id)
                                       }}
                                     >
@@ -601,7 +604,7 @@ export default function Sidebar({
                           {m.tiles!.map((t) => {
                             const isActiveTile = isTileActive(m, t)
                             const hasChildren = t.children && t.children.length > 0
-                            const isTileOpen = expandedTileIds.includes(t.id)
+                            const isTileOpen = expandedTileId === t.id
 
                             return (
                               <li
@@ -619,10 +622,11 @@ export default function Sidebar({
                                   onClick={() => {
                                     // Klik na tile naviguje + pokud má children, automaticky je otevře
                                     handleSelect({ moduleId: m.id, tileId: t.id })
-                                    if (hasChildren && !isTileOpen) {
+                                    if (hasChildren) {
                                       toggleTile(t.id)
                                     }
                                   }}
+                                  style={{ cursor: 'pointer' }}
                                 >
                                   {hasChildren && (
                                     <button
@@ -635,6 +639,7 @@ export default function Sidebar({
                                       }
                                       onClick={(e) => {
                                         e.stopPropagation()
+                                        handleSelect({ moduleId: m.id, tileId: t.id })
                                         toggleTile(t.id)
                                       }}
                                       aria-label={
