@@ -667,7 +667,6 @@ export default function Sidebar({
                                 {isTileOpen && hasChildren && (
                                   <ul className="sidebar__subsublist">
                                     {t.children!.map((child) => {
-                                      const childHref = `/${m.id}?m=${m.id}&t=${child.id}`
                                       const isActiveChild =
                                         activeSelection?.moduleId === m.id &&
                                         activeSelection?.tileId === child.id
@@ -682,18 +681,15 @@ export default function Sidebar({
                                               : '')
                                           }
                                         >
-                                          <Link
-                                            href={childHref}
+                                          <div
                                             className="sidebar__subsublink"
-                                            onClick={(e) => {
-                                              handleSelect(
-                                                {
-                                                  moduleId: m.id,
-                                                  tileId: child.id,
-                                                },
-                                                e,
-                                              )
+                                            onClick={() => {
+                                              handleSelect({
+                                                moduleId: m.id,
+                                                tileId: child.id,
+                                              })
                                             }}
+                                            style={{ cursor: 'pointer' }}
                                           >
                                             {showIcons && child.icon && (
                                               <span 
@@ -707,7 +703,7 @@ export default function Sidebar({
                                             <span className="sidebar__subsublabel">
                                               {child.label}
                                             </span>
-                                          </Link>
+                                          </div>
                                         </li>
                                       )
                                     })}
