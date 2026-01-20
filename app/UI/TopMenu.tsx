@@ -184,7 +184,9 @@ export function TopMenu({
 
   function handleSectionClick(sectionId: string) {
     onSelectSection(sectionId)
-    setView({ kind: 'sectionTiles', sectionId })
+    // ✅ Zavřít popover po kliknutí na section (navigace na section)
+    setOpenModuleId(null)
+    setView({ kind: 'root' })
   }
 
   function handleTileClick(tileId: string) {
