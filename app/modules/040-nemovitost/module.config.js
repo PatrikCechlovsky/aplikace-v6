@@ -58,34 +58,13 @@ export default {
   order: 40,
   enabled: true,
 
-  // 2. ÚROVEŇ – SECTIONS (Nemovitosti / Jednotky / Vybavení)
-  sections: [
-    {
-      id: 'properties-section',
-      label: 'Nemovitosti',
-      icon: 'building',
-    },
-    {
-      id: 'units-section',
-      label: 'Jednotky',
-      icon: 'door-open',
-    },
-    {
-      id: 'equipment-section',
-      label: 'Vybavení',
-      icon: 'toolbox',
-    },
-  ],
-
-  // 3. ÚROVEŇ – TILES (konkrétní přehledy a akce) přiřazené do sekcí
+  // 2. ÚROVEŇ – TILES (flat seznam s možností children pro 3. úroveň)
   tiles: [
-    // === SEKCE NEMOVITOSTI ===
-    // Přehled nemovitostí (s filtry jako children)
+    // === PŘEHLED NEMOVITOSTÍ (s filtry jako children) ===
     {
       id: 'properties-list',
       label: 'Přehled nemovitostí',
       icon: 'list-alt',
-      sectionId: 'properties-section',
       component: PropertiesTile,
       order: 10,
       children: [
@@ -141,23 +120,20 @@ export default {
       ],
     },
 
-    // Přidat nemovitost
+    // === PŘIDAT NEMOVITOST ===
     {
       id: 'properties-add',
       label: 'Přidat nemovitost',
       icon: 'plus',
-      sectionId: 'properties-section',
       component: CreatePropertyTile,
       order: 15,
     },
 
-    // === SEKCE JEDNOTKY ===
-    // Přehled jednotek (s filtry jako children)
+    // === PŘEHLED JEDNOTEK (s filtry jako children) ===
     {
       id: 'units-list',
       label: 'Přehled jednotek',
       icon: 'list-alt',
-      sectionId: 'units-section',
       component: UnitsTile,
       order: 20,
       children: [
@@ -237,23 +213,20 @@ export default {
       ],
     },
 
-    // Přidat jednotku
+    // === PŘIDAT JEDNOTKU ===
     {
       id: 'units-add',
       label: 'Přidat jednotku',
       icon: 'plus',
-      sectionId: 'units-section',
       component: CreateUnitTile,
       order: 25,
     },
 
-    // === SEKCE VYBAVENÍ ===
-    // Katalog vybavení
+    // === KATALOG VYBAVENÍ ===
     {
       id: 'equipment-catalog',
       label: 'Přehled vybavení',
       icon: 'toolbox',
-      sectionId: 'equipment-section',
       component: EquipmentTile,
       order: 30,
     },
