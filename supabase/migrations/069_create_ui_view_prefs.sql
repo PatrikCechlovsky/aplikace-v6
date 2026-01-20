@@ -28,6 +28,12 @@ CREATE INDEX IF NOT EXISTS idx_ui_view_prefs_user_view
 
 ALTER TABLE public.ui_view_prefs ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can read their own view preferences" ON public.ui_view_prefs;
+DROP POLICY IF EXISTS "Users can insert their own view preferences" ON public.ui_view_prefs;
+DROP POLICY IF EXISTS "Users can update their own view preferences" ON public.ui_view_prefs;
+DROP POLICY IF EXISTS "Users can delete their own view preferences" ON public.ui_view_prefs;
+
 -- Uživatel může číst pouze své vlastní preferences
 CREATE POLICY "Users can read their own view preferences"
   ON public.ui_view_prefs
@@ -65,6 +71,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_ui_view_prefs_updated_at ON public.ui_view_prefs;
 CREATE TRIGGER update_ui_view_prefs_updated_at
   BEFORE UPDATE ON public.ui_view_prefs
   FOR EACH ROW
