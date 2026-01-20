@@ -658,17 +658,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     if (!confirmIfDirty()) return
 
-    // ✅ AUTO-SELECT: Pokud není vybrán tile, ale modul má tiles, automaticky vyber první
-    let finalSelection = { ...selection }
-    if (!selection.tileId && !selection.sectionId) {
-      const targetModule = modules.find(m => m.id === selection.moduleId)
-      if (targetModule?.tiles && targetModule.tiles.length > 0) {
-        const firstTile = targetModule.tiles.find(t => t.component) || targetModule.tiles[0]
-        if (firstTile) {
-          finalSelection.tileId = firstTile.id
-        }
-      }
-    }
+    // Pokud klikneš na modul bez tileId → zobraz intro page (žádný AUTO-SELECT)
+    const finalSelection = { ...selection }
 
     const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null

@@ -188,7 +188,8 @@ export function TopMenu({
     const sectionHasTiles = tiles.some((t) => (t.sectionId ?? null) === sectionId)
     
     if (sectionHasTiles) {
-      // Section má tiles → zobrazit další úroveň (jako v Sidebaru)
+      // Section má tiles → navigovat NA section + zobrazit další úroveň (tiles)
+      onSelectSection(sectionId)
       setView({ kind: 'sectionTiles', sectionId })
     } else {
       // Section nemá tiles → navigovat a zavřít
@@ -203,7 +204,8 @@ export function TopMenu({
     const tileHasChildren = tile?.children && tile.children.length > 0
     
     if (tileHasChildren) {
-      // Tile má children → zobrazit další úroveň
+      // Tile má children → navigovat NA tile + zobrazit další úroveň (children)
+      onSelectTile(tileId)
       setView({ kind: 'tileChildren', tileId })
     } else {
       // Tile nemá children → navigovat a zavřít
