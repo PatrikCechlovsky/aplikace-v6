@@ -81,53 +81,6 @@ export default function AttachmentsManagerTile({
   }, [])
 
   // ============================================================================
-  // COMMON ACTIONS PATTERN
-  // ============================================================================
-  
-  useEffect(() => {
-    if (!onRegisterCommonActionHandler) return
-
-    // Handler pro CommonActions
-    const handler = (actionId: string) => {
-      const api = attachmentsApiRef.current
-      if (!api) return
-
-      switch (actionId) {
-        case 'add':
-          api.add()
-          break
-        case 'view':
-          api.view()
-          break
-        case 'edit':
-          api.edit()
-          break
-        case 'save':
-          void api.save()
-          break
-        case 'attachmentsNewVersion':
-          api.newVersion()
-          break
-        case 'columnSettings':
-          api.columnSettings()
-          break
-        case 'close':
-          if (localViewMode === 'list') {
-            // Zavřít celý manager → vrátit se do entity
-            onClose()
-          } else {
-            // Zavřít detail → vrátit se do list
-            api.close()
-          }
-          break
-      }
-    }
-
-    onRegisterCommonActionHandler(handler)
-    return () => onRegisterCommonActionHandler(null)
-  }, [onRegisterCommonActionHandler, localViewMode, onClose])
-
-  // ============================================================================
   // COMMON ACTIONS DEFINITION
   // ============================================================================
   
@@ -163,7 +116,9 @@ export default function AttachmentsManagerTile({
       hasSelection,
       isDirty,
     })
-  }, [localViewMode, hasSelection, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [localViewMode, hasSelection, isDirty])
+  // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
+  // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
   // ============================================================================
   // REGISTRACE COMMON ACTIONS HANDLER
@@ -210,7 +165,9 @@ export default function AttachmentsManagerTile({
 
     onRegisterCommonActionHandler(handler)
     return () => onRegisterCommonActionHandler(null)
-  }, [onRegisterCommonActionHandler, localViewMode, onClose])
+  }, [localViewMode, onClose])
+  // POZNÁMKA: onRegisterCommonActionHandler NENÍ v dependencies!
+  // Je stabilní (useCallback v AppShell), ale jeho přidání do dependencies způsobuje problémy.
 
   // ============================================================================
   // RENDER
