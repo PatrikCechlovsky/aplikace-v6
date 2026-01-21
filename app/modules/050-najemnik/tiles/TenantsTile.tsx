@@ -710,7 +710,7 @@ export default function TenantsTile({
         actions.push('edit', 'close')
       } else {
         // mode === 'list'
-        actions.push('add', 'view', 'edit', 'columnSettings', 'close')
+        actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
       }
     } else if (viewMode === 'list') {
       // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
@@ -719,12 +719,12 @@ export default function TenantsTile({
         actions.push('view', 'edit', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
       actions.push('columnSettings', 'close')
-      // TODO: Přidat delete a archive po implementaci
-      // if (selectedId) {
-      //   actions.push('delete', 'archive')
-      // }
     } else if (viewMode === 'edit' || viewMode === 'create') {
-      actions.push('save', 'attachments', 'close') // V create/edit mode: "Uložit", "Přílohy" a "Zavřít" (červené X)
+      if (viewMode === 'edit') {
+        actions.push('save', 'attachments', 'close') // V edit mode: "Uložit", "Přílohy", "Zavřít"
+      } else {
+        actions.push('save', 'close') // V create mode: "Uložit" a "Zavřít" (bez příloh)
+      }
     } else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
       // TODO: Přidat delete a archive po implementaci

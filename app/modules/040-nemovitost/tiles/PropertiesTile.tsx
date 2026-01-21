@@ -202,7 +202,11 @@ export default function PropertiesTile({
       }
       actions.push('columnSettings', 'close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
-      actions.push('save', 'close')
+      if (viewMode === 'edit') {
+        actions.push('save', 'attachments', 'close')
+      } else {
+        actions.push('save', 'close')
+      }
     } else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
     } else if (viewMode === 'attachments-manager') {
@@ -217,7 +221,7 @@ export default function PropertiesTile({
         managerActions.push('edit', 'close')
       } else {
         // mode === 'list'
-        managerActions.push('add', 'view', 'edit', 'columnSettings', 'close')
+        managerActions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
       }
       onRegisterCommonActions(managerActions)
       onRegisterCommonActionsState({
