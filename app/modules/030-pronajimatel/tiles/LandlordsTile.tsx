@@ -11,7 +11,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import LandlordDetailFrame, { type UiLandlord as DetailUiLandlord } from '../forms/LandlordDetailFrame'
-import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
+import AttachmentsManagerTile from '@/app/UI/attachments/AttachmentsManagerTile'
 import { listLandlords, getLandlordDetail, type LandlordsListRow } from '@/app/lib/services/landlords'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
@@ -242,14 +242,8 @@ export default function LandlordsTile({
 
   const submitRef = useRef<null | (() => Promise<DetailUiLandlord | null>)>(null)
 
-  // ✅ Attachments manager bridge (API + UI state)
+  // ✅ Attachments manager: jen ID (komponenta má vlastní logiku)
   const [attachmentsManagerLandlordId, setAttachmentsManagerLandlordId] = useState<string | null>(null)
-  const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
-  const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
-    hasSelection: false,
-    isDirty: false,
-    mode: 'list',
-  })
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   
@@ -653,27 +647,15 @@ export default function LandlordsTile({
       }
     } else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
-    } else if (viewMode === 'attachments-manager') {
-      // Manager mode: akce řídí AttachmentsManagerFrame
-      const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'list') {
-        actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
-      } else if (mode === 'new') {
-        actions.push('save', 'close')
-      } else if (mode === 'read') {
-        actions.push('edit', 'attachmentsNewVersion', 'close')
-      } else if (mode === 'edit') {
-        actions.push('save', 'close')
-      }
     }
 
     onRegisterCommonActions?.(actions)
     onRegisterCommonActionsState?.({
-      viewMode: viewMode === 'attachments-manager' ? 'read' : viewMode,
-      hasSelection: viewMode === 'attachments-manager' ? attachmentsManagerUi.hasSelection : !!selectedId,
-      isDirty: viewMode === 'attachments-manager' ? attachmentsManagerUi.isDirty : isDirty,
+      viewMode: viewMode,
+      hasSelection: !!selectedId,
+      isDirty: isDirty,
     })
-  }, [viewMode, selectedId, isDirty, attachmentsManagerUi, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
@@ -681,42 +663,9 @@ export default function LandlordsTile({
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       // CLOSE
       if (id === 'close') {
-        const dirtyNow = String(viewMode) === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
-
-        if (dirtyNow && (viewMode === 'edit' || viewMode === 'create')) {
+        if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
-        }
-
-        if (String(viewMode) === 'attachments-manager') {
-          const mode = attachmentsManagerUi.mode ?? 'list'
-          
-          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
-          if (mode === 'read' || mode === 'edit') {
-            const api = attachmentsManagerApiRef.current
-            if (api?.close) {
-              api.close()
-            }
-            return
-          }
-          
-          // Pokud jsme v list mode, vrátit se zpět do detailu entity
-          const backId = attachmentsManagerLandlordId ?? detailLandlord?.id ?? null
-          if (!backId) {
-            closeToList()
-            return
-          }
-        
-          setDetailInitialSectionId('attachments')
-        
-          // jdi přes stejnou cestu jako ostatní přechody do detailu - najít v seznamu
-          const backLandlord = landlords.find((l) => l.id === backId)
-          if (backLandlord) {
-            openDetail(backLandlord, 'read', 'attachments')
-          } else {
-            closeToList()
-          }
-          return
         }
 
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
@@ -756,38 +705,6 @@ export default function LandlordsTile({
           setViewMode('attachments-manager')
           setIsDirty(false)
           setUrl({ t: 'landlords-list', id: detailLandlord.id, vm: null }, 'push')
-          return
-        }
-        return
-      }
-
-      // MANAGER MODE: Delegovat API calls
-      if (String(viewMode) === 'attachments-manager') {
-        const api = attachmentsManagerApiRef.current
-        if (!api) return
-
-        if (id === 'add') {
-          api.add()
-          return
-        }
-        if (id === 'view') {
-          api.view()
-          return
-        }
-        if (id === 'edit') {
-          api.edit()
-          return
-        }
-        if (id === 'save') {
-          await api.save()
-          return
-        }
-        if (id === 'attachmentsNewVersion') {
-          api.newVersion()
-          return
-        }
-        if (id === 'columnSettings') {
-          api.columnSettings()
           return
         }
         return
@@ -1044,16 +961,31 @@ export default function LandlordsTile({
     const landlordLabel = landlord?.displayName || 'pronajímatele'
 
     return (
-      <AttachmentsManagerFrame
+      <AttachmentsManagerTile
         entityType="landlords"
         entityId={landlordId}
         entityLabel={landlordLabel}
-        onRegisterManagerApi={(api) => {
-          attachmentsManagerApiRef.current = api
+        onClose={() => {
+          // Vrátit se zpět do detailu entity s otevřenou záložkou Přílohy
+          const backId = attachmentsManagerLandlordId ?? detailLandlord?.id ?? null
+          if (!backId) {
+            closeToList()
+            return
+          }
+          
+          setDetailInitialSectionId('attachments')
+          
+          // Najít v seznamu a otevřít detail
+          const backLandlord = landlords.find((l) => l.id === backId)
+          if (backLandlord) {
+            openDetail(backLandlord, 'read', 'attachments')
+          } else {
+            closeToList()
+          }
         }}
-        onManagerStateChange={(state) => {
-          setAttachmentsManagerUi(state)
-        }}
+        onRegisterCommonActions={onRegisterCommonActions}
+        onRegisterCommonActionsState={onRegisterCommonActionsState}
+        onRegisterCommonActionHandler={onRegisterCommonActionHandler}
       />
     )
   }

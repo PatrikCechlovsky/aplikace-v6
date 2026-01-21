@@ -16,8 +16,7 @@ import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 import type { DetailSectionId } from '@/app/UI/DetailView'
-import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
-import type { AttachmentsManagerUiState, AttachmentsManagerApi } from '@/app/UI/detail-sections/DetailAttachmentsSection'
+import AttachmentsManagerTile from '@/app/UI/attachments/AttachmentsManagerTile'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -119,7 +118,7 @@ type PropertiesTileProps = {
   propertyTypeCode?: string | null
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
-  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
   onNavigate?: (tileId: string) => void
 }
 
@@ -152,14 +151,8 @@ export default function PropertiesTile({
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<DetailSectionId>('detail')
   const submitRef = useRef<(() => Promise<DetailUiProperty | null>) | null>(null)
 
-  // Attachments manager state
+  // Attachments manager: jen ID (komponenta má vlastní logiku)
   const [attachmentsManagerPropertyId, setAttachmentsManagerPropertyId] = useState<string | null>(null)
-  const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
-    hasSelection: false,
-    isDirty: false,
-    mode: 'list',
-  })
-  const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
 
   // Load property types
   useEffect(() => {
@@ -209,27 +202,6 @@ export default function PropertiesTile({
       }
     } else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
-    } else if (viewMode === 'attachments-manager') {
-      // Attachments manager má vlastní actions
-      const managerActions: CommonActionId[] = []
-      const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'new') {
-        managerActions.push('save', 'close')
-      } else if (mode === 'edit') {
-        managerActions.push('save', 'attachmentsNewVersion', 'close')
-      } else if (mode === 'read') {
-        managerActions.push('edit', 'close')
-      } else {
-        // mode === 'list'
-        managerActions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
-      }
-      onRegisterCommonActions(managerActions)
-      onRegisterCommonActionsState({
-        viewMode: 'read', // Mapped viewMode
-        hasSelection: attachmentsManagerUi.hasSelection,
-        isDirty: attachmentsManagerUi.isDirty,
-      })
-      return
     }
 
     onRegisterCommonActions(actions)
@@ -244,7 +216,7 @@ export default function PropertiesTile({
       hasSelection: !!selectedId,
       isDirty,
     })
-  }, [viewMode, selectedId, isDirty, attachmentsManagerUi])
+  }, [viewMode, selectedId, isDirty])
   // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
   // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
@@ -444,49 +416,8 @@ export default function PropertiesTile({
 
         return
       }
-
-      // ATTACHMENTS MANAGER ACTIONS
-      if (viewMode === 'attachments-manager') {
-        const api = attachmentsManagerApiRef.current
-        
-        if (id === 'close' as CommonActionId) {
-          // Vrátit se na detail na záložku attachments
-          setViewMode('read')
-          setDetailInitialSectionId('attachments')
-          setAttachmentsManagerPropertyId(null)
-          return
-        }
-
-        if (!api) return
-
-        if (id === 'add') {
-          api.add()
-          return
-        }
-        if (id === 'save') {
-          void api.save()
-          return
-        }
-        if (id === 'view' || id === 'detail') {
-          api.view()
-          return
-        }
-        if (id === 'edit') {
-          api.edit()
-          return
-        }
-        if (id === 'attachmentsNewVersion') {
-          api.newVersion()
-          return
-        }
-        if ((id as string) === 'columnSettings') {
-          api.columnSettings()
-          return
-        }
-        return
-      }
     })
-  }, [viewMode, selectedId, isDirty, properties, openDetail, loadData, closeListToModule, closeToList, detailProperty, attachmentsManagerApiRef])
+  }, [viewMode, selectedId, isDirty, properties, openDetail, loadData, closeListToModule, closeToList, detailProperty])
   // POZNÁMKA: onRegisterCommonActionHandler, onNavigate, toast NEJSOU v dependencies!
   // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
@@ -593,17 +524,31 @@ export default function PropertiesTile({
     const label = property?.displayName || 'Nemovitost'
     
     return (
-      <AttachmentsManagerFrame
+      <AttachmentsManagerTile
         entityType="properties"
         entityId={attachmentsManagerPropertyId}
         entityLabel={label}
-        canManage={true}
-        onRegisterManagerApi={(api) => {
-          attachmentsManagerApiRef.current = api
+        onClose={() => {
+          // Vrátit se zpět do detailu entity s otevřenou záložkou Přílohy
+          const backId = attachmentsManagerPropertyId ?? detailProperty?.id ?? null
+          if (!backId) {
+            closeToList()
+            return
+          }
+          
+          setDetailInitialSectionId('attachments')
+          
+          // Najít v seznamu a otevřít detail
+          const backProperty = properties.find((p) => p.id === backId)
+          if (backProperty) {
+            void openDetail(backProperty, 'read', 'attachments')
+          } else {
+            closeToList()
+          }
         }}
-        onManagerStateChange={(state) => {
-          setAttachmentsManagerUi(state)
-        }}
+        onRegisterCommonActions={onRegisterCommonActions}
+        onRegisterCommonActionsState={onRegisterCommonActionsState}
+        onRegisterCommonActionHandler={onRegisterCommonActionHandler}
       />
     )
   }
