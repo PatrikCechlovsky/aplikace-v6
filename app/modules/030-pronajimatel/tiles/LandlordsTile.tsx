@@ -23,6 +23,13 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 import { getIcon, type IconKey } from '@/app/UI/icons'
+import { 
+  getAttachmentsManagerActions, 
+  mapAttachmentsViewMode, 
+  getHasSelection, 
+  getIsDirty,
+  shouldCloseAttachmentsPanel 
+} from '@/app/lib/attachments/attachmentsManagerUtils'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/PaletteCard.css'
@@ -645,16 +652,7 @@ export default function LandlordsTile({
     // ATTACHMENTS MANAGER MODE
     if (viewMode === 'attachments-manager') {
       const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'new') {
-        actions.push('save', 'close')
-      } else if (mode === 'edit') {
-        actions.push('save', 'attachmentsNewVersion', 'close')
-      } else if (mode === 'read') {
-        actions.push('edit', 'close')
-      } else {
-        // mode === 'list'
-        actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
-      }
+      actions.push(...getAttachmentsManagerActions(mode, !!attachmentsManagerUi.hasSelection))
     }
     // LIST MODE
     else if (viewMode === 'list') {
@@ -680,28 +678,10 @@ export default function LandlordsTile({
 
     onRegisterCommonActions?.(actions)
     
-    // Namapovat LocalViewMode na ViewMode
-    let mappedViewMode: ViewMode
-    if (viewMode === 'list') {
-      mappedViewMode = 'list'
-    } else if (viewMode === 'edit') {
-      mappedViewMode = 'edit'
-    } else if (viewMode === 'create') {
-      mappedViewMode = 'create'
-    } else if (viewMode === 'attachments-manager') {
-      // Podle mode z AttachmentsManagerTile určit správný ViewMode
-      const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'list') mappedViewMode = 'list'
-      else if (mode === 'edit') mappedViewMode = 'edit'
-      else if (mode === 'new') mappedViewMode = 'create'
-      else mappedViewMode = 'read' // mode === 'read'
-    } else {
-      mappedViewMode = 'read'
-    }
-    
-    // Pro attachments-manager režim použít state z AttachmentsManagerTile
-    const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
-    const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
+    // Namapovat LocalViewMode na ViewMode pomocí utility funkce
+    const mappedViewMode = mapAttachmentsViewMode(viewMode as any, attachmentsManagerUi.mode ?? 'list')
+    const mappedHasSelection = getHasSelection(viewMode as any, selectedId, attachmentsManagerUi)
+    const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
     
     onRegisterCommonActionsState?.({
       viewMode: mappedViewMode,
@@ -730,8 +710,8 @@ export default function LandlordsTile({
             if (!ok) return
           }
           
-          // Pokud jsme v read/edit/new mode, zavřít detail a vrátit se do list
-          if (mode === 'read' || mode === 'edit' || mode === 'new') {
+          // Použij utility funkci pro zjištění, jestli zavřít jen panel nebo celý manager
+          if (shouldCloseAttachmentsPanel(mode)) {
             const api = attachmentsManagerApiRef.current
             if (api?.close) {
               api.close()

@@ -28,6 +28,13 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type Vi
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
+import { 
+  getAttachmentsManagerActions, 
+  mapAttachmentsViewMode, 
+  getHasSelection, 
+  getIsDirty,
+  shouldCloseAttachmentsPanel 
+} from '@/app/lib/attachments/attachmentsManagerUtils'
 import '@/app/styles/components/TileLayout.css'
 
 // Type check for CommonActionId - removed unused variable
@@ -862,24 +869,7 @@ export default function UsersTile({
 
     if (viewMode === 'attachments-manager') {
       const mode = attachmentsManagerUi.mode ?? 'list'
-      const hasSelection = !!attachmentsManagerUi.hasSelection
-      
-      if (mode === 'new') {
-        return ['save', 'close']
-      }
-      if (mode === 'edit') {
-        return ['save', 'attachmentsNewVersion', 'close']
-      }
-      if (mode === 'read') {
-        return ['edit', 'attachmentsNewVersion', 'close']
-      }
-      // mode === 'list'
-      const listActions: CommonActionId[] = ['add']
-      if (hasSelection) {
-        listActions.push('view', 'edit')
-      }
-      listActions.push('columnSettings', 'close')
-      return listActions
+      return getAttachmentsManagerActions(mode, !!attachmentsManagerUi.hasSelection)
     }
 
     if (viewMode === 'read') {

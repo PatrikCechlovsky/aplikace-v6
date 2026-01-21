@@ -20,6 +20,13 @@ import type { DetailSectionId } from '@/app/UI/DetailView'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 import type { AttachmentsManagerUiState, AttachmentsManagerApi } from '@/app/UI/detail-sections/DetailAttachmentsSection'
+import { 
+  getAttachmentsManagerActions, 
+  mapAttachmentsViewMode, 
+  getHasSelection, 
+  getIsDirty,
+  shouldCloseAttachmentsPanel 
+} from '@/app/lib/attachments/attachmentsManagerUtils'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/PaletteCard.css'
@@ -290,45 +297,22 @@ export default function UnitsTile({
     } else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
     } else if (viewMode === 'attachments-manager') {
-      // Attachments manager má vlastní actions - registruje je AttachmentsManagerFrame
+      // Použij utility funkci pro actions
       const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'new') {
-        actions.push('save', 'close')
-      } else if (mode === 'edit') {
-        actions.push('save', 'attachmentsNewVersion', 'close')
-      } else if (mode === 'read') {
-        actions.push('edit', 'close')
-      } else {
-        // mode === 'list'
-        actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
-      }
+      actions.push(...getAttachmentsManagerActions(mode, !!attachmentsManagerUi.hasSelection))
     }
 
     onRegisterCommonActions?.(actions)
     
-    // Namapovat LocalViewMode na ViewMode
-    let mappedViewMode: ViewMode
-    if ((viewMode as string) === 'list') {
-      mappedViewMode = 'list'
-    } else if (viewMode === 'edit') {
-      mappedViewMode = 'edit'
-    } else if (viewMode === 'create') {
-      mappedViewMode = 'create'
-    } else if (viewMode === 'attachments-manager') {
-      // Podle mode z AttachmentsManagerFrame určit správný ViewMode
-      const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'list') mappedViewMode = 'list'
-      else if (mode === 'edit') mappedViewMode = 'edit'
-      else if (mode === 'new') mappedViewMode = 'create'
-      else mappedViewMode = 'read' // mode === 'read'
-    } else {
-      mappedViewMode = 'read'
-    }
+    // Namapovat LocalViewMode na ViewMode pomocí utility funkce
+    const mappedViewMode = mapAttachmentsViewMode(viewMode as any, attachmentsManagerUi.mode ?? 'list')
+    const mappedHasSelection = getHasSelection(viewMode as any, selectedId ? String(selectedId) : null, attachmentsManagerUi)
+    const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
     
     onRegisterCommonActionsState?.({
       viewMode: mappedViewMode,
-      hasSelection: viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId,
-      isDirty: viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty,
+      hasSelection: mappedHasSelection,
+      isDirty: mappedIsDirty,
     })
   }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
@@ -436,8 +420,8 @@ export default function UnitsTile({
 
             const mode = attachmentsManagerUi.mode ?? 'list'
             
-            // Pokud jsme v read/edit/new mode, zavřít tento panel a vrátit se do list mode
-            if (mode === 'read' || mode === 'edit' || mode === 'new') {
+            // Použij utility funkci pro zjištění, jestli zavřít jen panel nebo celý manager
+            if (shouldCloseAttachmentsPanel(mode)) {
               const api = attachmentsManagerApiRef.current
               if (api?.close) {
                 api.close()
