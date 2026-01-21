@@ -793,7 +793,7 @@ export default function LandlordsTile({
         return
       }
     })
-  }, [onRegisterCommonActionHandler, viewMode, isDirty, selectedId, landlords, setUrl, load, toast, openDetail, closeToList, closeListToModule, detailLandlord, attachmentsManagerLandlordId, attachmentsManagerUi])
+  }, [onRegisterCommonActionHandler, viewMode, isDirty, selectedId, landlords, setUrl, load, toast, openDetail, closeToList, closeListToModule, detailLandlord, attachmentsManagerLandlordId])
 
   // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
   const baseOrderIndex = useMemo(() => {
