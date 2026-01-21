@@ -20,34 +20,35 @@
 import { getIcon } from './icons'
 
 /* =========================================================
-   TYPES - CommonActionId type definitions (v2)
+   TYPES - CommonActionId type definitions (v3 - cache fix)
    ========================================================= */
 
+// Základní akce
 export type CommonActionId =
-  | 'add'
-  | 'detail'
-  | 'view'
-  | 'edit'
-  | 'duplicate'
-  | 'attach'
-  | 'attachments'
-  | 'archive'
-  | 'delete'
-  | 'save'
-  | 'cancel'
-  | 'close'
-  | 'invite'
-  | 'sendInvite'
-  | 'columnSettings' // Column settings for ListView
-  | 'import'
-  | 'export'
-  | 'reject'
-  // ✅ Attachments Manager (ONLY) – akce jsou jen přes CommonActions
-  | 'attachmentsAdd'
-  | 'attachmentsEdit'
-  | 'attachmentsSave'
-  | 'attachmentsNewVersion'
-  | 'attachmentsHistory'
+  | 'add'          // Přidat nový záznam
+  | 'save'         // Uložit změny
+  | 'cancel'       // Zrušit změny
+  | 'close'        // Zavřít
+  | 'delete'       // Smazat
+  | 'archive'      // Archivovat
+  | 'view'         // Zobrazit detail
+  | 'edit'         // Editovat
+  | 'detail'       // Přejít na detail
+  | 'duplicate'    // Duplikovat
+  | 'attach'       // Připojit
+  | 'attachments'  // Správa příloh (otevře AttachmentsManager)
+  | 'columnSettings' // Nastavení sloupců ListView
+  | 'invite'       // Pozvat
+  | 'sendInvite'   // Odeslat pozvánku
+  | 'import'       // Import
+  | 'export'       // Export
+  | 'reject'       // Odmítnout
+  // Attachments Manager akce (ONLY)
+  | 'attachmentsAdd'        // Přidat přílohu v manageru
+  | 'attachmentsEdit'       // Editovat přílohu
+  | 'attachmentsSave'       // Uložit přílohu
+  | 'attachmentsNewVersion' // Nová verze přílohy
+  | 'attachmentsHistory'    // Historie příloh
 
 export type ViewMode = 'list' | 'read' | 'edit' | 'create'
 export type Locale = 'cs' | 'en'
