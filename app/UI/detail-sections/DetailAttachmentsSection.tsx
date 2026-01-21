@@ -1050,6 +1050,14 @@ export default function DetailAttachmentsSection({
               <div className="detail-form__hint" style={{ marginTop: 6 }}>
                 Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
               </div>
+
+              {/* Hidden file input pro tlačítko "Nová verze" v edit módu */}
+              <input
+                type="file"
+                style={{ display: 'none' }}
+                ref={(el) => setVersionInputRef(editingDocId, el)}
+                onChange={(e) => void handleNewVersionSelected(editingDocId, e.target.files?.[0] ?? null)}
+              />
             </div>
           )}
 
