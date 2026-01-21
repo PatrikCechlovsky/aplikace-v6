@@ -30,7 +30,7 @@ type LandlordsTileProps = {
   subjectTypeFilter?: string | null // Přednastavený filtr podle typu subjektu
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
-  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
   onNavigate?: (tileId: string) => void // Callback pro navigaci na jiný tile
 }
 
