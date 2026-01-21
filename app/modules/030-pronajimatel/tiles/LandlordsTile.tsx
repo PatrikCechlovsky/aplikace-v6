@@ -708,8 +708,8 @@ export default function LandlordsTile({
         
           setDetailInitialSectionId('attachments')
         
-          // jdi přes stejnou cestu jako ostatní přechody do detailu
-          const backLandlord = landlords.find((l) => l.id === backId) ?? (detailLandlord?.id === backId ? detailLandlord : null)
+          // jdi přes stejnou cestu jako ostatní přechody do detailu - najít v seznamu
+          const backLandlord = landlords.find((l) => l.id === backId)
           if (backLandlord) {
             openDetail(backLandlord, 'read', 'attachments')
           } else {
