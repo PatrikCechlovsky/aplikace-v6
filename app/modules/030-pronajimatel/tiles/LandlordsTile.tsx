@@ -650,8 +650,16 @@ export default function LandlordsTile({
     }
 
     onRegisterCommonActions?.(actions)
+    
+    // Namapovat LocalViewMode na ViewMode
+    const mappedViewMode: ViewMode = 
+      viewMode === 'list' ? 'list' :
+      viewMode === 'edit' ? 'edit' :
+      viewMode === 'create' ? 'create' :
+      viewMode === 'attachments-manager' ? 'read' : 'read'
+    
     onRegisterCommonActionsState?.({
-      viewMode: viewMode,
+      viewMode: mappedViewMode,
       hasSelection: !!selectedId,
       isDirty: isDirty,
     })
