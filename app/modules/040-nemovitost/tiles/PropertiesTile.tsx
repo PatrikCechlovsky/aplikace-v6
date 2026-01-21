@@ -473,12 +473,6 @@ export default function PropertiesTile({
         return
       }
 
-      // COLUMN SETTINGS
-      if (id === 'columnSettings') {
-        toast.showInfo('Nastavení sloupců zatím není implementováno')
-        return
-      }
-
       // LIST ACTIONS
       if (viewMode === 'list') {
         if (id === 'add') {
