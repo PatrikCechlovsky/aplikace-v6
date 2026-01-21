@@ -986,9 +986,9 @@ export default function UsersTile({
         if (String(viewMode) === 'attachments-manager') {
           const mode = attachmentsManagerUi.mode ?? 'list'
           
-          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
-          if (mode === 'read' || mode === 'edit') {
-            logger.debug('close -> attachments-manager read/edit mode -> list mode')
+          // Pokud jsme v read/edit/new mode, zavřít a vrátit se do list mode
+          if (mode === 'read' || mode === 'edit' || mode === 'new') {
+            logger.debug('close -> attachments-manager submodes -> list mode')
             const api = attachmentsManagerApiRef.current
             if (api?.close) {
               api.close()
