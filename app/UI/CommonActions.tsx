@@ -20,7 +20,7 @@
 import { getIcon } from './icons'
 
 /* =========================================================
-   TYPES - CommonActionId definitions
+   TYPES - CommonActionId type definitions (v2)
    ========================================================= */
 
 export type CommonActionId =
