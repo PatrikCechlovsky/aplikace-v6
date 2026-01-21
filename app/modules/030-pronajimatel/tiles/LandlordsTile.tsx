@@ -663,10 +663,14 @@ export default function LandlordsTile({
       hasSelection: !!selectedId,
       isDirty: isDirty,
     })
-  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty])
+  // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
+  // Jsou stabilní funkce (useCallback v AppShell) a jejich přidání způsobuje problémy s registrací.
 
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
+    // POZNÁMKA: onRegisterCommonActionHandler NENÍ v dependencies!
+    // Je stabilní funkce (useCallback v AppShell).
 
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       // CLOSE
