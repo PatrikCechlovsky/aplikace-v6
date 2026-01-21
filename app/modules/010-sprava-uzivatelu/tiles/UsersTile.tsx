@@ -889,7 +889,7 @@ export default function UsersTile({
 
     if (viewMode === 'edit') return withAttachmentsBeforeClose(EDIT_DEFAULT)
     return withAttachmentsBeforeClose(CREATE_DEFAULT)
-  }, [viewMode, selectedId, detailActiveSectionId, attachmentsManagerUi.mode])
+  }, [viewMode, selectedId, detailActiveSectionId, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
