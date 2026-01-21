@@ -79,8 +79,10 @@ if (viewMode === 'edit') {
 ```
 
 - **'save'** - Uloží změny
-- **'attachments'** - Otevře attachments manager (pokud entita již existuje)
+- **'attachments'** - Otevře attachments manager (entita již existuje)
 - **'close'** - Zavře detail (s potvrzením pokud jsou neuložené změny)
+
+**Důležité:** Edit mode má 'attachments', protože upravujeme existující záznam který již může mít přílohy.
 
 ---
 
@@ -121,10 +123,14 @@ if (viewMode === 'attachments-manager') {
 - **'add'** - Přidat novou přílohu
 - **'view'** - Zobrazit detail vybrané přílohy
 - **'edit'** - Upravit metadata vybrané přílohy
-- **'attachmentsNewVersion'** - Nahrát novou verzi vybraného dokumentu
+- **'attachmentsNewVersion'** - Nahrát novou verzi vybraného dokumentu (dostupné v list a read mode)
 - **'save'** - Uložit změny (v edit/new mode)
-- **'columnSettings'** - Nastavení sloupců seznamu příloh
+- **'columnSettings'** - Nastavení sloupců seznamu příloh (pouze v list mode)
 - **'close'** - Zavřít (v list mode → vrátí se do entity detail, v read/edit mode → vrátí se do list mode)
+
+**Důležité:** 
+- V **list mode** je viditelný button 'attachmentsNewVersion' pro rychlé nahrání nové verze vybraného dokumentu
+- V **new mode** (přidání nové přílohy) je viditelný button 'save' pro uložení nového dokumentu
 
 ---
 
@@ -196,6 +202,15 @@ useEffect(() => {
     if (viewMode === 'edit') {
       actions.push('save', 'attachments', 'close')
     } else {
+      actions.push('save', 'close')
+    const mode = attachmentsManagerUi.mode ?? 'list'
+    if (mode === 'list') {
+      actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
+    } else if (mode === 'new') {
+      actions.push('save', 'close')
+    } else if (mode === 'read') {
+      actions.push('edit', 'attachmentsNewVersion', 'close')
+    } else if (mode === 'edit') {
       actions.push('save', 'close')
     }
   } else if (viewMode === 'read') {
