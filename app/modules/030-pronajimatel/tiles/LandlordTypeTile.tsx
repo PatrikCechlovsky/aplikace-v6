@@ -12,7 +12,7 @@ type Props = {
   subjectType: string // 'osoba' | 'osvc' | 'firma' | 'spolek' | 'statni' | 'zastupce'
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
-  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
 }
 
 /**
