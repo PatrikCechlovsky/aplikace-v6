@@ -691,9 +691,13 @@ export default function DetailAttachmentsSection({
       },
 
       newVersion: () => {
-        const r = ensureSelected()
-        if (!r) return
-        handlePickNewVersion(r.id)
+        // V edit módu používáme editingDocId místo selectedDocId
+        const docId = editingDocId || selectedDocId
+        if (!docId) {
+          setErrorText('Nejdřív vyber nebo otevři přílohu.')
+          return
+        }
+        handlePickNewVersion(docId)
       },
 
       columnSettings: () => {
