@@ -896,8 +896,19 @@ export default function UsersTile({
   }, [onRegisterCommonActions, commonActions])
 
   useEffect(() => {
-    const mappedViewMode: ViewMode =
-      viewMode === 'list' ? 'list' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'read'
+    let mappedViewMode: ViewMode
+    
+    if (viewMode === 'attachments-manager') {
+      // V attachments-manager mapujeme podle mode attachmentů
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') mappedViewMode = 'create'
+      else if (mode === 'edit') mappedViewMode = 'edit'
+      else if (mode === 'read') mappedViewMode = 'read'
+      else mappedViewMode = 'list'
+    } else {
+      // Normální mapping pro entity detail
+      mappedViewMode = viewMode === 'list' ? 'list' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'read'
+    }
 
     const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
     const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
