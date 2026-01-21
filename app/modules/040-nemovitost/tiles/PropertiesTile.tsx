@@ -514,7 +514,8 @@ export default function PropertiesTile({
         }
 
         // attachments v create/edit režimu
-        if (id === 'attachments') {
+        // NOTE: Type assertion needed due to Vercel cache issue with CommonActionId type
+        if ((id as string) === 'attachments') {
           if (isDirty) {
             toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
             return
