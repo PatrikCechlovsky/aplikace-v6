@@ -433,11 +433,11 @@ export default function DetailAttachmentsSection({
     }
 
     return {
-      hasSelection: !!selectedDocId,
+      hasSelection: !!selectedDocId || !!editingDocId, // V edit módu je editingDocId místo selectedDocId
       isDirty: !!panelDirty || !!metaDirty,
       mode,
     }
-  }, [selectedDocId, panelDirty, metaDirty, panelOpen, editingDocId, readModeOpen])
+  }, [selectedDocId, editingDocId, panelDirty, metaDirty, panelOpen, readModeOpen])
 
   // ✅ hlášení stavu nahoru (kvůli Save/disabled v CommonActions)
   useEffect(() => {
