@@ -713,10 +713,10 @@ export default function TenantsTile({
         actions.push('add', 'view', 'edit', 'columnSettings', 'close')
       }
     } else if (viewMode === 'list') {
-      // Pořadí jako v Users: add, detail, edit/uložit, sloupce, zavřít
+      // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit') // Detail a Edit jen když je vybrán řádek
+        actions.push('view', 'edit', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
       actions.push('columnSettings', 'close')
       // TODO: Přidat delete a archive po implementaci

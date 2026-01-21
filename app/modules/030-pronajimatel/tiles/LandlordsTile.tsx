@@ -639,13 +639,10 @@ export default function LandlordsTile({
   useEffect(() => {
     const actions: CommonActionId[] = []
     if (viewMode === 'list') {
-      // Pořadí jako v Users: add, detail, edit/uložit, přílohy (když je vybrán), sloupce, zavřít
+      // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit') // Detail a Edit jen když je vybrán řádek
-      }
-      if (selectedId) {
-        actions.push('attachments') // Přílohy jen když je vybrán řádek
+        actions.push('view', 'edit', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
       actions.push('columnSettings', 'close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
