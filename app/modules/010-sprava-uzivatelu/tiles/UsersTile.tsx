@@ -862,6 +862,8 @@ export default function UsersTile({
 
     if (viewMode === 'attachments-manager') {
       const mode = attachmentsManagerUi.mode ?? 'list'
+      const hasSelection = !!attachmentsManagerUi.hasSelection
+      
       if (mode === 'new') {
         return ['save', 'close']
       }
@@ -869,10 +871,15 @@ export default function UsersTile({
         return ['save', 'attachmentsNewVersion', 'close']
       }
       if (mode === 'read') {
-        return ['edit', 'close']
+        return ['edit', 'attachmentsNewVersion', 'close']
       }
       // mode === 'list'
-      return ['add', 'view', 'edit', 'columnSettings', 'close']
+      const listActions: CommonActionId[] = ['add']
+      if (hasSelection) {
+        listActions.push('view', 'edit')
+      }
+      listActions.push('columnSettings', 'close')
+      return listActions
     }
 
     if (viewMode === 'read') {
@@ -896,7 +903,7 @@ export default function UsersTile({
     const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
 
     onRegisterCommonActionsState?.({ viewMode: mappedViewMode, hasSelection: mappedHasSelection, isDirty: mappedIsDirty })
-  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi])
+  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty])
 
   // -------------------------
   // CommonActions handler
