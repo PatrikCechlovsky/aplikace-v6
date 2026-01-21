@@ -797,7 +797,10 @@ export default function LandlordsTile({
         return
       }
     })
-  }, [onRegisterCommonActionHandler, viewMode, isDirty, selectedId, landlords, setUrl, load, toast, openDetail, closeToList, closeListToModule, detailLandlord, attachmentsManagerLandlordId])
+  }, [viewMode, isDirty, selectedId])
+  // POZNÁMKA: onRegisterCommonActionHandler, landlords, setUrl, load, toast, openDetail,
+  // closeToList, closeListToModule, detailLandlord, attachmentsManagerLandlordId NEJSOU v dependencies!
+  // Jsou stabilní funkce nebo způsobují nekonečnou smyčku re-renderů.
 
   // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
   const baseOrderIndex = useMemo(() => {

@@ -417,9 +417,10 @@ export default function PropertiesTile({
         return
       }
     })
-  }, [viewMode, selectedId, isDirty, properties, openDetail, loadData, closeListToModule, closeToList, detailProperty])
-  // POZNÁMKA: onRegisterCommonActionHandler, onNavigate, toast NEJSOU v dependencies!
-  // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
+  }, [viewMode, selectedId, isDirty])
+  // POZNÁMKA: onRegisterCommonActionHandler, properties, openDetail, loadData, closeListToModule,
+  // closeToList, detailProperty, toast NEJSOU v dependencies!
+  // Jsou stabilní funkce nebo způsobují nekonečnou smyčku re-renderů.
 
   // Load data on mount and filter change
   useEffect(() => {
