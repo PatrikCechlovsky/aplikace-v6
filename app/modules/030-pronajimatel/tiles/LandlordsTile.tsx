@@ -653,7 +653,7 @@ export default function LandlordsTile({
         actions.push('edit', 'close')
       } else {
         // mode === 'list'
-        actions.push('add', 'view', 'edit', 'columnSettings', 'close')
+        actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
       }
     }
     // LIST MODE

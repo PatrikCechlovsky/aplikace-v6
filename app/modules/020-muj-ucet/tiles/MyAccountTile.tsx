@@ -151,7 +151,7 @@ export default function MyAccountTile({
         return ['edit', 'close']
       }
       // mode === 'list'
-      return ['add', 'view', 'edit', 'columnSettings', 'close']
+      return ['add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close']
     }
     return ['save', 'attachments', 'close']
   }, [viewMode, attachmentsManagerUi.mode])
