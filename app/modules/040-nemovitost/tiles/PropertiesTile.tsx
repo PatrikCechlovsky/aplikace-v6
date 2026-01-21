@@ -441,6 +441,44 @@ export default function PropertiesTile({
         return
       }
 
+      // ATTACHMENTS open manager
+      if (id === 'attachments') {
+        if (viewMode === 'list') {
+          if (!selectedId) {
+            toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
+            return
+          }
+          setAttachmentsManagerPropertyId(selectedId)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          return
+        }
+
+        // READ / EDIT mode
+        if (viewMode === 'read' || viewMode === 'edit') {
+          if (isDirty) {
+            toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+            return
+          }
+          if (!detailProperty?.id || !detailProperty.id.trim() || detailProperty.id === 'new') {
+            toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+            return
+          }
+
+          setAttachmentsManagerPropertyId(detailProperty.id)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          return
+        }
+        return
+      }
+
+      // COLUMN SETTINGS
+      if (id === 'columnSettings') {
+        toast.showInfo('Nastavení sloupců zatím není implementováno')
+        return
+      }
+
       // LIST ACTIONS
       if (viewMode === 'list') {
         if (id === 'add') {
@@ -462,17 +500,6 @@ export default function PropertiesTile({
           return
         }
 
-        if (id === 'attachments') {
-          if (!selectedId) {
-            toast.showWarning('Nejdřív vyber nemovitost v seznamu.')
-            return
-          }
-          setAttachmentsManagerPropertyId(selectedId)
-          setViewMode('attachments-manager')
-          setIsDirty(false)
-          return
-        }
-
         return
       }
 
@@ -491,6 +518,23 @@ export default function PropertiesTile({
           }
           return
         }
+
+        // attachments v create/edit režimu
+        if (id === 'attachments') {
+          if (isDirty) {
+            toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+            return
+          }
+          if (!detailProperty?.id || !detailProperty.id.trim() || detailProperty.id === 'new') {
+            toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+            return
+          }
+
+          setAttachmentsManagerPropertyId(detailProperty.id)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          return
+        }
         return
       }
 
@@ -501,21 +545,7 @@ export default function PropertiesTile({
           return
         }
 
-        if (id === 'attachments') {
-          if (isDirty) {
-            toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
-            return
-          }
-          if (!detailProperty?.id || detailProperty.id === 'new') {
-            toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
-            return
-          }
-          setAttachmentsManagerPropertyId(detailProperty.id)
-          setViewMode('attachments-manager')
-          setIsDirty(false)
-          return
-        }
-
+        // attachments už je zpracován výše v ATTACHMENTS open manager bloku
         return
       }
     })
