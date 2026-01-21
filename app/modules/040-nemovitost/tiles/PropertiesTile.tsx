@@ -16,7 +16,10 @@ import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 import type { DetailSectionId } from '@/app/UI/DetailView'
-import AttachmentsManagerTile from '@/app/UI/attachments/AttachmentsManagerTile'
+import AttachmentsManagerTile, {
+  type AttachmentsManagerApi,
+  type AttachmentsManagerUiState,
+} from '@/app/UI/attachments/AttachmentsManagerTile'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -151,8 +154,14 @@ export default function PropertiesTile({
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<DetailSectionId>('detail')
   const submitRef = useRef<(() => Promise<DetailUiProperty | null>) | null>(null)
 
-  // Attachments manager: jen ID (komponenta má vlastní logiku)
+  // ✅ Attachments manager: API ref a UI state
   const [attachmentsManagerPropertyId, setAttachmentsManagerPropertyId] = useState<string | null>(null)
+  const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
+  const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
+    mode: 'list',
+    hasSelection: false,
+    isDirty: false,
+  })
 
   // Load property types
   useEffect(() => {
@@ -188,19 +197,39 @@ export default function PropertiesTile({
     if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
     
     const actions: CommonActionId[] = []
-    if (viewMode === 'list') {
+    
+    // ATTACHMENTS MANAGER MODE
+    if (viewMode === 'attachments-manager') {
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') {
+        actions.push('save', 'close')
+      } else if (mode === 'edit') {
+        actions.push('save', 'attachmentsNewVersion', 'close')
+      } else if (mode === 'read') {
+        actions.push('edit', 'close')
+      } else {
+        // mode === 'list'
+        actions.push('add', 'view', 'edit', 'columnSettings', 'close')
+      }
+    }
+    // LIST MODE
+    else if (viewMode === 'list') {
       actions.push('add')
       if (selectedId) {
         actions.push('view', 'edit', 'attachments')
       }
       actions.push('columnSettings', 'close')
-    } else if (viewMode === 'edit' || viewMode === 'create') {
+    }
+    // EDIT / CREATE MODE
+    else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
         actions.push('save', 'attachments', 'close')
       } else {
         actions.push('save', 'close')
       }
-    } else if (viewMode === 'read') {
+    }
+    // READ MODE
+    else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
     }
 
@@ -211,12 +240,16 @@ export default function PropertiesTile({
       viewMode === 'edit' ? 'edit' : 
       viewMode === 'create' ? 'create' : 'read'
     
+    // Pro attachments-manager režim použít state z AttachmentsManagerTile
+    const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
+    const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
+    
     onRegisterCommonActionsState({
       viewMode: mappedViewMode,
-      hasSelection: !!selectedId,
-      isDirty,
+      hasSelection: mappedHasSelection,
+      isDirty: mappedIsDirty,
     })
-  }, [viewMode, selectedId, isDirty])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi])
   // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
   // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
@@ -318,7 +351,76 @@ export default function PropertiesTile({
     if (!onRegisterCommonActionHandler) return
     
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
-      // CLOSE
+      // ATTACHMENTS MANAGER ACTIONS
+      if (viewMode === 'attachments-manager') {
+        // Close v attachments-manager má speciální chování
+        if (id === 'close') {
+          const mode = attachmentsManagerUi.mode ?? 'list'
+          const dirtyNow = !!attachmentsManagerUi.isDirty
+          
+          if (dirtyNow) {
+            const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+            if (!ok) return
+          }
+          
+          // Pokud jsme v read/edit/new mode, zavřít detail a vrátit se do list
+          if (mode === 'read' || mode === 'edit' || mode === 'new') {
+            const api = attachmentsManagerApiRef.current
+            if (api?.close) {
+              api.close()
+            }
+            return
+          }
+          
+          // Pokud jsme v list mode, vrátit se zpět do detailu entity
+          const backId = attachmentsManagerPropertyId ?? detailProperty?.id ?? null
+          if (!backId) {
+            closeToList()
+            return
+          }
+          
+          setDetailInitialSectionId('attachments')
+          
+          const backProperty = properties.find((p) => p.id === backId)
+          if (backProperty) {
+            void openDetail(backProperty, 'read', 'attachments')
+          } else {
+            closeToList()
+          }
+          return
+        }
+        
+        // Ostatní akce přes API
+        const api = attachmentsManagerApiRef.current
+        if (!api) return
+        
+        if (id === 'add') {
+          api.add()
+          return
+        }
+        if (id === 'view') {
+          api.view()
+          return
+        }
+        if (id === 'edit') {
+          api.edit()
+          return
+        }
+        if (id === 'save') {
+          await api.save()
+          return
+        }
+        if (id === 'attachmentsNewVersion') {
+          api.newVersion()
+          return
+        }
+        if (id === 'columnSettings') {
+          api.columnSettings()
+          return
+        }
+      }
+
+      // CLOSE (pro ostatní režimy)
       if (id === 'close') {
         if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
@@ -529,27 +631,12 @@ export default function PropertiesTile({
         entityType="properties"
         entityId={attachmentsManagerPropertyId}
         entityLabel={label}
-        onClose={() => {
-          // Vrátit se zpět do detailu entity s otevřenou záložkou Přílohy
-          const backId = attachmentsManagerPropertyId ?? detailProperty?.id ?? null
-          if (!backId) {
-            closeToList()
-            return
-          }
-          
-          setDetailInitialSectionId('attachments')
-          
-          // Najít v seznamu a otevřít detail
-          const backProperty = properties.find((p) => p.id === backId)
-          if (backProperty) {
-            void openDetail(backProperty, 'read', 'attachments')
-          } else {
-            closeToList()
-          }
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
         }}
-        onRegisterCommonActions={onRegisterCommonActions}
-        onRegisterCommonActionsState={onRegisterCommonActionsState}
-        onRegisterCommonActionHandler={onRegisterCommonActionHandler}
+        onManagerStateChange={(state) => {
+          setAttachmentsManagerUi(state)
+        }}
       />
     )
   }
