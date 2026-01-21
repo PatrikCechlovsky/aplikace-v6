@@ -20,7 +20,7 @@
 import { getIcon } from './icons'
 
 /* =========================================================
-   TYPES
+   TYPES - CommonActionId definitions
    ========================================================= */
 
 export type CommonActionId =
@@ -38,7 +38,7 @@ export type CommonActionId =
   | 'close'
   | 'invite'
   | 'sendInvite'
-  | 'columnSettings'
+  | 'columnSettings' // Column settings for ListView
   | 'import'
   | 'export'
   | 'reject'
