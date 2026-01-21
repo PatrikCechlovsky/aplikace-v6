@@ -649,7 +649,11 @@ export default function LandlordsTile({
       }
       actions.push('columnSettings', 'close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
-      actions.push('save', 'close') // V create/edit mode: "Uložit" a "Zavřít" (červené X)
+      if (viewMode === 'edit') {
+        actions.push('save', 'attachments', 'close') // V edit mode: "Uložit", "Přílohy", "Zavřít"
+      } else {
+        actions.push('save', 'close') // V create mode: "Uložit" a "Zavřít" (bez příloh)
+      }
     } else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
     } else if (viewMode === 'attachments-manager') {
@@ -740,19 +744,23 @@ export default function LandlordsTile({
           return
         }
 
-        if (isDirty) {
-          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
-          return
-        }
-        if (!detailLandlord?.id || !detailLandlord.id.trim() || detailLandlord.id === 'new') {
-          toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
-          return
-        }
+        // READ / EDIT mode
+        if (viewMode === 'read' || viewMode === 'edit') {
+          if (isDirty) {
+            toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+            return
+          }
+          if (!detailLandlord?.id || !detailLandlord.id.trim() || detailLandlord.id === 'new') {
+            toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+            return
+          }
 
-        setAttachmentsManagerLandlordId(detailLandlord.id)
-        setViewMode('attachments-manager')
-        setIsDirty(false)
-        setUrl({ t: 'landlords-list', id: detailLandlord.id, vm: null }, 'push')
+          setAttachmentsManagerLandlordId(detailLandlord.id)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          setUrl({ t: 'landlords-list', id: detailLandlord.id, vm: null }, 'push')
+          return
+        }
         return
       }
 
