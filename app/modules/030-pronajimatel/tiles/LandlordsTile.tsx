@@ -11,6 +11,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import LandlordDetailFrame, { type UiLandlord as DetailUiLandlord } from '../forms/LandlordDetailFrame'
+import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listLandlords, getLandlordDetail, type LandlordsListRow } from '@/app/lib/services/landlords'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
@@ -33,7 +34,7 @@ type LandlordsTileProps = {
   onNavigate?: (tileId: string) => void // Callback pro navigaci na jiný tile
 }
 
-type LocalViewMode = ViewMode | 'list'
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
 
 const VIEW_KEY = '030.landlords.list'
 
@@ -240,6 +241,15 @@ export default function LandlordsTile({
   const [isDirty, setIsDirty] = useState(false)
 
   const submitRef = useRef<null | (() => Promise<DetailUiLandlord | null>)>(null)
+
+  // ✅ Attachments manager bridge (API + UI state)
+  const [attachmentsManagerLandlordId, setAttachmentsManagerLandlordId] = useState<string | null>(null)
+  const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
+  const [attachmentsManagerUi, setAttachmentsManagerUi] = useState<AttachmentsManagerUiState>({
+    hasSelection: false,
+    isDirty: false,
+    mode: 'list',
+  })
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   
@@ -629,31 +639,40 @@ export default function LandlordsTile({
   useEffect(() => {
     const actions: CommonActionId[] = []
     if (viewMode === 'list') {
-      // Pořadí jako v Users: add, detail, edit/uložit, sloupce, zavřít
+      // Pořadí jako v Users: add, detail, edit/uložit, přílohy (když je vybrán), sloupce, zavřít
       actions.push('add')
       if (selectedId) {
         actions.push('view', 'edit') // Detail a Edit jen když je vybrán řádek
       }
+      if (selectedId) {
+        actions.push('attachments') // Přílohy jen když je vybrán řádek
+      }
       actions.push('columnSettings', 'close')
-      // TODO: Přidat delete a archive po implementaci
-      // if (selectedId) {
-      //   actions.push('delete', 'archive')
-      // }
     } else if (viewMode === 'edit' || viewMode === 'create') {
       actions.push('save', 'close') // V create/edit mode: "Uložit" a "Zavřít" (červené X)
     } else if (viewMode === 'read') {
-      actions.push('edit', 'close')
-      // TODO: Přidat delete a archive po implementaci
-      // actions.push('delete', 'archive')
+      actions.push('edit', 'attachments', 'close')
+    } else if (viewMode === 'attachments-manager') {
+      // Manager mode: akce řídí AttachmentsManagerFrame
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'list') {
+        actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
+      } else if (mode === 'new') {
+        actions.push('save', 'close')
+      } else if (mode === 'read') {
+        actions.push('edit', 'attachmentsNewVersion', 'close')
+      } else if (mode === 'edit') {
+        actions.push('save', 'close')
+      }
     }
 
     onRegisterCommonActions?.(actions)
     onRegisterCommonActionsState?.({
-      viewMode,
-      hasSelection: !!selectedId,
-      isDirty,
+      viewMode: viewMode === 'attachments-manager' ? 'read' : viewMode,
+      hasSelection: viewMode === 'attachments-manager' ? attachmentsManagerUi.hasSelection : !!selectedId,
+      isDirty: viewMode === 'attachments-manager' ? attachmentsManagerUi.isDirty : isDirty,
     })
-  }, [viewMode, selectedId, isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi, onRegisterCommonActions, onRegisterCommonActionsState])
 
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
@@ -661,15 +680,110 @@ export default function LandlordsTile({
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       // CLOSE
       if (id === 'close') {
-        if (isDirty && (viewMode === 'edit' || viewMode === 'create')) {
+        const dirtyNow = String(viewMode) === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
+
+        if (dirtyNow && (viewMode === 'edit' || viewMode === 'create')) {
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
+        }
+
+        if (String(viewMode) === 'attachments-manager') {
+          const mode = attachmentsManagerUi.mode ?? 'list'
+          
+          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
+          if (mode === 'read' || mode === 'edit') {
+            const api = attachmentsManagerApiRef.current
+            if (api?.close) {
+              api.close()
+            }
+            return
+          }
+          
+          // Pokud jsme v list mode, vrátit se zpět do detailu entity
+          const backId = attachmentsManagerLandlordId ?? detailLandlord?.id ?? null
+          if (!backId) {
+            closeToList()
+            return
+          }
+        
+          setDetailInitialSectionId('attachments')
+        
+          // jdi přes stejnou cestu jako ostatní přechody do detailu
+          const backLandlord = landlords.find((l) => l.id === backId) ?? (detailLandlord?.id === backId ? detailLandlord : null)
+          if (backLandlord) {
+            openDetail(backLandlord, 'read', 'attachments')
+          } else {
+            closeToList()
+          }
+          return
         }
 
         if (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create') {
           closeToList()
         } else {
           closeListToModule()
+        }
+        return
+      }
+
+      // ATTACHMENTS open manager
+      if (id === 'attachments') {
+        if (viewMode === 'list') {
+          if (!selectedId) {
+            toast.showWarning('Nejdřív vyber pronajimatele v seznamu.')
+            return
+          }
+          setAttachmentsManagerLandlordId(selectedId)
+          setViewMode('attachments-manager')
+          setIsDirty(false)
+          setUrl({ t: 'landlords-list', id: selectedId, vm: null, am: '1' }, 'push')
+          return
+        }
+
+        if (isDirty) {
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři správu příloh.')
+          return
+        }
+        if (!detailLandlord?.id || !detailLandlord.id.trim() || detailLandlord.id === 'new') {
+          toast.showWarning('Nejdřív ulož záznam, aby šly spravovat přílohy.')
+          return
+        }
+
+        setAttachmentsManagerLandlordId(detailLandlord.id)
+        setViewMode('attachments-manager')
+        setIsDirty(false)
+        setUrl({ t: 'landlords-list', id: detailLandlord.id, vm: null, am: '1' }, 'push')
+        return
+      }
+
+      // MANAGER MODE: Delegovat API calls
+      if (String(viewMode) === 'attachments-manager') {
+        const api = attachmentsManagerApiRef.current
+        if (!api) return
+
+        if (id === 'add') {
+          api.add()
+          return
+        }
+        if (id === 'view') {
+          api.view()
+          return
+        }
+        if (id === 'edit') {
+          api.edit()
+          return
+        }
+        if (id === 'save') {
+          await api.save()
+          return
+        }
+        if (id === 'attachmentsNewVersion') {
+          api.newVersion()
+          return
+        }
+        if (id === 'columnSettings') {
+          api.columnSettings()
+          return
         }
         return
       }
@@ -749,7 +863,7 @@ export default function LandlordsTile({
         return
       }
     })
-  }, [onRegisterCommonActionHandler, viewMode, isDirty, selectedId, landlords, setUrl, router, load, toast, openDetail, closeToList, closeListToModule])
+  }, [onRegisterCommonActionHandler, viewMode, isDirty, selectedId, landlords, setUrl, load, toast, openDetail, closeToList, closeListToModule, detailLandlord, attachmentsManagerLandlordId, attachmentsManagerUi])
 
   // ✅ mapa původního pořadí (jak přišlo z backendu) – stabilita řazení
   const baseOrderIndex = useMemo(() => {
@@ -902,6 +1016,40 @@ export default function LandlordsTile({
           }}
         />
       </div>
+    )
+  }
+
+  // ✅ ATTACHMENTS MANAGER MODE
+  if (viewMode === 'attachments-manager') {
+    const landlordId = attachmentsManagerLandlordId
+    if (!landlordId) {
+      return (
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">Správa příloh</h1>
+          </div>
+          <div style={{ padding: '1.5rem' }}>
+            <p>Chyba: Není vybrán pronajímatel.</p>
+          </div>
+        </div>
+      )
+    }
+
+    const landlord = landlords.find((l) => l.id === landlordId) ?? detailLandlord
+    const landlordLabel = landlord?.displayName || 'pronajímatele'
+
+    return (
+      <AttachmentsManagerFrame
+        entityType="landlords"
+        entityId={landlordId}
+        entityLabel={landlordLabel}
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
+        }}
+        onManagerStateChange={(state) => {
+          setAttachmentsManagerUi(state)
+        }}
+      />
     )
   }
 
