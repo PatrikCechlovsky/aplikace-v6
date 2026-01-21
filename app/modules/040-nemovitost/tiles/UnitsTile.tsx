@@ -290,41 +290,47 @@ export default function UnitsTile({
     } else if (viewMode === 'read') {
       actions.push('edit', 'attachments', 'close')
     } else if (viewMode === 'attachments-manager') {
-      // Attachments manager má vlastní actions
-      const managerActions: CommonActionId[] = []
+      // Attachments manager má vlastní actions - registruje je AttachmentsManagerFrame
       const mode = attachmentsManagerUi.mode ?? 'list'
       if (mode === 'new') {
-        managerActions.push('save', 'close')
+        actions.push('save', 'close')
       } else if (mode === 'edit') {
-        managerActions.push('save', 'attachmentsNewVersion', 'close')
+        actions.push('save', 'attachmentsNewVersion', 'close')
       } else if (mode === 'read') {
-        managerActions.push('edit', 'close')
+        actions.push('edit', 'close')
       } else {
         // mode === 'list'
-        managerActions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
+        actions.push('add', 'view', 'edit', 'attachmentsNewVersion', 'columnSettings', 'close')
       }
-      onRegisterCommonActions?.(managerActions)
-      onRegisterCommonActionsState?.({
-        viewMode: 'read',
-        hasSelection: attachmentsManagerUi.hasSelection,
-        isDirty: attachmentsManagerUi.isDirty,
-      })
-      return
     }
 
     onRegisterCommonActions?.(actions)
     
-    const mappedViewMode: ViewMode = 
-      (viewMode as string) === 'list' ? 'list' : 
-      viewMode === 'edit' ? 'edit' : 
-      viewMode === 'create' ? 'create' : 'read'
+    // Namapovat LocalViewMode na ViewMode
+    let mappedViewMode: ViewMode
+    if ((viewMode as string) === 'list') {
+      mappedViewMode = 'list'
+    } else if (viewMode === 'edit') {
+      mappedViewMode = 'edit'
+    } else if (viewMode === 'create') {
+      mappedViewMode = 'create'
+    } else if (viewMode === 'attachments-manager') {
+      // Podle mode z AttachmentsManagerFrame určit správný ViewMode
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'list') mappedViewMode = 'list'
+      else if (mode === 'edit') mappedViewMode = 'edit'
+      else if (mode === 'new') mappedViewMode = 'create'
+      else mappedViewMode = 'read' // mode === 'read'
+    } else {
+      mappedViewMode = 'read'
+    }
     
     onRegisterCommonActionsState?.({
       viewMode: mappedViewMode,
-      hasSelection: !!selectedId,
-      isDirty,
+      hasSelection: viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId,
+      isDirty: viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty,
     })
-  }, [viewMode, selectedId, isDirty, attachmentsManagerUi, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
   // Handle common actions
   useEffect(() => {
@@ -422,10 +428,26 @@ export default function UnitsTile({
         
         case 'close':
           if (viewMode === 'attachments-manager') {
-            // Zavřít attachments manager, vrátit se na detail
-            setViewMode('read')
-            setActiveSectionId('attachments')
-            setAttachmentsManagerUnitId(null)
+            const dirtyNow = !!attachmentsManagerUi.isDirty
+            if (dirtyNow) {
+              const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+              if (!ok) return
+            }
+
+            const mode = attachmentsManagerUi.mode ?? 'list'
+            
+            // Pokud jsme v read/edit/new mode, zavřít tento panel a vrátit se do list mode
+            if (mode === 'read' || mode === 'edit' || mode === 'new') {
+              const api = attachmentsManagerApiRef.current
+              if (api?.close) {
+                api.close()
+              }
+            } else {
+              // Jsme v list mode, zavřít celý attachments manager
+              setViewMode('read')
+              setActiveSectionId('attachments')
+              setAttachmentsManagerUnitId(null)
+            }
             break
           }
 

@@ -733,8 +733,24 @@ export default function TenantsTile({
 
     onRegisterCommonActions?.(actions)
     
-    const mappedViewMode: ViewMode =
-      viewMode === 'list' ? 'list' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'read'
+    // Namapovat LocalViewMode na ViewMode
+    let mappedViewMode: ViewMode
+    if (viewMode === 'list') {
+      mappedViewMode = 'list'
+    } else if (viewMode === 'edit') {
+      mappedViewMode = 'edit'
+    } else if (viewMode === 'create') {
+      mappedViewMode = 'create'
+    } else if (viewMode === 'attachments-manager') {
+      // Podle mode z AttachmentsManagerFrame určit správný ViewMode
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'list') mappedViewMode = 'list'
+      else if (mode === 'edit') mappedViewMode = 'edit'
+      else if (mode === 'new') mappedViewMode = 'create'
+      else mappedViewMode = 'read' // mode === 'read'
+    } else {
+      mappedViewMode = 'read'
+    }
 
     const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
     const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
@@ -744,7 +760,7 @@ export default function TenantsTile({
       hasSelection: mappedHasSelection,
       isDirty: mappedIsDirty,
     })
-  }, [viewMode, selectedId, isDirty, attachmentsManagerUi, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
@@ -780,9 +796,9 @@ export default function TenantsTile({
         if (id === 'close') {
           const mode = attachmentsManagerUi.mode ?? 'list'
           
-          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
-          if (mode === 'read' || mode === 'edit') {
-            logger.debug('close -> attachments-manager read/edit mode -> list mode')
+          // Pokud jsme v read/edit/new mode, zavřít tento panel a vrátit se do list mode
+          if (mode === 'read' || mode === 'edit' || mode === 'new') {
+            logger.debug('close -> attachments-manager read/edit/new mode -> list mode')
             const api = attachmentsManagerApiRef.current
             if (api?.close) {
               api.close()

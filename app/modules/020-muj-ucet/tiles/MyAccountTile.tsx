@@ -161,7 +161,19 @@ export default function MyAccountTile({
   }, [onRegisterCommonActions, commonActions])
 
   useEffect(() => {
-    const mappedViewMode: ViewMode = viewMode === 'attachments-manager' ? 'read' : 'edit'
+    let mappedViewMode: ViewMode
+    
+    if (viewMode === 'attachments-manager') {
+      // V attachments-manager mapujeme podle mode attachmentů
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') mappedViewMode = 'create'
+      else if (mode === 'edit') mappedViewMode = 'edit'
+      else if (mode === 'read') mappedViewMode = 'read'
+      else mappedViewMode = 'list'
+    } else {
+      mappedViewMode = 'edit' // Můj účet je vždy edit
+    }
+
     const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : true
     const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
 
@@ -170,7 +182,7 @@ export default function MyAccountTile({
       hasSelection: mappedHasSelection,
       isDirty: mappedIsDirty,
     })
-  }, [onRegisterCommonActionsState, viewMode, isDirty, attachmentsManagerUi])
+  }, [onRegisterCommonActionsState, viewMode, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty])
 
   // CommonActions handler
   useEffect(() => {
@@ -260,8 +272,8 @@ export default function MyAccountTile({
         if (viewMode === 'attachments-manager') {
           const mode = attachmentsManagerUi.mode ?? 'list'
           
-          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
-          if (mode === 'read' || mode === 'edit') {
+          // Pokud jsme v read/edit/new mode, zavřít tento panel a vrátit se do list mode
+          if (mode === 'read' || mode === 'edit' || mode === 'new') {
             const api = attachmentsManagerApiRef.current
             if (api?.close) {
               api.close()

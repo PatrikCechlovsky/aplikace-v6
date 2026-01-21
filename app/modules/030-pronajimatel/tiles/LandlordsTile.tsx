@@ -681,11 +681,23 @@ export default function LandlordsTile({
     onRegisterCommonActions?.(actions)
     
     // Namapovat LocalViewMode na ViewMode
-    const mappedViewMode: ViewMode = 
-      viewMode === 'list' ? 'list' :
-      viewMode === 'edit' ? 'edit' :
-      viewMode === 'create' ? 'create' :
-      viewMode === 'attachments-manager' ? 'read' : 'read'
+    let mappedViewMode: ViewMode
+    if (viewMode === 'list') {
+      mappedViewMode = 'list'
+    } else if (viewMode === 'edit') {
+      mappedViewMode = 'edit'
+    } else if (viewMode === 'create') {
+      mappedViewMode = 'create'
+    } else if (viewMode === 'attachments-manager') {
+      // Podle mode z AttachmentsManagerTile určit správný ViewMode
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'list') mappedViewMode = 'list'
+      else if (mode === 'edit') mappedViewMode = 'edit'
+      else if (mode === 'new') mappedViewMode = 'create'
+      else mappedViewMode = 'read' // mode === 'read'
+    } else {
+      mappedViewMode = 'read'
+    }
     
     // Pro attachments-manager režim použít state z AttachmentsManagerTile
     const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
@@ -696,7 +708,7 @@ export default function LandlordsTile({
       hasSelection: mappedHasSelection,
       isDirty: mappedIsDirty,
     })
-  }, [viewMode, selectedId, isDirty, attachmentsManagerUi])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty])
   // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
   // Jsou stabilní funkce (useCallback v AppShell) a jejich přidání způsobuje problémy s registrací.
 

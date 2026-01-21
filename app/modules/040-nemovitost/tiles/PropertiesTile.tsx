@@ -235,10 +235,24 @@ export default function PropertiesTile({
 
     onRegisterCommonActions(actions)
     
-    const mappedViewMode: ViewMode = 
-      (viewMode as string) === 'list' ? 'list' : 
-      viewMode === 'edit' ? 'edit' : 
-      viewMode === 'create' ? 'create' : 'read'
+    // Namapovat LocalViewMode na ViewMode
+    let mappedViewMode: ViewMode
+    if ((viewMode as string) === 'list') {
+      mappedViewMode = 'list'
+    } else if (viewMode === 'edit') {
+      mappedViewMode = 'edit'
+    } else if (viewMode === 'create') {
+      mappedViewMode = 'create'
+    } else if (viewMode === 'attachments-manager') {
+      // Podle mode z AttachmentsManagerTile určit správný ViewMode
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'list') mappedViewMode = 'list'
+      else if (mode === 'edit') mappedViewMode = 'edit'
+      else if (mode === 'new') mappedViewMode = 'create'
+      else mappedViewMode = 'read' // mode === 'read'
+    } else {
+      mappedViewMode = 'read'
+    }
     
     // Pro attachments-manager režim použít state z AttachmentsManagerTile
     const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
@@ -249,7 +263,7 @@ export default function PropertiesTile({
       hasSelection: mappedHasSelection,
       isDirty: mappedIsDirty,
     })
-  }, [viewMode, selectedId, isDirty, attachmentsManagerUi])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty])
   // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
   // Jsou stabilní (useCallback v AppShell), ale jejich přidání do dependencies způsobuje problémy.
 
