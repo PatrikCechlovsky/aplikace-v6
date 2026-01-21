@@ -736,7 +736,7 @@ export default function LandlordsTile({
           setAttachmentsManagerLandlordId(selectedId)
           setViewMode('attachments-manager')
           setIsDirty(false)
-          setUrl({ t: 'landlords-list', id: selectedId, vm: null, am: '1' }, 'push')
+          setUrl({ t: 'landlords-list', id: selectedId, vm: null }, 'push')
           return
         }
 
@@ -752,7 +752,7 @@ export default function LandlordsTile({
         setAttachmentsManagerLandlordId(detailLandlord.id)
         setViewMode('attachments-manager')
         setIsDirty(false)
-        setUrl({ t: 'landlords-list', id: detailLandlord.id, vm: null, am: '1' }, 'push')
+        setUrl({ t: 'landlords-list', id: detailLandlord.id, vm: null }, 'push')
         return
       }
 
