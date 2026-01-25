@@ -28,10 +28,7 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type Vi
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
-import { 
-  getAttachmentsManagerActions, 
-  shouldCloseAttachmentsPanel 
-} from '@/app/lib/attachments/attachmentsManagerUtils'
+import { getAttachmentsManagerActions } from '@/app/lib/attachments/attachmentsManagerUtils'
 import '@/app/styles/components/TileLayout.css'
 
 // Type check for CommonActionId - removed unused variable
