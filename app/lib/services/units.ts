@@ -41,7 +41,12 @@ export type UnitsListRow = {
   door_number: string | null
   area: number | null
   rooms: number | null
+  disposition: string | null
   status: string | null
+  tenant_id: string | null
+  orientation_number: string | null
+  year_renovated: number | null
+  manager_name: string | null
   
   // metadata
   is_archived: boolean | null
@@ -168,7 +173,12 @@ export type UnitDetailRow = {
   door_number: string | null
   area: number | null
   rooms: number | null
+  disposition: string | null
   status: string | null
+  tenant_id: string | null
+  orientation_number: string | null
+  year_renovated: number | null
+  manager_name: string | null
   
   // note
   note: string | null
@@ -239,7 +249,12 @@ export type SaveUnitInput = {
   door_number?: string | null
   area?: number | null
   rooms?: number | null
+  disposition?: string | null
   status?: string | null
+  tenant_id?: string | null
+  orientation_number?: string | null
+  year_renovated?: number | null
+  manager_name?: string | null
   
   // cadastre
   cadastral_area?: string | null
@@ -273,7 +288,12 @@ export async function saveUnit(input: SaveUnitInput): Promise<UnitDetailRow> {
     door_number: input.door_number ?? null,
     area: input.area ?? null,
     rooms: input.rooms ?? null,
+    disposition: input.disposition ?? null,
     status: input.status ?? 'available',
+    tenant_id: input.tenant_id ?? null,
+    orientation_number: input.orientation_number ?? null,
+    year_renovated: input.year_renovated ?? null,
+    manager_name: input.manager_name ?? null,
     cadastral_area: input.cadastral_area ?? null,
     parcel_number: input.parcel_number ?? null,
     lv_number: input.lv_number ?? null,

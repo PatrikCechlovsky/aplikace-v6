@@ -37,7 +37,12 @@ export type UnitFormValue = {
   doorNumber: string
   area: number | null
   rooms: number | null
+  disposition: string
   status: string
+  tenantId: string
+  orientationNumber: string
+  yearRenovated: number | null
+  managerName: string
   
   // Katastr
   cadastralArea: string
