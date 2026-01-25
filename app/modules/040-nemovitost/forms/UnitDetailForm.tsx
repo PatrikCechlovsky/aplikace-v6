@@ -4,8 +4,9 @@
 
 'use client'
 
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import InputWithHistory from '@/app/UI/InputWithHistory'
+import { supabase } from '@/app/lib/supabaseClient'
 
 // =====================
 // TYPES
@@ -73,6 +74,21 @@ export default function UnitDetailForm({
 }: UnitDetailFormProps) {
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
+  const [properties, setProperties] = useState<Array<{ id: string; display_name: string }>>([])
+  
+  // Load properties
+  useEffect(() => {
+    async function loadProperties() {
+      const { data } = await supabase
+        .from('properties')
+        .select('id, display_name')
+        .eq('is_archived', false)
+        .order('display_name')
+      
+      setProperties(data || [])
+    }
+    loadProperties()
+  }, [])
   
   // Build current form value
   const formValue: UnitFormValue = {
@@ -135,6 +151,24 @@ export default function UnitDetailForm({
         
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">Nemovitost *</label>
+            <select
+              className={inputClass}
+              value={formValue.propertyId}
+              onChange={(e) => handleChange('propertyId', e.target.value)}
+              disabled={readOnly}
+              required
+            >
+              <option value="">— vyberte nemovitost —</option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>{p.display_name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
             <label className="detail-form__label">Název jednotky *</label>
             <InputWithHistory
               historyId="unit-display-name"
@@ -143,12 +177,11 @@ export default function UnitDetailForm({
               onChange={(e) => handleChange('displayName', e.target.value)}
               readOnly={readOnly}
               placeholder="např. Byt 2+kk, 1.NP"
+              required
             />
           </div>
-        </div>
-        
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field detail-form__field--span-2">
+          
+          <div className="detail-form__field">
             <label className="detail-form__label">Interní kód</label>
             <InputWithHistory
               historyId="unit-internal-code"

@@ -14,6 +14,7 @@ export type DetailSectionId =
   | 'equipment'
   | 'accounts'
   | 'delegates'
+  | 'units'
   | 'attachments'
   | 'system'
 
@@ -66,6 +67,8 @@ export type DetailViewCtx = {
 
   rolesData?: RolesData
   rolesUi?: RolesUi
+
+  unitsContent?: React.ReactNode
 
   systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
   systemContent?: React.ReactNode
@@ -411,6 +414,14 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       const DelegatesSection = require('@/app/UI/detail-sections/DelegatesSection').default
       return <DelegatesSection subjectId={entityId} mode={ctx.mode ?? 'edit'} onCreateDelegateFromUser={onCreateDelegateFromUser} onOpenNewDelegateForm={onOpenNewDelegateForm} />
     },
+  },
+
+  units: {
+    id: 'units',
+    label: 'Jednotky',
+    order: 60,
+    visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId && ctx.entityId !== 'new',
+    render: (ctx: any) => ctx?.unitsContent ?? <div style={{ padding: '2rem' }}>Seznam jednotek (placeholder)</div>,
   },
 }
 

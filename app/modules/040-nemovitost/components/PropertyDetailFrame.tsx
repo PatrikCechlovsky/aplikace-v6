@@ -136,6 +136,7 @@ export default function PropertyDetailFrame({
   
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null }>>([])
   const [selectedPropertyTypeId, setSelectedPropertyTypeId] = useState<string | null>(property.propertyTypeId)
+  const [units, setUnits] = useState<Array<{ id: string; display_name: string; internal_code: string | null; status: string | null }>>([])
   
   // Load property types from generic_types
   useEffect(() => {
@@ -154,6 +155,29 @@ export default function PropertyDetailFrame({
       }
     })()
   }, [])
+  
+  // Load units for this property
+  useEffect(() => {
+    if (isNewId(resolvedProperty.id)) {
+      setUnits([])
+      return
+    }
+    
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('units')
+          .select('id, display_name, internal_code, status')
+          .eq('property_id', resolvedProperty.id)
+          .eq('is_archived', false)
+          .order('display_name')
+        
+        setUnits(data || [])
+      } catch (err) {
+        logger.error('Failed to load units', err)
+      }
+    })()
+  }, [resolvedProperty.id])
   
   useEffect(() => {
     formValueRef.current = formValue
@@ -348,57 +372,66 @@ export default function PropertyDetailFrame({
         visible: true,
         content: (
           <div className="detail-form">
-            <div className="detail-form__field">
-              <label className="detail-form__label">Typ nemovitosti</label>
-              {detailViewMode === 'view' ? (
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Typ nemovitosti</label>
+                {detailViewMode === 'view' ? (
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={currentPropertyType?.name || '—'}
+                    readOnly
+                  />
+                ) : (
+                  <select
+                    className="detail-form__input"
+                    value={selectedPropertyTypeId || ''}
+                    onChange={(e) => setSelectedPropertyTypeId(e.target.value || null)}
+                  >
+                    <option value="">— vyberte typ nemovitosti —</option>
+                    {propertyTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.icon ? `${type.icon} ` : ''}{type.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+            
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field">
+                <label className="detail-form__label">Vytvořeno</label>
                 <input
                   className="detail-form__input detail-form__input--readonly"
-                  value={currentPropertyType?.name || '—'}
+                  value={resolvedProperty.createdAt ? formatDateTime(resolvedProperty.createdAt) : '—'}
                   readOnly
                 />
-              ) : (
-                <select
-                  className="detail-form__input"
-                  value={selectedPropertyTypeId || ''}
-                  onChange={(e) => setSelectedPropertyTypeId(e.target.value || null)}
-                >
-                  <option value="">— vyberte typ nemovitosti —</option>
-                  {propertyTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.icon ? `${type.icon} ` : ''}{type.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              </div>
+              
+              <div className="detail-form__field">
+                <label className="detail-form__label">Aktualizováno</label>
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={resolvedProperty.updatedAt ? formatDateTime(resolvedProperty.updatedAt) : '—'}
+                  readOnly
+                />
+              </div>
             </div>
-            <div className="detail-form__field">
-              <label className="detail-form__label">Vytvořeno</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={resolvedProperty.createdAt ? formatDateTime(resolvedProperty.createdAt) : '—'}
-                readOnly
-              />
-            </div>
-            <div className="detail-form__field">
-              <label className="detail-form__label">Aktualizováno</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={resolvedProperty.updatedAt ? formatDateTime(resolvedProperty.updatedAt) : '—'}
-                readOnly
-              />
-            </div>
-            <div className="detail-form__field">
-              <label className="detail-form__label">Archivováno</label>
-              <input
-                type="checkbox"
-                checked={formValue.is_archived}
-                onChange={(e) => {
-                  const updated = { ...formValue, is_archived: e.target.checked }
-                  setFormValue(updated)
-                  markDirtyIfChanged(updated)
-                }}
-                disabled={detailViewMode === 'view'}
-              />
+            
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Archivováno</label>
+                <input
+                  type="checkbox"
+                  checked={formValue.is_archived}
+                  onChange={(e) => {
+                    const updated = { ...formValue, is_archived: e.target.checked }
+                    setFormValue(updated)
+                    markDirtyIfChanged(updated)
+                  }}
+                  disabled={detailViewMode === 'view'}
+                />
+              </div>
             </div>
           </div>
         ),
@@ -406,7 +439,9 @@ export default function PropertyDetailFrame({
     ]
   }, [resolvedProperty, formValue, detailViewMode, markDirtyIfChanged, propertyTypes, selectedPropertyTypeId])
   
-  const sectionIds: DetailSectionId[] = ['detail', 'attachments', 'system']
+  const sectionIds: DetailSectionId[] = isNewId(resolvedProperty.id) 
+    ? ['detail', 'attachments', 'system'] 
+    : ['detail', 'units', 'attachments', 'system']
   
   // Dynamický title podle typu nemovitosti
   const propertyTypeName = useMemo(() => {
@@ -461,6 +496,44 @@ export default function PropertyDetailFrame({
                   markDirtyIfChanged(val)
                 }}
               />
+            ),
+            
+            unitsContent: (
+              <div className="detail-form">
+                <section className="detail-form__section">
+                  <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
+                  {units.length === 0 ? (
+                    <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
+                      Zatím nejsou přiřazeny žádné jednotky.
+                    </p>
+                  ) : (
+                    <table className="data-table" style={{ width: '100%' }}>
+                      <thead>
+                        <tr>
+                          <th>Název</th>
+                          <th>Interní kód</th>
+                          <th>Stav</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {units.map((unit) => (
+                          <tr key={unit.id}>
+                            <td>{unit.display_name}</td>
+                            <td>{unit.internal_code || '—'}</td>
+                            <td>
+                              {unit.status === 'available' && '🟢 Volná'}
+                              {unit.status === 'occupied' && '🔴 Obsazená'}
+                              {unit.status === 'reserved' && '🟡 Rezervovaná'}
+                              {unit.status === 'renovation' && '🟤 V rekonstrukci'}
+                              {!unit.status && '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
+              </div>
             ),
             
             systemBlocks,

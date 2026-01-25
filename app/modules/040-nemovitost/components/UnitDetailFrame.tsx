@@ -337,78 +337,66 @@ export default function UnitDetailFrame({
         visible: true,
         content: (
           <div className="detail-form">
-            <div className="detail-form__field">              <label className="detail-form__label">Typ jednotky</label>
-              {readOnly ? (
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Typ jednotky</label>
+                {readOnly ? (
+                  <input
+                    className="detail-form__input detail-form__input--readonly"
+                    value={currentUnitType?.name || '—'}
+                    readOnly
+                  />
+                ) : (
+                  <select
+                    className="detail-form__input"
+                    value={selectedUnitTypeId || ''}
+                    onChange={(e) => setSelectedUnitTypeId(e.target.value || null)}
+                  >
+                    <option value="">— vyberte typ jednotky —</option>
+                    {unitTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.icon ? `${type.icon} ` : ''}{type.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+            
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field">
+                <label className="detail-form__label">Vytvořeno</label>
                 <input
                   className="detail-form__input detail-form__input--readonly"
-                  value={currentUnitType?.name || '—'}
+                  value={resolvedUnit.createdAt ? formatDateTime(resolvedUnit.createdAt) : '—'}
                   readOnly
                 />
-              ) : (
-                <select
-                  className="detail-form__input"
-                  value={selectedUnitTypeId || ''}
-                  onChange={(e) => setSelectedUnitTypeId(e.target.value || null)}
-                >
-                  <option value="">— vyberte typ jednotky —</option>
-                  {unitTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.icon ? `${type.icon} ` : ''}{type.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div className="detail-form__field">              <label className="detail-form__label">Typ jednotky</label>
-              {readOnly ? (
+              </div>
+              
+              <div className="detail-form__field">
+                <label className="detail-form__label">Aktualizováno</label>
                 <input
                   className="detail-form__input detail-form__input--readonly"
-                  value={currentUnitType?.name || '—'}
+                  value={resolvedUnit.updatedAt ? formatDateTime(resolvedUnit.updatedAt) : '—'}
                   readOnly
                 />
-              ) : (
-                <select
-                  className="detail-form__input"
-                  value={selectedUnitTypeId || ''}
-                  onChange={(e) => setSelectedUnitTypeId(e.target.value || null)}
-                >
-                  <option value="">— vyberte typ jednotky —</option>
-                  {unitTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.icon ? `${type.icon} ` : ''}{type.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              </div>
             </div>
-            <div className="detail-form__field">
-              <label className="detail-form__label">Vytvořeno</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={resolvedUnit.createdAt ? formatDateTime(resolvedUnit.createdAt) : '—'}
-                readOnly
-              />
-            </div>
-            <div className="detail-form__field">
-              <label className="detail-form__label">Aktualizováno</label>
-              <input
-                className="detail-form__input detail-form__input--readonly"
-                value={resolvedUnit.updatedAt ? formatDateTime(resolvedUnit.updatedAt) : '—'}
-                readOnly
-              />
-            </div>
-            <div className="detail-form__field">
-              <label className="detail-form__label">Archivováno</label>
-              <input
-                type="checkbox"
-                checked={formValue.isArchived}
-                onChange={(e) => {
-                  const updated = { ...formValue, isArchived: e.target.checked }
-                  setFormValue(updated)
-                  markDirtyIfChanged(updated)
-                }}
-                disabled={readOnly}
-              />
+            
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Archivováno</label>
+                <input
+                  type="checkbox"
+                  checked={formValue.isArchived}
+                  onChange={(e) => {
+                    const updated = { ...formValue, isArchived: e.target.checked }
+                    setFormValue(updated)
+                    markDirtyIfChanged(updated)
+                  }}
+                  disabled={readOnly}
+                />
+              </div>
             </div>
           </div>
         ),
