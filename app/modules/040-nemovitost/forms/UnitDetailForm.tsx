@@ -93,7 +93,8 @@ export default function UnitDetailForm({
   const firstRenderRef = useRef(true)
   const [properties, setProperties] = useState<Array<{ id: string; display_name: string }>>([])
   const [landlords, setLandlords] = useState<Array<{ id: string; display_name: string }>>([])
-  const [dispositions, setDispositions] = useState<Array<{ type_code: string; label: string }>>([])  const [tenants, setTenants] = useState<Array<{ id: string; display_name: string }>>([])
+  const [dispositions, setDispositions] = useState<Array<{ type_code: string; label: string }>>([])
+  const [tenants, setTenants] = useState<Array<{ id: string; display_name: string }>>([])
   
   // Load properties
   useEffect(() => {
