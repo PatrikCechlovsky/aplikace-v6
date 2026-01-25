@@ -24,6 +24,7 @@ export type UnitsListRow = {
   id: string
   property_id: string | null
   unit_type_id: string | null
+  landlord_id: string | null
   display_name: string | null
   internal_code: string | null
   
@@ -150,6 +151,7 @@ export type UnitDetailRow = {
   id: string
   property_id: string | null
   unit_type_id: string | null
+  landlord_id: string | null
   display_name: string | null
   internal_code: string | null
   
