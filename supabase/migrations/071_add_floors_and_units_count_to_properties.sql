@@ -20,14 +20,29 @@ COMMENT ON COLUMN public.properties.floors_below_ground IS 'Počet podzemních p
 COMMENT ON COLUMN public.properties.units_count IS 'Počet jednotek (manuální pole)';
 
 -- Add constraints
-ALTER TABLE public.properties 
-ADD CONSTRAINT properties_floors_above_positive CHECK (floors_above_ground IS NULL OR floors_above_ground >= 0);
-
-ALTER TABLE public.properties 
-ADD CONSTRAINT properties_floors_below_positive CHECK (floors_below_ground IS NULL OR floors_below_ground >= 0);
-
-ALTER TABLE public.properties 
-ADD CONSTRAINT properties_units_count_positive CHECK (units_count IS NULL OR units_count >= 0);
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'properties_floors_above_positive'
+  ) THEN
+    ALTER TABLE public.properties 
+    ADD CONSTRAINT properties_floors_above_positive CHECK (floors_above_ground IS NULL OR floors_above_ground >= 0);
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'properties_floors_below_positive'
+  ) THEN
+    ALTER TABLE public.properties 
+    ADD CONSTRAINT properties_floors_below_positive CHECK (floors_below_ground IS NULL OR floors_below_ground >= 0);
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'properties_units_count_positive'
+  ) THEN
+    ALTER TABLE public.properties 
+    ADD CONSTRAINT properties_units_count_positive CHECK (units_count IS NULL OR units_count >= 0);
+  END IF;
+END $$;
 
 -- Update existing properties: copy number_of_floors to floors_above_ground
 UPDATE public.properties
