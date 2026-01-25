@@ -190,111 +190,127 @@ export default function PropertyDetailFormComponent({
       <section className="detail-form__section">
         <h3 className="detail-form__section-title">Adresa</h3>
         
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">Vyhledat adresu</label>
-            <AddressAutocomplete
-              street={formVal.street}
-              houseNumber={formVal.house_number}
-              city={formVal.city}
-              zip={formVal.zip}
-              country={formVal.country}
-              onAddressChange={(address) => {
-                update({
-                  street: address.street || '',
-                  house_number: address.houseNumber || '',
-                  city: address.city || '',
-                  zip: address.zip || '',
-                })
-              }}
-              disabled={readOnly}
-            />
+        {readOnly ? (
+          // Read-only mód: Adresa na jeden řádek
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-2">
+              <label className="detail-form__label">Adresa</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={[
+                  formVal.street,
+                  formVal.house_number,
+                  formVal.city,
+                  formVal.zip
+                ].filter(Boolean).join(', ') || '—'}
+                readOnly
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">Ulice *</label>
-            <input
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.street}
-              onChange={(e) => update({ street: e.target.value })}
-              placeholder="Václavská"
-              readOnly={readOnly}
-              required
-            />
-          </div>
-          
-          <div className="detail-form__field">
-            <label className="detail-form__label">Číslo popisné *</label>
-            <input
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.house_number}
-              onChange={(e) => update({ house_number: e.target.value })}
-              placeholder="15"
-              readOnly={readOnly}
-              required
-            />
-          </div>
-        </div>
-        
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">Město *</label>
-            <input
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.city}
-              onChange={(e) => update({ city: e.target.value })}
-              placeholder="Praha"
-              readOnly={readOnly}
-              required
-            />
-          </div>
-          
-          <div className="detail-form__field">
-            <label className="detail-form__label">PSČ *</label>
-            <input
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.zip}
-              onChange={(e) => update({ zip: e.target.value })}
-              placeholder="19000"
-              pattern="^[0-9]{5}$"
-              readOnly={readOnly}
-              required
-            />
-          </div>
-        </div>
-        
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">Kraj</label>
-            <select
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.region}
-              onChange={(e) => update({ region: e.target.value })}
-              disabled={readOnly}
-            >
-              <option value="">— vyberte kraj —</option>
-              {REGIONS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="detail-form__field">
-            <label className="detail-form__label">Stát</label>
-            <select
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.country}
-              onChange={(e) => update({ country: e.target.value })}
-              disabled={readOnly}
-            >
-              {COUNTRIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        ) : (
+          // Edit/Create mód: Všechna pole
+          <>
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Vyhledat adresu</label>
+                <AddressAutocomplete
+                  street={formVal.street}
+                  houseNumber={formVal.house_number}
+                  city={formVal.city}
+                  zip={formVal.zip}
+                  country={formVal.country}
+                  onAddressChange={(address) => {
+                    update({
+                      street: address.street || '',
+                      house_number: address.houseNumber || '',
+                      city: address.city || '',
+                      zip: address.zip || '',
+                    })
+                  }}
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+            
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field">
+                <label className="detail-form__label">Ulice *</label>
+                <input
+                  className="detail-form__input"
+                  value={formVal.street}
+                  onChange={(e) => update({ street: e.target.value })}
+                  placeholder="Václavská"
+                  required
+                />
+              </div>
+              
+              <div className="detail-form__field">
+                <label className="detail-form__label">Číslo popisné *</label>
+                <input
+                  className="detail-form__input"
+                  value={formVal.house_number}
+                  onChange={(e) => update({ house_number: e.target.value })}
+                  placeholder="15"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field">
+                <label className="detail-form__label">Město *</label>
+                <input
+                  className="detail-form__input"
+                  value={formVal.city}
+                  onChange={(e) => update({ city: e.target.value })}
+                  placeholder="Praha"
+                  required
+                />
+              </div>
+              
+              <div className="detail-form__field">
+                <label className="detail-form__label">PSČ *</label>
+                <input
+                  className="detail-form__input"
+                  value={formVal.zip}
+                  onChange={(e) => update({ zip: e.target.value })}
+                  placeholder="19000"
+                  pattern="^[0-9]{5}$"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field">
+                <label className="detail-form__label">Kraj</label>
+                <select
+                  className="detail-form__input"
+                  value={formVal.region}
+                  onChange={(e) => update({ region: e.target.value })}
+                >
+                  <option value="">— vyberte kraj —</option>
+                  {REGIONS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="detail-form__field">
+                <label className="detail-form__label">Stát</label>
+                <select
+                  className="detail-form__input"
+                  value={formVal.country}
+                  onChange={(e) => update({ country: e.target.value })}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </>
+        )}
       </section>
       
       {/* === PLOCHY === */}

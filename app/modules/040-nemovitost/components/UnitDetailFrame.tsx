@@ -7,7 +7,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
-import UnitDetailForm, { type UnitFormValue } from '../forms/UnitDetailForm'
+import UnitDetailForm, { type UnitFormValue, type PropertyAddress } from '../forms/UnitDetailForm'
 import { getUnitDetail, saveUnit, type SaveUnitInput } from '@/app/lib/services/units'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
@@ -132,6 +132,7 @@ export default function UnitDetailFrame({
   
   const [unitTypes, setUnitTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null }>>([])
   const [selectedUnitTypeId, setSelectedUnitTypeId] = useState<string | null>(unit.unitTypeId)
+  const [propertyAddress, setPropertyAddress] = useState<PropertyAddress | null>(null)
   
   // Load unit types from generic_types
   useEffect(() => {
@@ -150,6 +151,35 @@ export default function UnitDetailFrame({
       }
     })()
   }, [])
+  
+  // Load property address when propertyId changes
+  useEffect(() => {
+    if (!formValue.propertyId) {
+      setPropertyAddress(null)
+      return
+    }
+    
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('properties')
+          .select('street, house_number, city, zip')
+          .eq('id', formValue.propertyId)
+          .single()
+        
+        if (data) {
+          setPropertyAddress({
+            street: data.street,
+            house_number: data.house_number,
+            city: data.city,
+            zip: data.zip,
+          })
+        }
+      } catch (err) {
+        logger.error('Failed to load property address', err)
+      }
+    })()
+  }, [formValue.propertyId])
   
   useEffect(() => {
     formValueRef.current = formValue
@@ -448,6 +478,7 @@ export default function UnitDetailFrame({
                 key={`form-${resolvedUnit.id}`}
                 unit={formValue}
                 readOnly={readOnly}
+                propertyAddress={propertyAddress}
                 onDirtyChange={(dirty) => {
                   if (dirty) {
                     markDirtyIfChanged(formValue)

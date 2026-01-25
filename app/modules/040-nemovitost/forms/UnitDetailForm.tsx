@@ -12,6 +12,13 @@ import { supabase } from '@/app/lib/supabaseClient'
 // TYPES
 // =====================
 
+export type PropertyAddress = {
+  street: string | null
+  house_number: string | null
+  city: string | null
+  zip: string | null
+}
+
 export type UnitFormValue = {
   displayName: string
   internalCode: string
@@ -44,6 +51,7 @@ export type UnitFormValue = {
 export type UnitDetailFormProps = {
   unit: Partial<UnitFormValue>
   readOnly: boolean
+  propertyAddress?: PropertyAddress | null
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: UnitFormValue) => void
 }
@@ -69,6 +77,7 @@ function safeNumber(v: any): number | null {
 export default function UnitDetailForm({
   unit,
   readOnly,
+  propertyAddress,
   onDirtyChange,
   onValueChange,
 }: UnitDetailFormProps) {
@@ -172,7 +181,6 @@ export default function UnitDetailForm({
             <label className="detail-form__label">Název jednotky *</label>
             <InputWithHistory
               historyId="unit-display-name"
-              className={inputClass}
               value={formValue.displayName}
               onChange={(e) => handleChange('displayName', e.target.value)}
               readOnly={readOnly}
@@ -185,7 +193,6 @@ export default function UnitDetailForm({
             <label className="detail-form__label">Interní kód</label>
             <InputWithHistory
               historyId="unit-internal-code"
-              className={inputClass}
               value={formValue.internalCode}
               onChange={(e) => handleChange('internalCode', e.target.value)}
               readOnly={readOnly}
@@ -194,6 +201,28 @@ export default function UnitDetailForm({
           </div>
         </div>
       </div>
+      
+      {/* Adresa z nemovitosti (read-only) */}
+      {propertyAddress && (
+        <div className="detail-form__section">
+          <h3 className="detail-form__section-title">Adresa (z nemovitosti)</h3>
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field detail-form__field--span-2">
+              <label className="detail-form__label">Adresa</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={[
+                  propertyAddress.street,
+                  propertyAddress.house_number,
+                  propertyAddress.city,
+                  propertyAddress.zip
+                ].filter(Boolean).join(', ') || '—'}
+                readOnly
+              />
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Prostor */}
       <div className="detail-form__section">
