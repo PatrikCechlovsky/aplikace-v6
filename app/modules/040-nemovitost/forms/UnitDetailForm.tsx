@@ -93,6 +93,7 @@ export default function UnitDetailForm({
   const firstRenderRef = useRef(true)
   const [properties, setProperties] = useState<Array<{ id: string; display_name: string }>>([])
   const [landlords, setLandlords] = useState<Array<{ id: string; display_name: string }>>([])
+  const [dispositions, setDispositions] = useState<Array<{ type_code: string; label: string }>>([])  const [tenants, setTenants] = useState<Array<{ id: string; display_name: string }>>([])
   
   // Load properties
   useEffect(() => {
@@ -123,6 +124,35 @@ export default function UnitDetailForm({
     loadLandlords()
   }, [])
   
+  // Load dispositions from generic_types
+  useEffect(() => {
+    async function loadDispositions() {
+      const { data } = await supabase
+        .from('generic_types')
+        .select('type_code, label')
+        .eq('category', 'unit_dispositions')
+        .order('order_index')
+      
+      setDispositions(data || [])
+    }
+    loadDispositions()
+  }, [])
+  
+  // Load tenants (subjects where is_tenant = true)
+  useEffect(() => {
+    async function loadTenants() {
+      const { data } = await supabase
+        .from('subjects')
+        .select('id, display_name')
+        .eq('is_tenant', true)
+        .eq('is_archived', false)
+        .order('display_name')
+      
+      setTenants(data || [])
+    }
+    loadTenants()
+  }, [])
+  
   // Build current form value
   const formValue: UnitFormValue = {
     displayName: safe(unit.displayName),
@@ -142,7 +172,12 @@ export default function UnitDetailForm({
     doorNumber: safe(unit.doorNumber),
     area: safeNumber(unit.area),
     rooms: safeNumber(unit.rooms),
+    disposition: safe(unit.disposition),
     status: safe(unit.status || 'available'),
+    tenantId: safe(unit.tenantId),
+    orientationNumber: safe(unit.orientationNumber),
+    yearRenovated: safeNumber(unit.yearRenovated),
+    managerName: safe(unit.managerName),
     
     cadastralArea: safe(unit.cadastralArea),
     parcelNumber: safe(unit.parcelNumber),
@@ -283,6 +318,22 @@ export default function UnitDetailForm({
         
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
+            <label className="detail-form__label">Dispozice *</label>
+            <select
+              className={inputClass}
+              value={formValue.disposition}
+              onChange={(e) => handleChange('disposition', e.target.value)}
+              disabled={readOnly}
+              required
+            >
+              <option value="">— vyberte dispozici —</option>
+              {dispositions.map((d) => (
+                <option key={d.type_code} value={d.type_code}>{d.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="detail-form__field">
             <label className="detail-form__label">Podlaží</label>
             <input
               type="number"
@@ -293,7 +344,9 @@ export default function UnitDetailForm({
               placeholder="např. 1, -1 (suterén)"
             />
           </div>
-          
+        </div>
+        
+        <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Číslo dveří</label>
             <InputWithHistory
@@ -303,6 +356,19 @@ export default function UnitDetailForm({
               onChange={(e) => handleChange('doorNumber', e.target.value)}
               readOnly={readOnly}
               placeholder="např. 12, A3"
+            />
+          </div>
+          
+          <div className="detail-form__field">
+            <label className="detail-form__label">Číslo orientační</label>
+            <InputWithHistory
+              historyId="unit-orientation-number"
+              className={inputClass}
+              value={formValue.orientationNumber}
+              onChange={(e) => handleChange('orientationNumber', e.target.value)}
+              readOnly={readOnly}
+              placeholder="např. 12a"
+              maxLength={10}
             />
           </div>
         </div>
@@ -322,7 +388,7 @@ export default function UnitDetailForm({
           </div>
           
           <div className="detail-form__field">
-            <label className="detail-form__label">Počet pokojů</label>
+            <label className="detail-form__label">Počet pokojů (legacy)</label>
             <input
               type="number"
               step="0.5"
@@ -330,7 +396,7 @@ export default function UnitDetailForm({
               value={formValue.rooms ?? ''}
               onChange={(e) => handleChange('rooms', e.target.value ? Number(e.target.value) : null)}
               readOnly={readOnly}
-              placeholder="např. 2, 2.5"
+              placeholder="Nyní se používá Dispozice"
             />
           </div>
         </div>
@@ -354,6 +420,52 @@ export default function UnitDetailForm({
               <option value="reserved">🟡 Rezervovaná</option>
               <option value="renovation">🟤 V rekonstrukci</option>
             </select>
+          </div>
+        </div>
+        
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">Nájemník</label>
+            <select
+              className={inputClass}
+              value={formValue.tenantId}
+              onChange={(e) => handleChange('tenantId', e.target.value)}
+              disabled={readOnly}
+            >
+              <option value="">— bez nájemníka —</option>
+              {tenants.map((t) => (
+                <option key={t.id} value={t.id}>{t.display_name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Rok rekonstrukce</label>
+            <input
+              type="number"
+              className={inputClass}
+              value={formValue.yearRenovated ?? ''}
+              onChange={(e) => handleChange('yearRenovated', e.target.value ? Number(e.target.value) : null)}
+              readOnly={readOnly}
+              placeholder="např. 2020"
+              min="1800"
+              max="2100"
+            />
+          </div>
+          
+          <div className="detail-form__field">
+            <label className="detail-form__label">Správce jednotky</label>
+            <InputWithHistory
+              historyId="unit-manager-name"
+              className={inputClass}
+              value={formValue.managerName}
+              onChange={(e) => handleChange('managerName', e.target.value)}
+              readOnly={readOnly}
+              placeholder="Jméno správce"
+              maxLength={100}
+            />
           </div>
         </div>
       </div>

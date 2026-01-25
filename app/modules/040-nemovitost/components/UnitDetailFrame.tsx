@@ -44,7 +44,12 @@ export type UiUnit = {
   doorNumber: string | null
   area: number | null
   rooms: number | null
+  disposition: string | null
   status: string | null
+  tenantId: string | null
+  orientationNumber: string | null
+  yearRenovated: number | null
+  managerName: string | null
   
   // Cadastre
   cadastralArea?: string | null
@@ -92,7 +97,12 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     doorNumber: u.doorNumber || '',
     area: u.area,
     rooms: u.rooms,
+    disposition: u.disposition || '',
     status: u.status || 'available',
+    tenantId: u.tenantId || '',
+    orientationNumber: u.orientationNumber || '',
+    yearRenovated: u.yearRenovated,
+    managerName: u.managerName || '',
     
     cadastralArea: u.cadastralArea || '',
     parcelNumber: u.parcelNumber || '',
@@ -217,6 +227,7 @@ export default function UnitDetailFrame({
           id: detail.unit.id,
           propertyId: detail.unit.property_id,
           unitTypeId: detail.unit.unit_type_id,
+          landlordId: detail.unit.landlord_id,
           displayName: detail.unit.display_name,
           internalCode: detail.unit.internal_code,
           
@@ -231,7 +242,12 @@ export default function UnitDetailFrame({
           doorNumber: detail.unit.door_number,
           area: detail.unit.area,
           rooms: detail.unit.rooms,
+          disposition: detail.unit.disposition,
           status: detail.unit.status,
+          tenantId: detail.unit.tenant_id,
+          orientationNumber: detail.unit.orientation_number,
+          yearRenovated: detail.unit.year_renovated,
+          managerName: detail.unit.manager_name,
           
           note: detail.unit.note,
           originModule: detail.unit.origin_module,
@@ -291,7 +307,12 @@ export default function UnitDetailFrame({
       door_number: formValue.doorNumber || null,
       area: formValue.area,
       rooms: formValue.rooms,
+      disposition: formValue.disposition || null,
       status: formValue.status || 'available',
+      tenant_id: formValue.tenantId || null,
+      orientation_number: formValue.orientationNumber || null,
+      year_renovated: formValue.yearRenovated,
+      manager_name: formValue.managerName || null,
       
       cadastral_area: formValue.cadastralArea || null,
       parcel_number: formValue.parcelNumber || null,
@@ -309,6 +330,7 @@ export default function UnitDetailFrame({
         id: savedRow.id,
         propertyId: savedRow.property_id,
         unitTypeId: savedRow.unit_type_id,
+        landlordId: savedRow.landlord_id,
         displayName: savedRow.display_name,
         internalCode: savedRow.internal_code,
         
@@ -323,7 +345,12 @@ export default function UnitDetailFrame({
         doorNumber: savedRow.door_number,
         area: savedRow.area,
         rooms: savedRow.rooms,
+        disposition: savedRow.disposition,
         status: savedRow.status,
+        tenantId: savedRow.tenant_id,
+        orientationNumber: savedRow.orientation_number,
+        yearRenovated: savedRow.year_renovated,
+        managerName: savedRow.manager_name,
         
         cadastralArea: (savedRow as any).cadastral_area,
         parcelNumber: (savedRow as any).parcel_number,

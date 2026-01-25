@@ -55,6 +55,39 @@ const STATUS_COLORS: Record<string, { label: string; color: string; icon: string
   renovation: { label: 'V rekonstrukci', color: '#a16207', icon: '🟤' },
 }
 
+// Helper to create minimal UiUnit for detail view
+function createMinimalUiUnit(partial: Partial<UiUnit>): UiUnit {
+  return {
+    id: partial.id || 'new',
+    propertyId: partial.propertyId || null,
+    unitTypeId: partial.unitTypeId || null,
+    landlordId: partial.landlordId || null,
+    displayName: partial.displayName || null,
+    internalCode: partial.internalCode || null,
+    street: partial.street || null,
+    houseNumber: partial.houseNumber || null,
+    city: partial.city || null,
+    zip: partial.zip || null,
+    country: partial.country || 'CZ',
+    region: partial.region || null,
+    floor: partial.floor || null,
+    doorNumber: partial.doorNumber || null,
+    area: partial.area || null,
+    rooms: partial.rooms || null,
+    disposition: partial.disposition || null,
+    status: partial.status || null,
+    tenantId: partial.tenantId || null,
+    orientationNumber: partial.orientationNumber || null,
+    yearRenovated: partial.yearRenovated || null,
+    managerName: partial.managerName || null,
+    note: partial.note || null,
+    originModule: partial.originModule || '040-nemovitost',
+    isArchived: partial.isArchived || false,
+    createdAt: partial.createdAt || null,
+    updatedAt: partial.updatedAt || null,
+  }
+}
+
 type UiUnitRow = {
   id: string
   displayName: string
@@ -333,30 +366,17 @@ export default function UnitsTile({
           if (selectedId) {
             const found = units.find((u) => u.id === selectedId)
             if (found) {
-              setDetailUnit({
+              setDetailUnit(createMinimalUiUnit({
                 id: found.id,
                 propertyId: found.propertyId,
                 unitTypeId: found.unitTypeId,
-                landlordId: null, // Will be loaded in DetailFrame
                 displayName: found.displayName,
-                internalCode: null, // Load full detail in DetailFrame
-                street: null,
-                houseNumber: null,
-                city: null,
-                zip: null,
-                country: 'CZ',
-                region: null,
                 floor: found.floor,
-                doorNumber: null,
                 area: found.area,
                 rooms: found.rooms,
                 status: found.status,
-                note: null,
-                originModule: '040-nemovitost',
                 isArchived: found.isArchived,
-                createdAt: null,
-                updatedAt: null,
-              })
+              }))
               setViewMode('read')
               setIsDirty(false)
             }
@@ -369,30 +389,17 @@ export default function UnitsTile({
           } else if (selectedId) {
             const found = units.find((u) => u.id === selectedId)
             if (found) {
-              setDetailUnit({
+              setDetailUnit(createMinimalUiUnit({
                 id: found.id,
                 propertyId: found.propertyId,
                 unitTypeId: found.unitTypeId,
-                landlordId: null, // Will be loaded in DetailFrame
                 displayName: found.displayName,
-                internalCode: null,
-                street: null,
-                houseNumber: null,
-                city: null,
-                zip: null,
-                country: 'CZ',
-                region: null,
                 floor: found.floor,
-                doorNumber: null,
                 area: found.area,
                 rooms: found.rooms,
                 status: found.status,
-                note: null,
-                originModule: '040-nemovitost',
                 isArchived: found.isArchived,
-                createdAt: null,
-                updatedAt: null,
-              })
+              }))
               setViewMode('edit')
               setIsDirty(false)
             }
@@ -557,29 +564,12 @@ export default function UnitsTile({
   const handleTypeSelect = useCallback((typeId: string) => {
     setSelectedTypeForCreate(typeId)
     // Create new unit with selected type
-    setDetailUnit({
+    setDetailUnit(createMinimalUiUnit({
       id: 'new',
       propertyId: propertyId || null,
       unitTypeId: typeId,
-      displayName: null,
-      internalCode: null,
-      street: null,
-      houseNumber: null,
-      city: null,
-      zip: null,
-      country: 'CZ',
-      region: null,
-      floor: null,
-      doorNumber: null,
-      area: null,
-      rooms: null,
       status: 'available',
-      note: null,
-      originModule: '040-nemovitost',
-      isArchived: false,
-      createdAt: null,
-      updatedAt: null,
-    })
+    }))
   }, [propertyId])
 
   // Sort handler
@@ -660,29 +650,17 @@ export default function UnitsTile({
               onRowDoubleClick={(row) => {
                 const unit = row.raw
                 if (!unit) return
-                setDetailUnit({
+                setDetailUnit(createMinimalUiUnit({
                   id: unit.id,
                   propertyId: unit.propertyId,
                   unitTypeId: unit.unitTypeId,
                   displayName: unit.displayName,
-                  internalCode: null,
-                  street: null,
-                  houseNumber: null,
-                  city: null,
-                  zip: null,
-                  country: 'CZ',
-                  region: null,
                   floor: unit.floor,
-                  doorNumber: null,
                   area: unit.area,
                   rooms: unit.rooms,
                   status: unit.status,
-                  note: null,
-                  originModule: '040-nemovitost',
                   isArchived: unit.isArchived,
-                  createdAt: null,
-                  updatedAt: null,
-                })
+                }))
                 setViewMode('read')
                 setIsDirty(false)
               }}
