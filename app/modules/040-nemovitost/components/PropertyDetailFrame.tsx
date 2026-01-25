@@ -408,13 +408,28 @@ export default function PropertyDetailFrame({
   
   const sectionIds: DetailSectionId[] = ['detail', 'attachments', 'system']
   
+  // Dynamický title podle typu nemovitosti
+  const propertyTypeName = useMemo(() => {
+    if (!formValue.property_type_id) return null
+    const type = propertyTypes.find(t => t.id === formValue.property_type_id)
+    return type?.name || null
+  }, [formValue.property_type_id, propertyTypes])
+  
+  const titleText = useMemo(() => {
+    if (detailViewMode === 'create') {
+      return propertyTypeName ? `Nová nemovitost - ${propertyTypeName}` : 'Nová nemovitost'
+    }
+    if (detailViewMode === 'edit') {
+      return `Editace: ${propertyName}`
+    }
+    return propertyName
+  }, [detailViewMode, propertyName, propertyTypeName])
+  
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
         <h1 className="tile-layout__title">
-          {detailViewMode === 'create' ? 'Nová nemovitost' : 
-           detailViewMode === 'edit' ? `Editace: ${propertyName}` : 
-           propertyName}
+          {titleText}
         </h1>
       </div>
       <div className="tile-layout__content">

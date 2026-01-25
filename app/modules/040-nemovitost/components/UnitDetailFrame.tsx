@@ -45,6 +45,11 @@ export type UiUnit = {
   rooms: number | null
   status: string | null
   
+  // Cadastre
+  cadastralArea?: string | null
+  parcelNumber?: string | null
+  lvNumber?: string | null
+  
   // Metadata
   note: string | null
   originModule: string | null
@@ -86,6 +91,10 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     area: u.area,
     rooms: u.rooms,
     status: u.status || 'available',
+    
+    cadastralArea: u.cadastralArea || '',
+    parcelNumber: u.parcelNumber || '',
+    lvNumber: u.lvNumber || '',
     
     note: u.note || '',
     originModule: u.originModule || '040-nemovitost',
@@ -243,6 +252,10 @@ export default function UnitDetailFrame({
       rooms: formValue.rooms,
       status: formValue.status || 'available',
       
+      cadastral_area: formValue.cadastralArea || null,
+      parcel_number: formValue.parcelNumber || null,
+      lv_number: formValue.lvNumber || null,
+      
       note: formValue.note || null,
       origin_module: formValue.originModule || '040-nemovitost',
       is_archived: formValue.isArchived || false,
@@ -270,6 +283,10 @@ export default function UnitDetailFrame({
         area: savedRow.area,
         rooms: savedRow.rooms,
         status: savedRow.status,
+        
+        cadastralArea: (savedRow as any).cadastral_area,
+        parcelNumber: (savedRow as any).parcel_number,
+        lvNumber: (savedRow as any).lv_number,
         
         note: savedRow.note,
         originModule: savedRow.origin_module,
@@ -401,13 +418,28 @@ export default function UnitDetailFrame({
   
   const sectionIds: DetailSectionId[] = ['detail', 'attachments', 'system']
   
+  // Dynamický title podle typu jednotky
+  const unitTypeName = useMemo(() => {
+    if (!formValue.unitTypeId) return null
+    const type = unitTypes.find(t => t.id === formValue.unitTypeId)
+    return type?.name || null
+  }, [formValue.unitTypeId, unitTypes])
+  
+  const titleText = useMemo(() => {
+    if (detailViewMode === 'create') {
+      return unitTypeName ? `Nová jednotka - ${unitTypeName}` : 'Nová jednotka'
+    }
+    if (detailViewMode === 'edit') {
+      return `Editace: ${unitName}`
+    }
+    return unitName
+  }, [detailViewMode, unitName, unitTypeName])
+  
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
         <h1 className="tile-layout__title">
-          {detailViewMode === 'create' ? 'Nová jednotka' : 
-           detailViewMode === 'edit' ? `Editace: ${unitName}` : 
-           unitName}
+          {titleText}
         </h1>
       </div>
       <div className="tile-layout__content">

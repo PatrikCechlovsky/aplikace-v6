@@ -70,7 +70,6 @@ export default function PropertyDetailFormComponent({
   onValueChange,
 }: PropertyDetailFormProps) {
   const [landlords, setLandlords] = useState<Array<{ id: string; display_name: string }>>([])
-  const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; name: string; icon: string | null }>>([])
   
   const [formVal, setFormVal] = useState<PropertyFormValue>(() => ({
     landlord_id: property.landlord_id ?? '',
@@ -115,21 +114,6 @@ export default function PropertyDetailFormComponent({
       setLandlords(data || [])
     }
     loadLandlords()
-  }, [])
-  
-  // Load property types
-  useEffect(() => {
-    async function loadPropertyTypes() {
-      const { data } = await supabase
-        .from('generic_types')
-        .select('id, name, icon')
-        .eq('category', 'property_types')
-        .eq('active', true)
-        .order('order_index')
-      
-      setPropertyTypes(data || [])
-    }
-    loadPropertyTypes()
   }, [])
   
   // Snapshot on initial mount
@@ -178,21 +162,15 @@ export default function PropertyDetailFormComponent({
         
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Typ nemovitosti *</label>
-            <select
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.property_type_id}
-              onChange={(e) => update({ property_type_id: e.target.value })}
-              disabled={readOnly}
+            <label className="detail-form__label">Název *</label>
+            <InputWithHistory
+              historyId="property_display_name"
+              value={formVal.display_name}
+              onChange={(e) => update({ display_name: e.target.value })}
+              placeholder="Např. Rodinný dům Praha 9"
+              readOnly={readOnly}
               required
-            >
-              <option value="">— vyberte typ —</option>
-              {propertyTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           
           <div className="detail-form__field">
@@ -203,20 +181,6 @@ export default function PropertyDetailFormComponent({
               onChange={(e) => update({ internal_code: e.target.value })}
               placeholder="Např. RD-001"
               readOnly={readOnly}
-            />
-          </div>
-        </div>
-        
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">Název *</label>
-            <InputWithHistory
-              historyId="property_display_name"
-              value={formVal.display_name}
-              onChange={(e) => update({ display_name: e.target.value })}
-              placeholder="Např. Rodinný dům Praha 9"
-              readOnly={readOnly}
-              required
             />
           </div>
         </div>
@@ -250,24 +214,26 @@ export default function PropertyDetailFormComponent({
         
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Ulice</label>
+            <label className="detail-form__label">Ulice *</label>
             <input
               className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
               value={formVal.street}
               onChange={(e) => update({ street: e.target.value })}
               placeholder="Václavská"
               readOnly={readOnly}
+              required
             />
           </div>
           
           <div className="detail-form__field">
-            <label className="detail-form__label">Číslo popisné</label>
+            <label className="detail-form__label">Číslo popisné *</label>
             <input
               className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
               value={formVal.house_number}
               onChange={(e) => update({ house_number: e.target.value })}
               placeholder="15"
               readOnly={readOnly}
+              required
             />
           </div>
         </div>
@@ -286,7 +252,7 @@ export default function PropertyDetailFormComponent({
           </div>
           
           <div className="detail-form__field">
-            <label className="detail-form__label">PSČ</label>
+            <label className="detail-form__label">PSČ *</label>
             <input
               className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
               value={formVal.zip}
@@ -294,6 +260,7 @@ export default function PropertyDetailFormComponent({
               placeholder="19000"
               pattern="^[0-9]{5}$"
               readOnly={readOnly}
+              required
             />
           </div>
         </div>
@@ -424,48 +391,6 @@ export default function PropertyDetailFormComponent({
               value={formVal.reconstruction_year ?? ''}
               onChange={(e) => update({ reconstruction_year: safeNum(e.target.value) })}
               placeholder="2018"
-              readOnly={readOnly}
-            />
-          </div>
-        </div>
-      </section>
-      
-      {/* === KATASTR === */}
-      <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Katastr</h3>
-        
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field">
-            <label className="detail-form__label">Katastrální území</label>
-            <input
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.cadastral_area}
-              onChange={(e) => update({ cadastral_area: e.target.value })}
-              placeholder="Horní Počernice"
-              readOnly={readOnly}
-            />
-          </div>
-          
-          <div className="detail-form__field">
-            <label className="detail-form__label">Číslo parcely</label>
-            <input
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.parcel_number}
-              onChange={(e) => update({ parcel_number: e.target.value })}
-              placeholder="123/45"
-              readOnly={readOnly}
-            />
-          </div>
-        </div>
-        
-        <div className="detail-form__grid detail-form__grid--narrow">
-          <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">List vlastnictví</label>
-            <input
-              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
-              value={formVal.lv_number}
-              onChange={(e) => update({ lv_number: e.target.value })}
-              placeholder="LV-1234"
               readOnly={readOnly}
             />
           </div>

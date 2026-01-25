@@ -30,6 +30,11 @@ export type UnitFormValue = {
   rooms: number | null
   status: string
   
+  // Katastr
+  cadastralArea: string
+  parcelNumber: string
+  lvNumber: string
+  
   note: string
   originModule: string
   isArchived: boolean
@@ -88,6 +93,10 @@ export default function UnitDetailForm({
     area: safeNumber(unit.area),
     rooms: safeNumber(unit.rooms),
     status: safe(unit.status || 'available'),
+    
+    cadastralArea: safe(unit.cadastralArea),
+    parcelNumber: safe(unit.parcelNumber),
+    lvNumber: safe(unit.lvNumber),
     
     note: safe(unit.note),
     originModule: safe(unit.originModule || '040-nemovitost'),
@@ -230,6 +239,51 @@ export default function UnitDetailForm({
               <option value="reserved">🟡 Rezervovaná</option>
               <option value="renovation">🟤 V rekonstrukci</option>
             </select>
+          </div>
+        </div>
+      </div>
+      
+      {/* Katastr */}
+      <div className="detail-form__section">
+        <h3 className="detail-form__section-title">Katastr</h3>
+        
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Katastrální území</label>
+            <InputWithHistory
+              historyId="unit-cadastral-area"
+              className={inputClass}
+              value={formValue.cadastralArea}
+              onChange={(e) => handleChange('cadastralArea', e.target.value)}
+              readOnly={readOnly}
+              placeholder="např. Horní Počernice"
+            />
+          </div>
+          
+          <div className="detail-form__field">
+            <label className="detail-form__label">Číslo parcely</label>
+            <InputWithHistory
+              historyId="unit-parcel-number"
+              className={inputClass}
+              value={formValue.parcelNumber}
+              onChange={(e) => handleChange('parcelNumber', e.target.value)}
+              readOnly={readOnly}
+              placeholder="např. 123/45"
+            />
+          </div>
+        </div>
+        
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">List vlastnictví</label>
+            <InputWithHistory
+              historyId="unit-lv-number"
+              className={inputClass}
+              value={formValue.lvNumber}
+              onChange={(e) => handleChange('lvNumber', e.target.value)}
+              readOnly={readOnly}
+              placeholder="např. LV-1234"
+            />
           </div>
         </div>
       </div>

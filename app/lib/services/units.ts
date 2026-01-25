@@ -238,6 +238,11 @@ export type SaveUnitInput = {
   rooms?: number | null
   status?: string | null
   
+  // cadastre
+  cadastral_area?: string | null
+  parcel_number?: string | null
+  lv_number?: string | null
+  
   // note
   note?: string | null
   
@@ -265,6 +270,9 @@ export async function saveUnit(input: SaveUnitInput): Promise<UnitDetailRow> {
     area: input.area ?? null,
     rooms: input.rooms ?? null,
     status: input.status ?? 'available',
+    cadastral_area: input.cadastral_area ?? null,
+    parcel_number: input.parcel_number ?? null,
+    lv_number: input.lv_number ?? null,
     note: input.note ?? null,
     origin_module: input.origin_module ?? '040-nemovitost',
     is_archived: input.is_archived ?? false,
