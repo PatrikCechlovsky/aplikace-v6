@@ -30,9 +30,6 @@ import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import { 
   getAttachmentsManagerActions, 
-  mapAttachmentsViewMode, 
-  getHasSelection, 
-  getIsDirty,
   shouldCloseAttachmentsPanel 
 } from '@/app/lib/attachments/attachmentsManagerUtils'
 import '@/app/styles/components/TileLayout.css'
