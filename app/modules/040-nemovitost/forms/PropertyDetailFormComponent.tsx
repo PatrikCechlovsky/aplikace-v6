@@ -49,6 +49,7 @@ export type PropertyFormValue = {
 export type PropertyDetailFormProps = {
   property: Partial<PropertyFormValue>
   readOnly: boolean
+  assignedUnitsCount?: number // Počet založených jednotek z DB
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: PropertyFormValue) => void
 }
@@ -69,6 +70,7 @@ function safeNum(v: any): number | null {
 export default function PropertyDetailFormComponent({
   property,
   readOnly,
+  assignedUnitsCount = 0,
   onDirtyChange,
   onValueChange,
 }: PropertyDetailFormProps) {
@@ -322,6 +324,7 @@ export default function PropertyDetailFormComponent({
       <section className="detail-form__section">
         <h3 className="detail-form__section-title">Plochy a podlaží</h3>
         
+        {/* Řádek 1: Výměra pozemku, Zastavěná plocha */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Výměra pozemku (m²)</label>
@@ -352,6 +355,7 @@ export default function PropertyDetailFormComponent({
           </div>
         </div>
         
+        {/* Řádek 2: Užitná plocha, Počet podlaží celkem */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Užitná plocha (m²)</label>
@@ -367,6 +371,23 @@ export default function PropertyDetailFormComponent({
             />
           </div>
           
+          <div className="detail-form__field">
+            <label className="detail-form__label">Počet podlaží celkem</label>
+            <input
+              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
+              type="number"
+              min="0"
+              max="60"
+              value={formVal.number_of_floors ?? ''}
+              onChange={(e) => update({ number_of_floors: safeNum(e.target.value) })}
+              placeholder="3"
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
+        
+        {/* Řádek 3: Nadzemní podlaží, Podzemní podlaží */}
+        <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Nadzemní podlaží</label>
             <input
@@ -394,7 +415,10 @@ export default function PropertyDetailFormComponent({
               readOnly={readOnly}
             />
           </div>
-          
+        </div>
+        
+        {/* Řádek 4: Počet jednotek (manuální), Počet založených jednotek (z DB) */}
+        <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Počet jednotek</label>
             <input
@@ -405,6 +429,17 @@ export default function PropertyDetailFormComponent({
               onChange={(e) => update({ units_count: safeNum(e.target.value) })}
               placeholder="4"
               readOnly={readOnly}
+            />
+          </div>
+          
+          <div className="detail-form__field">
+            <label className="detail-form__label">Počet založených jednotek</label>
+            <input
+              className="detail-form__input detail-form__input--readonly"
+              type="number"
+              value={assignedUnitsCount}
+              readOnly
+              title="Automaticky počítáno z přiřazených jednotek"
             />
           </div>
         </div>

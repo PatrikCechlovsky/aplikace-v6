@@ -500,6 +500,7 @@ export default function PropertyDetailFrame({
                 key={`form-${resolvedProperty.id}`}
                 property={formValue}
                 readOnly={readOnly}
+                assignedUnitsCount={units.length}
                 onDirtyChange={(dirty) => {
                   if (dirty) {
                     markDirtyIfChanged(formValue)
