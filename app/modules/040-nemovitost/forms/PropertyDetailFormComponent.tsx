@@ -31,6 +31,9 @@ export type PropertyFormValue = {
   built_up_area: number | null
   building_area: number | null
   number_of_floors: number | null
+  floors_above_ground: number | null
+  floors_below_ground: number | null
+  units_count: number | null
   
   build_year: number | null
   reconstruction_year: number | null
@@ -88,6 +91,9 @@ export default function PropertyDetailFormComponent({
     built_up_area: property.built_up_area ?? null,
     building_area: property.building_area ?? null,
     number_of_floors: property.number_of_floors ?? null,
+    floors_above_ground: property.floors_above_ground ?? null,
+    floors_below_ground: property.floors_below_ground ?? null,
+    units_count: property.units_count ?? null,
     
     build_year: property.build_year ?? null,
     reconstruction_year: property.reconstruction_year ?? null,
@@ -362,15 +368,42 @@ export default function PropertyDetailFormComponent({
           </div>
           
           <div className="detail-form__field">
-            <label className="detail-form__label">Počet podlaží</label>
+            <label className="detail-form__label">Nadzemní podlaží</label>
             <input
               className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
               type="number"
               min="0"
               max="50"
-              value={formVal.number_of_floors ?? ''}
-              onChange={(e) => update({ number_of_floors: safeNum(e.target.value) })}
+              value={formVal.floors_above_ground ?? ''}
+              onChange={(e) => update({ floors_above_ground: safeNum(e.target.value) })}
               placeholder="2"
+              readOnly={readOnly}
+            />
+          </div>
+          
+          <div className="detail-form__field">
+            <label className="detail-form__label">Podzemní podlaží</label>
+            <input
+              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
+              type="number"
+              min="0"
+              max="10"
+              value={formVal.floors_below_ground ?? ''}
+              onChange={(e) => update({ floors_below_ground: safeNum(e.target.value) })}
+              placeholder="1"
+              readOnly={readOnly}
+            />
+          </div>
+          
+          <div className="detail-form__field">
+            <label className="detail-form__label">Počet jednotek</label>
+            <input
+              className={`detail-form__input ${readOnly ? 'detail-form__input--readonly' : ''}`}
+              type="number"
+              min="0"
+              value={formVal.units_count ?? ''}
+              onChange={(e) => update({ units_count: safeNum(e.target.value) })}
+              placeholder="4"
               readOnly={readOnly}
             />
           </div>

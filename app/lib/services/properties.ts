@@ -181,6 +181,9 @@ export type PropertyDetailRow = {
   built_up_area: number | null
   building_area: number | null
   number_of_floors: number | null
+  floors_above_ground: number | null
+  floors_below_ground: number | null
+  units_count: number | null
   
   // dates
   build_year: number | null
@@ -259,6 +262,9 @@ export type SavePropertyInput = {
   built_up_area?: number | null
   building_area?: number | null
   number_of_floors?: number | null
+  floors_above_ground?: number | null
+  floors_below_ground?: number | null
+  units_count?: number | null
   
   // dates
   build_year?: number | null
@@ -294,6 +300,9 @@ export async function saveProperty(input: SavePropertyInput): Promise<PropertyDe
     built_up_area: input.built_up_area ?? null,
     building_area: input.building_area ?? null,
     number_of_floors: input.number_of_floors ?? null,
+    floors_above_ground: input.floors_above_ground ?? null,
+    floors_below_ground: input.floors_below_ground ?? null,
+    units_count: input.units_count ?? null,
     build_year: input.build_year ?? null,
     reconstruction_year: input.reconstruction_year ?? null,
     cadastral_area: input.cadastral_area ?? null,

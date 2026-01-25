@@ -287,6 +287,9 @@ export default function PropertiesTile({
           builtUpArea: detail.property.built_up_area,
           buildingArea: detail.property.building_area,
           numberOfFloors: detail.property.number_of_floors,
+          floorsAboveGround: detail.property.floors_above_ground,
+          floorsBelowGround: detail.property.floors_below_ground,
+          unitsCount: detail.property.units_count,
           
           buildYear: detail.property.build_year,
           reconstructionYear: detail.property.reconstruction_year,

@@ -43,6 +43,9 @@ export type UiProperty = {
   builtUpArea: number | null
   buildingArea: number | null
   numberOfFloors: number | null
+  floorsAboveGround: number | null
+  floorsBelowGround: number | null
+  unitsCount: number | null
   
   // Dates
   buildYear: number | null
@@ -93,6 +96,9 @@ function buildInitialFormValue(p: UiProperty): PropertyFormValue {
     built_up_area: p.builtUpArea ?? null,
     building_area: p.buildingArea ?? null,
     number_of_floors: p.numberOfFloors ?? null,
+    floors_above_ground: p.floorsAboveGround ?? null,
+    floors_below_ground: p.floorsBelowGround ?? null,
+    units_count: p.unitsCount ?? null,
     
     build_year: p.buildYear ?? null,
     reconstruction_year: p.reconstructionYear ?? null,
@@ -219,6 +225,9 @@ export default function PropertyDetailFrame({
           builtUpArea: detail.property.built_up_area,
           buildingArea: detail.property.building_area,
           numberOfFloors: detail.property.number_of_floors,
+          floorsAboveGround: detail.property.floors_above_ground,
+          floorsBelowGround: detail.property.floors_below_ground,
+          unitsCount: detail.property.units_count,
           
           buildYear: detail.property.build_year,
           reconstructionYear: detail.property.reconstruction_year,
@@ -284,6 +293,9 @@ export default function PropertyDetailFrame({
       built_up_area: formValue.built_up_area || null,
       building_area: formValue.building_area || null,
       number_of_floors: formValue.number_of_floors || null,
+      floors_above_ground: formValue.floors_above_ground || null,
+      floors_below_ground: formValue.floors_below_ground || null,
+      units_count: formValue.units_count || null,
       
       build_year: formValue.build_year || null,
       reconstruction_year: formValue.reconstruction_year || null,
@@ -317,6 +329,9 @@ export default function PropertyDetailFrame({
         builtUpArea: savedRow.built_up_area,
         buildingArea: savedRow.building_area,
         numberOfFloors: savedRow.number_of_floors,
+        floorsAboveGround: savedRow.floors_above_ground,
+        floorsBelowGround: savedRow.floors_below_ground,
+        unitsCount: savedRow.units_count,
         
         buildYear: savedRow.build_year,
         reconstructionYear: savedRow.reconstruction_year,
