@@ -27,6 +27,7 @@ export type UiUnit = {
   id: string
   propertyId: string | null
   unitTypeId: string | null
+  landlordId?: string | null
   displayName: string | null
   internalCode: string | null
   
@@ -78,6 +79,7 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     internalCode: u.internalCode || '',
     propertyId: u.propertyId || '',
     unitTypeId: u.unitTypeId || '',
+    landlordId: u.landlordId || '',
     
     street: u.street || '',
     houseNumber: u.houseNumber || '',
@@ -133,6 +135,7 @@ export default function UnitDetailFrame({
   const [unitTypes, setUnitTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null }>>([])
   const [selectedUnitTypeId, setSelectedUnitTypeId] = useState<string | null>(unit.unitTypeId)
   const [propertyAddress, setPropertyAddress] = useState<PropertyAddress | null>(null)
+  const [propertyLandlordId, setPropertyLandlordId] = useState<string | null>(null)
   
   // Load unit types from generic_types
   useEffect(() => {
@@ -156,6 +159,7 @@ export default function UnitDetailFrame({
   useEffect(() => {
     if (!formValue.propertyId) {
       setPropertyAddress(null)
+      setPropertyLandlordId(null)
       return
     }
     
@@ -163,7 +167,7 @@ export default function UnitDetailFrame({
       try {
         const { data } = await supabase
           .from('properties')
-          .select('street, house_number, city, zip')
+          .select('street, house_number, city, zip, landlord_id')
           .eq('id', formValue.propertyId)
           .single()
         
@@ -174,6 +178,12 @@ export default function UnitDetailFrame({
             city: data.city,
             zip: data.zip,
           })
+          setPropertyLandlordId(data.landlord_id)
+          
+          // Pre-fill landlord_id from property when creating new unit
+          if (isNewId(unit.id) && !formValue.landlordId) {
+            setFormValue(prev => ({ ...prev, landlordId: data.landlord_id }))
+          }
         }
       } catch (err) {
         logger.error('Failed to load property address', err)
@@ -268,6 +278,7 @@ export default function UnitDetailFrame({
       unit_type_id: formValue.unitTypeId || null,
       display_name: formValue.displayName || null,
       internal_code: formValue.internalCode || null,
+      landlord_id: formValue.landlordId || null,
       
       street: formValue.street || null,
       house_number: formValue.houseNumber || null,
@@ -479,6 +490,7 @@ export default function UnitDetailFrame({
                 unit={formValue}
                 readOnly={readOnly}
                 propertyAddress={propertyAddress}
+                propertyLandlordId={propertyLandlordId}
                 onDirtyChange={(dirty) => {
                   if (dirty) {
                     markDirtyIfChanged(formValue)

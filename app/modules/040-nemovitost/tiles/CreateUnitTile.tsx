@@ -140,6 +140,7 @@ export default function CreateUnitTile({
           id: 'new',
           propertyId: null,
           unitTypeId: type?.id || null,
+          landlordId: null,
           displayName: '',
           internalCode: null,
           floor: null,

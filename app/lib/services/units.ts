@@ -222,6 +222,7 @@ export type SaveUnitInput = {
   unit_type_id: string | null
   display_name: string | null
   internal_code?: string | null
+  landlord_id?: string | null
   
   // address (inherited or override)
   street?: string | null
@@ -259,6 +260,7 @@ export async function saveUnit(input: SaveUnitInput): Promise<UnitDetailRow> {
     unit_type_id: input.unit_type_id,
     display_name: input.display_name,
     internal_code: input.internal_code ?? null,
+    landlord_id: input.landlord_id ?? null,
     street: input.street ?? null,
     house_number: input.house_number ?? null,
     city: input.city ?? null,

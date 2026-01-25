@@ -24,6 +24,7 @@ export type UnitFormValue = {
   internalCode: string
   propertyId: string
   unitTypeId: string
+  landlordId: string
   
   street: string
   houseNumber: string
@@ -52,6 +53,7 @@ export type UnitDetailFormProps = {
   unit: Partial<UnitFormValue>
   readOnly: boolean
   propertyAddress?: PropertyAddress | null
+  propertyLandlordId?: string | null
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: UnitFormValue) => void
 }
@@ -78,12 +80,14 @@ export default function UnitDetailForm({
   unit,
   readOnly,
   propertyAddress,
+  propertyLandlordId,
   onDirtyChange,
   onValueChange,
 }: UnitDetailFormProps) {
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
   const [properties, setProperties] = useState<Array<{ id: string; display_name: string }>>([])
+  const [landlords, setLandlords] = useState<Array<{ id: string; display_name: string }>>([])
   
   // Load properties
   useEffect(() => {
@@ -99,12 +103,28 @@ export default function UnitDetailForm({
     loadProperties()
   }, [])
   
+  // Load landlords (subjects where is_landlord = true)
+  useEffect(() => {
+    async function loadLandlords() {
+      const { data } = await supabase
+        .from('subjects')
+        .select('id, display_name')
+        .eq('is_landlord', true)
+        .eq('is_archived', false)
+        .order('display_name')
+      
+      setLandlords(data || [])
+    }
+    loadLandlords()
+  }, [])
+  
   // Build current form value
   const formValue: UnitFormValue = {
     displayName: safe(unit.displayName),
     internalCode: safe(unit.internalCode),
     propertyId: safe(unit.propertyId),
     unitTypeId: safe(unit.unitTypeId),
+    landlordId: safe(unit.landlordId),
     
     street: safe(unit.street),
     houseNumber: safe(unit.houseNumber),
@@ -173,6 +193,35 @@ export default function UnitDetailForm({
                 <option key={p.id} value={p.id}>{p.display_name}</option>
               ))}
             </select>
+          </div>
+
+          <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">Pronajímatel *</label>
+            <select
+              className="detail-form__input"
+              value={formValue.landlordId || ''}
+              onChange={(e) => handleChange('landlordId', e.target.value)}
+              disabled={readOnly}
+              required
+            >
+              <option value="">— vyberte pronajímatele —</option>
+              {landlords.map((l) => (
+                <option key={l.id} value={l.id}>{l.display_name}</option>
+              ))}
+            </select>
+            {formValue.landlordId && propertyLandlordId && formValue.landlordId !== propertyLandlordId && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffc107',
+                borderRadius: '4px',
+                color: '#856404',
+                fontSize: '14px'
+              }}>
+                ⚠️ Pozor: Pronajímatel jednotky je jiný než pronajímatel nemovitosti
+              </div>
+            )}
           </div>
         </div>
         

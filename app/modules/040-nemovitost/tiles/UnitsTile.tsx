@@ -337,6 +337,7 @@ export default function UnitsTile({
                 id: found.id,
                 propertyId: found.propertyId,
                 unitTypeId: found.unitTypeId,
+                landlordId: null, // Will be loaded in DetailFrame
                 displayName: found.displayName,
                 internalCode: null, // Load full detail in DetailFrame
                 street: null,
@@ -372,6 +373,7 @@ export default function UnitsTile({
                 id: found.id,
                 propertyId: found.propertyId,
                 unitTypeId: found.unitTypeId,
+                landlordId: null, // Will be loaded in DetailFrame
                 displayName: found.displayName,
                 internalCode: null,
                 street: null,
