@@ -194,7 +194,6 @@ export default function PropertyDetailFormComponent({
           // Read-only mód: Adresa na jeden řádek
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">Adresa</label>
               <input
                 className="detail-form__input detail-form__input--readonly"
                 value={[

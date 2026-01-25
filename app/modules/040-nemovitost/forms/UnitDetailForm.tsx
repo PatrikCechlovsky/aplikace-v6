@@ -205,10 +205,9 @@ export default function UnitDetailForm({
       {/* Adresa z nemovitosti (read-only) */}
       {propertyAddress && (
         <div className="detail-form__section">
-          <h3 className="detail-form__section-title">Adresa (z nemovitosti)</h3>
+          <h3 className="detail-form__section-title">Adresa z nemovitosti</h3>
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">Adresa</label>
               <input
                 className="detail-form__input detail-form__input--readonly"
                 value={[
