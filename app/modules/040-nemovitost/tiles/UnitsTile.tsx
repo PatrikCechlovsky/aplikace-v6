@@ -694,6 +694,7 @@ export default function UnitsTile({
             order: colPrefs.colOrder ?? [],
             hidden: colPrefs.colHidden ?? [],
           }}
+          sortBy={sort ?? undefined}
           onChange={(next) => {
             setColPrefs((p) => ({
               ...p,
@@ -701,12 +702,14 @@ export default function UnitsTile({
               colHidden: next.hidden,
             }))
           }}
+          onSortChange={(newSort) => setSort(newSort)}
           onReset={() => {
             setColPrefs({
               colWidths: {},
               colOrder: [],
               colHidden: [],
             })
+            setSort(DEFAULT_SORT)
           }}
         />
       </div>

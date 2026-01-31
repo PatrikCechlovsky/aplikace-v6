@@ -719,6 +719,7 @@ export default function PropertiesTile({
             order: colPrefs.colOrder ?? [],
             hidden: colPrefs.colHidden ?? [],
           }}
+          sortBy={sort ?? undefined}
           onChange={(next) => {
             setColPrefs((p) => ({
               ...p,
@@ -726,12 +727,14 @@ export default function PropertiesTile({
               colHidden: next.hidden,
             }))
           }}
+          onSortChange={(newSort) => setSort(newSort)}
           onReset={() => {
             setColPrefs((p) => ({
               ...p,
               colOrder: [],
               colHidden: [],
             }))
+            setSort(DEFAULT_SORT)
           }}
         />
       </div>
