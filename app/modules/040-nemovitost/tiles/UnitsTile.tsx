@@ -37,7 +37,8 @@ type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
 
 const VIEW_KEY = '040.units.list'
 
-const BASE_COLUMNS: ListViewColumn[] = [
+// Export pro znovupoužití v EntityHub a ContractWizard
+export const UNITS_BASE_COLUMNS: ListViewColumn[] = [
   { key: 'unitTypeName', label: 'Typ', width: 140, sortable: true },
   { key: 'displayName', label: 'Název', width: 200, sortable: true },
   { key: 'propertyName', label: 'Nemovitost', width: 200, sortable: true },
@@ -46,6 +47,8 @@ const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'rooms', label: 'Pokoje', width: 100, sortable: true },
   { key: 'status', label: 'Status', width: 150, sortable: true },
 ]
+
+const BASE_COLUMNS = UNITS_BASE_COLUMNS
 
 // Status color mapping
 const STATUS_COLORS: Record<string, { label: string; color: string; icon: string }> = {
@@ -104,7 +107,8 @@ type UiUnitRow = {
   isArchived: boolean
 }
 
-function mapRowToUi(row: UnitsListRow): UiUnitRow {
+// Export pro znovupoužití v EntityHub a ContractWizard
+export function mapUnitRowToUi(row: UnitsListRow): UiUnitRow {
   return {
     id: row.id,
     displayName: row.display_name || '—',
@@ -121,6 +125,9 @@ function mapRowToUi(row: UnitsListRow): UiUnitRow {
     isArchived: !!row.is_archived,
   }
 }
+
+// Local alias for internal use
+const mapRowToUi = mapUnitRowToUi
 
 function toRow(u: UiUnitRow): ListViewRow<UiUnitRow> {
   const statusInfo = u.status ? STATUS_COLORS[u.status] : null

@@ -47,7 +47,8 @@ type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
 
 const VIEW_KEY = '030.tenants.list'
 
-const BASE_COLUMNS: ListViewColumn[] = [
+// Export pro znovupoužití v EntityHub a ContractWizard
+export const TENANTS_BASE_COLUMNS: ListViewColumn[] = [
   { key: 'subjectTypeLabel', label: 'Typ nájemníka', width: 160, sortable: true },
   { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
   { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
@@ -60,7 +61,10 @@ const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'isArchived', label: 'Archivován', width: 120, align: 'center', sortable: true },
 ]
 
-function mapRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectType>): UiTenant {
+const BASE_COLUMNS = TENANTS_BASE_COLUMNS
+
+// Export pro znovupoužití v EntityHub a ContractWizard
+export function mapTenantRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectType>): UiTenant {
   const subjectTypeMeta = subjectTypeMap[row.subject_type ?? '']
   
   // Složit adresu ve formátu: "Ulice ČísloPopisné, PSČ Město, Stát"
@@ -72,6 +76,39 @@ function mapRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectT
                      row.country === 'DE' ? 'Německo' :
                      row.country === 'AT' ? 'Rakousko' :
                      row.country || ''
+  const fullAddress = [streetPart, cityPart, countryName].filter(Boolean).join(', ')
+  
+  return {
+    id: row.id,
+    subjectType: row.subject_type ?? '',
+    displayName: row.display_name ?? '',
+    email: row.email ?? '',
+    phone: row.phone ?? null,
+    createdAt: row.created_at ?? '',
+    isArchived: !!row.is_archived,
+
+    titleBefore: row.title_before ?? null,
+    firstName: row.first_name ?? null,
+    lastName: row.last_name ?? null,
+
+    companyName: row.company_name ?? null,
+    ic: row.ic ?? null,
+    dic: row.dic ?? null,
+    
+    // Adresa
+    fullAddress: fullAddress || null,
+
+    // Metadata z subject_types
+    subjectTypeLabel: subjectTypeMeta?.name || row.subject_type_name || row.subject_type || '—',
+    subjectTypeColor: subjectTypeMeta?.color || row.subject_type_color || null,
+    subjectTypeOrderIndex: subjectTypeMeta?.sort_order ?? row.subject_type_sort_order ?? null,
+  }
+}
+
+// Local alias for internal use
+function mapRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectType>): UiTenant {
+  return mapTenantRowToUi(row, subjectTypeMap)
+}
   const fullAddress = [streetPart, cityPart, countryName].filter(Boolean).join(', ')
   
   return {

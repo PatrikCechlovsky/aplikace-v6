@@ -34,7 +34,8 @@ const logger = createLogger('040 PropertiesTile')
 
 type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
 
-const BASE_COLUMNS: ListViewColumn[] = [
+// Export pro znovupoužití v EntityHub a ContractWizard
+export const PROPERTIES_BASE_COLUMNS: ListViewColumn[] = [
   { key: 'propertyTypeName', label: 'Typ', width: 160, sortable: true },
   { key: 'displayName', label: 'Název', width: 250, sortable: true },
   { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
@@ -42,6 +43,8 @@ const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'buildingArea', label: 'Plocha (m²)', width: 120, sortable: true },
   { key: 'unitsCount', label: 'Jednotky', width: 100, sortable: true },
 ]
+
+const BASE_COLUMNS = PROPERTIES_BASE_COLUMNS
 
 type UiProperty = {
   id: string
@@ -58,7 +61,8 @@ type UiProperty = {
   isArchived: boolean
 }
 
-function mapRowToUi(row: PropertiesListRow): UiProperty {
+// Export pro znovupoužití v EntityHub a ContractWizard
+export function mapPropertyRowToUi(row: PropertiesListRow): UiProperty {
   const addressParts = [
     [row.street, row.house_number].filter(Boolean).join(' '),
     row.city,
@@ -80,6 +84,9 @@ function mapRowToUi(row: PropertiesListRow): UiProperty {
     isArchived: !!row.is_archived,
   }
 }
+
+// Local alias for internal use
+const mapRowToUi = mapPropertyRowToUi
 
 function toRow(p: UiProperty): ListViewRow<UiProperty> {
   return {
