@@ -110,35 +110,6 @@ export function mapLandlordRowToUi(row: LandlordsListRow, subjectTypeMap: Record
 function mapRowToUi(row: LandlordsListRow, subjectTypeMap: Record<string, SubjectType>): UiLandlord {
   return mapLandlordRowToUi(row, subjectTypeMap)
 }
-                     row.country || ''
-  const fullAddress = [streetPart, cityPart, countryName].filter(Boolean).join(', ')
-  
-  return {
-    id: row.id,
-    subjectType: row.subject_type ?? '',
-    displayName: row.display_name ?? '',
-    email: row.email ?? '',
-    phone: row.phone ?? null,
-    createdAt: row.created_at ?? '',
-    isArchived: !!row.is_archived,
-
-    titleBefore: row.title_before ?? null,
-    firstName: row.first_name ?? null,
-    lastName: row.last_name ?? null,
-
-    companyName: row.company_name ?? null,
-    ic: row.ic ?? null,
-    dic: row.dic ?? null,
-    
-    // Adresa
-    fullAddress: fullAddress || null,
-
-    // Metadata z subject_types
-    subjectTypeLabel: subjectTypeMeta?.name || row.subject_type_name || row.subject_type || '—',
-    subjectTypeColor: subjectTypeMeta?.color || row.subject_type_color || null,
-    subjectTypeOrderIndex: subjectTypeMeta?.sort_order ?? row.subject_type_sort_order ?? null,
-  }
-}
 
 function toRow(l: UiLandlord): ListViewRow<UiLandlord> {
   return {
