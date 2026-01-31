@@ -25,6 +25,9 @@ Všechna pole z `PropertyDetailForm.ts` jsou implementována v databázi:
 | built_up_area | built_up_area | numeric | ✅ |
 | building_area | building_area | numeric | ✅ |
 | number_of_floors | number_of_floors | integer | ✅ |
+| floors_above_ground | floors_above_ground | integer | ✅ |
+| floors_below_ground | floors_below_ground | integer | ✅ |
+| units_count | units_count | integer | ✅ (read-only) |
 | build_year | build_year | integer | ✅ |
 | reconstruction_year | reconstruction_year | integer | ✅ |
 | cadastral_area | cadastral_area | text | ✅ |
@@ -33,7 +36,7 @@ Všechna pole z `PropertyDetailForm.ts` jsou implementována v databázi:
 | note | note | text | ✅ |
 | is_archived | is_archived | boolean | ✅ |
 
-**Počet polí:** 21/21 ✅
+**Počet polí:** 24/24 ✅
 
 ---
 
@@ -107,13 +110,13 @@ Všechna pole z `PropertyDetailForm.ts` jsou implementována v databázi:
 
 ## 🎯 Závěr
 
-### ✅ Properties: KOMPLETNÍ
-Všechna pole z formuláře jsou v databázi.
+### ✅ Properties: KOMPLETNÍ (24 polí)
+Všechna pole z formuláře jsou v databázi, včetně `floors_above_ground`, `floors_below_ground` a `units_count`.
 
-### ✅ Units: KOMPLETNÍ po migraci 074
+### ✅ Units: KOMPLETNÍ po migraci 074 (27 polí)
 Všechna pole z formuláře budou v databázi po spuštění migrace 074.
 
-### 📊 Celková konzistence: 48/48 (100%) ✅
+### 📊 Celková konzistence: 51/51 (100%) ✅
 
 ---
 

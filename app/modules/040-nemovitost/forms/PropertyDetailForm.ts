@@ -24,6 +24,9 @@ export type PropertyFormValue = {
   built_up_area?: number
   building_area?: number
   number_of_floors?: number
+  floors_above_ground?: number
+  floors_below_ground?: number
+  units_count?: number
   
   // Dates
   build_year?: number
@@ -158,11 +161,36 @@ export const propertyDetailForm = {
         },
         {
           name: 'number_of_floors',
-          label: 'Počet podlaží',
+          label: 'Počet podlaží celkem',
           type: 'number',
           min: 0,
           max: 50,
           placeholder: '2',
+        },
+        {
+          name: 'floors_above_ground',
+          label: 'Nadzemní podlaží',
+          type: 'number',
+          min: 0,
+          max: 50,
+          placeholder: '2',
+        },
+        {
+          name: 'floors_below_ground',
+          label: 'Podzemní podlaží',
+          type: 'number',
+          min: 0,
+          max: 10,
+          placeholder: '1',
+        },
+        {
+          name: 'units_count',
+          label: 'Počet jednotek',
+          type: 'number',
+          min: 0,
+          placeholder: '4',
+          readOnly: true,
+          helpText: 'Automaticky počítáno z počtu založených jednotek',
         },
       ],
     },
