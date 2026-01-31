@@ -1040,7 +1040,7 @@ export default function LandlordsTile({
             order: colPrefs.colOrder ?? [],
             hidden: colPrefs.colHidden ?? [],
           }}
-          sortBy={sort}
+          sortBy={sort ?? undefined}
           onChange={(next) => {
             setColPrefs((p) => ({
               ...p,
