@@ -178,7 +178,7 @@ export default function PropertiesTile({
   const [colsOpen, setColsOpen] = useState(false)
 
   // Sort state with default
-  const DEFAULT_SORT: ViewPrefsSortState = { key: 'displayName', dir: 'asc' }
+  const DEFAULT_SORT: ViewPrefsSortState = { key: 'propertyTypeName', dir: 'asc' }
   const [sort, setSort] = useState<ViewPrefsSortState>(DEFAULT_SORT)
 
   // Detail state

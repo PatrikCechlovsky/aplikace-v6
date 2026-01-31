@@ -214,7 +214,7 @@ export default function UnitsTile({
   
   // Column settings
   const [colsOpen, setColsOpen] = useState(false)
-  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'displayName', dir: 'asc' }), [])
+  const DEFAULT_SORT: ListViewSortState = useMemo(() => ({ key: 'unitTypeName', dir: 'asc' }), [])
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
