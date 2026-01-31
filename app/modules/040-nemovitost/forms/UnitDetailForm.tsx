@@ -93,7 +93,7 @@ export default function UnitDetailForm({
   const firstRenderRef = useRef(true)
   const [properties, setProperties] = useState<Array<{ id: string; display_name: string }>>([])
   const [landlords, setLandlords] = useState<Array<{ id: string; display_name: string }>>([])
-  const [dispositions, setDispositions] = useState<Array<{ type_code: string; label: string }>>([])
+  const [dispositions, setDispositions] = useState<Array<{ code: string; name: string }>>([])
   const [tenants, setTenants] = useState<Array<{ id: string; display_name: string }>>([])
   
   // Load properties
@@ -130,8 +130,9 @@ export default function UnitDetailForm({
     async function loadDispositions() {
       const { data } = await supabase
         .from('generic_types')
-        .select('type_code, label')
+        .select('code, name')
         .eq('category', 'unit_dispositions')
+        .eq('active', true)
         .order('order_index')
       
       setDispositions(data || [])
@@ -329,7 +330,7 @@ export default function UnitDetailForm({
             >
               <option value="">— vyberte dispozici —</option>
               {dispositions.map((d) => (
-                <option key={d.type_code} value={d.type_code}>{d.label}</option>
+                <option key={d.code} value={d.code}>{d.name}</option>
               ))}
             </select>
           </div>
