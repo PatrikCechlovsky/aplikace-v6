@@ -9,7 +9,9 @@ import { useRouter } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, getPropertyDetail, type PropertiesListRow } from '@/app/lib/services/properties'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import PropertyDetailFrame, { type UiProperty as DetailUiProperty } from '../components/PropertyDetailFrame'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
@@ -31,6 +33,8 @@ import {
 import '@/app/styles/components/TileLayout.css'
 
 const logger = createLogger('040 PropertiesTile')
+
+const VIEW_KEY = '040.properties.list'
 
 type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
 
@@ -161,6 +165,22 @@ export default function PropertiesTile({
   // Property types pro mapování code -> name
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null; color: string | null }>>([])
 
+  // Column preferences (order, hidden, widths)
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+  const columns = useMemo(() => {
+    return applyColumnPrefs(BASE_COLUMNS, colPrefs)
+  }, [colPrefs])
+
+  const [colsOpen, setColsOpen] = useState(false)
+
+  // Sort state with default
+  const DEFAULT_SORT: ViewPrefsSortState = { key: 'displayName', dir: 'asc' }
+  const [sort, setSort] = useState<ViewPrefsSortState>(DEFAULT_SORT)
+
   // Detail state
   const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailProperty, setDetailProperty] = useState<DetailUiProperty | null>(null)
@@ -205,6 +225,46 @@ export default function PropertiesTile({
     
     void loadTypes()
   }, [propertyTypeCode])
+
+  // ✅ Načíst column preferences a sort z DB při mountu
+  useEffect(() => {
+    async function loadPrefs() {
+      const prefs = await loadViewPrefs(VIEW_KEY, {
+        colWidths: {},
+        colOrder: [],
+        colHidden: [],
+        sort: DEFAULT_SORT,
+      })
+      if (prefs) {
+        setColPrefs((prev) => {
+          const p: ViewPrefs = {
+            ...prev,
+            colWidths: prefs.colWidths || {},
+            colOrder: prefs.colOrder || [],
+            colHidden: prefs.colHidden || [],
+          }
+          return p
+        })
+        if (prefs.sort) {
+          setSort(prefs.sort)
+        }
+      }
+    }
+    void loadPrefs()
+  }, [])
+
+  // ✅ Uložit column preferences + sort do DB při změně
+  useEffect(() => {
+    async function persist() {
+      await saveViewPrefs(VIEW_KEY, {
+        colWidths: colPrefs.colWidths ?? {},
+        colOrder: colPrefs.colOrder ?? [],
+        colHidden: colPrefs.colHidden ?? [],
+        sort,
+      })
+    }
+    void persist()
+  }, [sort, DEFAULT_SORT, colPrefs])
 
   // Register common actions
   useEffect(() => {
@@ -441,7 +501,7 @@ export default function PropertiesTile({
 
       // COLUMN SETTINGS
       if (id === 'columnSettings') {
-        toast.showInfo('Nastavení sloupců zatím není implementováno')
+        setColsOpen(true)
         return
       }
 
@@ -576,9 +636,10 @@ export default function PropertiesTile({
     setSort(nextSort)
   }, [])
 
-  // Columns
-  const [columns] = useState<ListViewColumn[]>(BASE_COLUMNS)
-  const [sort, setSort] = useState<ListViewSortState>(null)
+  // Column resize handler
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+  }, [])
 
   // Filter, sort, map rows
   const rows = useMemo(() => {
@@ -643,9 +704,36 @@ export default function PropertiesTile({
               onRowDoubleClick={handleRowDoubleClick}
               sort={sort}
               onSortChange={handleSortChange}
+              onColumnResize={handleColumnResize}
             />
           )}
         </div>
+
+        <ListViewColumnsDrawer
+          open={colsOpen}
+          onClose={() => setColsOpen(false)}
+          columns={BASE_COLUMNS}
+          fixedFirstKey="propertyTypeName"
+          requiredKeys={['displayName']}
+          value={{
+            order: colPrefs.colOrder ?? [],
+            hidden: colPrefs.colHidden ?? [],
+          }}
+          onChange={(next) => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: next.order,
+              colHidden: next.hidden,
+            }))
+          }}
+          onReset={() => {
+            setColPrefs((p) => ({
+              ...p,
+              colOrder: [],
+              colHidden: [],
+            }))
+          }}
+        />
       </div>
     )
   }
