@@ -390,6 +390,9 @@ postgres,public,properties,origin_module,22,text,null,null,null,true,'040-nemovi
 postgres,public,properties,created_at,23,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,properties,updated_at,24,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,properties,is_archived,25,boolean,null,null,null,true,false,false
+postgres,public,properties,floors_above_ground,26,integer,null,32,0,true,null,false
+postgres,public,properties,floors_below_ground,27,integer,null,32,0,true,null,false
+postgres,public,properties,units_count,28,integer,null,32,0,true,null,false
 postgres,public,property_equipment,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,property_equipment,property_id,2,uuid,null,null,null,false,null,false
 postgres,public,property_equipment,equipment_id,3,uuid,null,null,null,false,null,false
@@ -559,6 +562,12 @@ postgres,public,units,created_at,19,timestamp with time zone,null,null,null,true
 postgres,public,units,updated_at,20,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,units,is_archived,21,boolean,null,null,null,true,false,false
 postgres,public,units,unit_type_id,23,uuid,null,null,null,true,null,false
+postgres,public,units,landlord_id,24,uuid,null,null,null,false,null,false
+postgres,public,units,tenant_id,25,uuid,null,null,null,true,null,false
+postgres,public,units,disposition,26,text,null,null,null,true,null,false
+postgres,public,units,orientation_number,27,text,null,null,null,true,null,false
+postgres,public,units,year_renovated,28,integer,null,32,0,true,null,false
+postgres,public,units,manager_name,29,text,null,null,null,true,null,false
 postgres,public,user_theme_settings,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,user_theme_settings,user_id,2,uuid,null,null,null,false,null,false
 postgres,public,user_theme_settings,theme_mode,3,text,null,null,null,false,'auto'::text,false

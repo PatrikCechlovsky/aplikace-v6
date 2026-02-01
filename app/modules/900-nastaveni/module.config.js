@@ -14,7 +14,7 @@ import UnitTypesTile from './tiles/UnitTypesTile'
 import RoleTypesTile from './tiles/RoleTypesTile'
 import PaymentTypesTile from './tiles/PaymentTypesTile'
 import RoomTypesTile from './tiles/RoomTypesTile'
-import EquipmentStatesTile from './tiles/EquipmentStatesTile'
+import EquipmentTypesTile from './tiles/EquipmentTypesTile'
 import AppViewSettingsTile from './tiles/AppViewSettingsTile'
 
 export default {
@@ -103,11 +103,11 @@ export default {
       order: 55,
     },
     {
-      id: 'equipment-states',
-      label: 'Stavy vybavení',
+      id: 'equipment-types',
+      label: 'Typy vybavení',
       icon: 'settings',
       sectionId: 'types-settings',
-      component: EquipmentStatesTile,
+      component: EquipmentTypesTile,
       order: 56,
     },
     {

@@ -1,24 +1,16 @@
-/*
- * FILE: app/modules/900-nastaveni/tiles/EquipmentStatesTile.tsx
- * PURPOSE: Wrapper kolem GenericTypeTile pro kategorii equipment_states
- */
+// FILE: app/modules/900-nastaveni/tiles/EquipmentTypesTile.tsx
+// PURPOSE: UI pro správu typů vybavení (equipment_types) přes generic_types
+// NOTES: Wrapper kolem GenericTypeTile pro kategorii 'equipment_types'
 
 'use client'
 
-import GenericTypeTile, {
-  GenericTypeItem,
-} from '@/app/UI/GenericTypeTile'
-
-import type {
-  GenericTypeRow,
-  GenericTypePayload,
-} from '../services/genericTypes'
-
-import {
-  listByCategory,
-  create,
-  update,
-} from '../services/genericTypes'
+import GenericTypeTile, { GenericTypeItem } from '@/app/UI/GenericTypeTile'
+import { 
+  listByCategory, 
+  create, 
+  update, 
+  GenericTypeRow 
+} from '@/app/lib/services/genericTypes'
 
 /**
  * Mapování z DB řádku (GenericTypeRow) na generický typový záznam
@@ -39,7 +31,7 @@ function mapRowToGeneric(row: GenericTypeRow): GenericTypeItem {
 /**
  * Mapování z GenericTypeItem (formulář) na payload pro service.
  */
-function mapGenericToPayload(input: GenericTypeItem): GenericTypePayload {
+function mapGenericToPayload(input: GenericTypeItem) {
   return {
     name: input.name,
     description: input.description ?? null,
@@ -53,29 +45,29 @@ function mapGenericToPayload(input: GenericTypeItem): GenericTypePayload {
   }
 }
 
-export default function EquipmentStatesTile() {
+export default function EquipmentTypesTile() {
   return (
     <GenericTypeTile
-      title="Stavy vybavení"
-      description="Číselník stavů vybavení (nové, běžné opotřebení, opotřebené, poškozené, k výměně, nefunkční…). Používá se v unit_equipment a property_equipment pro sledování stavu vybavení."
+      title="Typy vybavení"
+      description="Číselník typů vybavení (Spotřebiče, Nábytek, Sanitární technika, Kuchyňské spotřebiče, Vytápění, Technika, Osvětlení, Zahradní vybavení, Ostatní)."
 
-      // načtení seznamu – Supabase service
+      // načtení seznamu z generic_types WHERE category='equipment_types'
       fetchItems={async () => {
-        const rows = await listByCategory('equipment_states')
+        const rows = await listByCategory('equipment_types')
         return rows.map(mapRowToGeneric)
       }}
 
       // vytvoření nového záznamu
       createItem={async (input) => {
         const payload = mapGenericToPayload(input)
-        const created = await create('equipment_states', input.code, payload)
+        const created = await create('equipment_types', input.code, payload)
         return mapRowToGeneric(created)
       }}
 
       // update existujícího záznamu
       updateItem={async (codeKey, input) => {
         const payload = mapGenericToPayload(input)
-        const updated = await update('equipment_states', codeKey, payload)
+        const updated = await update('equipment_types', codeKey, payload)
         return mapRowToGeneric(updated)
       }}
     />

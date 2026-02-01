@@ -69,13 +69,17 @@ export const ROOM_TYPES = [
 ] as const;
 
 /**
- * Equipment condition states
+ * Equipment condition states (fixed technical values, not user-configurable)
+ * These 6 states match equipment_states in generic_types but should be used as constants.
+ * Users should not modify these via UI - they are standardized condition codes.
  */
 export const EQUIPMENT_STATES = [
-  { value: 'new', label: 'Nové' },
-  { value: 'good', label: 'Běžné' },
-  { value: 'damaged', label: 'Poškozené' },
-  { value: 'to_replace', label: 'K výměně' },
+  { value: 'new', label: 'Nové', description: 'Nové vybavení, nepoužité', color: '#2ECC71', icon: '✨' },
+  { value: 'good', label: 'Běžné opotřebení', description: 'Funkční vybavení v dobrém stavu', color: '#3498DB', icon: '✅' },
+  { value: 'worn', label: 'Opotřebené', description: 'Vybavení se znaky opotřebení', color: '#F39C12', icon: '⚠️' },
+  { value: 'damaged', label: 'Poškozené', description: 'Částečně poškozené, vyžaduje opravu', color: '#E67E22', icon: '🔧' },
+  { value: 'to_replace', label: 'K výměně', description: 'Vybavení určené k výměně', color: '#E74C3C', icon: '🔄' },
+  { value: 'broken', label: 'Nefunkční', description: 'Nefunkční vybavení, nutná výměna', color: '#C0392B', icon: '❌' },
 ] as const;
 
 // Type exports for TypeScript
