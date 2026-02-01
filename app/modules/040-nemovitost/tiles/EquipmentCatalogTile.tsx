@@ -397,13 +397,7 @@ export default function EquipmentCatalogTile({
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
-        <input
-          type="text"
-          className="tile-layout__search-input"
-          placeholder="Hledat vybavení..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
+        <h1 className="tile-layout__title">📋 Katalog vybavení</h1>
       </div>
       <div className="tile-layout__content">
         <ListView
