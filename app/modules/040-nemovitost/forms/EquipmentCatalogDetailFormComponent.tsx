@@ -58,7 +58,7 @@ export default function EquipmentCatalogDetailFormComponent({
         .select('id, name, icon, color')
         .eq('type_category', 'equipment_types')
         .eq('active', true)
-        .order('sort_order', { ascending: true })
+        .order('order_index', { ascending: true })
         .order('name', { ascending: true })
 
       if (error) {
@@ -80,7 +80,7 @@ export default function EquipmentCatalogDetailFormComponent({
         .select('id, name, icon, color')
         .eq('type_category', 'room_types')
         .eq('active', true)
-        .order('sort_order', { ascending: true })
+        .order('order_index', { ascending: true })
         .order('name', { ascending: true })
 
       if (error) {
