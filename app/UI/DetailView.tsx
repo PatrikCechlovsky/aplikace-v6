@@ -358,7 +358,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return <TenantUsersSection tenantId={entityId} viewMode={ctx.mode ?? 'edit'} />
     },
   },
-  equipment: { id: 'equipment', label: 'Vybavení', order: 40, render: () => null },
   accounts: {
     id: 'accounts',
     label: 'Účty',
