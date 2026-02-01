@@ -2,6 +2,10 @@
 // PURPOSE: Equipment service pro modul 040: catalog + unit equipment + property equipment
 // CONTRACT:
 // - listEquipmentCatalog(params) -> EquipmentCatalogRow[]
+// - getEquipmentCatalogById(id) -> EquipmentCatalogRow
+// - createEquipmentCatalog(data) -> vytvoří novou položku
+// - updateEquipmentCatalog(id, data) -> upraví položku
+// - deleteEquipmentCatalog(id) -> smaže položku (archivace)
 // - getEquipmentDetail(id) -> { equipment: EquipmentDetailRow }
 // - saveEquipment(input) -> vrací uložený equipment record
 // - listUnitEquipment(unitId) -> UnitEquipmentRow[]
@@ -10,6 +14,7 @@
 // - savePropertyEquipment(input) -> vrací vazbu
 
 import { supabase } from '@/app/lib/supabaseClient'
+import type { EquipmentCatalogFormValue } from '@/app/modules/040-nemovitost/forms/EquipmentCatalogDetailForm'
 
 /* =========================
    EQUIPMENT CATALOG
@@ -109,6 +114,182 @@ export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}):
   })
 
   return rows
+}
+
+/**
+ * Get single equipment catalog item by ID
+ */
+export async function getEquipmentCatalogById(id: string): Promise<EquipmentCatalogRow | null> {
+  const { data, error } = await supabase
+    .from('equipment_catalog')
+    .select(
+      `
+        id,
+        equipment_name,
+        equipment_type_id,
+        purchase_price,
+        purchase_date,
+        room_type_id,
+        default_lifespan_months,
+        default_revision_interval,
+        default_state,
+        default_description,
+        active,
+        is_archived,
+        created_at,
+        equipment_type:equipment_type_id(name, icon, color),
+        room_type:room_type_id(name, icon, color)
+      `
+    )
+    .eq('id', id)
+    .single()
+
+  if (error) throw new Error(error.message)
+  if (!data) return null
+
+  const equipmentType = Array.isArray(data.equipment_type) ? data.equipment_type[0] : data.equipment_type
+  const roomType = Array.isArray(data.room_type) ? data.room_type[0] : data.room_type
+
+  return {
+    ...data,
+    equipment_type_name: equipmentType?.name ?? null,
+    equipment_type_icon: equipmentType?.icon ?? null,
+    equipment_type_color: equipmentType?.color ?? null,
+    room_type_name: roomType?.name ?? null,
+    room_type_icon: roomType?.icon ?? null,
+    room_type_color: roomType?.color ?? null,
+  }
+}
+
+/**
+ * Create new equipment catalog item
+ */
+export async function createEquipmentCatalog(formData: EquipmentCatalogFormValue): Promise<EquipmentCatalogRow> {
+  const payload = {
+    equipment_name: formData.equipment_name,
+    equipment_type_id: formData.equipment_type_id,
+    room_type_id: formData.room_type_id || null,
+    purchase_price: formData.purchase_price || null,
+    purchase_date: formData.purchase_date || null,
+    default_lifespan_months: formData.default_lifespan_months || null,
+    default_revision_interval: formData.default_revision_interval || null,
+    default_state: formData.default_state || 'working',
+    default_description: formData.default_description || null,
+    active: formData.active ?? true,
+    is_archived: formData.is_archived ?? false,
+  }
+
+  const { data, error } = await supabase
+    .from('equipment_catalog')
+    .insert(payload)
+    .select(
+      `
+        id,
+        equipment_name,
+        equipment_type_id,
+        purchase_price,
+        purchase_date,
+        room_type_id,
+        default_lifespan_months,
+        default_revision_interval,
+        default_state,
+        default_description,
+        active,
+        is_archived,
+        created_at,
+        equipment_type:equipment_type_id(name, icon, color),
+        room_type:room_type_id(name, icon, color)
+      `
+    )
+    .single()
+
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error('Failed to create equipment catalog item')
+
+  const equipmentType = Array.isArray(data.equipment_type) ? data.equipment_type[0] : data.equipment_type
+  const roomType = Array.isArray(data.room_type) ? data.room_type[0] : data.room_type
+
+  return {
+    ...data,
+    equipment_type_name: equipmentType?.name ?? null,
+    equipment_type_icon: equipmentType?.icon ?? null,
+    equipment_type_color: equipmentType?.color ?? null,
+    room_type_name: roomType?.name ?? null,
+    room_type_icon: roomType?.icon ?? null,
+    room_type_color: roomType?.color ?? null,
+  }
+}
+
+/**
+ * Update existing equipment catalog item
+ */
+export async function updateEquipmentCatalog(id: string, formData: EquipmentCatalogFormValue): Promise<EquipmentCatalogRow> {
+  const payload = {
+    equipment_name: formData.equipment_name,
+    equipment_type_id: formData.equipment_type_id,
+    room_type_id: formData.room_type_id || null,
+    purchase_price: formData.purchase_price || null,
+    purchase_date: formData.purchase_date || null,
+    default_lifespan_months: formData.default_lifespan_months || null,
+    default_revision_interval: formData.default_revision_interval || null,
+    default_state: formData.default_state || 'working',
+    default_description: formData.default_description || null,
+    active: formData.active ?? true,
+    is_archived: formData.is_archived ?? false,
+  }
+
+  const { data, error } = await supabase
+    .from('equipment_catalog')
+    .update(payload)
+    .eq('id', id)
+    .select(
+      `
+        id,
+        equipment_name,
+        equipment_type_id,
+        purchase_price,
+        purchase_date,
+        room_type_id,
+        default_lifespan_months,
+        default_revision_interval,
+        default_state,
+        default_description,
+        active,
+        is_archived,
+        created_at,
+        equipment_type:equipment_type_id(name, icon, color),
+        room_type:room_type_id(name, icon, color)
+      `
+    )
+    .single()
+
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error('Failed to update equipment catalog item')
+
+  const equipmentType = Array.isArray(data.equipment_type) ? data.equipment_type[0] : data.equipment_type
+  const roomType = Array.isArray(data.room_type) ? data.room_type[0] : data.room_type
+
+  return {
+    ...data,
+    equipment_type_name: equipmentType?.name ?? null,
+    equipment_type_icon: equipmentType?.icon ?? null,
+    equipment_type_color: equipmentType?.color ?? null,
+    room_type_name: roomType?.name ?? null,
+    room_type_icon: roomType?.icon ?? null,
+    room_type_color: roomType?.color ?? null,
+  }
+}
+
+/**
+ * Delete equipment catalog item (archivation)
+ */
+export async function deleteEquipmentCatalog(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('equipment_catalog')
+    .update({ is_archived: true })
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
 }
 
 export type EquipmentDetailRow = {

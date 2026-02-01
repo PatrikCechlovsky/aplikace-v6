@@ -2,12 +2,21 @@
 
 // FILE: app/modules/040-nemovitost/tiles/EquipmentCatalogTile.tsx
 // PURPOSE: List + detail katalogu vybavení - master seznam typů vybavení pro výběr do nemovitostí/jednotek
-// URL state: t=equipment-catalog, id + vm (detail: read/edit/create)
+// URL state: t=equipment-catalog, id + vm (detail: view/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
-import { listEquipmentCatalog, type EquipmentCatalogRow } from '@/app/lib/services/equipment'
+import { 
+  listEquipmentCatalog, 
+  getEquipmentCatalogById,
+  createEquipmentCatalog,
+  updateEquipmentCatalog,
+  deleteEquipmentCatalog,
+  type EquipmentCatalogRow 
+} from '@/app/lib/services/equipment'
+import EquipmentCatalogDetailFormComponent from '../forms/EquipmentCatalogDetailFormComponent'
+import type { EquipmentCatalogFormValue } from '../forms/EquipmentCatalogDetailForm'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
@@ -22,7 +31,7 @@ const logger = createLogger('040 EquipmentCatalogTile')
 
 const VIEW_KEY = '040.equipment-catalog.list'
 
-type LocalViewMode = ViewMode | 'list'
+type LocalViewMode = 'list' | 'view' | 'edit' | 'create'
 
 const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'equipmentTypeName', label: 'Typ', width: 180, sortable: true },
@@ -158,6 +167,8 @@ export default function EquipmentCatalogTile({
   const [localViewMode, setLocalViewMode] = useState<LocalViewMode>('list')
   const [data, setData] = useState<UiEquipmentCatalog[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [currentEquipment, setCurrentEquipment] = useState<EquipmentCatalogFormValue | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -266,7 +277,7 @@ export default function EquipmentCatalogTile({
   // Row click
   const handleRowClick = useCallback((row: ListViewRow<UiEquipmentCatalog>) => {
     setSelectedId(String(row.id))
-    setLocalViewMode('read')
+    setLocalViewMode('view')
   }, [])
 
   // Sort change
@@ -280,16 +291,82 @@ export default function EquipmentCatalogTile({
     })
   }, [colPrefs])
 
+  // Detail handlers - must be defined before useEffect that uses them
+  const handleCancel = useCallback(() => {
+    setLocalViewMode('list')
+    setSelectedId(null)
+    setCurrentEquipment(null)
+  }, [])
+
+  const handleDelete = useCallback(async () => {
+    if (!selectedId) return
+    if (!confirm('Opravdu smazat toto vybavení z katalogu?')) return
+
+    try {
+      setDetailLoading(true)
+      await deleteEquipmentCatalog(selectedId)
+      showToast('Vybavení smazáno', 'success')
+      await loadData()
+      setLocalViewMode('list')
+      setSelectedId(null)
+      setCurrentEquipment(null)
+    } catch (err: any) {
+      logger.error('Chyba při mazání vybavení:', err)
+      showToast(err.message || 'Nepodařilo se smazat vybavení', 'error')
+    } finally {
+      setDetailLoading(false)
+    }
+  }, [selectedId, loadData, showToast])
+
+  const handleSave = useCallback(async () => {
+    if (!currentEquipment) return
+
+    // Validace
+    if (!currentEquipment.equipment_name?.trim()) {
+      showToast('Název vybavení je povinný', 'error')
+      return
+    }
+    if (!currentEquipment.equipment_type_id?.trim()) {
+      showToast('Typ vybavení je povinný', 'error')
+      return
+    }
+
+    try {
+      setDetailLoading(true)
+      if (localViewMode === 'create') {
+        await createEquipmentCatalog(currentEquipment)
+        showToast('Vybavení vytvořeno', 'success')
+      } else if (localViewMode === 'edit' && selectedId) {
+        await updateEquipmentCatalog(selectedId, currentEquipment)
+        showToast('Vybavení uloženo', 'success')
+      }
+      await loadData()
+      setLocalViewMode('list')
+      setSelectedId(null)
+      setCurrentEquipment(null)
+    } catch (err: any) {
+      logger.error('Chyba při ukládání vybavení:', err)
+      showToast(err.message || 'Nepodařilo se uložit vybavení', 'error')
+    } finally {
+      setDetailLoading(false)
+    }
+  }, [localViewMode, selectedId, currentEquipment, loadData, showToast])
+
   // Common actions
   useEffect(() => {
     if (!onRegisterCommonActions) return
 
-    const actions: CommonActionId[] = ['add', 'columnSettings']
-    if (localViewMode === 'read') actions.push('edit', 'delete')
-    if (localViewMode === 'list') actions.push('close')
+    const actions: CommonActionId[] = []
+    if (localViewMode === 'list') {
+      actions.push('add', 'columnSettings', 'close')
+    } else if (localViewMode === 'view') {
+      actions.push('edit', 'delete', 'close')
+    } else if (localViewMode === 'edit' || localViewMode === 'create') {
+      actions.push('save', 'cancel')
+    }
 
     onRegisterCommonActions(actions)
-  }, [localViewMode])
+  }, [localViewMode, onRegisterCommonActions])
 
   useEffect(() => {
     if (!onRegisterCommonActionsState) return
@@ -308,16 +385,27 @@ export default function EquipmentCatalogTile({
     const handler = (actionId: CommonActionId) => {
       if (actionId === 'add') {
         setSelectedId(null)
+        setCurrentEquipment({
+          equipment_name: '',
+          equipment_type_id: '',
+          active: true,
+          is_archived: false,
+        })
         setLocalViewMode('create')
       } else if (actionId === 'columnSettings') {
         setShowColumnsDrawer(true)
       } else if (actionId === 'edit') {
         setLocalViewMode('edit')
       } else if (actionId === 'delete') {
-        showToast('Mazání zatím není implementováno', 'info')
+        handleDelete()
+      } else if (actionId === 'save') {
+        handleSave()
+      } else if (actionId === 'cancel') {
+        handleCancel()
       } else if (actionId === 'close') {
         setLocalViewMode('list')
         setSelectedId(null)
+        setCurrentEquipment(null)
       }
     }
 
@@ -326,13 +414,47 @@ export default function EquipmentCatalogTile({
     return () => {
       onRegisterCommonActionHandler(null)
     }
-  }, [localViewMode])
+  }, [onRegisterCommonActionHandler, localViewMode, handleDelete, handleSave, handleCancel])
 
-  // Detail view
-  const handleCancel = useCallback(() => {
-    setLocalViewMode('list')
-    setSelectedId(null)
-  }, [])
+  // Load detail when selectedId changes
+  useEffect(() => {
+    if (!selectedId || localViewMode === 'create') {
+      setCurrentEquipment(null)
+      return
+    }
+
+    async function loadDetail() {
+      if (!selectedId) return
+      try {
+        setDetailLoading(true)
+        const equipment = await getEquipmentCatalogById(selectedId)
+        if (equipment) {
+          setCurrentEquipment({
+            equipment_name: equipment.equipment_name,
+            equipment_type_id: equipment.equipment_type_id || '',
+            room_type_id: equipment.room_type_id || undefined,
+            purchase_price: equipment.purchase_price || undefined,
+            purchase_date: equipment.purchase_date || undefined,
+            default_lifespan_months: equipment.default_lifespan_months || undefined,
+            default_revision_interval: equipment.default_revision_interval || undefined,
+            default_state: equipment.default_state || 'working',
+            default_description: equipment.default_description || undefined,
+            active: equipment.active ?? true,
+            is_archived: equipment.is_archived || false,
+          })
+        }
+      } catch (err: any) {
+        logger.error('Chyba při načítání detailu vybavení:', err)
+        showToast(err.message || 'Nepodařilo se načíst detail', 'error')
+        setLocalViewMode('list')
+        setSelectedId(null)
+      } finally {
+        setDetailLoading(false)
+      }
+    }
+
+    void loadDetail()
+  }, [selectedId, localViewMode, showToast])
 
   // Loading state
   if (loading && data.length === 0) {
@@ -371,23 +493,30 @@ export default function EquipmentCatalogTile({
   }
 
   // Detail view
-  if (localViewMode === 'read' || localViewMode === 'edit' || localViewMode === 'create') {
+  if (localViewMode === 'view' || localViewMode === 'edit' || localViewMode === 'create') {
+    const readOnly = localViewMode === 'view'
+
     return (
       <div className="tile-layout">
         <div className="tile-layout__header">
-          <button onClick={handleCancel} className="btn btn--secondary">
-            ← Zpět
-          </button>
-          <h1 className="tile-layout__title">Katalog vybavení - Detail</h1>
+          <h1 className="tile-layout__title">
+            {localViewMode === 'create' ? '➕ Nové vybavení' : '📋 Katalog vybavení - Detail'}
+          </h1>
         </div>
         <div className="tile-layout__content">
-          {/* TODO: Implementovat form pro equipment catalog - prozatím placeholder */}
-          <div style={{ padding: '2rem' }}>
-            <p>Detail formulář pro katalog vybavení není ještě implementován.</p>
-            <button onClick={handleCancel} className="btn btn--secondary" style={{ marginTop: '1rem' }}>
-              Zpět na seznam
-            </button>
-          </div>
+          {detailLoading && !currentEquipment ? (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>Načítání...</div>
+          ) : currentEquipment ? (
+            <EquipmentCatalogDetailFormComponent
+              equipment={currentEquipment}
+              readOnly={readOnly}
+              onValueChange={setCurrentEquipment}
+            />
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              Nepodařilo se načíst detail vybavení
+            </div>
+          )}
         </div>
       </div>
     )
