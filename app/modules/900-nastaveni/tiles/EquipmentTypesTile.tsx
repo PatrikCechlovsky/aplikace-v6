@@ -5,12 +5,15 @@
 'use client'
 
 import GenericTypeTile, { GenericTypeItem } from '@/app/UI/GenericTypeTile'
+import type {
+  GenericTypeRow,
+  GenericTypePayload,
+} from '../services/genericTypes'
 import { 
   listByCategory, 
   create, 
-  update, 
-  GenericTypeRow 
-} from '@/app/lib/services/genericTypes'
+  update,
+} from '../services/genericTypes'
 
 /**
  * Mapování z DB řádku (GenericTypeRow) na generický typový záznam
@@ -31,7 +34,7 @@ function mapRowToGeneric(row: GenericTypeRow): GenericTypeItem {
 /**
  * Mapování z GenericTypeItem (formulář) na payload pro service.
  */
-function mapGenericToPayload(input: GenericTypeItem) {
+function mapGenericToPayload(input: GenericTypeItem): GenericTypePayload {
   return {
     name: input.name,
     description: input.description ?? null,
