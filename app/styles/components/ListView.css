@@ -33,11 +33,11 @@
 .listview__table-wrapper {
   width: 100%;
   position: relative;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto; /* Změněno z overflow-x/y na auto */
   scrollbar-gutter: stable;
   flex: 1;
-  min-height: 0;
+  min-height: 0; /* Důležité pro flex scroll */
+  max-height: 100%; /* Zajistí že se nevytáhne */
 }
 
 /* Jemnější tabulka (méně “krabic”) */
