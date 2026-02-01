@@ -12,7 +12,7 @@ type Props = {
   equipmentTypeCode: string // kuchyne, koupelna, vytapeni, atd.
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
-  onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
   onNavigate?: (tileId: string) => void
 }
 
