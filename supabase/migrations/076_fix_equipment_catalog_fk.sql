@@ -45,14 +45,22 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- STEP 4: Drop old column and rename new one
+-- STEP 4: Drop views that depend on equipment_type_id column
+-- ============================================================================
+
+-- Musíme dropnout views PŘED dropnutím sloupce, jinak dostaneme error
+DROP VIEW IF EXISTS public.v_unit_equipment_list CASCADE;
+DROP VIEW IF EXISTS public.v_property_equipment_list CASCADE;
+
+-- ============================================================================
+-- STEP 5: Drop old column and rename new one
 -- ============================================================================
 
 -- Drop old FK constraint
 ALTER TABLE public.equipment_catalog 
 DROP CONSTRAINT IF EXISTS equipment_catalog_equipment_type_id_fkey;
 
--- Drop old column
+-- Drop old column (teď už můžeme, views jsou pryč)
 ALTER TABLE public.equipment_catalog 
 DROP COLUMN IF EXISTS equipment_type_id;
 
@@ -65,7 +73,7 @@ ALTER TABLE public.equipment_catalog
 ALTER COLUMN equipment_type_id SET NOT NULL;
 
 -- ============================================================================
--- STEP 5: Add new FK constraint
+-- STEP 6: Add new FK constraint
 -- ============================================================================
 
 -- Add FK to generic_types
@@ -76,7 +84,7 @@ REFERENCES public.generic_types(id)
 ON DELETE RESTRICT;
 
 -- ============================================================================
--- STEP 6: Recreate indexes
+-- STEP 7: Recreate indexes
 -- ============================================================================
 
 -- Drop old index if exists
@@ -88,19 +96,17 @@ ON public.equipment_catalog(equipment_type_id)
 WHERE is_archived = FALSE;
 
 -- ============================================================================
--- STEP 7: Update comments
+-- STEP 8: Update comments
 -- ============================================================================
 
 COMMENT ON COLUMN public.equipment_catalog.equipment_type_id IS 
 'FK na generic_types (category=equipment_types) - kategorie vybavení (Spotřebiče, Nábytek, Sanitární technika...)';
 
 -- ============================================================================
--- STEP 8: Update views (if any references equipment_types table directly)
+-- STEP 9: Recreate views with new UUID FK
 -- ============================================================================
 
--- Drop and recreate v_unit_equipment_list view
-DROP VIEW IF EXISTS public.v_unit_equipment_list CASCADE;
-
+-- Recreate v_unit_equipment_list view s novým equipment_type_id (UUID)
 CREATE OR REPLACE VIEW public.v_unit_equipment_list AS
 SELECT 
   ue.*,
@@ -123,9 +129,7 @@ COMMENT ON VIEW public.v_unit_equipment_list IS
 
 -- Drop and recreate v_property_equipment_list view
 DROP VIEW IF EXISTS public.v_property_equipment_list CASCADE;
-
-CREATE OR REPLACE VIEW public.v_property_equipment_list AS
-SELECT 
+Recreate v_property_equipment_list view s novým equipment_type_id (UUID)SELECT 
   pe.*,
   ec.equipment_name,
   ec.equipment_type_id,
