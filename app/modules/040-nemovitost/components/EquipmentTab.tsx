@@ -49,6 +49,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const [items, setItems] = useState<EquipmentRow[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [catalog, setCatalog] = useState<EquipmentCatalogRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
   // Form state pro detail
   const [editMode, setEditMode] = useState(false)
@@ -60,6 +62,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   
   const loadEquipment = useCallback(async () => {
     try {
+      setLoading(true)
+      setError(null)
       const data = entityType === 'property' 
         ? await listPropertyEquipment(entityId)
         : await listUnitEquipment(entityId)
@@ -71,9 +75,12 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
       }
     } catch (err: any) {
       logger.error('Failed to load equipment:', err)
-      toast.showError('Nepodařilo se načíst vybavení')
+      setError(err.message || 'Nepodařilo se načíst vybavení')
+      setItems([])
+    } finally {
+      setLoading(false)
     }
-  }, [entityType, entityId, selectedId, toast])
+  }, [entityType, entityId, selectedId])
   
   const loadCatalog = useCallback(async () => {
     try {
@@ -197,6 +204,61 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   })
   
   const selectedItem = items.find(i => i.id === selectedId)
+  
+  // =====================
+  // LOADING STATE
+  // =====================
+  
+  if (loading) {
+    return (
+      <div className="detail-form">
+        <section className="detail-form__section">
+          <div className="detail-form__hint">Načítám vybavení…</div>
+        </section>
+      </div>
+    )
+  }
+  
+  // =====================
+  // ERROR STATE
+  // =====================
+  
+  if (error) {
+    return (
+      <div className="detail-form">
+        <section className="detail-form__section">
+          <div style={{ 
+            padding: '2rem', 
+            textAlign: 'center', 
+            color: 'var(--color-danger)',
+            backgroundColor: 'var(--color-danger-soft)',
+            borderRadius: '0.5rem'
+          }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
+            <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Nelze načíst vybavení</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+              {error}
+            </div>
+            <div style={{ fontSize: '0.875rem', marginTop: '1rem', color: 'var(--color-text-muted)' }}>
+              💡 Tip: Zkontrolujte, zda byla spuštěna migrace 077 v databázi
+            </div>
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={loadEquipment}
+              style={{ marginTop: '1rem' }}
+            >
+              🔄 Zkusit znovu
+            </button>
+          </div>
+        </section>
+      </div>
+    )
+  }
+  
+  // =====================
+  // MAIN CONTENT
+  // =====================
   
   return (
     <RelationListWithDetail
