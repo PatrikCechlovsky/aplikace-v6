@@ -1,0 +1,6 @@
+property_type_id,category,code,name,count
+19fce34e-802d-4697-9ff7-1b747b3fde8d,property_types,admin_budova,Administrativní budova,2
+d54c05e5-f8fc-4d06-9ec5-b2ef36c01dca,property_types,jiny_objekt,Jiný objekt,4
+ccf37a92-6807-4701-8132-9891e7e4671a,property_types,bytovy_dum,Bytový dům,2
+c9e43cea-0ec2-447d-9683-ce9b4c15f2b8,property_types,pozemek,Pozemek,2
+69642a59-abf4-4c3d-aea3-cb62ddf18912,property_types,rodinny_dum,Rodinný dům,2

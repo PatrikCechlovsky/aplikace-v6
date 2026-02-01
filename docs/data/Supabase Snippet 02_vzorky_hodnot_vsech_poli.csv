@@ -66,13 +66,13 @@ public,documents,updated_at,9,timestamp with time zone,2025-12-31 20:02:03.04269
 public,documents,updated_by,10,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,6
 public,equipment_catalog,id,1,uuid,(prázdná tabulka),0
 public,equipment_catalog,equipment_name,2,text,(prázdná tabulka),0
-public,equipment_catalog,equipment_type_id,3,text,(prázdná tabulka),0
 public,equipment_catalog,purchase_price,4,numeric,(prázdná tabulka),0
 public,equipment_catalog,purchase_date,5,date,(prázdná tabulka),0
 public,equipment_catalog,origin_module,6,text,(prázdná tabulka),0
 public,equipment_catalog,created_at,7,timestamp with time zone,(prázdná tabulka),0
 public,equipment_catalog,updated_at,8,timestamp with time zone,(prázdná tabulka),0
 public,equipment_catalog,is_archived,9,boolean,(prázdná tabulka),0
+public,equipment_catalog,equipment_type_id,10,uuid,(prázdná tabulka),0
 public,equipment_types,code,1,text,nabytek | osvetleni | spotrebice,9
 public,equipment_types,name,2,text,Osvětlení | Spotřebiče | Zahrada,9
 public,equipment_types,description,3,text,"Ostatní vybavení | Stoly, židle, skříně, postele | Zahradní nábytek, nástroje",9
@@ -82,17 +82,17 @@ public,equipment_types,order_index,6,integer,10 | 30 | 90,9
 public,equipment_types,active,7,boolean,true,9
 public,equipment_types,created_at,8,timestamp with time zone,2026-01-18 09:36:48.037977+00,9
 public,equipment_types,updated_at,9,timestamp with time zone,2026-01-18 09:36:48.037977+00,9
-public,generic_types,id,1,uuid,003fdd9e-c73a-4387-bf97-f451efa6fe3e | 027ec27d-9c50-498e-a850-f2bbcd285d93 | 0764a790-12e8-401f-9a5b-dfee5bc965ea,43
-public,generic_types,category,2,text,equipment_types | property_types | subject_types,43
-public,generic_types,code,3,text,1+1 | 1+kk | 2+1,43
-public,generic_types,name,4,text,1+kk | Admin. budova | Spolek / SVJ,43
-public,generic_types,description,5,text,"IT, zabezpečení, videotelefon | osoba bez IČ | Stoly, židle, skříně, postele",43
-public,generic_types,color,6,text,#95A5A6 | #C0392B | #f59e0b,43
-public,generic_types,icon,7,text,🏘️ | 📱 | 🔷,43
-public,generic_types,order_index,8,integer,4 | 40 | 80,43
-public,generic_types,active,9,boolean,true,43
-public,generic_types,created_at,10,timestamp with time zone,2026-01-19 08:01:30.492351+00 | 2026-01-25 20:15:18.958827+00,43
-public,generic_types,updated_at,11,timestamp with time zone,2026-01-19 08:01:30.492351+00 | 2026-01-25 20:15:18.958827+00,43
+public,generic_types,id,1,uuid,003fdd9e-c73a-4387-bf97-f451efa6fe3e | 02579d49-26b4-4b2f-b821-9a054ec8fb0e | 027ec27d-9c50-498e-a850-f2bbcd285d93,64
+public,generic_types,category,2,text,equipment_states | equipment_types | property_types,64
+public,generic_types,code,3,text,1+1 | 1+kk | 2+1,64
+public,generic_types,name,4,text,1+kk | Pracovna | Spolek / SVJ,64
+public,generic_types,description,5,text,"osoba bez IČ | Průchozí prostor | Stoly, židle, skříně, postele",64
+public,generic_types,color,6,text,#95A5A6 | #C0392B | #f59e0b,64
+public,generic_types,icon,7,text,✨ | 🌿 | link,64
+public,generic_types,order_index,8,integer,30 | 4 | 50,64
+public,generic_types,active,9,boolean,true,64
+public,generic_types,created_at,10,timestamp with time zone,2026-01-19 08:01:30.492351+00 | 2026-01-25 20:15:18.958827+00 | 2026-02-01 09:36:15.459096+00,64
+public,generic_types,updated_at,11,timestamp with time zone,2026-01-19 08:01:30.492351+00 | 2026-01-25 20:15:18.958827+00 | 2026-02-01 09:36:15.459096+00,64
 public,meta_field_catalog,database_name,1,text,postgres,457
 public,meta_field_catalog,table_schema,2,text,auth | extensions | vault,457
 public,meta_field_catalog,table_name,3,text,one_time_tokens | secrets | users,457
@@ -328,6 +328,9 @@ public,units,disposition,26,text,1+kk | 2+kk | 3+kk,12
 public,units,orientation_number,27,text,(prázdná tabulka),12
 public,units,year_renovated,28,integer,(prázdná tabulka),12
 public,units,manager_name,29,text,(prázdná tabulka),12
+public,units,cadastral_area,30,text,(prázdná tabulka),12
+public,units,parcel_number,31,text,(prázdná tabulka),12
+public,units,lv_number,32,text,(prázdná tabulka),12
 public,user_theme_settings,id,1,uuid,0c81029d-b270-43b8-a97c-4ab6ecac99d0,1
 public,user_theme_settings,user_id,2,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,1
 public,user_theme_settings,theme_mode,3,text,light,1
@@ -365,12 +368,13 @@ public,v_property_equipment_list,created_at,8,timestamp with time zone,(prázdn�
 public,v_property_equipment_list,updated_at,9,timestamp with time zone,(prázdná tabulka),0
 public,v_property_equipment_list,is_archived,10,boolean,(prázdná tabulka),0
 public,v_property_equipment_list,equipment_name,11,text,(prázdná tabulka),0
-public,v_property_equipment_list,equipment_type_id,12,text,(prázdná tabulka),0
+public,v_property_equipment_list,equipment_type_id,12,uuid,(prázdná tabulka),0
 public,v_property_equipment_list,purchase_price,13,numeric,(prázdná tabulka),0
 public,v_property_equipment_list,purchase_date,14,date,(prázdná tabulka),0
 public,v_property_equipment_list,equipment_type_name,15,text,(prázdná tabulka),0
 public,v_property_equipment_list,equipment_type_icon,16,text,(prázdná tabulka),0
-public,v_property_equipment_list,total_price,17,numeric,(prázdná tabulka),0
+public,v_property_equipment_list,equipment_type_color,17,text,(prázdná tabulka),0
+public,v_property_equipment_list,total_price,18,numeric,(prázdná tabulka),0
 public,v_subject_invite_latest,subject_id,1,uuid,45ed734f-2ffc-4d41-96c7-1c6df1e887b9 | 7504d2ed-090d-4e1a-a9c2-672cac914d41 | 91a475d4-8c98-4719-aab5-a6a143e3ec9e,4
 public,v_subject_invite_latest,invite_id,2,uuid,1738069e-14f6-4412-bbc9-789df74bbc8f | 271f1c5a-46eb-418d-98c1-a008bf2b8432 | 45bda23d-14bc-43b4-a7f6-6f1eddf88c63,4
 public,v_subject_invite_latest,status,3,text,pending,4
@@ -400,12 +404,13 @@ public,v_unit_equipment_list,created_at,8,timestamp with time zone,(prázdná ta
 public,v_unit_equipment_list,updated_at,9,timestamp with time zone,(prázdná tabulka),0
 public,v_unit_equipment_list,is_archived,10,boolean,(prázdná tabulka),0
 public,v_unit_equipment_list,equipment_name,11,text,(prázdná tabulka),0
-public,v_unit_equipment_list,equipment_type_id,12,text,(prázdná tabulka),0
+public,v_unit_equipment_list,equipment_type_id,12,uuid,(prázdná tabulka),0
 public,v_unit_equipment_list,purchase_price,13,numeric,(prázdná tabulka),0
 public,v_unit_equipment_list,purchase_date,14,date,(prázdná tabulka),0
 public,v_unit_equipment_list,equipment_type_name,15,text,(prázdná tabulka),0
 public,v_unit_equipment_list,equipment_type_icon,16,text,(prázdná tabulka),0
-public,v_unit_equipment_list,total_price,17,numeric,(prázdná tabulka),0
+public,v_unit_equipment_list,equipment_type_color,17,text,(prázdná tabulka),0
+public,v_unit_equipment_list,total_price,18,numeric,(prázdná tabulka),0
 public,v_units_list,id,1,uuid,04c2b230-f7f7-4b14-bbd5-4cc99902ce49 | 05545ec3-279a-41a0-a603-7d06d606713a | 5ca848c7-8aed-412a-9a2d-e04e0743fac7,9
 public,v_units_list,property_id,2,uuid,2b99779e-8924-4d55-bf5f-10624e4daea2 | 40823a5c-4cb3-42e0-b58e-2a6222edeebf | 55664ae9-72ae-4e76-b5c8-2a1e4c2c1a6b,9
 public,v_units_list,display_name,3,text,"Byt 2+1, 3. patro | Byt 3+kk, 5. patro | Garáž G12",9
