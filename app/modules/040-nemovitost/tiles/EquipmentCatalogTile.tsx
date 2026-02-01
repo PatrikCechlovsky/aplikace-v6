@@ -212,6 +212,8 @@ export default function EquipmentCatalogTile({
     setIsLoadingTypeId(true)
 
     async function fetchTypeId() {
+      logger.log('🔍 Hledám ID pro code:', equipmentTypeFilter)
+      
       const { data, error } = await supabase
         .from('generic_types')
         .select('id')
@@ -220,13 +222,13 @@ export default function EquipmentCatalogTile({
         .single()
 
       if (error || !data) {
-        logger.error('Nepodařilo se najít ID typu vybavení pro code:', equipmentTypeFilter, error)
+        logger.error('❌ Nepodařilo se najít ID typu vybavení pro code:', equipmentTypeFilter, error)
         setEquipmentTypeId(null)
         setIsLoadingTypeId(false)
         return
       }
 
-      logger.log('Převod code → ID:', equipmentTypeFilter, '→', data.id)
+      logger.log('✅ Převod code → ID:', equipmentTypeFilter, '→', data.id)
       setEquipmentTypeId(data.id)
       setIsLoadingTypeId(false)
     }
@@ -238,7 +240,7 @@ export default function EquipmentCatalogTile({
   const loadData = useCallback(async () => {
     // If we're waiting for equipmentTypeId conversion, skip loading
     if (isLoadingTypeId) {
-      logger.log('Čekám na převod code → ID před načtením dat')
+      logger.log('⏳ Čekám na převod code → ID před načtením dat')
       return
     }
 
@@ -246,13 +248,20 @@ export default function EquipmentCatalogTile({
       setLoading(true)
       setError(null)
 
-      logger.log('Načítám data s filtrem:', { equipmentTypeId, equipmentTypeFilter })
+      logger.log('📊 Načítám data:', { 
+        equipmentTypeFilter,
+        equipmentTypeId, 
+        hasFilter: !!equipmentTypeId,
+        isLoadingTypeId 
+      })
 
       const rows = await listEquipmentCatalog({
         searchText: debouncedSearchText,
         equipmentTypeId: equipmentTypeId,
         includeArchived: activeFilter === 'all',
       })
+
+      logger.log('✅ Načteno řádků:', rows.length, 'filtr:', equipmentTypeId ? 'ANO' : 'NE')
 
       let filtered = rows.map(mapRowToUi)
 
