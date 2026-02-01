@@ -9,7 +9,14 @@ const SELECT_FIELDS = 'id, category, code, name, description, color, icon, order
 /**
  * Podporované kategorie typů
  */
-export type GenericTypeCategory = 'subject_types' | 'property_types' | 'unit_types' | 'equipment_types'
+export type GenericTypeCategory = 
+  | 'subject_types' 
+  | 'property_types' 
+  | 'unit_types' 
+  | 'equipment_types' 
+  | 'unit_dispositions'
+  | 'room_types'
+  | 'equipment_states'
 
 /**
  * Datový typ přesně podle tabulky generic_types
