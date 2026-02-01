@@ -563,7 +563,7 @@ export default function EquipmentCatalogTile({
       <div className="tile-layout__header">
         <h1 className="tile-layout__title">📋 Katalog vybavení</h1>
       </div>
-      <div className="tile-layout__content">
+      <div className="tile-layout__content" style={{ overflow: 'auto', height: '100%' }}>
         <ListView
           columns={columns}
           rows={sortedData}
