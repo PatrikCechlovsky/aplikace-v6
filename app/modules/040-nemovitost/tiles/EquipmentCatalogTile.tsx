@@ -181,6 +181,7 @@ export default function EquipmentCatalogTile({
   // Filters - použít externí filter pokud je předán (code → bude převeden na ID)
   const [equipmentTypeFilter, _setEquipmentTypeFilter] = useState<string | null>(externalEquipmentTypeFilter || null)
   const [equipmentTypeId, setEquipmentTypeId] = useState<string | null>(null)
+  const [isLoadingTypeId, setIsLoadingTypeId] = useState(false)
   const [activeFilter, _setActiveFilter] = useState<'all' | 'active' | 'inactive'>('active')
 
   // View prefs
@@ -204,8 +205,11 @@ export default function EquipmentCatalogTile({
   useEffect(() => {
     if (!equipmentTypeFilter) {
       setEquipmentTypeId(null)
+      setIsLoadingTypeId(false)
       return
     }
+
+    setIsLoadingTypeId(true)
 
     async function fetchTypeId() {
       const { data, error } = await supabase
@@ -218,20 +222,22 @@ export default function EquipmentCatalogTile({
       if (error || !data) {
         logger.error('Nepodařilo se najít ID typu vybavení pro code:', equipmentTypeFilter, error)
         setEquipmentTypeId(null)
+        setIsLoadingTypeId(false)
         return
       }
 
       logger.log('Převod code → ID:', equipmentTypeFilter, '→', data.id)
       setEquipmentTypeId(data.id)
+      setIsLoadingTypeId(false)
     }
 
     void fetchTypeId()
   }, [equipmentTypeFilter])
 
-  // Data loading - DON'T load if we're waiting for equipmentTypeId conversion
+  // Data loading
   const loadData = useCallback(async () => {
-    // If equipmentTypeFilter is set but equipmentTypeId is not ready yet, skip loading
-    if (equipmentTypeFilter && !equipmentTypeId) {
+    // If we're waiting for equipmentTypeId conversion, skip loading
+    if (isLoadingTypeId) {
       logger.log('Čekám na převod code → ID před načtením dat')
       return
     }
@@ -264,7 +270,7 @@ export default function EquipmentCatalogTile({
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearchText, equipmentTypeId, activeFilter, equipmentTypeFilter])
+  }, [debouncedSearchText, equipmentTypeId, activeFilter, isLoadingTypeId])
 
   // Load data on mount and when filters change
   useEffect(() => {
