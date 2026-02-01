@@ -11,8 +11,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 0;
-  flex: 1;
+  min-height: 0; /* Důležité pro flex scroll */
+  flex: 1; /* Roztáhne se na dostupnou výšku */
+  overflow: hidden; /* Scroll bude v table-wrapper */
 }
 
 /* Horní lišta */

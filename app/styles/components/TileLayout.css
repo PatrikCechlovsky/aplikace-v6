@@ -43,7 +43,7 @@
   flex-direction: column;
   background: var(--color-surface-subtle);
   padding: 1rem 1.5rem;
-  overflow: auto;
+  overflow: hidden; /* Změněno z auto na hidden - scroll bude v ListView */
 }
 
 /* DetailView v content oblasti - odstranit vlastní padding */
