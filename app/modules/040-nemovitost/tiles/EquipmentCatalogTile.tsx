@@ -357,6 +357,21 @@ export default function EquipmentCatalogTile({
     })
   }, [colPrefs])
 
+  // Column resize handler
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => {
+      const newWidths = { ...(p.colWidths ?? {}), [key]: px }
+      // Save to preferences
+      void saveViewPrefs(VIEW_KEY, {
+        colWidths: newWidths,
+        colOrder: p.colOrder ?? [],
+        colHidden: p.colHidden ?? [],
+        sort: sort,
+      })
+      return { ...p, colWidths: newWidths }
+    })
+  }, [sort])
+
   // Detail handlers - must be defined before useEffect that uses them
   const handleCancel = useCallback(() => {
     setLocalViewMode('list')
@@ -574,6 +589,7 @@ export default function EquipmentCatalogTile({
           onRowDoubleClick={handleRowDoubleClick}
           sort={sort}
           onSortChange={handleSortChange}
+          onColumnResize={handleColumnResize}
         />
       </div>
 
