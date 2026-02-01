@@ -28,6 +28,12 @@ export type EquipmentCatalogRow = {
   equipment_type_id: string | null
   purchase_price: number | null
   purchase_date: string | null
+  room_type_id: string | null
+  default_lifespan_months: number | null
+  default_revision_interval: number | null
+  default_state: string | null
+  default_description: string | null
+  active: boolean | null
   is_archived: boolean | null
   created_at: string | null
   
@@ -35,6 +41,9 @@ export type EquipmentCatalogRow = {
   equipment_type_name?: string | null
   equipment_type_icon?: string | null
   equipment_type_color?: string | null
+  room_type_name?: string | null
+  room_type_icon?: string | null
+  room_type_color?: string | null
 }
 
 export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}): Promise<EquipmentCatalogRow[]> {
@@ -52,9 +61,16 @@ export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}):
         equipment_type_id,
         purchase_price,
         purchase_date,
+        room_type_id,
+        default_lifespan_months,
+        default_revision_interval,
+        default_state,
+        default_description,
+        active,
         is_archived,
         created_at,
-        equipment_type:generic_types!fk_equipment_type_generic(name, icon, color)
+        equipment_type:generic_types!fk_equipment_type_generic(name, icon, color),
+        room_type:generic_types!equipment_catalog_room_type_id_fkey(name, icon, color)
       `
     )
     .order('equipment_name', { ascending: true })
@@ -79,12 +95,16 @@ export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}):
 
   const rows = (data ?? []).map((row: any) => {
     const equipmentType = Array.isArray(row.equipment_type) ? row.equipment_type[0] : row.equipment_type
+    const roomType = Array.isArray(row.room_type) ? row.room_type[0] : row.room_type
 
     return {
       ...row,
       equipment_type_name: equipmentType?.name ?? null,
       equipment_type_icon: equipmentType?.icon ?? null,
       equipment_type_color: equipmentType?.color ?? null,
+      room_type_name: roomType?.name ?? null,
+      room_type_icon: roomType?.icon ?? null,
+      room_type_color: roomType?.color ?? null,
     }
   })
 
@@ -97,6 +117,12 @@ export type EquipmentDetailRow = {
   equipment_type_id: string | null
   purchase_price: number | null
   purchase_date: string | null
+  room_type_id: string | null
+  default_lifespan_months: number | null
+  default_revision_interval: number | null
+  default_state: string | null
+  default_description: string | null
+  active: boolean | null
   origin_module: string | null
   is_archived: boolean | null
   created_at: string | null
@@ -139,6 +165,12 @@ export type SaveEquipmentInput = {
   equipment_type_id: string
   purchase_price?: number | null
   purchase_date?: string | null
+  room_type_id?: string | null
+  default_lifespan_months?: number | null
+  default_revision_interval?: number | null
+  default_state?: string | null
+  default_description?: string | null
+  active?: boolean
   is_archived?: boolean
 }
 
@@ -150,6 +182,12 @@ export async function saveEquipment(input: SaveEquipmentInput): Promise<Equipmen
     equipment_type_id: input.equipment_type_id,
     purchase_price: input.purchase_price ?? null,
     purchase_date: input.purchase_date ?? null,
+    room_type_id: input.room_type_id ?? null,
+    default_lifespan_months: input.default_lifespan_months ?? null,
+    default_revision_interval: input.default_revision_interval ?? null,
+    default_state: input.default_state ?? 'good',
+    default_description: input.default_description ?? null,
+    active: input.active ?? true,
     is_archived: input.is_archived ?? false,
   }
 

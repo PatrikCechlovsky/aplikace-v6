@@ -9,6 +9,7 @@ import UnitsTile from './tiles/UnitsTile'
 import UnitTypeTile from './tiles/UnitTypeTile'
 import CreateUnitTile from './tiles/CreateUnitTile'
 import EquipmentTile from './tiles/EquipmentTile'
+import EquipmentCatalogTile from './tiles/EquipmentCatalogTile'
 
 // Factory funkce pro vytvoření PropertyTypeTile s přednastaveným typem
 function createPropertyTypeTile(propertyTypeCode) {
@@ -225,9 +226,9 @@ export default {
     // === KATALOG VYBAVENÍ ===
     {
       id: 'equipment-catalog',
-      label: 'Přehled vybavení',
+      label: 'Katalog vybavení',
       icon: 'toolbox',
-      component: EquipmentTile,
+      component: EquipmentCatalogTile,
       order: 30,
     },
   ],
