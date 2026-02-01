@@ -26,14 +26,29 @@ Vybavení může být přiřazeno k:
 - **generic_types** – typy vybavení (equipment_types) a místností (room_types)
 - **Views** – v_unit_equipment_list, v_property_equipment_list
 
-### ✅ Hotovo (v UI)
+### ✅ Hotovo (v UI) - Aktualizováno 1.2.2026
 - **EquipmentTab** – správa vybavení v detailu nemovitosti/jednotky
-- **EquipmentCatalogTile** – master seznam typů vybavení
+- **EquipmentCatalogTile** – master seznam typů vybavení s CRUD funkcionalitou
+  - ListView s 6 sloupci (Typ, Název, Místnost, Cena, Životnost, Stav)
+  - DetailView pro prohlížení/editaci položky
+  - Podpora filtrování podle typu vybavení (equipmentTypeFilter prop)
+- **CreateEquipmentTile** – vytváření vybavení přes výběr typu (16 karet)
+  - Pattern: Tile-based creation jako CreateUnitTile
+  - Type selection cards s ikonami a barvami z generic_types
+- **EquipmentTypeTile (Factory)** – 16 filtrovaných pohledů podle typu
+  - Kuchyňské spotřebiče, Sanitární technika, Vytápění, atd.
+  - Každý filtr = samostatná dlaždice v menu
+- **EquipmentCatalogDetailFormComponent** – formulář pro detail vybavení
+  - 4 sekce: Základní údaje, Cenové informace, Životnost a údržba, Systém
+  - Dynamický nadpis: "Katalog vybavení - {název}"
+  - Archive pattern (is_archived), no delete
 - **EquipmentTypesTile** – správa typů vybavení (generic_types)
 - **RoomTypesTile** – správa typů místností (generic_types)
 
 ### 🔧 V plánu
-- Detailní kategorizace podle níže uvedeného seznamu
+- Vazba na jednotky (unit_equipment) - required fields při vazbě
+- Vazba na nemovitosti (property_equipment) - required fields při vazbě
+- Přílohy na vazby (ne na katalog)
 - Vazba na revize (plánované, proběhlé)
 - Historie výměn a oprav
 - Rozúčtování nákladů na energie
