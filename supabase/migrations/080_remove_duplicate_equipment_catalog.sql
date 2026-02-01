@@ -7,11 +7,12 @@
 -- STEP 1: Remove duplicates - keep only the oldest record for each name
 -- ============================================================================
 
+-- Použít DISTINCT ON protože MIN() nefunguje s UUID
 DELETE FROM equipment_catalog
 WHERE id NOT IN (
-  SELECT MIN(id)
+  SELECT DISTINCT ON (equipment_name) id
   FROM equipment_catalog
-  GROUP BY equipment_name
+  ORDER BY equipment_name, created_at ASC
 );
 
 -- ============================================================================
@@ -67,7 +68,7 @@ END $$;
 -- - Bez unique constraint nebylo nic, co by duplicitám zabránilo
 --
 -- ✅ Řešení:
--- 1. Smaže všechny duplicitní záznamy kromě nejstaršího (MIN(id))
+-- 1. Smaže všechny duplicitní záznamy kromě nejstaršího (DISTINCT ON s created_at)
 -- 2. Přidá UNIQUE constraint na equipment_name
 -- 3. Budoucí pokusy o vložení duplicity způsobí chybu
 --
@@ -75,3 +76,7 @@ END $$;
 -- - ~170 unikátních položek v equipment_catalog
 -- - Žádné duplicity
 -- - UNIQUE constraint zabrání opakování problému
+--
+-- 🔧 Technical note:
+-- - UUID nemá MIN() funkci, proto se používá DISTINCT ON s ORDER BY created_at
+-- - Ponechává nejstarší záznam (created_at ASC)
