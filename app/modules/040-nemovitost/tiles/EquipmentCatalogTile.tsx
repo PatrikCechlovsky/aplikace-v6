@@ -23,6 +23,7 @@ import createLogger from '@/app/lib/logger'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 import { EQUIPMENT_STATES } from '@/app/lib/constants/properties'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import { supabase } from '@/app/lib/supabaseClient'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -177,8 +178,9 @@ export default function EquipmentCatalogTile({
   const [searchText, setSearchText] = useState('')
   const [debouncedSearchText, setDebouncedSearchText] = useState('')
 
-  // Filters - použít externí filter pokud je předán
+  // Filters - použít externí filter pokud je předán (code → bude převeden na ID)
   const [equipmentTypeFilter, _setEquipmentTypeFilter] = useState<string | null>(externalEquipmentTypeFilter || null)
+  const [equipmentTypeId, setEquipmentTypeId] = useState<string | null>(null)
   const [activeFilter, _setActiveFilter] = useState<'all' | 'active' | 'inactive'>('active')
 
   // View prefs
@@ -191,12 +193,39 @@ export default function EquipmentCatalogTile({
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
   const [showColumnsDrawer, setShowColumnsDrawer] = useState(false)
 
-  // Sync external equipment type filter (from EquipmentTypeTile)
+  // Sync external equipment type filter (from EquipmentTypeTile) and convert code to ID
   useEffect(() => {
     if (externalEquipmentTypeFilter !== undefined) {
       _setEquipmentTypeFilter(externalEquipmentTypeFilter)
     }
   }, [externalEquipmentTypeFilter])
+
+  // Convert equipmentTypeFilter (code) to ID
+  useEffect(() => {
+    if (!equipmentTypeFilter) {
+      setEquipmentTypeId(null)
+      return
+    }
+
+    async function fetchTypeId() {
+      const { data, error } = await supabase
+        .from('generic_types')
+        .select('id')
+        .eq('type_category', 'equipment_types')
+        .eq('code', equipmentTypeFilter)
+        .single()
+
+      if (error || !data) {
+        logger.error('Nepodařilo se najít ID typu vybavení pro code:', equipmentTypeFilter)
+        setEquipmentTypeId(null)
+        return
+      }
+
+      setEquipmentTypeId(data.id)
+    }
+
+    void fetchTypeId()
+  }, [equipmentTypeFilter])
 
   // Data loading
   const loadData = useCallback(async () => {
@@ -206,7 +235,7 @@ export default function EquipmentCatalogTile({
 
       const rows = await listEquipmentCatalog({
         searchText: debouncedSearchText,
-        equipmentTypeId: equipmentTypeFilter,
+        equipmentTypeId: equipmentTypeId,
         includeArchived: activeFilter === 'all',
       })
 
@@ -226,7 +255,7 @@ export default function EquipmentCatalogTile({
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearchText, equipmentTypeFilter, activeFilter])
+  }, [debouncedSearchText, equipmentTypeId, activeFilter])
 
   // Load data on mount and when filters change
   useEffect(() => {
@@ -282,8 +311,13 @@ export default function EquipmentCatalogTile({
     return applyColumnPrefs(BASE_COLUMNS, colPrefs)
   }, [colPrefs])
 
-  // Row click
+  // Row click - pouze vybrat, nezobrazit detail
   const handleRowClick = useCallback((row: ListViewRow<UiEquipmentCatalog>) => {
+    setSelectedId(String(row.id))
+  }, [])
+
+  // Row double click - otevřít detail v režimu view
+  const handleRowDoubleClick = useCallback((row: ListViewRow<UiEquipmentCatalog>) => {
     setSelectedId(String(row.id))
     setLocalViewMode('view')
   }, [])
@@ -511,7 +545,9 @@ export default function EquipmentCatalogTile({
           rows={sortedData}
           filterValue={searchText}
           onFilterChange={setSearchText}
+          selectedId={selectedId}
           onRowClick={handleRowClick}
+          onRowDoubleClick={handleRowDoubleClick}
           sort={sort}
           onSortChange={handleSortChange}
         />
