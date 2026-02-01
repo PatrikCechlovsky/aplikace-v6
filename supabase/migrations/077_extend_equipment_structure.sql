@@ -120,13 +120,13 @@ END $$;
 
 -- Update state constraint to include all 6 states
 ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_state_valid;
-ALTER TABLE public (drop first if they exist from previous failed migration)
-ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_price_positive;
-ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_lifespan_positive;
-.property_equipment 
+ALTER TABLE public.property_equipment 
 ADD CONSTRAINT property_equipment_state_valid CHECK (state IN ('new', 'good', 'worn', 'damaged', 'to_replace', 'broken'));
 
--- Add constraints
+-- Add constraints (drop first if they exist from previous failed migration)
+ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_price_positive;
+ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_lifespan_positive;
+
 ALTER TABLE public.property_equipment
 ADD CONSTRAINT property_equipment_price_positive CHECK (purchase_price IS NULL OR purchase_price >= 0),
 ADD CONSTRAINT property_equipment_lifespan_positive CHECK (lifespan_months IS NULL OR lifespan_months > 0);
