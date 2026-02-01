@@ -77,7 +77,16 @@ BEGIN
   SELECT id INTO room_obchod FROM generic_types WHERE category = 'room_types' AND code = 'jina_mistnost' LIMIT 1; -- Fallback pro obchod
 
   -- ============================================================================
-  -- STEP 4: INSERT equipment catalog items
+  -- STEP 4: Clear existing equipment catalog (idempotency)
+  -- ============================================================================
+  
+  -- Smazat všechny existující záznamy aby migrace byla idempotentní
+  DELETE FROM equipment_catalog;
+  
+  RAISE NOTICE 'Existing equipment catalog cleared for fresh seed';
+
+  -- ============================================================================
+  -- STEP 5: INSERT equipment catalog items
   -- ============================================================================
 
   -- ========================================
