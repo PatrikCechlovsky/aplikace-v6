@@ -48,8 +48,7 @@ ADD COLUMN IF NOT EXISTS type TEXT,
 ADD COLUMN IF NOT EXISTS description TEXT,
 ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(12,2),
 ADD COLUMN IF NOT EXISTS lifespan_months INTEGER,
-ADD COLUMN IF NOT EXISTS last_revision DATE,
-ADD COLUMN IF NOT EXISTS photo_attachment_id UUID;
+ADD COLUMN IF NOT EXISTS last_revision DATE;
 
 -- Rename installation_date to installed_at for consistency
 DO $$
@@ -81,7 +80,6 @@ COMMENT ON COLUMN public.unit_equipment.description IS 'Volitelný popis konkré
 COMMENT ON COLUMN public.unit_equipment.purchase_price IS 'Jednotková cena pořízení';
 COMMENT ON COLUMN public.unit_equipment.lifespan_months IS 'Konkrétní životnost v měsících';
 COMMENT ON COLUMN public.unit_equipment.last_revision IS 'Datum poslední revize (elektro, kotle, měřiče)';
-COMMENT ON COLUMN public.unit_equipment.photo_attachment_id IS 'FK na documents - fotka vybavení';
 COMMENT ON COLUMN public.unit_equipment.installed_at IS 'Datum instalace / výměny';
 
 -- ============================================================================
@@ -99,8 +97,7 @@ ADD COLUMN IF NOT EXISTS description TEXT,
 ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(12,2),
 ADD COLUMN IF NOT EXISTS lifespan_months INTEGER,
 ADD COLUMN IF NOT EXISTS last_revision DATE,
-ADD COLUMN IF NOT EXISTS photo_attachment_id UUID;
-
+ADD COLUMN IF NOT EXISTS photo_attachment_i
 -- Rename installation_date to installed_at for consistency
 DO $$
 BEGIN
@@ -132,8 +129,7 @@ COMMENT ON COLUMN public.property_equipment.purchase_price IS 'Jednotková cena 
 COMMENT ON COLUMN public.property_equipment.lifespan_months IS 'Konkrétní životnost v měsících';
 COMMENT ON COLUMN public.property_equipment.last_revision IS 'Datum poslední revize (elektro, kotle, měřiče)';
 COMMENT ON COLUMN public.property_equipment.photo_attachment_id IS 'FK na documents - fotka vybavení';
-COMMENT ON COLUMN public.property_equipment.installed_at IS 'Datum instalace / výměny';
-
+COMMENT ON COLUMN public.property_equipment.
 -- ============================================================================
 -- STEP 4: Recreate VIEWS with extended fields
 -- ============================================================================
@@ -222,8 +218,8 @@ BEGIN
   
   RAISE NOTICE 'equipment_catalog columns: % (expected: 16)', catalog_cols;
   RAISE NOTICE 'unit_equipment columns: % (expected: 18)', unit_eq_cols;
-  RAISE NOTICE 'property_equipment columns: % (expected: 18)', property_eq_cols;
-  RAISE NOTICE '✅ Equipment structure extended with lifecycle fields';
+  RAISE NOTICE 'property_equipment columns: % (expecte7)', unit_eq_cols;
+  RAISE NOTICE 'property_equipment columns: % (expected: 17le fields';
   RAISE NOTICE '========================================';
 END $$;
 
@@ -245,7 +241,7 @@ END $$;
 --    - photo_attachment_id (FK na documents)
 --    - installation_date → installed_at (rename)
 --    - state: rozšířeno o 'worn', 'broken'
---
+--    - Fotky a dokumenty: přes standardní attachments systém (záložka Přílohy)
 -- 3. Views aktualizovány:
 --    - v_unit_equipment_list: JOIN na room_types, preferuje unit_equipment.purchase_price
 --    - v_property_equipment_list: JOIN na room_types, preferuje property_equipment.purchase_price
@@ -259,4 +255,4 @@ END $$;
 -- - Plná podpora lifecycle management (životnost, revize)
 -- - Rozlišení katalog vs. konkrétní instance
 -- - Vazba na typy místností
--- - Fotodokumentace vybavení
+-- - Fotodokumentace přes attachments systém (záložka Přílohy v detailu)
