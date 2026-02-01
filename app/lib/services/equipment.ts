@@ -222,9 +222,10 @@ export type UnitEquipmentRow = {
   is_archived: boolean | null
   created_at: string | null
   
-  // joined from catalog
-  equipment_name?: string
+  // joined from view (v_unit_equipment_list)
+  catalog_equipment_name?: string
   equipment_type_name?: string
+  catalog_purchase_price?: number | null
   purchase_price?: number | null
   total_price?: number | null
 }
@@ -234,7 +235,7 @@ export async function listUnitEquipment(unitId: string): Promise<UnitEquipmentRo
     .from('v_unit_equipment_list')
     .select('*')
     .eq('unit_id', unitId)
-    .order('equipment_name', { ascending: true })
+    .order('catalog_equipment_name', { ascending: true })
 
   if (error) throw new Error(error.message)
 
@@ -297,9 +298,10 @@ export type PropertyEquipmentRow = {
   is_archived: boolean | null
   created_at: string | null
   
-  // joined from catalog
-  equipment_name?: string
+  // joined from view (v_property_equipment_list)
+  catalog_equipment_name?: string
   equipment_type_name?: string
+  catalog_purchase_price?: number | null
   purchase_price?: number | null
   total_price?: number | null
 }
@@ -309,7 +311,7 @@ export async function listPropertyEquipment(propertyId: string): Promise<Propert
     .from('v_property_equipment_list')
     .select('*')
     .eq('property_id', propertyId)
-    .order('equipment_name', { ascending: true })
+    .order('catalog_equipment_name', { ascending: true })
 
   if (error) throw new Error(error.message)
 

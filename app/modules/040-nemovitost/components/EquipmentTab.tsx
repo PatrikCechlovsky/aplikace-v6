@@ -187,8 +187,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     
     return {
       id: item.id,
-      primary: item.equipment_name || 'Bez názvu',
+      primary: item.catalog_equipment_name || 'Bez názvu',
       secondary: `${item.quantity}× | ${stateLabel} | ${item.total_price ? `${item.total_price.toLocaleString('cs-CZ')} Kč` : '—'}`,
+
       badge: item.equipment_type_name ? (
         <span style={{ 
           fontSize: '0.75rem', 
@@ -273,7 +274,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           <div className="detail-form__section">
             <div className="detail-form__header">
               <h3 className="detail-form__section-title">
-                {selectedItem.equipment_name}
+                {selectedItem.catalog_equipment_name || 'Vybavení'}
               </h3>
               {!readOnly && (
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -327,7 +328,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <label className="detail-form__label">Katalogová cena (ks)</label>
                 <input
                   className="detail-form__input detail-form__input--readonly"
-                  value={selectedItem.purchase_price ? `${selectedItem.purchase_price.toLocaleString('cs-CZ')} Kč` : '—'}
+                  value={selectedItem.catalog_purchase_price ? `${selectedItem.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'}
                   readOnly
                 />
               </div>
