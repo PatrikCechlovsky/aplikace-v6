@@ -16,7 +16,11 @@ ADD COLUMN IF NOT EXISTS default_state TEXT DEFAULT 'good',
 ADD COLUMN IF NOT EXISTS default_description TEXT,
 ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE;
 
--- Add constraints
+-- Add constraints (drop first if they exist from previous failed migration)
+ALTER TABLE public.equipment_catalog DROP CONSTRAINT IF EXISTS equipment_catalog_lifespan_positive;
+ALTER TABLE public.equipment_catalog DROP CONSTRAINT IF EXISTS equipment_catalog_revision_positive;
+ALTER TABLE public.equipment_catalog DROP CONSTRAINT IF EXISTS equipment_catalog_default_state_valid;
+
 ALTER TABLE public.equipment_catalog
 ADD CONSTRAINT equipment_catalog_lifespan_positive CHECK (default_lifespan_months IS NULL OR default_lifespan_months > 0),
 ADD CONSTRAINT equipment_catalog_revision_positive CHECK (default_revision_interval IS NULL OR default_revision_interval > 0),
@@ -68,7 +72,10 @@ ALTER TABLE public.unit_equipment DROP CONSTRAINT IF EXISTS unit_equipment_state
 ALTER TABLE public.unit_equipment 
 ADD CONSTRAINT unit_equipment_state_valid CHECK (state IN ('new', 'good', 'worn', 'damaged', 'to_replace', 'broken'));
 
--- Add constraints
+-- Add constraints (drop first if they exist from previous failed migration)
+ALTER TABLE public.unit_equipment DROP CONSTRAINT IF EXISTS unit_equipment_price_positive;
+ALTER TABLE public.unit_equipment DROP CONSTRAINT IF EXISTS unit_equipment_lifespan_positive;
+
 ALTER TABLE public.unit_equipment
 ADD CONSTRAINT unit_equipment_price_positive CHECK (purchase_price IS NULL OR purchase_price >= 0),
 ADD CONSTRAINT unit_equipment_lifespan_positive CHECK (lifespan_months IS NULL OR lifespan_months > 0);
@@ -113,7 +120,10 @@ END $$;
 
 -- Update state constraint to include all 6 states
 ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_state_valid;
-ALTER TABLE public.property_equipment 
+ALTER TABLE public (drop first if they exist from previous failed migration)
+ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_price_positive;
+ALTER TABLE public.property_equipment DROP CONSTRAINT IF EXISTS property_equipment_lifespan_positive;
+.property_equipment 
 ADD CONSTRAINT property_equipment_state_valid CHECK (state IN ('new', 'good', 'worn', 'damaged', 'to_replace', 'broken'));
 
 -- Add constraints
