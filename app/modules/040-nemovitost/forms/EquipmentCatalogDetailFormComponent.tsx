@@ -129,7 +129,7 @@ export default function EquipmentCatalogDetailFormComponent({
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">Název vybavení *</label>
+            <label className="detail-form__label">Název vybavení</label>
             <input
               className={inputClass}
               type="text"
@@ -137,18 +137,16 @@ export default function EquipmentCatalogDetailFormComponent({
               onChange={(e) => update({ equipment_name: e.target.value })}
               placeholder="Např. Pračka Candy CS4"
               readOnly={readOnly}
-              required
             />
           </div>
 
           <div className="detail-form__field">
-            <label className="detail-form__label">Typ vybavení *</label>
+            <label className="detail-form__label">Typ vybavení</label>
             <select
               className={inputClass}
               value={formVal.equipment_type_id}
               onChange={(e) => update({ equipment_type_id: e.target.value })}
               disabled={readOnly}
-              required
             >
               <option value="">— vyberte typ —</option>
               {equipmentTypes.map((t) => (
@@ -276,7 +274,7 @@ export default function EquipmentCatalogDetailFormComponent({
 
       {/* === POPIS === */}
       <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Popis a status</h3>
+        <h3 className="detail-form__section-title">Popis</h3>
 
         <div className="detail-form__field">
           <label className="detail-form__label">Poznámka</label>
@@ -289,6 +287,11 @@ export default function EquipmentCatalogDetailFormComponent({
             readOnly={readOnly}
           />
         </div>
+      </section>
+
+      {/* === SYSTÉM === */}
+      <section className="detail-form__section">
+        <h3 className="detail-form__section-title">Systém</h3>
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">

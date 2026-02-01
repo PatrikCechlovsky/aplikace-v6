@@ -12,7 +12,6 @@ import {
   getEquipmentCatalogById,
   createEquipmentCatalog,
   updateEquipmentCatalog,
-  deleteEquipmentCatalog,
   type EquipmentCatalogRow 
 } from '@/app/lib/services/equipment'
 import EquipmentCatalogDetailFormComponent from '../forms/EquipmentCatalogDetailFormComponent'
@@ -298,38 +297,8 @@ export default function EquipmentCatalogTile({
     setCurrentEquipment(null)
   }, [])
 
-  const handleDelete = useCallback(async () => {
-    if (!selectedId) return
-    if (!confirm('Opravdu smazat toto vybavení z katalogu?')) return
-
-    try {
-      setDetailLoading(true)
-      await deleteEquipmentCatalog(selectedId)
-      showToast('Vybavení smazáno', 'success')
-      await loadData()
-      setLocalViewMode('list')
-      setSelectedId(null)
-      setCurrentEquipment(null)
-    } catch (err: any) {
-      logger.error('Chyba při mazání vybavení:', err)
-      showToast(err.message || 'Nepodařilo se smazat vybavení', 'error')
-    } finally {
-      setDetailLoading(false)
-    }
-  }, [selectedId, loadData, showToast])
-
   const handleSave = useCallback(async () => {
     if (!currentEquipment) return
-
-    // Validace
-    if (!currentEquipment.equipment_name?.trim()) {
-      showToast('Název vybavení je povinný', 'error')
-      return
-    }
-    if (!currentEquipment.equipment_type_id?.trim()) {
-      showToast('Typ vybavení je povinný', 'error')
-      return
-    }
 
     try {
       setDetailLoading(true)
@@ -360,7 +329,7 @@ export default function EquipmentCatalogTile({
     if (localViewMode === 'list') {
       actions.push('add', 'columnSettings', 'close')
     } else if (localViewMode === 'view') {
-      actions.push('edit', 'delete', 'close')
+      actions.push('edit', 'close')
     } else if (localViewMode === 'edit' || localViewMode === 'create') {
       actions.push('save', 'cancel')
     }
@@ -396,8 +365,6 @@ export default function EquipmentCatalogTile({
         setShowColumnsDrawer(true)
       } else if (actionId === 'edit') {
         setLocalViewMode('edit')
-      } else if (actionId === 'delete') {
-        handleDelete()
       } else if (actionId === 'save') {
         handleSave()
       } else if (actionId === 'cancel') {
@@ -414,7 +381,7 @@ export default function EquipmentCatalogTile({
     return () => {
       onRegisterCommonActionHandler(null)
     }
-  }, [onRegisterCommonActionHandler, localViewMode, handleDelete, handleSave, handleCancel])
+  }, [onRegisterCommonActionHandler, localViewMode, handleSave, handleCancel])
 
   // Load detail when selectedId changes
   useEffect(() => {
@@ -495,12 +462,13 @@ export default function EquipmentCatalogTile({
   // Detail view
   if (localViewMode === 'view' || localViewMode === 'edit' || localViewMode === 'create') {
     const readOnly = localViewMode === 'view'
+    const equipmentName = currentEquipment?.equipment_name || 'Detail'
 
     return (
       <div className="tile-layout">
         <div className="tile-layout__header">
           <h1 className="tile-layout__title">
-            {localViewMode === 'create' ? '➕ Nové vybavení' : '📋 Katalog vybavení - Detail'}
+            {localViewMode === 'create' ? '➕ Nové vybavení' : `📋 Katalog vybavení - ${equipmentName}`}
           </h1>
         </div>
         <div className="tile-layout__content">
