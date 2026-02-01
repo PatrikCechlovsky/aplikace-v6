@@ -42,8 +42,8 @@
   display: flex;
   flex-direction: column;
   background: var(--color-surface-subtle);
-  padding: 0; /* Padding je nyní v ListView */
-  overflow: hidden; /* Scroll bude v ListView */
+  padding: 1rem 1.5rem;
+  overflow: hidden; /* Scroll je v ListView */
 }
 
 /* DetailView v content oblasti - odstranit vlastní padding */

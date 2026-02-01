@@ -8,12 +8,12 @@
   border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 10px 12px;
-  margin: 1rem 1.5rem; /* Padding přesunutý z tile-layout__content */
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-height: 0; /* Důležité pro flex scroll */
   flex: 1; /* Roztáhne se na dostupnou výšku */
+  max-height: 100%; /* Zajistí že se nevytáhne přes content */
   overflow: hidden; /* Scroll bude v table-wrapper */
 }
 
