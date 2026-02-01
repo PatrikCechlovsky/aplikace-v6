@@ -13,6 +13,7 @@ import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
 import { supabase } from '@/app/lib/supabaseClient'
+import EquipmentTab from './EquipmentTab'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -472,7 +473,9 @@ export default function UnitDetailFrame({
     ]
   }, [resolvedUnit, formValue, readOnly, markDirtyIfChanged, unitTypes, selectedUnitTypeId])
   
-  const sectionIds: DetailSectionId[] = ['detail', 'attachments', 'system']
+  const sectionIds: DetailSectionId[] = isNewId(resolvedUnit.id) 
+    ? ['detail', 'attachments', 'system'] 
+    : ['detail', 'equipment', 'attachments', 'system']
   
   // Dynamický title podle typu jednotky
   const unitTypeName = useMemo(() => {
@@ -528,6 +531,14 @@ export default function UnitDetailFrame({
                   formValueRef.current = val
                   markDirtyIfChanged(val)
                 }}
+              />
+            ),
+            
+            equipmentContent: (
+              <EquipmentTab
+                entityType="unit"
+                entityId={resolvedUnit.id}
+                readOnly={readOnly}
               />
             ),
             

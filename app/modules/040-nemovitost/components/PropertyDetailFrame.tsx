@@ -13,6 +13,7 @@ import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
 import { supabase } from '@/app/lib/supabaseClient'
+import EquipmentTab from './EquipmentTab'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -456,7 +457,7 @@ export default function PropertyDetailFrame({
   
   const sectionIds: DetailSectionId[] = isNewId(resolvedProperty.id) 
     ? ['detail', 'attachments', 'system'] 
-    : ['detail', 'units', 'attachments', 'system']
+    : ['detail', 'units', 'equipment', 'attachments', 'system']
   
   // Dynamický title podle typu nemovitosti
   const propertyTypeName = useMemo(() => {
@@ -550,6 +551,14 @@ export default function PropertyDetailFrame({
                   )}
                 </section>
               </div>
+            ),
+            
+            equipmentContent: (
+              <EquipmentTab
+                entityType="property"
+                entityId={resolvedProperty.id}
+                readOnly={readOnly}
+              />
             ),
             
             systemBlocks,

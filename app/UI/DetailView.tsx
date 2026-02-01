@@ -69,6 +69,7 @@ export type DetailViewCtx = {
   rolesUi?: RolesUi
 
   unitsContent?: React.ReactNode
+  equipmentContent?: React.ReactNode
 
   systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
   systemContent?: React.ReactNode
@@ -422,6 +423,14 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 60,
     visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId && ctx.entityId !== 'new',
     render: (ctx: any) => ctx?.unitsContent ?? <div style={{ padding: '2rem' }}>Seznam jednotek (placeholder)</div>,
+  },
+
+  equipment: {
+    id: 'equipment',
+    label: 'Vybavení',
+    order: 65,
+    visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId && ctx.entityId !== 'new',
+    render: (ctx: any) => ctx?.equipmentContent ?? <div style={{ padding: '2rem' }}>Seznam vybavení (placeholder)</div>,
   },
 }
 
