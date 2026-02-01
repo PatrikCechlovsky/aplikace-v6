@@ -149,6 +149,7 @@ function getSortValue(e: UiEquipmentCatalog, key: string): string | number {
 }
 
 type EquipmentCatalogTileProps = {
+  equipmentTypeFilter?: string | null // Pro filtrování podle typu (použito v EquipmentTypeTile)
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
@@ -156,6 +157,7 @@ type EquipmentCatalogTileProps = {
 }
 
 export default function EquipmentCatalogTile({
+  equipmentTypeFilter: externalEquipmentTypeFilter,
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
@@ -175,8 +177,8 @@ export default function EquipmentCatalogTile({
   const [searchText, setSearchText] = useState('')
   const [debouncedSearchText, setDebouncedSearchText] = useState('')
 
-  // Filters
-  const [equipmentTypeFilter, _setEquipmentTypeFilter] = useState<string | null>(null)
+  // Filters - použít externí filter pokud je předán
+  const [equipmentTypeFilter, _setEquipmentTypeFilter] = useState<string | null>(externalEquipmentTypeFilter || null)
   const [activeFilter, _setActiveFilter] = useState<'all' | 'active' | 'inactive'>('active')
 
   // View prefs
@@ -188,6 +190,13 @@ export default function EquipmentCatalogTile({
   const DEFAULT_SORT = { key: 'equipmentName', dir: 'asc' as const }
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
   const [showColumnsDrawer, setShowColumnsDrawer] = useState(false)
+
+  // Sync external equipment type filter (from EquipmentTypeTile)
+  useEffect(() => {
+    if (externalEquipmentTypeFilter !== undefined) {
+      _setEquipmentTypeFilter(externalEquipmentTypeFilter)
+    }
+  }, [externalEquipmentTypeFilter])
 
   // Data loading
   const loadData = useCallback(async () => {

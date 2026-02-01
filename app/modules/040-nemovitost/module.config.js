@@ -10,6 +10,8 @@ import UnitTypeTile from './tiles/UnitTypeTile'
 import CreateUnitTile from './tiles/CreateUnitTile'
 import EquipmentTile from './tiles/EquipmentTile'
 import EquipmentCatalogTile from './tiles/EquipmentCatalogTile'
+import EquipmentTypeTile from './tiles/EquipmentTypeTile'
+import CreateEquipmentTile from './tiles/CreateEquipmentTile'
 
 // Factory funkce pro vytvoření PropertyTypeTile s přednastaveným typem
 function createPropertyTypeTile(propertyTypeCode) {
@@ -26,6 +28,15 @@ function createUnitTypeTile(unitTypeCode) {
     return UnitTypeTile({ ...props, unitTypeCode })
   }
   WrappedComponent.displayName = `UnitTypeTile_${unitTypeCode}`
+  return WrappedComponent
+}
+
+// Factory funkce pro vytvoření EquipmentTypeTile s přednastaveným typem
+function createEquipmentTypeTile(equipmentTypeCode) {
+  const WrappedComponent = function EquipmentTypeTileWrapper(props) {
+    return EquipmentTypeTile({ ...props, equipmentTypeCode })
+  }
+  WrappedComponent.displayName = `EquipmentTypeTile_${equipmentTypeCode}`
   return WrappedComponent
 }
 
@@ -230,6 +241,146 @@ export default {
       icon: 'toolbox',
       component: EquipmentCatalogTile,
       order: 30,
+      children: [
+        // 3. ÚROVEŇ – Filtry podle typu vybavení
+        {
+          id: 'equipment-type-kuchyne',
+          label: 'Kuchyňské spotřebiče',
+          icon: 'kitchen',
+          component: createEquipmentTypeTile('kuchyne'),
+          equipmentTypeCode: 'kuchyne',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-koupelna',
+          label: 'Koupelna a sanitace',
+          icon: 'shower',
+          component: createEquipmentTypeTile('koupelna'),
+          equipmentTypeCode: 'koupelna',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-vytapeni',
+          label: 'Vytápění',
+          icon: 'fire',
+          component: createEquipmentTypeTile('vytapeni'),
+          equipmentTypeCode: 'vytapeni',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-technika',
+          label: 'Technika',
+          icon: 'bolt',
+          component: createEquipmentTypeTile('technika'),
+          equipmentTypeCode: 'technika',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-nabytek',
+          label: 'Nábytek',
+          icon: 'couch',
+          component: createEquipmentTypeTile('nabytek'),
+          equipmentTypeCode: 'nabytek',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-osviceni',
+          label: 'Osvětlení',
+          icon: 'sparkles',
+          component: createEquipmentTypeTile('osviceni'),
+          equipmentTypeCode: 'osviceni',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-zabezpeceni',
+          label: 'Zabezpečení',
+          icon: 'lock',
+          component: createEquipmentTypeTile('zabezpeceni'),
+          equipmentTypeCode: 'zabezpeceni',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-energie',
+          label: 'Energie a měření',
+          icon: 'bolt',
+          component: createEquipmentTypeTile('energie_mereni'),
+          equipmentTypeCode: 'energie_mereni',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-chlazeni',
+          label: 'Chlazení a vzduchotechnika',
+          icon: 'snow',
+          component: createEquipmentTypeTile('chlazeni_vzduchotechnika'),
+          equipmentTypeCode: 'chlazeni_vzduchotechnika',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-stavebni',
+          label: 'Stavební prvky',
+          icon: 'hammer',
+          component: createEquipmentTypeTile('stavebni_prvky'),
+          equipmentTypeCode: 'stavebni_prvky',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-bezpecnost',
+          label: 'Bezpečnost a požár',
+          icon: 'fire',
+          component: createEquipmentTypeTile('bezpecnost_pozar'),
+          equipmentTypeCode: 'bezpecnost_pozar',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-pristupy',
+          label: 'Přístupy a zabezpečení',
+          icon: 'lock',
+          component: createEquipmentTypeTile('pristupy_zabezpeceni'),
+          equipmentTypeCode: 'pristupy_zabezpeceni',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-spolecne',
+          label: 'Společné prostory',
+          icon: 'building',
+          component: createEquipmentTypeTile('spolecne_prostory'),
+          equipmentTypeCode: 'spolecne_prostory',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-exterier',
+          label: 'Exteriér',
+          icon: 'leaf',
+          component: createEquipmentTypeTile('exterier'),
+          equipmentTypeCode: 'exterier',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-sport',
+          label: 'Sport a zábava',
+          icon: 'toy',
+          component: createEquipmentTypeTile('sport_zabava'),
+          equipmentTypeCode: 'sport_zabava',
+          dynamicLabel: true,
+        },
+        {
+          id: 'equipment-type-ostatni',
+          label: 'Ostatní',
+          icon: 'question',
+          component: createEquipmentTypeTile('ostatni'),
+          equipmentTypeCode: 'ostatni',
+          dynamicLabel: true,
+        },
+      ],
+    },
+
+    // === PŘIDAT VYBAVENÍ ===
+    {
+      id: 'create-equipment',
+      label: 'Přidat vybavení',
+      icon: 'plus',
+      component: CreateEquipmentTile,
+      order: 35,
     },
   ],
 }
