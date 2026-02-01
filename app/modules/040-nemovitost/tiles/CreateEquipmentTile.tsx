@@ -162,61 +162,55 @@ export default function CreateEquipmentTile({
         <div className="tile-layout__header">
           <h1 className="tile-layout__title">➕ Přidat vybavení</h1>
         </div>
-        <div className="tile-layout__content" style={{ padding: '2rem' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <p style={{ fontSize: '1.1rem', color: '#6b7280' }}>
-              Vyber typ vybavení pro přidání do katalogu:
-            </p>
-          </div>
-          
-          <div className="palette-grid" style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', 
-            gap: '1.25rem',
-            maxWidth: '1400px'
-          }}>
+        <div className="tile-layout__content" style={{ padding: '1.5rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+            }}
+          >
             {equipmentTypes.map((type) => {
-              const Icon = getIcon((type.icon as IconKey) || 'toolbox')
-              const bgColor = type.color || '#94a3b8'
-              
+              const isSelected = selectedEquipmentType === type.code
+              const iconKey = (type.icon?.trim() || 'wrench') as IconKey
+              const icon = getIcon(iconKey)
+              const color = type.color?.trim() || '#666666'
+
               return (
                 <button
                   key={type.code}
+                  type="button"
+                  className={`palette-card ${isSelected ? 'palette-card--active' : ''}`}
                   onClick={() => handleTypeSelect(type.code)}
-                  className="palette-card"
                   style={{
-                    backgroundColor: bgColor,
-                    border: 'none',
+                    backgroundColor: isSelected ? color : 'var(--color-surface-subtle)',
+                    borderColor: color,
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    padding: '1.5rem',
+                    borderRadius: '8px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    transform: 'scale(1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)'
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)'
-                    e.currentTarget.style.boxShadow = 'none'
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
                   }}
                 >
-                  <div className="palette-card__content" style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    color: '#ffffff',
-                    textAlign: 'center',
-                  }}>
-                    <div style={{ fontSize: '3rem', color: '#ffffff' }}>
-                      <Icon />
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    <span style={{ fontSize: '2rem' }}>{icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{type.name}</div>
+                      {type.description && (
+                        <div style={{ fontSize: '0.875rem', opacity: 0.8, marginTop: '0.25rem' }}>
+                          {type.description}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{type.name}</div>
-                    {type.description && (
-                      <div style={{ fontSize: '0.875rem', opacity: 0.9, marginTop: '0.25rem' }}>
-                        {type.description}
-                      </div>
-                    )}
                   </div>
                 </button>
               )
