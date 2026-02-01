@@ -216,22 +216,31 @@ export default function EquipmentCatalogTile({
         .single()
 
       if (error || !data) {
-        logger.error('Nepodařilo se najít ID typu vybavení pro code:', equipmentTypeFilter)
+        logger.error('Nepodařilo se najít ID typu vybavení pro code:', equipmentTypeFilter, error)
         setEquipmentTypeId(null)
         return
       }
 
+      logger.log('Převod code → ID:', equipmentTypeFilter, '→', data.id)
       setEquipmentTypeId(data.id)
     }
 
     void fetchTypeId()
   }, [equipmentTypeFilter])
 
-  // Data loading
+  // Data loading - DON'T load if we're waiting for equipmentTypeId conversion
   const loadData = useCallback(async () => {
+    // If equipmentTypeFilter is set but equipmentTypeId is not ready yet, skip loading
+    if (equipmentTypeFilter && !equipmentTypeId) {
+      logger.log('Čekám na převod code → ID před načtením dat')
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
+
+      logger.log('Načítám data s filtrem:', { equipmentTypeId, equipmentTypeFilter })
 
       const rows = await listEquipmentCatalog({
         searchText: debouncedSearchText,
@@ -255,7 +264,7 @@ export default function EquipmentCatalogTile({
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearchText, equipmentTypeId, activeFilter])
+  }, [debouncedSearchText, equipmentTypeId, activeFilter, equipmentTypeFilter])
 
   // Load data on mount and when filters change
   useEffect(() => {
