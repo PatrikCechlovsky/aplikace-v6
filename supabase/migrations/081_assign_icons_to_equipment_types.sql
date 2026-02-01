@@ -38,5 +38,9 @@ SET icon = 'leaf'
 WHERE type_category = 'equipment_types' AND code = 'zahrada';
 
 UPDATE public.generic_types 
+SET icon = 'map' 
+WHERE type_category = 'equipment_types' AND code = 'exterier';
+
+UPDATE public.generic_types 
 SET icon = 'question' 
 WHERE type_category = 'equipment_types' AND code = 'jine';
