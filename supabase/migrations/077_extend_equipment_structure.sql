@@ -96,8 +96,8 @@ ADD COLUMN IF NOT EXISTS type TEXT,
 ADD COLUMN IF NOT EXISTS description TEXT,
 ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(12,2),
 ADD COLUMN IF NOT EXISTS lifespan_months INTEGER,
-ADD COLUMN IF NOT EXISTS last_revision DATE,
-ADD COLUMN IF NOT EXISTS photo_attachment_i
+ADD COLUMN IF NOT EXISTS last_revision DATE;
+
 -- Rename installation_date to installed_at for consistency
 DO $$
 BEGIN
@@ -128,8 +128,8 @@ COMMENT ON COLUMN public.property_equipment.description IS 'Volitelný popis kon
 COMMENT ON COLUMN public.property_equipment.purchase_price IS 'Jednotková cena pořízení';
 COMMENT ON COLUMN public.property_equipment.lifespan_months IS 'Konkrétní životnost v měsících';
 COMMENT ON COLUMN public.property_equipment.last_revision IS 'Datum poslední revize (elektro, kotle, měřiče)';
-COMMENT ON COLUMN public.property_equipment.photo_attachment_id IS 'FK na documents - fotka vybavení';
-COMMENT ON COLUMN public.property_equipment.
+COMMENT ON COLUMN public.property_equipment.installed_at IS 'Datum instalace / výměny';
+
 -- ============================================================================
 -- STEP 4: Recreate VIEWS with extended fields
 -- ============================================================================
@@ -217,9 +217,9 @@ BEGIN
   WHERE table_schema = 'public' AND table_name = 'property_equipment';
   
   RAISE NOTICE 'equipment_catalog columns: % (expected: 16)', catalog_cols;
-  RAISE NOTICE 'unit_equipment columns: % (expected: 18)', unit_eq_cols;
-  RAISE NOTICE 'property_equipment columns: % (expecte7)', unit_eq_cols;
-  RAISE NOTICE 'property_equipment columns: % (expected: 17le fields';
+  RAISE NOTICE 'unit_equipment columns: % (expected: 17)', unit_eq_cols;
+  RAISE NOTICE 'property_equipment columns: % (expected: 17)', property_eq_cols;
+  RAISE NOTICE '✅ Equipment structure extended with lifecycle fields';
   RAISE NOTICE '========================================';
 END $$;
 
@@ -238,7 +238,6 @@ END $$;
 --    - name, type, description (konkrétní instance)
 --    - purchase_price (může se lišit od katalogu)
 --    - lifespan_months, last_revision
---    - photo_attachment_id (FK na documents)
 --    - installation_date → installed_at (rename)
 --    - state: rozšířeno o 'worn', 'broken'
 --    - Fotky a dokumenty: přes standardní attachments systém (záložka Přílohy)
