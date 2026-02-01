@@ -69,8 +69,8 @@ export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}):
         active,
         is_archived,
         created_at,
-        equipment_type:generic_types!fk_equipment_type_generic(name, icon, color),
-        room_type:generic_types!equipment_catalog_room_type_id_fkey(name, icon, color)
+        equipment_type:equipment_type_id(name, icon, color),
+        room_type:room_type_id(name, icon, color)
       `
     )
     .order('equipment_name', { ascending: true })
