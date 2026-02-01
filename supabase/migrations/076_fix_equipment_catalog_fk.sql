@@ -127,9 +127,9 @@ WHERE ue.is_archived = FALSE;
 COMMENT ON VIEW public.v_unit_equipment_list IS 
 'Přehled vybavení jednotek s výpočtem celkové ceny a informacemi o typu z generic_types';
 
--- Drop and recreate v_property_equipment_list view
-DROP VIEW IF EXISTS public.v_property_equipment_list CASCADE;
-Recreate v_property_equipment_list view s novým equipment_type_id (UUID)SELECT 
+-- Recreate v_property_equipment_list view s novým equipment_type_id (UUID)
+CREATE OR REPLACE VIEW public.v_property_equipment_list AS
+SELECT 
   pe.*,
   ec.equipment_name,
   ec.equipment_type_id,
