@@ -217,7 +217,7 @@ export default function EquipmentCatalogTile({
       const { data, error } = await supabase
         .from('generic_types')
         .select('id')
-        .eq('type_category', 'equipment_types')
+        .eq('category', 'equipment_types')
         .eq('code', equipmentTypeFilter)
         .single()
 
