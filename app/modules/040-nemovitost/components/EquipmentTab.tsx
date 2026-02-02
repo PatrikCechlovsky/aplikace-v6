@@ -125,8 +125,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         const { data: eqTypes, error: eqError } = await supabase
           .from('generic_types')
           .select('id, name, icon')
-          .eq('category', 'unit_equipment_types')
-          .eq('is_archived', false)
+          .eq('category', 'equipment_types')
+          .or('is_archived.is.null,is_archived.eq.false')
           .order('name')
         
         if (eqError) throw eqError
@@ -137,7 +137,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           .from('generic_types')
           .select('id, name, icon')
           .eq('category', 'room_types')
-          .eq('is_archived', false)
+          .or('is_archived.is.null,is_archived.eq.false')
           .order('name')
         
         if (rmError) throw rmError

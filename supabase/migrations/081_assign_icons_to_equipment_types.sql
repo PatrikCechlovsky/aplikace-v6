@@ -7,40 +7,40 @@
 -- Aktualizace ikon pro typy vybavení
 UPDATE public.generic_types 
 SET icon = 'plug' 
-WHERE type_category = 'equipment_types' AND code = 'spotrebice';
+WHERE category = 'equipment_types' AND code = 'spotrebice';
 
 UPDATE public.generic_types 
 SET icon = 'couch' 
-WHERE type_category = 'equipment_types' AND code = 'nabytek';
+WHERE category = 'equipment_types' AND code = 'nabytek';
 
 UPDATE public.generic_types 
 SET icon = 'shower' 
-WHERE type_category = 'equipment_types' AND code = 'koupelna';
+WHERE category = 'equipment_types' AND code = 'koupelna';
 
 UPDATE public.generic_types 
 SET icon = 'kitchen' 
-WHERE type_category = 'equipment_types' AND code = 'kuchyne';
+WHERE category = 'equipment_types' AND code = 'kuchyne';
 
 UPDATE public.generic_types 
 SET icon = 'fire' 
-WHERE type_category = 'equipment_types' AND code = 'vytapeni';
+WHERE category = 'equipment_types' AND code = 'vytapeni';
 
 UPDATE public.generic_types 
 SET icon = 'laptop' 
-WHERE type_category = 'equipment_types' AND code = 'technika';
+WHERE category = 'equipment_types' AND code = 'technika';
 
 UPDATE public.generic_types 
 SET icon = 'sun' 
-WHERE type_category = 'equipment_types' AND code = 'osvetleni';
+WHERE category = 'equipment_types' AND code = 'osvetleni';
 
 UPDATE public.generic_types 
 SET icon = 'leaf' 
-WHERE type_category = 'equipment_types' AND code = 'zahrada';
+WHERE category = 'equipment_types' AND code = 'zahrada';
 
 UPDATE public.generic_types 
 SET icon = 'map' 
-WHERE type_category = 'equipment_types' AND code = 'exterier';
+WHERE category = 'equipment_types' AND code = 'exterier';
 
 UPDATE public.generic_types 
 SET icon = 'question' 
-WHERE type_category = 'equipment_types' AND code = 'jine';
+WHERE category = 'equipment_types' AND code = 'jine';
