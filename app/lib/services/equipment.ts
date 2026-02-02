@@ -175,7 +175,6 @@ export async function createEquipmentCatalog(formData: EquipmentCatalogFormValue
     default_revision_interval: formData.default_revision_interval || null,
     default_state: formData.default_state || 'working',
     default_description: formData.default_description || null,
-    active: formData.active ?? true,
     is_archived: formData.is_archived ?? false,
   }
 
@@ -234,7 +233,6 @@ export async function updateEquipmentCatalog(id: string, formData: EquipmentCata
     default_revision_interval: formData.default_revision_interval || null,
     default_state: formData.default_state || 'working',
     default_description: formData.default_description || null,
-    active: formData.active ?? true,
     is_archived: formData.is_archived ?? false,
   }
 
