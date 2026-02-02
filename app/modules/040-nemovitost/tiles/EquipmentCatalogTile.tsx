@@ -423,7 +423,6 @@ export default function EquipmentCatalogTile({
         setCurrentEquipment({
           equipment_name: '',
           equipment_type_id: '',
-          active: true,
           is_archived: false,
         })
         setLocalViewMode('create')
