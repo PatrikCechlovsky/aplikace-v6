@@ -357,7 +357,7 @@ export default function EquipmentCatalogTile({
   }, [sort])
 
   // Detail handlers - must be defined before useEffect that uses them
-  const handleCancel = useCallback(() => {
+  const closeToList = useCallback(() => {
     setLocalViewMode('list')
     setSelectedId(null)
     setCurrentEquipment(null)
@@ -393,11 +393,15 @@ export default function EquipmentCatalogTile({
 
     const actions: CommonActionId[] = []
     if (localViewMode === 'list') {
-      actions.push('add', 'columnSettings', 'close')
+      actions.push('add')
+      if (selectedId) {
+        actions.push('view', 'edit')
+      }
+      actions.push('columnSettings', 'close')
     } else if (localViewMode === 'view') {
       actions.push('edit', 'close')
     } else if (localViewMode === 'edit' || localViewMode === 'create') {
-      actions.push('save', 'cancel')
+      actions.push('save', 'close')
     }
 
     onRegisterCommonActions(actions)
@@ -428,16 +432,15 @@ export default function EquipmentCatalogTile({
         setLocalViewMode('create')
       } else if (actionId === 'columnSettings') {
         setShowColumnsDrawer(true)
+      } else if (actionId === 'view') {
+        if (!selectedId) return
+        setLocalViewMode('view')
       } else if (actionId === 'edit') {
         setLocalViewMode('edit')
       } else if (actionId === 'save') {
         handleSave()
-      } else if (actionId === 'cancel') {
-        handleCancel()
       } else if (actionId === 'close') {
-        setLocalViewMode('list')
-        setSelectedId(null)
-        setCurrentEquipment(null)
+        closeToList()
       }
     }
 
@@ -446,7 +449,7 @@ export default function EquipmentCatalogTile({
     return () => {
       onRegisterCommonActionHandler(null)
     }
-  }, [onRegisterCommonActionHandler, localViewMode, handleSave, handleCancel])
+  }, [onRegisterCommonActionHandler, localViewMode, selectedId, handleSave, closeToList])
 
   // Load detail when selectedId changes
   useEffect(() => {
