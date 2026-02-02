@@ -142,9 +142,8 @@ export const equipmentCatalogDetailForm = {
           rows: 4,
           help: 'Společný popis pro všechny instance tohoto typu',
         },
-          help: 'Aktivní typy se zobrazují v selectech při přidávání vybavení',
-        },
       ],
     },
+    // Note: is_archived se zobrazuje na záložce "Systém" v DetailView
   ],
 }
