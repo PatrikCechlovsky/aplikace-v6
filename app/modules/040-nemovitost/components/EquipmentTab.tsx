@@ -134,7 +134,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           throw eqError
         }
         if (!cancelled && eqTypes) {
-          logger.info('Equipment types loaded:', eqTypes.length)
+          logger.log('Equipment types loaded:', eqTypes.length)
           setEquipmentTypes(eqTypes)
         }
 
@@ -151,7 +151,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           throw rmError
         }
         if (!cancelled && rmTypes) {
-          logger.info('Room types loaded:', rmTypes.length)
+          logger.log('Room types loaded:', rmTypes.length)
           setRoomTypes(rmTypes)
         }
       } catch (e: any) {
