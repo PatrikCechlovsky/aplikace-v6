@@ -471,7 +471,6 @@ export default function EquipmentCatalogTile({
             default_revision_interval: equipment.default_revision_interval || undefined,
             default_state: equipment.default_state || 'working',
             default_description: equipment.default_description || undefined,
-            active: equipment.active ?? true,
             is_archived: equipment.is_archived || false,
           })
         }
