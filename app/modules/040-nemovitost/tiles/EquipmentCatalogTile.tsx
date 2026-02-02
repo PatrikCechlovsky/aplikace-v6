@@ -180,7 +180,7 @@ export default function EquipmentCatalogTile({
     colOrder: [],
     colHidden: [],
   })
-  const DEFAULT_SORT = { key: 'equipmentName', dir: 'asc' as const }
+  const DEFAULT_SORT = { key: 'equipmentTypeName', dir: 'asc' as const }
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
   const [showColumnsDrawer, setShowColumnsDrawer] = useState(false)
 
@@ -591,20 +591,36 @@ export default function EquipmentCatalogTile({
         }}
         sortBy={sort ?? undefined}
         onChange={(next) => {
-          setColPrefs((p) => ({
-            ...p,
-            colOrder: next.order,
-            colHidden: next.hidden,
-          }))
+          setColPrefs((p) => {
+            const updated = {
+              ...p,
+              colOrder: next.order,
+              colHidden: next.hidden,
+            }
+            // Save to DB
+            void saveViewPrefs(VIEW_KEY, {
+              colWidths: updated.colWidths ?? {},
+              colOrder: updated.colOrder ?? [],
+              colHidden: updated.colHidden ?? [],
+              sort: sort,
+            })
+            return updated
+          })
         }}
-        onSortChange={(newSort) => setSort(newSort)}
+        onSortChange={(newSort) => handleSortChange(newSort)}
         onReset={() => {
-          setColPrefs({
+          const resetPrefs = {
             colWidths: {},
             colOrder: [],
             colHidden: [],
-          })
+          }
+          setColPrefs(resetPrefs)
           setSort(DEFAULT_SORT)
+          // Save reset to DB
+          void saveViewPrefs(VIEW_KEY, {
+            ...resetPrefs,
+            sort: DEFAULT_SORT,
+          })
         }}
       />
     </div>
