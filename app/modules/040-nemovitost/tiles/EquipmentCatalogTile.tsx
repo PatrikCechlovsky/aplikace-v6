@@ -40,7 +40,6 @@ const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'purchasePrice', label: 'Cena', width: 120, sortable: true },
   { key: 'defaultLifespanMonths', label: 'Životnost', width: 120, sortable: true },
   { key: 'defaultState', label: 'Stav', width: 120, sortable: true },
-  { key: 'active', label: 'Aktivní', width: 100, sortable: true },
 ]
 
 type UiEquipmentCatalog = {
@@ -60,7 +59,6 @@ type UiEquipmentCatalog = {
   defaultRevisionInterval: number | null
   defaultState: string | null
   defaultDescription: string | null
-  active: boolean
   isArchived: boolean
 }
 
@@ -82,7 +80,6 @@ function mapRowToUi(row: EquipmentCatalogRow): UiEquipmentCatalog {
     defaultRevisionInterval: row.default_revision_interval,
     defaultState: row.default_state,
     defaultDescription: row.default_description,
-    active: row.active ?? true,
     isArchived: !!row.is_archived,
   }
 }
@@ -115,11 +112,6 @@ function toRow(e: UiEquipmentCatalog): ListViewRow<UiEquipmentCatalog> {
           {stateInfo.icon} {stateInfo.label}
         </span>
       ) : '—',
-      active: e.active ? (
-        <span style={{ color: '#10b981' }}>✓ Ano</span>
-      ) : (
-        <span style={{ color: '#6b7280' }}>⨯ Ne</span>
-      ),
     },
     className: e.isArchived ? 'row--archived' : undefined,
     raw: e,
@@ -142,8 +134,6 @@ function getSortValue(e: UiEquipmentCatalog, key: string): string | number {
       return e.defaultLifespanMonths ?? 0
     case 'defaultState':
       return norm(e.defaultState || '')
-    case 'active':
-      return e.active ? 1 : 0
     default:
       return ''
   }
@@ -182,7 +172,7 @@ export default function EquipmentCatalogTile({
   const [equipmentTypeFilter, _setEquipmentTypeFilter] = useState<string | null>(externalEquipmentTypeFilter || null)
   const [equipmentTypeId, setEquipmentTypeId] = useState<string | null>(null)
   const [isLoadingTypeId, setIsLoadingTypeId] = useState(false)
-  const [activeFilter, _setActiveFilter] = useState<'all' | 'active' | 'inactive'>('active')
+  const [showArchived, setShowArchived] = useState(false)
 
   // View prefs
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
@@ -252,25 +242,19 @@ export default function EquipmentCatalogTile({
         equipmentTypeFilter,
         equipmentTypeId, 
         hasFilter: !!equipmentTypeId,
-        isLoadingTypeId 
+        isLoadingTypeId,
+        showArchived
       })
 
       const rows = await listEquipmentCatalog({
         searchText: debouncedSearchText,
         equipmentTypeId: equipmentTypeId,
-        includeArchived: activeFilter === 'all',
+        includeArchived: showArchived,
       })
 
       logger.log('✅ Načteno řádků:', rows.length, 'filtr:', equipmentTypeId ? 'ANO' : 'NE')
 
-      let filtered = rows.map(mapRowToUi)
-
-      // Filter by active state
-      if (activeFilter === 'active') {
-        filtered = filtered.filter(e => e.active && !e.isArchived)
-      } else if (activeFilter === 'inactive') {
-        filtered = filtered.filter(e => !e.active || e.isArchived)
-      }
+      const filtered = rows.map(mapRowToUi)
 
       setData(filtered)
     } catch (err: any) {
@@ -279,7 +263,7 @@ export default function EquipmentCatalogTile({
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearchText, equipmentTypeId, activeFilter, isLoadingTypeId])
+  }, [debouncedSearchText, equipmentTypeId, showArchived, isLoadingTypeId])
 
   // Load data on mount and when filters change
   useEffect(() => {
@@ -584,6 +568,8 @@ export default function EquipmentCatalogTile({
           rows={sortedData}
           filterValue={searchText}
           onFilterChange={setSearchText}
+          showArchived={showArchived}
+          onShowArchivedChange={setShowArchived}
           selectedId={selectedId}
           onRowClick={handleRowClick}
           onRowDoubleClick={handleRowDoubleClick}

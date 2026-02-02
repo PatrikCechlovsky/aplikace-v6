@@ -44,7 +44,6 @@ export default function EquipmentCatalogDetailFormComponent({
     default_revision_interval: equipment.default_revision_interval,
     default_state: equipment.default_state ?? 'working',
     default_description: equipment.default_description,
-    active: equipment.active ?? true,
     is_archived: equipment.is_archived ?? false,
   }))
 
@@ -295,29 +294,16 @@ export default function EquipmentCatalogDetailFormComponent({
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
-            <label className="detail-form__label">Aktivní</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="checkbox"
-                checked={formVal.active ?? true}
-                onChange={(e) => update({ active: e.target.checked })}
-                disabled={readOnly}
-              />
-              <span>{formVal.active ? 'Ano' : 'Ne'}</span>
-            </div>
-          </div>
-
-          <div className="detail-form__field">
-            <label className="detail-form__label">Archivováno</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label className="detail-form__label">
               <input
                 type="checkbox"
                 checked={formVal.is_archived ?? false}
                 onChange={(e) => update({ is_archived: e.target.checked })}
                 disabled={readOnly}
+                style={{ marginRight: '0.5rem' }}
               />
-              <span>{formVal.is_archived ? 'Ano' : 'Ne'}</span>
-            </div>
+              Archivováno
+            </label>
           </div>
         </div>
       </section>

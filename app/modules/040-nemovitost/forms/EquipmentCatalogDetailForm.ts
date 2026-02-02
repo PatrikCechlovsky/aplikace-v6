@@ -21,7 +21,6 @@ export type EquipmentCatalogFormValue = {
   default_description?: string
   
   // Status
-  active?: boolean
   is_archived?: boolean
 }
 
@@ -143,11 +142,6 @@ export const equipmentCatalogDetailForm = {
           rows: 4,
           help: 'Společný popis pro všechny instance tohoto typu',
         },
-        {
-          name: 'active',
-          label: 'Aktivní',
-          type: 'checkbox',
-          required: false,
           help: 'Aktivní typy se zobrazují v selectech při přidávání vybavení',
         },
       ],
