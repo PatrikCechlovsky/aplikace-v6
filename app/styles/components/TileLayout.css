@@ -47,8 +47,8 @@
   flex-direction: column;
   background: var(--color-surface-subtle);
   border: 3px solid green; /* DEBUG */
-  padding: 0; /* Padding je v ListView jako margin */
-  overflow: hidden; /* Scroll je uvnitř ListView */
+  padding: 1rem 1.5rem; /* VRÁCENO - prostor okolo ListView */
+  overflow: hidden; /* Scroll JEN v table-wrapper! */
 }
 
 /* DetailView v content oblasti - odstranit vlastní padding */
