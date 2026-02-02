@@ -14,8 +14,7 @@
   gap: 8px;
   min-height: 0; /* Důležité pro flex scroll */
   flex: 1; /* Roztáhne se na dostupnou výšku */
-  max-height: calc(100% - 2rem); /* Odečíst margin */
-  overflow: hidden; /* Scroll bude v table-wrapper */
+  overflow: visible; /* Umožní marginu fungovat správně */
 }
 
 /* Horní lišta */
