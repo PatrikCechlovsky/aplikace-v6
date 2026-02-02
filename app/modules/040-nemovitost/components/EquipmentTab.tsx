@@ -60,6 +60,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const [loadingCatalog, setLoadingCatalog] = useState(true)
   
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null)
+  const currentIndexRef = useRef(-1)
   const [formValue, setFormValue] = useState<EquipmentFormValue>({
     equipmentId: '',
     quantity: 1,
@@ -68,6 +69,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     note: '',
   })
   const [isDirty, setIsDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
   // Načíst seznam vybavení
   useEffect(() => {
     let cancelled = false
@@ -443,52 +445,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           </div>
         </section>
       )}
-    </div_STATES.map((state) => (
-                    <option key={state.value} value={state.value}>
-                      {state.icon} {state.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Datum instalace</label>
-                <input
-                  type="date"
-                  className="detail-form__input"
-                  value={formData.installation_date || ''}
-                  onChange={(e) => setFormData({ ...formData, installation_date: e.target.value || null })}
-                />
-              </div>
-              
-              <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Poznámka</label>
-                <textarea
-                  className="detail-form__textarea"
-                  value={formData.note || ''}
-                  onChange={(e) => setFormData({ ...formData, note: e.target.value || null })}
-                  rows={3}
-                  placeholder="Poznámky k vybavení..."
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {!selectedItem && !editMode && !readOnly && (
-        <div className="detail-form">
-          <div className="detail-form__section">
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={handleAdd}
-            >
-              ➕ Přidat vybavení
-            </button>
-          </div>
-        </div>
-      )}
-    </RelationListWithDetail>
+    </div>
   )
 }
