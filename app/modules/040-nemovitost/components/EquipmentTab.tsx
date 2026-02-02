@@ -215,7 +215,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             quantity: equipment.quantity ?? 1,
             purchasePrice: equipment.purchase_price ?? null,
             state: equipment.state ?? 'good',
-            installationDate: equipment.installation_date ?? '',
+            installationDate: equipment.installed_at ?? '',
             lastRevision: equipment.last_revision ?? '',
             lifespanMonths: equipment.lifespan_months ?? null,
             note: equipment.note ?? '',
@@ -320,7 +320,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           quantity: formValue.quantity || 1,
           purchase_price: formValue.purchasePrice || undefined,
           state: formValue.state || 'good',
-          installation_date: formValue.installationDate || undefined,
+          installed_at: formValue.installationDate || undefined,
           last_revision: formValue.lastRevision || undefined,
           lifespan_months: formValue.lifespanMonths || undefined,
           note: formValue.note || undefined,
@@ -403,7 +403,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                     <td style={{ padding: '8px' }}>
                       {equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'}
                     </td>
-                    <td style={{ padding: '8px' }}>{equipment.installation_date || '—'}</td>
+                    <td style={{ padding: '8px' }}>{equipment.installed_at || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -480,7 +480,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                   <option value="">— všechny typy —</option>
                   {equipmentTypes.map((type) => (
                     <option key={type.id} value={type.id}>
-                      {type.icon && `${type.icon} `}{type.name}
+                      {type.name}
                     </option>
                   ))}
                 </select>
@@ -492,7 +492,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                   <option value="">— všechny místnosti —</option>
                   {roomTypes.map((type) => (
                     <option key={type.id} value={type.id}>
-                      {type.icon && `${type.icon} `}{type.name}
+                      {type.name}
                     </option>
                   ))}
                 </select>
