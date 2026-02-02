@@ -12,7 +12,8 @@
   flex-direction: column;
   gap: 8px;
   min-height: 0;
-  overflow: visible; /* Aby scroll byl na content */
+  flex: 1; /* Roztáhne se */
+  overflow: hidden; /* Scroll je v table-wrapper */
 }
 
 /* Horní lišta */
@@ -31,8 +32,10 @@
 .listview__table-wrapper {
   width: 100%;
   position: relative;
-  overflow: visible; /* Scroll je na tile-layout__content! */
+  overflow: auto; /* SCROLL TADY! */
   scrollbar-gutter: stable;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Jemnější tabulka (méně “krabic”) */

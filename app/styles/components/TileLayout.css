@@ -44,7 +44,7 @@
   flex-direction: column;
   background: var(--color-surface-subtle);
   padding: 1rem 1.5rem;
-  overflow: auto; /* SCROLL JE TADY! */
+  overflow: hidden; /* Scroll je v table-wrapper! */
 }
 
 /* DetailView v content oblasti - odstranit vlastní padding */
