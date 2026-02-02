@@ -243,7 +243,15 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
       setSaving(false)
     }
   }, [selectedEquipmentId, entityType, entityId, formValue, selectEquipment, toast])
-return (
+
+  const canGoPrevious = currentIndexRef.current > 0
+  const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < equipmentList.length - 1
+
+  // =====================
+  // RENDER
+  // =====================
+  
+  return (
     <div className="detail-form">
       {/* Seznam vybavení */}
       <section className="detail-form__section">
