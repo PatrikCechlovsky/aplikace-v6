@@ -126,7 +126,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           .from('generic_types')
           .select('id, name, icon')
           .eq('category', 'equipment_types')
-          .or('is_archived.is.null,is_archived.eq.false')
           .order('name')
         
         if (eqError) {
@@ -143,7 +142,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           .from('generic_types')
           .select('id, name, icon')
           .eq('category', 'room_types')
-          .or('is_archived.is.null,is_archived.eq.false')
           .order('name')
         
         if (rmError) {
@@ -528,10 +526,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <option value="">{loadingCatalog ? 'Načítám…' : '— vyberte vybavení —'}</option>
                 {catalog.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.equipment_type_icon && `${item.equipment_type_icon} `}
-                    {item.room_type_icon && `${item.room_type_icon} `}
                     {item.equipment_name}
-                    {item.purchase_price && ` (${item.purchase_price.toLocaleString('cs-CZ')} Kč)`}
+                    {item.purchase_price && ` — ${item.purchase_price.toLocaleString('cs-CZ')} Kč`}
                   </option>
                 ))}
               </select>
