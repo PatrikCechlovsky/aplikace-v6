@@ -1,11 +1,10 @@
 // FILE: app/modules/040-nemovitost/components/EquipmentTab.tsx
-// PURPOSE: Záložka vybavení pro Property/Unit - seznam nahoře, detail dole (RelationListWithDetail pattern)
+// PURPOSE: Záložka vybavení pro Property/Unit - pattern jako AccountsSection (seznam nahoře, formulář dole)
 // NOTES: Použitelná pro properties i units, podle entityType
 
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
-import RelationListWithDetail, { type RelationItem } from '@/app/UI/RelationListWithDetail'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   listPropertyEquipment,
   listUnitEquipment,
@@ -13,13 +12,14 @@ import {
   type UnitEquipmentRow,
   savePropertyEquipment,
   saveUnitEquipment,
-  deletePropertyEquipment,
-  deleteUnitEquipment,
   listEquipmentCatalog,
   type EquipmentCatalogRow,
+  type SavePropertyEquipmentInput,
+  type SaveUnitEquipmentInput,
 } from '@/app/lib/services/equipment'
 import { EQUIPMENT_STATES } from '@/app/lib/constants/properties'
 import { useToast } from '@/app/UI/Toast'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 
 import '@/app/styles/components/DetailForm.css'
@@ -39,6 +39,14 @@ type Props = {
   readOnly?: boolean
 }
 
+type EquipmentFormValue = {
+  equipmentId: string
+  quantity: number
+  state: string
+  installationDate: string
+  note: string
+}
+
 // =====================
 // COMPONENT
 // =====================
@@ -46,399 +54,358 @@ type Props = {
 export default function EquipmentTab({ entityType, entityId, readOnly = false }: Props) {
   const toast = useToast()
   
-  const [items, setItems] = useState<EquipmentRow[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [catalog, setCatalog] = useState<EquipmentCatalogRow[]>([])
+  const [equipmentList, setEquipmentList] = useState<EquipmentRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [catalog, setCatalog] = useState<EquipmentCatalogRow[]>([])
+  const [loadingCatalog, setLoadingCatalog] = useState(true)
   
-  // Form state pro detail
-  const [editMode, setEditMode] = useState(false)
-  const [formData, setFormData] = useState<Partial<EquipmentRow>>({})
-  
-  // =====================
-  // DATA LOADING
-  // =====================
-  
-  const loadEquipment = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = entityType === 'property' 
-        ? await listPropertyEquipment(entityId)
-        : await listUnitEquipment(entityId)
-      setItems(data)
-      
-      // Pokud bylo něco vybráno a už neexistuje, resetuj
-      if (selectedId && !data.find(item => item.id === selectedId)) {
-        setSelectedId(null)
-      }
-    } catch (err: any) {
-      logger.error('Failed to load equipment:', err)
-      setError(err.message || 'Nepodařilo se načíst vybavení')
-      setItems([])
-    } finally {
-      setLoading(false)
-    }
-  }, [entityType, entityId, selectedId])
-  
-  const loadCatalog = useCallback(async () => {
-    try {
-      const data = await listEquipmentCatalog({ includeArchived: false })
-      setCatalog(data)
-    } catch (err: any) {
-      logger.error('Failed to load equipment catalog:', err)
-    }
-  }, [])
-  
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null)
+  const [formValue, setFormValue] = useState<EquipmentFormValue>({
+    equipmentId: '',
+    quantity: 1,
+    state: 'good',
+    installationDate: '',
+    note: '',
+  })
+  const [isDirty, setIsDirty] = useState(false)
+  // Načíst seznam vybavení
   useEffect(() => {
-    loadEquipment()
-    loadCatalog()
-  }, [loadEquipment, loadCatalog])
-  
-  // =====================
-  // SELECTION
-  // =====================
-  
-  const handleSelect = useCallback((id: string | number) => {
-    const item = items.find(i => i.id === id)
-    if (!item) return
-    
-    setSelectedId(String(id))
-    setFormData(item)
-    setEditMode(false)
-  }, [items])
-  
-  // =====================
-  // CRUD OPERATIONS
-  // =====================
-  
-  const handleSave = useCallback(async () => {
-    if (!formData.equipment_id) {
-      toast.showError('Vyberte vybavení z katalogu')
-      return
-    }
-    
-    try {
-      const input = {
-        id: formData.id || null,
-        [entityType === 'property' ? 'property_id' : 'unit_id']: entityId,
-        equipment_id: formData.equipment_id,
-        quantity: formData.quantity || 1,
-        state: formData.state || 'good',
-        installation_date: formData.installation_date || null,
-        note: formData.note || null,
+    let cancelled = false
+
+    async function load() {
+      try {
+        setLoading(true)
+        const data = entityType === 'property' 
+          ? await listPropertyEquipment(entityId)
+          : await listUnitEquipment(entityId)
+        if (cancelled) return
+        setEquipmentList(data)
+      } catch (e: any) {
+        if (cancelled) return
+        logger.error('listEquipment failed', e)
+        toast.showError(e?.message ?? 'Chyba při načítání vybavení')
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      
-      if (entityType === 'property') {
-        await savePropertyEquipment(input as any)
-      } else {
-        await saveUnitEquipment(input as any)
-      }
-      
-      toast.showSuccess('Vybavení uloženo')
-      setEditMode(false)
-      await loadEquipment()
-    } catch (err: any) {
-      logger.error('Failed to save equipment:', err)
-      toast.showError('Nepodařilo se uložit vybavení')
     }
-  }, [formData, entityType, entityId, toast, loadEquipment])
-  
-  const handleDelete = useCallback(async () => {
-    if (!selectedId) return
-    if (!confirm('Opravdu chcete odstranit toto vybavení?')) return
-    
-    try {
-      if (entityType === 'property') {
-        await deletePropertyEquipment(selectedId)
-      } else {
-        await deleteUnitEquipment(selectedId)
-      }
-      
-      toast.showSuccess('Vybavení odstraňeno')
-      setSelectedId(null)
-      await loadEquipment()
-    } catch (err: any) {
-      logger.error('Failed to delete equipment:', err)
-      toast.showError('Nepodařilo se odstranit vybavení')
+
+    void load()
+    return () => {
+      cancelled = true
     }
-  }, [selectedId, entityType, toast, loadEquipment])
-  
+  }, [entityType, entityId, toast])
+
+  // Načíst katalog vybavení
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      try {
+        setLoadingCatalog(true)
+        const data = await listEquipmentCatalog({ includeArchived: false })
+        if (cancelled) return
+        setCatalog(data)
+      } catch (e: any) {
+        if (cancelled) return
+        logger.error('listEquipmentCatalog failed', e)
+        toast.showError(e?.message ?? 'Chyba při načítání katalogu')
+      } finally {
+        if (!cancelled) setLoadingCatalog(false)
+      }
+    }
+
+    void load()
+    return () => {
+      caselectEquipment = useCallback(
+    (equipmentId: string | null) => {
+      setSelectedEquipmentId(equipmentId)
+      currentIndexRef.current = equipmentId ? equipmentList.findIndex((e) => e.id === equipmentId) : -1
+
+      if (equipmentId) {
+        const equipment = equipmentList.find((e) => e.id === equipmentId)
+        if (equipment) {
+          setFormValue({
+            equipmentId: equipment.equipment_id ?? '',
+            quantity: equipment.quantity ?? 1,
+            state: equipment.state ?? 'good',
+            installationDate: equipment.installation_date ?? '',
+  // Nové vybavení
   const handleAdd = useCallback(() => {
-    setFormData({
-      equipment_id: '',
+    setSelectedEquipmentId(null)
+    currentIndexRef.current = -1
+    setFormValue({
+      equipmentId: '',
       quantity: 1,
       state: 'good',
-      installation_date: null,
-      note: null,
+      installationDate: '',
+      note: '',
     })
-    setSelectedId(null)
-    setEditMode(true)
+    setIsDirty(false)
   }, [])
-  
-  // =====================
-  // RENDER
-  // =====================
-  
-  const relationItems: RelationItem[] = items.map((item) => {
-    const stateDef = EQUIPMENT_STATES.find(s => s.value === item.state)
-    const stateLabel = stateDef ? `${stateDef.icon} ${stateDef.label}` : item.state
-    
-    return {
-      id: item.id,
-      primary: item.catalog_equipment_name || 'Bez názvu',
-      secondary: `${item.quantity}× | ${stateLabel} | ${item.total_price ? `${item.total_price.toLocaleString('cs-CZ')} Kč` : '—'}`,
 
-      badge: item.equipment_type_name ? (
-        <span style={{ 
-          fontSize: '0.75rem', 
-          padding: '0.125rem 0.5rem',
-          borderRadius: '0.25rem',
-          backgroundColor: 'var(--color-primary-light)',
-          color: 'var(--color-primary-dark)'
-        }}>
-          {item.equipment_type_name}
-        </span>
-      ) : undefined,
+  // Předchozí/Další
+  const handlePrevious = useCallback(() => {
+    if (currentIndexRef.current > 0) {
+      const prevEquipment = equipmentList[currentIndexRef.current - 1]
+      selectEquipment(prevEquipment.id)
     }
-  })
-  
-  const selectedItem = items.find(i => i.id === selectedId)
-  
-  // =====================
-  // LOADING STATE
-  // =====================
-  
-  if (loading) {
-    return (
-      <div className="detail-form">
+  }, [equipmentList, selectEquipment])
+
+  const handleNext = useCallback(() => {
+    if (currentIndexRef.current < equipmentList.length - 1) {
+      const nextEquipment = equipmentList[currentIndexRef.current + 1]
+      selectEquipment(nextEquipment.id)
+    }
+  }, [equipmentList, selectEquipment])
+
+  // Uložit
+  const handleSave = useCallback(async () => {
+    try {
+      // Validace povinných polí
+      if (!formValue.equipmentId?.trim()) {
+        toast.showWarning('Vyberte vybavení z katalogu.')
+        return
+      }
+
+      setSaving(true)
+
+      if (entityType === 'property') {
+        const payload: SavePropertyEquipmentInput = {
+          id: selectedEquipmentId || undefined,
+          property_id: entityId,
+          equipment_id: formValue.equipmentId,
+          quantity: formValue.quantity || 1,
+          state: formValue.state || 'good',
+          installation_date: formValue.installationDate || undefined,
+          note: formValue.note || undefined,
+        }
+        await savePropertyEquipment(payload)
+      } else {
+        const payload: SaveUnitEquipmentInput = {
+          id: selectedEquipmentId || undefined,
+          unit_id: entityId,
+          equipment_id: formValue.equipmentId,
+          quantity: formValue.quantity || 1,
+          state: formValue.state || 'good',
+          installation_date: formValue.installationDate || undefined,
+          note: formValue.note || undefined,
+        }
+        await saveUnitEquipment(payload)
+      }
+
+      // Obnovit seznam
+      const refreshed = entityType === 'property'
+        ? await listPropertyEquipment(entityId)
+        : await listUnitEquipment(entityId)
+      setEquipmentList(refreshed)
+
+      // Pokud bylo nové vybavení, vybrat ho
+      if (!selectedEquipmentId && refreshed.length > 0) {
+        selectEquipment(refreshed[refreshed.length - 1].id)
+      }
+
+      setIsDirty(false)
+      toast.showSuccess('Vybavení uloženo')
+    } catch (e: any) {
+      logger.error('saveEquipment failed', e)
+      toast.showError(e?.message ?? 'Chyba při ukládání vybavení')
+    } finally {
+      setSaving(false)
+    }
+  }, [selectedEquipmentId, entityType, entityId, formValue, selectEquipment, toast])
+return (
+    <div className="detail-form">
+      {/* Seznam vybavení */}
+      <section className="detail-form__section">
+        <h3 className="detail-form__section-title">Seznam vybavení</h3>
+
+        {loading && <div className="detail-form__hint">Načítám vybavení…</div>}
+
+        {!loading && equipmentList.length === 0 && <div className="detail-form__hint">Zatím žádné vybavení.</div>}
+
+        {!loading && equipmentList.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Název</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Typ</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Množství</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Stav</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Cena (ks)</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Celkem</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Instalováno</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipmentList.map((equipment) => (
+                  <tr
+                    key={equipment.id}
+                    onClick={() => selectEquipment(equipment.id)}
+                    style={{
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--color-border-soft)',
+                      backgroundColor: selectedEquipmentId === equipment.id ? 'var(--color-primary-soft)' : 'transparent',
+                    }}
+                  >
+                    <td style={{ padding: '8px' }}>{equipment.catalog_equipment_name || '—'}</td>
+                    <td style={{ padding: '8px' }}>{equipment.equipment_type_name || '—'}</td>
+                    <td style={{ padding: '8px' }}>{equipment.quantity || 1}×</td>
+                    <td style={{ padding: '8px' }}>
+                      {EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state}
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      {equipment.catalog_purchase_price ? `${equipment.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'}
+                    </td>
+                    <td style={{ padding: '8px' }}>
+                      {equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'}
+                    </td>
+                    <td style={{ padding: '8px' }}>{equipment.installation_date || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Formulář */}
+      {!readOnly && (
         <section className="detail-form__section">
-          <div className="detail-form__hint">Načítám vybavení…</div>
-        </section>
-      </div>
-    )
-  }
-  
-  // =====================
-  // ERROR STATE
-  // =====================
-  
-  if (error) {
-    return (
-      <div className="detail-form">
-        <section className="detail-form__section">
-          <div style={{ 
-            padding: '2rem', 
-            textAlign: 'center', 
-            color: 'var(--color-danger)',
-            backgroundColor: 'var(--color-danger-soft)',
-            borderRadius: '0.5rem'
-          }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
-            <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Nelze načíst vybavení</div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-              {error}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 className="detail-form__section-title">Formulář</h3>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={handlePrevious}
+                disabled={!canGoPrevious}
+                className="common-actions__btn"
+                title="Předchozí vybavení"
+              >
+                <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
+                <span className="common-actions__label">Předchozí</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={!canGoNext}
+                className="common-actions__btn"
+                title="Další vybavení"
+              >
+                <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
+                <span className="common-actions__label">Další</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleAdd}
+                className="common-actions__btn"
+                title="Přidat nové vybavení"
+              >
+                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                <span className="common-actions__label">Přidat</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving || !isDirty}
+                className="common-actions__btn"
+                title={saving ? 'Ukládám…' : 'Uložit vybavení'}
+              >
+                <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
+              </button>
             </div>
-            <div style={{ fontSize: '0.875rem', marginTop: '1rem', color: 'var(--color-text-muted)' }}>
-              💡 Tip: Zkontrolujte, zda byla spuštěna migrace 077 v databázi
+          </div>
+
+          <div className="detail-form__grid detail-form__grid--narrow">
+            {/* Řádek 1: Vybavení z katalogu + Množství */}
+            <div className="detail-form__field">
+              <label className="detail-form__label">
+                Vybavení z katalogu <span className="detail-form__required">*</span>
+              </label>
+              <select
+                className="detail-form__input"
+                value={formValue.equipmentId}
+                disabled={loadingCatalog}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, equipmentId: e.target.value }))
+                  setIsDirty(true)
+                }}
+              >
+                <option value="">{loadingCatalog ? 'Načítám…' : '— vyberte vybavení —'}</option>
+                {catalog.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.equipment_type_icon && `${item.equipment_type_icon} `}
+                    {item.equipment_name}
+                    {item.purchase_price && ` (${item.purchase_price.toLocaleString('cs-CZ')} Kč)`}
+                  </option>
+                ))}
+              </select>
             </div>
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={loadEquipment}
-              style={{ marginTop: '1rem' }}
-            >
-              🔄 Zkusit znovu
-            </button>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Množství</label>
+              <input
+                className="detail-form__input"
+                type="number"
+                min="1"
+                value={formValue.quantity}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))
+                  setIsDirty(true)
+                }}
+              />
+            </div>
+
+            {/* Řádek 2: Stav + Datum instalace */}
+            <div className="detail-form__field">
+              <label className="detail-form__label">Stav</label>
+              <select
+                className="detail-form__input"
+                value={formValue.state}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, state: e.target.value }))
+                  setIsDirty(true)
+                }}
+              >
+                {EQUIPMENT_STATES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.icon} {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Datum instalace</label>
+              <input
+                className="detail-form__input"
+                type="date"
+                value={formValue.installationDate}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, installationDate: e.target.value }))
+                  setIsDirty(true)
+                }}
+              />
+            </div>
+
+            {/* Poznámka */}
+            <div className="detail-form__field detail-form__field--span-2">
+              <label className="detail-form__label">Poznámka</label>
+              <textarea
+                className="detail-form__input"
+                maxLength={500}
+                value={formValue.note}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, note: e.target.value }))
+                  setIsDirty(true)
+                }}
+                rows={3}
+                placeholder="Poznámky k vybavení..."
+              />
+            </div>
           </div>
         </section>
-      </div>
-    )
-  }
-  
-  // =====================
-  // MAIN CONTENT
-  // =====================
-  
-  return (
-    <RelationListWithDetail
-      title={`Vybavení (${items.length})`}
-      items={relationItems}
-      selectedId={selectedId}
-      onSelect={handleSelect}
-      emptyText={`Tato ${entityType === 'property' ? 'nemovitost' : 'jednotka'} nemá přiřazeno žádné vybavení.`}
-    >
-      {selectedItem && !editMode && (
-        <div className="detail-form">
-          <div className="detail-form__section">
-            <div className="detail-form__header">
-              <h3 className="detail-form__section-title">
-                {selectedItem.catalog_equipment_name || 'Vybavení'}
-              </h3>
-              {!readOnly && (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    type="button"
-                    className="button button--secondary button--small"
-                    onClick={() => setEditMode(true)}
-                  >
-                    ✏️ Upravit
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--danger button--small"
-                    onClick={handleDelete}
-                  >
-                    🗑️ Odstranit
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            <div className="detail-form__grid">
-              <div className="detail-form__field">
-                <label className="detail-form__label">Typ vybavení</label>
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={selectedItem.equipment_type_name || '—'}
-                  readOnly
-                />
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Množství</label>
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={selectedItem.quantity}
-                  readOnly
-                />
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Stav</label>
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={EQUIPMENT_STATES.find(s => s.value === selectedItem.state)?.label || selectedItem.state || '—'}
-                  readOnly
-                />
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Katalogová cena (ks)</label>
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={selectedItem.catalog_purchase_price ? `${selectedItem.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'}
-                  readOnly
-                />
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Celková cena</label>
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={selectedItem.total_price ? `${selectedItem.total_price.toLocaleString('cs-CZ')} Kč` : '—'}
-                  readOnly
-                />
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Datum instalace</label>
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={selectedItem.installation_date || '—'}
-                  readOnly
-                />
-              </div>
-              
-              <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Poznámka</label>
-                <textarea
-                  className="detail-form__textarea detail-form__input--readonly"
-                  value={selectedItem.note || ''}
-                  readOnly
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
       )}
-      
-      {editMode && (
-        <div className="detail-form">
-          <div className="detail-form__section">
-            <div className="detail-form__header">
-              <h3 className="detail-form__section-title">
-                {formData.id ? 'Upravit vybavení' : 'Přidat vybavení'}
-              </h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className="button button--primary button--small"
-                  onClick={handleSave}
-                >
-                  💾 Uložit
-                </button>
-                <button
-                  type="button"
-                  className="button button--secondary button--small"
-                  onClick={() => {
-                    setEditMode(false)
-                    if (selectedId) {
-                      const item = items.find(i => i.id === selectedId)
-                      if (item) setFormData(item)
-                    } else {
-                      setFormData({})
-                    }
-                  }}
-                >
-                  ✖️ Zrušit
-                </button>
-              </div>
-            </div>
-            
-            <div className="detail-form__grid">
-              <div className="detail-form__field">
-                <label className="detail-form__label">
-                  Vybavení z katalogu <span className="detail-form__required">*</span>
-                </label>
-                <select
-                  className="detail-form__input"
-                  value={formData.equipment_id || ''}
-                  onChange={(e) => setFormData({ ...formData, equipment_id: e.target.value })}
-                  required
-                >
-                  <option value="">— vyberte —</option>
-                  {catalog.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.equipment_type_icon && `${item.equipment_type_icon} `}
-                      {item.equipment_name}
-                      {item.purchase_price && ` (${item.purchase_price.toLocaleString('cs-CZ')} Kč)`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Množství</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="detail-form__input"
-                  value={formData.quantity || 1}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                />
-              </div>
-              
-              <div className="detail-form__field">
-                <label className="detail-form__label">Stav</label>
-                <select
-                  className="detail-form__input"
-                  value={formData.state || 'good'}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                >
-                  {EQUIPMENT_STATES.map((state) => (
+    </div_STATES.map((state) => (
                     <option key={state.value} value={state.value}>
                       {state.icon} {state.label}
                     </option>
