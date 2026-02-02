@@ -128,7 +128,6 @@ export default function CreateEquipmentTile({
           default_revision_interval: undefined,
           default_state: 'working',
           default_description: undefined,
-          active: true,
           is_archived: false,
         }
         setEquipmentData(newEquipment)
