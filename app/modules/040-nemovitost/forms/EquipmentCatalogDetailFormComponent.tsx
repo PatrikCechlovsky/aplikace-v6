@@ -56,7 +56,7 @@ export default function EquipmentCatalogDetailFormComponent({
       const { data, error } = await supabase
         .from('generic_types')
         .select('id, name, icon, color')
-        .eq('type_category', 'equipment_types')
+        .eq('category', 'equipment_types')
         .eq('active', true)
         .order('order_index', { ascending: true })
         .order('name', { ascending: true })
@@ -78,7 +78,7 @@ export default function EquipmentCatalogDetailFormComponent({
       const { data, error } = await supabase
         .from('generic_types')
         .select('id, name, icon, color')
-        .eq('type_category', 'room_types')
+        .eq('category', 'room_types')
         .eq('active', true)
         .order('order_index', { ascending: true })
         .order('name', { ascending: true })
