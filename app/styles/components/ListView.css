@@ -13,7 +13,7 @@
   flex-direction: column;
   gap: 8px;
   min-height: 0; /* Důležité pro flex scroll */
-  flex: 1; /* Roztáhne se na dostupnou výšku */
+  height: 100%; /* OPRAVA: místo flex: 1 */
   overflow: hidden; /* ListView nesmí scrollovat! */
   box-shadow: inset 0 0 0 3px purple; /* DEBUG */
 }
