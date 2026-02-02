@@ -41,9 +41,14 @@ type Props = {
 
 type EquipmentFormValue = {
   equipmentId: string
+  name: string
+  description: string
   quantity: number
+  purchasePrice: number | null
   state: string
   installationDate: string
+  lastRevision: string
+  lifespanMonths: number | null
   note: string
 }
 
@@ -58,14 +63,22 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const [loading, setLoading] = useState(true)
   const [catalog, setCatalog] = useState<EquipmentCatalogRow[]>([])
   const [loadingCatalog, setLoadingCatalog] = useState(true)
+  const [catalogSearch, setCatalogSearch] = useState('')
+  const [catalogEquipmentType, setCatalogEquipmentType] = useState<string | null>(null)
+  const [catalogRoomType, setCatalogRoomType] = useState<string | null>(null)
   
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null)
   const currentIndexRef = useRef(-1)
   const [formValue, setFormValue] = useState<EquipmentFormValue>({
     equipmentId: '',
+    name: '',
+    description: '',
     quantity: 1,
+    purchasePrice: null,
     state: 'good',
     installationDate: '',
+    lastRevision: '',
+    lifespanMonths: null,
     note: '',
   })
   const [isDirty, setIsDirty] = useState(false)
@@ -104,7 +117,12 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     async function load() {
       try {
         setLoadingCatalog(true)
-        const data = await listEquipmentCatalog({ includeArchived: false })
+        const data = await listEquipmentCatalog({ 
+          includeArchived: false,
+          searchText: catalogSearch || undefined,
+          equipmentTypeId: catalogEquipmentType || undefined,
+          roomTypeId: catalogRoomType || undefined,
+        })
         if (cancelled) return
         setCatalog(data)
       } catch (e: any) {
@@ -120,7 +138,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     return () => {
       cancelled = true
     }
-  }, [toast])
+  }, [toast, catalogSearch, catalogEquipmentType, catalogRoomType])
 
   // =====================
   // SELECTION
@@ -136,9 +154,14 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         if (equipment) {
           setFormValue({
             equipmentId: equipment.equipment_id ?? '',
+            name: equipment.name ?? '',
+            description: equipment.description ?? '',
             quantity: equipment.quantity ?? 1,
+            purchasePrice: equipment.purchase_price ?? null,
             state: equipment.state ?? 'good',
             installationDate: equipment.installation_date ?? '',
+            lastRevision: equipment.last_revision ?? '',
+            lifespanMonths: equipment.lifespan_months ?? null,
             note: equipment.note ?? '',
           })
           setIsDirty(false)
@@ -146,9 +169,14 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
       } else {
         setFormValue({
           equipmentId: '',
+          name: '',
+          description: '',
           quantity: 1,
+          purchasePrice: null,
           state: 'good',
           installationDate: '',
+          lastRevision: '',
+          lifespanMonths: null,
           note: '',
         })
         setIsDirty(false)
@@ -167,9 +195,14 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     currentIndexRef.current = -1
     setFormValue({
       equipmentId: '',
+      name: '',
+      description: '',
       quantity: 1,
+      purchasePrice: null,
       state: 'good',
       installationDate: '',
+      lastRevision: '',
+      lifespanMonths: null,
       note: '',
     })
     setIsDirty(false)
@@ -198,6 +231,10 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         toast.showWarning('Vyberte vybavení z katalogu.')
         return
       }
+      if (!formValue.name?.trim()) {
+        toast.showWarning('Zadejte název konkrétního kusu vybavení.')
+        return
+      }
 
       setSaving(true)
 
@@ -206,9 +243,14 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           id: selectedEquipmentId || undefined,
           property_id: entityId,
           equipment_id: formValue.equipmentId,
+          name: formValue.name,
+          description: formValue.description || undefined,
           quantity: formValue.quantity || 1,
+          purchase_price: formValue.purchasePrice || undefined,
           state: formValue.state || 'good',
           installation_date: formValue.installationDate || undefined,
+          last_revision: formValue.lastRevision || undefined,
+          lifespan_months: formValue.lifespanMonths || undefined,
           note: formValue.note || undefined,
         }
         await savePropertyEquipment(payload)
@@ -217,9 +259,14 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           id: selectedEquipmentId || undefined,
           unit_id: entityId,
           equipment_id: formValue.equipmentId,
+          name: formValue.name,
+          description: formValue.description || undefined,
           quantity: formValue.quantity || 1,
+          purchase_price: formValue.purchasePrice || undefined,
           state: formValue.state || 'good',
           installation_date: formValue.installationDate || undefined,
+          last_revision: formValue.lastRevision || undefined,
+          lifespan_months: formValue.lifespanMonths || undefined,
           note: formValue.note || undefined,
         }
         await saveUnitEquipment(payload)
@@ -358,8 +405,38 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           </div>
 
           <div className="detail-form__grid detail-form__grid--narrow">
-            {/* Řádek 1: Vybavení z katalogu + Množství */}
-            <div className="detail-form__field">
+            {/* Filtry katalogu */}
+            <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
+              <label className="detail-form__label" style={{ marginBottom: 8 }}>🔍 Filtrovat katalog vybavení</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <input
+                  type="text"
+                  className="detail-form__input"
+                  placeholder="Hledat název..."
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                />
+                <select
+                  className="detail-form__input"
+                  value={catalogEquipmentType || ''}
+                  onChange={(e) => setCatalogEquipmentType(e.target.value || null)}
+                >
+                  <option value="">— všechny typy —</option>
+                  {/* TODO: načíst z generic_types kde category='unit_equipment_types' */}
+                </select>
+                <select
+                  className="detail-form__input"
+                  value={catalogRoomType || ''}
+                  onChange={(e) => setCatalogRoomType(e.target.value || null)}
+                >
+                  <option value="">— všechny místnosti —</option>
+                  {/* TODO: načíst z generic_types kde category='room_types' */}
+                </select>
+              </div>
+            </div>
+            
+            {/* Řádek 1: Vybavení z katalogu */}
+            <div className="detail-form__field detail-form__field--span-2">
               <label className="detail-form__label">
                 Vybavení z katalogu <span className="detail-form__required">*</span>
               </label>
@@ -376,12 +453,47 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 {catalog.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.equipment_type_icon && `${item.equipment_type_icon} `}
+                    {item.room_type_icon && `${item.room_type_icon} `}
                     {item.equipment_name}
                     {item.purchase_price && ` (${item.purchase_price.toLocaleString('cs-CZ')} Kč)`}
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Řádek 2: Název + Popis */}
+            <div className="detail-form__field">
+              <label className="detail-form__label">
+                Název konkrétního kusu <span className="detail-form__required">*</span>
+              </label>
+              <input
+                className="detail-form__input"
+                type="text"
+                maxLength={100}
+                value={formValue.name}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, name: e.target.value }))
+                  setIsDirty(true)
+                }}
+                placeholder="např. Sporák Whirlpool v kuchyni"
+              />
+            </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Popis</label>
+              <input
+                className="detail-form__input"
+                type="text"
+                maxLength={200}
+                value={formValue.description}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, description: e.target.value }))
+                  setIsDirty(true)
+                }}
+                placeholder="Volitelný popis..."
+              />
+            </div>
+
+            {/* Řádek 3: Množství + Jednotková cena */}
             <div className="detail-form__field">
               <label className="detail-form__label">Množství</label>
               <input
@@ -395,8 +507,23 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 }}
               />
             </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Jednotková cena (Kč)</label>
+              <input
+                className="detail-form__input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formValue.purchasePrice ?? ''}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, purchasePrice: e.target.value ? parseFloat(e.target.value) : null }))
+                  setIsDirty(true)
+                }}
+                placeholder="Cena pořízení..."
+              />
+            </div>
 
-            {/* Řádek 2: Stav + Datum instalace */}
+            {/* Řádek 4: Stav + Životnost */}
             <div className="detail-form__field">
               <label className="detail-form__label">Stav</label>
               <select
@@ -415,6 +542,22 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               </select>
             </div>
             <div className="detail-form__field">
+              <label className="detail-form__label">Životnost (měsíce)</label>
+              <input
+                className="detail-form__input"
+                type="number"
+                min="0"
+                value={formValue.lifespanMonths ?? ''}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, lifespanMonths: e.target.value ? parseInt(e.target.value) : null }))
+                  setIsDirty(true)
+                }}
+                placeholder="např. 120"
+              />
+            </div>
+
+            {/* Řádek 5: Datum instalace + Poslední revize */}
+            <div className="detail-form__field">
               <label className="detail-form__label">Datum instalace</label>
               <input
                 className="detail-form__input"
@@ -422,6 +565,18 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 value={formValue.installationDate}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, installationDate: e.target.value }))
+                  setIsDirty(true)
+                }}
+              />
+            </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Poslední revize</label>
+              <input
+                className="detail-form__input"
+                type="date"
+                value={formValue.lastRevision}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, lastRevision: e.target.value }))
                   setIsDirty(true)
                 }}
               />

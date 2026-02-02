@@ -23,6 +23,7 @@ import type { EquipmentCatalogFormValue } from '@/app/modules/040-nemovitost/for
 export type EquipmentCatalogParams = {
   searchText?: string
   equipmentTypeId?: string | null // filtrovat podle typu vybavení
+  roomTypeId?: string | null // filtrovat podle typu místnosti
   includeArchived?: boolean
   limit?: number
 }
@@ -56,6 +57,7 @@ export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}):
   const includeArchived = !!params.includeArchived
   const limit = params.limit ?? 500
   const equipmentTypeId = params.equipmentTypeId?.trim() || null
+  const roomTypeId = params.roomTypeId?.trim() || null
 
   let q = supabase
     .from('equipment_catalog')
@@ -84,6 +86,10 @@ export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}):
 
   if (equipmentTypeId) {
     q = q.eq('equipment_type_id', equipmentTypeId)
+  }
+
+  if (roomTypeId) {
+    q = q.eq('room_type_id', roomTypeId)
   }
 
   if (!includeArchived) {
@@ -432,10 +438,16 @@ export type UnitEquipmentRow = {
   id: string
   unit_id: string
   equipment_id: string
+  name: string | null
+  description: string | null
   quantity: number
+  purchase_price: number | null
   state: string | null
   installation_date: string | null
+  last_revision: string | null
+  lifespan_months: number | null
   note: string | null
+  photo_attachment_id: string | null
   is_archived: boolean | null
   created_at: string | null
   
@@ -443,7 +455,6 @@ export type UnitEquipmentRow = {
   catalog_equipment_name?: string
   equipment_type_name?: string
   catalog_purchase_price?: number | null
-  purchase_price?: number | null
   total_price?: number | null
 }
 
@@ -463,10 +474,16 @@ export type SaveUnitEquipmentInput = {
   id?: string | null
   unit_id: string
   equipment_id: string
+  name: string
+  description?: string | null
   quantity?: number
+  purchase_price?: number | null
   state?: string | null
   installation_date?: string | null
+  last_revision?: string | null
+  lifespan_months?: number | null
   note?: string | null
+  photo_attachment_id?: string | null
   is_archived?: boolean
 }
 
@@ -476,10 +493,16 @@ export async function saveUnitEquipment(input: SaveUnitEquipmentInput): Promise<
   const payload: any = {
     unit_id: input.unit_id,
     equipment_id: input.equipment_id,
+    name: input.name,
+    description: input.description ?? null,
     quantity: input.quantity ?? 1,
+    purchase_price: input.purchase_price ?? null,
     state: input.state ?? 'good',
     installation_date: input.installation_date ?? null,
+    last_revision: input.last_revision ?? null,
+    lifespan_months: input.lifespan_months ?? null,
     note: input.note ?? null,
+    photo_attachment_id: input.photo_attachment_id ?? null,
     is_archived: input.is_archived ?? false,
   }
 
@@ -508,10 +531,16 @@ export type PropertyEquipmentRow = {
   id: string
   property_id: string
   equipment_id: string
+  name: string | null
+  description: string | null
   quantity: number
+  purchase_price: number | null
   state: string | null
   installation_date: string | null
+  last_revision: string | null
+  lifespan_months: number | null
   note: string | null
+  photo_attachment_id: string | null
   is_archived: boolean | null
   created_at: string | null
   
@@ -519,7 +548,6 @@ export type PropertyEquipmentRow = {
   catalog_equipment_name?: string
   equipment_type_name?: string
   catalog_purchase_price?: number | null
-  purchase_price?: number | null
   total_price?: number | null
 }
 
@@ -539,10 +567,16 @@ export type SavePropertyEquipmentInput = {
   id?: string | null
   property_id: string
   equipment_id: string
+  name: string
+  description?: string | null
   quantity?: number
+  purchase_price?: number | null
   state?: string | null
   installation_date?: string | null
+  last_revision?: string | null
+  lifespan_months?: number | null
   note?: string | null
+  photo_attachment_id?: string | null
   is_archived?: boolean
 }
 
@@ -552,10 +586,16 @@ export async function savePropertyEquipment(input: SavePropertyEquipmentInput): 
   const payload: any = {
     property_id: input.property_id,
     equipment_id: input.equipment_id,
+    name: input.name,
+    description: input.description ?? null,
     quantity: input.quantity ?? 1,
+    purchase_price: input.purchase_price ?? null,
     state: input.state ?? 'good',
     installation_date: input.installation_date ?? null,
+    last_revision: input.last_revision ?? null,
+    lifespan_months: input.lifespan_months ?? null,
     note: input.note ?? null,
+    photo_attachment_id: input.photo_attachment_id ?? null,
     is_archived: input.is_archived ?? false,
   }
 
