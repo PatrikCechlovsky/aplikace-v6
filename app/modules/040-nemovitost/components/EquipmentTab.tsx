@@ -116,7 +116,15 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
 
     void load()
     return () => {
-      caselectEquipment = useCallback(
+      cancelled = true
+    }
+  }, [toast])
+
+  // =====================
+  // SELECTION
+  // =====================
+  
+  const selectEquipment = useCallback(
     (equipmentId: string | null) => {
       setSelectedEquipmentId(equipmentId)
       currentIndexRef.current = equipmentId ? equipmentList.findIndex((e) => e.id === equipmentId) : -1
@@ -129,6 +137,28 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             quantity: equipment.quantity ?? 1,
             state: equipment.state ?? 'good',
             installationDate: equipment.installation_date ?? '',
+            note: equipment.note ?? '',
+          })
+          setIsDirty(false)
+        }
+      } else {
+        setFormValue({
+          equipmentId: '',
+          quantity: 1,
+          state: 'good',
+          installationDate: '',
+          note: '',
+        })
+        setIsDirty(false)
+      }
+    },
+    [equipmentList]
+  )
+
+  // =====================
+  // CRUD OPERATIONS
+  // =====================
+  
   // Nové vybavení
   const handleAdd = useCallback(() => {
     setSelectedEquipmentId(null)
