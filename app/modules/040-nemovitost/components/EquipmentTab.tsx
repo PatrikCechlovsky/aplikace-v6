@@ -129,8 +129,14 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           .or('is_archived.is.null,is_archived.eq.false')
           .order('name')
         
-        if (eqError) throw eqError
-        if (!cancelled && eqTypes) setEquipmentTypes(eqTypes)
+        if (eqError) {
+          logger.error('loadEquipmentTypes failed', eqError)
+          throw eqError
+        }
+        if (!cancelled && eqTypes) {
+          logger.info('Equipment types loaded:', eqTypes.length)
+          setEquipmentTypes(eqTypes)
+        }
 
         // Room types  
         const { data: rmTypes, error: rmError } = await supabase
@@ -140,11 +146,18 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           .or('is_archived.is.null,is_archived.eq.false')
           .order('name')
         
-        if (rmError) throw rmError
-        if (!cancelled && rmTypes) setRoomTypes(rmTypes)
+        if (rmError) {
+          logger.error('loadRoomTypes failed', rmError)
+          throw rmError
+        }
+        if (!cancelled && rmTypes) {
+          logger.info('Room types loaded:', rmTypes.length)
+          setRoomTypes(rmTypes)
+        }
       } catch (e: any) {
         if (!cancelled) {
           logger.error('loadGenericTypes failed', e)
+          toast.showError(e?.message ?? 'Chyba při načítání typů')
         }
       }
     }
@@ -498,7 +511,17 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 value={formValue.equipmentId}
                 disabled={loadingCatalog}
                 onChange={(e) => {
-                  setFormValue((prev) => ({ ...prev, equipmentId: e.target.value }))
+                  const selectedId = e.target.value
+                  const selectedItem = catalog.find((item) => item.id === selectedId)
+                  
+                  setFormValue((prev) => ({ 
+                    ...prev, 
+                    equipmentId: selectedId,
+                    // Předvyplnit název z katalogu, pokud ještě není vyplněn
+                    name: prev.name ? prev.name : (selectedItem?.equipment_name || ''),
+                    // Předvyplnit cenu z katalogu, pokud ještě není vyplněna
+                    purchasePrice: prev.purchasePrice !== null ? prev.purchasePrice : (selectedItem?.purchase_price || null),
+                  }))
                   setIsDirty(true)
                 }}
               >
