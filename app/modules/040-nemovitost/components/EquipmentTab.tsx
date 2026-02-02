@@ -21,6 +21,7 @@ import { EQUIPMENT_STATES } from '@/app/lib/constants/properties'
 import { useToast } from '@/app/UI/Toast'
 import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
+import { supabase } from '@/app/lib/supabaseClient'
 
 import '@/app/styles/components/DetailForm.css'
 
@@ -67,6 +68,10 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const [catalogEquipmentType, setCatalogEquipmentType] = useState<string | null>(null)
   const [catalogRoomType, setCatalogRoomType] = useState<string | null>(null)
   
+  // Generic types pro filtry
+  const [equipmentTypes, setEquipmentTypes] = useState<Array<{ id: string; name: string; icon?: string }>>([])
+  const [roomTypes, setRoomTypes] = useState<Array<{ id: string; name: string; icon?: string }>>([])
+  
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null)
   const currentIndexRef = useRef(-1)
   const [formValue, setFormValue] = useState<EquipmentFormValue>({
@@ -109,6 +114,46 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
       cancelled = true
     }
   }, [entityType, entityId, toast])
+
+  // Načíst generic types pro filtry
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadTypes() {
+      try {
+        // Equipment types
+        const { data: eqTypes, error: eqError } = await supabase
+          .from('generic_types')
+          .select('id, name, icon')
+          .eq('category', 'unit_equipment_types')
+          .eq('is_archived', false)
+          .order('name')
+        
+        if (eqError) throw eqError
+        if (!cancelled && eqTypes) setEquipmentTypes(eqTypes)
+
+        // Room types  
+        const { data: rmTypes, error: rmError } = await supabase
+          .from('generic_types')
+          .select('id, name, icon')
+          .eq('category', 'room_types')
+          .eq('is_archived', false)
+          .order('name')
+        
+        if (rmError) throw rmError
+        if (!cancelled && rmTypes) setRoomTypes(rmTypes)
+      } catch (e: any) {
+        if (!cancelled) {
+          logger.error('loadGenericTypes failed', e)
+        }
+      }
+    }
+
+    void loadTypes()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Načíst katalog vybavení
   useEffect(() => {
@@ -422,7 +467,11 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                   onChange={(e) => setCatalogEquipmentType(e.target.value || null)}
                 >
                   <option value="">— všechny typy —</option>
-                  {/* TODO: načíst z generic_types kde category='unit_equipment_types' */}
+                  {equipmentTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.icon && `${type.icon} `}{type.name}
+                    </option>
+                  ))}
                 </select>
                 <select
                   className="detail-form__input"
@@ -430,7 +479,11 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                   onChange={(e) => setCatalogRoomType(e.target.value || null)}
                 >
                   <option value="">— všechny místnosti —</option>
-                  {/* TODO: načíst z generic_types kde category='room_types' */}
+                  {roomTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.icon && `${type.icon} `}{type.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
