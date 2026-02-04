@@ -693,8 +693,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                         className="common-actions__btn"
                         title="Přidat novou verzi přílohy"
                       >
-                        <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                        <span className="common-actions__label">Přidat verzi</span>
+                        <span className="common-actions__icon">{getIcon('upload' as IconKey)}</span>
+                        <span className="common-actions__label">Nová verze</span>
                       </button>
                       {/* Zavřít read režim */}
                       <button
