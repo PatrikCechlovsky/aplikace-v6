@@ -776,6 +776,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="text"
                 maxLength={100}
+                disabled={readOnly}
                 value={formValue.name}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, name: e.target.value }))
@@ -790,6 +791,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="text"
                 maxLength={200}
+                disabled={readOnly}
                 value={formValue.description}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, description: e.target.value }))
@@ -804,6 +806,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <label className="detail-form__label">Typ vybavení (konkrétní)</label>
               <select
                 className="detail-form__input"
+                disabled={readOnly}
                 value={formValue.equipmentTypeId || ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, equipmentTypeId: e.target.value || null }))
@@ -822,6 +825,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <label className="detail-form__label">Místnost</label>
               <select
                 className="detail-form__input"
+                disabled={readOnly}
                 value={formValue.roomTypeId || ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, roomTypeId: e.target.value || null }))
@@ -844,6 +848,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="number"
                 min="1"
+                disabled={readOnly}
                 value={formValue.quantity}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))
@@ -858,6 +863,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 type="number"
                 min="0"
                 step="0.01"
+                disabled={readOnly}
                 value={formValue.purchasePrice ?? ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, purchasePrice: e.target.value ? parseFloat(e.target.value) : null }))
@@ -872,6 +878,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <label className="detail-form__label">Stav</label>
               <select
                 className="detail-form__input"
+                disabled={readOnly}
                 value={formValue.state}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, state: e.target.value }))
@@ -891,6 +898,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="number"
                 min="0"
+                disabled={readOnly}
                 value={formValue.lifespanMonths ?? ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, lifespanMonths: e.target.value ? parseInt(e.target.value) : null }))
@@ -906,6 +914,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <input
                 className="detail-form__input"
                 type="date"
+                disabled={readOnly}
                 value={formValue.installationDate}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, installationDate: e.target.value }))
@@ -918,6 +927,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <input
                 className="detail-form__input"
                 type="date"
+                disabled={readOnly}
                 value={formValue.lastRevision}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, lastRevision: e.target.value }))
@@ -932,6 +942,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <textarea
                 className="detail-form__input"
                 maxLength={500}
+                disabled={readOnly}
                 value={formValue.note}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, note: e.target.value }))
