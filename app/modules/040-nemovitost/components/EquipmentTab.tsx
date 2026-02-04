@@ -304,7 +304,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           quantity: formValue.quantity || 1,
           purchase_price: formValue.purchasePrice || undefined,
           state: formValue.state || 'good',
-          installation_date: formValue.installationDate || undefined,
+          installed_at: formValue.installationDate || undefined,
           last_revision: formValue.lastRevision || undefined,
           lifespan_months: formValue.lifespanMonths || undefined,
           note: formValue.note || undefined,
