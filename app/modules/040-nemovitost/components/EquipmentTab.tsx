@@ -25,7 +25,7 @@ import { supabase } from '@/app/lib/supabaseClient'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import type { ListViewColumn } from '@/app/UI/ListView'
-import EquipmentAttachmentsModal from './EquipmentAttachmentsModal'
+import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 
 import '@/app/styles/components/DetailForm.css'
 
@@ -129,8 +129,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   // Režim: katalog vs vlastní
   const [isCustomEquipment, setIsCustomEquipment] = useState(false)
   
-  // Attachments modal
-  const [attachmentsModalOpen, setAttachmentsModalOpen] = useState(false)
+  // Attachments manager view mode - null = seznam vybavení, 'manager' = správa příloh
+  const [attachmentsViewMode, setAttachmentsViewMode] = useState<null | 'manager'>(null)
   
   // Načíst seznam vybavení
   useEffect(() => {
@@ -623,7 +623,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 type="button"
                 onClick={() => {
                   if (selectedEquipmentId) {
-                    setAttachmentsModalOpen(true)
+                    setAttachmentsViewMode('manager')
                   }
                 }}
                 disabled={!selectedEquipmentId}
@@ -935,15 +935,35 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           </div>
         </section>
 
-      {/* Attachments Modal */}
-      {selectedEquipmentId && (
-        <EquipmentAttachmentsModal
-          isOpen={attachmentsModalOpen}
-          onClose={() => setAttachmentsModalOpen(false)}
-          equipmentBindingId={selectedEquipmentId}
-          bindingType={entityType === 'property' ? 'property_equipment' : 'unit_equipment'}
-          equipmentName={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
+      {/* Attachments Manager View */}
+      {attachmentsViewMode === 'manager' && selectedEquipmentId && (
+        <AttachmentsManagerFrame
+          entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
+          entityId={selectedEquipmentId}
+          entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
+          canManage={!readOnly}
         />
+      )}
+
+      {/* Zpět na seznam vybavení */}
+      {attachmentsViewMode === 'manager' && (
+        <button
+          onClick={() => setAttachmentsViewMode(null)}
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            left: 20,
+            padding: '8px 16px',
+            backgroundColor: 'var(--color-primary)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 'var(--border-radius-sm)',
+            cursor: 'pointer',
+            zIndex: 999,
+          }}
+        >
+          ← Zpět na vybavení
+        </button>
       )}
 
       {/* Columns Drawer */}
