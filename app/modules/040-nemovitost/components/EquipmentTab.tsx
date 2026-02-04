@@ -22,10 +22,10 @@ import { useToast } from '@/app/UI/Toast'
 import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
-import EquipmentAttachmentsModal from './EquipmentAttachmentsModal'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import type { ListViewColumn } from '@/app/UI/ListView'
+import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 import '@/app/styles/components/DetailForm.css'
 
@@ -43,7 +43,6 @@ const BASE_COLUMNS: ListViewColumn[] = [
   { key: 'state', label: 'Stav', sortable: false },
   { key: 'catalog_purchase_price', label: 'Cena (ks)', sortable: false, align: 'right' },
   { key: 'total_price', label: 'Celkem', sortable: false, align: 'right' },
-  { key: 'attachments', label: '📎 Přílohy', sortable: false, align: 'center' },
 ]
 
 // =====================
@@ -127,13 +126,11 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const prefsLoadedRef = useRef(false)
   const saveTimerRef = useRef<any>(null)
   
-  // Modal pro přílohy
-  const [attachmentsModalOpen, setAttachmentsModalOpen] = useState(false)
-  const [attachmentsModalEquipmentId, setAttachmentsModalEquipmentId] = useState<string | null>(null)
-  const [attachmentsModalEquipmentName, setAttachmentsModalEquipmentName] = useState('')
-  
   // Režim: katalog vs vlastní
   const [isCustomEquipment, setIsCustomEquipment] = useState(false)
+  
+  // Tab state - formulář nebo přílohy
+  const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
   
   // Načíst seznam vybavení
   useEffect(() => {
@@ -553,28 +550,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                         {col.key === 'total_price' && (
                           equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'
                         )}
-                        {col.key === 'attachments' && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (equipment.id) {
-                                setAttachmentsModalEquipmentId(equipment.id)
-                                setAttachmentsModalEquipmentName(equipment.catalog_equipment_name || 'Vybavení')
-                                setAttachmentsModalOpen(true)
-                              }
-                            }}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: equipment.id ? 'pointer' : 'default',
-                              fontSize: '16px',
-                              padding: 0,
-                            }}
-                          >
-                            {equipment.id ? '📎' : '—'}
-                          </button>
-                        )}
                       </td>
                     ))}
                   </tr>
@@ -631,25 +606,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (selectedEquipmentId) {
-                    const equipment = equipmentList.find((e) => e.id === selectedEquipmentId)
-                    if (equipment) {
-                      setAttachmentsModalEquipmentId(equipment.id)
-                      setAttachmentsModalEquipmentName(equipment.catalog_equipment_name || equipment.name || 'Vybavení')
-                      setAttachmentsModalOpen(true)
-                    }
-                  }
-                }}
-                disabled={!selectedEquipmentId}
-                className="common-actions__btn"
-                title="Správa příloh"
-              >
-                <span className="common-actions__icon">📎</span>
-                <span className="common-actions__label">Přílohy</span>
-              </button>
-              <button
-                type="button"
                 onClick={handleSave}
                 disabled={saving || !isDirty}
                 className="common-actions__btn"
@@ -661,6 +617,46 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             </div>
           </div>
 
+          {/* Záložky: Formulář / Přílohy */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab('form')}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderBottom: activeTab === 'form' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                color: activeTab === 'form' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+              }}
+            >
+              Formulář
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('attachments')}
+              disabled={!selectedEquipmentId}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                background: 'transparent',
+                cursor: selectedEquipmentId ? 'pointer' : 'not-allowed',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderBottom: activeTab === 'attachments' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                color: activeTab === 'attachments' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                opacity: selectedEquipmentId ? 1 : 0.5,
+              }}
+            >
+              📎 Přílohy
+            </button>
+          </div>
+
+          {/* Tab Content: Formulář */}
+          {activeTab === 'form' && (
           <div className="detail-form__grid detail-form__grid--narrow">
             {/* Toggle: Katalog vs Vlastní */}
             <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
@@ -946,18 +942,21 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               />
             </div>
           </div>
-        </section>
-      )}
+          )}
 
-      {/* Attachments Modal */}
-      {attachmentsModalEquipmentId && (
-        <EquipmentAttachmentsModal
-          isOpen={attachmentsModalOpen}
-          onClose={() => setAttachmentsModalOpen(false)}
-          equipmentBindingId={attachmentsModalEquipmentId}
-          bindingType={entityType === 'property' ? 'property_equipment' : 'unit_equipment'}
-          equipmentName={attachmentsModalEquipmentName}
-        />
+          {/* Tab Content: Přílohy */}
+          {activeTab === 'attachments' && selectedEquipmentId && (
+            <div style={{ marginTop: 16 }}>
+              <DetailAttachmentsSection
+                entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
+                entityId={selectedEquipmentId}
+                entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
+                mode={readOnly ? 'view' : 'edit'}
+                variant="list"
+              />
+            </div>
+          )}
+        </section>
       )}
 
       {/* Columns Drawer */}
