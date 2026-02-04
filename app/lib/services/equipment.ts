@@ -443,7 +443,7 @@ export type UnitEquipmentRow = {
   quantity: number
   purchase_price: number | null
   state: string | null
-  installation_date: string | null
+  installed_at: string | null
   last_revision: string | null
   lifespan_months: number | null
   note: string | null
@@ -479,7 +479,7 @@ export type SaveUnitEquipmentInput = {
   quantity?: number
   purchase_price?: number | null
   state?: string | null
-  installation_date?: string | null
+  installed_at?: string | null
   last_revision?: string | null
   lifespan_months?: number | null
   note?: string | null
@@ -498,7 +498,7 @@ export async function saveUnitEquipment(input: SaveUnitEquipmentInput): Promise<
     quantity: input.quantity ?? 1,
     purchase_price: input.purchase_price ?? null,
     state: input.state ?? 'good',
-    installation_date: input.installation_date ?? null,
+    installed_at: input.installed_at ?? null,
     last_revision: input.last_revision ?? null,
     lifespan_months: input.lifespan_months ?? null,
     note: input.note ?? null,
