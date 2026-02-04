@@ -560,12 +560,13 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         )}
       </section>
 
-      {/* Formulář */}
-      {!readOnly && (
-        <section className="detail-form__section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">Formulář</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
+      {/* Formulář - vždy viditelný, v read-only režimu disabled */}
+      <section className="detail-form__section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 className="detail-form__section-title">Formulář</h3>
+          {/* Toolbar - jen v edit režimu */}
+          {!readOnly && (
+          <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="button"
                 onClick={() => setColsOpen(true)}
@@ -615,7 +616,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
               </button>
             </div>
-          </div>
+          )}
+        </div>
 
           {/* Záložky: Formulář / Přílohy */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
@@ -968,7 +970,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             </div>
           )}
         </section>
-      )}
 
       {/* Columns Drawer */}
       <ListViewColumnsDrawer
