@@ -564,9 +564,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
       <section className="detail-form__section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 className="detail-form__section-title">Formulář</h3>
-          {/* Toolbar - jen v edit režimu */}
-          {!readOnly && (
           <div style={{ display: 'flex', gap: 8 }}>
+              {!readOnly && (
               <button
                 type="button"
                 onClick={() => setColsOpen(true)}
@@ -576,6 +575,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
                 <span className="common-actions__label">Sloupce</span>
               </button>
+              )}
               <button
                 type="button"
                 onClick={handlePrevious}
@@ -596,6 +596,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                 <span className="common-actions__label">Další</span>
               </button>
+              {!readOnly && (
               <button
                 type="button"
                 onClick={handleAdd}
@@ -605,6 +606,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
                 <span className="common-actions__label">Přidat</span>
               </button>
+              )}
+              {!readOnly && (
               <button
                 type="button"
                 onClick={handleSave}
@@ -615,8 +618,22 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
                 <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
               </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedEquipmentId) {
+                    setActiveTab('attachments')
+                  }
+                }}
+                disabled={!selectedEquipmentId}
+                className="common-actions__btn"
+                title="Spravovat přílohy vybraného vybavení"
+              >
+                <span className="common-actions__icon">📎</span>
+                <span className="common-actions__label">Přílohy</span>
+              </button>
             </div>
-          )}
         </div>
 
           {/* Záložky: Formulář / Přílohy */}
