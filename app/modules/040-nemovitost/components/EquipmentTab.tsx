@@ -129,8 +129,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   // Režim: katalog vs vlastní
   const [isCustomEquipment, setIsCustomEquipment] = useState(false)
   
-  // Attachments manager view mode - null = seznam vybavení, 'manager' = správa příloh
-  const [attachmentsViewMode, setAttachmentsViewMode] = useState<null | 'manager'>(null)
+  // Tab state - formulář nebo přílohy
+  const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
   
   // Načíst seznam vybavení
   useEffect(() => {
@@ -623,7 +623,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 type="button"
                 onClick={() => {
                   if (selectedEquipmentId) {
-                    setAttachmentsViewMode('manager')
+                    setActiveTab('attachments')
                   }
                 }}
                 disabled={!selectedEquipmentId}
@@ -636,7 +636,46 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             </div>
         </div>
 
-          {/* Formulář */}
+          {/* Záložky: Formulář / Přílohy */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab('form')}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderBottom: activeTab === 'form' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                color: activeTab === 'form' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+              }}
+            >
+              Formulář
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('attachments')}
+              disabled={!selectedEquipmentId}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                background: 'transparent',
+                cursor: selectedEquipmentId ? 'pointer' : 'not-allowed',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderBottom: activeTab === 'attachments' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                color: activeTab === 'attachments' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                opacity: selectedEquipmentId ? 1 : 0.5,
+              }}
+            >
+              📎 Přílohy
+            </button>
+          </div>
+
+          {/* Tab Content: Formulář */}
+          {activeTab === 'form' && (
           <div className="detail-form__grid detail-form__grid--narrow">
             {/* Toggle: Katalog vs Vlastní */}
             <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
@@ -933,38 +972,20 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               />
             </div>
           </div>
-        </section>
+        )}
 
-      {/* Attachments Manager View */}
-      {attachmentsViewMode === 'manager' && selectedEquipmentId && (
-        <AttachmentsManagerFrame
-          entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
-          entityId={selectedEquipmentId}
-          entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
-          canManage={!readOnly}
-        />
-      )}
-
-      {/* Zpět na seznam vybavení */}
-      {attachmentsViewMode === 'manager' && (
-        <button
-          onClick={() => setAttachmentsViewMode(null)}
-          style={{
-            position: 'fixed',
-            bottom: 20,
-            left: 20,
-            padding: '8px 16px',
-            backgroundColor: 'var(--color-primary)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 'var(--border-radius-sm)',
-            cursor: 'pointer',
-            zIndex: 999,
-          }}
-        >
-          ← Zpět na vybavení
-        </button>
-      )}
+        {/* Tab Content: Přílohy */}
+        {activeTab === 'attachments' && selectedEquipmentId && (
+          <div style={{ marginTop: '20px' }}>
+            <AttachmentsManagerFrame
+              entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
+              entityId={selectedEquipmentId}
+              entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
+              canManage={true}
+            />
+          </div>
+        )}
+      </section>
 
       {/* Columns Drawer */}
       <ListViewColumnsDrawer
