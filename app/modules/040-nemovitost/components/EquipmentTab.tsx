@@ -4,7 +4,7 @@
 
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
   listPropertyEquipment,
   listUnitEquipment,
@@ -22,10 +22,30 @@ import { useToast } from '@/app/UI/Toast'
 import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
+import EquipmentAttachmentsModal from './EquipmentAttachmentsModal'
+import EquipmentDetailReadOnly from './EquipmentDetailReadOnly'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import type { ListViewColumn } from '@/app/UI/ListView'
 
 import '@/app/styles/components/DetailForm.css'
 
 const logger = createLogger('EquipmentTab')
+
+// =====================
+// COLUMNS & PREFS
+// =====================
+
+const BASE_COLUMNS: ListViewColumn[] = [
+  { key: 'catalog_equipment_name', label: 'Název', sortable: true },
+  { key: 'equipment_type_name', label: 'Typ', sortable: false },
+  { key: 'room_type_name', label: 'Místnost', sortable: false },
+  { key: 'quantity', label: 'Množství', sortable: false, align: 'center' },
+  { key: 'state', label: 'Stav', sortable: false },
+  { key: 'catalog_purchase_price', label: 'Cena (ks)', sortable: false, align: 'right' },
+  { key: 'total_price', label: 'Celkem', sortable: false, align: 'right' },
+  { key: 'attachments', label: '📎 Přílohy', sortable: false, align: 'center' },
+]
 
 // =====================
 // TYPES
@@ -51,6 +71,8 @@ type EquipmentFormValue = {
   lastRevision: string
   lifespanMonths: number | null
   note: string
+  equipmentTypeId: string | null
+  roomTypeId: string | null
 }
 
 // =====================
@@ -85,9 +107,34 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     lastRevision: '',
     lifespanMonths: null,
     note: '',
+    equipmentTypeId: null,
+    roomTypeId: null,
   })
   const [isDirty, setIsDirty] = useState(false)
   const [saving, setSaving] = useState(false)
+  
+  // Column prefs
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+  
+  const columns = useMemo(() => {
+    return applyColumnPrefs(BASE_COLUMNS, colPrefs)
+  }, [colPrefs])
+  
+  const [colsOpen, setColsOpen] = useState(false)
+  const prefsLoadedRef = useRef(false)
+  const saveTimerRef = useRef<any>(null)
+  
+  // Modal pro přílohy
+  const [attachmentsModalOpen, setAttachmentsModalOpen] = useState(false)
+  const [attachmentsModalEquipmentId, setAttachmentsModalEquipmentId] = useState<string | null>(null)
+  const [attachmentsModalEquipmentName, setAttachmentsModalEquipmentName] = useState('')
+  
+  // Read-only detail v sidepanelu
+  const [selectedDetailEquipment, setSelectedDetailEquipment] = useState<EquipmentRow | null>(null)
   // Načíst seznam vybavení
   useEffect(() => {
     let cancelled = false
@@ -114,6 +161,40 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
       cancelled = true
     }
   }, [entityType, entityId, toast])
+
+  // Načíst column prefs
+  useEffect(() => {
+    const VIEW_KEY = `equipment-table:${entityType}:${entityId}`
+    
+    void (async () => {
+      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+      setColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+      prefsLoadedRef.current = true
+    })()
+  }, [entityType, entityId])
+
+  // Uložit column prefs (debounced)
+  useEffect(() => {
+    if (!prefsLoadedRef.current) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+
+    const VIEW_KEY = `equipment-table:${entityType}:${entityId}`
+    const payload: ViewPrefs = {
+      v: 1,
+      sort: null,
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
+    }
+
+    saveTimerRef.current = setTimeout(() => {
+      void saveViewPrefs(VIEW_KEY, payload)
+    }, 500)
+  }, [entityType, entityId, colPrefs])
 
   // Načíst generic types pro filtry
   useEffect(() => {
@@ -219,6 +300,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             lastRevision: equipment.last_revision ?? '',
             lifespanMonths: equipment.lifespan_months ?? null,
             note: equipment.note ?? '',
+            equipmentTypeId: equipment.equipment_type_id ?? null,
+            roomTypeId: equipment.room_type_id ?? null,
           })
           setIsDirty(false)
         }
@@ -234,6 +317,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           lastRevision: '',
           lifespanMonths: null,
           note: '',
+          equipmentTypeId: null,
+          roomTypeId: null,
         })
         setIsDirty(false)
       }
@@ -260,6 +345,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
       lastRevision: '',
       lifespanMonths: null,
       note: '',
+      equipmentTypeId: null,
+      roomTypeId: null,
     })
     setIsDirty(false)
   }, [])
@@ -308,6 +395,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           last_revision: formValue.lastRevision || undefined,
           lifespan_months: formValue.lifespanMonths || undefined,
           note: formValue.note || undefined,
+          equipment_type_id: formValue.equipmentTypeId || undefined,
+          room_type_id: formValue.roomTypeId || undefined,
         }
         await savePropertyEquipment(payload)
       } else {
@@ -324,6 +413,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           last_revision: formValue.lastRevision || undefined,
           lifespan_months: formValue.lifespanMonths || undefined,
           note: formValue.note || undefined,
+          equipment_type_id: formValue.equipmentTypeId || undefined,
+          room_type_id: formValue.roomTypeId || undefined,
         }
         await saveUnitEquipment(payload)
       }
@@ -371,39 +462,126 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Název</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Typ</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Množství</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Stav</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Cena (ks)</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Celkem</th>
-                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Instalováno</th>
+                  {columns.map((col) => (
+                    <th
+                      key={col.key}
+                      style={{
+                        padding: '8px',
+                        textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
+                        fontWeight: 600,
+                        width: col.width,
+                      }}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {equipmentList.map((equipment) => (
                   <tr
                     key={equipment.id}
-                    onClick={() => selectEquipment(equipment.id)}
+                    onClick={() => {
+                      if (readOnly) {
+                        setSelectedDetailEquipment(equipment)
+                      } else {
+                        selectEquipment(equipment.id)
+                      }
+                    }}
                     style={{
                       cursor: 'pointer',
                       borderBottom: '1px solid var(--color-border-soft)',
                       backgroundColor: selectedEquipmentId === equipment.id ? 'var(--color-primary-soft)' : 'transparent',
                     }}
                   >
-                    <td style={{ padding: '8px' }}>{equipment.catalog_equipment_name || '—'}</td>
-                    <td style={{ padding: '8px' }}>{equipment.equipment_type_name || '—'}</td>
-                    <td style={{ padding: '8px' }}>{equipment.quantity || 1}×</td>
-                    <td style={{ padding: '8px' }}>
-                      {EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state}
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      {equipment.catalog_purchase_price ? `${equipment.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'}
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      {equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'}
-                    </td>
-                    <td style={{ padding: '8px' }}>{equipment.installed_at || '—'}</td>
+                    {columns.map((col) => (
+                      <td
+                        key={col.key}
+                        style={{
+                          padding: '8px',
+                          textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
+                          width: col.width,
+                        }}
+                      >
+                        {col.key === 'catalog_equipment_name' && (equipment.catalog_equipment_name || '—')}
+                        {col.key === 'equipment_type_name' && (
+                          <select
+                            className="detail-form__input"
+                            style={{ fontSize: '12px', padding: '4px' }}
+                            value={(equipment as any).equipment_type_id || ''}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const updated = [...equipmentList]
+                              const idx = updated.findIndex(eq => eq.id === equipment.id)
+                              if (idx >= 0) {
+                                (updated[idx] as any).equipment_type_id = e.target.value || null
+                                setEquipmentList(updated)
+                              }
+                            }}
+                          >
+                            <option value="">—</option>
+                            {equipmentTypes.map((type) => (
+                              <option key={type.id} value={type.id}>
+                                {type.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        {col.key === 'room_type_name' && (
+                          <select
+                            className="detail-form__input"
+                            style={{ fontSize: '12px', padding: '4px' }}
+                            value={(equipment as any).room_type_id || ''}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const updated = [...equipmentList]
+                              const idx = updated.findIndex(eq => eq.id === equipment.id)
+                              if (idx >= 0) {
+                                (updated[idx] as any).room_type_id = e.target.value || null
+                                setEquipmentList(updated)
+                              }
+                            }}
+                          >
+                            <option value="">—</option>
+                            {roomTypes.map((type) => (
+                              <option key={type.id} value={type.id}>
+                                {type.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        {col.key === 'quantity' && `${equipment.quantity || 1}×`}
+                        {col.key === 'state' && (EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state)}
+                        {col.key === 'catalog_purchase_price' && (
+                          equipment.catalog_purchase_price ? `${equipment.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'
+                        )}
+                        {col.key === 'total_price' && (
+                          equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'
+                        )}
+                        {col.key === 'attachments' && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (equipment.id) {
+                                setAttachmentsModalEquipmentId(equipment.id)
+                                setAttachmentsModalEquipmentName(equipment.catalog_equipment_name || 'Vybavení')
+                                setAttachmentsModalOpen(true)
+                              }
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: equipment.id ? 'pointer' : 'default',
+                              fontSize: '16px',
+                              padding: 0,
+                            }}
+                          >
+                            {equipment.id ? '📎' : '—'}
+                          </button>
+                        )}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -418,6 +596,15 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Formulář</h3>
             <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setColsOpen(true)}
+                className="common-actions__btn"
+                title="Nastavit sloupce"
+              >
+                <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
+                <span className="common-actions__label">Sloupce</span>
+              </button>
               <button
                 type="button"
                 onClick={handlePrevious}
@@ -565,7 +752,45 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               />
             </div>
 
-            {/* Řádek 3: Množství + Jednotková cena */}
+            {/* Řádek 3: Typ + Místnost */}
+            <div className="detail-form__field">
+              <label className="detail-form__label">Typ vybavení (konkrétní)</label>
+              <select
+                className="detail-form__input"
+                value={formValue.equipmentTypeId || ''}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, equipmentTypeId: e.target.value || null }))
+                  setIsDirty(true)
+                }}
+              >
+                <option value="">— z katalogu —</option>
+                {equipmentTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="detail-form__field">
+              <label className="detail-form__label">Místnost</label>
+              <select
+                className="detail-form__input"
+                value={formValue.roomTypeId || ''}
+                onChange={(e) => {
+                  setFormValue((prev) => ({ ...prev, roomTypeId: e.target.value || null }))
+                  setIsDirty(true)
+                }}
+              >
+                <option value="">—</option>
+                {roomTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Řádek 4: Množství + Jednotková cena */}
             <div className="detail-form__field">
               <label className="detail-form__label">Množství</label>
               <input
@@ -595,7 +820,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               />
             </div>
 
-            {/* Řádek 4: Stav + Životnost */}
+            {/* Řádek 5: Stav + Životnost */}
             <div className="detail-form__field">
               <label className="detail-form__label">Stav</label>
               <select
@@ -628,7 +853,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               />
             </div>
 
-            {/* Řádek 5: Datum instalace + Poslední revize */}
+            {/* Řádek 6: Datum instalace + Poslední revize */}
             <div className="detail-form__field">
               <label className="detail-form__label">Datum instalace</label>
               <input
@@ -672,6 +897,69 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           </div>
         </section>
       )}
+
+      {/* Attachments Modal */}
+      {attachmentsModalEquipmentId && (
+        <EquipmentAttachmentsModal
+          isOpen={attachmentsModalOpen}
+          onClose={() => setAttachmentsModalOpen(false)}
+          equipmentBindingId={attachmentsModalEquipmentId}
+          bindingType={entityType === 'property' ? 'property_equipment' : 'unit_equipment'}
+          equipmentName={attachmentsModalEquipmentName}
+        />
+      )}
+
+      {/* Equipment Detail Read-Only Sidepanel */}
+      {readOnly && selectedDetailEquipment && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: '400px',
+            backgroundColor: 'var(--color-bg-primary)',
+            borderLeft: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-lg)',
+            zIndex: 999,
+            overflowY: 'auto',
+          }}
+        >
+          <EquipmentDetailReadOnly
+            equipment={selectedDetailEquipment}
+            entityType={entityType}
+            onClose={() => setSelectedDetailEquipment(null)}
+          />
+        </div>
+      )}
+
+      {/* Columns Drawer */}
+      <ListViewColumnsDrawer
+        open={colsOpen}
+        title="Sloupce vybavení"
+        columns={BASE_COLUMNS}
+        fixedFirstKey="catalog_equipment_name"
+        requiredKeys={['catalog_equipment_name']}
+        value={{
+          order: colPrefs.colOrder ?? [],
+          hidden: colPrefs.colHidden ?? [],
+        }}
+        onChange={(next) => {
+          setColPrefs((p) => ({
+            ...p,
+            colOrder: next.order,
+            colHidden: next.hidden,
+          }))
+        }}
+        onReset={() => {
+          setColPrefs((p) => ({
+            ...p,
+            colOrder: [],
+            colHidden: [],
+          }))
+        }}
+        onClose={() => setColsOpen(false)}
+      />
     </div>
   )
 }

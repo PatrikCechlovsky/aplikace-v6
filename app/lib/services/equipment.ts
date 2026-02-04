@@ -448,6 +448,8 @@ export type UnitEquipmentRow = {
   lifespan_months: number | null
   note: string | null
   photo_attachment_id: string | null
+  equipment_type_id: string | null
+  room_type_id: string | null
   is_archived: boolean | null
   created_at: string | null
   
@@ -456,6 +458,7 @@ export type UnitEquipmentRow = {
   equipment_type_name?: string
   catalog_purchase_price?: number | null
   total_price?: number | null
+  room_type_name?: string | null
 }
 
 export async function listUnitEquipment(unitId: string): Promise<UnitEquipmentRow[]> {
@@ -484,6 +487,8 @@ export type SaveUnitEquipmentInput = {
   lifespan_months?: number | null
   note?: string | null
   photo_attachment_id?: string | null
+  equipment_type_id?: string | null
+  room_type_id?: string | null
   is_archived?: boolean
 }
 
@@ -503,6 +508,8 @@ export async function saveUnitEquipment(input: SaveUnitEquipmentInput): Promise<
     lifespan_months: input.lifespan_months ?? null,
     note: input.note ?? null,
     photo_attachment_id: input.photo_attachment_id ?? null,
+    equipment_type_id: input.equipment_type_id ?? null,
+    room_type_id: input.room_type_id ?? null,
     is_archived: input.is_archived ?? false,
   }
 
@@ -541,6 +548,8 @@ export type PropertyEquipmentRow = {
   lifespan_months: number | null
   note: string | null
   photo_attachment_id: string | null
+  equipment_type_id: string | null
+  room_type_id: string | null
   is_archived: boolean | null
   created_at: string | null
   
@@ -549,6 +558,7 @@ export type PropertyEquipmentRow = {
   equipment_type_name?: string
   catalog_purchase_price?: number | null
   total_price?: number | null
+  room_type_name?: string | null
 }
 
 export async function listPropertyEquipment(propertyId: string): Promise<PropertyEquipmentRow[]> {
@@ -577,6 +587,8 @@ export type SavePropertyEquipmentInput = {
   lifespan_months?: number | null
   note?: string | null
   photo_attachment_id?: string | null
+  equipment_type_id?: string | null
+  room_type_id?: string | null
   is_archived?: boolean
 }
 
@@ -596,6 +608,8 @@ export async function savePropertyEquipment(input: SavePropertyEquipmentInput): 
     lifespan_months: input.lifespan_months ?? null,
     note: input.note ?? null,
     photo_attachment_id: input.photo_attachment_id ?? null,
+    equipment_type_id: input.equipment_type_id ?? null,
+    room_type_id: input.room_type_id ?? null,
     is_archived: input.is_archived ?? false,
   }
 
