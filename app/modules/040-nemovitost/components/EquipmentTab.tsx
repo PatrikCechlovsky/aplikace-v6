@@ -25,7 +25,7 @@ import { supabase } from '@/app/lib/supabaseClient'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import type { ListViewColumn } from '@/app/UI/ListView'
-import AttachmentsManagerFrame, { type AttachmentsManagerApi } from '@/app/UI/attachments/AttachmentsManagerFrame'
+import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 
 import '@/app/styles/components/DetailForm.css'
 
@@ -134,6 +134,11 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   
   // API ref pro AttachmentsManagerFrame
   const attachmentsApiRef = useRef<AttachmentsManagerApi | null>(null)
+  const [attachmentsUiState, setAttachmentsUiState] = useState<AttachmentsManagerUiState>({
+    hasSelection: false,
+    isDirty: false,
+    mode: 'list',
+  })
   
   // Načíst seznam vybavení
   useEffect(() => {
@@ -630,22 +635,59 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               </button>
               )}
               
-              {/* Přidat přílohu - pouze pro tab přílohy */}
+              {/* Tab Přílohy - akční tlačítka podle stavu */}
               {activeTab === 'attachments' && (
-              <button
-                type="button"
-                onClick={() => {
-                  attachmentsApiRef.current?.add()
-                }}
-                className="common-actions__btn"
-                title="Přidat novou přílohu"
-              >
-                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                <span className="common-actions__label">Přidat přílohu</span>
-              </button>
+                <>
+                  {/* Přidat přílohu - když je režim list */}
+                  {attachmentsUiState.mode === 'list' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        attachmentsApiRef.current?.add()
+                      }}
+                      className="common-actions__btn"
+                      title="Přidat novou přílohu"
+                    >
+                      <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                      <span className="common-actions__label">Přidat přílohu</span>
+                    </button>
+                  )}
+                  
+                  {/* Uložit - když je něco rozpracováno (new/edit) */}
+                  {(attachmentsUiState.mode === 'new' || attachmentsUiState.mode === 'edit') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void attachmentsApiRef.current?.save()
+                      }}
+                      disabled={!attachmentsUiState.isDirty}
+                      className="common-actions__btn"
+                      title="Uložit přílohu"
+                    >
+                      <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                      <span className="common-actions__label">Uložit</span>
+                    </button>
+                  )}
+                  
+                  {/* Přidat verzi - když je vybrán dokument a jsme v read režimu */}
+                  {attachmentsUiState.mode === 'read' && attachmentsUiState.hasSelection && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        attachmentsApiRef.current?.newVersion()
+                      }}
+                      className="common-actions__btn"
+                      title="Přidat novou verzi přílohy"
+                    >
+                      <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                      <span className="common-actions__label">Přidat verzi</span>
+                    </button>
+                  )}
+                </>
               )}
               
-              {/* Záložka přílohy - vždy viditelná */}
+              {/* Záložka přílohy - přepnout na attachments tab */}
+              {activeTab === 'form' && (
               <button
                 type="button"
                 onClick={() => {
@@ -660,6 +702,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">📎</span>
                 <span className="common-actions__label">Přílohy</span>
               </button>
+              )}
             </div>
         </div>
 
@@ -1011,6 +1054,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               canManage={true}
               onRegisterManagerApi={(api) => {
                 attachmentsApiRef.current = api
+              }}
+              onManagerStateChange={(state) => {
+                setAttachmentsUiState(state)
               }}
             />
           </div>
