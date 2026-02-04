@@ -25,7 +25,7 @@ import { supabase } from '@/app/lib/supabaseClient'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import type { ListViewColumn } from '@/app/UI/ListView'
-import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
+import AttachmentsManagerFrame, { type AttachmentsManagerApi } from '@/app/UI/attachments/AttachmentsManagerFrame'
 
 import '@/app/styles/components/DetailForm.css'
 
@@ -131,6 +131,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   
   // Tab state - formulář nebo přílohy
   const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
+  
+  // API ref pro AttachmentsManagerFrame
+  const attachmentsApiRef = useRef<AttachmentsManagerApi | null>(null)
   
   // Načíst seznam vybavení
   useEffect(() => {
@@ -565,7 +568,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 className="detail-form__section-title">Formulář</h3>
           <div style={{ display: 'flex', gap: 8 }}>
-              {!readOnly && (
+              {/* Sloupce - pouze pro tab formulář a ne read-only */}
+              {!readOnly && activeTab === 'form' && (
               <button
                 type="button"
                 onClick={() => setColsOpen(true)}
@@ -576,6 +580,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__label">Sloupce</span>
               </button>
               )}
+              
+              {/* Navigace - vždy viditelná */}
               <button
                 type="button"
                 onClick={handlePrevious}
@@ -596,7 +602,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                 <span className="common-actions__label">Další</span>
               </button>
-              {!readOnly && (
+              
+              {/* Přidat vybavení - pouze pro tab formulář a ne read-only */}
+              {!readOnly && activeTab === 'form' && (
               <button
                 type="button"
                 onClick={handleAdd}
@@ -607,7 +615,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__label">Přidat</span>
               </button>
               )}
-              {!readOnly && (
+              
+              {/* Uložit vybavení - pouze pro tab formulář a ne read-only */}
+              {!readOnly && activeTab === 'form' && (
               <button
                 type="button"
                 onClick={handleSave}
@@ -619,6 +629,23 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
               </button>
               )}
+              
+              {/* Přidat přílohu - pouze pro tab přílohy */}
+              {activeTab === 'attachments' && (
+              <button
+                type="button"
+                onClick={() => {
+                  attachmentsApiRef.current?.add()
+                }}
+                className="common-actions__btn"
+                title="Přidat novou přílohu"
+              >
+                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                <span className="common-actions__label">Přidat přílohu</span>
+              </button>
+              )}
+              
+              {/* Záložka přílohy - vždy viditelná */}
               <button
                 type="button"
                 onClick={() => {
@@ -982,6 +1009,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               entityId={selectedEquipmentId}
               entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
               canManage={true}
+              onRegisterManagerApi={(api) => {
+                attachmentsApiRef.current = api
+              }}
             />
           </div>
         )}
