@@ -640,48 +640,133 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <>
                   {/* Přidat přílohu - když je režim list */}
                   {attachmentsUiState.mode === 'list' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        attachmentsApiRef.current?.add()
-                      }}
-                      className="common-actions__btn"
-                      title="Přidat novou přílohu"
-                    >
-                      <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                      <span className="common-actions__label">Přidat přílohu</span>
-                    </button>
+                    <>
+                      {/* Zobrazit - když je něco vybráno */}
+                      {attachmentsUiState.hasSelection && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            attachmentsApiRef.current?.view()
+                          }}
+                          className="common-actions__btn"
+                          title="Zobrazit detail přílohy"
+                        >
+                          <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                          <span className="common-actions__label">Zobrazit</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          attachmentsApiRef.current?.add()
+                        }}
+                        className="common-actions__btn"
+                        title="Přidat novou přílohu"
+                      >
+                        <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                        <span className="common-actions__label">Přidat přílohu</span>
+                      </button>
+                    </>
                   )}
                   
-                  {/* Uložit - když je něco rozpracováno (new/edit) */}
-                  {(attachmentsUiState.mode === 'new' || attachmentsUiState.mode === 'edit') && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void attachmentsApiRef.current?.save()
-                      }}
-                      disabled={!attachmentsUiState.isDirty}
-                      className="common-actions__btn"
-                      title="Uložit přílohu"
-                    >
-                      <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-                      <span className="common-actions__label">Uložit</span>
-                    </button>
+                  {/* Read režim - zobrazit detail */}
+                  {attachmentsUiState.mode === 'read' && (
+                    <>
+                      {/* Upravit metadata */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          attachmentsApiRef.current?.edit()
+                        }}
+                        className="common-actions__btn"
+                        title="Upravit název a popis"
+                      >
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                      {/* Přidat verzi */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          attachmentsApiRef.current?.newVersion()
+                        }}
+                        className="common-actions__btn"
+                        title="Přidat novou verzi přílohy"
+                      >
+                        <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                        <span className="common-actions__label">Přidat verzi</span>
+                      </button>
+                      {/* Zavřít read režim */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          attachmentsApiRef.current?.close()
+                        }}
+                        className="common-actions__btn"
+                        title="Zavřít detail"
+                      >
+                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                        <span className="common-actions__label">Zavřít</span>
+                      </button>
+                    </>
                   )}
                   
-                  {/* Přidat verzi - když je vybrán dokument a jsme v read režimu */}
-                  {attachmentsUiState.mode === 'read' && attachmentsUiState.hasSelection && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        attachmentsApiRef.current?.newVersion()
-                      }}
-                      className="common-actions__btn"
-                      title="Přidat novou verzi přílohy"
-                    >
-                      <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                      <span className="common-actions__label">Přidat verzi</span>
-                    </button>
+                  {/* Edit režim - upravit metadata */}
+                  {attachmentsUiState.mode === 'edit' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void attachmentsApiRef.current?.save()
+                        }}
+                        disabled={!attachmentsUiState.isDirty}
+                        className="common-actions__btn"
+                        title="Uložit změny"
+                      >
+                        <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                        <span className="common-actions__label">Uložit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          attachmentsApiRef.current?.close()
+                        }}
+                        className="common-actions__btn"
+                        title="Zrušit úpravy"
+                      >
+                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                        <span className="common-actions__label">Zrušit</span>
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* New režim - přidání nové přílohy */}
+                  {attachmentsUiState.mode === 'new' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void attachmentsApiRef.current?.save()
+                        }}
+                        disabled={!attachmentsUiState.isDirty}
+                        className="common-actions__btn"
+                        title="Uložit novou přílohu"
+                      >
+                        <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                        <span className="common-actions__label">Uložit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          attachmentsApiRef.current?.close()
+                        }}
+                        className="common-actions__btn"
+                        title="Zrušit přidání"
+                      >
+                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                        <span className="common-actions__label">Zrušit</span>
+                      </button>
+                    </>
                   )}
                 </>
               )}
