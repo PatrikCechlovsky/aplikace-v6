@@ -497,50 +497,62 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                       >
                         {col.key === 'catalog_equipment_name' && (equipment.catalog_equipment_name || '—')}
                         {col.key === 'equipment_type_name' && (
-                          <select
-                            className="detail-form__input"
-                            style={{ fontSize: '12px', padding: '4px' }}
-                            value={(equipment as any).equipment_type_id || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              const updated = [...equipmentList]
-                              const idx = updated.findIndex(eq => eq.id === equipment.id)
-                              if (idx >= 0) {
-                                (updated[idx] as any).equipment_type_id = e.target.value || null
-                                setEquipmentList(updated)
-                              }
-                            }}
-                          >
-                            <option value="">—</option>
-                            {equipmentTypes.map((type) => (
-                              <option key={type.id} value={type.id}>
-                                {type.name}
-                              </option>
-                            ))}
-                          </select>
+                          readOnly ? (
+                            (equipment as any).equipment_type_id
+                              ? equipmentTypes.find((t) => t.id === (equipment as any).equipment_type_id)?.name || '—'
+                              : '—'
+                          ) : (
+                            <select
+                              className="detail-form__input"
+                              style={{ fontSize: '12px', padding: '4px' }}
+                              value={(equipment as any).equipment_type_id || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const updated = [...equipmentList]
+                                const idx = updated.findIndex(eq => eq.id === equipment.id)
+                                if (idx >= 0) {
+                                  (updated[idx] as any).equipment_type_id = e.target.value || null
+                                  setEquipmentList(updated)
+                                }
+                              }}
+                            >
+                              <option value="">—</option>
+                              {equipmentTypes.map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.name}
+                                </option>
+                              ))}
+                            </select>
+                          )
                         )}
                         {col.key === 'room_type_name' && (
-                          <select
-                            className="detail-form__input"
-                            style={{ fontSize: '12px', padding: '4px' }}
-                            value={(equipment as any).room_type_id || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              const updated = [...equipmentList]
-                              const idx = updated.findIndex(eq => eq.id === equipment.id)
-                              if (idx >= 0) {
-                                (updated[idx] as any).room_type_id = e.target.value || null
-                                setEquipmentList(updated)
-                              }
-                            }}
-                          >
-                            <option value="">—</option>
-                            {roomTypes.map((type) => (
-                              <option key={type.id} value={type.id}>
-                                {type.name}
-                              </option>
-                            ))}
-                          </select>
+                          readOnly ? (
+                            (equipment as any).room_type_id
+                              ? roomTypes.find((t) => t.id === (equipment as any).room_type_id)?.name || '—'
+                              : '—'
+                          ) : (
+                            <select
+                              className="detail-form__input"
+                              style={{ fontSize: '12px', padding: '4px' }}
+                              value={(equipment as any).room_type_id || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const updated = [...equipmentList]
+                                const idx = updated.findIndex(eq => eq.id === equipment.id)
+                                if (idx >= 0) {
+                                  (updated[idx] as any).room_type_id = e.target.value || null
+                                  setEquipmentList(updated)
+                                }
+                              }}
+                            >
+                              <option value="">—</option>
+                              {roomTypes.map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.name}
+                                </option>
+                              ))}
+                            </select>
+                          )
                         )}
                         {col.key === 'quantity' && `${equipment.quantity || 1}×`}
                         {col.key === 'state' && (EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state)}
@@ -560,12 +572,13 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         )}
       </section>
 
-      {/* Formulář */}
-      {!readOnly && (
-        <section className="detail-form__section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">Formulář</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
+      {/* Formulář - vždy viditelný, v read-only režimu disabled */}
+      <section className="detail-form__section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 className="detail-form__section-title">Formulář</h3>
+          {/* Toolbar - jen v edit režimu */}
+          {!readOnly && (
+          <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="button"
                 onClick={() => setColsOpen(true)}
@@ -614,6 +627,20 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
                 <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedEquipmentId) {
+                    setActiveTab('attachments')
+                  }
+                }}
+                disabled={!selectedEquipmentId}
+                className="common-actions__btn"
+                title="Spravovat přílohy vybraného vybavení"
+              >
+                <span className="common-actions__icon">📎</span>
+                <span className="common-actions__label">Přílohy</span>
+              </button>
             </div>
           </div>
 
@@ -658,7 +685,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           {/* Tab Content: Formulář */}
           {activeTab === 'form' && (
           <div className="detail-form__grid detail-form__grid--narrow">
-            {/* Toggle: Katalog vs Vlastní */}
+            {/* Toggle: Katalog vs Vlastní - jen v edit režimu */}
+            {!readOnly && (
             <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
               <label className="detail-form__label" style={{ marginBottom: 8 }}>Typ vybavení</label>
               <div style={{ display: 'flex', gap: 16 }}>
@@ -691,8 +719,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               </div>
             </div>
 
-            {/* Filtry katalogu - jen když je "Z katalogu" */}
-            {!isCustomEquipment && (
+            {/* Filtry katalogu - jen v edit režimu */}
+            {!readOnly && !isCustomEquipment && (
               <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
                 <label className="detail-form__label" style={{ marginBottom: 8 }}>🔍 Filtrovat katalog vybavení</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
@@ -731,8 +759,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               </div>
             )}
             
-            {/* Řádek 1: Vybavení z katalogu - jen když je "Z katalogu" */}
-            {!isCustomEquipment && (
+            {/* Řádek 1: Vybavení z katalogu - jen v edit režimu */}
+            {!readOnly && !isCustomEquipment && (
               <div className="detail-form__field detail-form__field--span-2">
                 <label className="detail-form__label">
                   Vybavení z katalogu <span className="detail-form__required">*</span>
@@ -740,7 +768,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <select
                   className="detail-form__input"
                   value={formValue.equipmentId}
-                  disabled={loadingCatalog}
+                  disabled={loadingCatalog || readOnly}
                   onChange={(e) => {
                     const selectedId = e.target.value
                     const selectedItem = catalog.find((item) => item.id === selectedId)
@@ -777,6 +805,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 type="text"
                 maxLength={100}
                 value={formValue.name}
+                disabled={readOnly}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, name: e.target.value }))
                   setIsDirty(true)
@@ -791,6 +820,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 type="text"
                 maxLength={200}
                 value={formValue.description}
+                disabled={readOnly}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, description: e.target.value }))
                   setIsDirty(true)
@@ -805,6 +835,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <select
                 className="detail-form__input"
                 value={formValue.equipmentTypeId || ''}
+                disabled={readOnly}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, equipmentTypeId: e.target.value || null }))
                   setIsDirty(true)
@@ -823,6 +854,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <select
                 className="detail-form__input"
                 value={formValue.roomTypeId || ''}
+                disabled={readOnly}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, roomTypeId: e.target.value || null }))
                   setIsDirty(true)
@@ -844,6 +876,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="number"
                 min="1"
+                disabled={readOnly}
                 value={formValue.quantity}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))
@@ -858,6 +891,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 type="number"
                 min="0"
                 step="0.01"
+                disabled={readOnly}
                 value={formValue.purchasePrice ?? ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, purchasePrice: e.target.value ? parseFloat(e.target.value) : null }))
@@ -873,6 +907,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <select
                 className="detail-form__input"
                 value={formValue.state}
+                disabled={readOnly}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, state: e.target.value }))
                   setIsDirty(true)
@@ -891,6 +926,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="number"
                 min="0"
+                disabled={readOnly}
                 value={formValue.lifespanMonths ?? ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, lifespanMonths: e.target.value ? parseInt(e.target.value) : null }))
@@ -906,6 +942,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <input
                 className="detail-form__input"
                 type="date"
+                disabled={readOnly}
                 value={formValue.installationDate}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, installationDate: e.target.value }))
@@ -918,6 +955,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <input
                 className="detail-form__input"
                 type="date"
+                disabled={readOnly}
                 value={formValue.lastRevision}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, lastRevision: e.target.value }))
@@ -932,6 +970,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <textarea
                 className="detail-form__input"
                 maxLength={500}
+                disabled={readOnly}
                 value={formValue.note}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, note: e.target.value }))
@@ -957,7 +996,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             </div>
           )}
         </section>
-      )}
 
       {/* Columns Drawer */}
       <ListViewColumnsDrawer
