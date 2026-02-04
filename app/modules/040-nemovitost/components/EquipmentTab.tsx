@@ -24,7 +24,7 @@ import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import EquipmentAttachmentsModal from './EquipmentAttachmentsModal'
 import EquipmentDetailReadOnly from './EquipmentDetailReadOnly'
-import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import type { ListViewColumn } from '@/app/UI/ListView'
 
