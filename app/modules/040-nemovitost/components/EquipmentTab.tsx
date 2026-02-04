@@ -23,7 +23,6 @@ import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import EquipmentAttachmentsModal from './EquipmentAttachmentsModal'
-import EquipmentDetailReadOnly from './EquipmentDetailReadOnly'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import type { ListViewColumn } from '@/app/UI/ListView'
@@ -133,8 +132,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const [attachmentsModalEquipmentId, setAttachmentsModalEquipmentId] = useState<string | null>(null)
   const [attachmentsModalEquipmentName, setAttachmentsModalEquipmentName] = useState('')
   
-  // Read-only detail v sidepanelu
-  const [selectedDetailEquipment, setSelectedDetailEquipment] = useState<EquipmentRow | null>(null)
+  // Režim: katalog vs vlastní
+  const [isCustomEquipment, setIsCustomEquipment] = useState(false)
+  
   // Načíst seznam vybavení
   useEffect(() => {
     let cancelled = false
@@ -334,6 +334,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const handleAdd = useCallback(() => {
     setSelectedEquipmentId(null)
     currentIndexRef.current = -1
+    setIsCustomEquipment(false) // Reset na katalog
     setFormValue({
       equipmentId: '',
       name: '',
@@ -370,8 +371,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   const handleSave = useCallback(async () => {
     try {
       // Validace povinných polí
-      if (!formValue.equipmentId?.trim()) {
-        toast.showWarning('Vyberte vybavení z katalogu.')
+      if (!isCustomEquipment && !formValue.equipmentId?.trim()) {
+        toast.showWarning('Vyberte vybavení z katalogu nebo použijte režim "Vlastní vybavení".')
         return
       }
       if (!formValue.name?.trim()) {
@@ -385,7 +386,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         const payload: SavePropertyEquipmentInput = {
           id: selectedEquipmentId || undefined,
           property_id: entityId,
-          equipment_id: formValue.equipmentId,
+          equipment_id: formValue.equipmentId || undefined,
           name: formValue.name,
           description: formValue.description || undefined,
           quantity: formValue.quantity || 1,
@@ -403,7 +404,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         const payload: SaveUnitEquipmentInput = {
           id: selectedEquipmentId || undefined,
           unit_id: entityId,
-          equipment_id: formValue.equipmentId,
+          equipment_id: formValue.equipmentId || undefined,
           name: formValue.name,
           description: formValue.description || undefined,
           quantity: formValue.quantity || 1,
@@ -481,13 +482,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 {equipmentList.map((equipment) => (
                   <tr
                     key={equipment.id}
-                    onClick={() => {
-                      if (readOnly) {
-                        setSelectedDetailEquipment(equipment)
-                      } else {
-                        selectEquipment(equipment.id)
-                      }
-                    }}
+                    onClick={() => selectEquipment(equipment.id)}
                     style={{
                       cursor: 'pointer',
                       borderBottom: '1px solid var(--color-border-soft)',
@@ -636,6 +631,25 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  if (selectedEquipmentId) {
+                    const equipment = equipmentList.find((e) => e.id === selectedEquipmentId)
+                    if (equipment) {
+                      setAttachmentsModalEquipmentId(equipment.id)
+                      setAttachmentsModalEquipmentName(equipment.catalog_equipment_name || equipment.name || 'Vybavení')
+                      setAttachmentsModalOpen(true)
+                    }
+                  }
+                }}
+                disabled={!selectedEquipmentId}
+                className="common-actions__btn"
+                title="Správa příloh"
+              >
+                <span className="common-actions__icon">📎</span>
+                <span className="common-actions__label">Přílohy</span>
+              </button>
+              <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving || !isDirty}
                 className="common-actions__btn"
@@ -648,77 +662,114 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           </div>
 
           <div className="detail-form__grid detail-form__grid--narrow">
-            {/* Filtry katalogu */}
+            {/* Toggle: Katalog vs Vlastní */}
             <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
-              <label className="detail-form__label" style={{ marginBottom: 8 }}>🔍 Filtrovat katalog vybavení</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                <input
-                  type="text"
-                  className="detail-form__input"
-                  placeholder="Hledat název..."
-                  value={catalogSearch}
-                  onChange={(e) => setCatalogSearch(e.target.value)}
-                />
+              <label className="detail-form__label" style={{ marginBottom: 8 }}>Typ vybavení</label>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="equipment-type"
+                    checked={!isCustomEquipment}
+                    onChange={() => {
+                      setIsCustomEquipment(false)
+                      setFormValue((prev) => ({ ...prev, equipmentId: '' }))
+                      setIsDirty(true)
+                    }}
+                  />
+                  <span>Z katalogu</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="equipment-type"
+                    checked={isCustomEquipment}
+                    onChange={() => {
+                      setIsCustomEquipment(true)
+                      setFormValue((prev) => ({ ...prev, equipmentId: '' }))
+                      setIsDirty(true)
+                    }}
+                  />
+                  <span>Vlastní vybavení</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Filtry katalogu - jen když je "Z katalogu" */}
+            {!isCustomEquipment && (
+              <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
+                <label className="detail-form__label" style={{ marginBottom: 8 }}>🔍 Filtrovat katalog vybavení</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  <input
+                    type="text"
+                    className="detail-form__input"
+                    placeholder="Hledat název..."
+                    value={catalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
+                  />
+                  <select
+                    className="detail-form__input"
+                    value={catalogEquipmentType || ''}
+                    onChange={(e) => setCatalogEquipmentType(e.target.value || null)}
+                  >
+                    <option value="">— všechny typy —</option>
+                    {equipmentTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="detail-form__input"
+                    value={catalogRoomType || ''}
+                    onChange={(e) => setCatalogRoomType(e.target.value || null)}
+                  >
+                    <option value="">— všechny místnosti —</option>
+                    {roomTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+            
+            {/* Řádek 1: Vybavení z katalogu - jen když je "Z katalogu" */}
+            {!isCustomEquipment && (
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">
+                  Vybavení z katalogu <span className="detail-form__required">*</span>
+                </label>
                 <select
                   className="detail-form__input"
-                  value={catalogEquipmentType || ''}
-                  onChange={(e) => setCatalogEquipmentType(e.target.value || null)}
+                  value={formValue.equipmentId}
+                  disabled={loadingCatalog}
+                  onChange={(e) => {
+                    const selectedId = e.target.value
+                    const selectedItem = catalog.find((item) => item.id === selectedId)
+                    
+                    setFormValue((prev) => ({ 
+                      ...prev, 
+                      equipmentId: selectedId,
+                      // Předvyplnit název z katalogu, pokud ještě není vyplněn
+                      name: prev.name ? prev.name : (selectedItem?.equipment_name || ''),
+                      // Předvyplnit cenu z katalogu, pokud ještě není vyplněna
+                      purchasePrice: prev.purchasePrice !== null ? prev.purchasePrice : (selectedItem?.purchase_price || null),
+                    }))
+                    setIsDirty(true)
+                  }}
                 >
-                  <option value="">— všechny typy —</option>
-                  {equipmentTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="detail-form__input"
-                  value={catalogRoomType || ''}
-                  onChange={(e) => setCatalogRoomType(e.target.value || null)}
-                >
-                  <option value="">— všechny místnosti —</option>
-                  {roomTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
+                  <option value="">{loadingCatalog ? 'Načítám…' : '— vyberte vybavení —'}</option>
+                  {catalog.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.equipment_name}
+                      {item.purchase_price && ` — ${item.purchase_price.toLocaleString('cs-CZ')} Kč`}
                     </option>
                   ))}
                 </select>
               </div>
-            </div>
-            
-            {/* Řádek 1: Vybavení z katalogu */}
-            <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">
-                Vybavení z katalogu <span className="detail-form__required">*</span>
-              </label>
-              <select
-                className="detail-form__input"
-                value={formValue.equipmentId}
-                disabled={loadingCatalog}
-                onChange={(e) => {
-                  const selectedId = e.target.value
-                  const selectedItem = catalog.find((item) => item.id === selectedId)
-                  
-                  setFormValue((prev) => ({ 
-                    ...prev, 
-                    equipmentId: selectedId,
-                    // Předvyplnit název z katalogu, pokud ještě není vyplněn
-                    name: prev.name ? prev.name : (selectedItem?.equipment_name || ''),
-                    // Předvyplnit cenu z katalogu, pokud ještě není vyplněna
-                    purchasePrice: prev.purchasePrice !== null ? prev.purchasePrice : (selectedItem?.purchase_price || null),
-                  }))
-                  setIsDirty(true)
-                }}
-              >
-                <option value="">{loadingCatalog ? 'Načítám…' : '— vyberte vybavení —'}</option>
-                {catalog.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.equipment_name}
-                    {item.purchase_price && ` — ${item.purchase_price.toLocaleString('cs-CZ')} Kč`}
-                  </option>
-                ))}
-              </select>
-            </div>
+            )}
 
             {/* Řádek 2: Název + Popis */}
             <div className="detail-form__field">
@@ -907,30 +958,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
           bindingType={entityType === 'property' ? 'property_equipment' : 'unit_equipment'}
           equipmentName={attachmentsModalEquipmentName}
         />
-      )}
-
-      {/* Equipment Detail Read-Only Sidepanel */}
-      {readOnly && selectedDetailEquipment && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: '400px',
-            backgroundColor: 'var(--color-bg-primary)',
-            borderLeft: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-lg)',
-            zIndex: 999,
-            overflowY: 'auto',
-          }}
-        >
-          <EquipmentDetailReadOnly
-            equipment={selectedDetailEquipment}
-            entityType={entityType}
-            onClose={() => setSelectedDetailEquipment(null)}
-          />
-        </div>
       )}
 
       {/* Columns Drawer */}

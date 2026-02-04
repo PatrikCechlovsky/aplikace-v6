@@ -476,7 +476,7 @@ export async function listUnitEquipment(unitId: string): Promise<UnitEquipmentRo
 export type SaveUnitEquipmentInput = {
   id?: string | null
   unit_id: string
-  equipment_id: string
+  equipment_id?: string | null
   name: string
   description?: string | null
   quantity?: number
@@ -497,7 +497,7 @@ export async function saveUnitEquipment(input: SaveUnitEquipmentInput): Promise<
 
   const payload: any = {
     unit_id: input.unit_id,
-    equipment_id: input.equipment_id,
+    equipment_id: input.equipment_id ?? null,
     name: input.name,
     description: input.description ?? null,
     quantity: input.quantity ?? 1,
@@ -576,7 +576,7 @@ export async function listPropertyEquipment(propertyId: string): Promise<Propert
 export type SavePropertyEquipmentInput = {
   id?: string | null
   property_id: string
-  equipment_id: string
+  equipment_id?: string | null
   name: string
   description?: string | null
   quantity?: number
@@ -597,7 +597,7 @@ export async function savePropertyEquipment(input: SavePropertyEquipmentInput): 
 
   const payload: any = {
     property_id: input.property_id,
-    equipment_id: input.equipment_id,
+    equipment_id: input.equipment_id ?? null,
     name: input.name,
     description: input.description ?? null,
     quantity: input.quantity ?? 1,
