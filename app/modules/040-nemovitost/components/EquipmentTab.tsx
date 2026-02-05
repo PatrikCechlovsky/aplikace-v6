@@ -1172,48 +1172,42 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                       <span className="common-actions__label">Zobrazit</span>
                     </button>
                   )}
-                  {!readOnly && (
-                    <button
-                      type="button"
-                      onClick={() => attachmentsApiRef.current?.add()}
-                      className="common-actions__btn"
-                      title="Přidat novou přílohu"
-                    >
-                      <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                      <span className="common-actions__label">Přidat</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => attachmentsApiRef.current?.add()}
+                    className="common-actions__btn"
+                    title="Přidat novou přílohu"
+                  >
+                    <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                    <span className="common-actions__label">Přidat</span>
+                  </button>
                 </>
               )}
 
               {attachmentsUiState.mode === 'read' && (
                 <>
-                  {!readOnly && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => attachmentsApiRef.current?.edit()}
-                        className="common-actions__btn"
-                        title="Upravit název a popis"
-                      >
-                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                        <span className="common-actions__label">Upravit</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => attachmentsApiRef.current?.newVersion()}
-                        className="common-actions__btn"
-                        title="Nahrát novou verzi"
-                      >
-                        <span className="common-actions__icon">{getIcon('upload' as IconKey)}</span>
-                        <span className="common-actions__label">Nová verze</span>
-                      </button>
-                    </>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => attachmentsApiRef.current?.edit()}
+                    className="common-actions__btn"
+                    title={readOnly ? "Upravit název a popis (můžeš editovat jen svoje soubory)" : "Upravit název a popis"}
+                  >
+                    <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                    <span className="common-actions__label">Upravit</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => attachmentsApiRef.current?.newVersion()}
+                    className="common-actions__btn"
+                    title={readOnly ? "Nahrát novou verzi (můžeš upravit jen svoje soubory)" : "Nahrát novou verzi"}
+                  >
+                    <span className="common-actions__icon">{getIcon('upload' as IconKey)}</span>
+                    <span className="common-actions__label">Nová verze</span>
+                  </button>
                 </>
               )}
 
-              {!readOnly && (attachmentsUiState.mode === 'edit' || attachmentsUiState.mode === 'new') && (
+              {(attachmentsUiState.mode === 'edit' || attachmentsUiState.mode === 'new') && (
                 <button
                   type="button"
                   onClick={() => void attachmentsApiRef.current?.save()}
