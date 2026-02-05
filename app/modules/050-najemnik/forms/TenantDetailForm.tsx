@@ -1012,11 +1012,15 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
             ) : (
               <select
                 className="detail-form__input"
-                value={formValue.unitId || ''}
+                value={val.unitId || ''}
                 onChange={e => {
                   const newValue = e.target.value || ''
-                  setFormValue(prev => ({ ...prev, unitId: newValue }))
-                  setDirty(true)
+                  setVal(prev => ({ ...prev, unitId: newValue }))
+                  if (!dirtyRef.current) {
+                    dirtyRef.current = true
+                    onDirtyChange?.(true)
+                  }
+                  onValueChange?.({ ...val, unitId: newValue })
                   if (onFieldChange) {
                     onFieldChange('unitId', newValue)
                   }
