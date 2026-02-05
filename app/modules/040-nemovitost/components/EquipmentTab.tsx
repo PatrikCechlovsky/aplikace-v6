@@ -26,6 +26,7 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import type { ListViewColumn } from '@/app/UI/ListView'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
+import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 import '@/app/styles/components/DetailForm.css'
 
@@ -51,6 +52,8 @@ const BASE_COLUMNS: ListViewColumn[] = [
 
 type EntityType = 'property' | 'unit'
 type EquipmentRow = PropertyEquipmentRow | UnitEquipmentRow
+type ViewMode = 'list' | 'detail' | 'attachments'
+type DetailMode = 'read' | 'edit' | 'create'
 
 type Props = {
   entityType: EntityType
@@ -131,6 +134,11 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   
   // Tab state - formulář nebo přílohy
   const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
+
+  // View mode - seznam / detail / správa příloh
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [detailMode, setDetailMode] = useState<DetailMode>('read')
+  const [attachmentsReturnView, setAttachmentsReturnView] = useState<'list' | 'detail'>('list')
   
   // API ref pro AttachmentsManagerFrame
   const attachmentsApiRef = useRef<AttachmentsManagerApi | null>(null)
@@ -357,6 +365,51 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     setIsDirty(false)
   }, [])
 
+  const openDetailRead = useCallback(() => {
+    if (!selectedEquipmentId) return
+    selectEquipment(selectedEquipmentId)
+    setDetailMode('read')
+    setViewMode('detail')
+    setActiveTab('form')
+  }, [selectedEquipmentId, selectEquipment])
+
+  const openDetailEdit = useCallback(() => {
+    if (!selectedEquipmentId || readOnly) return
+    selectEquipment(selectedEquipmentId)
+    setDetailMode('edit')
+    setViewMode('detail')
+    setActiveTab('form')
+  }, [selectedEquipmentId, selectEquipment, readOnly])
+
+  const openDetailCreate = useCallback(() => {
+    if (readOnly) return
+    handleAdd()
+    setDetailMode('create')
+    setViewMode('detail')
+    setActiveTab('form')
+  }, [handleAdd, readOnly])
+
+  const closeDetail = useCallback(() => {
+    setViewMode('list')
+    setActiveTab('form')
+    setDetailMode('read')
+    setIsDirty(false)
+  }, [])
+
+  const openAttachmentsManager = useCallback(
+    (returnTo: 'list' | 'detail') => {
+      if (!selectedEquipmentId) return
+      setAttachmentsReturnView(returnTo)
+      setViewMode('attachments')
+    },
+    [selectedEquipmentId]
+  )
+
+  const closeAttachmentsManager = useCallback(() => {
+    setViewMode(attachmentsReturnView)
+    setActiveTab('form')
+  }, [attachmentsReturnView])
+
   // Předchozí/Další
   const handlePrevious = useCallback(() => {
     if (currentIndexRef.current > 0) {
@@ -436,6 +489,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         selectEquipment(refreshed[refreshed.length - 1].id)
       }
 
+      setDetailMode('read')
+      setViewMode('detail')
+      setActiveTab('form')
       setIsDirty(false)
       toast.showSuccess('Vybavení uloženo')
     } catch (e: any) {
@@ -448,6 +504,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
 
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < equipmentList.length - 1
+  const isFormReadOnly = readOnly || detailMode === 'read'
 
   // =====================
   // RENDER
@@ -455,126 +512,11 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
   
   return (
     <div className="detail-form">
-      {/* Seznam vybavení */}
-      <section className="detail-form__section">
-        <h3 className="detail-form__section-title">Seznam vybavení</h3>
-
-        {loading && <div className="detail-form__hint">Načítám vybavení…</div>}
-
-        {!loading && equipmentList.length === 0 && <div className="detail-form__hint">Zatím žádné vybavení.</div>}
-
-        {!loading && equipmentList.length > 0 && (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  {columns.map((col) => (
-                    <th
-                      key={col.key}
-                      style={{
-                        padding: '8px',
-                        textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
-                        fontWeight: 600,
-                        width: col.width,
-                      }}
-                    >
-                      {col.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {equipmentList.map((equipment) => (
-                  <tr
-                    key={equipment.id}
-                    onClick={() => selectEquipment(equipment.id)}
-                    style={{
-                      cursor: 'pointer',
-                      borderBottom: '1px solid var(--color-border-soft)',
-                      backgroundColor: selectedEquipmentId === equipment.id ? 'var(--color-primary-soft)' : 'transparent',
-                    }}
-                  >
-                    {columns.map((col) => (
-                      <td
-                        key={col.key}
-                        style={{
-                          padding: '8px',
-                          textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
-                          width: col.width,
-                        }}
-                      >
-                        {col.key === 'catalog_equipment_name' && (equipment.catalog_equipment_name || '—')}
-                        {col.key === 'equipment_type_name' && (
-                          <select
-                            className="detail-form__input"
-                            style={{ fontSize: '12px', padding: '4px' }}
-                            value={(equipment as any).equipment_type_id || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              const updated = [...equipmentList]
-                              const idx = updated.findIndex(eq => eq.id === equipment.id)
-                              if (idx >= 0) {
-                                (updated[idx] as any).equipment_type_id = e.target.value || null
-                                setEquipmentList(updated)
-                              }
-                            }}
-                          >
-                            <option value="">—</option>
-                            {equipmentTypes.map((type) => (
-                              <option key={type.id} value={type.id}>
-                                {type.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        {col.key === 'room_type_name' && (
-                          <select
-                            className="detail-form__input"
-                            style={{ fontSize: '12px', padding: '4px' }}
-                            value={(equipment as any).room_type_id || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              const updated = [...equipmentList]
-                              const idx = updated.findIndex(eq => eq.id === equipment.id)
-                              if (idx >= 0) {
-                                (updated[idx] as any).room_type_id = e.target.value || null
-                                setEquipmentList(updated)
-                              }
-                            }}
-                          >
-                            <option value="">—</option>
-                            {roomTypes.map((type) => (
-                              <option key={type.id} value={type.id}>
-                                {type.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        {col.key === 'quantity' && `${equipment.quantity || 1}×`}
-                        {col.key === 'state' && (EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state)}
-                        {col.key === 'catalog_purchase_price' && (
-                          equipment.catalog_purchase_price ? `${equipment.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'
-                        )}
-                        {col.key === 'total_price' && (
-                          equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Formulář - vždy viditelný, v read-only režimu disabled */}
-      <section className="detail-form__section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 className="detail-form__section-title">Formulář</h3>
-          <div style={{ display: 'flex', gap: 8 }}>
-              {/* Sloupce - pouze pro tab formulář a ne read-only */}
-              {!readOnly && activeTab === 'form' && (
+      {viewMode === 'list' && (
+        <section className="detail-form__section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 className="detail-form__section-title">Seznam vybavení</h3>
+            <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="button"
                 onClick={() => setColsOpen(true)}
@@ -584,211 +526,315 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
                 <span className="common-actions__label">Sloupce</span>
               </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={openDetailCreate}
+                  className="common-actions__btn"
+                  title="Přidat nové vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                  <span className="common-actions__label">Přidat</span>
+                </button>
               )}
-              
-              {/* Navigace - vždy viditelná */}
               <button
                 type="button"
-                onClick={handlePrevious}
-                disabled={!canGoPrevious}
-                className="common-actions__btn"
-                title="Předchozí vybavení"
-              >
-                <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
-                <span className="common-actions__label">Předchozí</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={!canGoNext}
-                className="common-actions__btn"
-                title="Další vybavení"
-              >
-                <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
-                <span className="common-actions__label">Další</span>
-              </button>
-              
-              {/* Přidat vybavení - pouze pro tab formulář a ne read-only */}
-              {!readOnly && activeTab === 'form' && (
-              <button
-                type="button"
-                onClick={handleAdd}
-                className="common-actions__btn"
-                title="Přidat nové vybavení"
-              >
-                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                <span className="common-actions__label">Přidat</span>
-              </button>
-              )}
-              
-              {/* Uložit vybavení - pouze pro tab formulář a ne read-only */}
-              {!readOnly && activeTab === 'form' && (
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || !isDirty}
-                className="common-actions__btn"
-                title={saving ? 'Ukládám…' : 'Uložit vybavení'}
-              >
-                <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-                <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
-              </button>
-              )}
-              
-              {/* Tab Přílohy - akční tlačítka podle stavu */}
-              {activeTab === 'attachments' && (
-                <>
-                  {/* Přidat přílohu - když je režim list */}
-                  {attachmentsUiState.mode === 'list' && (
-                    <>
-                      {/* Zobrazit - když je něco vybráno */}
-                      {attachmentsUiState.hasSelection && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            attachmentsApiRef.current?.view()
-                          }}
-                          className="common-actions__btn"
-                          title="Zobrazit detail přílohy"
-                        >
-                          <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
-                          <span className="common-actions__label">Zobrazit</span>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          attachmentsApiRef.current?.add()
-                        }}
-                        className="common-actions__btn"
-                        title="Přidat novou přílohu"
-                      >
-                        <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                        <span className="common-actions__label">Přidat přílohu</span>
-                      </button>
-                    </>
-                  )}
-                  
-                  {/* Read režim - zobrazit detail */}
-                  {attachmentsUiState.mode === 'read' && (
-                    <>
-                      {/* Upravit metadata */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          attachmentsApiRef.current?.edit()
-                        }}
-                        className="common-actions__btn"
-                        title="Upravit název a popis"
-                      >
-                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                        <span className="common-actions__label">Upravit</span>
-                      </button>
-                      {/* Přidat verzi */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          attachmentsApiRef.current?.newVersion()
-                        }}
-                        className="common-actions__btn"
-                        title="Přidat novou verzi přílohy"
-                      >
-                        <span className="common-actions__icon">{getIcon('upload' as IconKey)}</span>
-                        <span className="common-actions__label">Nová verze</span>
-                      </button>
-                      {/* Zavřít read režim */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          attachmentsApiRef.current?.close()
-                        }}
-                        className="common-actions__btn"
-                        title="Zavřít detail"
-                      >
-                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                        <span className="common-actions__label">Zavřít</span>
-                      </button>
-                    </>
-                  )}
-                  
-                  {/* Edit režim - upravit metadata */}
-                  {attachmentsUiState.mode === 'edit' && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void attachmentsApiRef.current?.save()
-                        }}
-                        disabled={!attachmentsUiState.isDirty}
-                        className="common-actions__btn"
-                        title="Uložit změny"
-                      >
-                        <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-                        <span className="common-actions__label">Uložit</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          attachmentsApiRef.current?.close()
-                        }}
-                        className="common-actions__btn"
-                        title="Zrušit úpravy"
-                      >
-                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                        <span className="common-actions__label">Zrušit</span>
-                      </button>
-                    </>
-                  )}
-                  
-                  {/* New režim - přidání nové přílohy */}
-                  {attachmentsUiState.mode === 'new' && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void attachmentsApiRef.current?.save()
-                        }}
-                        disabled={!attachmentsUiState.isDirty}
-                        className="common-actions__btn"
-                        title="Uložit novou přílohu"
-                      >
-                        <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-                        <span className="common-actions__label">Uložit</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          attachmentsApiRef.current?.close()
-                        }}
-                        className="common-actions__btn"
-                        title="Zrušit přidání"
-                      >
-                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                        <span className="common-actions__label">Zrušit</span>
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
-              
-              {/* Záložka přílohy - přepnout na attachments tab */}
-              {activeTab === 'form' && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (selectedEquipmentId) {
-                    setActiveTab('attachments')
-                  }
-                }}
+                onClick={openDetailRead}
                 disabled={!selectedEquipmentId}
                 className="common-actions__btn"
-                title="Spravovat přílohy vybraného vybavení"
+                title="Číst vybrané vybavení"
               >
-                <span className="common-actions__icon">📎</span>
+                <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                <span className="common-actions__label">Číst</span>
+              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={openDetailEdit}
+                  disabled={!selectedEquipmentId}
+                  className="common-actions__btn"
+                  title="Upravit vybrané vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                  <span className="common-actions__label">Editovat</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => openAttachmentsManager('list')}
+                disabled={!selectedEquipmentId}
+                className="common-actions__btn"
+                title="Správa příloh vybraného vybavení"
+              >
+                <span className="common-actions__icon">{getIcon('attach' as IconKey)}</span>
                 <span className="common-actions__label">Přílohy</span>
               </button>
-              )}
             </div>
+          </div>
+
+          {loading && <div className="detail-form__hint">Načítám vybavení…</div>}
+
+          {!loading && equipmentList.length === 0 && <div className="detail-form__hint">Zatím žádné vybavení.</div>}
+
+          {!loading && equipmentList.length > 0 && (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    {columns.map((col) => (
+                      <th
+                        key={col.key}
+                        style={{
+                          padding: '8px',
+                          textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
+                          fontWeight: 600,
+                          width: col.width,
+                        }}
+                      >
+                        {col.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {equipmentList.map((equipment) => (
+                    <tr
+                      key={equipment.id}
+                      onClick={() => selectEquipment(equipment.id)}
+                      style={{
+                        cursor: 'pointer',
+                        borderBottom: '1px solid var(--color-border-soft)',
+                        backgroundColor: selectedEquipmentId === equipment.id ? 'var(--color-primary-soft)' : 'transparent',
+                      }}
+                    >
+                      {columns.map((col) => (
+                        <td
+                          key={col.key}
+                          style={{
+                            padding: '8px',
+                            textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
+                            width: col.width,
+                          }}
+                        >
+                          {col.key === 'catalog_equipment_name' && (equipment.catalog_equipment_name || '—')}
+                          {col.key === 'equipment_type_name' && (
+                            <select
+                              className="detail-form__input"
+                              style={{ fontSize: '12px', padding: '4px' }}
+                              value={(equipment as any).equipment_type_id || ''}
+                              disabled={readOnly}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const updated = [...equipmentList]
+                                const idx = updated.findIndex(eq => eq.id === equipment.id)
+                                if (idx >= 0) {
+                                  (updated[idx] as any).equipment_type_id = e.target.value || null
+                                  setEquipmentList(updated)
+                                }
+                              }}
+                            >
+                              <option value="">—</option>
+                              {equipmentTypes.map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {col.key === 'room_type_name' && (
+                            <select
+                              className="detail-form__input"
+                              style={{ fontSize: '12px', padding: '4px' }}
+                              value={(equipment as any).room_type_id || ''}
+                              disabled={readOnly}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const updated = [...equipmentList]
+                                const idx = updated.findIndex(eq => eq.id === equipment.id)
+                                if (idx >= 0) {
+                                  (updated[idx] as any).room_type_id = e.target.value || null
+                                  setEquipmentList(updated)
+                                }
+                              }}
+                            >
+                              <option value="">—</option>
+                              {roomTypes.map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {col.key === 'quantity' && `${equipment.quantity || 1}×`}
+                          {col.key === 'state' && (EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state)}
+                          {col.key === 'catalog_purchase_price' && (
+                            equipment.catalog_purchase_price ? `${equipment.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'
+                          )}
+                          {col.key === 'total_price' && (
+                            equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Detail vybavení */}
+      {viewMode === 'detail' && (
+      <section className="detail-form__section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 className="detail-form__section-title">Detail vybavení</h3>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {detailMode === 'read' && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  disabled={!canGoPrevious}
+                  className="common-actions__btn"
+                  title="Předchozí vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
+                  <span className="common-actions__label">Předchozí</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!canGoNext}
+                  className="common-actions__btn"
+                  title="Další vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
+                  <span className="common-actions__label">Další</span>
+                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={openDetailCreate}
+                    className="common-actions__btn"
+                    title="Přidat nové vybavení"
+                  >
+                    <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                    <span className="common-actions__label">Přidat</span>
+                  </button>
+                )}
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={openDetailEdit}
+                    disabled={!selectedEquipmentId}
+                    className="common-actions__btn"
+                    title="Změnit vybrané vybavení"
+                  >
+                    <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                    <span className="common-actions__label">Změnit</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => openAttachmentsManager('detail')}
+                  disabled={!selectedEquipmentId}
+                  className="common-actions__btn"
+                  title="Správa příloh vybraného vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('attach' as IconKey)}</span>
+                  <span className="common-actions__label">Přílohy</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={closeDetail}
+                  className="common-actions__btn"
+                  title="Zavřít detail"
+                >
+                  <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                  <span className="common-actions__label">Zavřít</span>
+                </button>
+              </>
+            )}
+
+            {detailMode === 'create' && !readOnly && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !isDirty}
+                  className="common-actions__btn"
+                  title={saving ? 'Ukládám…' : 'Uložit vybavení'}
+                >
+                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                  <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={closeDetail}
+                  className="common-actions__btn"
+                  title="Zavřít bez uložení"
+                >
+                  <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                  <span className="common-actions__label">Zavřít</span>
+                </button>
+              </>
+            )}
+
+            {detailMode === 'edit' && !readOnly && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  disabled={!canGoPrevious}
+                  className="common-actions__btn"
+                  title="Předchozí vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
+                  <span className="common-actions__label">Předchozí</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!canGoNext}
+                  className="common-actions__btn"
+                  title="Další vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
+                  <span className="common-actions__label">Další</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !isDirty}
+                  className="common-actions__btn"
+                  title={saving ? 'Ukládám…' : 'Uložit vybavení'}
+                >
+                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                  <span className="common-actions__label">{saving ? 'Ukládám…' : 'Uložit'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAttachmentsManager('detail')}
+                  disabled={!selectedEquipmentId}
+                  className="common-actions__btn"
+                  title="Správa příloh vybraného vybavení"
+                >
+                  <span className="common-actions__icon">{getIcon('attach' as IconKey)}</span>
+                  <span className="common-actions__label">Přílohy</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={closeDetail}
+                  className="common-actions__btn"
+                  title="Zavřít detail"
+                >
+                  <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                  <span className="common-actions__label">Zavřít</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
           {/* Záložky: Formulář / Přílohy */}
@@ -841,6 +887,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                     type="radio"
                     name="equipment-type"
                     checked={!isCustomEquipment}
+                    disabled={isFormReadOnly}
                     onChange={() => {
                       setIsCustomEquipment(false)
                       setFormValue((prev) => ({ ...prev, equipmentId: '' }))
@@ -854,6 +901,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                     type="radio"
                     name="equipment-type"
                     checked={isCustomEquipment}
+                    disabled={isFormReadOnly}
                     onChange={() => {
                       setIsCustomEquipment(true)
                       setFormValue((prev) => ({ ...prev, equipmentId: '' }))
@@ -950,7 +998,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="text"
                 maxLength={100}
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.name}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, name: e.target.value }))
@@ -965,7 +1013,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="text"
                 maxLength={200}
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.description}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, description: e.target.value }))
@@ -980,7 +1028,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <label className="detail-form__label">Typ vybavení (konkrétní)</label>
               <select
                 className="detail-form__input"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.equipmentTypeId || ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, equipmentTypeId: e.target.value || null }))
@@ -999,7 +1047,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <label className="detail-form__label">Místnost</label>
               <select
                 className="detail-form__input"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.roomTypeId || ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, roomTypeId: e.target.value || null }))
@@ -1022,7 +1070,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="number"
                 min="1"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.quantity}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))
@@ -1037,7 +1085,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 type="number"
                 min="0"
                 step="0.01"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.purchasePrice ?? ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, purchasePrice: e.target.value ? parseFloat(e.target.value) : null }))
@@ -1052,7 +1100,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <label className="detail-form__label">Stav</label>
               <select
                 className="detail-form__input"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.state}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, state: e.target.value }))
@@ -1072,7 +1120,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                 className="detail-form__input"
                 type="number"
                 min="0"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.lifespanMonths ?? ''}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, lifespanMonths: e.target.value ? parseInt(e.target.value) : null }))
@@ -1088,7 +1136,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <input
                 className="detail-form__input"
                 type="date"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.installationDate}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, installationDate: e.target.value }))
@@ -1101,7 +1149,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <input
                 className="detail-form__input"
                 type="date"
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.lastRevision}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, lastRevision: e.target.value }))
@@ -1116,7 +1164,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               <textarea
                 className="detail-form__input"
                 maxLength={500}
-                disabled={readOnly}
+                disabled={isFormReadOnly}
                 value={formValue.note}
                 onChange={(e) => {
                   setFormValue((prev) => ({ ...prev, note: e.target.value }))
@@ -1132,21 +1180,117 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
         {/* Tab Content: Přílohy */}
         {activeTab === 'attachments' && selectedEquipmentId && (
           <div style={{ marginTop: '20px' }}>
-            <AttachmentsManagerFrame
+            <DetailAttachmentsSection
               entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
               entityId={selectedEquipmentId}
               entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
-              canManage={true}
-              onRegisterManagerApi={(api) => {
-                attachmentsApiRef.current = api
-              }}
-              onManagerStateChange={(state) => {
-                setAttachmentsUiState(state)
-              }}
+              mode="view"
+              variant="list"
+              canManage={false}
             />
           </div>
         )}
       </section>
+      )}
+
+      {viewMode === 'attachments' && selectedEquipmentId && (
+        <section className="detail-form__section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 className="detail-form__section-title">Správa příloh</h3>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {attachmentsUiState.mode === 'list' && (
+                <>
+                  {attachmentsUiState.hasSelection && (
+                    <button
+                      type="button"
+                      onClick={() => attachmentsApiRef.current?.view()}
+                      className="common-actions__btn"
+                      title="Zobrazit detail přílohy"
+                    >
+                      <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                      <span className="common-actions__label">Zobrazit</span>
+                    </button>
+                  )}
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => attachmentsApiRef.current?.add()}
+                      className="common-actions__btn"
+                      title="Přidat novou přílohu"
+                    >
+                      <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                      <span className="common-actions__label">Přidat</span>
+                    </button>
+                  )}
+                </>
+              )}
+
+              {attachmentsUiState.mode === 'read' && (
+                <>
+                  {!readOnly && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => attachmentsApiRef.current?.edit()}
+                        className="common-actions__btn"
+                        title="Upravit název a popis"
+                      >
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => attachmentsApiRef.current?.newVersion()}
+                        className="common-actions__btn"
+                        title="Nahrát novou verzi"
+                      >
+                        <span className="common-actions__icon">{getIcon('upload' as IconKey)}</span>
+                        <span className="common-actions__label">Nová verze</span>
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+
+              {!readOnly && (attachmentsUiState.mode === 'edit' || attachmentsUiState.mode === 'new') && (
+                <button
+                  type="button"
+                  onClick={() => void attachmentsApiRef.current?.save()}
+                  disabled={!attachmentsUiState.isDirty}
+                  className="common-actions__btn"
+                  title="Uložit"
+                >
+                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                  <span className="common-actions__label">Uložit</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={closeAttachmentsManager}
+                className="common-actions__btn"
+                title="Zavřít správu příloh"
+              >
+                <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                <span className="common-actions__label">Zavřít</span>
+              </button>
+            </div>
+          </div>
+
+          <AttachmentsManagerFrame
+            entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
+            entityId={selectedEquipmentId}
+            entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
+            canManage={!readOnly}
+            onRegisterManagerApi={(api) => {
+              attachmentsApiRef.current = api
+            }}
+            onManagerStateChange={(state) => {
+              setAttachmentsUiState(state)
+            }}
+          />
+        </section>
+      )}
 
       {/* Columns Drawer */}
       <ListViewColumnsDrawer
