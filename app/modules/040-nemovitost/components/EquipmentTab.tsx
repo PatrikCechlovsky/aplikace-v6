@@ -601,6 +601,12 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                     <tr
                       key={equipment.id}
                       onClick={() => selectEquipment(equipment.id)}
+                      onDoubleClick={() => {
+                        selectEquipment(equipment.id)
+                        setDetailMode('read')
+                        setViewMode('detail')
+                        setActiveTab('form')
+                      }}
                       style={{
                         cursor: 'pointer',
                         borderBottom: '1px solid var(--color-border-soft)',
