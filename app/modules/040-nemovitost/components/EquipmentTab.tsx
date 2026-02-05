@@ -605,6 +605,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                         cursor: 'pointer',
                         borderBottom: '1px solid var(--color-border-soft)',
                         backgroundColor: selectedEquipmentId === equipment.id ? 'var(--color-primary-soft)' : 'transparent',
+                        height: '32px',
                       }}
                     >
                       {columns.map((col) => (
@@ -617,54 +618,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
                           }}
                         >
                           {col.key === 'catalog_equipment_name' && (equipment.catalog_equipment_name || '—')}
-                          {col.key === 'equipment_type_name' && (
-                            <select
-                              className="detail-form__input"
-                              style={{ fontSize: '12px', padding: '4px' }}
-                              value={(equipment as any).equipment_type_id || ''}
-                              disabled={readOnly}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => {
-                                const updated = [...equipmentList]
-                                const idx = updated.findIndex(eq => eq.id === equipment.id)
-                                if (idx >= 0) {
-                                  (updated[idx] as any).equipment_type_id = e.target.value || null
-                                  setEquipmentList(updated)
-                                }
-                              }}
-                            >
-                              <option value="">—</option>
-                              {equipmentTypes.map((type) => (
-                                <option key={type.id} value={type.id}>
-                                  {type.name}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                          {col.key === 'room_type_name' && (
-                            <select
-                              className="detail-form__input"
-                              style={{ fontSize: '12px', padding: '4px' }}
-                              value={(equipment as any).room_type_id || ''}
-                              disabled={readOnly}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => {
-                                const updated = [...equipmentList]
-                                const idx = updated.findIndex(eq => eq.id === equipment.id)
-                                if (idx >= 0) {
-                                  (updated[idx] as any).room_type_id = e.target.value || null
-                                  setEquipmentList(updated)
-                                }
-                              }}
-                            >
-                              <option value="">—</option>
-                              {roomTypes.map((type) => (
-                                <option key={type.id} value={type.id}>
-                                  {type.name}
-                                </option>
-                              ))}
-                            </select>
-                          )}
+                          {col.key === 'equipment_type_name' && (equipment.equipment_type_name || '—')}
+                          {col.key === 'room_type_name' && (equipment.room_type_name || '—')}
                           {col.key === 'quantity' && `${equipment.quantity || 1}×`}
                           {col.key === 'state' && (EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state)}
                           {col.key === 'catalog_purchase_price' && (
