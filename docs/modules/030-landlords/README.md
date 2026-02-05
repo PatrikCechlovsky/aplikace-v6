@@ -32,6 +32,10 @@ Modul **030-pronajimatel** slouží pro:
    - Propojení se smlouvami (landlord → contracts)
    - Vazba na uživatelské účty (`is_landlord_user` flag)
 
+4. **🔗 Přehled vazeb (read-only)**
+   - Záložka **Vazby** zobrazuje seznamy: nemovitosti, jednotky, nájemníci
+   - Detail vybrané entity se zobrazuje v plném detailu (včetně záložek)
+
 ---
 
 ## 🗄️ Databázové entity
@@ -68,6 +72,7 @@ Sidebar → Pronajímatelé
   │
   └── Detail pronajímatele (TenantDetailFrame)
         ├── Tab: Základní údaje (TenantDetailForm)
+     ├── Tab: Vazby (RelationListWithDetail, read-only)
         ├── Tab: Nemovitosti (PropertiesSection)
         ├── Tab: Smlouvy (ContractsSection)
         ├── Tab: Účty (AccountsSection) – bankovní účty

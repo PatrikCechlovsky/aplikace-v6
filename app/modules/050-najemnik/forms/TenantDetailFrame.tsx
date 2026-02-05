@@ -80,6 +80,7 @@ type Props = {
   onSaved?: (tenant: UiTenant) => void // Callback po uložení
   onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
   onOpenNewDelegateForm?: (type: string, fromUserId?: string) => void // Callback pro otevření formuláře nového zástupce
+  embedded?: boolean // Embedded mode without tile-layout wrapper
 }
 
 // Očekávané typy subjektů pro pronajimatele
@@ -149,6 +150,7 @@ export default function TenantDetailFrame({
   onSaved,
   onCreateDelegateFromUser,
   onOpenNewDelegateForm,
+  embedded = false,
 }: Props) {
   // DB truth (subjects)
   const [resolvedTenant, setResolvedTenant] = useState<UiTenant>(tenant)
@@ -704,56 +706,63 @@ export default function TenantDetailFrame({
     title = subjectTypeName ? `Nájemník - ${subjectTypeName}: ${tenantName}` : `Nájemník: ${tenantName}`
   }
 
+  const content = (
+    <DetailView
+      mode={detailMode}
+      sectionIds={sectionIds}
+      initialActiveId={initialSectionId ?? 'detail'}
+      onActiveSectionChange={(id) => {
+        onActiveSectionChange?.(id)
+      }}
+      ctx={
+        {
+          entityType: 'subjects',
+          // Pro create mode nastavit entityId na 'new', aby byly záložky viditelné
+          entityId: resolvedTenant.id === 'new' ? 'new' : resolvedTenant.id || undefined,
+          entityLabel: resolvedTenant.displayName ?? null,
+          showSystemEntityHeader: false,
+          mode: detailMode,
+          onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
+          onOpenNewDelegateForm, // Předat do DelegatesSection přes ctx
+
+          detailContent: (
+            <TenantDetailForm
+              key={`form-${resolvedTenant.id}-${subjectType}`}
+              subjectType={subjectType}
+              tenant={formValue}
+              readOnly={readOnly}
+              onDirtyChange={(dirty) => {
+                if (dirty) {
+                  markDirtyIfChanged(formValue)
+                } else {
+                  computeDirty()
+                }
+              }}
+              onValueChange={(val) => {
+                console.log('[TenantDetailFrame] onValueChange - companyName:', val.companyName, 'ic:', val.ic, 'city:', val.city)
+                setFormValue(val)
+                formValueRef.current = val // Synchronně aktualizovat ref
+                markDirtyIfChanged(val)
+              }}
+            />
+          ),
+
+          systemBlocks,
+        } as any
+      }
+    />
+  )
+
+  if (embedded) {
+    return <div className="tile-layout__content">{content}</div>
+  }
+
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
         <h1 className="tile-layout__title">{title}</h1>
       </div>
-      <div className="tile-layout__content">
-        <DetailView
-          mode={detailMode}
-          sectionIds={sectionIds}
-          initialActiveId={initialSectionId ?? 'detail'}
-          onActiveSectionChange={(id) => {
-            onActiveSectionChange?.(id)
-          }}
-          ctx={
-            {
-              entityType: 'subjects',
-              // Pro create mode nastavit entityId na 'new', aby byly záložky viditelné
-              entityId: resolvedTenant.id === 'new' ? 'new' : resolvedTenant.id || undefined,
-              entityLabel: resolvedTenant.displayName ?? null,
-              showSystemEntityHeader: false,
-              mode: detailMode,
-                  onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
-                  onOpenNewDelegateForm, // Předat do DelegatesSection přes ctx
-
-              detailContent: (
-                <TenantDetailForm
-                  key={`form-${resolvedTenant.id}-${subjectType}`}
-                  subjectType={subjectType}
-                  tenant={formValue}
-                  readOnly={readOnly}
-                  onDirtyChange={(dirty) => {
-                    if (dirty) {
-                      markDirtyIfChanged(formValue)
-                    } else {
-                      computeDirty()
-                    }
-                  }}
-                  onValueChange={(val) => {
-                    console.log('[TenantDetailFrame] onValueChange - companyName:', val.companyName, 'ic:', val.ic, 'city:', val.city)
-                    setFormValue(val)
-                    formValueRef.current = val // Synchronně aktualizovat ref
-                    markDirtyIfChanged(val)
-                  }}
-                />
-              ),
-
-            systemBlocks,
-          } as any}
-        />
-      </div>
+      <div className="tile-layout__content">{content}</div>
     </div>
   )
 }

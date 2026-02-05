@@ -44,7 +44,7 @@ export default function RelationListWithDetail({
 
         {hasItems && (
           <ul className="relation-pane__list-inner">
-            {items.slice(0, 10).map((item) => {
+            {items.slice(0, 8).map((item) => {
               const active = item.id === selectedId
               return (
                 <li

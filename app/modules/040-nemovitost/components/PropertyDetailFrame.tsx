@@ -73,6 +73,7 @@ type Props = {
   onRegisterSubmit?: (fn: () => Promise<UiProperty | null>) => void
   onDirtyChange?: (dirty: boolean) => void
   onSaved?: (property: UiProperty) => void
+  embedded?: boolean
 }
 
 // =====================
@@ -130,67 +131,64 @@ export default function PropertyDetailFrame({
   onRegisterSubmit,
   onDirtyChange,
   onSaved,
+  embedded = false,
 }: Props) {
   const [resolvedProperty, setResolvedProperty] = useState<UiProperty>(property)
   const resolveSeqRef = useRef(0)
-  
+
   const toast = useToast()
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
-  
+
   const [formValue, setFormValue] = useState<PropertyFormValue>(() => buildInitialFormValue(property))
   const formValueRef = useRef<PropertyFormValue>(formValue)
-  
-  const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null }>>([])
-  const [selectedPropertyTypeId, setSelectedPropertyTypeId] = useState<string | null>(property.propertyTypeId)
-  const [units, setUnits] = useState<Array<{ id: string; display_name: string; internal_code: string | null; status: string | null }>>([])
-  
-  // Load property types from generic_types
+
+  const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; name: string; icon?: string | null }>>([])
+  const [selectedPropertyTypeId, setSelectedPropertyTypeId] = useState<string | null>(property.propertyTypeId ?? null)
+  const [units, setUnits] = useState<Array<{ id: string; display_name: string | null; internal_code: string | null; status: string | null }>>([])
+
+  useEffect(() => {
+    formValueRef.current = formValue
+  }, [formValue])
+
   useEffect(() => {
     ;(async () => {
       try {
         const { data } = await supabase
           .from('generic_types')
-          .select('id, code, name, icon')
+          .select('id, name, icon')
           .eq('category', 'property_types')
           .eq('active', true)
           .order('order_index')
-        
+
         setPropertyTypes(data || [])
       } catch (err) {
         logger.error('Failed to load property types', err)
       }
     })()
   }, [])
-  
-  // Load units for this property
+
   useEffect(() => {
-    if (isNewId(resolvedProperty.id)) {
+    if (isNewId(property.id)) {
       setUnits([])
       return
     }
-    
+
     ;(async () => {
       try {
         const { data } = await supabase
           .from('units')
           .select('id, display_name, internal_code, status')
-          .eq('property_id', resolvedProperty.id)
-          .eq('is_archived', false)
-          .order('display_name')
-        
-        setUnits(data || [])
+          .eq('property_id', property.id)
+          .order('display_name', { ascending: true, nullsFirst: false })
+
+        setUnits((data ?? []) as any)
       } catch (err) {
-        logger.error('Failed to load units', err)
+        logger.error('Failed to load property units', err)
       }
     })()
-  }, [resolvedProperty.id])
-  
-  useEffect(() => {
-    formValueRef.current = formValue
-  }, [formValue])
-  
-  // Load property detail (pokud není new)
+  }, [property.id])
+
   useEffect(() => {
     if (isNewId(property.id)) {
       const initialValue = buildInitialFormValue(property)
@@ -205,23 +203,23 @@ export default function PropertyDetailFrame({
     ;(async () => {
       try {
         const detail = await getPropertyDetail(property.id)
-        
+
         if (seq !== resolveSeqRef.current) return
-        
+
         const resolved: UiProperty = {
           id: detail.property.id,
           landlordId: detail.property.landlord_id,
           propertyTypeId: detail.property.property_type_id,
           displayName: detail.property.display_name,
           internalCode: detail.property.internal_code,
-          
+
           street: detail.property.street,
           houseNumber: detail.property.house_number,
           city: detail.property.city,
           zip: detail.property.zip,
           country: detail.property.country,
           region: detail.property.region,
-          
+
           landArea: detail.property.land_area,
           builtUpArea: detail.property.built_up_area,
           buildingArea: detail.property.building_area,
@@ -229,21 +227,21 @@ export default function PropertyDetailFrame({
           floorsAboveGround: detail.property.floors_above_ground,
           floorsBelowGround: detail.property.floors_below_ground,
           unitsCount: detail.property.units_count,
-          
+
           buildYear: detail.property.build_year,
           reconstructionYear: detail.property.reconstruction_year,
-          
+
           cadastralArea: detail.property.cadastral_area,
           parcelNumber: detail.property.parcel_number,
           lvNumber: detail.property.lv_number,
-          
+
           note: detail.property.note,
           originModule: detail.property.origin_module,
           isArchived: detail.property.is_archived,
           createdAt: detail.property.created_at,
           updatedAt: detail.property.updated_at,
         }
-        
+
         setResolvedProperty(resolved)
         const initialValue = buildInitialFormValue(resolved)
         setFormValue(initialValue)
@@ -475,96 +473,100 @@ export default function PropertyDetailFrame({
     }
     return propertyName
   }, [detailViewMode, propertyName, propertyTypeName])
-  
+
+  const content = (
+    <DetailView
+      mode={detailViewMode}
+      sectionIds={sectionIds}
+      initialActiveId={initialSectionId ?? 'detail'}
+      onActiveSectionChange={onActiveSectionChange}
+      ctx={{
+        entityType: 'properties',
+        entityId: resolvedProperty.id === 'new' ? 'new' : resolvedProperty.id || undefined,
+        entityLabel: resolvedProperty.displayName ?? null,
+        showSystemEntityHeader: false,
+        mode: detailViewMode,
+
+        detailContent: (
+          <PropertyDetailFormComponent
+            key={`form-${resolvedProperty.id}`}
+            property={formValue}
+            readOnly={readOnly}
+            assignedUnitsCount={units.length}
+            onDirtyChange={(dirty) => {
+              if (dirty) {
+                markDirtyIfChanged(formValue)
+              }
+            }}
+            onValueChange={(val) => {
+              setFormValue(val)
+              formValueRef.current = val
+              markDirtyIfChanged(val)
+            }}
+          />
+        ),
+
+        unitsContent: (
+          <div className="detail-form">
+            <section className="detail-form__section">
+              <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
+              {units.length === 0 ? (
+                <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
+                  Zatím nejsou přiřazeny žádné jednotky.
+                </p>
+              ) : (
+                <table className="data-table" style={{ width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Název</th>
+                      <th>Interní kód</th>
+                      <th>Stav</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {units.map((unit) => (
+                      <tr key={unit.id}>
+                        <td>{unit.display_name}</td>
+                        <td>{unit.internal_code || '—'}</td>
+                        <td>
+                          {unit.status === 'available' && '🟢 Volná'}
+                          {unit.status === 'occupied' && '🔴 Obsazená'}
+                          {unit.status === 'reserved' && '🟡 Rezervovaná'}
+                          {unit.status === 'renovation' && '🟤 V rekonstrukci'}
+                          {!unit.status && '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          </div>
+        ),
+
+        equipmentContent: (
+          <EquipmentTab
+            entityType="property"
+            entityId={resolvedProperty.id}
+            readOnly={readOnly}
+          />
+        ),
+
+        systemBlocks,
+      } as any}
+    />
+  )
+
+  if (embedded) {
+    return <div className="tile-layout__content">{content}</div>
+  }
+
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
-        <h1 className="tile-layout__title">
-          {titleText}
-        </h1>
+        <h1 className="tile-layout__title">{titleText}</h1>
       </div>
-      <div className="tile-layout__content">
-        <DetailView
-          mode={detailViewMode}
-          sectionIds={sectionIds}
-          initialActiveId={initialSectionId ?? 'detail'}
-          onActiveSectionChange={onActiveSectionChange}
-          ctx={{
-            entityType: 'properties',
-            entityId: resolvedProperty.id === 'new' ? 'new' : resolvedProperty.id || undefined,
-            entityLabel: resolvedProperty.displayName ?? null,
-            showSystemEntityHeader: false,
-            mode: detailViewMode,
-            
-            detailContent: (
-              <PropertyDetailFormComponent
-                key={`form-${resolvedProperty.id}`}
-                property={formValue}
-                readOnly={readOnly}
-                assignedUnitsCount={units.length}
-                onDirtyChange={(dirty) => {
-                  if (dirty) {
-                    markDirtyIfChanged(formValue)
-                  }
-                }}
-                onValueChange={(val) => {
-                  setFormValue(val)
-                  formValueRef.current = val
-                  markDirtyIfChanged(val)
-                }}
-              />
-            ),
-            
-            unitsContent: (
-              <div className="detail-form">
-                <section className="detail-form__section">
-                  <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
-                  {units.length === 0 ? (
-                    <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
-                      Zatím nejsou přiřazeny žádné jednotky.
-                    </p>
-                  ) : (
-                    <table className="data-table" style={{ width: '100%' }}>
-                      <thead>
-                        <tr>
-                          <th>Název</th>
-                          <th>Interní kód</th>
-                          <th>Stav</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {units.map((unit) => (
-                          <tr key={unit.id}>
-                            <td>{unit.display_name}</td>
-                            <td>{unit.internal_code || '—'}</td>
-                            <td>
-                              {unit.status === 'available' && '🟢 Volná'}
-                              {unit.status === 'occupied' && '🔴 Obsazená'}
-                              {unit.status === 'reserved' && '🟡 Rezervovaná'}
-                              {unit.status === 'renovation' && '🟤 V rekonstrukci'}
-                              {!unit.status && '—'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </section>
-              </div>
-            ),
-            
-            equipmentContent: (
-              <EquipmentTab
-                entityType="property"
-                entityId={resolvedProperty.id}
-                readOnly={readOnly}
-              />
-            ),
-            
-            systemBlocks,
-          } as any}
-        />
-      </div>
+      <div className="tile-layout__content">{content}</div>
     </div>
   )
 }

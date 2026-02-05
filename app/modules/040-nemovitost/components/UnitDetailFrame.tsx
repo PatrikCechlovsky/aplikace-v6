@@ -73,6 +73,7 @@ type Props = {
   onRegisterSubmit?: (fn: () => Promise<UiUnit | null>) => void
   onDirtyChange?: (dirty: boolean) => void
   onSaved?: (unit: UiUnit) => void
+  embedded?: boolean
 }
 
 // =====================
@@ -132,6 +133,7 @@ export default function UnitDetailFrame({
   onRegisterSubmit,
   onDirtyChange,
   onSaved,
+  embedded = false,
 }: Props) {
   const [resolvedUnit, setResolvedUnit] = useState<UiUnit>(unit)
   const resolveSeqRef = useRef(0)
@@ -206,6 +208,13 @@ export default function UnitDetailFrame({
     formValueRef.current = formValue
   }, [formValue])
   
+  // Dirty tracking
+  const markDirtyIfChanged = useCallback((val: UnitFormValue) => {
+    const currentSnap = JSON.stringify(val)
+    const isDirty = currentSnap !== initialSnapshotRef.current
+    onDirtyChange?.(isDirty)
+  }, [onDirtyChange])
+  
   // Load unit detail (pokud není new)
   useEffect(() => {
     if (isNewId(unit.id)) {
@@ -238,7 +247,7 @@ export default function UnitDetailFrame({
           zip: detail.unit.zip,
           country: detail.unit.country,
           region: detail.unit.region,
-          
+
           floor: detail.unit.floor,
           doorNumber: detail.unit.door_number,
           area: detail.unit.area,
@@ -249,14 +258,18 @@ export default function UnitDetailFrame({
           orientationNumber: detail.unit.orientation_number,
           yearRenovated: detail.unit.year_renovated,
           managerName: detail.unit.manager_name,
-          
+
+          cadastralArea: detail.unit.cadastral_area,
+          parcelNumber: detail.unit.parcel_number,
+          lvNumber: detail.unit.lv_number,
+
           note: detail.unit.note,
           originModule: detail.unit.origin_module,
           isArchived: detail.unit.is_archived,
           createdAt: detail.unit.created_at,
           updatedAt: detail.unit.updated_at,
         }
-        
+
         setResolvedUnit(resolved)
         const initialValue = buildInitialFormValue(resolved)
         setFormValue(initialValue)
@@ -268,27 +281,10 @@ export default function UnitDetailFrame({
       }
     })()
   }, [unit.id, toast])
-  
-  // Dirty tracking
-  const markDirtyIfChanged = useCallback((val: UnitFormValue) => {
-    const currentSnap = JSON.stringify(val)
-    const isDirty = currentSnap !== initialSnapshotRef.current
-    onDirtyChange?.(isDirty)
-  }, [onDirtyChange])
-  
-  // Update formValue when unitTypeId changes
-  useEffect(() => {
-    if (selectedUnitTypeId !== formValue.unitTypeId) {
-      const updated = { ...formValue, unitTypeId: selectedUnitTypeId || '' }
-      setFormValue(updated)
-      markDirtyIfChanged(updated)
-    }
-  }, [selectedUnitTypeId, formValue, markDirtyIfChanged])
-  
-  // Submit handler
-  const handleSubmit = useCallback(async (): Promise<UiUnit | null> => {
+
+  const handleSubmit = useCallback(async () => {
     const isNew = isNewId(resolvedUnit.id)
-    
+
     const input: SaveUnitInput = {
       id: isNew ? undefined : resolvedUnit.id,
       property_id: formValue.propertyId || null,
@@ -296,14 +292,14 @@ export default function UnitDetailFrame({
       display_name: formValue.displayName || null,
       internal_code: formValue.internalCode || null,
       landlord_id: formValue.landlordId || null,
-      
+
       street: formValue.street || null,
       house_number: formValue.houseNumber || null,
       city: formValue.city || null,
       zip: formValue.zip || null,
       country: formValue.country || 'CZ',
       region: formValue.region || null,
-      
+
       floor: formValue.floor,
       door_number: formValue.doorNumber || null,
       area: formValue.area,
@@ -314,19 +310,19 @@ export default function UnitDetailFrame({
       orientation_number: formValue.orientationNumber || null,
       year_renovated: formValue.yearRenovated,
       manager_name: formValue.managerName || null,
-      
+
       cadastral_area: formValue.cadastralArea || null,
       parcel_number: formValue.parcelNumber || null,
       lv_number: formValue.lvNumber || null,
-      
+
       note: formValue.note || null,
       origin_module: formValue.originModule || '040-nemovitost',
       is_archived: formValue.isArchived || false,
     }
-    
+
     try {
       const savedRow = await saveUnit(input)
-      
+
       const saved: UiUnit = {
         id: savedRow.id,
         propertyId: savedRow.property_id,
@@ -334,14 +330,14 @@ export default function UnitDetailFrame({
         landlordId: savedRow.landlord_id,
         displayName: savedRow.display_name,
         internalCode: savedRow.internal_code,
-        
+
         street: savedRow.street,
         houseNumber: savedRow.house_number,
         city: savedRow.city,
         zip: savedRow.zip,
         country: savedRow.country,
         region: savedRow.region,
-        
+
         floor: savedRow.floor,
         doorNumber: savedRow.door_number,
         area: savedRow.area,
@@ -352,27 +348,27 @@ export default function UnitDetailFrame({
         orientationNumber: savedRow.orientation_number,
         yearRenovated: savedRow.year_renovated,
         managerName: savedRow.manager_name,
-        
+
         cadastralArea: (savedRow as any).cadastral_area,
         parcelNumber: (savedRow as any).parcel_number,
         lvNumber: (savedRow as any).lv_number,
-        
+
         note: savedRow.note,
         originModule: savedRow.origin_module,
         isArchived: savedRow.is_archived,
         createdAt: savedRow.created_at,
         updatedAt: savedRow.updated_at,
       }
-      
+
       setResolvedUnit(saved)
       const newInitial = buildInitialFormValue(saved)
       setFormValue(newInitial)
       initialSnapshotRef.current = JSON.stringify(newInitial)
       onDirtyChange?.(false)
-      
+
       toast.showSuccess(isNew ? 'Jednotka vytvořena' : 'Jednotka uložena')
       onSaved?.(saved)
-      
+
       return saved
     } catch (err) {
       logger.error('Failed to save unit', err)
@@ -494,58 +490,62 @@ export default function UnitDetailFrame({
     return unitName
   }, [detailViewMode, unitName, unitTypeName])
   
+  const content = (
+    <DetailView
+      mode={detailViewMode}
+      sectionIds={sectionIds}
+      initialActiveId={initialSectionId ?? 'detail'}
+      onActiveSectionChange={onActiveSectionChange}
+      ctx={{
+        entityType: 'units',
+        entityId: resolvedUnit.id === 'new' ? 'new' : resolvedUnit.id || undefined,
+        entityLabel: resolvedUnit.displayName ?? null,
+        showSystemEntityHeader: false,
+        mode: detailViewMode,
+
+        detailContent: (
+          <UnitDetailForm
+            key={`form-${resolvedUnit.id}`}
+            unit={formValue}
+            readOnly={readOnly}
+            propertyAddress={propertyAddress}
+            propertyLandlordId={propertyLandlordId}
+            onDirtyChange={(dirty) => {
+              if (dirty) {
+                markDirtyIfChanged(formValue)
+              }
+            }}
+            onValueChange={(val) => {
+              setFormValue(val)
+              formValueRef.current = val
+              markDirtyIfChanged(val)
+            }}
+          />
+        ),
+
+        equipmentContent: (
+          <EquipmentTab
+            entityType="unit"
+            entityId={resolvedUnit.id}
+            readOnly={readOnly}
+          />
+        ),
+
+        systemBlocks,
+      } as any}
+    />
+  )
+
+  if (embedded) {
+    return <div className="tile-layout__content">{content}</div>
+  }
+
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
-        <h1 className="tile-layout__title">
-          {titleText}
-        </h1>
+        <h1 className="tile-layout__title">{titleText}</h1>
       </div>
-      <div className="tile-layout__content">
-        <DetailView
-          mode={detailViewMode}
-          sectionIds={sectionIds}
-          initialActiveId={initialSectionId ?? 'detail'}
-          onActiveSectionChange={onActiveSectionChange}
-          ctx={{
-            entityType: 'units',
-            entityId: resolvedUnit.id === 'new' ? 'new' : resolvedUnit.id || undefined,
-            entityLabel: resolvedUnit.displayName ?? null,
-            showSystemEntityHeader: false,
-            mode: detailViewMode,
-            
-            detailContent: (
-              <UnitDetailForm
-                key={`form-${resolvedUnit.id}`}
-                unit={formValue}
-                readOnly={readOnly}
-                propertyAddress={propertyAddress}
-                propertyLandlordId={propertyLandlordId}
-                onDirtyChange={(dirty) => {
-                  if (dirty) {
-                    markDirtyIfChanged(formValue)
-                  }
-                }}
-                onValueChange={(val) => {
-                  setFormValue(val)
-                  formValueRef.current = val
-                  markDirtyIfChanged(val)
-                }}
-              />
-            ),
-            
-            equipmentContent: (
-              <EquipmentTab
-                entityType="unit"
-                entityId={resolvedUnit.id}
-                readOnly={readOnly}
-              />
-            ),
-            
-            systemBlocks,
-          } as any}
-        />
-      </div>
+      <div className="tile-layout__content">{content}</div>
     </div>
   )
 }

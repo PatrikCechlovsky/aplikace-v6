@@ -118,6 +118,7 @@
   border: 1px solid var(--color-border);
   padding: 10px;
   font-size: 13px;
+  overflow: auto;
 }
 
 /* Detail entity */

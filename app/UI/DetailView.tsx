@@ -2,12 +2,14 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
+import { getIcon } from '@/app/UI/icons'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 export type DetailViewMode = 'create' | 'edit' | 'view'
 
 export type DetailSectionId =
   | 'detail'
+  | 'relations'
   | 'roles'
   | 'invite'
   | 'users'
@@ -23,6 +25,7 @@ export type DetailViewSection<Ctx = unknown> = {
   label: string
   order: number
   always?: boolean
+  icon?: React.ReactNode
   render: (ctx: Ctx) => React.ReactNode
   visibleWhen?: (ctx: Ctx) => boolean
 }
@@ -61,6 +64,8 @@ export type DetailViewCtx = {
   showSystemEntityHeader?: boolean
 
   detailContent?: React.ReactNode
+
+  relationsContent?: React.ReactNode
 
   // ✅ může být ReactNode NEBO funkce(ctx) => ReactNode
   inviteContent?: React.ReactNode | ((ctx: DetailViewCtx) => React.ReactNode)
@@ -216,6 +221,15 @@ function renderRoleAndPermissionControls(
 
 const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   detail: { id: 'detail', label: 'Detail', order: 10, always: true, render: (ctx) => ctx?.detailContent ?? null },
+
+  relations: {
+    id: 'relations',
+    label: 'Vazby',
+    order: 25,
+    icon: getIcon('link'),
+    visibleWhen: (ctx) => !!(ctx as any)?.relationsContent,
+    render: (ctx: any) => ctx?.relationsContent ?? null,
+  },
 
   invite: {
     id: 'invite',
@@ -453,7 +467,7 @@ export default function DetailView({
   const tabs: DetailTabItem[] = useMemo(() => {
     return sections
       .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
-      .map((s) => ({ id: s.id, label: s.label }))
+      .map((s) => ({ id: s.id, label: s.label, icon: s.icon }))
   }, [sections, ctx])
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'

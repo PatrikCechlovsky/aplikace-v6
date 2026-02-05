@@ -75,8 +75,10 @@ export async function listUnits(params: UnitsListParams = {}): Promise<UnitsList
         id,
         property_id,
         unit_type_id,
+        landlord_id,
         display_name,
         internal_code,
+        tenant_id,
         street,
         house_number,
         city,
@@ -167,6 +169,11 @@ export type UnitDetailRow = {
   zip: string | null
   country: string | null
   region: string | null
+  
+  // cadastral info
+  cadastral_area: string | null
+  parcel_number: string | null
+  lv_number: string | null
   
   // unit info
   floor: number | null
