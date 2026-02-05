@@ -827,8 +827,11 @@ export default function DetailAttachmentsSection({
 
 
   const sharedColumnsBase = useMemo(() => {
-    return getAttachmentsColumns({ variant: isManager ? 'manager' : 'list' })
-  }, [isManager])
+    return getAttachmentsColumns({ 
+      variant: isManager ? 'manager' : 'list',
+      entityType: entityType 
+    })
+  }, [isManager, entityType])
 
   const sharedColumns = useMemo(() => {
     return applyColumnPrefs(sharedColumnsBase, colPrefs)
