@@ -1162,15 +1162,26 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
               {attachmentsUiState.mode === 'list' && (
                 <>
                   {attachmentsUiState.hasSelection && (
-                    <button
-                      type="button"
-                      onClick={() => attachmentsApiRef.current?.view()}
-                      className="common-actions__btn"
-                      title="Zobrazit detail přílohy"
-                    >
-                      <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
-                      <span className="common-actions__label">Zobrazit</span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => attachmentsApiRef.current?.view()}
+                        className="common-actions__btn"
+                        title="Zobrazit detail přílohy"
+                      >
+                        <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                        <span className="common-actions__label">Zobrazit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => attachmentsApiRef.current?.edit()}
+                        className="common-actions__btn"
+                        title={readOnly ? "Upravit název a popis (můžeš editovat jen svoje soubory)" : "Upravit název a popis"}
+                      >
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                    </>
                   )}
                   <button
                     type="button"
