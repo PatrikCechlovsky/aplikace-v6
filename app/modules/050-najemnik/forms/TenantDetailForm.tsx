@@ -15,6 +15,9 @@ import { useToast } from '@/app/UI/Toast'
 // =====================
 
 export type TenantFormValue = {
+  // Vazba na jednotku
+  unitId: string
+
   // Person fields (osoba, osvc, zastupce)
   titleBefore: string
   firstName: string
@@ -58,10 +61,29 @@ export type TenantFormValue = {
   isArchived: boolean
 }
 
+export type UnitInfo = {
+  id: string
+  display_name: string | null
+  property_name?: string | null
+  property_id?: string | null
+}
+
+export type PropertyInfo = {
+  id: string
+  display_name: string | null
+  landlord_name?: string | null
+  landlord_id?: string | null
+}
+
 export type TenantDetailFormProps = {
   subjectType: string // 'osoba' | 'osvc' | 'firma' | 'spolek' | 'statni' | 'zastupce'
   tenant: Partial<TenantFormValue>
   readOnly: boolean
+  units?: Array<{ id: string; display_name: string | null; property_name?: string | null }> // Seznam jednotek pro výběr
+  unitInfo?: UnitInfo | null // Info o přiřazené jednotce
+  propertyInfo?: PropertyInfo | null // Info o nemovitosti (přes jednotku)
+  landlordName?: string | null // Jméno pronajimatele (přes nemovitost)
+  onFieldChange?: (field: keyof TenantFormValue, value: any) => void // Pro změnu jednotky
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: TenantFormValue) => void
 }
@@ -155,12 +177,26 @@ function validateEmail(value: string): string | null {
 
 const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormProps>(
   function TenantDetailForm(props, ref) {
-  const { subjectType, tenant, readOnly = false, onDirtyChange, onValueChange } = props
+  const { 
+    subjectType, 
+    tenant, 
+    readOnly = false, 
+    units = [],
+    unitInfo, 
+    propertyInfo, 
+    landlordName, 
+    onFieldChange,
+    onDirtyChange, 
+    onValueChange 
+  } = props
   const isPerson = isPersonType(subjectType)
   const isCompany = isCompanyType(subjectType)
 
   const initial = useMemo<TenantFormValue>(
     () => ({
+      // Vazba na jednotku
+      unitId: safe(tenant.unitId),
+
       // Person fields
       titleBefore: safe(tenant.titleBefore),
       firstName: safe(tenant.firstName),
@@ -954,6 +990,72 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
             )}
           </div>
         </div>
+      </div>
+
+      {/* PŘIŘAZENÍ JEDNOTKY */}
+      <div className="detail-form__section">
+        <div className="detail-form__section-title">Přiřazení jednotky</div>
+
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Jednotka</label>
+            {readOnly ? (
+              unitInfo ? (
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={`${unitInfo.display_name || '—'} ${unitInfo.property_name ? `(${unitInfo.property_name})` : ''}`}
+                  readOnly
+                />
+              ) : (
+                <div className="detail-form__hint">Jednotka není přiřazena</div>
+              )
+            ) : (
+              <select
+                className="detail-form__input"
+                value={formValue.unitId || ''}
+                onChange={e => {
+                  const newValue = e.target.value || ''
+                  setFormValue(prev => ({ ...prev, unitId: newValue }))
+                  setDirty(true)
+                  if (onFieldChange) {
+                    onFieldChange('unitId', newValue)
+                  }
+                }}
+              >
+                <option value="">-- Bez jednotky --</option>
+                {units.map(unit => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.display_name || '?'} {unit.property_name ? `(${unit.property_name})` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {propertyInfo && (
+            <div className="detail-form__field">
+              <label className="detail-form__label">Nemovitost</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={propertyInfo.display_name || '—'}
+                readOnly
+              />
+            </div>
+          )}
+        </div>
+
+        {landlordName && (
+          <div className="detail-form__grid detail-form__grid--narrow">
+            <div className="detail-form__field">
+              <label className="detail-form__label">Pronajímatel</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={landlordName}
+                readOnly
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* PŘIŘAZENÍ SUBJEKTU */}
