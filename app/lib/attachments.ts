@@ -195,6 +195,31 @@ export async function listAttachments(args: ListAttachmentsArgs): Promise<Attach
   
   let rows = (data ?? []) as AttachmentRow[]
 
+  // ✅ Pokud načítáme přímo vybavení binding, doplň název vybavení
+  if (entityType === 'equipment_binding' || entityType === 'property_equipment_binding') {
+    try {
+      const isUnitEquipment = entityType === 'equipment_binding'
+      const equipmentTable = isUnitEquipment ? 'unit_equipment' : 'property_equipment'
+      
+      const { data: equipment, error: eqError } = await supabase
+        .from(equipmentTable)
+        .select('id, equipment_id, name, equipment_catalog(equipment_name)')
+        .eq('id', args.entityId)
+        .maybeSingle()
+      
+      if (!eqError && equipment) {
+        const catalogName = (equipment as any)?.equipment_catalog?.equipment_name ?? null
+        rows = rows.map((attach) => ({
+          ...attach,
+          equipment_name: catalogName || (equipment as any)?.name || null,
+          equipment_id: (equipment as any)?.equipment_id || null,
+        }))
+      }
+    } catch (e) {
+      // pokud se načtení vybavení nezdařilo, pokračuj bez názvu
+    }
+  }
+
   // ✅ Pro jednotku/nemovitost: také načti dokumenty k jejímu vybavení
   if (entityType === 'unit' || entityType === 'units' || entityType === 'property' || entityType === 'properties') {
     try {
