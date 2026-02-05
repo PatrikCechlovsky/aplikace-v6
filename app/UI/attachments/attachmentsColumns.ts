@@ -10,6 +10,7 @@ export function getAttachmentsColumns(opts: { variant: AttachmentsColumnsVariant
   const base: ListViewColumn[] = [
     { key: 'title', label: 'Název', width: '220px', sortable: true },
     { key: 'description', label: 'Popis', width: '260px' },
+    { key: 'equipment', label: 'Vybavení', width: '180px', sortable: false },
     { key: 'file', label: 'Soubor (latest)', sortable: true },
     { key: 'ver', label: 'Verze', width: '90px', sortable: true },
     { key: 'uploaded', label: 'Nahráno', width: '220px', sortable: true },
@@ -23,6 +24,7 @@ export function getAttachmentsColumns(opts: { variant: AttachmentsColumnsVariant
       { key: 'ver', label: 'Verze', width: '90px', sortable: true },
       { key: 'title', label: 'Název', width: '220px', sortable: true },
       { key: 'description', label: 'Popis', width: '260px' },
+      { key: 'equipment', label: 'Vybavení', width: '180px', sortable: false },
     ]
   }
 

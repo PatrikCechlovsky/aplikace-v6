@@ -151,6 +151,7 @@ export default function DetailAttachmentsSection({
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
+  const [showEquipmentAttachments, setShowEquipmentAttachments] = useState(false)
   const [filterText, setFilterText] = useState('')
 
   const [loading, setLoading] = useState(false)
@@ -348,16 +349,28 @@ export default function DetailAttachmentsSection({
   }, [canLoad, loadAttachments])
 
   const filteredRows = useMemo(() => {
+    let filtered = rows
+
+    // ✅ Filtr: zobrazit dokumenty k vybavení?
+    if (!showEquipmentAttachments) {
+      // Skryj dokumenty s entity_type equipment_binding nebo property_equipment_binding
+      filtered = filtered.filter(
+        (r) => r.entity_type !== 'equipment_binding' && r.entity_type !== 'property_equipment_binding'
+      )
+    }
+
+    // ✅ Textový filtr
     const t = filterText.trim().toLowerCase()
-    if (!t) return rows
+    if (!t) return filtered
   
-    return rows.filter((r) => {
+    return filtered.filter((r) => {
       const a = (r.title ?? '').toLowerCase()
       const b = (r.description ?? '').toLowerCase()
       const c = (r.file_name ?? '').toLowerCase()
-      return a.includes(t) || b.includes(t) || c.includes(t)
+      const e = (r.equipment_name ?? '').toLowerCase()
+      return a.includes(t) || b.includes(t) || c.includes(t) || e.includes(t)
     })
-  }, [rows, filterText])
+  }, [rows, filterText, showEquipmentAttachments])
 
   // ============================================================================
   // SORTED ROWS (Attachments)
@@ -793,6 +806,18 @@ export default function DetailAttachmentsSection({
             </span>
           ),
           description: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
+          equipment: (
+            <span className="detail-attachments__muted">
+              {r.equipment_name ? (
+                <>
+                  {r.equipment_name}
+                  {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+                </>
+              ) : (
+                '—'
+              )}
+            </span>
+          ),
           file: (
             <button
               type="button"
@@ -852,20 +877,37 @@ export default function DetailAttachmentsSection({
             {!loading && !errorText && listRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
 
             {!loading && !errorText && listRows.length > 0 && (
-              <ListView
-                columns={sharedColumns}
-                rows={listRows}
-                sort={sort}
-                onSortChange={handleSortChange}
-                filterValue={filterText}
-                onFilterChange={setFilterText}
-                filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                showArchived={includeArchived}
-                onShowArchivedChange={setIncludeArchived}
-                showArchivedLabel="Zobrazit archivované"
-                onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                onColumnResize={handleColumnResize}
-              />
+              <>
+                <div style={{ marginBottom: '12px', display: 'flex', gap: '16px', fontSize: '13px', alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={includeArchived}
+                      onChange={(e) => setIncludeArchived(e.target.checked)}
+                    />
+                    <span>Zobrazit archivované</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showEquipmentAttachments}
+                      onChange={(e) => setShowEquipmentAttachments(e.target.checked)}
+                    />
+                    <span>Zobrazit dokumenty k vybavení</span>
+                  </label>
+                </div>
+                <ListView
+                  columns={sharedColumns}
+                  rows={listRows}
+                  sort={sort}
+                  onSortChange={handleSortChange}
+                  filterValue={filterText}
+                  onFilterChange={setFilterText}
+                  filterPlaceholder="Hledat podle názvu, popisu, souboru nebo vybavení..."
+                  onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                  onColumnResize={handleColumnResize}
+                />
+              </>
             )}
 
             {/* ✅ Sloupce (Drawer) */}
