@@ -18,6 +18,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import { supabase } from '@/app/lib/supabaseClient'
 
 import {
   addAttachmentVersionWithUpload,
@@ -142,7 +143,9 @@ export default function DetailAttachmentsSection({
   onManagerStateChange,
 }: DetailAttachmentsSectionProps) {
   const isManagerRequested = variant === 'manager'
-  const isManager = isManagerRequested && canManage !== false
+  const isManager = isManagerRequested
+  const canWriteAll = canManage !== false
+  const isLimitedWrite = isManagerRequested && canManage === false
 
   // ✅ viewKey per-variant (list vs manager)
   const VIEW_KEY = ATTACHMENTS_VIEW_KEY
@@ -153,6 +156,8 @@ export default function DetailAttachmentsSection({
   const [includeArchived, setIncludeArchived] = useState(false)
   const [showEquipmentAttachments, setShowEquipmentAttachments] = useState(false)
   const [filterText, setFilterText] = useState('')
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -177,6 +182,18 @@ export default function DetailAttachmentsSection({
 
   const handleColumnResize = useCallback((key: string, px: number) => {
     setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      const { data } = await supabase.auth.getUser()
+      if (!active) return
+      setCurrentUserId(data?.user?.id ?? null)
+    })()
+    return () => {
+      active = false
+    }
   }, [])
   
   // ✅ prefs load/save
@@ -478,6 +495,18 @@ export default function DetailAttachmentsSection({
     setPanelOpen(true)
   }, [isManager])
 
+  const canEditAttachment = useCallback(
+    (row: AttachmentRow | null) => {
+      if (!row) return false
+      if (canWriteAll) return true
+      if (!currentUserId) return false
+      return row.created_by === currentUserId
+    },
+    [canWriteAll, currentUserId]
+  )
+
+  const editDeniedMessage = 'Nemáš oprávnění upravovat přílohy jiných uživatelů.'
+
   const handleActionSaveNew = useCallback(async () => {
     if (!isManager) return
     setErrorText(null)
@@ -510,17 +539,26 @@ export default function DetailAttachmentsSection({
   const handleStartEditMeta = useCallback(
     (r: AttachmentRow) => {
       if (!isManager) return
+      if (!canEditAttachment(r)) {
+        setErrorText(editDeniedMessage)
+        return
+      }
       setErrorText(null)
       setEditingDocId(r.id)
       setEditTitle(r.title ?? '')
       setEditDesc(r.description ?? '')
     },
-    [isManager]
+    [isManager, canEditAttachment, editDeniedMessage]
   )
 
   const handleSaveEditMeta = useCallback(async () => {
     if (!isManager) return
     if (!editingDocId) return
+    const editingRow = rows.find((x) => x.id === editingDocId) ?? null
+    if (!canEditAttachment(editingRow)) {
+      setErrorText(editDeniedMessage)
+      return
+    }
     setErrorText(null)
 
     const title = editTitle.trim()
@@ -540,7 +578,7 @@ export default function DetailAttachmentsSection({
     } finally {
       setEditSaving(false)
     }
-  }, [isManager, editingDocId, editTitle, editDesc, loadAttachments])
+  }, [isManager, editingDocId, editTitle, editDesc, loadAttachments, rows, canEditAttachment, editDeniedMessage])
 
   const handlePickNewVersion = useCallback(
     (documentId: string) => {
@@ -681,6 +719,10 @@ export default function DetailAttachmentsSection({
       edit: () => {
         const r = ensureSelected()
         if (!r) return
+        if (!canEditAttachment(r)) {
+          setErrorText(editDeniedMessage)
+          return
+        }
         // Zavřít předchozí režimy
         if (panelOpen) {
           setPanelOpen(false)
@@ -708,6 +750,11 @@ export default function DetailAttachmentsSection({
         const docId = editingDocId || selectedDocId
         if (!docId) {
           setErrorText('Nejdřív vyber nebo otevři přílohu.')
+          return
+        }
+        const r = rows.find((x) => x.id === docId) ?? null
+        if (!canEditAttachment(r)) {
+          setErrorText(editDeniedMessage)
           return
         }
         handlePickNewVersion(docId)
@@ -752,6 +799,9 @@ export default function DetailAttachmentsSection({
     handleToggleHistory,
     handleActionSaveNew,
     handleSaveEditMeta,
+    canEditAttachment,
+    editDeniedMessage,
+    rows,
   ])
 
 // ============================================================================
@@ -1003,6 +1053,12 @@ export default function DetailAttachmentsSection({
           {errorText && (
             <div className="detail-view__placeholder">
               Chyba: <strong>{errorText}</strong>
+            </div>
+          )}
+
+          {isLimitedWrite && (
+            <div className="detail-form__hint">
+              Správa příloh je v režimu omezeného zápisu: můžeš přidávat přílohy a upravovat pouze své.
             </div>
           )}
 
