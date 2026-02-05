@@ -6,9 +6,9 @@ postgres,auth,audit_log_entries,created_at,4,timestamp with time zone,null,null,
 postgres,auth,audit_log_entries,ip_address,5,character varying,64,null,null,false,''::character varying,false
 postgres,auth,flow_state,id,1,uuid,null,null,null,false,null,false
 postgres,auth,flow_state,user_id,2,uuid,null,null,null,true,null,false
-postgres,auth,flow_state,auth_code,3,text,null,null,null,false,null,false
-postgres,auth,flow_state,code_challenge_method,4,USER-DEFINED,null,null,null,false,null,false
-postgres,auth,flow_state,code_challenge,5,text,null,null,null,false,null,false
+postgres,auth,flow_state,auth_code,3,text,null,null,null,true,null,false
+postgres,auth,flow_state,code_challenge_method,4,USER-DEFINED,null,null,null,true,null,false
+postgres,auth,flow_state,code_challenge,5,text,null,null,null,true,null,false
 postgres,auth,flow_state,provider_type,6,text,null,null,null,false,null,false
 postgres,auth,flow_state,provider_access_token,7,text,null,null,null,true,null,false
 postgres,auth,flow_state,provider_refresh_token,8,text,null,null,null,true,null,false
@@ -16,6 +16,11 @@ postgres,auth,flow_state,created_at,9,timestamp with time zone,null,null,null,tr
 postgres,auth,flow_state,updated_at,10,timestamp with time zone,null,null,null,true,null,false
 postgres,auth,flow_state,authentication_method,11,text,null,null,null,false,null,false
 postgres,auth,flow_state,auth_code_issued_at,12,timestamp with time zone,null,null,null,true,null,false
+postgres,auth,flow_state,invite_token,13,text,null,null,null,true,null,false
+postgres,auth,flow_state,referrer,14,text,null,null,null,true,null,false
+postgres,auth,flow_state,oauth_client_state_id,15,uuid,null,null,null,true,null,false
+postgres,auth,flow_state,linking_target_id,16,uuid,null,null,null,true,null,false
+postgres,auth,flow_state,email_optional,17,boolean,null,null,null,false,false,false
 postgres,auth,identities,provider_id,1,text,null,null,null,false,null,false
 postgres,auth,identities,user_id,2,uuid,null,null,null,false,null,false
 postgres,auth,identities,identity_data,3,jsonb,null,null,null,false,null,false
@@ -88,6 +93,7 @@ postgres,auth,oauth_clients,created_at,10,timestamp with time zone,null,null,nul
 postgres,auth,oauth_clients,updated_at,11,timestamp with time zone,null,null,null,false,now(),false
 postgres,auth,oauth_clients,deleted_at,12,timestamp with time zone,null,null,null,true,null,false
 postgres,auth,oauth_clients,client_type,13,USER-DEFINED,null,null,null,false,'confidential'::auth.oauth_client_type,false
+postgres,auth,oauth_clients,token_endpoint_auth_method,14,text,null,null,null,false,null,false
 postgres,auth,oauth_consents,id,1,uuid,null,null,null,false,null,false
 postgres,auth,oauth_consents,user_id,2,uuid,null,null,null,false,null,false
 postgres,auth,oauth_consents,client_id,3,uuid,null,null,null,false,null,false
@@ -313,6 +319,12 @@ postgres,public,equipment_catalog,created_at,7,timestamp with time zone,null,nul
 postgres,public,equipment_catalog,updated_at,8,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,equipment_catalog,is_archived,9,boolean,null,null,null,true,false,false
 postgres,public,equipment_catalog,equipment_type_id,10,uuid,null,null,null,false,null,false
+postgres,public,equipment_catalog,room_type_id,11,uuid,null,null,null,true,null,false
+postgres,public,equipment_catalog,default_lifespan_months,12,integer,null,32,0,true,null,false
+postgres,public,equipment_catalog,default_revision_interval,13,integer,null,32,0,true,null,false
+postgres,public,equipment_catalog,default_state,14,text,null,null,null,true,'good'::text,false
+postgres,public,equipment_catalog,default_description,15,text,null,null,null,true,null,false
+postgres,public,equipment_catalog,active,16,boolean,null,null,null,true,true,false
 postgres,public,equipment_types,code,1,text,null,null,null,false,null,false
 postgres,public,equipment_types,name,2,text,null,null,null,false,null,false
 postgres,public,equipment_types,description,3,text,null,null,null,true,null,false
@@ -398,11 +410,20 @@ postgres,public,property_equipment,property_id,2,uuid,null,null,null,false,null,
 postgres,public,property_equipment,equipment_id,3,uuid,null,null,null,false,null,false
 postgres,public,property_equipment,quantity,4,integer,null,32,0,true,1,false
 postgres,public,property_equipment,state,5,text,null,null,null,true,'good'::text,false
-postgres,public,property_equipment,installation_date,6,date,null,null,null,true,null,false
+postgres,public,property_equipment,installed_at,6,date,null,null,null,true,null,false
 postgres,public,property_equipment,note,7,text,null,null,null,true,null,false
 postgres,public,property_equipment,created_at,8,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,property_equipment,updated_at,9,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,property_equipment,is_archived,10,boolean,null,null,null,true,false,false
+postgres,public,property_equipment,name,11,text,null,null,null,true,null,false
+postgres,public,property_equipment,type,12,text,null,null,null,true,null,false
+postgres,public,property_equipment,description,13,text,null,null,null,true,null,false
+postgres,public,property_equipment,purchase_price,14,numeric,null,12,2,true,null,false
+postgres,public,property_equipment,lifespan_months,15,integer,null,32,0,true,null,false
+postgres,public,property_equipment,last_revision,16,date,null,null,null,true,null,false
+postgres,public,property_equipment,photo_attachment_id,17,uuid,null,null,null,true,null,false
+postgres,public,property_equipment,equipment_type_id,18,uuid,null,null,null,true,null,false
+postgres,public,property_equipment,room_type_id,19,uuid,null,null,null,true,null,false
 postgres,public,property_types,id,1,uuid,null,null,null,false,gen_random_uuid(),false
 postgres,public,property_types,code,2,text,null,null,null,false,null,false
 postgres,public,property_types,name,3,text,null,null,null,false,null,false
@@ -529,11 +550,20 @@ postgres,public,unit_equipment,unit_id,2,uuid,null,null,null,false,null,false
 postgres,public,unit_equipment,equipment_id,3,uuid,null,null,null,false,null,false
 postgres,public,unit_equipment,quantity,4,integer,null,32,0,true,1,false
 postgres,public,unit_equipment,state,5,text,null,null,null,true,'good'::text,false
-postgres,public,unit_equipment,installation_date,6,date,null,null,null,true,null,false
+postgres,public,unit_equipment,installed_at,6,date,null,null,null,true,null,false
 postgres,public,unit_equipment,note,7,text,null,null,null,true,null,false
 postgres,public,unit_equipment,created_at,8,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,unit_equipment,updated_at,9,timestamp with time zone,null,null,null,true,now(),false
 postgres,public,unit_equipment,is_archived,10,boolean,null,null,null,true,false,false
+postgres,public,unit_equipment,name,11,text,null,null,null,true,null,false
+postgres,public,unit_equipment,type,12,text,null,null,null,true,null,false
+postgres,public,unit_equipment,description,13,text,null,null,null,true,null,false
+postgres,public,unit_equipment,purchase_price,14,numeric,null,12,2,true,null,false
+postgres,public,unit_equipment,lifespan_months,15,integer,null,32,0,true,null,false
+postgres,public,unit_equipment,last_revision,16,date,null,null,null,true,null,false
+postgres,public,unit_equipment,photo_attachment_id,17,uuid,null,null,null,true,null,false
+postgres,public,unit_equipment,equipment_type_id,18,uuid,null,null,null,true,null,false
+postgres,public,unit_equipment,room_type_id,19,uuid,null,null,null,true,null,false
 postgres,public,unit_types,code,1,text,null,null,null,false,null,false
 postgres,public,unit_types,name,2,text,null,null,null,false,null,false
 postgres,public,unit_types,description,3,text,null,null,null,true,null,false
@@ -602,19 +632,29 @@ postgres,public,v_property_equipment_list,property_id,2,uuid,null,null,null,true
 postgres,public,v_property_equipment_list,equipment_id,3,uuid,null,null,null,true,null,false
 postgres,public,v_property_equipment_list,quantity,4,integer,null,32,0,true,null,false
 postgres,public,v_property_equipment_list,state,5,text,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,installation_date,6,date,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,installed_at,6,date,null,null,null,true,null,false
 postgres,public,v_property_equipment_list,note,7,text,null,null,null,true,null,false
 postgres,public,v_property_equipment_list,created_at,8,timestamp with time zone,null,null,null,true,null,false
 postgres,public,v_property_equipment_list,updated_at,9,timestamp with time zone,null,null,null,true,null,false
 postgres,public,v_property_equipment_list,is_archived,10,boolean,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,equipment_name,11,text,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,equipment_type_id,12,uuid,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,purchase_price,13,numeric,null,12,2,true,null,false
-postgres,public,v_property_equipment_list,purchase_date,14,date,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,equipment_type_name,15,text,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,equipment_type_icon,16,text,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,equipment_type_color,17,text,null,null,null,true,null,false
-postgres,public,v_property_equipment_list,total_price,18,numeric,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,name,11,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,type,12,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,description,13,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,purchase_price,14,numeric,null,12,2,true,null,false
+postgres,public,v_property_equipment_list,lifespan_months,15,integer,null,32,0,true,null,false
+postgres,public,v_property_equipment_list,last_revision,16,date,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,photo_attachment_id,17,uuid,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_type_id,18,uuid,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,room_type_id,19,uuid,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,catalog_equipment_name,20,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,catalog_equipment_type_id,21,uuid,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,catalog_purchase_price,22,numeric,null,12,2,true,null,false
+postgres,public,v_property_equipment_list,catalog_purchase_date,23,date,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_type_name,24,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,equipment_type_icon,25,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,room_type_name,26,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,room_type_icon,27,text,null,null,null,true,null,false
+postgres,public,v_property_equipment_list,total_price,28,numeric,null,null,null,true,null,false
 postgres,public,v_subject_invite_latest,subject_id,1,uuid,null,null,null,true,null,false
 postgres,public,v_subject_invite_latest,invite_id,2,uuid,null,null,null,true,null,false
 postgres,public,v_subject_invite_latest,status,3,text,null,null,null,true,null,false
@@ -638,19 +678,29 @@ postgres,public,v_unit_equipment_list,unit_id,2,uuid,null,null,null,true,null,fa
 postgres,public,v_unit_equipment_list,equipment_id,3,uuid,null,null,null,true,null,false
 postgres,public,v_unit_equipment_list,quantity,4,integer,null,32,0,true,null,false
 postgres,public,v_unit_equipment_list,state,5,text,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,installation_date,6,date,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,installed_at,6,date,null,null,null,true,null,false
 postgres,public,v_unit_equipment_list,note,7,text,null,null,null,true,null,false
 postgres,public,v_unit_equipment_list,created_at,8,timestamp with time zone,null,null,null,true,null,false
 postgres,public,v_unit_equipment_list,updated_at,9,timestamp with time zone,null,null,null,true,null,false
 postgres,public,v_unit_equipment_list,is_archived,10,boolean,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,equipment_name,11,text,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,equipment_type_id,12,uuid,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,purchase_price,13,numeric,null,12,2,true,null,false
-postgres,public,v_unit_equipment_list,purchase_date,14,date,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,equipment_type_name,15,text,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,equipment_type_icon,16,text,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,equipment_type_color,17,text,null,null,null,true,null,false
-postgres,public,v_unit_equipment_list,total_price,18,numeric,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,name,11,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,type,12,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,description,13,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,purchase_price,14,numeric,null,12,2,true,null,false
+postgres,public,v_unit_equipment_list,lifespan_months,15,integer,null,32,0,true,null,false
+postgres,public,v_unit_equipment_list,last_revision,16,date,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,photo_attachment_id,17,uuid,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_type_id,18,uuid,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,room_type_id,19,uuid,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,catalog_equipment_name,20,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,catalog_equipment_type_id,21,uuid,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,catalog_purchase_price,22,numeric,null,12,2,true,null,false
+postgres,public,v_unit_equipment_list,catalog_purchase_date,23,date,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_type_name,24,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,equipment_type_icon,25,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,room_type_name,26,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,room_type_icon,27,text,null,null,null,true,null,false
+postgres,public,v_unit_equipment_list,total_price,28,numeric,null,null,null,true,null,false
 postgres,public,v_units_list,id,1,uuid,null,null,null,true,null,false
 postgres,public,v_units_list,property_id,2,uuid,null,null,null,true,null,false
 postgres,public,v_units_list,display_name,3,text,null,null,null,true,null,false

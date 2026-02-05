@@ -147,6 +147,9 @@ export default function DetailAttachmentsSection({
   const canWriteAll = canManage !== false
   const isLimitedWrite = isManagerRequested && canManage === false
 
+  const normalizedEntityType = useMemo(() => (entityType ?? '').trim().toLowerCase(), [entityType])
+  const isUnitOrProperty = normalizedEntityType === 'unit' || normalizedEntityType === 'units' || normalizedEntityType === 'property' || normalizedEntityType === 'properties'
+
   // ✅ viewKey per-variant (list vs manager)
   const VIEW_KEY = ATTACHMENTS_VIEW_KEY
   
@@ -369,7 +372,7 @@ export default function DetailAttachmentsSection({
     let filtered = rows
 
     // ✅ Filtr: zobrazit dokumenty k vybavení?
-    if (!showEquipmentAttachments) {
+    if (!isManager && isUnitOrProperty && !showEquipmentAttachments) {
       // Skryj dokumenty s entity_type equipment_binding nebo property_equipment_binding
       filtered = filtered.filter(
         (r) => r.entity_type !== 'equipment_binding' && r.entity_type !== 'property_equipment_binding'
@@ -387,7 +390,7 @@ export default function DetailAttachmentsSection({
       const e = (r.equipment_name ?? '').toLowerCase()
       return a.includes(t) || b.includes(t) || c.includes(t) || e.includes(t)
     })
-  }, [rows, filterText, showEquipmentAttachments])
+  }, [rows, filterText, showEquipmentAttachments, isManager, isUnitOrProperty])
 
   // ============================================================================
   // SORTED ROWS (Attachments)
@@ -928,7 +931,27 @@ export default function DetailAttachmentsSection({
 
             {!loading && !errorText && listRows.length > 0 && (
               <>
-                <div style={{ marginBottom: '12px', display: 'flex', gap: '16px', fontSize: '13px', alignItems: 'center' }}>
+                <div
+                  style={{
+                    marginBottom: '12px',
+                    display: 'flex',
+                    gap: '16px',
+                    fontSize: '13px',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    width: '100%',
+                  }}
+                >
+                  {isUnitOrProperty && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={showEquipmentAttachments}
+                        onChange={(e) => setShowEquipmentAttachments(e.target.checked)}
+                      />
+                      <span>Zobrazit dokumenty k vybavení</span>
+                    </label>
+                  )}
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
@@ -936,14 +959,6 @@ export default function DetailAttachmentsSection({
                       onChange={(e) => setIncludeArchived(e.target.checked)}
                     />
                     <span>Zobrazit archivované</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={showEquipmentAttachments}
-                      onChange={(e) => setShowEquipmentAttachments(e.target.checked)}
-                    />
-                    <span>Zobrazit dokumenty k vybavení</span>
                   </label>
                 </div>
                 <ListView

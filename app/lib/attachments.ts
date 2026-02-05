@@ -196,17 +196,18 @@ export async function listAttachments(args: ListAttachmentsArgs): Promise<Attach
   let rows = (data ?? []) as AttachmentRow[]
 
   // ✅ Pro jednotku/nemovitost: také načti dokumenty k jejímu vybavení
-  if (entityType === 'unit' || entityType === 'property') {
+  if (entityType === 'unit' || entityType === 'units' || entityType === 'property' || entityType === 'properties') {
     try {
-      const bindingEntityType = entityType === 'unit' ? 'equipment_binding' : 'property_equipment_binding'
+      const isUnit = entityType === 'unit' || entityType === 'units'
+      const bindingEntityType = isUnit ? 'equipment_binding' : 'property_equipment_binding'
       
       // 1) Najdi všechna vybavení pro danou jednotku/nemovitost
-      const equipmentTable = entityType === 'unit' ? 'unit_equipment' : 'property_equipment'
-      const filterCol = entityType === 'unit' ? 'unit_id' : 'property_id'
+      const equipmentTable = isUnit ? 'unit_equipment' : 'property_equipment'
+      const filterCol = isUnit ? 'unit_id' : 'property_id'
       
       let equipmentQ = supabase
         .from(equipmentTable)
-        .select('id, equipment_id, name')
+        .select('id, equipment_id, name, equipment_catalog(equipment_name)')
         .eq(filterCol, args.entityId)
       
       const { data: equipment, error: eqError } = await equipmentQ
@@ -232,10 +233,11 @@ export async function listAttachments(args: ListAttachmentsArgs): Promise<Attach
         if (attachData) {
           const attachWithEquipment = (attachData as AttachmentRow[]).map((attach) => {
             const eq = equipment.find((e) => (e as any).id === attach.entity_id)
+            const catalogName = (eq as any)?.equipment_catalog?.equipment_name ?? null
             return {
               ...attach,
-              equipment_name: eq ? (eq.name || (eq.equipment_id ? null : eq.name)) : null,
-              equipment_id: eq?.equipment_id || null,
+              equipment_name: catalogName || (eq as any)?.name || null,
+              equipment_id: (eq as any)?.equipment_id || null,
             }
           })
           
