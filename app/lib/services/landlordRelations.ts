@@ -27,12 +27,24 @@ export type LandlordRelationsResult = {
 
 export async function getLandlordRelations(landlordId: string, opts?: { includeArchived?: boolean }): Promise<LandlordRelationsResult> {
   const includeArchived = !!opts?.includeArchived
+  const startedAt = Date.now()
+
+  console.debug('[landlordRelations] start', {
+    landlordId,
+    includeArchived,
+  })
 
   const properties = await listProperties({ landlordId, includeArchived, limit: 500 })
   const propertyIds = properties.map((p) => p.id)
 
+  console.debug('[landlordRelations] properties loaded', {
+    count: properties.length,
+    durationMs: Date.now() - startedAt,
+  })
+
   let units: UnitsListRow[] = []
   if (propertyIds.length > 0) {
+    const unitsStart = Date.now()
     let q = supabase
       .from('units')
       .select(
@@ -106,12 +118,18 @@ export async function getLandlordRelations(landlordId: string, opts?: { includeA
         user_count: row.user_count ?? null,
       } as UnitsListRow
     })
+
+    console.debug('[landlordRelations] units loaded', {
+      count: units.length,
+      durationMs: Date.now() - unitsStart,
+    })
   }
 
   const tenantIds = Array.from(new Set(units.map((u) => u.tenant_id).filter(Boolean))) as string[]
   let tenants: LandlordRelationTenant[] = []
 
   if (tenantIds.length > 0) {
+    const tenantsStart = Date.now()
     let q = supabase
       .from('subjects')
       .select('id, display_name, email, phone, subject_type, is_archived')
@@ -124,7 +142,19 @@ export async function getLandlordRelations(landlordId: string, opts?: { includeA
     const { data, error } = await q
     if (error) throw new Error(error.message)
     tenants = (data ?? []) as LandlordRelationTenant[]
+
+    console.debug('[landlordRelations] tenants loaded', {
+      count: tenants.length,
+      durationMs: Date.now() - tenantsStart,
+    })
   }
+
+  console.debug('[landlordRelations] done', {
+    properties: properties.length,
+    units: units.length,
+    tenants: tenants.length,
+    totalMs: Date.now() - startedAt,
+  })
 
   return { properties, units, tenants }
 }

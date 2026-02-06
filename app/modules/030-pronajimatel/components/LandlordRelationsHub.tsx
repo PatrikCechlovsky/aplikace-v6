@@ -387,8 +387,11 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     setLoading(true)
     setErrorText(null)
 
+    logger.debug('Relations load: start', { landlordId })
+
     ;(async () => {
       try {
+        const t0 = Date.now()
         const relations = await getLandlordRelations(landlordId, { includeArchived: false })
         if (!active) return
 
@@ -399,8 +402,15 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         setSelectedPropertyId((prev) => prev ?? relations.properties[0]?.id ?? null)
         setSelectedUnitId((prev) => prev ?? relations.units[0]?.id ?? null)
         setSelectedTenantId((prev) => prev ?? relations.tenants[0]?.id ?? null)
+        logger.debug('Relations load: done', {
+          landlordId,
+          properties: relations.properties.length,
+          units: relations.units.length,
+          tenants: relations.tenants.length,
+          durationMs: Date.now() - t0,
+        })
       } catch (err: any) {
-        logger.error('Failed to load landlord relations', err)
+        logger.error('Failed to load landlord relations', { landlordId, err })
         if (!active) return
         setErrorText(err?.message || 'Nepodařilo se načíst vazby pronajimatele.')
       } finally {
@@ -424,10 +434,13 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
 
     ;(async () => {
       try {
+        const t0 = Date.now()
         const landlordRow = await getLandlordDetail(landlordId)
         if (!active) return
         setLandlordDetail(mapLandlordDetailToUi(landlordRow))
+        logger.debug('Landlord detail loaded', { landlordId, durationMs: Date.now() - t0 })
       } catch (err) {
+        logger.error('Failed to load landlord detail', { landlordId, err })
         if (active) setLandlordDetail(null)
       }
     })()
