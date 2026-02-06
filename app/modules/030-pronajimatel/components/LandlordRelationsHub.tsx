@@ -233,7 +233,13 @@ function sortItems<T>(items: T[], sort: ListViewSortState, getValue: (item: T, k
   return [...items].sort((a, b) => compareValues(getValue(a, sort.key), getValue(b, sort.key)) * dir)
 }
 
-function useRelationListPrefs(viewKey: string, baseColumns: ListViewColumn[], defaultSort: ListViewSortState) {
+function useRelationListPrefs(
+  viewKey: string,
+  baseColumns: ListViewColumn[],
+  defaultSort: ListViewSortState,
+  opts?: { readOnly?: boolean }
+) {
+  const readOnly = !!opts?.readOnly
   const [sort, setSort] = useState<ListViewSortState>(defaultSort)
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
@@ -258,6 +264,7 @@ function useRelationListPrefs(viewKey: string, baseColumns: ListViewColumn[], de
   }, [viewKey, defaultSort])
 
   useEffect(() => {
+    if (readOnly) return
     if (!prefsLoadedRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
 
@@ -272,7 +279,7 @@ function useRelationListPrefs(viewKey: string, baseColumns: ListViewColumn[], de
     saveTimerRef.current = setTimeout(() => {
       void saveViewPrefs(viewKey, payload)
     }, 500)
-  }, [viewKey, sort, colPrefs])
+  }, [viewKey, sort, colPrefs, readOnly])
 
   const columns = useMemo(() => applyColumnPrefs(baseColumns, colPrefs), [baseColumns, colPrefs])
 
@@ -361,10 +368,10 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
   const [unitDetail, setUnitDetail] = useState<UiUnit | null>(null)
   const [tenantDetail, setTenantDetail] = useState<UiTenant | null>(null)
 
-  const landlordList = useRelationListPrefs('030.landlords.list', LANDLORD_COLUMNS, { key: 'displayName', dir: 'asc' })
-  const propertiesList = useRelationListPrefs('040.properties.list', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' })
-  const unitsList = useRelationListPrefs('040.units.list', UNIT_COLUMNS, { key: 'displayName', dir: 'asc' })
-  const tenantsList = useRelationListPrefs('030.tenants.list', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const landlordList = useRelationListPrefs('030.landlords.list', LANDLORD_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
+  const propertiesList = useRelationListPrefs('040.properties.list', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
+  const unitsList = useRelationListPrefs('040.units.list', UNIT_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
+  const tenantsList = useRelationListPrefs('030.tenants.list', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
 
   const [landlordFilter, setLandlordFilter] = useState('')
   const [propertiesFilter, setPropertiesFilter] = useState('')
