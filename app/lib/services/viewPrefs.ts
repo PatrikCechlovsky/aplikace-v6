@@ -125,6 +125,9 @@ export async function loadViewPrefs(viewKey: string, defaults: ViewPrefs): Promi
       if (process.env.NODE_ENV === 'development') {
         console.debug('[viewPrefs] Table ui_view_prefs not ready:', error.message)
       }
+      if ((error as any)?.status === 400) {
+        DISABLE_DB_PREFS = true
+      }
       return merged
     }
 
