@@ -112,6 +112,44 @@ function mapRowToUi(row: LandlordsListRow, subjectTypeMap: Record<string, Subjec
   return mapLandlordRowToUi(row, subjectTypeMap)
 }
 
+function mapDetailLandlordToUi(detail: DetailUiLandlord, subjectTypeMap: Record<string, SubjectType>): UiLandlord {
+  const subjectTypeMeta = subjectTypeMap[detail.subjectType ?? '']
+
+  const streetPart = [detail.street, detail.houseNumber].filter(Boolean).join(' ')
+  const cityPart = [detail.zip, detail.city].filter(Boolean).join(' ')
+  const countryName = detail.country === 'CZ' ? 'Česká republika' :
+                     detail.country === 'SK' ? 'Slovensko' :
+                     detail.country === 'PL' ? 'Polsko' :
+                     detail.country === 'DE' ? 'Německo' :
+                     detail.country === 'AT' ? 'Rakousko' :
+                     detail.country || ''
+  const fullAddress = [streetPart, cityPart, countryName].filter(Boolean).join(', ')
+
+  return {
+    id: detail.id,
+    displayName: detail.displayName ?? '',
+    email: detail.email ?? null,
+    phone: detail.phone ?? null,
+    subjectType: detail.subjectType ?? null,
+    isArchived: detail.isArchived ?? null,
+    createdAt: detail.createdAt ?? '',
+
+    titleBefore: detail.titleBefore ?? null,
+    firstName: detail.firstName ?? null,
+    lastName: detail.lastName ?? null,
+
+    companyName: detail.companyName ?? null,
+    ic: detail.ic ?? null,
+    dic: detail.dic ?? null,
+
+    fullAddress: fullAddress || null,
+
+    subjectTypeLabel: subjectTypeMeta?.name || detail.subjectType || '—',
+    subjectTypeColor: subjectTypeMeta?.color ?? null,
+    subjectTypeOrderIndex: subjectTypeMeta?.sort_order ?? null,
+  }
+}
+
 function toRow(l: UiLandlord): ListViewRow<UiLandlord> {
   return {
     id: l.id,
@@ -731,9 +769,12 @@ export default function LandlordsTile({
             return
           }
 
-          const backLandlord = landlords.find((l) => l.id === backId) ?? detailLandlord
-          if (backLandlord) {
-            openDetail(backLandlord, 'read', 'detail')
+          const listBackLandlord = landlords.find((l) => l.id === backId)
+          if (listBackLandlord) {
+            openDetail(listBackLandlord, 'read', 'detail')
+          } else if (detailLandlord) {
+            const mapped = mapDetailLandlordToUi(detailLandlord, subjectTypeMapRef.current)
+            openDetail(mapped, 'read', 'detail')
           } else {
             setViewMode('read')
             setSelectedId(backId)
