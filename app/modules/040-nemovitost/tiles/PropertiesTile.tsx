@@ -6,7 +6,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, getPropertyDetail, type PropertiesListRow } from '@/app/lib/services/properties'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
@@ -30,6 +30,7 @@ import {
   getIsDirty,
   shouldCloseAttachmentsPanel 
 } from '@/app/lib/attachments/attachmentsManagerUtils'
+import { PROPERTIES_BASE_COLUMNS } from '../propertiesColumns'
 
 import '@/app/styles/components/TileLayout.css'
 
@@ -40,15 +41,6 @@ const VIEW_KEY = '040.properties.list'
 type LocalViewMode = ViewMode | 'list' | 'attachments-manager' | 'relations'
 
 // Export pro znovupoužití v EntityHub a ContractWizard
-export const PROPERTIES_BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'propertyTypeName', label: 'Typ', width: 160, sortable: true },
-  { key: 'displayName', label: 'Název', width: 250, sortable: true },
-  { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
-  { key: 'landlordName', label: 'Pronajímatel', width: 200, sortable: true },
-  { key: 'buildingArea', label: 'Plocha (m²)', width: 120, sortable: true },
-  { key: 'unitsCount', label: 'Jednotky', width: 100, sortable: true },
-]
-
 const BASE_COLUMNS = PROPERTIES_BASE_COLUMNS
 
 type UiProperty = {

@@ -15,8 +15,8 @@ import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/pr
 import { getPropertyRelations, type PropertyRelationTenant, type PropertyRelationUnit } from '@/app/lib/services/propertyRelations'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
 
-import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/tiles/LandlordsTile'
-import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/tiles/PropertiesTile'
+import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/landlordsColumns'
+import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/propertiesColumns'
 import { UNITS_BASE_COLUMNS } from '@/app/modules/040-nemovitost/tiles/UnitsTile'
 import { TENANTS_BASE_COLUMNS } from '@/app/modules/050-najemnik/tiles/TenantsTile'
 

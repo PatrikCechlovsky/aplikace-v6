@@ -8,7 +8,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import LandlordDetailFrame, { type UiLandlord as DetailUiLandlord } from '../forms/LandlordDetailFrame'
 import LandlordRelationsHub from '../components/LandlordRelationsHub'
@@ -24,6 +24,7 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 import { getIcon, type IconKey } from '@/app/UI/icons'
+import { LANDLORDS_BASE_COLUMNS } from '../landlordsColumns'
 import { 
   getAttachmentsManagerActions, 
   mapAttachmentsViewMode, 
@@ -50,19 +51,6 @@ type LocalViewMode = ViewMode | 'list' | 'attachments-manager' | 'relations'
 const VIEW_KEY = '030.landlords.list'
 
 // Export pro znovupoužití v EntityHub a ContractWizard
-export const LANDLORDS_BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'subjectTypeLabel', label: 'Typ pronajimatele', width: 160, sortable: true },
-  { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
-  { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
-  { key: 'email', label: 'E-mail', width: 260, sortable: true },
-  { key: 'phone', label: 'Telefon', width: 180, sortable: true },
-  { key: 'companyName', label: 'Název společnosti', width: 220, sortable: true },
-  { key: 'ic', label: 'IČ', width: 120, sortable: true },
-  { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
-  { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
-  { key: 'isArchived', label: 'Archivován', width: 120, align: 'center', sortable: true },
-]
-
 const BASE_COLUMNS = LANDLORDS_BASE_COLUMNS
 
 // Export pro znovupoužití v EntityHub a ContractWizard
