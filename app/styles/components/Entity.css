@@ -140,6 +140,13 @@
 .relation-detail__nav {
   display: inline-flex;
   gap: 6px;
+  align-items: center;
+}
+
+.relation-detail__count {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  padding-right: 4px;
 }
 
 .relation-detail__nav-btn {

@@ -328,12 +328,14 @@ function RelationDetailPanel({
   const current = idx >= 0 ? items[idx] : null
   const canPrev = idx > 0
   const canNext = idx >= 0 && idx < items.length - 1
+  const positionLabel = idx >= 0 ? `${idx + 1} z ${items.length}` : `0 z ${items.length}`
 
   return (
     <div className="relation-detail">
       <div className="relation-detail__toolbar">
         <div className="relation-detail__title">{current?.title ?? title}</div>
         <div className="relation-detail__nav">
+          <div className="relation-detail__count">{positionLabel}</div>
           <button
             type="button"
             className="relation-detail__nav-btn"
@@ -710,7 +712,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'landlord' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Pronajímatel</div>
+              <div className="relation-pane__header">Pronajímatel ({landlordRows.length})</div>
               <ListView
                 columns={landlordList.columns}
                 rows={landlordRows}
@@ -787,7 +789,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'properties' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Nemovitosti</div>
+              <div className="relation-pane__header">Nemovitosti ({propertyRows.length})</div>
               <ListView
                 columns={propertiesList.columns}
                 rows={propertyRows}
@@ -864,7 +866,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'units' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Jednotky</div>
+              <div className="relation-pane__header">Jednotky ({unitRows.length})</div>
               <ListView
                 columns={unitsList.columns}
                 rows={unitRows}
@@ -941,7 +943,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'tenants' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Nájemníci</div>
+              <div className="relation-pane__header">Nájemníci ({tenantRows.length})</div>
               <ListView
                 columns={tenantsList.columns}
                 rows={tenantRows}
@@ -1018,7 +1020,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'contracts' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Smlouvy</div>
+              <div className="relation-pane__header">Smlouvy (0)</div>
               <ListView
                 columns={[{ key: 'name', label: 'Smlouva', width: 260 }]}
                 rows={[]}
@@ -1037,7 +1039,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'energy' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Energie</div>
+              <div className="relation-pane__header">Energie (0)</div>
               <ListView
                 columns={[{ key: 'name', label: 'Energie', width: 260 }]}
                 rows={[]}
@@ -1056,7 +1058,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'payments' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Platby</div>
+              <div className="relation-pane__header">Platby (0)</div>
               <ListView
                 columns={[{ key: 'name', label: 'Platby', width: 260 }]}
                 rows={[]}
