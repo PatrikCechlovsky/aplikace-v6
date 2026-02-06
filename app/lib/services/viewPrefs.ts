@@ -33,6 +33,7 @@ export type ViewPrefs = {
 // =====================
 
 const LS_PREFIX = 'ui:view-prefs:'
+let DISABLE_DB_PREFS = false
 
 function lsKey(viewKey: string) {
   return `${LS_PREFIX}${viewKey}`
@@ -110,6 +111,8 @@ export async function loadViewPrefs(viewKey: string, defaults: ViewPrefs): Promi
   const ls = typeof window !== 'undefined' ? safeJsonParse<ViewPrefs>(window.localStorage.getItem(lsKey(viewKey))) : null
   let merged = mergePrefs(defaults, ls)
 
+  if (DISABLE_DB_PREFS) return merged
+
   try {
     const { data: auth } = await supabase.auth.getUser()
     if (!auth?.user?.id) return merged
@@ -154,6 +157,7 @@ export async function saveViewPrefs(viewKey: string, prefs: ViewPrefs): Promise<
   }
 
   try {
+    if (DISABLE_DB_PREFS) return
     const { data: auth } = await supabase.auth.getUser()
     if (!auth?.user?.id) return
 
@@ -173,6 +177,7 @@ export async function saveViewPrefs(viewKey: string, prefs: ViewPrefs): Promise<
       if (process.env.NODE_ENV === 'development') {
         console.debug('[viewPrefs] Failed to save to DB:', error.message)
       }
+      DISABLE_DB_PREFS = true
       return
     }
   } catch (err) {
@@ -180,5 +185,6 @@ export async function saveViewPrefs(viewKey: string, prefs: ViewPrefs): Promise<
     if (process.env.NODE_ENV === 'development') {
       console.debug('[viewPrefs] Exception saving prefs:', err)
     }
+    DISABLE_DB_PREFS = true
   }
 }
