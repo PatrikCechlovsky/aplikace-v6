@@ -332,6 +332,7 @@ function RelationDetailPanel({
   return (
     <div className="relation-detail">
       <div className="relation-detail__toolbar">
+        <div className="relation-detail__title">{current?.title ?? title}</div>
         <div className="relation-detail__nav">
           <button
             type="button"
@@ -352,7 +353,6 @@ function RelationDetailPanel({
             {getIcon('chevron-right')}
           </button>
         </div>
-        <div className="relation-detail__title">{current?.title ?? title}</div>
       </div>
       <div className="relation-detail__content">{children}</div>
     </div>
@@ -394,6 +394,13 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
 
   useEffect(() => {
     let active = true
+    if (!landlordId) {
+      setErrorText('Chybí identifikátor pronajímatele.')
+      setLoading(false)
+      return () => {
+        active = false
+      }
+    }
     setLoading(true)
     setErrorText(null)
 
