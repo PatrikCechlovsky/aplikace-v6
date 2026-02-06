@@ -4,11 +4,13 @@
 
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from '@/app/UI/DetailTabs'
-import RelationListWithDetail, { type RelationItem } from '@/app/UI/RelationListWithDetail'
+import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { getIcon } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import { getLandlordRelations, type LandlordRelationProperty, type LandlordRelationTenant, type LandlordRelationUnit } from '@/app/lib/services/landlordRelations'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
 import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/properties'
@@ -22,6 +24,7 @@ import TenantDetailFrame, { type UiTenant } from '@/app/modules/050-najemnik/for
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
+import '@/app/styles/components/CommonActions.css'
 
 const logger = createLogger('LandlordRelationsHub')
 
@@ -31,6 +34,34 @@ type Props = {
   landlordId: string
   landlordLabel?: string | null
 }
+
+const LANDLORD_COLUMNS: ListViewColumn[] = [
+  { key: 'displayName', label: 'Pronajímatel', width: 220, sortable: true },
+  { key: 'subjectType', label: 'Typ', width: 160, sortable: true },
+  { key: 'email', label: 'E-mail', width: 220, sortable: true },
+  { key: 'phone', label: 'Telefon', width: 160, sortable: true },
+  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
+]
+
+const PROPERTY_COLUMNS: ListViewColumn[] = [
+  { key: 'displayName', label: 'Nemovitost', width: 240, sortable: true },
+  { key: 'address', label: 'Adresa', width: 320, sortable: true },
+  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
+]
+
+const UNIT_COLUMNS: ListViewColumn[] = [
+  { key: 'displayName', label: 'Jednotka', width: 220, sortable: true },
+  { key: 'propertyName', label: 'Nemovitost', width: 260, sortable: true },
+  { key: 'status', label: 'Stav', width: 140, sortable: true },
+  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
+]
+
+const TENANT_COLUMNS: ListViewColumn[] = [
+  { key: 'displayName', label: 'Nájemník', width: 220, sortable: true },
+  { key: 'email', label: 'E-mail', width: 220, sortable: true },
+  { key: 'phone', label: 'Telefon', width: 160, sortable: true },
+  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
+]
 
 function mapLandlordDetailToUi(row: LandlordDetailRow): UiLandlord {
   return {
@@ -195,7 +226,92 @@ function mapTenantDetailToUi(row: TenantDetailRow): UiTenant {
   }
 }
 
-function RelationDetailNav({
+type RelationNavItem = {
+  id: string
+  title: string
+}
+
+const MAX_RELATION_ROWS_HEIGHT = 'calc(var(--table-header-h) + (var(--table-row-h) * 5) + 2px)'
+
+function normalizeText(v: any): string {
+  return String(v ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function compareValues(a: any, b: any): number {
+  if (typeof a === 'number' && typeof b === 'number') return a - b
+  return String(a ?? '').localeCompare(String(b ?? ''), 'cs', { sensitivity: 'base' })
+}
+
+function sortItems<T>(items: T[], sort: ListViewSortState, getValue: (item: T, key: string) => any): T[] {
+  if (!sort) return items
+  const dir = sort.dir === 'asc' ? 1 : -1
+  return [...items].sort((a, b) => compareValues(getValue(a, sort.key), getValue(b, sort.key)) * dir)
+}
+
+function useRelationListPrefs(viewKey: string, baseColumns: ListViewColumn[], defaultSort: ListViewSortState) {
+  const [sort, setSort] = useState<ListViewSortState>(defaultSort)
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+  const [colsOpen, setColsOpen] = useState(false)
+  const prefsLoadedRef = useRef(false)
+  const saveTimerRef = useRef<any>(null)
+
+  useEffect(() => {
+    void (async () => {
+      const prefs = await loadViewPrefs(viewKey, { v: 1, sort: defaultSort as ViewPrefsSortState, colWidths: {}, colOrder: [], colHidden: [] })
+      setSort((prefs.sort as ViewPrefsSortState) ?? defaultSort)
+      setColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+      prefsLoadedRef.current = true
+    })()
+  }, [viewKey, defaultSort])
+
+  useEffect(() => {
+    if (!prefsLoadedRef.current) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+
+    const payload: ViewPrefs = {
+      v: 1,
+      sort: sort as ViewPrefsSortState,
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
+    }
+
+    saveTimerRef.current = setTimeout(() => {
+      void saveViewPrefs(viewKey, payload)
+    }, 500)
+  }, [viewKey, sort, colPrefs])
+
+  const columns = useMemo(() => applyColumnPrefs(baseColumns, colPrefs), [baseColumns, colPrefs])
+
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+  }, [])
+
+  return {
+    sort,
+    setSort,
+    columns,
+    colPrefs,
+    setColPrefs,
+    colsOpen,
+    setColsOpen,
+    handleColumnResize,
+  }
+}
+
+function RelationDetailPanel({
   title,
   items,
   selectedId,
@@ -203,7 +319,7 @@ function RelationDetailNav({
   children,
 }: {
   title: string
-  items: RelationItem[]
+  items: RelationNavItem[]
   selectedId: string | number | null
   onSelect: (id: string | number) => void
   children: React.ReactNode
@@ -214,34 +330,32 @@ function RelationDetailNav({
   const canNext = idx >= 0 && idx < items.length - 1
 
   return (
-    <RelationListWithDetail title={title} items={items} selectedId={selectedId} onSelect={onSelect}>
-      <div className="relation-detail">
-        <div className="relation-detail__toolbar">
-          <div className="relation-detail__nav">
-            <button
-              type="button"
-              className="relation-detail__nav-btn"
-              onClick={() => canPrev && onSelect(items[idx - 1].id)}
-              disabled={!canPrev}
-              aria-label="Předchozí"
-            >
-              {getIcon('chevron-left')}
-            </button>
-            <button
-              type="button"
-              className="relation-detail__nav-btn"
-              onClick={() => canNext && onSelect(items[idx + 1].id)}
-              disabled={!canNext}
-              aria-label="Další"
-            >
-              {getIcon('chevron-right')}
-            </button>
-          </div>
-          <div className="relation-detail__title">{current?.primary ?? title}</div>
+    <div className="relation-detail">
+      <div className="relation-detail__toolbar">
+        <div className="relation-detail__nav">
+          <button
+            type="button"
+            className="relation-detail__nav-btn"
+            onClick={() => canPrev && onSelect(items[idx - 1].id)}
+            disabled={!canPrev}
+            aria-label="Předchozí"
+          >
+            {getIcon('chevron-left')}
+          </button>
+          <button
+            type="button"
+            className="relation-detail__nav-btn"
+            onClick={() => canNext && onSelect(items[idx + 1].id)}
+            disabled={!canNext}
+            aria-label="Další"
+          >
+            {getIcon('chevron-right')}
+          </button>
         </div>
-        <div className="relation-detail__content">{children}</div>
+        <div className="relation-detail__title">{current?.title ?? title}</div>
       </div>
-    </RelationListWithDetail>
+      <div className="relation-detail__content">{children}</div>
+    </div>
   )
 }
 
@@ -263,6 +377,16 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
   const [propertyDetail, setPropertyDetail] = useState<UiProperty | null>(null)
   const [unitDetail, setUnitDetail] = useState<UiUnit | null>(null)
   const [tenantDetail, setTenantDetail] = useState<UiTenant | null>(null)
+
+  const landlordList = useRelationListPrefs('relations.landlord.landlord', LANDLORD_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const propertiesList = useRelationListPrefs('relations.landlord.properties', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const unitsList = useRelationListPrefs('relations.landlord.units', UNIT_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const tenantsList = useRelationListPrefs('relations.landlord.tenants', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' })
+
+  const [landlordFilter, setLandlordFilter] = useState('')
+  const [propertiesFilter, setPropertiesFilter] = useState('')
+  const [unitsFilter, setUnitsFilter] = useState('')
+  const [tenantsFilter, setTenantsFilter] = useState('')
 
   useEffect(() => {
     setSelectedLandlordId(landlordId)
@@ -369,58 +493,163 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     }
   }, [selectedTenantId])
 
-  const landlordItems: RelationItem[] = useMemo(() => {
-    return [
-      {
-        id: landlordId,
-        primary: landlordDetail?.displayName ?? landlordLabel ?? '—',
-        secondary: [landlordDetail?.email, landlordDetail?.phone].filter(Boolean).join(' · ') || '—',
+  const landlordData = useMemo(() => (landlordDetail ? [landlordDetail] : []), [landlordDetail])
+  const landlordFiltered = useMemo(() => {
+    const f = normalizeText(landlordFilter)
+    if (!f) return landlordData
+    return landlordData.filter((l) => {
+      const hay = normalizeText([l.displayName, l.subjectType, l.email, l.phone].filter(Boolean).join(' '))
+      return hay.includes(f)
+    })
+  }, [landlordData, landlordFilter])
+  const landlordSorted = useMemo(() => {
+    return sortItems(landlordFiltered, landlordList.sort, (l, key) => {
+      switch (key) {
+        case 'displayName':
+          return normalizeText(l.displayName)
+        case 'subjectType':
+          return normalizeText(l.subjectType)
+        case 'email':
+          return normalizeText(l.email)
+        case 'phone':
+          return normalizeText(l.phone)
+        case 'archived':
+          return l.isArchived ? 1 : 0
+        default:
+          return ''
+      }
+    })
+  }, [landlordFiltered, landlordList.sort])
+  const landlordRows = useMemo<ListViewRow<UiLandlord>[]>(() => {
+    return landlordSorted.map((l) => ({
+      id: l.id,
+      data: {
+        displayName: l.displayName || '—',
+        subjectType: l.subjectType || '—',
+        email: l.email || '—',
+        phone: l.phone || '—',
+        archived: l.isArchived ? 'Ano' : 'Ne',
       },
-    ]
-  }, [landlordId, landlordDetail, landlordLabel])
+      raw: l,
+    }))
+  }, [landlordSorted])
+  const landlordNavItems = useMemo<RelationNavItem[]>(() => landlordSorted.map((l) => ({ id: l.id, title: l.displayName || '—' })), [landlordSorted])
 
-  const propertyItems: RelationItem[] = useMemo(() => {
-    return properties.map((p) => {
-      const address = [
-        [p.street, p.house_number].filter(Boolean).join(' '),
-        p.city,
-        p.zip,
-      ]
-        .filter(Boolean)
-        .join(', ')
-
+  const propertyFiltered = useMemo(() => {
+    const f = normalizeText(propertiesFilter)
+    if (!f) return properties
+    return properties.filter((p) => {
+      const address = [[p.street, p.house_number].filter(Boolean).join(' '), p.city, p.zip].filter(Boolean).join(', ')
+      const hay = normalizeText([p.display_name, address].filter(Boolean).join(' '))
+      return hay.includes(f)
+    })
+  }, [properties, propertiesFilter])
+  const propertySorted = useMemo(() => {
+    return sortItems(propertyFiltered, propertiesList.sort, (p, key) => {
+      const address = [[p.street, p.house_number].filter(Boolean).join(' '), p.city, p.zip].filter(Boolean).join(', ')
+      switch (key) {
+        case 'displayName':
+          return normalizeText(p.display_name)
+        case 'address':
+          return normalizeText(address)
+        case 'archived':
+          return p.is_archived ? 1 : 0
+        default:
+          return ''
+      }
+    })
+  }, [propertyFiltered, propertiesList.sort])
+  const propertyRows = useMemo<ListViewRow<LandlordRelationProperty>[]>(() => {
+    return propertySorted.map((p) => {
+      const address = [[p.street, p.house_number].filter(Boolean).join(' '), p.city, p.zip].filter(Boolean).join(', ')
       return {
         id: p.id,
-        primary: p.display_name || '—',
-        secondary: address || '—',
-        badge: p.is_archived ? 'Archivováno' : undefined,
+        data: {
+          displayName: p.display_name || '—',
+          address: address || '—',
+          archived: p.is_archived ? 'Ano' : 'Ne',
+        },
+        raw: p,
       }
     })
-  }, [properties])
+  }, [propertySorted])
+  const propertyNavItems = useMemo<RelationNavItem[]>(() => propertySorted.map((p) => ({ id: p.id, title: p.display_name || '—' })), [propertySorted])
 
-  const unitItems: RelationItem[] = useMemo(() => {
-    return units.map((u) => {
-      const secondary = u.property_name ? `Nemovitost: ${u.property_name}` : '—'
-      return {
-        id: u.id,
-        primary: u.display_name || u.internal_code || '—',
-        secondary,
-        badge: u.is_archived ? 'Archivováno' : undefined,
+  const unitFiltered = useMemo(() => {
+    const f = normalizeText(unitsFilter)
+    if (!f) return units
+    return units.filter((u) => {
+      const hay = normalizeText([u.display_name, u.internal_code, u.property_name, u.status].filter(Boolean).join(' '))
+      return hay.includes(f)
+    })
+  }, [units, unitsFilter])
+  const unitSorted = useMemo(() => {
+    return sortItems(unitFiltered, unitsList.sort, (u, key) => {
+      switch (key) {
+        case 'displayName':
+          return normalizeText(u.display_name || u.internal_code)
+        case 'propertyName':
+          return normalizeText(u.property_name)
+        case 'status':
+          return normalizeText(u.status)
+        case 'archived':
+          return u.is_archived ? 1 : 0
+        default:
+          return ''
       }
     })
-  }, [units])
+  }, [unitFiltered, unitsList.sort])
+  const unitRows = useMemo<ListViewRow<LandlordRelationUnit>[]>(() => {
+    return unitSorted.map((u) => ({
+      id: u.id,
+      data: {
+        displayName: u.display_name || u.internal_code || '—',
+        propertyName: u.property_name || '—',
+        status: u.status || '—',
+        archived: u.is_archived ? 'Ano' : 'Ne',
+      },
+      raw: u,
+    }))
+  }, [unitSorted])
+  const unitNavItems = useMemo<RelationNavItem[]>(() => unitSorted.map((u) => ({ id: u.id, title: u.display_name || u.internal_code || '—' })), [unitSorted])
 
-  const tenantItems: RelationItem[] = useMemo(() => {
-    return tenants.map((t) => {
-      const secondary = [t.email, t.phone].filter(Boolean).join(' · ') || '—'
-      return {
-        id: t.id,
-        primary: t.display_name || '—',
-        secondary,
-        badge: t.is_archived ? 'Archivováno' : undefined,
+  const tenantFiltered = useMemo(() => {
+    const f = normalizeText(tenantsFilter)
+    if (!f) return tenants
+    return tenants.filter((t) => {
+      const hay = normalizeText([t.display_name, t.email, t.phone].filter(Boolean).join(' '))
+      return hay.includes(f)
+    })
+  }, [tenants, tenantsFilter])
+  const tenantSorted = useMemo(() => {
+    return sortItems(tenantFiltered, tenantsList.sort, (t, key) => {
+      switch (key) {
+        case 'displayName':
+          return normalizeText(t.display_name)
+        case 'email':
+          return normalizeText(t.email)
+        case 'phone':
+          return normalizeText(t.phone)
+        case 'archived':
+          return t.is_archived ? 1 : 0
+        default:
+          return ''
       }
     })
-  }, [tenants])
+  }, [tenantFiltered, tenantsList.sort])
+  const tenantRows = useMemo<ListViewRow<LandlordRelationTenant>[]>(() => {
+    return tenantSorted.map((t) => ({
+      id: t.id,
+      data: {
+        displayName: t.display_name || '—',
+        email: t.email || '—',
+        phone: t.phone || '—',
+        archived: t.is_archived ? 'Ano' : 'Ne',
+      },
+      raw: t,
+    }))
+  }, [tenantSorted])
+  const tenantNavItems = useMemo<RelationNavItem[]>(() => tenantSorted.map((t) => ({ id: t.id, title: t.display_name || '—' })), [tenantSorted])
 
   const tabs: DetailTabItem[] = useMemo(() => {
     return [
@@ -472,75 +701,368 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         <DetailTabs items={tabs} activeId={activeTab} onChange={(id) => setActiveTab(id as RelationsTabId)} ariaLabel="Vazby" />
 
         {activeTab === 'landlord' && (
-          <RelationDetailNav
-            title="Pronajímatel"
-            items={landlordItems}
-            selectedId={selectedLandlordId}
-            onSelect={(id) => setSelectedLandlordId(String(id))}
-          >
-            {landlordDetail ? (
-              <LandlordDetailFrame landlord={landlordDetail} viewMode="read" embedded />
-            ) : (
-              <div className="detail-form__hint">Detail pronajimatele se nepodařilo načíst.</div>
-            )}
-          </RelationDetailNav>
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <div className="relation-pane__header">Pronajímatel</div>
+              <ListView
+                columns={landlordList.columns}
+                rows={landlordRows}
+                filterValue={landlordFilter}
+                onFilterChange={setLandlordFilter}
+                selectedId={selectedLandlordId}
+                onRowClick={(row) => setSelectedLandlordId(String(row.id))}
+                sort={landlordList.sort}
+                onSortChange={landlordList.setSort}
+                onColumnResize={landlordList.handleColumnResize}
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+                emptyText="Pronajímatel nebyl nalezen."
+                toolbarRight={
+                  <button
+                    type="button"
+                    className="common-actions__btn"
+                    title="Nastavit sloupce"
+                    onClick={() => landlordList.setColsOpen(true)}
+                  >
+                    {getIcon('settings')}
+                    <span className="common-actions__label">Sloupce</span>
+                  </button>
+                }
+              />
+              <ListViewColumnsDrawer
+                open={landlordList.colsOpen}
+                onClose={() => landlordList.setColsOpen(false)}
+                columns={LANDLORD_COLUMNS}
+                fixedFirstKey="displayName"
+                requiredKeys={['displayName']}
+                value={{
+                  order: landlordList.colPrefs.colOrder ?? [],
+                  hidden: landlordList.colPrefs.colHidden ?? [],
+                }}
+                onChange={(next) => {
+                  landlordList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: next.order,
+                    colHidden: next.hidden,
+                  }))
+                }}
+                onReset={() => {
+                  landlordList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: [],
+                    colHidden: [],
+                  }))
+                }}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              {landlordRows.length === 0 && <div className="detail-form__hint">Žádná data k zobrazení.</div>}
+              {landlordRows.length > 0 && selectedLandlordId == null && (
+                <div className="detail-form__hint">Vyber položku ze seznamu nahoře.</div>
+              )}
+              {landlordRows.length > 0 && selectedLandlordId != null && (
+                <RelationDetailPanel
+                  title="Pronajímatel"
+                  items={landlordNavItems}
+                  selectedId={selectedLandlordId}
+                  onSelect={(id) => setSelectedLandlordId(String(id))}
+                >
+                  {landlordDetail ? (
+                    <LandlordDetailFrame landlord={landlordDetail} viewMode="read" embedded />
+                  ) : (
+                    <div className="detail-form__hint">Detail pronajimatele se nepodařilo načíst.</div>
+                  )}
+                </RelationDetailPanel>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === 'properties' && (
-          <RelationDetailNav
-            title="Nemovitosti"
-            items={propertyItems}
-            selectedId={selectedPropertyId}
-            onSelect={(id) => setSelectedPropertyId(String(id))}
-          >
-            {propertyDetail ? (
-              <PropertyDetailFrame property={propertyDetail} viewMode="read" embedded />
-            ) : (
-              <div className="detail-form__hint">Detail nemovitosti se nepodařilo načíst.</div>
-            )}
-          </RelationDetailNav>
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <div className="relation-pane__header">Nemovitosti</div>
+              <ListView
+                columns={propertiesList.columns}
+                rows={propertyRows}
+                filterValue={propertiesFilter}
+                onFilterChange={setPropertiesFilter}
+                selectedId={selectedPropertyId}
+                onRowClick={(row) => setSelectedPropertyId(String(row.id))}
+                sort={propertiesList.sort}
+                onSortChange={propertiesList.setSort}
+                onColumnResize={propertiesList.handleColumnResize}
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+                emptyText="Pronajímatel nemá žádné nemovitosti."
+                toolbarRight={
+                  <button
+                    type="button"
+                    className="common-actions__btn"
+                    title="Nastavit sloupce"
+                    onClick={() => propertiesList.setColsOpen(true)}
+                  >
+                    {getIcon('settings')}
+                    <span className="common-actions__label">Sloupce</span>
+                  </button>
+                }
+              />
+              <ListViewColumnsDrawer
+                open={propertiesList.colsOpen}
+                onClose={() => propertiesList.setColsOpen(false)}
+                columns={PROPERTY_COLUMNS}
+                fixedFirstKey="displayName"
+                requiredKeys={['displayName']}
+                value={{
+                  order: propertiesList.colPrefs.colOrder ?? [],
+                  hidden: propertiesList.colPrefs.colHidden ?? [],
+                }}
+                onChange={(next) => {
+                  propertiesList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: next.order,
+                    colHidden: next.hidden,
+                  }))
+                }}
+                onReset={() => {
+                  propertiesList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: [],
+                    colHidden: [],
+                  }))
+                }}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              {propertyRows.length === 0 && <div className="detail-form__hint">Žádná data k zobrazení.</div>}
+              {propertyRows.length > 0 && selectedPropertyId == null && (
+                <div className="detail-form__hint">Vyber položku ze seznamu nahoře.</div>
+              )}
+              {propertyRows.length > 0 && selectedPropertyId != null && (
+                <RelationDetailPanel
+                  title="Nemovitosti"
+                  items={propertyNavItems}
+                  selectedId={selectedPropertyId}
+                  onSelect={(id) => setSelectedPropertyId(String(id))}
+                >
+                  {propertyDetail ? (
+                    <PropertyDetailFrame property={propertyDetail} viewMode="read" embedded />
+                  ) : (
+                    <div className="detail-form__hint">Detail nemovitosti se nepodařilo načíst.</div>
+                  )}
+                </RelationDetailPanel>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === 'units' && (
-          <RelationDetailNav
-            title="Jednotky"
-            items={unitItems}
-            selectedId={selectedUnitId}
-            onSelect={(id) => setSelectedUnitId(String(id))}
-          >
-            {unitDetail ? (
-              <UnitDetailFrame unit={unitDetail} viewMode="read" embedded />
-            ) : (
-              <div className="detail-form__hint">Detail jednotky se nepodařilo načíst.</div>
-            )}
-          </RelationDetailNav>
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <div className="relation-pane__header">Jednotky</div>
+              <ListView
+                columns={unitsList.columns}
+                rows={unitRows}
+                filterValue={unitsFilter}
+                onFilterChange={setUnitsFilter}
+                selectedId={selectedUnitId}
+                onRowClick={(row) => setSelectedUnitId(String(row.id))}
+                sort={unitsList.sort}
+                onSortChange={unitsList.setSort}
+                onColumnResize={unitsList.handleColumnResize}
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+                emptyText="Pronajímatel nemá žádné jednotky."
+                toolbarRight={
+                  <button
+                    type="button"
+                    className="common-actions__btn"
+                    title="Nastavit sloupce"
+                    onClick={() => unitsList.setColsOpen(true)}
+                  >
+                    {getIcon('settings')}
+                    <span className="common-actions__label">Sloupce</span>
+                  </button>
+                }
+              />
+              <ListViewColumnsDrawer
+                open={unitsList.colsOpen}
+                onClose={() => unitsList.setColsOpen(false)}
+                columns={UNIT_COLUMNS}
+                fixedFirstKey="displayName"
+                requiredKeys={['displayName']}
+                value={{
+                  order: unitsList.colPrefs.colOrder ?? [],
+                  hidden: unitsList.colPrefs.colHidden ?? [],
+                }}
+                onChange={(next) => {
+                  unitsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: next.order,
+                    colHidden: next.hidden,
+                  }))
+                }}
+                onReset={() => {
+                  unitsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: [],
+                    colHidden: [],
+                  }))
+                }}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              {unitRows.length === 0 && <div className="detail-form__hint">Žádná data k zobrazení.</div>}
+              {unitRows.length > 0 && selectedUnitId == null && (
+                <div className="detail-form__hint">Vyber položku ze seznamu nahoře.</div>
+              )}
+              {unitRows.length > 0 && selectedUnitId != null && (
+                <RelationDetailPanel
+                  title="Jednotky"
+                  items={unitNavItems}
+                  selectedId={selectedUnitId}
+                  onSelect={(id) => setSelectedUnitId(String(id))}
+                >
+                  {unitDetail ? (
+                    <UnitDetailFrame unit={unitDetail} viewMode="read" embedded />
+                  ) : (
+                    <div className="detail-form__hint">Detail jednotky se nepodařilo načíst.</div>
+                  )}
+                </RelationDetailPanel>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === 'tenants' && (
-          <RelationDetailNav
-            title="Nájemníci"
-            items={tenantItems}
-            selectedId={selectedTenantId}
-            onSelect={(id) => setSelectedTenantId(String(id))}
-          >
-            {tenantDetail ? (
-              <TenantDetailFrame tenant={tenantDetail} viewMode="read" embedded />
-            ) : (
-              <div className="detail-form__hint">Detail nájemníka se nepodařilo načíst.</div>
-            )}
-          </RelationDetailNav>
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <div className="relation-pane__header">Nájemníci</div>
+              <ListView
+                columns={tenantsList.columns}
+                rows={tenantRows}
+                filterValue={tenantsFilter}
+                onFilterChange={setTenantsFilter}
+                selectedId={selectedTenantId}
+                onRowClick={(row) => setSelectedTenantId(String(row.id))}
+                sort={tenantsList.sort}
+                onSortChange={tenantsList.setSort}
+                onColumnResize={tenantsList.handleColumnResize}
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+                emptyText="Pronajímatel nemá žádné nájemníky."
+                toolbarRight={
+                  <button
+                    type="button"
+                    className="common-actions__btn"
+                    title="Nastavit sloupce"
+                    onClick={() => tenantsList.setColsOpen(true)}
+                  >
+                    {getIcon('settings')}
+                    <span className="common-actions__label">Sloupce</span>
+                  </button>
+                }
+              />
+              <ListViewColumnsDrawer
+                open={tenantsList.colsOpen}
+                onClose={() => tenantsList.setColsOpen(false)}
+                columns={TENANT_COLUMNS}
+                fixedFirstKey="displayName"
+                requiredKeys={['displayName']}
+                value={{
+                  order: tenantsList.colPrefs.colOrder ?? [],
+                  hidden: tenantsList.colPrefs.colHidden ?? [],
+                }}
+                onChange={(next) => {
+                  tenantsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: next.order,
+                    colHidden: next.hidden,
+                  }))
+                }}
+                onReset={() => {
+                  tenantsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: [],
+                    colHidden: [],
+                  }))
+                }}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              {tenantRows.length === 0 && <div className="detail-form__hint">Žádná data k zobrazení.</div>}
+              {tenantRows.length > 0 && selectedTenantId == null && (
+                <div className="detail-form__hint">Vyber položku ze seznamu nahoře.</div>
+              )}
+              {tenantRows.length > 0 && selectedTenantId != null && (
+                <RelationDetailPanel
+                  title="Nájemníci"
+                  items={tenantNavItems}
+                  selectedId={selectedTenantId}
+                  onSelect={(id) => setSelectedTenantId(String(id))}
+                >
+                  {tenantDetail ? (
+                    <TenantDetailFrame tenant={tenantDetail} viewMode="read" embedded />
+                  ) : (
+                    <div className="detail-form__hint">Detail nájemníka se nepodařilo načíst.</div>
+                  )}
+                </RelationDetailPanel>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === 'contracts' && (
-          <RelationListWithDetail title="Smlouvy" items={[]} selectedId={null} onSelect={() => undefined} emptyText="Zatím nejsou žádné smlouvy." />
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <div className="relation-pane__header">Smlouvy</div>
+              <ListView
+                columns={[{ key: 'name', label: 'Smlouva', width: 260 }]}
+                rows={[]}
+                filterValue=""
+                onFilterChange={() => undefined}
+                emptyText="Zatím nejsou žádné smlouvy."
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              <div className="detail-form__hint">Detail smlouvy bude dostupný po doplnění vazeb.</div>
+            </div>
+          </div>
         )}
 
         {activeTab === 'energy' && (
-          <RelationListWithDetail title="Energie" items={[]} selectedId={null} onSelect={() => undefined} emptyText="Zatím nejsou žádné vazby na energie." />
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <div className="relation-pane__header">Energie</div>
+              <ListView
+                columns={[{ key: 'name', label: 'Energie', width: 260 }]}
+                rows={[]}
+                filterValue=""
+                onFilterChange={() => undefined}
+                emptyText="Zatím nejsou žádné vazby na energie."
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              <div className="detail-form__hint">Detail energií bude dostupný po doplnění vazeb.</div>
+            </div>
+          </div>
         )}
 
         {activeTab === 'payments' && (
-          <RelationListWithDetail title="Platby" items={[]} selectedId={null} onSelect={() => undefined} emptyText="Zatím nejsou žádné platby." />
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <div className="relation-pane__header">Platby</div>
+              <ListView
+                columns={[{ key: 'name', label: 'Platby', width: 260 }]}
+                rows={[]}
+                filterValue=""
+                onFilterChange={() => undefined}
+                emptyText="Zatím nejsou žádné platby."
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              <div className="detail-form__hint">Detail plateb bude dostupný po doplnění vazeb.</div>
+            </div>
+          </div>
         )}
       </div>
     </div>
