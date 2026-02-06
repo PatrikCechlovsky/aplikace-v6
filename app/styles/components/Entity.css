@@ -121,6 +121,54 @@
   overflow: auto;
 }
 
+.relation-detail {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+}
+
+.relation-detail__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+}
+
+.relation-detail__nav {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.relation-detail__nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.relation-detail__nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.relation-detail__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.relation-detail__content {
+  min-height: 120px;
+}
+
 /* Detail entity */
 
 .entity-detail {

@@ -34,6 +34,7 @@ export type CommonActionId =
   | 'view'         // Zobrazit detail
   | 'edit'         // Editovat
   | 'detail'       // Přejít na detail
+  | 'relations'    // Otevřít vazby
   | 'duplicate'    // Duplikovat
   | 'attach'       // Připojit
   | 'attachments'  // Správa příloh (otevře AttachmentsManager)
@@ -105,6 +106,15 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Zobrazit detail záznamu.', en: 'Open record detail.' },
     requiresSelection: true,
     hideWhen: ['read'],
+  },
+
+  relations: {
+    id: 'relations',
+    icon: 'link',
+    label: { cs: 'Vazby', en: 'Relations' },
+    description: { cs: 'Otevřít přehled vazeb.', en: 'Open relations overview.' },
+    requiresSelection: true,
+    hideWhen: ['create'],
   },
 
   edit: {

@@ -11,6 +11,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import LandlordDetailFrame, { type UiLandlord as DetailUiLandlord } from '../forms/LandlordDetailFrame'
+import LandlordRelationsHub from '../components/LandlordRelationsHub'
 import AttachmentsManagerTile, {
   type AttachmentsManagerApi,
   type AttachmentsManagerUiState,
@@ -44,7 +45,7 @@ type LandlordsTileProps = {
   onNavigate?: (tileId: string) => void // Callback pro navigaci na jiný tile
 }
 
-type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager' | 'relations'
 
 const VIEW_KEY = '030.landlords.list'
 
@@ -254,6 +255,7 @@ export default function LandlordsTile({
 
   const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailLandlord, setDetailLandlord] = useState<DetailUiLandlord | null>(null)
+  const [relationsLandlordId, setRelationsLandlordId] = useState<string | null>(null)
 
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
 
@@ -483,6 +485,9 @@ export default function LandlordsTile({
 
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
+    if (vm === 'relations') {
+      setRelationsLandlordId(id)
+    }
 
     // Pokud je id a nejde o list mode, najdi pronajimatele v seznamu a otevři detail
     if (id && vm !== 'list') {
@@ -668,29 +673,39 @@ export default function LandlordsTile({
       // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit', 'attachments') // Všechny akce najednou když je vybrán řádek
+        actions.push('view', 'edit', 'relations', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
       actions.push('columnSettings', 'close')
     }
     // EDIT / CREATE MODE
     else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
-        actions.push('save', 'attachments', 'close') // V edit mode: "Uložit", "Přílohy", "Zavřít"
+        actions.push('save', 'relations', 'attachments', 'close') // V edit mode: "Uložit", "Vazby", "Přílohy", "Zavřít"
       } else {
         actions.push('save', 'close') // V create mode: "Uložit" a "Zavřít" (bez příloh)
       }
     }
     // READ MODE
     else if (viewMode === 'read') {
-      actions.push('edit', 'attachments', 'close')
+      actions.push('edit', 'relations', 'attachments', 'close')
+    }
+    // RELATIONS MODE
+    else if (viewMode === 'relations') {
+      actions.push('close')
     }
 
     onRegisterCommonActions?.(actions)
     
     // Namapovat LocalViewMode na ViewMode pomocí utility funkce
-    const mappedViewMode = mapAttachmentsViewMode(viewMode as any, attachmentsManagerUi.mode ?? 'list')
-    const mappedHasSelection = getHasSelection(viewMode as any, selectedId, attachmentsManagerUi)
-    const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
+    const mappedViewMode = viewMode === 'relations'
+      ? 'read'
+      : mapAttachmentsViewMode(viewMode as any, attachmentsManagerUi.mode ?? 'list')
+    const mappedHasSelection = viewMode === 'relations'
+      ? true
+      : getHasSelection(viewMode as any, selectedId, attachmentsManagerUi)
+    const mappedIsDirty = viewMode === 'relations'
+      ? false
+      : getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
     
     onRegisterCommonActionsState?.({
       viewMode: mappedViewMode,
@@ -707,6 +722,27 @@ export default function LandlordsTile({
     // Je stabilní funkce (useCallback v AppShell).
 
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      // RELATIONS MODE
+      if (viewMode === 'relations') {
+        if (id === 'close') {
+          const backId = relationsLandlordId ?? detailLandlord?.id ?? selectedId
+          if (!backId) {
+            closeToList()
+            return
+          }
+
+          const backLandlord = landlords.find((l) => l.id === backId) ?? detailLandlord
+          if (backLandlord) {
+            openDetail(backLandlord, 'read', 'detail')
+          } else {
+            setViewMode('read')
+            setSelectedId(backId)
+            setUrl({ t: 'landlords-list', id: backId, vm: 'read' }, 'push')
+          }
+          return
+        }
+      }
+
       // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
         // Close v attachments-manager má speciální chování
@@ -788,6 +824,21 @@ export default function LandlordsTile({
         } else {
           closeListToModule()
         }
+        return
+      }
+
+      // RELATIONS open
+      if (id === 'relations') {
+        if (viewMode === 'edit' && isDirty) {
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři vazby.')
+          return
+        }
+        const targetId = selectedId ?? detailLandlord?.id ?? null
+        if (!targetId) return
+        setRelationsLandlordId(targetId)
+        setSelectedId(targetId)
+        setViewMode('relations')
+        setUrl({ t: 'landlords-list', id: targetId, vm: 'relations' }, 'push')
         return
       }
 
@@ -1094,6 +1145,28 @@ export default function LandlordsTile({
         }}
       />
     )
+  }
+
+  // RELATIONS MODE
+  if (viewMode === 'relations') {
+    const landlordId = relationsLandlordId ?? detailLandlord?.id ?? selectedId
+    if (!landlordId) {
+      return (
+        <div className="tile-layout">
+          <div className="tile-layout__header">
+            <h1 className="tile-layout__title">Vazby</h1>
+          </div>
+          <div style={{ padding: '1.5rem' }}>
+            <p>Chyba: Není vybrán pronajímatel.</p>
+          </div>
+        </div>
+      )
+    }
+
+    const landlord = landlords.find((l) => l.id === landlordId) ?? detailLandlord
+    const landlordLabel = landlord?.displayName || 'Pronajímatel'
+
+    return <LandlordRelationsHub landlordId={landlordId} landlordLabel={landlordLabel} />
   }
 
   // CREATE / EDIT / READ mode - zobrazit LandlordDetailFrame

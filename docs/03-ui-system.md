@@ -85,6 +85,16 @@ Uživatel může:
 - zobrazit historii verzí,
 - zavřít správu a vrátit se do detailu entity.
 
+#### C) 🔗 v CommonActions → „Vazby“ (RELATIONS VIEW)
+Uživatel může:
+- otevřít **samostatný content** s vazbami pro vybranou entitu,
+- přepínat **taby vazeb** (např. pronajímatel, nemovitost, jednotka…),
+- používat **seznam nahoře + detail dole** (RelationListWithDetail),
+- přecházet **předchozí / další** v detailu.
+
+Uživatel **NEMŮŽE**:
+- měnit data vazeb přímo z tohoto přehledu (read-only).
+
 ---
 
 ### 5.2 Základní princip (datový model)
