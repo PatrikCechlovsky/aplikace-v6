@@ -92,6 +92,10 @@ Uživatel může:
 - používat **seznam nahoře + detail dole** (RelationListWithDetail),
 - přecházet **předchozí / další** v detailu.
 
+Aktuálně podporované moduly:
+- Pronajímatel (030)
+- Nemovitost (040)
+
 Uživatel **NEMŮŽE**:
 - měnit data vazeb přímo z tohoto přehledu (read-only).
 

@@ -11,6 +11,7 @@ import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listProperties, getPropertyDetail, type PropertiesListRow } from '@/app/lib/services/properties'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import PropertyDetailFrame, { type UiProperty as DetailUiProperty } from '../components/PropertyDetailFrame'
+import PropertyRelationsHub from '../components/PropertyRelationsHub'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
@@ -36,7 +37,7 @@ const logger = createLogger('040 PropertiesTile')
 
 const VIEW_KEY = '040.properties.list'
 
-type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager' | 'relations'
 
 // Export pro znovupoužití v EntityHub a ContractWizard
 export const PROPERTIES_BASE_COLUMNS: ListViewColumn[] = [
@@ -188,6 +189,8 @@ export default function PropertiesTile({
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<DetailSectionId>('detail')
   const submitRef = useRef<(() => Promise<DetailUiProperty | null>) | null>(null)
 
+  const [relationsPropertyId, setRelationsPropertyId] = useState<string | null>(null)
+
   // ✅ Attachments manager: API ref a UI state
   const [attachmentsManagerPropertyId, setAttachmentsManagerPropertyId] = useState<string | null>(null)
   const attachmentsManagerApiRef = useRef<AttachmentsManagerApi | null>(null)
@@ -281,21 +284,25 @@ export default function PropertiesTile({
     else if (viewMode === 'list') {
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit', 'attachments')
+        actions.push('view', 'edit', 'relations', 'attachments')
       }
       actions.push('columnSettings', 'close')
     }
     // EDIT / CREATE MODE
     else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
-        actions.push('save', 'attachments', 'close')
+        actions.push('save', 'relations', 'attachments', 'close')
       } else {
         actions.push('save', 'close')
       }
     }
     // READ MODE
     else if (viewMode === 'read') {
-      actions.push('edit', 'attachments', 'close')
+      actions.push('edit', 'relations', 'attachments', 'close')
+    }
+    // RELATIONS MODE
+    else if (viewMode === 'relations') {
+      actions.push('close')
     }
 
     onRegisterCommonActions(actions)
@@ -305,10 +312,12 @@ export default function PropertiesTile({
     const mappedHasSelection = getHasSelection(viewMode as any, selectedId, attachmentsManagerUi)
     const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
     
+    const relationsView = viewMode === 'relations'
+
     onRegisterCommonActionsState({
-      viewMode: mappedViewMode,
-      hasSelection: mappedHasSelection,
-      isDirty: mappedIsDirty,
+      viewMode: relationsView ? 'read' : mappedViewMode,
+      hasSelection: relationsView ? true : mappedHasSelection,
+      isDirty: relationsView ? false : mappedIsDirty,
     })
   }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty])
   // POZNÁMKA: onRegisterCommonActions a onRegisterCommonActionsState NEJSOU v dependencies!
@@ -415,6 +424,25 @@ export default function PropertiesTile({
     if (!onRegisterCommonActionHandler) return
     
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      // RELATIONS MODE
+      if (viewMode === 'relations') {
+        if (id === 'close') {
+          const backId = relationsPropertyId ?? detailProperty?.id ?? selectedId
+          if (!backId) {
+            closeToList()
+            return
+          }
+
+          const listBackProperty = properties.find((p) => p.id === backId)
+          if (listBackProperty) {
+            void openDetail(listBackProperty, 'read', 'detail')
+          } else {
+            closeToList()
+          }
+          return
+        }
+      }
+
       // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
         // Close v attachments-manager má speciální chování
@@ -496,6 +524,20 @@ export default function PropertiesTile({
         } else {
           closeListToModule()
         }
+        return
+      }
+
+      // RELATIONS open
+      if (id === 'relations') {
+        if (viewMode === 'edit' && isDirty) {
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři vazby.')
+          return
+        }
+        const targetId = selectedId ?? detailProperty?.id ?? null
+        if (!targetId) return
+        setRelationsPropertyId(targetId)
+        setSelectedId(targetId)
+        setViewMode('relations')
         return
       }
 
@@ -739,6 +781,14 @@ export default function PropertiesTile({
         />
       </div>
     )
+  }
+
+  // RELATIONS VIEW
+  if (viewMode === 'relations' && relationsPropertyId) {
+    const property = properties.find((p) => p.id === relationsPropertyId) ?? detailProperty
+    const label = property?.displayName || 'Nemovitost'
+
+    return <PropertyRelationsHub propertyId={relationsPropertyId} propertyLabel={label} />
   }
 
   // ATTACHMENTS MANAGER VIEW
