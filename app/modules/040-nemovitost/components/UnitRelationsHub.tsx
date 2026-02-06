@@ -1,5 +1,5 @@
-// FILE: app/modules/040-nemovitost/components/PropertyRelationsHub.tsx
-// PURPOSE: Samostatný content „Vazby“ pro nemovitost s taby a list+detail layoutem.
+// FILE: app/modules/040-nemovitost/components/UnitRelationsHub.tsx
+// PURPOSE: Samostatný content „Vazby“ pro jednotku s taby a list+detail layoutem.
 // NOTES: Otevírá se z CommonActions akce „Vazby“.
 
 'use client'
@@ -11,9 +11,10 @@ import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { getIcon } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import { getUnitDetail, type UnitDetailRow } from '@/app/lib/services/units'
 import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/properties'
-import { getPropertyRelations, type PropertyRelationTenant, type PropertyRelationUnit } from '@/app/lib/services/propertyRelations'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
+import { getTenantDetail, type TenantDetailRow } from '@/app/lib/services/tenants'
 
 import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/landlordsColumns'
 import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/propertiesColumns'
@@ -29,13 +30,13 @@ import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
 import '@/app/styles/components/CommonActions.css'
 
-const logger = createLogger('PropertyRelationsHub')
+const logger = createLogger('UnitRelationsHub')
 
-type RelationsTabId = 'property' | 'units' | 'tenants' | 'landlord' | 'contracts' | 'energy' | 'payments'
+type RelationsTabId = 'unit' | 'property' | 'tenant' | 'landlord' | 'contracts' | 'energy' | 'payments'
 
 type Props = {
-  propertyId: string
-  propertyLabel?: string | null
+  unitId: string
+  unitLabel?: string | null
 }
 
 type RelationNavItem = {
@@ -43,8 +44,8 @@ type RelationNavItem = {
   title: string
 }
 
-const PROPERTY_COLUMNS: ListViewColumn[] = PROPERTIES_BASE_COLUMNS
 const UNIT_COLUMNS: ListViewColumn[] = UNITS_BASE_COLUMNS
+const PROPERTY_COLUMNS: ListViewColumn[] = PROPERTIES_BASE_COLUMNS
 const TENANT_COLUMNS: ListViewColumn[] = TENANTS_BASE_COLUMNS
 const LANDLORD_COLUMNS: ListViewColumn[] = LANDLORDS_BASE_COLUMNS
 
@@ -224,6 +225,45 @@ function mapPropertyDetailToUi(row: PropertyDetailRow): UiProperty {
   }
 }
 
+function mapUnitDetailToUi(row: UnitDetailRow): UiUnit {
+  return {
+    id: row.id,
+    propertyId: row.property_id ?? null,
+    unitTypeId: row.unit_type_id ?? null,
+    landlordId: row.landlord_id ?? null,
+    displayName: row.display_name ?? null,
+    internalCode: row.internal_code ?? null,
+
+    street: row.street ?? null,
+    houseNumber: row.house_number ?? null,
+    city: row.city ?? null,
+    zip: row.zip ?? null,
+    country: row.country ?? null,
+    region: row.region ?? null,
+
+    floor: row.floor ?? null,
+    doorNumber: row.door_number ?? null,
+    area: row.area ?? null,
+    rooms: row.rooms ?? null,
+    disposition: row.disposition ?? null,
+    status: row.status ?? null,
+    tenantId: row.tenant_id ?? null,
+    orientationNumber: row.orientation_number ?? null,
+    yearRenovated: row.year_renovated ?? null,
+    managerName: row.manager_name ?? null,
+
+    cadastralArea: null,
+    parcelNumber: null,
+    lvNumber: null,
+
+    note: row.note ?? null,
+    originModule: row.origin_module ?? null,
+    isArchived: row.is_archived ?? null,
+    createdAt: row.created_at ?? null,
+    updatedAt: row.updated_at ?? null,
+  }
+}
+
 function mapLandlordDetailToUi(row: LandlordDetailRow): UiLandlord {
   return {
     id: row.id,
@@ -261,6 +301,49 @@ function mapLandlordDetailToUi(row: LandlordDetailRow): UiLandlord {
     isLandlord: true,
     isLandlordDelegate: null,
     isTenant: null,
+    isTenantDelegate: null,
+    isMaintenance: null,
+    isMaintenanceDelegate: null,
+  }
+}
+
+function mapTenantDetailToUi(row: TenantDetailRow): UiTenant {
+  return {
+    id: row.id,
+    displayName: row.display_name ?? '—',
+    email: row.email ?? null,
+    phone: row.phone ?? null,
+    subjectType: row.subject_type ?? null,
+    isArchived: row.is_archived ?? null,
+    createdAt: row.created_at ?? '',
+
+    titleBefore: row.title_before ?? null,
+    firstName: row.first_name ?? null,
+    lastName: row.last_name ?? null,
+    note: row.note ?? null,
+
+    birthDate: row.birth_date ?? null,
+    personalIdNumber: row.personal_id_number ?? null,
+    idDocType: row.id_doc_type ?? null,
+    idDocNumber: row.id_doc_number ?? null,
+
+    companyName: row.company_name ?? null,
+    ic: row.ic ?? null,
+    dic: row.dic ?? null,
+    icValid: row.ic_valid ?? null,
+    dicValid: row.dic_valid ?? null,
+    delegateIds: (row as any).delegateIds ?? [],
+
+    street: row.street ?? null,
+    city: row.city ?? null,
+    zip: row.zip ?? null,
+    houseNumber: row.house_number ?? null,
+    country: row.country ?? null,
+
+    isUser: null,
+    isLandlord: null,
+    isLandlordDelegate: null,
+    isTenant: true,
     isTenantDelegate: null,
     isMaintenance: null,
     isMaintenanceDelegate: null,
@@ -310,122 +393,41 @@ function createLandlordFallback(id: string, displayName?: string | null): UiLand
   }
 }
 
-function mapUnitDetailToUi(row: PropertyRelationUnit): UiUnit {
-  return {
-    id: row.id,
-    propertyId: row.property_id ?? null,
-    unitTypeId: row.unit_type_id ?? null,
-    landlordId: row.landlord_id ?? null,
-    displayName: row.display_name ?? null,
-    internalCode: row.internal_code ?? null,
-
-    street: row.street ?? null,
-    houseNumber: row.house_number ?? null,
-    city: row.city ?? null,
-    zip: row.zip ?? null,
-    country: row.country ?? null,
-    region: row.region ?? null,
-
-    floor: row.floor ?? null,
-    doorNumber: row.door_number ?? null,
-    area: row.area ?? null,
-    rooms: row.rooms ?? null,
-    disposition: row.disposition ?? null,
-    status: row.status ?? null,
-    tenantId: row.tenant_id ?? null,
-    orientationNumber: row.orientation_number ?? null,
-    yearRenovated: row.year_renovated ?? null,
-    managerName: row.manager_name ?? null,
-
-    cadastralArea: null,
-    parcelNumber: null,
-    lvNumber: null,
-
-    note: null,
-    originModule: null,
-    isArchived: row.is_archived ?? null,
-    createdAt: row.created_at ?? null,
-    updatedAt: null,
-  }
-}
-
-function mapTenantDetailToUi(row: PropertyRelationTenant): UiTenant {
-  return {
-    id: row.id,
-    displayName: row.display_name ?? '—',
-    email: row.email ?? null,
-    phone: row.phone ?? null,
-    subjectType: row.subject_type ?? null,
-    isArchived: row.is_archived ?? null,
-    createdAt: '',
-
-    titleBefore: null,
-    firstName: null,
-    lastName: null,
-    note: null,
-
-    birthDate: null,
-    personalIdNumber: null,
-    idDocType: null,
-    idDocNumber: null,
-
-    companyName: null,
-    ic: null,
-    dic: null,
-    icValid: null,
-    dicValid: null,
-    delegateIds: [],
-
-    street: null,
-    city: null,
-    zip: null,
-    houseNumber: null,
-    country: null,
-
-    isUser: null,
-    isLandlord: null,
-    isLandlordDelegate: null,
-    isTenant: true,
-    isTenantDelegate: null,
-    isMaintenance: null,
-    isMaintenanceDelegate: null,
-  }
-}
-
-export default function PropertyRelationsHub({ propertyId, propertyLabel }: Props) {
-  const [activeTab, setActiveTab] = useState<RelationsTabId>('property')
+export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
+  const [activeTab, setActiveTab] = useState<RelationsTabId>('unit')
   const [loading, setLoading] = useState(true)
   const [errorText, setErrorText] = useState<string | null>(null)
 
+  const [unitDetail, setUnitDetail] = useState<UiUnit | null>(null)
+  const [unitRaw, setUnitRaw] = useState<UnitDetailRow | null>(null)
   const [propertyDetail, setPropertyDetail] = useState<UiProperty | null>(null)
-  const [propertyLandlordName, setPropertyLandlordName] = useState<string | null>(null)
-  const [units, setUnits] = useState<PropertyRelationUnit[]>([])
-  const [tenants, setTenants] = useState<PropertyRelationTenant[]>([])
+  const [tenantDetail, setTenantDetail] = useState<UiTenant | null>(null)
   const [landlordDetail, setLandlordDetail] = useState<UiLandlord | null>(null)
+  const [propertyLandlordName, setPropertyLandlordName] = useState<string | null>(null)
 
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(propertyId)
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null)
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(unitId)
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null)
   const [selectedLandlordId, setSelectedLandlordId] = useState<string | null>(null)
 
-  const propertyList = useRelationListPrefs('040.properties.list', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
   const unitsList = useRelationListPrefs('040.units.list', UNIT_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
-  const tenantsList = useRelationListPrefs('030.tenants.list', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
+  const propertyList = useRelationListPrefs('040.properties.list', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
+  const tenantsList = useRelationListPrefs('050.tenants.list', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
   const landlordsList = useRelationListPrefs('030.landlords.list', LANDLORD_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
 
+  const [unitFilter, setUnitFilter] = useState('')
   const [propertyFilter, setPropertyFilter] = useState('')
-  const [unitsFilter, setUnitsFilter] = useState('')
-  const [tenantsFilter, setTenantsFilter] = useState('')
-  const [landlordsFilter, setLandlordsFilter] = useState('')
+  const [tenantFilter, setTenantFilter] = useState('')
+  const [landlordFilter, setLandlordFilter] = useState('')
 
   useEffect(() => {
-    setSelectedPropertyId(propertyId)
-  }, [propertyId])
+    setSelectedUnitId(unitId)
+  }, [unitId])
 
   useEffect(() => {
     let active = true
-    if (!propertyId) {
-      setErrorText('Chybí identifikátor nemovitosti.')
+    if (!unitId) {
+      setErrorText('Chybí identifikátor jednotky.')
       setLoading(false)
       return () => {
         active = false
@@ -436,28 +438,39 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
 
     ;(async () => {
       try {
-        const [detail, relations] = await Promise.all([
-          getPropertyDetail(propertyId),
-          getPropertyRelations(propertyId, { includeArchived: false }),
-        ])
+        const unitDetailRes = await getUnitDetail(unitId)
         if (!active) return
 
-        setPropertyDetail(mapPropertyDetailToUi(detail.property))
-        setPropertyLandlordName(detail.property.landlord_name ?? null)
-        setUnits(relations.units)
-        setTenants(relations.tenants)
-        setSelectedUnitId((prev) => prev ?? relations.units[0]?.id ?? null)
-        setSelectedTenantId((prev) => prev ?? relations.tenants[0]?.id ?? null)
+        setUnitRaw(unitDetailRes.unit)
+        setUnitDetail(mapUnitDetailToUi(unitDetailRes.unit))
+        setSelectedUnitId(unitDetailRes.unit.id)
 
-        const landlordId = detail.property.landlord_id ?? null
+        const tenantId = unitDetailRes.unit.tenant_id ?? null
+        setSelectedTenantId(tenantId)
+
+        const propertyId = unitDetailRes.unit.property_id ?? null
+        setSelectedPropertyId(propertyId)
+
+        let propertyLandlordId: string | null = null
+        let propertyLandlordNameLocal: string | null = null
+        if (propertyId) {
+          const propertyRes = await getPropertyDetail(propertyId)
+          if (!active) return
+          setPropertyDetail(mapPropertyDetailToUi(propertyRes.property))
+          propertyLandlordNameLocal = propertyRes.property.landlord_name ?? null
+          setPropertyLandlordName(propertyLandlordNameLocal)
+          propertyLandlordId = propertyRes.property.landlord_id ?? null
+        }
+
+        const landlordId = unitDetailRes.unit.landlord_id ?? propertyLandlordId ?? null
         setSelectedLandlordId(landlordId)
-        if (landlordId && detail.property.landlord_name) {
-          setLandlordDetail(createLandlordFallback(landlordId, detail.property.landlord_name))
+        if (landlordId && propertyLandlordNameLocal) {
+          setLandlordDetail(createLandlordFallback(landlordId, propertyLandlordNameLocal))
         }
       } catch (err: any) {
-        logger.error('Failed to load property relations', err)
+        logger.error('Failed to load unit relations', err)
         if (!active) return
-        setErrorText(err?.message || 'Nepodařilo se načíst vazby nemovitosti.')
+        setErrorText(err?.message || 'Nepodařilo se načíst vazby jednotky.')
       } finally {
         if (active) setLoading(false)
       }
@@ -466,7 +479,7 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
     return () => {
       active = false
     }
-  }, [propertyId])
+  }, [unitId])
 
   useEffect(() => {
     let active = true
@@ -494,6 +507,79 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
       active = false
     }
   }, [selectedLandlordId, propertyLandlordName])
+
+  useEffect(() => {
+    let active = true
+    const tenantId = selectedTenantId
+    if (!tenantId) {
+      setTenantDetail(null)
+      return () => {
+        active = false
+      }
+    }
+
+    ;(async () => {
+      try {
+        const tenantRow = await getTenantDetail(tenantId)
+        if (!active) return
+        setTenantDetail(mapTenantDetailToUi(tenantRow))
+      } catch (err) {
+        if (active) setTenantDetail(null)
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [selectedTenantId])
+
+  const unitData = useMemo(() => (unitDetail && unitRaw ? [{ detail: unitDetail, raw: unitRaw }] : []), [unitDetail, unitRaw])
+  const unitFiltered = useMemo(() => {
+    const f = normalizeText(unitFilter)
+    if (!f) return unitData
+    return unitData.filter(({ raw }) => {
+      const hay = normalizeText([raw.unit_type_name, raw.display_name, raw.internal_code, raw.property_name, raw.status, raw.floor, raw.rooms, raw.area].filter(Boolean).join(' '))
+      return hay.includes(f)
+    })
+  }, [unitData, unitFilter])
+  const unitSorted = useMemo(() => {
+    return sortItems(unitFiltered, unitsList.sort, ({ raw }, key) => {
+      switch (key) {
+        case 'unitTypeName':
+          return normalizeText(raw.unit_type_name)
+        case 'displayName':
+          return normalizeText(raw.display_name || raw.internal_code)
+        case 'propertyName':
+          return normalizeText(raw.property_name)
+        case 'floor':
+          return raw.floor ?? 0
+        case 'area':
+          return raw.area ?? 0
+        case 'rooms':
+          return raw.rooms ?? 0
+        case 'status':
+          return normalizeText(raw.status)
+        default:
+          return ''
+      }
+    })
+  }, [unitFiltered, unitsList.sort])
+  const unitRows = useMemo<ListViewRow<UnitDetailRow>[]>(() => {
+    return unitSorted.map(({ raw }) => ({
+      id: raw.id,
+      data: {
+        unitTypeName: raw.unit_type_name || '—',
+        displayName: raw.display_name || raw.internal_code || '—',
+        propertyName: raw.property_name || '—',
+        floor: raw.floor ?? '—',
+        area: raw.area ?? '—',
+        rooms: raw.rooms ?? '—',
+        status: raw.status || '—',
+      },
+      raw,
+    }))
+  }, [unitSorted])
+  const unitNavItems = useMemo<RelationNavItem[]>(() => unitSorted.map(({ raw }) => ({ id: raw.id, title: raw.display_name || raw.internal_code || '—' })), [unitSorted])
 
   const propertyData = useMemo(() => (propertyDetail ? [propertyDetail] : []), [propertyDetail])
   const propertyFiltered = useMemo(() => {
@@ -545,68 +631,22 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
   }, [propertySorted])
   const propertyNavItems = useMemo<RelationNavItem[]>(() => propertySorted.map((p) => ({ id: p.id, title: p.displayName || '—' })), [propertySorted])
 
-  const unitsFiltered = useMemo(() => {
-    const f = normalizeText(unitsFilter)
-    if (!f) return units
-    return units.filter((u) => {
-      const hay = normalizeText([u.unit_type_name, u.display_name, u.internal_code, u.property_name, u.status, u.floor, u.rooms, u.area].filter(Boolean).join(' '))
-      return hay.includes(f)
-    })
-  }, [units, unitsFilter])
-  const unitsSorted = useMemo(() => {
-    return sortItems(unitsFiltered, unitsList.sort, (u, key) => {
-      switch (key) {
-        case 'unitTypeName':
-          return normalizeText(u.unit_type_name)
-        case 'displayName':
-          return normalizeText(u.display_name || u.internal_code)
-        case 'propertyName':
-          return normalizeText(u.property_name)
-        case 'floor':
-          return u.floor ?? 0
-        case 'area':
-          return u.area ?? 0
-        case 'rooms':
-          return u.rooms ?? 0
-        case 'status':
-          return normalizeText(u.status)
-        default:
-          return ''
-      }
-    })
-  }, [unitsFiltered, unitsList.sort])
-  const unitsRows = useMemo<ListViewRow<PropertyRelationUnit>[]>(() => {
-    return unitsSorted.map((u) => ({
-      id: u.id,
-      data: {
-        unitTypeName: u.unit_type_name || '—',
-        displayName: u.display_name || u.internal_code || '—',
-        propertyName: u.property_name || '—',
-        floor: u.floor ?? '—',
-        area: u.area ?? '—',
-        rooms: u.rooms ?? '—',
-        status: u.status || '—',
-      },
-      raw: u,
-    }))
-  }, [unitsSorted])
-  const unitNavItems = useMemo<RelationNavItem[]>(() => unitsSorted.map((u) => ({ id: u.id, title: u.display_name || u.internal_code || '—' })), [unitsSorted])
-
+  const tenantsData = useMemo(() => (tenantDetail ? [tenantDetail] : []), [tenantDetail])
   const tenantsFiltered = useMemo(() => {
-    const f = normalizeText(tenantsFilter)
-    if (!f) return tenants
-    return tenants.filter((t) => {
-      const hay = normalizeText([t.subject_type, t.display_name, t.email, t.phone].filter(Boolean).join(' '))
+    const f = normalizeText(tenantFilter)
+    if (!f) return tenantsData
+    return tenantsData.filter((t) => {
+      const hay = normalizeText([t.subjectType, t.displayName, t.email, t.phone].filter(Boolean).join(' '))
       return hay.includes(f)
     })
-  }, [tenants, tenantsFilter])
+  }, [tenantsData, tenantFilter])
   const tenantsSorted = useMemo(() => {
     return sortItems(tenantsFiltered, tenantsList.sort, (t, key) => {
       switch (key) {
         case 'subjectTypeLabel':
-          return normalizeText(t.subject_type)
+          return normalizeText(t.subjectType)
         case 'displayName':
-          return normalizeText(t.display_name)
+          return normalizeText(t.displayName)
         case 'fullAddress':
           return ''
         case 'email':
@@ -622,18 +662,18 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
         case 'lastName':
           return ''
         case 'isArchived':
-          return t.is_archived ? 1 : 0
+          return t.isArchived ? 1 : 0
         default:
           return ''
       }
     })
   }, [tenantsFiltered, tenantsList.sort])
-  const tenantsRows = useMemo<ListViewRow<PropertyRelationTenant>[]>(() => {
+  const tenantsRows = useMemo<ListViewRow<UiTenant>[]>(() => {
     return tenantsSorted.map((t) => ({
       id: t.id,
       data: {
-        subjectTypeLabel: t.subject_type || '—',
-        displayName: t.display_name || '—',
+        subjectTypeLabel: t.subjectType || '—',
+        displayName: t.displayName || '—',
         fullAddress: '—',
         email: t.email || '—',
         phone: t.phone || '—',
@@ -641,22 +681,22 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
         ic: '—',
         firstName: '—',
         lastName: '—',
-        isArchived: t.is_archived ? 'Ano' : 'Ne',
+        isArchived: t.isArchived ? 'Ano' : 'Ne',
       },
       raw: t,
     }))
   }, [tenantsSorted])
-  const tenantNavItems = useMemo<RelationNavItem[]>(() => tenantsSorted.map((t) => ({ id: t.id, title: t.display_name || '—' })), [tenantsSorted])
+  const tenantNavItems = useMemo<RelationNavItem[]>(() => tenantsSorted.map((t) => ({ id: t.id, title: t.displayName || '—' })), [tenantsSorted])
 
   const landlordsData = useMemo(() => (landlordDetail ? [landlordDetail] : []), [landlordDetail])
   const landlordsFiltered = useMemo(() => {
-    const f = normalizeText(landlordsFilter)
+    const f = normalizeText(landlordFilter)
     if (!f) return landlordsData
     return landlordsData.filter((l) => {
       const hay = normalizeText([l.displayName, l.subjectType, l.email, l.phone].filter(Boolean).join(' '))
       return hay.includes(f)
     })
-  }, [landlordsData, landlordsFilter])
+  }, [landlordsData, landlordFilter])
   const landlordsSorted = useMemo(() => {
     return sortItems(landlordsFiltered, landlordsList.sort, (l, key) => {
       switch (key) {
@@ -707,17 +747,17 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
 
   const tabs: DetailTabItem[] = useMemo(() => {
     return [
+      { id: 'unit', label: `Jednotka (${unitRows.length})` },
       { id: 'property', label: `Nemovitost (${propertyRows.length})` },
-      { id: 'units', label: `Jednotky (${unitsRows.length})` },
-      { id: 'tenants', label: `Nájemníci (${tenantsRows.length})` },
+      { id: 'tenant', label: `Nájemník (${tenantsRows.length})` },
       { id: 'landlord', label: `Pronajímatel (${landlordsRows.length})` },
       { id: 'contracts', label: 'Smlouvy (0)' },
       { id: 'energy', label: 'Energie (0)' },
       { id: 'payments', label: 'Platby (0)' },
     ]
-  }, [propertyRows.length, unitsRows.length, tenantsRows.length, landlordsRows.length])
+  }, [unitRows.length, propertyRows.length, tenantsRows.length, landlordsRows.length])
 
-  const headerTitle = propertyDetail?.displayName || propertyLabel || 'Nemovitost'
+  const headerTitle = unitDetail?.displayName || unitLabel || 'Jednotka'
 
   if (loading) {
     return (
@@ -726,7 +766,7 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
           <h1 className="tile-layout__title">Vazby – {headerTitle}</h1>
         </div>
         <div className="tile-layout__content">
-          <div className="detail-form__hint">Načítám vazby nemovitosti…</div>
+          <div className="detail-form__hint">Načítám vazby jednotky…</div>
         </div>
       </div>
     )
@@ -754,6 +794,82 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
       <div className="tile-layout__content" style={{ display: 'grid', gap: 12 }}>
         <DetailTabs items={tabs} activeId={activeTab} onChange={(id) => setActiveTab(id as RelationsTabId)} ariaLabel="Vazby" />
 
+        {activeTab === 'unit' && (
+          <div className="relation-pane">
+            <div className="relation-pane__list">
+              <ListView
+                columns={unitsList.columns}
+                rows={unitRows}
+                filterValue={unitFilter}
+                onFilterChange={setUnitFilter}
+                selectedId={selectedUnitId}
+                onRowClick={(row) => setSelectedUnitId(String(row.id))}
+                sort={unitsList.sort}
+                onSortChange={unitsList.setSort}
+                onColumnResize={unitsList.handleColumnResize}
+                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+                emptyText="Jednotka nebyla nalezena."
+                toolbarRight={
+                  <button
+                    type="button"
+                    className="common-actions__btn"
+                    title="Nastavit sloupce"
+                    onClick={() => unitsList.setColsOpen(true)}
+                  >
+                    {getIcon('settings')}
+                    <span className="common-actions__label">Sloupce</span>
+                  </button>
+                }
+              />
+              <ListViewColumnsDrawer
+                open={unitsList.colsOpen}
+                onClose={() => unitsList.setColsOpen(false)}
+                columns={UNIT_COLUMNS}
+                fixedFirstKey="unitTypeName"
+                requiredKeys={['displayName']}
+                value={{
+                  order: unitsList.colPrefs.colOrder ?? [],
+                  hidden: unitsList.colPrefs.colHidden ?? [],
+                }}
+                onChange={(next) => {
+                  unitsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: next.order,
+                    colHidden: next.hidden,
+                  }))
+                }}
+                onReset={() => {
+                  unitsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: [],
+                    colHidden: [],
+                  }))
+                }}
+              />
+            </div>
+            <div className="relation-pane__detail">
+              {unitRows.length === 0 && <div className="detail-form__hint">Žádná data k zobrazení.</div>}
+              {unitRows.length > 0 && selectedUnitId == null && (
+                <div className="detail-form__hint">Vyber položku ze seznamu nahoře.</div>
+              )}
+              {unitRows.length > 0 && selectedUnitId != null && (
+                <RelationDetailPanel
+                  title="Jednotka"
+                  items={unitNavItems}
+                  selectedId={selectedUnitId}
+                  onSelect={(id) => setSelectedUnitId(String(id))}
+                >
+                  {unitDetail ? (
+                    <UnitDetailFrame unit={unitDetail} viewMode="read" embedded />
+                  ) : (
+                    <div className="detail-form__hint">Detail jednotky se nepodařilo načíst.</div>
+                  )}
+                </RelationDetailPanel>
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'property' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
@@ -768,7 +884,7 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
                 onSortChange={propertyList.setSort}
                 onColumnResize={propertyList.handleColumnResize}
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
-                emptyText="Nemovitost nebyla nalezena."
+                emptyText="Jednotka nemá vazbu na nemovitost."
                 toolbarRight={
                   <button
                     type="button"
@@ -830,97 +946,21 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
           </div>
         )}
 
-        {activeTab === 'units' && (
-          <div className="relation-pane">
-            <div className="relation-pane__list">
-              <ListView
-                columns={unitsList.columns}
-                rows={unitsRows}
-                filterValue={unitsFilter}
-                onFilterChange={setUnitsFilter}
-                selectedId={selectedUnitId}
-                onRowClick={(row) => setSelectedUnitId(String(row.id))}
-                sort={unitsList.sort}
-                onSortChange={unitsList.setSort}
-                onColumnResize={unitsList.handleColumnResize}
-                tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
-                emptyText="Nemovitost nemá žádné jednotky."
-                toolbarRight={
-                  <button
-                    type="button"
-                    className="common-actions__btn"
-                    title="Nastavit sloupce"
-                    onClick={() => unitsList.setColsOpen(true)}
-                  >
-                    {getIcon('settings')}
-                    <span className="common-actions__label">Sloupce</span>
-                  </button>
-                }
-              />
-              <ListViewColumnsDrawer
-                open={unitsList.colsOpen}
-                onClose={() => unitsList.setColsOpen(false)}
-                columns={UNIT_COLUMNS}
-                fixedFirstKey="unitTypeName"
-                requiredKeys={['displayName']}
-                value={{
-                  order: unitsList.colPrefs.colOrder ?? [],
-                  hidden: unitsList.colPrefs.colHidden ?? [],
-                }}
-                onChange={(next) => {
-                  unitsList.setColPrefs((p) => ({
-                    ...p,
-                    colOrder: next.order,
-                    colHidden: next.hidden,
-                  }))
-                }}
-                onReset={() => {
-                  unitsList.setColPrefs((p) => ({
-                    ...p,
-                    colOrder: [],
-                    colHidden: [],
-                  }))
-                }}
-              />
-            </div>
-            <div className="relation-pane__detail">
-              {unitsRows.length === 0 && <div className="detail-form__hint">Žádná data k zobrazení.</div>}
-              {unitsRows.length > 0 && selectedUnitId == null && (
-                <div className="detail-form__hint">Vyber položku ze seznamu nahoře.</div>
-              )}
-              {unitsRows.length > 0 && selectedUnitId != null && (
-                <RelationDetailPanel
-                  title="Jednotky"
-                  items={unitNavItems}
-                  selectedId={selectedUnitId}
-                  onSelect={(id) => setSelectedUnitId(String(id))}
-                >
-                  {selectedUnitId ? (
-                    <UnitDetailFrame unit={mapUnitDetailToUi(unitsSorted.find((u) => u.id === selectedUnitId) ?? unitsSorted[0])} viewMode="read" embedded />
-                  ) : (
-                    <div className="detail-form__hint">Detail jednotky se nepodařilo načíst.</div>
-                  )}
-                </RelationDetailPanel>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'tenants' && (
+        {activeTab === 'tenant' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
               <ListView
                 columns={tenantsList.columns}
                 rows={tenantsRows}
-                filterValue={tenantsFilter}
-                onFilterChange={setTenantsFilter}
+                filterValue={tenantFilter}
+                onFilterChange={setTenantFilter}
                 selectedId={selectedTenantId}
                 onRowClick={(row) => setSelectedTenantId(String(row.id))}
                 sort={tenantsList.sort}
                 onSortChange={tenantsList.setSort}
                 onColumnResize={tenantsList.handleColumnResize}
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
-                emptyText="Nemovitost nemá žádné nájemníky."
+                emptyText="Jednotka nemá nájemníka."
                 toolbarRight={
                   <button
                     type="button"
@@ -966,13 +1006,13 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
               )}
               {tenantsRows.length > 0 && selectedTenantId != null && (
                 <RelationDetailPanel
-                  title="Nájemníci"
+                  title="Nájemník"
                   items={tenantNavItems}
                   selectedId={selectedTenantId}
                   onSelect={(id) => setSelectedTenantId(String(id))}
                 >
-                  {selectedTenantId ? (
-                    <TenantDetailFrame tenant={mapTenantDetailToUi(tenantsSorted.find((t) => t.id === selectedTenantId) ?? tenantsSorted[0])} viewMode="read" embedded />
+                  {tenantDetail ? (
+                    <TenantDetailFrame tenant={tenantDetail} viewMode="read" embedded />
                   ) : (
                     <div className="detail-form__hint">Detail nájemníka se nepodařilo načíst.</div>
                   )}
@@ -988,15 +1028,15 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
               <ListView
                 columns={landlordsList.columns}
                 rows={landlordsRows}
-                filterValue={landlordsFilter}
-                onFilterChange={setLandlordsFilter}
+                filterValue={landlordFilter}
+                onFilterChange={setLandlordFilter}
                 selectedId={selectedLandlordId}
                 onRowClick={(row) => setSelectedLandlordId(String(row.id))}
                 sort={landlordsList.sort}
                 onSortChange={landlordsList.setSort}
                 onColumnResize={landlordsList.handleColumnResize}
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
-                emptyText="Nemovitost nemá pronajímatele."
+                emptyText="Jednotka nemá pronajímatele."
                 toolbarRight={
                   <button
                     type="button"

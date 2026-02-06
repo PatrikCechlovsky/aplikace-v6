@@ -95,6 +95,7 @@ Uživatel může:
 Aktuálně podporované moduly:
 - Pronajímatel (030)
 - Nemovitost (040)
+- Jednotky (040)
 
 Uživatel **NEMŮŽE**:
 - měnit data vazeb přímo z tohoto přehledu (read-only).

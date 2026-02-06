@@ -6,7 +6,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listUnits, type UnitsListRow } from '@/app/lib/services/units'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
@@ -16,6 +16,7 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import UnitDetailFrame, { type UiUnit } from '../components/UnitDetailFrame'
+import UnitRelationsHub from '../components/UnitRelationsHub'
 import type { DetailSectionId } from '@/app/UI/DetailView'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
@@ -27,26 +28,16 @@ import {
   getIsDirty,
   shouldCloseAttachmentsPanel 
 } from '@/app/lib/attachments/attachmentsManagerUtils'
+import { UNITS_BASE_COLUMNS } from '../unitsColumns'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/PaletteCard.css'
 
 const logger = createLogger('040 UnitsTile')
 
-type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager' | 'relations'
 
 const VIEW_KEY = '040.units.list'
-
-// Export pro znovupoužití v EntityHub a ContractWizard
-export const UNITS_BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'unitTypeName', label: 'Typ', width: 140, sortable: true },
-  { key: 'displayName', label: 'Název', width: 200, sortable: true },
-  { key: 'propertyName', label: 'Nemovitost', width: 200, sortable: true },
-  { key: 'floor', label: 'Podlaží', width: 100, sortable: true },
-  { key: 'area', label: 'Plocha (m²)', width: 120, sortable: true },
-  { key: 'rooms', label: 'Pokoje', width: 100, sortable: true },
-  { key: 'status', label: 'Status', width: 150, sortable: true },
-]
 
 const BASE_COLUMNS = UNITS_BASE_COLUMNS
 
@@ -202,6 +193,7 @@ export default function UnitsTile({
   const [isDirty, setIsDirty] = useState(false)
   const [activeSectionId, setActiveSectionId] = useState<DetailSectionId>('detail')
   const submitDetailFnRef = React.useRef<(() => Promise<UiUnit | null>) | null>(null)
+  const [relationsUnitId, setRelationsUnitId] = useState<string | null>(null)
   
   // Attachments manager state
   const [attachmentsManagerUnitId, setAttachmentsManagerUnitId] = useState<string | null>(null)
@@ -325,17 +317,19 @@ export default function UnitsTile({
     if (viewMode === 'list') {
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit', 'attachments')
+        actions.push('view', 'edit', 'relations', 'attachments')
       }
       actions.push('columnSettings', 'close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
-        actions.push('save', 'attachments', 'close')
+        actions.push('save', 'relations', 'attachments', 'close')
       } else {
         actions.push('save', 'close')
       }
     } else if (viewMode === 'read') {
-      actions.push('edit', 'attachments', 'close')
+      actions.push('edit', 'relations', 'attachments', 'close')
+    } else if (viewMode === 'relations') {
+      actions.push('close')
     } else if (viewMode === 'attachments-manager') {
       // Použij utility funkci pro actions
       const mode = attachmentsManagerUi.mode ?? 'list'
@@ -348,11 +342,12 @@ export default function UnitsTile({
     const mappedViewMode = mapAttachmentsViewMode(viewMode as any, attachmentsManagerUi.mode ?? 'list')
     const mappedHasSelection = getHasSelection(viewMode as any, selectedId ? String(selectedId) : null, attachmentsManagerUi)
     const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
+    const relationsView = viewMode === 'relations'
     
     onRegisterCommonActionsState?.({
-      viewMode: mappedViewMode,
-      hasSelection: mappedHasSelection,
-      isDirty: mappedIsDirty,
+      viewMode: relationsView ? 'read' : mappedViewMode,
+      hasSelection: relationsView ? true : mappedHasSelection,
+      isDirty: relationsView ? false : mappedIsDirty,
     })
   }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
@@ -362,6 +357,38 @@ export default function UnitsTile({
     
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       logger.log(`[common action] ${id}`)
+
+      // RELATIONS MODE
+      if (viewMode === 'relations') {
+        if (id === 'close') {
+          const backId = relationsUnitId ?? detailUnit?.id ?? selectedId
+          if (!backId) {
+            closeToList()
+            return
+          }
+
+          const found = units.find((u) => u.id === backId)
+          if (found) {
+            setDetailUnit(createMinimalUiUnit({
+              id: found.id,
+              propertyId: found.propertyId,
+              unitTypeId: found.unitTypeId,
+              displayName: found.displayName,
+              floor: found.floor,
+              area: found.area,
+              rooms: found.rooms,
+              status: found.status,
+              isArchived: found.isArchived,
+            }))
+            setSelectedId(found.id)
+            setViewMode('read')
+            setIsDirty(false)
+          } else {
+            closeToList()
+          }
+          return
+        }
+      }
       
       switch (id) {
         case 'add':
@@ -461,6 +488,18 @@ export default function UnitsTile({
             closeListToModule()
           }
           break
+
+        case 'relations':
+          if (viewMode === 'edit' && isDirty) {
+            toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři vazby.')
+            return
+          }
+          const targetId = selectedId ?? detailUnit?.id ?? null
+          if (!targetId) return
+          setRelationsUnitId(String(targetId))
+          setSelectedId(String(targetId))
+          setViewMode('relations')
+          return
         
         case 'attachments':
           if (viewMode === 'list') {
@@ -787,6 +826,14 @@ export default function UnitsTile({
         }}
       />
     )
+  }
+
+  // RELATIONS VIEW
+  if (viewMode === 'relations' && relationsUnitId) {
+    const unit = units.find((u) => u.id === relationsUnitId) ?? detailUnit
+    const label = unit?.displayName || 'Jednotka'
+
+    return <UnitRelationsHub unitId={String(relationsUnitId)} unitLabel={label} />
   }
 
   return (
