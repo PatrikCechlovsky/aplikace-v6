@@ -240,6 +240,7 @@ function useRelationListPrefs(
   opts?: { readOnly?: boolean }
 ) {
   const readOnly = !!opts?.readOnly
+  const defaultSortRef = useRef<ListViewSortState>(defaultSort)
   const [sort, setSort] = useState<ListViewSortState>(defaultSort)
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
@@ -252,8 +253,8 @@ function useRelationListPrefs(
 
   useEffect(() => {
     void (async () => {
-      const prefs = await loadViewPrefs(viewKey, { v: 1, sort: defaultSort as ViewPrefsSortState, colWidths: {}, colOrder: [], colHidden: [] })
-      setSort((prefs.sort as ViewPrefsSortState) ?? defaultSort)
+      const prefs = await loadViewPrefs(viewKey, { v: 1, sort: defaultSortRef.current as ViewPrefsSortState, colWidths: {}, colOrder: [], colHidden: [] })
+      setSort((prefs.sort as ViewPrefsSortState) ?? defaultSortRef.current)
       setColPrefs({
         colWidths: prefs.colWidths ?? {},
         colOrder: prefs.colOrder ?? [],
@@ -261,7 +262,7 @@ function useRelationListPrefs(
       })
       prefsLoadedRef.current = true
     })()
-  }, [viewKey, defaultSort])
+  }, [viewKey])
 
   useEffect(() => {
     if (readOnly) return
