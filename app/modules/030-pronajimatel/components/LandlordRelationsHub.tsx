@@ -11,6 +11,10 @@ import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { getIcon } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
+import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/tiles/LandlordsTile'
+import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/tiles/PropertiesTile'
+import { UNITS_BASE_COLUMNS } from '@/app/modules/040-nemovitost/tiles/UnitsTile'
+import { TENANTS_BASE_COLUMNS } from '@/app/modules/050-najemnik/tiles/TenantsTile'
 import { getLandlordRelations, type LandlordRelationProperty, type LandlordRelationTenant, type LandlordRelationUnit } from '@/app/lib/services/landlordRelations'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
 import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/properties'
@@ -35,33 +39,10 @@ type Props = {
   landlordLabel?: string | null
 }
 
-const LANDLORD_COLUMNS: ListViewColumn[] = [
-  { key: 'displayName', label: 'Pronajímatel', width: 220, sortable: true },
-  { key: 'subjectType', label: 'Typ', width: 160, sortable: true },
-  { key: 'email', label: 'E-mail', width: 220, sortable: true },
-  { key: 'phone', label: 'Telefon', width: 160, sortable: true },
-  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
-]
-
-const PROPERTY_COLUMNS: ListViewColumn[] = [
-  { key: 'displayName', label: 'Nemovitost', width: 240, sortable: true },
-  { key: 'address', label: 'Adresa', width: 320, sortable: true },
-  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
-]
-
-const UNIT_COLUMNS: ListViewColumn[] = [
-  { key: 'displayName', label: 'Jednotka', width: 220, sortable: true },
-  { key: 'propertyName', label: 'Nemovitost', width: 260, sortable: true },
-  { key: 'status', label: 'Stav', width: 140, sortable: true },
-  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
-]
-
-const TENANT_COLUMNS: ListViewColumn[] = [
-  { key: 'displayName', label: 'Nájemník', width: 220, sortable: true },
-  { key: 'email', label: 'E-mail', width: 220, sortable: true },
-  { key: 'phone', label: 'Telefon', width: 160, sortable: true },
-  { key: 'archived', label: 'Archiv', width: 120, sortable: true, align: 'center' },
-]
+const LANDLORD_COLUMNS: ListViewColumn[] = LANDLORDS_BASE_COLUMNS
+const PROPERTY_COLUMNS: ListViewColumn[] = PROPERTIES_BASE_COLUMNS
+const UNIT_COLUMNS: ListViewColumn[] = UNITS_BASE_COLUMNS
+const TENANT_COLUMNS: ListViewColumn[] = TENANTS_BASE_COLUMNS
 
 function mapLandlordDetailToUi(row: LandlordDetailRow): UiLandlord {
   return {
@@ -380,10 +361,10 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
   const [unitDetail, setUnitDetail] = useState<UiUnit | null>(null)
   const [tenantDetail, setTenantDetail] = useState<UiTenant | null>(null)
 
-  const landlordList = useRelationListPrefs('relations.landlord.landlord', LANDLORD_COLUMNS, { key: 'displayName', dir: 'asc' })
-  const propertiesList = useRelationListPrefs('relations.landlord.properties', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' })
-  const unitsList = useRelationListPrefs('relations.landlord.units', UNIT_COLUMNS, { key: 'displayName', dir: 'asc' })
-  const tenantsList = useRelationListPrefs('relations.landlord.tenants', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const landlordList = useRelationListPrefs('030.landlords.list', LANDLORD_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const propertiesList = useRelationListPrefs('040.properties.list', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const unitsList = useRelationListPrefs('040.units.list', UNIT_COLUMNS, { key: 'displayName', dir: 'asc' })
+  const tenantsList = useRelationListPrefs('030.tenants.list', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' })
 
   const [landlordFilter, setLandlordFilter] = useState('')
   const [propertiesFilter, setPropertiesFilter] = useState('')
@@ -408,13 +389,9 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
 
     ;(async () => {
       try {
-        const [relations, landlordRow] = await Promise.all([
-          getLandlordRelations(landlordId, { includeArchived: false }),
-          getLandlordDetail(landlordId),
-        ])
+        const relations = await getLandlordRelations(landlordId, { includeArchived: false })
         if (!active) return
 
-        setLandlordDetail(mapLandlordDetailToUi(landlordRow))
         setProperties(relations.properties)
         setUnits(relations.units)
         setTenants(relations.tenants)
@@ -428,6 +405,30 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         setErrorText(err?.message || 'Nepodařilo se načíst vazby pronajimatele.')
       } finally {
         if (active) setLoading(false)
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [landlordId])
+
+  useEffect(() => {
+    let active = true
+    if (!landlordId) {
+      setLandlordDetail(null)
+      return () => {
+        active = false
+      }
+    }
+
+    ;(async () => {
+      try {
+        const landlordRow = await getLandlordDetail(landlordId)
+        if (!active) return
+        setLandlordDetail(mapLandlordDetailToUi(landlordRow))
+      } catch (err) {
+        if (active) setLandlordDetail(null)
       }
     })()
 
@@ -507,22 +508,46 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     const f = normalizeText(landlordFilter)
     if (!f) return landlordData
     return landlordData.filter((l) => {
-      const hay = normalizeText([l.displayName, l.subjectType, l.email, l.phone].filter(Boolean).join(' '))
+      const hay = normalizeText([
+        l.displayName,
+        l.subjectType,
+        l.email,
+        l.phone,
+        l.companyName,
+        l.ic,
+        l.firstName,
+        l.lastName,
+        l.street,
+        l.houseNumber,
+        l.city,
+        l.zip,
+        l.country,
+      ].filter(Boolean).join(' '))
       return hay.includes(f)
     })
   }, [landlordData, landlordFilter])
   const landlordSorted = useMemo(() => {
     return sortItems(landlordFiltered, landlordList.sort, (l, key) => {
       switch (key) {
+        case 'subjectTypeLabel':
+          return normalizeText(l.subjectType)
         case 'displayName':
           return normalizeText(l.displayName)
-        case 'subjectType':
-          return normalizeText(l.subjectType)
+        case 'fullAddress':
+          return normalizeText([l.street, l.houseNumber, l.city, l.zip, l.country].filter(Boolean).join(' '))
         case 'email':
           return normalizeText(l.email)
         case 'phone':
           return normalizeText(l.phone)
-        case 'archived':
+        case 'companyName':
+          return normalizeText(l.companyName)
+        case 'ic':
+          return normalizeText(l.ic)
+        case 'firstName':
+          return normalizeText(l.firstName)
+        case 'lastName':
+          return normalizeText(l.lastName)
+        case 'isArchived':
           return l.isArchived ? 1 : 0
         default:
           return ''
@@ -533,11 +558,16 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     return landlordSorted.map((l) => ({
       id: l.id,
       data: {
+        subjectTypeLabel: l.subjectType || '—',
         displayName: l.displayName || '—',
-        subjectType: l.subjectType || '—',
+        fullAddress: [l.street, l.houseNumber, l.city, l.zip, l.country].filter(Boolean).join(', ') || '—',
         email: l.email || '—',
         phone: l.phone || '—',
-        archived: l.isArchived ? 'Ano' : 'Ne',
+        companyName: l.companyName || '—',
+        ic: l.ic || '—',
+        firstName: l.firstName || '—',
+        lastName: l.lastName || '—',
+        isArchived: l.isArchived ? 'Ano' : 'Ne',
       },
       raw: l,
     }))
@@ -549,7 +579,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     if (!f) return properties
     return properties.filter((p) => {
       const address = [[p.street, p.house_number].filter(Boolean).join(' '), p.city, p.zip].filter(Boolean).join(', ')
-      const hay = normalizeText([p.display_name, address].filter(Boolean).join(' '))
+      const hay = normalizeText([p.property_type_name, p.display_name, p.landlord_name, address].filter(Boolean).join(' '))
       return hay.includes(f)
     })
   }, [properties, propertiesFilter])
@@ -557,12 +587,18 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     return sortItems(propertyFiltered, propertiesList.sort, (p, key) => {
       const address = [[p.street, p.house_number].filter(Boolean).join(' '), p.city, p.zip].filter(Boolean).join(', ')
       switch (key) {
+        case 'propertyTypeName':
+          return normalizeText(p.property_type_name)
         case 'displayName':
           return normalizeText(p.display_name)
-        case 'address':
+        case 'fullAddress':
           return normalizeText(address)
-        case 'archived':
-          return p.is_archived ? 1 : 0
+        case 'landlordName':
+          return normalizeText(p.landlord_name)
+        case 'buildingArea':
+          return p.building_area ?? 0
+        case 'unitsCount':
+          return p.units_count ?? 0
         default:
           return ''
       }
@@ -574,9 +610,12 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
       return {
         id: p.id,
         data: {
+          propertyTypeName: p.property_type_name || '—',
           displayName: p.display_name || '—',
-          address: address || '—',
-          archived: p.is_archived ? 'Ano' : 'Ne',
+          fullAddress: address || '—',
+          landlordName: p.landlord_name || '—',
+          buildingArea: p.building_area ?? '—',
+          unitsCount: p.units_count ?? '—',
         },
         raw: p,
       }
@@ -588,21 +627,27 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     const f = normalizeText(unitsFilter)
     if (!f) return units
     return units.filter((u) => {
-      const hay = normalizeText([u.display_name, u.internal_code, u.property_name, u.status].filter(Boolean).join(' '))
+      const hay = normalizeText([u.unit_type_name, u.display_name, u.internal_code, u.property_name, u.status, u.floor, u.rooms, u.area].filter(Boolean).join(' '))
       return hay.includes(f)
     })
   }, [units, unitsFilter])
   const unitSorted = useMemo(() => {
     return sortItems(unitFiltered, unitsList.sort, (u, key) => {
       switch (key) {
+        case 'unitTypeName':
+          return normalizeText(u.unit_type_name)
         case 'displayName':
           return normalizeText(u.display_name || u.internal_code)
         case 'propertyName':
           return normalizeText(u.property_name)
+        case 'floor':
+          return u.floor ?? 0
+        case 'area':
+          return u.area ?? 0
+        case 'rooms':
+          return u.rooms ?? 0
         case 'status':
           return normalizeText(u.status)
-        case 'archived':
-          return u.is_archived ? 1 : 0
         default:
           return ''
       }
@@ -612,10 +657,13 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     return unitSorted.map((u) => ({
       id: u.id,
       data: {
+        unitTypeName: u.unit_type_name || '—',
         displayName: u.display_name || u.internal_code || '—',
         propertyName: u.property_name || '—',
+        floor: u.floor ?? '—',
+        area: u.area ?? '—',
+        rooms: u.rooms ?? '—',
         status: u.status || '—',
-        archived: u.is_archived ? 'Ano' : 'Ne',
       },
       raw: u,
     }))
@@ -626,20 +674,32 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     const f = normalizeText(tenantsFilter)
     if (!f) return tenants
     return tenants.filter((t) => {
-      const hay = normalizeText([t.display_name, t.email, t.phone].filter(Boolean).join(' '))
+      const hay = normalizeText([t.subject_type, t.display_name, t.email, t.phone].filter(Boolean).join(' '))
       return hay.includes(f)
     })
   }, [tenants, tenantsFilter])
   const tenantSorted = useMemo(() => {
     return sortItems(tenantFiltered, tenantsList.sort, (t, key) => {
       switch (key) {
+        case 'subjectTypeLabel':
+          return normalizeText(t.subject_type)
         case 'displayName':
           return normalizeText(t.display_name)
+        case 'fullAddress':
+          return ''
         case 'email':
           return normalizeText(t.email)
         case 'phone':
           return normalizeText(t.phone)
-        case 'archived':
+        case 'companyName':
+          return ''
+        case 'ic':
+          return ''
+        case 'firstName':
+          return ''
+        case 'lastName':
+          return ''
+        case 'isArchived':
           return t.is_archived ? 1 : 0
         default:
           return ''
@@ -650,10 +710,16 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
     return tenantSorted.map((t) => ({
       id: t.id,
       data: {
+        subjectTypeLabel: t.subject_type || '—',
         displayName: t.display_name || '—',
+        fullAddress: '—',
         email: t.email || '—',
         phone: t.phone || '—',
-        archived: t.is_archived ? 'Ano' : 'Ne',
+        companyName: '—',
+        ic: '—',
+        firstName: '—',
+        lastName: '—',
+        isArchived: t.is_archived ? 'Ano' : 'Ne',
       },
       raw: t,
     }))
@@ -662,15 +728,15 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
 
   const tabs: DetailTabItem[] = useMemo(() => {
     return [
-      { id: 'landlord', label: 'Pronajímatel' },
-      { id: 'properties', label: 'Nemovitosti' },
-      { id: 'units', label: 'Jednotky' },
-      { id: 'tenants', label: 'Nájemníci' },
-      { id: 'contracts', label: 'Smlouvy' },
-      { id: 'energy', label: 'Energie' },
-      { id: 'payments', label: 'Platby' },
+      { id: 'landlord', label: `Pronajímatel (${landlordRows.length})` },
+      { id: 'properties', label: `Nemovitosti (${propertyRows.length})` },
+      { id: 'units', label: `Jednotky (${unitRows.length})` },
+      { id: 'tenants', label: `Nájemníci (${tenantRows.length})` },
+      { id: 'contracts', label: 'Smlouvy (0)' },
+      { id: 'energy', label: 'Energie (0)' },
+      { id: 'payments', label: 'Platby (0)' },
     ]
-  }, [])
+  }, [landlordRows.length, propertyRows.length, unitRows.length, tenantRows.length])
 
   const headerTitle = landlordDetail?.displayName || landlordLabel || 'Pronajímatel'
 
@@ -712,7 +778,6 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'landlord' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Pronajímatel ({landlordRows.length})</div>
               <ListView
                 columns={landlordList.columns}
                 rows={landlordRows}
@@ -741,8 +806,8 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
                 open={landlordList.colsOpen}
                 onClose={() => landlordList.setColsOpen(false)}
                 columns={LANDLORD_COLUMNS}
-                fixedFirstKey="displayName"
-                requiredKeys={['displayName']}
+                fixedFirstKey="subjectTypeLabel"
+                requiredKeys={['email']}
                 value={{
                   order: landlordList.colPrefs.colOrder ?? [],
                   hidden: landlordList.colPrefs.colHidden ?? [],
@@ -789,7 +854,6 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'properties' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Nemovitosti ({propertyRows.length})</div>
               <ListView
                 columns={propertiesList.columns}
                 rows={propertyRows}
@@ -818,7 +882,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
                 open={propertiesList.colsOpen}
                 onClose={() => propertiesList.setColsOpen(false)}
                 columns={PROPERTY_COLUMNS}
-                fixedFirstKey="displayName"
+                fixedFirstKey="propertyTypeName"
                 requiredKeys={['displayName']}
                 value={{
                   order: propertiesList.colPrefs.colOrder ?? [],
@@ -866,7 +930,6 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'units' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Jednotky ({unitRows.length})</div>
               <ListView
                 columns={unitsList.columns}
                 rows={unitRows}
@@ -895,7 +958,7 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
                 open={unitsList.colsOpen}
                 onClose={() => unitsList.setColsOpen(false)}
                 columns={UNIT_COLUMNS}
-                fixedFirstKey="displayName"
+                fixedFirstKey="unitTypeName"
                 requiredKeys={['displayName']}
                 value={{
                   order: unitsList.colPrefs.colOrder ?? [],
@@ -943,7 +1006,6 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'tenants' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Nájemníci ({tenantRows.length})</div>
               <ListView
                 columns={tenantsList.columns}
                 rows={tenantRows}
@@ -972,8 +1034,8 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
                 open={tenantsList.colsOpen}
                 onClose={() => tenantsList.setColsOpen(false)}
                 columns={TENANT_COLUMNS}
-                fixedFirstKey="displayName"
-                requiredKeys={['displayName']}
+                fixedFirstKey="subjectTypeLabel"
+                requiredKeys={['email']}
                 value={{
                   order: tenantsList.colPrefs.colOrder ?? [],
                   hidden: tenantsList.colPrefs.colHidden ?? [],
@@ -1020,7 +1082,6 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'contracts' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Smlouvy (0)</div>
               <ListView
                 columns={[{ key: 'name', label: 'Smlouva', width: 260 }]}
                 rows={[]}
@@ -1039,7 +1100,6 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'energy' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Energie (0)</div>
               <ListView
                 columns={[{ key: 'name', label: 'Energie', width: 260 }]}
                 rows={[]}
@@ -1058,7 +1118,6 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
         {activeTab === 'payments' && (
           <div className="relation-pane">
             <div className="relation-pane__list">
-              <div className="relation-pane__header">Platby (0)</div>
               <ListView
                 columns={[{ key: 'name', label: 'Platby', width: 260 }]}
                 rows={[]}
