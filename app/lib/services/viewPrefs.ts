@@ -33,7 +33,17 @@ export type ViewPrefs = {
 // =====================
 
 const LS_PREFIX = 'ui:view-prefs:'
-let DISABLE_DB_PREFS = false
+const DISABLE_DB_PREFS_LS_KEY = `${LS_PREFIX}disable-db`
+let DISABLE_DB_PREFS = process.env.NODE_ENV === 'production'
+
+if (typeof window !== 'undefined') {
+  try {
+    const stored = window.localStorage.getItem(DISABLE_DB_PREFS_LS_KEY)
+    if (stored === 'true') DISABLE_DB_PREFS = true
+  } catch {
+    // ignore
+  }
+}
 
 function lsKey(viewKey: string) {
   return `${LS_PREFIX}${viewKey}`
@@ -127,6 +137,13 @@ export async function loadViewPrefs(viewKey: string, defaults: ViewPrefs): Promi
       }
       if ((error as any)?.status === 400) {
         DISABLE_DB_PREFS = true
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem(DISABLE_DB_PREFS_LS_KEY, 'true')
+          } catch {
+            // ignore
+          }
+        }
       }
       return merged
     }
@@ -181,6 +198,13 @@ export async function saveViewPrefs(viewKey: string, prefs: ViewPrefs): Promise<
         console.debug('[viewPrefs] Failed to save to DB:', error.message)
       }
       DISABLE_DB_PREFS = true
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(DISABLE_DB_PREFS_LS_KEY, 'true')
+        } catch {
+          // ignore
+        }
+      }
       return
     }
   } catch (err) {
@@ -189,5 +213,12 @@ export async function saveViewPrefs(viewKey: string, prefs: ViewPrefs): Promise<
       console.debug('[viewPrefs] Exception saving prefs:', err)
     }
     DISABLE_DB_PREFS = true
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(DISABLE_DB_PREFS_LS_KEY, 'true')
+      } catch {
+        // ignore
+      }
+    }
   }
 }
