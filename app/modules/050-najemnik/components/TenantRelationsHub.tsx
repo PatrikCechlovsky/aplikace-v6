@@ -10,12 +10,16 @@ import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { getIcon } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
+import { getContrastTextColor } from '@/app/lib/colorUtils'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import { getTenantDetail, type TenantDetailRow } from '@/app/lib/services/tenants'
 import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/properties'
 import { getUnitDetail, type UnitDetailRow } from '@/app/lib/services/units'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
 import { getTenantRelations, type TenantRelationProperty, type TenantRelationUnit, type TenantRelationLandlord } from '@/app/lib/services/tenantRelations'
+import { renderUnitStatus } from '@/app/modules/040-nemovitost/unitsStatus'
+import { listByCategory, type GenericTypeRow } from '@/app/modules/900-nastaveni/services/genericTypes'
+import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 
 import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/landlordsColumns'
 import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/propertiesColumns'
@@ -423,6 +427,48 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
   const [propertiesFilter, setPropertiesFilter] = useState('')
   const [landlordsFilter, setLandlordsFilter] = useState('')
 
+  const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
+  const [propertyTypes, setPropertyTypes] = useState<GenericTypeRow[]>([])
+  const [unitTypes, setUnitTypes] = useState<GenericTypeRow[]>([])
+  const subjectTypeMap = useMemo(() => {
+    const map: Record<string, SubjectType> = {}
+    subjectTypes.forEach((t) => {
+      map[t.code] = t
+    })
+    return map
+  }, [subjectTypes])
+  const propertyTypeMap = useMemo(() => {
+    const map: Record<string, GenericTypeRow> = {}
+    propertyTypes.forEach((t) => {
+      map[t.id] = t
+    })
+    return map
+  }, [propertyTypes])
+  const unitTypeMap = useMemo(() => {
+    const map: Record<string, GenericTypeRow> = {}
+    unitTypes.forEach((t) => {
+      map[t.id] = t
+    })
+    return map
+  }, [unitTypes])
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [types, propertyTypeRows, unitTypeRows] = await Promise.all([
+          fetchSubjectTypes(),
+          listByCategory('property_types'),
+          listByCategory('unit_types'),
+        ])
+        setSubjectTypes(types)
+        setPropertyTypes(propertyTypeRows)
+        setUnitTypes(unitTypeRows)
+      } catch (err) {
+        logger.error('Failed to load relation type metadata', err)
+      }
+    })()
+  }, [])
+
   useEffect(() => {
     setSelectedTenantId(tenantId)
   }, [tenantId])
@@ -588,7 +634,18 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
     return tenantSorted.map((t) => ({
       id: t.id,
       data: {
-        subjectTypeLabel: t.subjectType || '—',
+        subjectTypeLabel: (() => {
+          const meta = subjectTypeMap[t.subjectType ?? '']
+          const label = meta?.name || t.subjectType || '—'
+          const color = meta?.color || null
+          return color ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: color, color: getContrastTextColor(color) }}>
+              {label}
+            </span>
+          ) : (
+            <span>{label}</span>
+          )
+        })(),
         displayName: t.displayName || '—',
         fullAddress: '—',
         email: t.email || '—',
@@ -601,7 +658,7 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
       },
       raw: t,
     }))
-  }, [tenantSorted])
+  }, [tenantSorted, subjectTypeMap])
   const tenantNavItems = useMemo<RelationNavItem[]>(() => tenantSorted.map((t) => ({ id: t.id, title: t.displayName || '—' })), [tenantSorted])
 
   const unitsFiltered = useMemo(() => {
@@ -638,17 +695,28 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
     return unitsSorted.map((u) => ({
       id: u.id,
       data: {
-        unitTypeName: u.unit_type_name || '—',
+        unitTypeName: (() => {
+          const meta = u.unit_type_id ? unitTypeMap[u.unit_type_id] : null
+          const label = meta?.name || u.unit_type_name || '—'
+          const color = meta?.color || u.unit_type_color || null
+          return color ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: color, color: getContrastTextColor(color) }}>
+              {label}
+            </span>
+          ) : (
+            <span>{label}</span>
+          )
+        })(),
         displayName: u.display_name || u.internal_code || '—',
         propertyName: u.property_name || '—',
         floor: u.floor ?? '—',
         area: u.area ?? '—',
         rooms: u.rooms ?? '—',
-        status: u.status || '—',
+        status: renderUnitStatus(u.status),
       },
       raw: u,
     }))
-  }, [unitsSorted])
+  }, [unitsSorted, unitTypeMap])
   const unitNavItems = useMemo<RelationNavItem[]>(() => unitsSorted.map((u) => ({ id: u.id, title: u.display_name || u.internal_code || '—' })), [unitsSorted])
 
   const propertiesFiltered = useMemo(() => {
@@ -684,10 +752,19 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
   const propertiesRows = useMemo<ListViewRow<TenantRelationProperty>[]>(() => {
     return propertiesSorted.map((p) => {
       const address = [[p.street, p.house_number].filter(Boolean).join(' '), p.city, p.zip].filter(Boolean).join(', ')
+      const propertyMeta = p.property_type_id ? propertyTypeMap[p.property_type_id] : null
+      const propertyTypeName = propertyMeta?.name || p.property_type_name || '—'
+      const propertyTypeColor = propertyMeta?.color || p.property_type_color || null
       return {
         id: p.id,
         data: {
-          propertyTypeName: p.property_type_name || '—',
+          propertyTypeName: propertyTypeColor ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: propertyTypeColor, color: getContrastTextColor(propertyTypeColor) }}>
+              {propertyTypeName}
+            </span>
+          ) : (
+            <span>{propertyTypeName}</span>
+          ),
           displayName: p.display_name || '—',
           fullAddress: address || '—',
           landlordName: p.landlord_name || '—',
@@ -697,7 +774,7 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
         raw: p,
       }
     })
-  }, [propertiesSorted])
+  }, [propertiesSorted, propertyTypeMap])
   const propertyNavItems = useMemo<RelationNavItem[]>(() => propertiesSorted.map((p) => ({ id: p.id, title: p.display_name || '—' })), [propertiesSorted])
 
   const landlordsFiltered = useMemo(() => {
@@ -740,7 +817,18 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
     return landlordsSorted.map((l) => ({
       id: l.id,
       data: {
-        subjectTypeLabel: l.subject_type || '—',
+        subjectTypeLabel: (() => {
+          const meta = subjectTypeMap[l.subject_type ?? '']
+          const label = meta?.name || l.subject_type || '—'
+          const color = meta?.color || null
+          return color ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: color, color: getContrastTextColor(color) }}>
+              {label}
+            </span>
+          ) : (
+            <span>{label}</span>
+          )
+        })(),
         displayName: l.display_name || '—',
         fullAddress: '—',
         email: l.email || '—',
@@ -753,7 +841,7 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
       },
       raw: l,
     }))
-  }, [landlordsSorted])
+  }, [landlordsSorted, subjectTypeMap])
   const landlordNavItems = useMemo<RelationNavItem[]>(() => landlordsSorted.map((l) => ({ id: l.id, title: l.display_name || '—' })), [landlordsSorted])
 
   const tabs: DetailTabItem[] = useMemo(() => {

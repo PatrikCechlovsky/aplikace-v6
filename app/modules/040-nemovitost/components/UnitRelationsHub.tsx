@@ -10,11 +10,15 @@ import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { getIcon } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
+import { getContrastTextColor } from '@/app/lib/colorUtils'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import { getUnitDetail, type UnitDetailRow } from '@/app/lib/services/units'
 import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/properties'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
 import { getTenantDetail, type TenantDetailRow } from '@/app/lib/services/tenants'
+import { renderUnitStatus } from '@/app/modules/040-nemovitost/unitsStatus'
+import { listByCategory, type GenericTypeRow } from '@/app/modules/900-nastaveni/services/genericTypes'
+import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 
 import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/landlordsColumns'
 import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/propertiesColumns'
@@ -420,6 +424,48 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
   const [tenantFilter, setTenantFilter] = useState('')
   const [landlordFilter, setLandlordFilter] = useState('')
 
+  const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
+  const [propertyTypes, setPropertyTypes] = useState<GenericTypeRow[]>([])
+  const [unitTypes, setUnitTypes] = useState<GenericTypeRow[]>([])
+  const subjectTypeMap = useMemo(() => {
+    const map: Record<string, SubjectType> = {}
+    subjectTypes.forEach((t) => {
+      map[t.code] = t
+    })
+    return map
+  }, [subjectTypes])
+  const propertyTypeMap = useMemo(() => {
+    const map: Record<string, GenericTypeRow> = {}
+    propertyTypes.forEach((t) => {
+      map[t.id] = t
+    })
+    return map
+  }, [propertyTypes])
+  const unitTypeMap = useMemo(() => {
+    const map: Record<string, GenericTypeRow> = {}
+    unitTypes.forEach((t) => {
+      map[t.id] = t
+    })
+    return map
+  }, [unitTypes])
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [types, propertyTypeRows, unitTypeRows] = await Promise.all([
+          fetchSubjectTypes(),
+          listByCategory('property_types'),
+          listByCategory('unit_types'),
+        ])
+        setSubjectTypes(types)
+        setPropertyTypes(propertyTypeRows)
+        setUnitTypes(unitTypeRows)
+      } catch (err) {
+        logger.error('Failed to load relation type metadata', err)
+      }
+    })()
+  }, [])
+
   useEffect(() => {
     setSelectedUnitId(unitId)
   }, [unitId])
@@ -568,17 +614,28 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
     return unitSorted.map(({ raw }) => ({
       id: raw.id,
       data: {
-        unitTypeName: raw.unit_type_name || '—',
+        unitTypeName: (() => {
+          const meta = raw.unit_type_id ? unitTypeMap[raw.unit_type_id] : null
+          const label = meta?.name || raw.unit_type_name || '—'
+          const color = meta?.color || null
+          return color ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: color, color: getContrastTextColor(color) }}>
+              {label}
+            </span>
+          ) : (
+            <span>{label}</span>
+          )
+        })(),
         displayName: raw.display_name || raw.internal_code || '—',
         propertyName: raw.property_name || '—',
         floor: raw.floor ?? '—',
         area: raw.area ?? '—',
         rooms: raw.rooms ?? '—',
-        status: raw.status || '—',
+        status: renderUnitStatus(raw.status),
       },
       raw,
     }))
-  }, [unitSorted])
+  }, [unitSorted, unitTypeMap])
   const unitNavItems = useMemo<RelationNavItem[]>(() => unitSorted.map(({ raw }) => ({ id: raw.id, title: raw.display_name || raw.internal_code || '—' })), [unitSorted])
 
   const propertyData = useMemo(() => (propertyDetail ? [propertyDetail] : []), [propertyDetail])
@@ -615,10 +672,19 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
   const propertyRows = useMemo<ListViewRow<UiProperty>[]>(() => {
     return propertySorted.map((p) => {
       const address = [[p.street, p.houseNumber].filter(Boolean).join(' '), p.city, p.zip].filter(Boolean).join(', ')
+      const propertyType = p.propertyTypeId ? propertyTypeMap[p.propertyTypeId] : null
+      const propertyTypeName = propertyType?.name || '—'
+      const propertyTypeColor = propertyType?.color || null
       return {
         id: p.id,
         data: {
-          propertyTypeName: '—',
+          propertyTypeName: propertyTypeColor ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: propertyTypeColor, color: getContrastTextColor(propertyTypeColor) }}>
+              {propertyTypeName}
+            </span>
+          ) : (
+            <span>{propertyTypeName}</span>
+          ),
           displayName: p.displayName || '—',
           fullAddress: address || '—',
           landlordName: '—',
@@ -628,7 +694,7 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
         raw: p,
       }
     })
-  }, [propertySorted])
+  }, [propertySorted, propertyTypeMap])
   const propertyNavItems = useMemo<RelationNavItem[]>(() => propertySorted.map((p) => ({ id: p.id, title: p.displayName || '—' })), [propertySorted])
 
   const tenantsData = useMemo(() => (tenantDetail ? [tenantDetail] : []), [tenantDetail])
@@ -672,7 +738,18 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
     return tenantsSorted.map((t) => ({
       id: t.id,
       data: {
-        subjectTypeLabel: t.subjectType || '—',
+        subjectTypeLabel: (() => {
+          const meta = subjectTypeMap[t.subjectType ?? '']
+          const label = meta?.name || t.subjectType || '—'
+          const color = meta?.color || null
+          return color ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: color, color: getContrastTextColor(color) }}>
+              {label}
+            </span>
+          ) : (
+            <span>{label}</span>
+          )
+        })(),
         displayName: t.displayName || '—',
         fullAddress: '—',
         email: t.email || '—',
@@ -685,7 +762,7 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
       },
       raw: t,
     }))
-  }, [tenantsSorted])
+  }, [tenantsSorted, subjectTypeMap])
   const tenantNavItems = useMemo<RelationNavItem[]>(() => tenantsSorted.map((t) => ({ id: t.id, title: t.displayName || '—' })), [tenantsSorted])
 
   const landlordsData = useMemo(() => (landlordDetail ? [landlordDetail] : []), [landlordDetail])
@@ -729,7 +806,18 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
     return landlordsSorted.map((l) => ({
       id: l.id,
       data: {
-        subjectTypeLabel: l.subjectType || '—',
+        subjectTypeLabel: (() => {
+          const meta = subjectTypeMap[l.subjectType ?? '']
+          const label = meta?.name || l.subjectType || '—'
+          const color = meta?.color || null
+          return color ? (
+            <span className="generic-type__name-badge" style={{ backgroundColor: color, color: getContrastTextColor(color) }}>
+              {label}
+            </span>
+          ) : (
+            <span>{label}</span>
+          )
+        })(),
         displayName: l.displayName || '—',
         fullAddress: [l.street, l.houseNumber, l.city, l.zip, l.country].filter(Boolean).join(', ') || '—',
         email: l.email || '—',
@@ -742,7 +830,7 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
       },
       raw: l,
     }))
-  }, [landlordsSorted])
+  }, [landlordsSorted, subjectTypeMap])
   const landlordNavItems = useMemo<RelationNavItem[]>(() => landlordsSorted.map((l) => ({ id: l.id, title: l.displayName || '—' })), [landlordsSorted])
 
   const tabs: DetailTabItem[] = useMemo(() => {
