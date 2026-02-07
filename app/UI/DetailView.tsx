@@ -2,18 +2,21 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
+import { getIcon } from '@/app/UI/icons'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 
 export type DetailViewMode = 'create' | 'edit' | 'view'
 
 export type DetailSectionId =
   | 'detail'
+  | 'relations'
   | 'roles'
   | 'invite'
   | 'users'
   | 'equipment'
   | 'accounts'
   | 'delegates'
+  | 'units'
   | 'attachments'
   | 'system'
 
@@ -22,6 +25,7 @@ export type DetailViewSection<Ctx = unknown> = {
   label: string
   order: number
   always?: boolean
+  icon?: React.ReactNode
   render: (ctx: Ctx) => React.ReactNode
   visibleWhen?: (ctx: Ctx) => boolean
 }
@@ -61,11 +65,16 @@ export type DetailViewCtx = {
 
   detailContent?: React.ReactNode
 
+  relationsContent?: React.ReactNode
+
   // ✅ může být ReactNode NEBO funkce(ctx) => ReactNode
   inviteContent?: React.ReactNode | ((ctx: DetailViewCtx) => React.ReactNode)
 
   rolesData?: RolesData
   rolesUi?: RolesUi
+
+  unitsContent?: React.ReactNode
+  equipmentContent?: React.ReactNode
 
   systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
   systemContent?: React.ReactNode
@@ -213,6 +222,15 @@ function renderRoleAndPermissionControls(
 const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
   detail: { id: 'detail', label: 'Detail', order: 10, always: true, render: (ctx) => ctx?.detailContent ?? null },
 
+  relations: {
+    id: 'relations',
+    label: 'Vazby',
+    order: 25,
+    icon: getIcon('link'),
+    visibleWhen: (ctx) => !!(ctx as any)?.relationsContent,
+    render: (ctx: any) => ctx?.relationsContent ?? null,
+  },
+
   invite: {
     id: 'invite',
     label: 'Pozvánka',
@@ -354,7 +372,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return <TenantUsersSection tenantId={entityId} viewMode={ctx.mode ?? 'edit'} />
     },
   },
-  equipment: { id: 'equipment', label: 'Vybavení', order: 40, render: () => null },
   accounts: {
     id: 'accounts',
     label: 'Účty',
@@ -412,6 +429,22 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return <DelegatesSection subjectId={entityId} mode={ctx.mode ?? 'edit'} onCreateDelegateFromUser={onCreateDelegateFromUser} onOpenNewDelegateForm={onOpenNewDelegateForm} />
     },
   },
+
+  units: {
+    id: 'units',
+    label: 'Jednotky',
+    order: 60,
+    visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId && ctx.entityId !== 'new',
+    render: (ctx: any) => ctx?.unitsContent ?? <div style={{ padding: '2rem' }}>Seznam jednotek (placeholder)</div>,
+  },
+
+  equipment: {
+    id: 'equipment',
+    label: 'Vybavení',
+    order: 65,
+    visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId && ctx.entityId !== 'new',
+    render: (ctx: any) => ctx?.equipmentContent ?? <div style={{ padding: '2rem' }}>Seznam vybavení (placeholder)</div>,
+  },
 }
 
 export default function DetailView({
@@ -434,7 +467,7 @@ export default function DetailView({
   const tabs: DetailTabItem[] = useMemo(() => {
     return sections
       .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
-      .map((s) => ({ id: s.id, label: s.label }))
+      .map((s) => ({ id: s.id, label: s.label, icon: s.icon }))
   }, [sections, ctx])
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'

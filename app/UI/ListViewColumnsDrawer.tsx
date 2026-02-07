@@ -24,9 +24,11 @@ type Props = {
   value: ColumnsDrawerValue              // current prefs (order/hidden)
   fixedFirstKey: string                  // první sloupec je zamčený
   requiredKeys?: string[]                // povinné (nelze skrýt, ale lze přesouvat)
+  sortBy?: { key: string; dir: 'asc' | 'desc' }  // aktuální řazení
   onClose: () => void
   onChange: (next: ColumnsDrawerValue) => void
   onReset?: () => void
+  onSortChange?: (sort: { key: string; dir: 'asc' | 'desc' }) => void
 }
 
 // =====================
@@ -73,9 +75,11 @@ export default function ListViewColumnsDrawer({
   value,
   fixedFirstKey,
   requiredKeys = [],
+  sortBy,
   onClose,
   onChange,
   onReset,
+  onSortChange
 }: Props) {
   const [q, setQ] = useState('')
 
@@ -169,6 +173,63 @@ export default function ListViewColumnsDrawer({
         <div className="lvcols__search">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat sloupec…" />
         </div>
+
+        {/* Sekce řazení */}
+        {onSortChange && (
+          <div className="lvcols__sort-section">
+            <h3 className="lvcols__sort-heading">📊 VÝCHOZÍ ŘAZENÍ</h3>
+            <div className="lvcols__sort-row">
+              <label className="lvcols__sort-label">Seřadit podle:</label>
+              <select
+                className="lvcols__sort-select"
+                value={sortBy?.key ?? ''}
+                onChange={(e) => {
+                  const newKey = e.target.value
+                  if (newKey && onSortChange) {
+                    onSortChange({ key: newKey, dir: sortBy?.dir ?? 'asc' })
+                  }
+                }}
+              >
+                {columns.filter(c => c.sortable !== false).map((c) => (
+                  <option key={c.key} value={c.key}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="lvcols__sort-row">
+              <label className="lvcols__sort-label">Směr:</label>
+              <div className="lvcols__sort-radios">
+                <label className="lvcols__sort-radio">
+                  <input
+                    type="radio"
+                    name="sort-direction"
+                    value="asc"
+                    checked={sortBy?.dir === 'asc'}
+                    onChange={() => {
+                      if (onSortChange && sortBy) {
+                        onSortChange({ key: sortBy.key, dir: 'asc' })
+                      }
+                    }}
+                  />
+                  <span>Vzestupně</span>
+                </label>
+                <label className="lvcols__sort-radio">
+                  <input
+                    type="radio"
+                    name="sort-direction"
+                    value="desc"
+                    checked={sortBy?.dir === 'desc'}
+                    onChange={() => {
+                      if (onSortChange && sortBy) {
+                        onSortChange({ key: sortBy.key, dir: 'desc' })
+                      }
+                    }}
+                  />
+                  <span>Sestupně</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="lvcols__list">
           {items.map((c) => {

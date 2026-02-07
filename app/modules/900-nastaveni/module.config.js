@@ -13,6 +13,8 @@ import PropertyTypesTile from './tiles/PropertyTypesTile'
 import UnitTypesTile from './tiles/UnitTypesTile'
 import RoleTypesTile from './tiles/RoleTypesTile'
 import PaymentTypesTile from './tiles/PaymentTypesTile'
+import RoomTypesTile from './tiles/RoomTypesTile'
+import EquipmentTypesTile from './tiles/EquipmentTypesTile'
 import AppViewSettingsTile from './tiles/AppViewSettingsTile'
 
 export default {
@@ -91,6 +93,22 @@ export default {
       sectionId: 'types-settings',
       component: UnitTypesTile,
       order: 50,
+    },
+    {
+      id: 'room-types',
+      label: 'Typy místností',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: RoomTypesTile,
+      order: 55,
+    },
+    {
+      id: 'equipment-types',
+      label: 'Typy vybavení',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: EquipmentTypesTile,
+      order: 56,
     },
     {
       id: 'payment-types',

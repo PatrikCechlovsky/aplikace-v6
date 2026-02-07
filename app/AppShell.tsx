@@ -57,6 +57,7 @@ type ModuleTileConfig = {
   component: React.ComponentType<any>
   icon?: IconKey
   sectionId?: string
+  children?: ModuleTileConfig[]
 }
 
 type ModuleSectionConfig = {
@@ -125,7 +126,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       setOrDelete('t', next.tileId ?? null)
 
       const qs = sp.toString()
-      const basePath = next.moduleId ? `/modules/${next.moduleId}` : '/'
+      const basePath = next.moduleId ? `/${next.moduleId}` : '/'
       const nextUrl = qs ? `${basePath}?${qs}` : basePath
 
       const currentQs = searchParams?.toString() ?? ''
@@ -152,6 +153,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null)
   const [activeSelection, setActiveSelection] = useState<SidebarSelection | null>(null)
   
+  // ✅ Counter pro force remount tile při opakovaném kliknutí
+  const [tileRenderKey, setTileRenderKey] = useState(0)
+  
   // ✅ Flag pro home button - aby se nevolal confirmIfDirty znovu
   const homeButtonClickRef = useRef(false)
 
@@ -170,7 +174,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   )
 
   const registerCommonActions = useCallback((actions: CommonActionId[]) => {
-    setCommonActions(actions)
+    setCommonActions((prev) => {
+      // Kontrola jestli se pole změnilo (délka + obsah)
+      if (prev && prev.length === actions.length && prev.every((a, i) => a === actions[i])) {
+        return prev // Nezměnilo se → neměnit state → žádný re-render
+      }
+      return actions
+    })
   }, [])
 
   const registerCommonActionsUi = useCallback((next: any) => {
@@ -399,76 +409,91 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         const loaded: ModuleConfig[] = []
 
         for (const loader of MODULE_SOURCES) {
-          const modModule: any = await loader()
-          const cfg: any = modModule.default
-          if (!cfg?.id) continue
-          if (cfg.enabled === false) continue
+          try {
+            const modModule: any = await loader()
+            const cfg: any = modModule.default ?? modModule
+            if (!cfg?.id) continue
+            if (cfg.enabled === false) continue
 
-          // Pro modul 030 (Pronajímatelé) načteme počty podle typů a aktualizujeme labels + ikony
-          if (cfg.id === '030-pronajimatel' && Array.isArray(cfg.tiles)) {
-            try {
-              // Načíst počty podle typů
-              const counts = await getLandlordCountsByType(false)
-              const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+            // Pro modul 030 (Pronajímatelé) načteme počty podle typů a aktualizujeme labels + ikony
+            if (cfg.id === '030-pronajimatel' && Array.isArray(cfg.tiles)) {
+              try {
+                // Načíst počty podle typů
+                const counts = await getLandlordCountsByType(false)
+                const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
 
-              // Načíst typy subjektů z modulu 900 pro ikony a barvy
-              const subjectTypes = await fetchSubjectTypes()
-              const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+                // Načíst typy subjektů z modulu 900 pro ikony a barvy
+                const subjectTypes = await fetchSubjectTypes()
+                const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
 
-              // Mapování typů subjektů na názvy (fallback, pokud není v DB)
-              const typeLabels: Record<string, string> = {
-                osoba: 'Osoba',
-                osvc: 'OSVČ',
-                firma: 'Firma',
-                spolek: 'Spolek',
-                statni: 'Státní',
-                zastupce: 'Zástupce',
-              }
+                // Mapování typů subjektů na názvy (fallback, pokud není v DB)
+                const typeLabels: Record<string, string> = {
+                  osoba: 'Osoba',
+                  osvc: 'OSVČ',
+                  firma: 'Firma',
+                  spolek: 'Spolek',
+                  statni: 'Státní',
+                  zastupce: 'Zástupce',
+                }
 
-              // Aktualizovat tiles s počty, ikonami a filtrovat jen ty s počtem > 0
-              const updatedTiles = cfg.tiles
-                .map((tile: any) => {
-                  // Pokud je tile pro typ subjektu, aktualizovat label s počtem a ikonu z modulu 900
-                  if (tile.dynamicLabel && tile.subjectType) {
-                    const count = countsMap.get(tile.subjectType) ?? 0
-                    const typeDef = typesMap.get(tile.subjectType)
-                    const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
-                    const icon = typeDef?.icon || tile.icon || 'user' // Ikona z modulu 900 nebo fallback
+                // Aktualizovat tiles s počty, ikonami a filtrovat jen ty s počtem > 0
+                const updatedTiles = cfg.tiles
+                  .map((tile: any) => {
+                    // Pokud je tile pro typ subjektu, aktualizovat label s počtem a ikonu z modulu 900
+                    if (tile.dynamicLabel && tile.subjectType) {
+                      const count = countsMap.get(tile.subjectType) ?? 0
+                      const typeDef = typesMap.get(tile.subjectType)
+                      const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
+                      const icon = typeDef?.icon || tile.icon || 'user' // Ikona z modulu 900 nebo fallback
 
-                    // Vrátit tile s aktualizovaným labelem a ikonou
-                    return {
-                      ...tile,
-                      label: `${typeLabel} (${count})`,
-                      icon: icon as IconKey,
-                      _count: count, // Uložit počet pro pozdější použití
-                      _color: typeDef?.color || null, // Uložit barvu pro pozdější použití
+                      // Vrátit tile s aktualizovaným labelem a ikonou
+                      return {
+                        ...tile,
+                        label: `${typeLabel} (${count})`,
+                        icon: icon as IconKey,
+                        _count: count, // Uložit počet pro pozdější použití
+                        _color: typeDef?.color || null, // Uložit barvu pro pozdější použití
+                      }
                     }
-                  }
-                  return tile
-                })
-                .filter((tile: any) => {
-                  // Filtrovat tiles s dynamicLabel - zobrazit jen pokud mají počet > 0
-                  if (tile.dynamicLabel && tile.subjectType) {
-                    const count = countsMap.get(tile.subjectType) ?? 0
-                    return count > 0
-                  }
-                  return true // Ostatní tiles zobrazit vždy (Přehled pronajímatelů, Přidat pronajimatele)
-                })
+                    return tile
+                  })
+                  .filter((tile: any) => {
+                    // Filtrovat tiles s dynamicLabel - zobrazit jen pokud mají počet > 0
+                    if (tile.dynamicLabel && tile.subjectType) {
+                      const count = countsMap.get(tile.subjectType) ?? 0
+                      return count > 0
+                    }
+                    return true // Ostatní tiles zobrazit vždy (Přehled pronajímatelů, Přidat pronajimatele)
+                  })
 
-              loaded.push({
-                id: cfg.id,
-                label: cfg.label ?? cfg.id,
-                icon: cfg.icon,
-                order: cfg.order ?? 9999,
-                enabled: cfg.enabled ?? true,
-                tiles: updatedTiles,
-                sections: cfg.sections ?? [],
-                introTitle: cfg.introTitle,
-                introText: cfg.introText,
-              })
-            } catch (countErr) {
-              console.error('Chyba při načítání počtů pronajímatelů:', countErr)
-              // Fallback na původní konfiguraci bez počtů
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů pronajímatelů:', countErr)
+                // Fallback na původní konfiguraci bez počtů
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else {
+              // Ostatní moduly bez změn
               loaded.push({
                 id: cfg.id,
                 label: cfg.label ?? cfg.id,
@@ -481,19 +506,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 introText: cfg.introText,
               })
             }
-          } else {
-            // Ostatní moduly bez změn
-            loaded.push({
-              id: cfg.id,
-              label: cfg.label ?? cfg.id,
-              icon: cfg.icon,
-              order: cfg.order ?? 9999,
-              enabled: cfg.enabled ?? true,
-              tiles: cfg.tiles ?? [],
-              sections: cfg.sections ?? [],
-              introTitle: cfg.introTitle,
-              introText: cfg.introText,
-            })
+          } catch (err) {
+            console.error('Chyba při načítání modulu:', err)
           }
         }
 
@@ -611,14 +625,21 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
       (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
 
+    console.log('🔍 handleModuleSelect:', { 
+      selection, 
+      sameSelection, 
+      tileRenderKey,
+      searchParams: Object.fromEntries(searchParams?.entries() || [])
+    })
+
     // ✅ FIX: Pokud je stejná selection, ale máme otevřený detail (tile-specifické parametry),
     // zavřeme detail a otevřeme seznam
     if (sameSelection) {
       const id = searchParams?.get('id')
       const vm = searchParams?.get('vm')
-      const t = searchParams?.get('t')
-      // Zkontroluj, jestli máme tile-specifické parametry (id nebo vm, nebo t jiné než users-list)
-      const hasTileSpecificParams = id || vm || (t && t !== 'users-list')
+      // Zkontroluj, jestli máme tile-specifické parametry (pouze id nebo vm, NE t!)
+      // Parametr 't' (tileId) je normální navigační parametr, ne detail-specific
+      const hasTileSpecificParams = id || vm
       if (hasTileSpecificParams) {
         // Zavřeme detail - zahoďme tile-specifické parametry
         // Použijeme keepOtherParams=false, což zahodí všechny parametry kromě m/s/t
@@ -632,23 +653,37 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
           false // keepOtherParams=false znamená zahodit tile-specifické parametry (id/vm/am/t)
         )
         resetCommonActions()
+        return
       }
+      
+      // ✅ FIX: Pokud klikneš na stejný tile znovu (bez detail params)
+      // → force remount tile (aby se CommonActions znovu zaregistroval)
+      if (selection.tileId) {
+        console.log('⚡ Force remount - incrementing tileRenderKey from', tileRenderKey, 'to', tileRenderKey + 1)
+        setTileRenderKey(prev => prev + 1)
+        // NEMAŽ CommonActions - nechej staré, tile se remountuje a přepíše je
+        return
+      }
+      
       return
     }
 
     if (!confirmIfDirty()) return
 
+    // Pokud klikneš na modul bez tileId → zobraz intro page (žádný AUTO-SELECT)
+    const finalSelection = { ...selection }
+
     const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null
 
-    const nextModule = selection.moduleId ?? null
-    const nextTile = selection.tileId ?? null
+    const nextModule = finalSelection.moduleId ?? null
+    const nextTile = finalSelection.tileId ?? null
 
     const moduleChanged = prevModule !== nextModule
     const tileChanged = prevTile !== nextTile
 
-    setActiveModuleId(selection.moduleId)
-    setActiveSelection(selection)
+    setActiveModuleId(finalSelection.moduleId)
+    setActiveSelection(finalSelection)
 
     // ✅ KEY FIX:
     // Když měníš modul nebo tile, zahoď tile-specifické parametry (id/vm/...)
@@ -657,9 +692,9 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     setUrlState(
       {
-        moduleId: selection.moduleId,
-        sectionId: selection.sectionId ?? null,
-        tileId: selection.tileId ?? null,
+        moduleId: finalSelection.moduleId,
+        sectionId: finalSelection.sectionId ?? null,
+        tileId: finalSelection.tileId ?? null,
       },
       'push',
       keepOtherParams
@@ -707,14 +742,44 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     segments.push({ label: activeModule.label, icon: activeModule.icon })
 
     const selection = activeSelection
+    
+    // Pokud má modul SECTIONS (např. Nastavení):
     if (selection?.sectionId && activeModule.sections?.length) {
       const section = activeModule.sections.find((s) => s.id === selection.sectionId)
-      if (section) segments.push({ label: section.label, icon: section.icon })
+      if (section) {
+        segments.push({ label: section.label, icon: section.icon })
+      }
     }
 
+    // Zobrazit tile pokud existuje
     if (selection?.tileId && activeModule.tiles?.length) {
-      const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
-      if (tile) segments.push({ label: tile.label, icon: tile.icon })
+      // Najít tile - může být parent nebo child
+      let tile = activeModule.tiles.find((t) => t.id === selection.tileId)
+      let parentTile = null
+      
+      // Pokud tile nebyl nalezen na první úrovni, hledat v children
+      if (!tile) {
+        for (const t of activeModule.tiles) {
+          if (t.children) {
+            const childTile = t.children.find((c) => c.id === selection.tileId)
+            if (childTile) {
+              parentTile = t
+              tile = childTile
+              break
+            }
+          }
+        }
+      }
+      
+      // Pokud je to child tile, přidat nejdřív parent
+      if (parentTile) {
+        segments.push({ label: parentTile.label, icon: parentTile.icon })
+      }
+      
+      // Přidat samotný tile
+      if (tile) {
+        segments.push({ label: tile.label, icon: tile.icon })
+      }
     }
 
     return segments
@@ -805,20 +870,58 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     }
 
     if (selection.tileId && activeModule.tiles?.length) {
-      const tile = activeModule.tiles.find((t) => t.id === selection.tileId)
+      // Rekurzivní vyhledávání včetně children
+      const findTileRecursive = (tiles: any[], id: string): any | null => {
+        for (const t of tiles) {
+          if (t.id === id) return t
+          if (t.children?.length) {
+            const found = findTileRecursive(t.children, id)
+            if (found) return found
+          }
+        }
+        return null
+      }
+      
+      const tile = findTileRecursive(activeModule.tiles, selection.tileId)
       if (tile) {
         const TileComponent = tile.component
+        if (!TileComponent) {
+          console.error('❌ AppShell: Tile nemá component!', tile)
+          return (
+            <div className="tile-layout">
+              <div className="tile-layout__header">
+                <h1 className="tile-layout__title">{tile.label}</h1>
+                <p className="tile-layout__description">Tento tile nemá nakonfigurovanou komponentu.</p>
+              </div>
+            </div>
+          )
+        }
         return (
           <div className="content">
             <section className="content__section" aria-label={tile.label}>
               <TileComponent
+                key={`${selection.tileId}-${tileRenderKey}`}
                 onRegisterCommonActions={registerCommonActions}
                 onRegisterCommonActionsState={registerCommonActionsUi}
                 onRegisterCommonActionHandler={registerCommonActionHandler}
+                onNavigate={(tileId: string) => {
+                  // Naviguj na jiný tile v rámci stejného modulu
+                  handleModuleSelect({ moduleId: selection.moduleId, tileId })
+                  // ✅ Zavři Sidebar přehledy (sbalit modul) při navigaci
+                  // Toto umožní čistou navigaci list → create bez otevřených filtrů
+                  if (typeof window !== 'undefined') {
+                    // Force Sidebar collapse po navigaci (příští render)
+                    setTimeout(() => {
+                      // URL update už proběhl v handleModuleSelect, jen necháme Sidebar se syncnout
+                    }, 0)
+                  }
+                }}
               />
             </section>
           </div>
         )
+      } else {
+        console.error('❌ AppShell: Tile s id', selection.tileId, 'nebyl nalezen v modulu', activeModule.label)
       }
     }
 
@@ -909,6 +1012,11 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 label: t.label ?? t.id,
                 icon: t.icon ?? null,
                 sectionId: t.sectionId ?? null,
+                children: (t.children ?? []).map((c) => ({
+                  id: c.id,
+                  label: c.label ?? c.id,
+                  icon: c.icon ?? null,
+                })),
               })),
             }))}
             activeModuleId={activeModuleId ?? undefined}

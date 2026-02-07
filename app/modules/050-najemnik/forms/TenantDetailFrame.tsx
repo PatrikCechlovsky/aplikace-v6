@@ -8,13 +8,14 @@ import { useSearchParams } from 'next/navigation'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
 
-import TenantDetailForm, { type TenantFormValue } from './TenantDetailForm'
+import TenantDetailForm, { type TenantFormValue, type UnitInfo, type PropertyInfo } from './TenantDetailForm'
 import { getTenantDetail, saveTenant, type SaveTenantInput } from '@/app/lib/services/tenants'
 import { getUserDetail } from '@/app/lib/services/users'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
+import { supabase } from '@/app/lib/supabaseClient'
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
 
@@ -80,6 +81,7 @@ type Props = {
   onSaved?: (tenant: UiTenant) => void // Callback po uložení
   onCreateDelegateFromUser?: (userId: string) => void // Callback pro vytvoření zástupce z uživatele
   onOpenNewDelegateForm?: (type: string, fromUserId?: string) => void // Callback pro otevření formuláře nového zástupce
+  embedded?: boolean // Embedded mode without tile-layout wrapper
 }
 
 // Očekávané typy subjektů pro pronajimatele
@@ -91,6 +93,8 @@ const EXPECTED_SUBJECT_TYPES = ['osoba', 'osvc', 'firma', 'spolek', 'statni', 'z
 
 function buildInitialFormValue(l: UiTenant): TenantFormValue {
   return {
+    unitId: '', // Bude načteno z units.tenant_id
+    
     displayName: (l.displayName ?? '').toString(),
     email: (l.email ?? '').toString(),
     phone: (l.phone ?? '').toString(),
@@ -149,6 +153,7 @@ export default function TenantDetailFrame({
   onSaved,
   onCreateDelegateFromUser,
   onOpenNewDelegateForm,
+  embedded = false,
 }: Props) {
   // DB truth (subjects)
   const [resolvedTenant, setResolvedTenant] = useState<UiTenant>(tenant)
@@ -158,6 +163,12 @@ export default function TenantDetailFrame({
   // Subject types pro změnu typu v edit mode
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   const [selectedSubjectType, setSelectedSubjectType] = useState<string | null>(tenant.subjectType || null)
+
+  // Units - pro select jednotky
+  const [units, setUnits] = useState<Array<{ id: string; display_name: string | null; property_id: string | null; property_name?: string | null }>>([])
+  const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null)
+  const [propertyInfo, setPropertyInfo] = useState<PropertyInfo | null>(null)
+  const [landlordName, setLandlordName] = useState<string | null>(null)
 
   // Dirty state - wrapper který volá onDirtyChange callback
   const setDirtyAndNotify = useCallback(
@@ -201,6 +212,140 @@ export default function TenantDetailFrame({
       mounted = false
     }
   }, [])
+
+  // Načíst seznam jednotek (volné + aktuální jednotka tohoto nájemníka)
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        // Načíst všechny jednotky s property_name
+        const { data, error } = await supabase
+          .from('units')
+          .select('id, display_name, property_id, property:properties!units_property_id_fkey(display_name)')
+          .eq('is_archived', false)
+          .or(`tenant_id.is.null,tenant_id.eq.${tenant.id}`)
+          .order('display_name', { ascending: true, nullsFirst: false })
+
+        if (error) throw error
+        if (!mounted) return
+
+        const unitsWithProperty = (data || []).map((u: any) => ({
+          id: u.id,
+          display_name: u.display_name,
+          property_id: u.property_id,
+          property_name: u.property?.display_name ?? null,
+        }))
+
+        setUnits(unitsWithProperty)
+      } catch (err) {
+        logger.error('Failed to load units', err)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [tenant.id])
+
+  // Načíst aktuální jednotku nájemníka (pokud má přiřazenou)
+  useEffect(() => {
+    let mounted = true
+    if (isNewId(tenant.id)) {
+      setFormValue(prev => ({ ...prev, unitId: '' }))
+      setUnitInfo(null)
+      setPropertyInfo(null)
+      setLandlordName(null)
+      return
+    }
+
+    ;(async () => {
+      try {
+        // Najít jednotku kde tenant_id = tento nájemník
+        const { data, error } = await supabase
+          .from('units')
+          .select('id, display_name, property_id, property:properties!units_property_id_fkey(display_name)')
+          .eq('tenant_id', tenant.id)
+          .eq('is_archived', false)
+          .maybeSingle()
+
+        if (error && error.code !== 'PGRST116') throw error
+        if (!mounted) return
+
+        if (data) {
+          const unitId = data.id
+          setFormValue(prev => ({ ...prev, unitId }))
+          setUnitInfo({
+            id: data.id,
+            display_name: data.display_name,
+            property_id: data.property_id,
+            property_name: (data.property as any)?.display_name ?? null,
+          })
+        } else {
+          setFormValue(prev => ({ ...prev, unitId: '' }))
+          setUnitInfo(null)
+        }
+      } catch (err) {
+        logger.error('Failed to load tenant unit', err)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [tenant.id])
+
+  // Načíst property a landlord info když se změní unitId
+  useEffect(() => {
+    let mounted = true
+    const currentUnitId = formValue.unitId?.trim()
+    
+    if (!currentUnitId) {
+      setPropertyInfo(null)
+      setLandlordName(null)
+      return
+    }
+
+    ;(async () => {
+      try {
+        // Najít property z unit
+        const unitFromList = units.find(u => u.id === currentUnitId)
+        if (!unitFromList || !unitFromList.property_id) {
+          if (mounted) {
+            setPropertyInfo(null)
+            setLandlordName(null)
+          }
+          return
+        }
+
+        // Načíst property s landlord
+        const { data, error } = await supabase
+          .from('properties')
+          .select('id, display_name, landlord_id, landlord:subjects!properties_landlord_id_fkey(display_name)')
+          .eq('id', unitFromList.property_id)
+          .single()
+
+        if (error) throw error
+        if (!mounted) return
+
+        setPropertyInfo({
+          id: data.id,
+          display_name: data.display_name,
+          landlord_id: data.landlord_id,
+          landlord_name: (data.landlord as any)?.display_name ?? null,
+        })
+        setLandlordName((data.landlord as any)?.display_name ?? null)
+      } catch (err) {
+        logger.error('Failed to load property and landlord', err)
+        if (mounted) {
+          setPropertyInfo(null)
+          setLandlordName(null)
+        }
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [formValue.unitId, units])
 
   // Aktualizovat selectedSubjectType když se změní resolvedTenant.subjectType (při načtení dat)
   useEffect(() => {
@@ -506,6 +651,34 @@ export default function TenantDetailFrame({
         const saved = await saveTenant(input)
         logger.log('Tenant saved', { id: saved.id })
 
+        // Aktualizovat vazbu jednotka-nájemník
+        const newUnitId = v.unitId?.trim() || null
+        const oldUnitId = unitInfo?.id || null
+
+        // Pokud se unit_id změnil, aktualizovat units tabulku
+        if (newUnitId !== oldUnitId) {
+          try {
+            // Odebrat z staré jednotky
+            if (oldUnitId) {
+              await supabase
+                .from('units')
+                .update({ tenant_id: null })
+                .eq('id', oldUnitId)
+            }
+
+            // Přiřadit k nové jednotce
+            if (newUnitId) {
+              await supabase
+                .from('units')
+                .update({ tenant_id: saved.id })
+                .eq('id', newUnitId)
+            }
+          } catch (err) {
+            logger.error('Failed to update unit tenant_id', err)
+            toast.showWarning('Nájemník byl uložen, ale nepodařilo se aktualizovat přiřazení jednotky')
+          }
+        }
+
         toast.showSuccess('Nájemník byl úspěšně uložen')
 
         // Aktualizovat resolvedTenant s uloženými daty
@@ -704,56 +877,74 @@ export default function TenantDetailFrame({
     title = subjectTypeName ? `Nájemník - ${subjectTypeName}: ${tenantName}` : `Nájemník: ${tenantName}`
   }
 
+  const content = (
+    <DetailView
+      mode={detailMode}
+      sectionIds={sectionIds}
+      initialActiveId={initialSectionId ?? 'detail'}
+      onActiveSectionChange={(id) => {
+        onActiveSectionChange?.(id)
+      }}
+      ctx={
+        {
+          entityType: 'subjects',
+          // Pro create mode nastavit entityId na 'new', aby byly záložky viditelné
+          entityId: resolvedTenant.id === 'new' ? 'new' : resolvedTenant.id || undefined,
+          entityLabel: resolvedTenant.displayName ?? null,
+          showSystemEntityHeader: false,
+          mode: detailMode,
+          onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
+          onOpenNewDelegateForm, // Předat do DelegatesSection přes ctx
+
+          detailContent: (
+            <TenantDetailForm
+              key={`form-${resolvedTenant.id}-${subjectType}`}
+              subjectType={subjectType}
+              tenant={formValue}
+              readOnly={readOnly}
+              units={units}
+              unitInfo={unitInfo}
+              propertyInfo={propertyInfo}
+              landlordName={landlordName}
+              onFieldChange={(field, value) => {
+                // Když se změní unitId, aktualizovat formValue
+                if (field === 'unitId') {
+                  setFormValue(prev => ({ ...prev, unitId: value }))
+                  formValueRef.current = { ...formValueRef.current, unitId: value }
+                }
+              }}
+              onDirtyChange={(dirty) => {
+                if (dirty) {
+                  markDirtyIfChanged(formValue)
+                } else {
+                  computeDirty()
+                }
+              }}
+              onValueChange={(val) => {
+                console.log('[TenantDetailFrame] onValueChange - companyName:', val.companyName, 'ic:', val.ic, 'city:', val.city)
+                setFormValue(val)
+                formValueRef.current = val // Synchronně aktualizovat ref
+                markDirtyIfChanged(val)
+              }}
+            />
+          ),
+
+          systemBlocks,
+        } as any
+      }
+    />
+  )
+
+  if (embedded) {
+    return <div className="tile-layout__content">{content}</div>
+  }
+
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
         <h1 className="tile-layout__title">{title}</h1>
       </div>
-      <div className="tile-layout__content">
-        <DetailView
-          mode={detailMode}
-          sectionIds={sectionIds}
-          initialActiveId={initialSectionId ?? 'detail'}
-          onActiveSectionChange={(id) => {
-            onActiveSectionChange?.(id)
-          }}
-          ctx={
-            {
-              entityType: 'subjects',
-              // Pro create mode nastavit entityId na 'new', aby byly záložky viditelné
-              entityId: resolvedTenant.id === 'new' ? 'new' : resolvedTenant.id || undefined,
-              entityLabel: resolvedTenant.displayName ?? null,
-              showSystemEntityHeader: false,
-              mode: detailMode,
-                  onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
-                  onOpenNewDelegateForm, // Předat do DelegatesSection přes ctx
-
-              detailContent: (
-                <TenantDetailForm
-                  key={`form-${resolvedTenant.id}-${subjectType}`}
-                  subjectType={subjectType}
-                  tenant={formValue}
-                  readOnly={readOnly}
-                  onDirtyChange={(dirty) => {
-                    if (dirty) {
-                      markDirtyIfChanged(formValue)
-                    } else {
-                      computeDirty()
-                    }
-                  }}
-                  onValueChange={(val) => {
-                    console.log('[TenantDetailFrame] onValueChange - companyName:', val.companyName, 'ic:', val.ic, 'city:', val.city)
-                    setFormValue(val)
-                    formValueRef.current = val // Synchronně aktualizovat ref
-                    markDirtyIfChanged(val)
-                  }}
-                />
-              ),
-
-            systemBlocks,
-          } as any}
-        />
-      </div>
+      <div className="tile-layout__content">{content}</div>
     </div>
   )
 }

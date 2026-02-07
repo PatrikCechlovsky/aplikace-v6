@@ -18,6 +18,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import { supabase } from '@/app/lib/supabaseClient'
 
 import {
   addAttachmentVersionWithUpload,
@@ -142,7 +143,12 @@ export default function DetailAttachmentsSection({
   onManagerStateChange,
 }: DetailAttachmentsSectionProps) {
   const isManagerRequested = variant === 'manager'
-  const isManager = isManagerRequested && canManage !== false
+  const isManager = isManagerRequested
+  const canWriteAll = canManage !== false
+  const isLimitedWrite = isManagerRequested && canManage === false
+
+  const normalizedEntityType = useMemo(() => (entityType ?? '').trim().toLowerCase(), [entityType])
+  const isUnitOrProperty = normalizedEntityType === 'unit' || normalizedEntityType === 'units' || normalizedEntityType === 'property' || normalizedEntityType === 'properties'
 
   // ✅ viewKey per-variant (list vs manager)
   const VIEW_KEY = ATTACHMENTS_VIEW_KEY
@@ -151,7 +157,10 @@ export default function DetailAttachmentsSection({
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
+  const [showEquipmentAttachments, setShowEquipmentAttachments] = useState(false)
   const [filterText, setFilterText] = useState('')
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -176,6 +185,18 @@ export default function DetailAttachmentsSection({
 
   const handleColumnResize = useCallback((key: string, px: number) => {
     setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      const { data } = await supabase.auth.getUser()
+      if (!active) return
+      setCurrentUserId(data?.user?.id ?? null)
+    })()
+    return () => {
+      active = false
+    }
   }, [])
   
   // ✅ prefs load/save
@@ -348,16 +369,28 @@ export default function DetailAttachmentsSection({
   }, [canLoad, loadAttachments])
 
   const filteredRows = useMemo(() => {
+    let filtered = rows
+
+    // ✅ Filtr: zobrazit dokumenty k vybavení?
+    if (!isManager && isUnitOrProperty && !showEquipmentAttachments) {
+      // Skryj dokumenty s entity_type equipment_binding nebo property_equipment_binding
+      filtered = filtered.filter(
+        (r) => r.entity_type !== 'equipment_binding' && r.entity_type !== 'property_equipment_binding'
+      )
+    }
+
+    // ✅ Textový filtr
     const t = filterText.trim().toLowerCase()
-    if (!t) return rows
+    if (!t) return filtered
   
-    return rows.filter((r) => {
+    return filtered.filter((r) => {
       const a = (r.title ?? '').toLowerCase()
       const b = (r.description ?? '').toLowerCase()
       const c = (r.file_name ?? '').toLowerCase()
-      return a.includes(t) || b.includes(t) || c.includes(t)
+      const e = (r.equipment_name ?? '').toLowerCase()
+      return a.includes(t) || b.includes(t) || c.includes(t) || e.includes(t)
     })
-  }, [rows, filterText])
+  }, [rows, filterText, showEquipmentAttachments, isManager, isUnitOrProperty])
 
   // ============================================================================
   // SORTED ROWS (Attachments)
@@ -433,11 +466,11 @@ export default function DetailAttachmentsSection({
     }
 
     return {
-      hasSelection: !!selectedDocId,
+      hasSelection: !!selectedDocId || !!editingDocId, // V edit módu je editingDocId místo selectedDocId
       isDirty: !!panelDirty || !!metaDirty,
       mode,
     }
-  }, [selectedDocId, panelDirty, metaDirty, panelOpen, editingDocId, readModeOpen])
+  }, [selectedDocId, editingDocId, panelDirty, metaDirty, panelOpen, readModeOpen])
 
   // ✅ hlášení stavu nahoru (kvůli Save/disabled v CommonActions)
   useEffect(() => {
@@ -464,6 +497,18 @@ export default function DetailAttachmentsSection({
     setErrorText(null)
     setPanelOpen(true)
   }, [isManager])
+
+  const canEditAttachment = useCallback(
+    (row: AttachmentRow | null) => {
+      if (!row) return false
+      if (canWriteAll) return true
+      if (!currentUserId) return false
+      return row.created_by === currentUserId
+    },
+    [canWriteAll, currentUserId]
+  )
+
+  const editDeniedMessage = 'Nemáš oprávnění upravovat přílohy jiných uživatelů.'
 
   const handleActionSaveNew = useCallback(async () => {
     if (!isManager) return
@@ -497,17 +542,26 @@ export default function DetailAttachmentsSection({
   const handleStartEditMeta = useCallback(
     (r: AttachmentRow) => {
       if (!isManager) return
+      if (!canEditAttachment(r)) {
+        setErrorText(editDeniedMessage)
+        return
+      }
       setErrorText(null)
       setEditingDocId(r.id)
       setEditTitle(r.title ?? '')
       setEditDesc(r.description ?? '')
     },
-    [isManager]
+    [isManager, canEditAttachment, editDeniedMessage]
   )
 
   const handleSaveEditMeta = useCallback(async () => {
     if (!isManager) return
     if (!editingDocId) return
+    const editingRow = rows.find((x) => x.id === editingDocId) ?? null
+    if (!canEditAttachment(editingRow)) {
+      setErrorText(editDeniedMessage)
+      return
+    }
     setErrorText(null)
 
     const title = editTitle.trim()
@@ -527,7 +581,7 @@ export default function DetailAttachmentsSection({
     } finally {
       setEditSaving(false)
     }
-  }, [isManager, editingDocId, editTitle, editDesc, loadAttachments])
+  }, [isManager, editingDocId, editTitle, editDesc, loadAttachments, rows, canEditAttachment, editDeniedMessage])
 
   const handlePickNewVersion = useCallback(
     (documentId: string) => {
@@ -668,6 +722,10 @@ export default function DetailAttachmentsSection({
       edit: () => {
         const r = ensureSelected()
         if (!r) return
+        if (!canEditAttachment(r)) {
+          setErrorText(editDeniedMessage)
+          return
+        }
         // Zavřít předchozí režimy
         if (panelOpen) {
           setPanelOpen(false)
@@ -691,9 +749,18 @@ export default function DetailAttachmentsSection({
       },
 
       newVersion: () => {
-        const r = ensureSelected()
-        if (!r) return
-        handlePickNewVersion(r.id)
+        // V edit módu používáme editingDocId místo selectedDocId
+        const docId = editingDocId || selectedDocId
+        if (!docId) {
+          setErrorText('Nejdřív vyber nebo otevři přílohu.')
+          return
+        }
+        const r = rows.find((x) => x.id === docId) ?? null
+        if (!canEditAttachment(r)) {
+          setErrorText(editDeniedMessage)
+          return
+        }
+        handlePickNewVersion(docId)
       },
 
       columnSettings: () => {
@@ -735,6 +802,9 @@ export default function DetailAttachmentsSection({
     handleToggleHistory,
     handleActionSaveNew,
     handleSaveEditMeta,
+    canEditAttachment,
+    editDeniedMessage,
+    rows,
   ])
 
 // ============================================================================
@@ -757,8 +827,11 @@ export default function DetailAttachmentsSection({
 
 
   const sharedColumnsBase = useMemo(() => {
-    return getAttachmentsColumns({ variant: isManager ? 'manager' : 'list' })
-  }, [isManager])
+    return getAttachmentsColumns({ 
+      variant: isManager ? 'manager' : 'list',
+      entityType: entityType 
+    })
+  }, [isManager, entityType])
 
   const sharedColumns = useMemo(() => {
     return applyColumnPrefs(sharedColumnsBase, colPrefs)
@@ -789,6 +862,18 @@ export default function DetailAttachmentsSection({
             </span>
           ),
           description: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
+          equipment: (
+            <span className="detail-attachments__muted">
+              {r.equipment_name ? (
+                <>
+                  {r.equipment_name}
+                  {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
+                </>
+              ) : (
+                '—'
+              )}
+            </span>
+          ),
           file: (
             <button
               type="button"
@@ -848,20 +933,49 @@ export default function DetailAttachmentsSection({
             {!loading && !errorText && listRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
 
             {!loading && !errorText && listRows.length > 0 && (
-              <ListView
-                columns={sharedColumns}
-                rows={listRows}
-                sort={sort}
-                onSortChange={handleSortChange}
-                filterValue={filterText}
-                onFilterChange={setFilterText}
-                filterPlaceholder="Hledat podle názvu, popisu nebo souboru..."
-                showArchived={includeArchived}
-                onShowArchivedChange={setIncludeArchived}
-                showArchivedLabel="Zobrazit archivované"
-                onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                onColumnResize={handleColumnResize}
-              />
+              <>
+                <div
+                  style={{
+                    marginBottom: '12px',
+                    display: 'flex',
+                    gap: '16px',
+                    fontSize: '13px',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    width: '100%',
+                  }}
+                >
+                  {isUnitOrProperty && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={showEquipmentAttachments}
+                        onChange={(e) => setShowEquipmentAttachments(e.target.checked)}
+                      />
+                      <span>Zobrazit dokumenty k vybavení</span>
+                    </label>
+                  )}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={includeArchived}
+                      onChange={(e) => setIncludeArchived(e.target.checked)}
+                    />
+                    <span>Zobrazit archivované</span>
+                  </label>
+                </div>
+                <ListView
+                  columns={sharedColumns}
+                  rows={listRows}
+                  sort={sort}
+                  onSortChange={handleSortChange}
+                  filterValue={filterText}
+                  onFilterChange={setFilterText}
+                  filterPlaceholder="Hledat podle názvu, popisu, souboru nebo vybavení..."
+                  onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                  onColumnResize={handleColumnResize}
+                />
+              </>
             )}
 
             {/* ✅ Sloupce (Drawer) */}
@@ -960,6 +1074,12 @@ export default function DetailAttachmentsSection({
             </div>
           )}
 
+          {isLimitedWrite && (
+            <div className="detail-form__hint">
+              Správa příloh je v režimu omezeného zápisu: můžeš přidávat přílohy a upravovat pouze své.
+            </div>
+          )}
+
           {/* PANEL: NOVÁ PŘÍLOHA (otevírá CommonActions → attachmentsAdd) */}
           {panelOpen && (
             <div className="detail-attachments__panel" style={{ marginTop: 10 }}>
@@ -1046,6 +1166,14 @@ export default function DetailAttachmentsSection({
               <div className="detail-form__hint" style={{ marginTop: 6 }}>
                 Uložení se provádí přes CommonActions tlačítko <strong>Uložit</strong>.
               </div>
+
+              {/* Hidden file input pro tlačítko "Nová verze" v edit módu */}
+              <input
+                type="file"
+                style={{ display: 'none' }}
+                ref={(el) => setVersionInputRef(editingDocId, el)}
+                onChange={(e) => void handleNewVersionSelected(editingDocId, e.target.files?.[0] ?? null)}
+              />
             </div>
           )}
 

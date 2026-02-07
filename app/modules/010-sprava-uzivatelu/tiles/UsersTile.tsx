@@ -28,6 +28,7 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type Vi
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
+import { getAttachmentsManagerActions } from '@/app/lib/attachments/attachmentsManagerUtils'
 import '@/app/styles/components/TileLayout.css'
 
 // Type check for CommonActionId - removed unused variable
@@ -862,17 +863,7 @@ export default function UsersTile({
 
     if (viewMode === 'attachments-manager') {
       const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'new') {
-        return ['save', 'close']
-      }
-      if (mode === 'edit') {
-        return ['save', 'attachmentsNewVersion', 'close']
-      }
-      if (mode === 'read') {
-        return ['edit', 'close']
-      }
-      // mode === 'list'
-      return ['add', 'view', 'edit', 'columnSettings', 'close']
+      return getAttachmentsManagerActions(mode, !!attachmentsManagerUi.hasSelection)
     }
 
     if (viewMode === 'read') {
@@ -882,21 +873,32 @@ export default function UsersTile({
 
     if (viewMode === 'edit') return withAttachmentsBeforeClose(EDIT_DEFAULT)
     return withAttachmentsBeforeClose(CREATE_DEFAULT)
-  }, [viewMode, selectedId, detailActiveSectionId, attachmentsManagerUi.mode])
+  }, [viewMode, selectedId, detailActiveSectionId, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
 
   useEffect(() => {
-    const mappedViewMode: ViewMode =
-      viewMode === 'list' ? 'list' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'read'
+    let mappedViewMode: ViewMode
+    
+    if (viewMode === 'attachments-manager') {
+      // V attachments-manager mapujeme podle mode attachmentů
+      const mode = attachmentsManagerUi.mode ?? 'list'
+      if (mode === 'new') mappedViewMode = 'create'
+      else if (mode === 'edit') mappedViewMode = 'edit'
+      else if (mode === 'read') mappedViewMode = 'read'
+      else mappedViewMode = 'list'
+    } else {
+      // Normální mapping pro entity detail
+      mappedViewMode = viewMode === 'list' ? 'list' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'read'
+    }
 
     const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
     const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
 
     onRegisterCommonActionsState?.({ viewMode: mappedViewMode, hasSelection: mappedHasSelection, isDirty: mappedIsDirty })
-  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi])
+  }, [onRegisterCommonActionsState, viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty])
 
   // -------------------------
   // CommonActions handler
@@ -968,9 +970,9 @@ export default function UsersTile({
         if (String(viewMode) === 'attachments-manager') {
           const mode = attachmentsManagerUi.mode ?? 'list'
           
-          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
-          if (mode === 'read' || mode === 'edit') {
-            logger.debug('close -> attachments-manager read/edit mode -> list mode')
+          // Pokud jsme v read/edit/new mode, zavřít a vrátit se do list mode
+          if (mode === 'read' || mode === 'edit' || mode === 'new') {
+            logger.debug('close -> attachments-manager submodes -> list mode')
             const api = attachmentsManagerApiRef.current
             if (api?.close) {
               api.close()
@@ -1326,6 +1328,7 @@ export default function UsersTile({
             order: colPrefs.colOrder ?? [],
             hidden: colPrefs.colHidden ?? [],
           }}
+          sortBy={sort ?? undefined}
           onChange={(next) => {
             setColPrefs((p) => ({
               ...p,
@@ -1333,12 +1336,14 @@ export default function UsersTile({
               colHidden: next.hidden,
             }))
           }}
+          onSortChange={(newSort) => setSort(newSort)}
           onReset={() => {
             setColPrefs((p) => ({
               ...p,
               colOrder: [],
               colHidden: [],
             }))
+            setSort(DEFAULT_SORT)
           }}
           onClose={() => setColsOpen(false)}
         />

@@ -14,6 +14,13 @@ import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsMa
 import { getCurrentSession } from '@/app/lib/services/auth'
 import { getUserDetail } from '@/app/lib/services/users'
 import { useToast } from '@/app/UI/Toast'
+import { 
+  getAttachmentsManagerActions, 
+  mapAttachmentsViewMode, 
+  getHasSelection, 
+  getIsDirty,
+  shouldCloseAttachmentsPanel 
+} from '@/app/lib/attachments/attachmentsManagerUtils'
 import '@/app/styles/components/TileLayout.css'
 
 // =====================
@@ -141,36 +148,29 @@ export default function MyAccountTile({
   const commonActions = useMemo<CommonActionId[]>(() => {
     if (viewMode === 'attachments-manager') {
       const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'new') {
-        return ['save', 'close']
-      }
-      if (mode === 'edit') {
-        return ['save', 'attachmentsNewVersion', 'close']
-      }
-      if (mode === 'read') {
-        return ['edit', 'close']
-      }
-      // mode === 'list'
-      return ['add', 'view', 'edit', 'columnSettings', 'close']
+      return getAttachmentsManagerActions(mode, !!attachmentsManagerUi.hasSelection)
     }
     return ['save', 'attachments', 'close']
-  }, [viewMode, attachmentsManagerUi.mode])
+  }, [viewMode, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection])
 
   useEffect(() => {
     onRegisterCommonActions?.(commonActions)
   }, [onRegisterCommonActions, commonActions])
 
   useEffect(() => {
-    const mappedViewMode: ViewMode = viewMode === 'attachments-manager' ? 'read' : 'edit'
-    const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : true
-    const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : isDirty
+    const mappedViewMode = viewMode === 'attachments-manager'
+      ? mapAttachmentsViewMode(viewMode, attachmentsManagerUi.mode ?? 'list')
+      : 'edit' // Můj účet je vždy edit
+
+    const mappedHasSelection = getHasSelection(viewMode as any, null, attachmentsManagerUi)
+    const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
 
     onRegisterCommonActionsState?.({
       viewMode: mappedViewMode,
       hasSelection: mappedHasSelection,
       isDirty: mappedIsDirty,
     })
-  }, [onRegisterCommonActionsState, viewMode, isDirty, attachmentsManagerUi])
+  }, [onRegisterCommonActionsState, viewMode, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty])
 
   // CommonActions handler
   useEffect(() => {
@@ -260,8 +260,8 @@ export default function MyAccountTile({
         if (viewMode === 'attachments-manager') {
           const mode = attachmentsManagerUi.mode ?? 'list'
           
-          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
-          if (mode === 'read' || mode === 'edit') {
+          // Použij utility funkci pro zjištění, jestli zavřít jen panel nebo celý manager
+          if (shouldCloseAttachmentsPanel(mode)) {
             const api = attachmentsManagerApiRef.current
             if (api?.close) {
               api.close()

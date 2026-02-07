@@ -58,10 +58,18 @@ export default function InputWithHistory({
     onChange?.(e)
   }
 
+  // Sestavit className - přidat detail-form__input a případně detail-form__input--readonly
+  const computedClassName = [
+    'detail-form__input',
+    inputProps.readOnly && 'detail-form__input--readonly',
+    inputProps.className
+  ].filter(Boolean).join(' ')
+
   return (
     <>
       <input
         {...inputProps}
+        className={computedClassName}
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}

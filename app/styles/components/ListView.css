@@ -12,8 +12,8 @@
   flex-direction: column;
   gap: 8px;
   min-height: 0;
-  flex: 1;
-  height: 100%;
+  flex: 1; /* Roztáhne se */
+  overflow: hidden; /* Scroll je v table-wrapper */
 }
 
 /* Horní lišta */
@@ -22,21 +22,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-shrink: 0; /* MUSÍ zůstat viditelný! */
 }
 
 /* Tabulka wrapper
    - JEDINÝ scroll container (X i Y)
    - sticky header funguje pouze pokud scrolluje tento element
-   - flex: 1 zajišťuje, že se přizpůsobí výšce rodiče
+   - max-height místo flex (jako GenericTypeTile - tam to funguje!)
 */
 .listview__table-wrapper {
   width: 100%;
   position: relative;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto; /* SCROLL TADY! */
   scrollbar-gutter: stable;
-  flex: 1;
-  min-height: 0;
+  max-height: calc(100vh - 250px); /* pevná výška místo flex: 1 */
 }
 
 /* Jemnější tabulka (méně “krabic”) */

@@ -172,6 +172,14 @@ const data = {
     aliasesCZ: ["akumulátor","nabití"],
     aliasesEN: ["power","charge"]
   },
+  "bed": {
+    emoji: "🛏️",
+    nameCZ: "Postel",
+    nameEN: "Bed",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["ložnice","spaní"],
+    aliasesEN: ["bedroom","sleep"]
+  },
   "bell": {
     emoji: "🔔",
     nameCZ: "Zvonek",
@@ -531,6 +539,14 @@ const data = {
     category: "MAP / GEO",
     aliasesCZ: ["směr","orientace"],
     aliasesEN: ["direction","navigation"]
+  },
+  "couch": {
+    emoji: "🛋️",
+    nameCZ: "Pohovka",
+    nameEN: "Couch",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["gauč","sedačka"],
+    aliasesEN: ["sofa","settee"]
   },
   "credit-card": {
     emoji: "💳",
@@ -939,6 +955,14 @@ const data = {
     category: "CRUD / ACTIONS",
     aliasesCZ: ["odemčení","přístup"],
     aliasesEN: ["unlock","access"]
+  },
+  "kitchen": {
+    emoji: "🍳",
+    nameCZ: "Kuchyně",
+    nameEN: "Kitchen",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["vaření","sporák"],
+    aliasesEN: ["cooking","stove"]
   },
   "language": {
     emoji: "🗣️",
@@ -1380,6 +1404,14 @@ const data = {
     aliasesCZ: ["čárový kód","scan"],
     aliasesEN: ["barcode","scan"]
   },
+  "question": {
+    emoji: "❓",
+    nameCZ: "Otázka",
+    nameEN: "Question",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["nevím","dotaz"],
+    aliasesEN: ["unknown","query"]
+  },
   "rain": {
     emoji: "🌧️",
     nameCZ: "Déšť",
@@ -1580,6 +1612,14 @@ const data = {
     aliasesCZ: ["košík"],
     aliasesEN: ["cart"]
   },
+  "shower": {
+    emoji: "🚿",
+    nameCZ: "Sprcha",
+    nameEN: "Shower",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["koupelna","hygiena"],
+    aliasesEN: ["bathroom","hygiene"]
+  },
   "snow": {
     emoji: "❄️",
     nameCZ: "Sníh",
@@ -1611,6 +1651,14 @@ const data = {
     category: "MAP / GEO",
     aliasesCZ: ["dolů","směr"],
     aliasesEN: ["down","direction"]
+  },
+  "sparkles": {
+    emoji: "✨",
+    nameCZ: "Jiskření",
+    nameEN: "Sparkles",
+    category: "STATUS / STATE",
+    aliasesCZ: ["nové","leskne se"],
+    aliasesEN: ["new","shiny"]
   },
   "star": {
     emoji: "⭐️",
@@ -1659,6 +1707,14 @@ const data = {
     category: "STATUS / STATE",
     aliasesCZ: ["OK","v pořádku"],
     aliasesEN: ["OK","successful"]
+  },
+  "suit": {
+    emoji: "👔",
+    nameCZ: "Oblek",
+    nameEN: "Suit",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["šatna","oblečení"],
+    aliasesEN: ["wardrobe","clothes"]
   },
   "sun": {
     emoji: "☀️",
@@ -1740,6 +1796,14 @@ const data = {
     aliasesCZ: ["stopky","odpočet"],
     aliasesEN: ["stopwatch","countdown"]
   },
+  "toilet": {
+    emoji: "🚽",
+    nameCZ: "Záchod",
+    nameEN: "Toilet",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["WC","toaleta"],
+    aliasesEN: ["WC","restroom"]
+  },
   "tools": {
     emoji: "🛠️",
     nameCZ: "Nástroje",
@@ -1747,6 +1811,14 @@ const data = {
     category: "ZÁKLAD / NAV",
     aliasesCZ: ["pomůcky","utility"],
     aliasesEN: ["utilities","instruments"]
+  },
+  "toy": {
+    emoji: "🧸",
+    nameCZ: "Hračka",
+    nameEN: "Toy",
+    category: "ROOMS / HOME",
+    aliasesCZ: ["dětský pokoj","hračky"],
+    aliasesEN: ["playroom","toys"]
   },
   "train": {
     emoji: "🚆",

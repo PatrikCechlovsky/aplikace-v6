@@ -10,9 +10,10 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import TenantDetailFrame, { type UiTenant as DetailUiTenant } from '../forms/TenantDetailFrame'
+import TenantRelationsHub from '../components/TenantRelationsHub'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listTenants, getTenantDetail, type TenantsListRow } from '@/app/lib/services/tenants'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
@@ -22,6 +23,14 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 import { getIcon, type IconKey } from '@/app/UI/icons'
+import { 
+  getAttachmentsManagerActions, 
+  mapAttachmentsViewMode, 
+  getHasSelection, 
+  getIsDirty,
+  shouldCloseAttachmentsPanel 
+} from '@/app/lib/attachments/attachmentsManagerUtils'
+import { TENANTS_BASE_COLUMNS } from '../tenantsColumns'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/PaletteCard.css'
@@ -33,26 +42,17 @@ type TenantsTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: (id: CommonActionId) => void) => void
+  onNavigate?: (tileId: string) => void // Callback pro navigaci na jiný tile
 }
 
-type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager' | 'relations'
 
 const VIEW_KEY = '030.tenants.list'
 
-const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'subjectTypeLabel', label: 'Typ nájemníka', width: 160, sortable: true },
-  { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
-  { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
-  { key: 'email', label: 'E-mail', width: 260, sortable: true },
-  { key: 'phone', label: 'Telefon', width: 180, sortable: true },
-  { key: 'companyName', label: 'Název společnosti', width: 220, sortable: true },
-  { key: 'ic', label: 'IČ', width: 120, sortable: true },
-  { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
-  { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
-  { key: 'isArchived', label: 'Archivován', width: 120, align: 'center', sortable: true },
-]
+const BASE_COLUMNS = TENANTS_BASE_COLUMNS
 
-function mapRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectType>): UiTenant {
+// Export pro znovupoužití v EntityHub a ContractWizard
+export function mapTenantRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectType>): UiTenant {
   const subjectTypeMeta = subjectTypeMap[row.subject_type ?? '']
   
   // Složit adresu ve formátu: "Ulice ČísloPopisné, PSČ Město, Stát"
@@ -91,6 +91,11 @@ function mapRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectT
     subjectTypeColor: subjectTypeMeta?.color || row.subject_type_color || null,
     subjectTypeOrderIndex: subjectTypeMeta?.sort_order ?? row.subject_type_sort_order ?? null,
   }
+}
+
+// Local alias for internal use
+function mapRowToUi(row: TenantsListRow, subjectTypeMap: Record<string, SubjectType>): UiTenant {
+  return mapTenantRowToUi(row, subjectTypeMap)
 }
 
 function toRow(l: UiTenant): ListViewRow<UiTenant> {
@@ -193,6 +198,7 @@ export default function TenantsTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
+  onNavigate,
 }: TenantsTileProps) {
   const toast = useToast()
   const router = useRouter()
@@ -235,6 +241,7 @@ export default function TenantsTile({
 
   const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailTenant, setDetailTenant] = useState<DetailUiTenant | null>(null)
+  const [relationsTenantId, setRelationsTenantId] = useState<string | null>(null)
 
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
 
@@ -521,6 +528,13 @@ export default function TenantsTile({
       return
     }
 
+    if (id && vm === 'relations') {
+      setSelectedId(id)
+      setRelationsTenantId(id)
+      setViewMode('relations')
+      return
+    }
+
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
 
@@ -700,54 +714,70 @@ export default function TenantsTile({
     
     if (viewMode === 'attachments-manager') {
       const mode = attachmentsManagerUi.mode ?? 'list'
-      if (mode === 'new') {
-        actions.push('save', 'close')
-      } else if (mode === 'edit') {
-        actions.push('save', 'attachmentsNewVersion', 'close')
-      } else if (mode === 'read') {
-        actions.push('edit', 'close')
-      } else {
-        // mode === 'list'
-        actions.push('add', 'view', 'edit', 'columnSettings', 'close')
-      }
+      actions.push(...getAttachmentsManagerActions(mode, !!attachmentsManagerUi.hasSelection))
     } else if (viewMode === 'list') {
-      // Pořadí jako v Users: add, detail, edit/uložit, sloupce, zavřít
+      // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit') // Detail a Edit jen když je vybrán řádek
+        actions.push('view', 'edit', 'relations', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
       actions.push('columnSettings', 'close')
-      // TODO: Přidat delete a archive po implementaci
-      // if (selectedId) {
-      //   actions.push('delete', 'archive')
-      // }
     } else if (viewMode === 'edit' || viewMode === 'create') {
-      actions.push('save', 'attachments', 'close') // V create/edit mode: "Uložit", "Přílohy" a "Zavřít" (červené X)
+      if (viewMode === 'edit') {
+        actions.push('save', 'relations', 'attachments', 'close') // V edit mode: "Uložit", "Vazby", "Přílohy", "Zavřít"
+      } else {
+        actions.push('save', 'close') // V create mode: "Uložit" a "Zavřít" (bez příloh)
+      }
     } else if (viewMode === 'read') {
-      actions.push('edit', 'attachments', 'close')
+      actions.push('edit', 'relations', 'attachments', 'close')
       // TODO: Přidat delete a archive po implementaci
       // actions.push('delete', 'archive')
+    } else if (viewMode === 'relations') {
+      actions.push('close')
     }
 
     onRegisterCommonActions?.(actions)
     
-    const mappedViewMode: ViewMode =
-      viewMode === 'list' ? 'list' : viewMode === 'edit' ? 'edit' : viewMode === 'create' ? 'create' : 'read'
-
-    const mappedHasSelection = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.hasSelection : !!selectedId
-    const mappedIsDirty = viewMode === 'attachments-manager' ? !!attachmentsManagerUi.isDirty : !!isDirty
+    // Namapovat LocalViewMode na ViewMode pomocí utility funkce
+    const mappedViewMode = mapAttachmentsViewMode(viewMode as any, attachmentsManagerUi.mode ?? 'list')
+    const mappedHasSelection = getHasSelection(viewMode as any, selectedId, attachmentsManagerUi)
+    const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
+    const relationsView = viewMode === 'relations'
 
     onRegisterCommonActionsState?.({
-      viewMode: mappedViewMode,
-      hasSelection: mappedHasSelection,
-      isDirty: mappedIsDirty,
+      viewMode: relationsView ? 'read' : mappedViewMode,
+      hasSelection: relationsView ? true : mappedHasSelection,
+      isDirty: relationsView ? false : mappedIsDirty,
     })
-  }, [viewMode, selectedId, isDirty, attachmentsManagerUi, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
 
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      // RELATIONS MODE
+      if (viewMode === 'relations') {
+        if (id === 'close') {
+          const backId = relationsTenantId ?? detailTenant?.id ?? selectedId
+          if (!backId) {
+            closeToList()
+            return
+          }
+
+          const listBackTenant = tenants.find((l) => l.id === backId)
+          if (listBackTenant) {
+            openDetail(listBackTenant, 'read', 'detail')
+          } else if (detailTenant?.id === backId) {
+            setViewMode('read')
+            setSelectedId(backId)
+            setUrl({ t: 'tenants-list', id: backId, vm: 'read' }, 'push')
+          } else {
+            closeToList()
+          }
+          return
+        }
+      }
+
       // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
         const api = attachmentsManagerApiRef.current
@@ -778,9 +808,9 @@ export default function TenantsTile({
         if (id === 'close') {
           const mode = attachmentsManagerUi.mode ?? 'list'
           
-          // Pokud jsme v read/edit mode, zavřít read/edit mode a vrátit se do list mode
-          if (mode === 'read' || mode === 'edit') {
-            logger.debug('close -> attachments-manager read/edit mode -> list mode')
+          // Použij utility funkci pro zjištění, jestli zavřít jen panel nebo celý manager
+          if (shouldCloseAttachmentsPanel(mode)) {
+            logger.debug('close -> attachments-manager read/edit/new mode -> list mode')
             const api = attachmentsManagerApiRef.current
             if (api?.close) {
               api.close()
@@ -814,6 +844,21 @@ export default function TenantsTile({
           }
           return
         }
+        return
+      }
+
+      // RELATIONS open
+      if (id === 'relations') {
+        if (viewMode === 'edit' && isDirty) {
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři vazby.')
+          return
+        }
+        const targetId = selectedId ?? detailTenant?.id ?? null
+        if (!targetId) return
+        setRelationsTenantId(targetId)
+        setSelectedId(targetId)
+        setViewMode('relations')
+        setUrl({ t: 'tenants-list', id: targetId, vm: 'relations' }, 'push')
         return
       }
 
@@ -872,41 +917,8 @@ export default function TenantsTile({
       // LIST ACTIONS
       if (viewMode === 'list') {
         if (id === 'add') {
-          // Pro create režim nejdřív zobrazit výběr typu subjektu
-          setSelectedSubjectTypeForCreate(null)
-          const newTenant: DetailUiTenant = {
-            id: 'new',
-            displayName: '',
-            email: null,
-            phone: null,
-            subjectType: null,
-            isArchived: false,
-            createdAt: '',
-            titleBefore: null,
-            firstName: null,
-            lastName: null,
-            note: null,
-            birthDate: null,
-            personalIdNumber: null,
-            idDocType: null,
-            idDocNumber: null,
-            companyName: null,
-            ic: null,
-            dic: null,
-            icValid: null,
-            dicValid: null,
-            delegateIds: [],
-            street: null,
-            city: null,
-            zip: null,
-            houseNumber: null,
-            country: 'CZ',
-          }
-          setDetailTenant(newTenant)
-          setViewMode('create')
-          setSelectedId('new')
-          setIsDirty(false)
-          setUrl({ t: 'tenants-list', id: 'new', vm: 'create' }, 'push')
+          // ✅ Naviguj na create-tenant tile místo lokálního create mode
+          onNavigate?.('create-tenant')
           return
         }
 
@@ -1128,6 +1140,7 @@ export default function TenantsTile({
             order: colPrefs.colOrder ?? [],
             hidden: colPrefs.colHidden ?? [],
           }}
+          sortBy={sort ?? undefined}
           onChange={(next) => {
             setColPrefs((p) => ({
               ...p,
@@ -1135,16 +1148,47 @@ export default function TenantsTile({
               colHidden: next.hidden,
             }))
           }}
+          onSortChange={(newSort) => setSort(newSort)}
           onReset={() => {
             setColPrefs((p) => ({
               ...p,
               colOrder: [],
               colHidden: [],
             }))
+            setSort(DEFAULT_SORT)
           }}
         />
       </div>
     )
+  }
+
+  // ✅ ATTACHMENTS MANAGER VIEW
+  if ((viewMode as LocalViewMode) === 'attachments-manager' && attachmentsManagerSubjectId) {
+    const tenant = tenants.find((l) => l.id === attachmentsManagerSubjectId) ?? detailTenant
+    const label = tenant?.displayName || 'Nájemník'
+
+    return (
+      <AttachmentsManagerFrame
+        entityType="tenant"
+        entityId={attachmentsManagerSubjectId}
+        entityLabel={label}
+        canManage={true}
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
+        }}
+        onManagerStateChange={(state) => {
+          setAttachmentsManagerUi(state)
+        }}
+      />
+    )
+  }
+
+  // RELATIONS VIEW
+  if ((viewMode as LocalViewMode) === 'relations' && relationsTenantId) {
+    const tenant = tenants.find((l) => l.id === relationsTenantId) ?? detailTenant
+    const label = tenant?.displayName || 'Nájemník'
+
+    return <TenantRelationsHub tenantId={relationsTenantId} tenantLabel={label} />
   }
 
   // CREATE / EDIT / READ mode - zobrazit TenantDetailFrame
@@ -1259,27 +1303,6 @@ export default function TenantsTile({
             </div>
           </div>
         </div>
-      )
-    }
-
-    // ✅ ATTACHMENTS MANAGER VIEW
-    if ((viewMode as LocalViewMode) === 'attachments-manager' && attachmentsManagerSubjectId) {
-      const tenant = tenants.find((l) => l.id === attachmentsManagerSubjectId) ?? detailTenant
-      const label = tenant?.displayName || 'Nájemník'
-      
-      return (
-        <AttachmentsManagerFrame
-          entityType="tenant"
-          entityId={attachmentsManagerSubjectId}
-          entityLabel={label}
-          canManage={true}
-          onRegisterManagerApi={(api) => {
-            attachmentsManagerApiRef.current = api
-          }}
-          onManagerStateChange={(state) => {
-            setAttachmentsManagerUi(state)
-          }}
-        />
       )
     }
 

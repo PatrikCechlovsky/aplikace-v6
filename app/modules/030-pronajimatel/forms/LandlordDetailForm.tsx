@@ -976,6 +976,9 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
           </div>
         </div>
 
+        {/* Oddělovač pro mobil */}
+        <div style={{ height: '12px' }} className="mobile-only-spacer"></div>
+
         {/* 2. řádek: Pronajímatel, Zástupce pronajimatele */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
@@ -1004,6 +1007,9 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
           </div>
         </div>
 
+        {/* Oddělovač pro mobil */}
+        <div style={{ height: '12px' }} className="mobile-only-spacer"></div>
+
         {/* 3. řádek: Nájemník, Zástupce nájemníka */}
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
@@ -1031,6 +1037,9 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
             </label>
           </div>
         </div>
+
+        {/* Oddělovač pro mobil */}
+        <div style={{ height: '12px' }} className="mobile-only-spacer"></div>
 
         {/* 4. řádek: Údržba, Zástupce údržby */}
         <div className="detail-form__grid detail-form__grid--narrow">

@@ -62,6 +62,9 @@ export type ListViewProps<TData = any> = {
 
   /** extra akce napravo v toolbaru (např. Sloupce) */
   toolbarRight?: React.ReactNode
+
+  /** max výška scrollovatelné tabulky (např. pro vazby) */
+  tableWrapperMaxHeight?: string | number
 }
 
 // ============================================================================
@@ -119,7 +122,11 @@ export default function ListView<TData = any>({
   onSortChange,
   onColumnResize,
   toolbarRight,
+  tableWrapperMaxHeight,
 }: ListViewProps<TData>) {
+  const tableWrapperStyle = typeof tableWrapperMaxHeight !== 'undefined'
+    ? { maxHeight: typeof tableWrapperMaxHeight === 'number' ? `${tableWrapperMaxHeight}px` : tableWrapperMaxHeight }
+    : undefined
   const dragRef = useRef<{
     key: string
     startX: number
@@ -186,7 +193,7 @@ export default function ListView<TData = any>({
         </div>
       </div>
 
-      <div className="listview__table-wrapper">
+      <div className="listview__table-wrapper" style={tableWrapperStyle}>
         <table className="generic-type__table" style={{ tableLayout: 'fixed' }}>
           <thead>
             <tr>

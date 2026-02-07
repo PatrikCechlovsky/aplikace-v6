@@ -331,6 +331,19 @@
 | 💼 | `briefcase` | Kufřík | Briefcase | business, práce | business, work |
 | 🤝 | `handshake` | Podání ruky | Handshake | dohoda, partnerství | agreement, partnership |
 
+### ROOMS / HOME
+
+| Ikona | Klíč | Název CZ | Název EN | Aliasy CZ | Aliasy EN |
+|-------|------|----------|----------|-----------|----------|
+| 🍳 | `kitchen` | Kuchyně | Kitchen | vaření, sporák | cooking, stove |
+| 🚿 | `shower` | Sprcha | Shower | koupelna, hygiena | bathroom, hygiene |
+| 🛋️ | `couch` | Pohovka | Couch | gauč, sedačka | sofa, settee |
+| 🛏️ | `bed` | Postel | Bed | ložnice, spaní | bedroom, sleep |
+| 🚽 | `toilet` | Záchod | Toilet | WC, toaleta | WC, restroom |
+| 🧸 | `toy` | Hračka | Toy | dětský pokoj, hračky | playroom, toys |
+| 👔 | `suit` | Oblek | Suit | šatna, oblečení | wardrobe, clothes |
+| ❓ | `question` | Otázka | Question | nevím, dotaz | unknown, query |
+
 ### NAV/FILE
 
 | Ikona | Klíč | Název CZ | Název EN | Aliasy CZ | Aliasy EN |
@@ -384,6 +397,7 @@
 | 🔓 | `unlocked` | Odemčeno | Unlocked | otevřeno, přístupné | open, accessible |
 | ✅ | `check-circle` | Zaškrtnutí v kruhu | Check circle | hotovo, OK | done, OK |
 | ✔️ | `check` | Zaškrtnout | Check | potvrdit, označit | confirm, mark |
+| ✨ | `sparkles` | Jiskření | Sparkles | nové, leskne se | new, shiny |
 
 ### TRANSPORT
 

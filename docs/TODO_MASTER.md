@@ -33,12 +33,25 @@ Poznámka:
 ## 1) Kritické problémy / stabilita
 
 - [x] Opravit blikání UI / request stormy (useSearchParams → stabilní klíč přes toString)
+- [x] Menu accordion behavior - pouze jeden modul/sekce otevřený najednou (20.1.2026)
+- [x] Unifikovat kliknutí v menu - šipka = label (navigate + toggle) (20.1.2026)
+- [x] Auto-expand menu pokud má další úroveň (20.1.2026)
 - [ ] Zamezit opakovaným fetchům v dalších modulech (anti-storm pattern jako standard)
 - [ ] Zkontrolovat, že nikde nevzniká loop přes router/query state
 
 ---
 
-## 2) CommonActions (globální akce)
+## 2) Menu & Navigace
+
+- [ ] **Module Overview Pages** - dlaždice při kliknutí na modul (např. "Přehled nemovitostí (12)", "Přidat nemovitost")
+  - Zatím modul naviguje rovnou na první tile
+  - TODO: Vytvořit TileLayout komponenty pro overview každého modulu
+  - Vzor: Home page dlaždice (Welcome, Rychlé akce, atd.)
+  - Priority: Střední (UX improvement)
+  
+---
+
+## 3) CommonActions (globální akce)
 
 - [ ] Dokončit jednotná pravidla viditelnosti (mode/selection/permission)
 - [ ] Zamezit ztrátě neuložených dat při navigaci (confirm)
@@ -86,7 +99,57 @@ Poznámka:
 
 ---
 
-## 6) Reorder / přečíslování typů (role, permission, …)
+## 6) Modul 040 – Nemovitosti
+
+### ✅ HOTOVO (1.2.2026)
+- [x] **Equipment Catalog - CRUD Implementation**
+  - EquipmentCatalogTile s full CRUD (list, view, edit, create)
+  - EquipmentCatalogDetailFormComponent (4 sekce, archive pattern, no delete)
+  - Equipment services (getById, create, update, delete=archive)
+  - ListView s 6 sloupci, Common Actions integrace
+  - Dynamic detail title: "Katalog vybavení - {název}"
+  - No required fields (validace až při vazbě na jednotku/nemovitost)
+
+- [x] **Equipment Catalog - Tile Architecture**
+  - CreateEquipmentTile s type selection cards (16 typů)
+  - EquipmentTypeTile factory pro filtrované pohledy
+  - Module config: parent + 16 child filters (kuchyne, koupelna, vytapeni...)
+  - Icons/colors from generic_types
+  - Pattern matches CreateUnitTile/UnitTypeTile
+
+- [x] **Equipment Types - Icon Assignment**
+  - Migration 081: přiřazení ikon 9 typům (spotrebice, nabytek, koupelna, kuchyne, vytapeni, technika, osvetleni, zahrada, jine)
+  - Všechny typy mají nyní proper ikony (ne ❓)
+
+- [x] **Build Error Fixes**
+  - Type mismatch v EquipmentTypeTile (onRegisterCommonActionHandler)
+  - Fix: Support null handler for cleanup pattern
+
+### 🔧 TODO - Equipment Linkage
+- [ ] **Unit Equipment** - vazba vybavení na jednotky
+  - Tabulka unit_equipment s required fields při vazbě
+  - UI pro přidání vybavení k jednotce
+  - Required validation na unit level (ne v katalogu)
+  - Attachments na linkage (ne na katalog)
+
+- [ ] **Property Equipment** - vazba vybavení na nemovitosti
+  - Tabulka property_equipment s required fields při vazbě
+  - UI pro přidání vybavení k nemovitosti
+  - Required validation na property level
+  - Attachments na linkage
+
+- [ ] **Equipment Maintenance**
+  - Revize scheduling podle lifecycle fields
+  - Historie výměn a oprav
+  - Notifikace pro upcoming revisions
+
+### 📋 Dokumentace
+- [x] CHANGELOG-EQUIPMENT-CATALOG-CRUD-TILES.md vytvořen
+- [x] docs/modules/040-equipment-system-detailed.md aktualizován
+
+---
+
+## 7) Reorder / přečíslování typů (role, permission, …)
 
 - [ ] Opravit bug s duplicitním pořadím při přesunu (2× stejné číslo)
 - [ ] Zajistit atomický reorder (bez duplicit)

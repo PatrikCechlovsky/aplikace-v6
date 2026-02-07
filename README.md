@@ -159,3 +159,4 @@ Nic se nemaže, vše se archivuje podle pravidel projektu.
 Tento projekt má jasnou strukturu, dokumentaci, pravidla i roadmapu.  
 README slouží jako přehledný vstupní bod, zatímco detailní informace jsou uloženy ve `/docs/01–10`.
 
+# Force rebuild

@@ -1,0 +1,570 @@
+schemat,tabulka,sloupec,poradi,datovy_typ,vzorky_hodnot,pocet_radku_celkem
+public,app_admins,user_id,1,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,1
+public,app_admins,note,2,text,Hlavní admin aplikace,1
+public,app_admins,created_at,3,timestamp with time zone,2025-11-28 05:45:36.134433+00,1
+public,audit_log,id,1,uuid,(prázdná tabulka),0
+public,audit_log,created_at,2,timestamp with time zone,(prázdná tabulka),0
+public,audit_log,actor_user_id,3,uuid,(prázdná tabulka),0
+public,audit_log,actor_subject_id,4,uuid,(prázdná tabulka),0
+public,audit_log,actor_name,5,text,(prázdná tabulka),0
+public,audit_log,actor_email,6,text,(prázdná tabulka),0
+public,audit_log,origin_module,7,text,(prázdná tabulka),0
+public,audit_log,origin_tile,8,text,(prázdná tabulka),0
+public,audit_log,origin_action,9,text,(prázdná tabulka),0
+public,audit_log,request_id,10,text,(prázdná tabulka),0
+public,audit_log,ip,11,inet,(prázdná tabulka),0
+public,audit_log,user_agent,12,text,(prázdná tabulka),0
+public,audit_log,entity_type,13,text,(prázdná tabulka),0
+public,audit_log,entity_id,14,uuid,(prázdná tabulka),0
+public,audit_log,entity_label,15,text,(prázdná tabulka),0
+public,audit_log,action,16,text,(prázdná tabulka),0
+public,audit_log,severity,17,text,(prázdná tabulka),0
+public,audit_log,success,18,boolean,(prázdná tabulka),0
+public,audit_log,message,19,text,(prázdná tabulka),0
+public,audit_log,diff,20,jsonb,(prázdná tabulka),0
+public,audit_log,meta,21,jsonb,(prázdná tabulka),0
+public,bank_accounts,id,1,uuid,eaeb6bf8-e081-47f2-afc8-5cddfeab8023,1
+public,bank_accounts,subject_id,2,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,1
+public,bank_accounts,label,3,text,firemní,1
+public,bank_accounts,bank_id,4,uuid,82fcef14-0eec-4cef-81dd-5533ccbe70c9,1
+public,bank_accounts,account_number,5,text,889867329,1
+public,bank_accounts,iban,6,text,(prázdná tabulka),1
+public,bank_accounts,swift,7,text,(prázdná tabulka),1
+public,bank_accounts,note,8,text,(prázdná tabulka),1
+public,bank_accounts,is_archived,9,boolean,false,1
+public,bank_accounts,created_at,10,timestamp with time zone,2026-01-07 22:10:37.505788+00,1
+public,bank_accounts,updated_at,11,timestamp with time zone,2026-01-07 22:10:37.505788+00,1
+public,bank_list,id,1,uuid,034972c7-18cc-4461-99bf-e5928b1e2a2e | 05ae4caa-2794-4e64-9c87-4e95bb4d1c29 | 0b6b9a18-40d2-439e-861e-fdcc7d52d197,38
+public,bank_list,bank_code,2,text,0100 | 0300 | 0600,38
+public,bank_list,bank_name,3,text,"Česká národní banka | Československá obchodní banka, a.s. | Citibank Europe plc, organizační složka",38
+public,bank_list,swift,4,text,EQBKCZPP | FIOBCZPPXXX | POBNCZPP,38
+public,bank_list,created_at,5,timestamp with time zone,2026-01-07 06:08:42.321036+00,38
+public,bank_list,updated_at,6,timestamp with time zone,2026-01-07 06:08:42.321036+00,38
+public,document_versions,id,1,uuid,05688b52-2098-4c8e-ace5-83d0d2de6251 | 0dd3ab48-3eee-4b83-b100-9b44d6a7b9fd | 0fe880f9-251a-495c-8a32-f8a036f83a4c,25
+public,document_versions,document_id,2,uuid,1f5198cd-4cab-4886-aeb5-36e2717fa365 | 26bc1232-4205-490c-9e69-4c7142ade248 | 3d06bd75-e40e-44b7-b092-6a4484140153,25
+public,document_versions,version_number,3,integer,3 | 5 | 9,25
+public,document_versions,file_path,4,text,subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v007_subjects_rows.csv | subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/7fba56c6-0861-4989-8f7e-d891aa9c5ab5/v005_document_versions_rows.csv | subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/fbf06629-9e65-4445-9611-f2cc184d6029/v002_Smlouva_pr_evodu.pdf,25
+public,document_versions,file_name,5,text,faktura 892025.pdf | Supabase Snippet 02_vzorky_hodnot_vsech_poli (1).csv | Supabase Snippet 02_vzorky_hodnot_vsech_poli (2).csv,25
+public,document_versions,mime_type,6,text,application/pdf | application/vnd.openxmlformats-officedocument.wordprocessingml.document | application/x-iwork-pages-sffpages,25
+public,document_versions,file_size,7,bigint,159466 | 347809 | 37632,25
+public,document_versions,is_archived,8,boolean,false,25
+public,document_versions,created_at,9,timestamp with time zone,2025-12-22 16:02:40.24278+00 | 2025-12-31 17:24:46.10708+00 | 2026-02-05 17:53:40.588804+00,25
+public,document_versions,created_by,10,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,25
+public,document_versions,title,11,text,d | test | test34,25
+public,document_versions,description,12,text,3231 | oprava | test new,25
+public,document_versions,updated_at,13,timestamp with time zone,2025-12-31 19:09:36.490705+00 | 2025-12-31 20:28:58.443535+00,25
+public,document_versions,updated_by,14,uuid,(prázdná tabulka),25
+public,documents,id,1,uuid,1f5198cd-4cab-4886-aeb5-36e2717fa365 | 26bc1232-4205-490c-9e69-4c7142ade248 | 3d06bd75-e40e-44b7-b092-6a4484140153,10
+public,documents,entity_type,2,text,properties | property_equipment_binding | subject,10
+public,documents,entity_id,3,uuid,6aea775d-3677-4020-a57c-c1e67ae5764f | f4b385d3-4708-472c-a96c-cf8d7a843feb | fd2bcfac-6ca3-40b6-a472-de9677499ea6,10
+public,documents,title,4,text,d | seznam | test,10
+public,documents,description,5,text,3231 | fff | oprava,10
+public,documents,is_archived,6,boolean,false,10
+public,documents,created_at,7,timestamp with time zone,2026-01-21 21:06:21.20681+00 | 2026-02-04 23:27:41.659758+00 | 2026-02-05 18:21:16.599502+00,10
+public,documents,created_by,8,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,10
+public,documents,updated_at,9,timestamp with time zone,2025-12-31 20:02:03.042699+00 | 2025-12-31 20:28:24.729725+00 | 2026-01-01 00:05:52.225729+00,10
+public,documents,updated_by,10,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,10
+public,equipment_catalog,id,1,uuid,00133ab0-0674-4b44-8c70-8e8c0c23e2f2 | 00a5aeda-c6f5-4d6c-8813-38dabc3c0fd9 | 062d80ac-0d42-463c-978f-8fa930aa0902,145
+public,equipment_catalog,equipment_name,2,text,Akumulační nádrž | Alarm (EZS) | Anténa DVB-T,145
+public,equipment_catalog,purchase_price,4,numeric,(prázdná tabulka),145
+public,equipment_catalog,purchase_date,5,date,(prázdná tabulka),145
+public,equipment_catalog,origin_module,6,text,040-nemovitost,145
+public,equipment_catalog,created_at,7,timestamp with time zone,2026-02-01 15:08:32.862709+00,145
+public,equipment_catalog,updated_at,8,timestamp with time zone,2026-02-01 15:08:32.862709+00,145
+public,equipment_catalog,is_archived,9,boolean,false,145
+public,equipment_catalog,equipment_type_id,10,uuid,1b2f0fe4-a9a1-4010-8302-d55292d69053 | 8206dd55-e272-465c-9e52-2959d24d4a78 | eeb16fd1-b923-4af9-8aa8-995700a0ba7d,145
+public,equipment_catalog,room_type_id,11,uuid,3d3d9c44-582a-4dd3-9fff-52c3329c8b8c | 80f644a7-190a-4e68-800b-1363942fa870 | 928d44b4-96ef-4f02-803a-3a6961e7b5d0,145
+public,equipment_catalog,default_lifespan_months,12,integer,180 | 300 | 360,145
+public,equipment_catalog,default_revision_interval,13,integer,12 | 24 | 48,145
+public,equipment_catalog,default_state,14,text,good,145
+public,equipment_catalog,default_description,15,text,Centrální nouzové vypnutí | Dřevěné parkety | Ochrana proti úrazu elektrickým proudem,145
+public,equipment_catalog,active,16,boolean,true,145
+public,equipment_types,code,1,text,nabytek | osvetleni | spotrebice,9
+public,equipment_types,name,2,text,Osvětlení | Spotřebiče | Zahrada,9
+public,equipment_types,description,3,text,"Ostatní vybavení | Stoly, židle, skříně, postele | Zahradní nábytek, nástroje",9
+public,equipment_types,color,4,text,#2C3E50 | #3498DB | #95A5A6,9
+public,equipment_types,icon,5,text,💡 | 📦 | 🔥,9
+public,equipment_types,order_index,6,integer,10 | 30 | 90,9
+public,equipment_types,active,7,boolean,true,9
+public,equipment_types,created_at,8,timestamp with time zone,2026-01-18 09:36:48.037977+00,9
+public,equipment_types,updated_at,9,timestamp with time zone,2026-01-18 09:36:48.037977+00,9
+public,generic_types,id,1,uuid,003fdd9e-c73a-4387-bf97-f451efa6fe3e | 02579d49-26b4-4b2f-b821-9a054ec8fb0e | 027ec27d-9c50-498e-a850-f2bbcd285d93,79
+public,generic_types,category,2,text,equipment_states | equipment_types | property_types,79
+public,generic_types,code,3,text,1+1 | 1+kk | 2+1,79
+public,generic_types,name,4,text,1+kk | Pracovna | Spolek / SVJ,79
+public,generic_types,description,5,text,Ostatní typy místností | Parkování a úložný prostor | Venkovní terasa,79
+public,generic_types,color,6,text,#95A5A6 | #C0392B | #f59e0b,79
+public,generic_types,icon,7,text,🏢 | building | fire,79
+public,generic_types,order_index,8,integer,4 | 40 | 80,79
+public,generic_types,active,9,boolean,true,79
+public,generic_types,created_at,10,timestamp with time zone,2026-01-19 08:01:30.492351+00 | 2026-02-01 15:04:53.692456+00 | 2026-02-04 07:47:46.877436+00,79
+public,generic_types,updated_at,11,timestamp with time zone,2026-02-01 09:36:15.459096+00 | 2026-02-01 20:48:38.513+00 | 2026-02-01 20:49:10.381+00,79
+public,meta_field_catalog,database_name,1,text,postgres,457
+public,meta_field_catalog,table_schema,2,text,auth | extensions | vault,457
+public,meta_field_catalog,table_name,3,text,one_time_tokens | secrets | users,457
+public,meta_field_catalog,column_name,4,text,dimension | login | topic,457
+public,meta_field_catalog,ordinal_position,5,integer,29 | 4 | 42,457
+public,meta_field_catalog,data_type,6,text,boolean | bytea | oid,457
+public,meta_field_catalog,character_maximum_length,7,integer,100 | 255 | 40,457
+public,meta_field_catalog,numeric_precision,8,integer,32 | 53 | 64,457
+public,meta_field_catalog,numeric_scale,9,integer,0,457
+public,meta_field_catalog,is_nullable,10,boolean,false | true,457
+public,meta_field_catalog,column_default,11,text,'STANDARD'::storage.buckettype | 'VECTOR'::storage.buckettype | now(),457
+public,meta_field_catalog,is_identity,12,boolean,false | true,457
+public,meta_field_catalog,column_comment,13,text,Auth: Email is a generated column that references the optional email property in the identity_data | Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails. | Stores the latest WebAuthn challenge data including attestation/assertion for customer verification,457
+public,meta_field_values,table_schema,1,text,public,260
+public,meta_field_values,table_name,2,text,permission_types | subject_types | unit_types,260
+public,meta_field_values,column_name,3,text,color | id | theme_accent,260
+public,meta_field_values,row_identifier,4,text,"(0,10) | (0,13) | (0,7)",260
+public,meta_field_values,value_text,5,text,"admin_full | firma | může upravovat finanční data, vytvářet, měnit",260
+public,payment_types,code,1,text,odchozi_neplanovana | odchozi_planovana | odchozi_pravidelna,7
+public,payment_types,name,2,text,odchozí neplánovaná | odchozí pravidelná | vrácená platba,7
+public,payment_types,description,3,text,příjem | výdaj,7
+public,payment_types,color,4,text,(prázdná tabulka),7
+public,payment_types,icon,5,text,(prázdná tabulka),7
+public,payment_types,order_index,6,integer,3 | 4 | 5,7
+public,payment_types,active,7,boolean,true,7
+public,permission_types,code,1,text,admin_full | finance_manage | finance_read,7
+public,permission_types,name,2,text,Administátor | částečné čtení | úplné čtení,7
+public,permission_types,color,3,text,(prázdná tabulka),7
+public,permission_types,icon,4,text,(prázdná tabulka),7
+public,permission_types,order_index,5,integer,3 | 4 | 5,7
+public,permission_types,active,6,boolean,true,7
+public,permission_types,description,7,text,"může číst jen některé moduly nebo čast dat | může číst všechny finanční moduly (platby, účtování, přehledy) | může upravovat finanční data, vytvářet, měnit",7
+public,properties,id,1,uuid,2b99779e-8924-4d55-bf5f-10624e4daea2 | 40823a5c-4cb3-42e0-b58e-2a6222edeebf | 55664ae9-72ae-4e76-b5c8-2a1e4c2c1a6b,12
+public,properties,landlord_id,2,uuid,5455149a-1f70-48a1-9464-66b81442bed3 | f168a6f4-daea-45c5-980e-7b84e49ba5e3,12
+public,properties,property_type_id,3,uuid,69642a59-abf4-4c3d-aea3-cb62ddf18912 | ccf37a92-6807-4701-8132-9891e7e4671a | d54c05e5-f8fc-4d06-9ec5-b2ef36c01dca,12
+public,properties,display_name,4,text,Byt 3+1 Karlín | Garážové stání Nové Butovice | Rezidence Letná,12
+public,properties,internal_code,5,text,BD-VIN-001 | GAR-STR-001 | KOM-AND-001,12
+public,properties,street,6,text,Milady Horákové | Patočkova | Radlická,12
+public,properties,house_number,7,text,15 | 180 | 88,12
+public,properties,city,8,text,Praha | Říčany,12
+public,properties,zip,9,text,12000 | 15800 | 16000,12
+public,properties,country,10,text,CZ,12
+public,properties,region,11,text,PHA | STC,12
+public,properties,land_area,12,numeric,1200.00 | 600.00 | 850.00,12
+public,properties,built_up_area,13,numeric,120.00 | 200.00 | 500.00,12
+public,properties,building_area,14,numeric,1800.00 | 2400.00 | 52.00,12
+public,properties,number_of_floors,15,integer,3 | 5 | 6,12
+public,properties,build_year,16,integer,1985 | 2018 | 2020,12
+public,properties,reconstruction_year,17,integer,2010 | 2015 | 2018,12
+public,properties,cadastral_area,18,text,Smíchov | Strašnice | Střešovice,12
+public,properties,parcel_number,19,text,678/90 | 789/12 | 890/23,12
+public,properties,lv_number,20,text,LV-0124 | LV-7891 | LV-9013,12
+public,properties,note,21,text,"Luxusní vila se třemi podlažími a výhledem | Prostory vhodné pro obchod nebo služby, přízemí | Samostatná zděná garáž, elektřina",12
+public,properties,origin_module,22,text,040-nemovitost,12
+public,properties,created_at,23,timestamp with time zone,2026-01-18 09:39:15.213681+00,12
+public,properties,updated_at,24,timestamp with time zone,2026-01-18 09:39:15.213681+00 | 2026-01-25 13:13:49.507793+00,12
+public,properties,is_archived,25,boolean,false,12
+public,properties,floors_above_ground,26,integer,3 | 5 | 6,12
+public,properties,floors_below_ground,27,integer,(prázdná tabulka),12
+public,properties,units_count,28,integer,(prázdná tabulka),12
+public,property_equipment,id,1,uuid,053334d9-6562-4fd8-adf9-59117d4c4fa4 | 11bf4780-1f38-4b15-b629-ff73f409e4a5 | 282eed48-b9b9-4864-9a8c-7d31b1a079de,6
+public,property_equipment,property_id,2,uuid,f4b385d3-4708-472c-a96c-cf8d7a843feb,6
+public,property_equipment,equipment_id,3,uuid,27e0608a-3b82-4db1-afc9-58c4ee4be751 | 2e311a73-1f09-4955-a1d2-55a2cb02a1cd | 720c2a81-27e2-4a14-98c5-8684fbd9ec08,6
+public,property_equipment,quantity,4,integer,1,6
+public,property_equipment,state,5,text,good,6
+public,property_equipment,installed_at,6,date,(prázdná tabulka),6
+public,property_equipment,note,7,text,(prázdná tabulka),6
+public,property_equipment,created_at,8,timestamp with time zone,2026-02-04 08:24:20.955454+00 | 2026-02-04 22:00:03.0079+00 | 2026-02-05 07:33:00.355537+00,6
+public,property_equipment,updated_at,9,timestamp with time zone,2026-02-04 22:01:04.624591+00 | 2026-02-05 07:33:00.355537+00 | 2026-02-05 07:33:13.877559+00,6
+public,property_equipment,is_archived,10,boolean,false,6
+public,property_equipment,name,11,text,Balkonové dveře | Čipový systém | Datové zásuvky,6
+public,property_equipment,type,12,text,(prázdná tabulka),6
+public,property_equipment,description,13,text,(prázdná tabulka),6
+public,property_equipment,purchase_price,14,numeric,(prázdná tabulka),6
+public,property_equipment,lifespan_months,15,integer,(prázdná tabulka),6
+public,property_equipment,last_revision,16,date,(prázdná tabulka),6
+public,property_equipment,photo_attachment_id,17,uuid,(prázdná tabulka),6
+public,property_equipment,equipment_type_id,18,uuid,8206dd55-e272-465c-9e52-2959d24d4a78,6
+public,property_equipment,room_type_id,19,uuid,928d44b4-96ef-4f02-803a-3a6961e7b5d0,6
+public,property_types,id,1,uuid,19fce34e-802d-4697-9ff7-1b747b3fde8d | 1e60cfc8-001a-44ba-9d90-c9dbe784b7b5 | 69642a59-abf4-4c3d-aea3-cb62ddf18912,6
+public,property_types,code,2,text,admin_budova | bytovy_dum | jiny_objekt,6
+public,property_types,name,3,text,Admin. budova | Jiný objekt | Rodinný dům,6
+public,property_types,color,4,text,#3498DB | #935116 | #A564AD,6
+public,property_types,icon,5,text,building | home | warehouse,6
+public,property_types,order_index,6,integer,3 | 4 | 5,6
+public,property_types,created_at,7,timestamp with time zone,2025-12-08 12:11:41.884233+00,6
+public,property_types,updated_at,8,timestamp with time zone,2025-12-08 12:11:41.884233+00,6
+public,property_types,description,9,text,(prázdná tabulka),6
+public,property_types,active,10,boolean,true,6
+public,role_permissions,role_code,1,text,(prázdná tabulka),0
+public,role_permissions,permission_code,2,text,(prázdná tabulka),0
+public,role_types,code,1,text,admin | calculator | manager,8
+public,role_types,name,2,text,Manager | Správce | Údržbář,8
+public,role_types,color,3,text,#d63ea5 | #e05570 | #f4d35e,8
+public,role_types,icon,4,text,(prázdná tabulka),8
+public,role_types,order_index,5,integer,3 | 4 | 5,8
+public,role_types,active,6,boolean,true,8
+public,role_types,description,7,text,(prázdná tabulka),8
+public,subject_delegates,id,1,uuid,f56429fd-949a-49c9-a3f7-2ad071e4496b,1
+public,subject_delegates,subject_id,2,uuid,993a2911-0268-43cb-82e9-0373ad1a6a88,1
+public,subject_delegates,delegate_subject_id,3,uuid,c679f666-09e0-4281-a0c8-9d0d6f417619,1
+public,subject_delegates,created_at,4,timestamp with time zone,2026-01-17 20:46:38.183387+00,1
+public,subject_delegates,created_by,5,uuid,(prázdná tabulka),1
+public,subject_delegates,updated_at,6,timestamp with time zone,(prázdná tabulka),1
+public,subject_delegates,updated_by,7,uuid,(prázdná tabulka),1
+public,subject_invites,id,1,uuid,1738069e-14f6-4412-bbc9-789df74bbc8f | 271f1c5a-46eb-418d-98c1-a008bf2b8432 | 45bda23d-14bc-43b4-a7f6-6f1eddf88c63,4
+public,subject_invites,invite_mode,2,text,existing | new,4
+public,subject_invites,subject_id,3,uuid,45ed734f-2ffc-4d41-96c7-1c6df1e887b9 | 7504d2ed-090d-4e1a-a9c2-672cac914d41 | 91a475d4-8c98-4719-aab5-a6a143e3ec9e,4
+public,subject_invites,email,4,text,patrik.cechlovsky@fish-com.cz,4
+public,subject_invites,role_code,5,text,manager | pronajimatel | user,4
+public,subject_invites,status,6,text,pending,4
+public,subject_invites,note,7,text,Nová pozvánka vytvořena z detailu uživatele (předchozí pending expirovány).,4
+public,subject_invites,created_at,8,timestamp with time zone,2025-12-22 18:40:15.678949+00 | 2025-12-26 19:56:42.608061+00 | 2026-01-04 08:14:54.28701+00,4
+public,subject_invites,created_by,9,uuid,(prázdná tabulka),4
+public,subject_invites,sent_at,10,timestamp with time zone,(prázdná tabulka),4
+public,subject_invites,expires_at,11,timestamp with time zone,2026-01-02 19:56:42.608061+00 | 2026-01-11 08:09:12.659163+00 | 2026-01-11 08:14:54.28701+00,4
+public,subject_invites,accepted_at,12,timestamp with time zone,(prázdná tabulka),4
+public,subject_invites,canceled_at,13,timestamp with time zone,(prázdná tabulka),4
+public,subject_invites,display_name,14,text,je to nové | Patizonan | piskot,4
+public,subject_permissions,subject_id,1,uuid,7504d2ed-090d-4e1a-a9c2-672cac914d41 | 91a475d4-8c98-4719-aab5-a6a143e3ec9e | c5cf15b5-383c-4972-88c1-048b8ea198b6,5
+public,subject_permissions,permission_code,2,text,admin_full | manage_full | read_limited,5
+public,subject_roles,subject_id,1,uuid,45ed734f-2ffc-4d41-96c7-1c6df1e887b9 | 7504d2ed-090d-4e1a-a9c2-672cac914d41 | 91a475d4-8c98-4719-aab5-a6a143e3ec9e,6
+public,subject_roles,role_code,2,text,admin | manager | pronajimatel,6
+public,subject_types,code,1,text,firma | osoba | osvc,6
+public,subject_types,name,2,text,Fyzická osoba | Spolek / SVJ | Státní instituce,6
+public,subject_types,description,3,text,osoba bez IČ,6
+public,subject_types,order_index,4,integer,3 | 4 | 5,6
+public,subject_types,icon,5,text,briefcase | office-building | user,6
+public,subject_types,color,6,text,#1E8449 | #3498DB | #F4D03F,6
+public,subject_types,active,7,boolean,true,6
+public,subject_types,sort_order,8,integer,3 | 4 | 5,6
+public,subjects,id,1,uuid,04d800a2-ed25-43d7-8b9e-1e37960eb7ac | 11cba08e-81a4-4aba-8fdf-d1779a9c71c5 | 138080be-8622-4204-8a36-fdc88021d5f0,28
+public,subjects,subject_type,2,text,osoba | spolek | zastupce,28
+public,subjects,auth_user_id,3,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,28
+public,subjects,title_before,4,text,Ing. | JUDr. | Mgr.,28
+public,subjects,first_name,5,text,Marie | Patrik | Tomáš,28
+public,subjects,last_name,6,text,Čechlovský | Dvořák | Procházková,28
+public,subjects,company_name,7,text,"Český úřad zeměměřický a katastrální | Český zahrádkářský svaz, z.s. | Krajský úřad Ústeckého kraje",28
+public,subjects,display_name,8,text,Eva Horáková | FISH-COM | Spolek přátel architektury,28
+public,subjects,ic,9,text,22334455 | 33445566 | 44556677,28
+public,subjects,dic,10,text,CZ12345678 | CZ22334455 | CZ34567890,28
+public,subjects,ic_valid,11,boolean,false | true,28
+public,subjects,dic_valid,12,boolean,false | true,28
+public,subjects,birth_date,13,date,1985-05-15 | 1988-11-05 | 1995-03-10,28
+public,subjects,id_doc_type,14,text,OP | PAS,28
+public,subjects,id_doc_number,15,text,AB123456 | CD987654 | EF111222,28
+public,subjects,country,16,text,CZ,28
+public,subjects,city,17,text,Ostrava | Plzeň | Praha,28
+public,subjects,street,18,text,Mírové náměstí | Nová | Velká Hradební,28
+public,subjects,house_number,19,text,12 | 123 | 67,28
+public,subjects,orientation_number,20,text,(prázdná tabulka),28
+public,subjects,postal_code,21,text,(prázdná tabulka),28
+public,subjects,address_source,22,text,(prázdná tabulka),28
+public,subjects,phone,23,text,+420 606 222 000 | +420 606 666 777 | +420 606 888 999,28
+public,subjects,email,24,text,info@klubtouristu-najemnik.cz | info@sokol-najemnik.cz | marie.svobodova.osvc@test.cz,28
+public,subjects,bank_account_id,25,uuid,(prázdná tabulka),28
+public,subjects,delegate_id,26,uuid,(prázdná tabulka),28
+public,subjects,login,27,text,patrik.cechlovsky@centrum.cz,28
+public,subjects,password_hash,28,text,(prázdná tabulka),28
+public,subjects,unit_label,29,text,(prázdná tabulka),28
+public,subjects,ares_json,30,jsonb,(prázdná tabulka),28
+public,subjects,audit,31,jsonb,(prázdná tabulka),28
+public,subjects,origin_module,32,text,010 | 030 | 050,28
+public,subjects,origin_entity,33,text,user,28
+public,subjects,created_at,34,timestamp with time zone,2025-12-15 20:51:06.712132+00 | 2025-12-22 18:40:15.435353+00 | 2026-01-16 16:16:51.516585+00,28
+public,subjects,updated_at,35,timestamp with time zone,2026-01-19 08:01:30.492351+00,28
+public,subjects,created_by,36,uuid,(prázdná tabulka),28
+public,subjects,is_archived,37,boolean,false,28
+public,subjects,archived_at,38,timestamp with time zone,(prázdná tabulka),28
+public,subjects,archived_by,39,uuid,(prázdná tabulka),28
+public,subjects,first_login_at,40,timestamp with time zone,2025-12-22 22:35:52.977958+00,28
+public,subjects,last_login_at,41,timestamp with time zone,(prázdná tabulka),28
+public,subjects,note,42,text,Testovací nájemník - státní instituce #1 | Testovací nájemník - zástupce #2 (finanční zástupce) | Testovací spolek pronajímatel #2,28
+public,subjects,zip,43,text,30100 | 37001 | 61200,28
+public,subjects,personal_id_number,44,text,7502146789 | 8203105678 | 8209085432,28
+public,subjects,is_landlord,45,boolean,false | true,28
+public,subjects,is_tenant,46,boolean,false | true,28
+public,subjects,is_user,47,boolean,false | true,28
+public,subjects,is_delegate,48,boolean,false,28
+public,subjects,subject_type_id,49,uuid,0764a790-12e8-401f-9a5b-dfee5bc965ea | 2a341826-7879-40aa-98bb-2a8584a974e3 | 4feb9acd-89ec-45bc-b117-f3b81a82a1c3,28
+public,tenant_users,id,1,uuid,2c8a202b-b1b9-423f-96ae-7f9ad1cc5abf,1
+public,tenant_users,tenant_id,2,uuid,138080be-8622-4204-8a36-fdc88021d5f0,1
+public,tenant_users,first_name,3,text,"muj ",1
+public,tenant_users,last_name,4,text,"brácha ",1
+public,tenant_users,birth_date,5,date,2010-02-11,1
+public,tenant_users,note,6,text,(prázdná tabulka),1
+public,tenant_users,is_archived,7,boolean,false,1
+public,tenant_users,created_at,8,timestamp with time zone,2026-01-16 16:59:57.633718+00,1
+public,tenant_users,updated_at,9,timestamp with time zone,2026-01-16 16:59:57.633718+00,1
+public,tenant_users,created_by,10,uuid,(prázdná tabulka),1
+public,ui_view_prefs,id,1,uuid,(prázdná tabulka),0
+public,ui_view_prefs,client_id,2,uuid,(prázdná tabulka),0
+public,ui_view_prefs,user_id,3,uuid,(prázdná tabulka),0
+public,ui_view_prefs,view_key,4,text,(prázdná tabulka),0
+public,ui_view_prefs,col_widths,5,jsonb,(prázdná tabulka),0
+public,ui_view_prefs,col_order,6,ARRAY,(prázdná tabulka),0
+public,ui_view_prefs,col_hidden,7,ARRAY,(prázdná tabulka),0
+public,ui_view_prefs,created_at,8,timestamp with time zone,(prázdná tabulka),0
+public,ui_view_prefs,updated_at,9,timestamp with time zone,(prázdná tabulka),0
+public,ui_view_prefs,prefs,10,jsonb,(prázdná tabulka),0
+public,unit_equipment,id,1,uuid,00222b75-0ae2-4b18-a801-2d990e8fcae8,1
+public,unit_equipment,unit_id,2,uuid,0188018f-ed0c-4f61-94bd-25d5af963a6d,1
+public,unit_equipment,equipment_id,3,uuid,13e45eae-2b9a-4bca-8164-ceda65a0d798,1
+public,unit_equipment,quantity,4,integer,1,1
+public,unit_equipment,state,5,text,good,1
+public,unit_equipment,installed_at,6,date,(prázdná tabulka),1
+public,unit_equipment,note,7,text,(prázdná tabulka),1
+public,unit_equipment,created_at,8,timestamp with time zone,2026-02-04 07:53:25.397151+00,1
+public,unit_equipment,updated_at,9,timestamp with time zone,2026-02-04 07:53:25.397151+00,1
+public,unit_equipment,is_archived,10,boolean,false,1
+public,unit_equipment,name,11,text,Anténa DVB-T,1
+public,unit_equipment,type,12,text,(prázdná tabulka),1
+public,unit_equipment,description,13,text,(prázdná tabulka),1
+public,unit_equipment,purchase_price,14,numeric,(prázdná tabulka),1
+public,unit_equipment,lifespan_months,15,integer,(prázdná tabulka),1
+public,unit_equipment,last_revision,16,date,(prázdná tabulka),1
+public,unit_equipment,photo_attachment_id,17,uuid,(prázdná tabulka),1
+public,unit_equipment,equipment_type_id,18,uuid,(prázdná tabulka),1
+public,unit_equipment,room_type_id,19,uuid,(prázdná tabulka),1
+public,unit_types,code,1,text,byt | garaz | jina_jednotka,9
+public,unit_types,name,2,text,Garáž - Parking | Kancelář | Zahrada,9
+public,unit_types,description,3,text,(prázdná tabulka),9
+public,unit_types,color,4,text,#1E8449 | #566573 | #F9F635,9
+public,unit_types,icon,5,text,briefcase | shopping-cart | warehouse,9
+public,unit_types,order_index,6,integer,3 | 5 | 9,9
+public,unit_types,active,7,boolean,true,9
+public,units,id,1,uuid,0188018f-ed0c-4f61-94bd-25d5af963a6d | 04c2b230-f7f7-4b14-bbd5-4cc99902ce49 | 05545ec3-279a-41a0-a603-7d06d606713a,12
+public,units,property_id,2,uuid,40823a5c-4cb3-42e0-b58e-2a6222edeebf | 9ab4cf1c-f262-49b0-ba29-88b412180d12 | aaa78259-5ec8-44ad-87bb-2ca07eef5a10,12
+public,units,display_name,4,text,Kancelář 1A | Kancelář 2B | Sklep S08,12
+public,units,internal_code,5,text,KOM-K1A | LET-G25 | STR-P02,12
+public,units,street,6,text,Korunní | Na Pankráci | Nádražní,12
+public,units,house_number,7,text,25 | 42 | 86,12
+public,units,city,8,text,Praha,12
+public,units,zip,9,text,14000 | 15000 | 19300,12
+public,units,country,10,text,CZ,12
+public,units,region,11,text,PHA,12
+public,units,floor,12,integer,-1 | 0 | 1,12
+public,units,door_number,13,text,2B | 301 | G12,12
+public,units,area,14,numeric,25.00 | 35.00 | 8.00,12
+public,units,rooms,15,numeric,1.0 | 2.0 | 3.0,12
+public,units,status,16,text,available | occupied | renovation,12
+public,units,note,17,text,"Kancelář pro 4 osoby, klimatizace | Podzemní garáž, vjezd automatickou branou | Sklep k bytu 301",12
+public,units,origin_module,18,text,040-nemovitost,12
+public,units,created_at,19,timestamp with time zone,2026-01-18 09:39:15.213681+00,12
+public,units,updated_at,20,timestamp with time zone,2026-01-25 11:36:55.278482+00 | 2026-01-25 20:13:56.855925+00,12
+public,units,is_archived,21,boolean,false,12
+public,units,unit_type_id,23,uuid,003fdd9e-c73a-4387-bf97-f451efa6fe3e | a0af90c8-07a4-4406-b654-35377c87fa31 | a59e0968-eb5c-4769-858a-90245286dfb9,12
+public,units,landlord_id,24,uuid,5455149a-1f70-48a1-9464-66b81442bed3 | f168a6f4-daea-45c5-980e-7b84e49ba5e3,12
+public,units,tenant_id,25,uuid,(prázdná tabulka),12
+public,units,disposition,26,text,1+kk | 2+kk | 3+kk,12
+public,units,orientation_number,27,text,(prázdná tabulka),12
+public,units,year_renovated,28,integer,(prázdná tabulka),12
+public,units,manager_name,29,text,(prázdná tabulka),12
+public,units,cadastral_area,30,text,(prázdná tabulka),12
+public,units,parcel_number,31,text,(prázdná tabulka),12
+public,units,lv_number,32,text,(prázdná tabulka),12
+public,user_theme_settings,id,1,uuid,0c81029d-b270-43b8-a97c-4ab6ecac99d0,1
+public,user_theme_settings,user_id,2,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,1
+public,user_theme_settings,theme_mode,3,text,light,1
+public,user_theme_settings,theme_accent,4,text,neutral,1
+public,user_theme_settings,updated_at,5,timestamp with time zone,2025-12-07 16:22:17.08+00,1
+public,v_document_latest_version,id,1,uuid,1f5198cd-4cab-4886-aeb5-36e2717fa365 | 26bc1232-4205-490c-9e69-4c7142ade248 | 3d06bd75-e40e-44b7-b092-6a4484140153,10
+public,v_document_latest_version,entity_type,2,text,properties | property_equipment_binding | subject,10
+public,v_document_latest_version,entity_id,3,uuid,6aea775d-3677-4020-a57c-c1e67ae5764f | f4b385d3-4708-472c-a96c-cf8d7a843feb | fd2bcfac-6ca3-40b6-a472-de9677499ea6,10
+public,v_document_latest_version,title,4,text,d | seznam | test,10
+public,v_document_latest_version,description,5,text,3231 | fff | oprava,10
+public,v_document_latest_version,is_archived,6,boolean,false,10
+public,v_document_latest_version,created_at,7,timestamp with time zone,2026-01-21 21:06:21.20681+00 | 2026-02-04 23:27:41.659758+00 | 2026-02-05 18:21:16.599502+00,10
+public,v_document_latest_version,created_by,8,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,10
+public,v_document_latest_version,updated_at,9,timestamp with time zone,2025-12-31 20:02:03.042699+00 | 2025-12-31 20:28:24.729725+00 | 2026-01-01 00:05:52.225729+00,10
+public,v_document_latest_version,updated_by,10,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,10
+public,v_document_latest_version,updated_by_name,11,text,Páťa,10
+public,v_document_latest_version,version_id,12,uuid,05688b52-2098-4c8e-ace5-83d0d2de6251 | d281289c-3943-446a-ac9d-95a7e3e1e5f9 | fbd84d1e-ae20-48ec-8c9f-8b3903fd9eb8,10
+public,v_document_latest_version,version_number,13,integer,2 | 7 | 9,10
+public,v_document_latest_version,file_path,14,text,property_equipment_binding/6aea775d-3677-4020-a57c-c1e67ae5764f/1f5198cd-4cab-4886-aeb5-36e2717fa365/v001_Potvrzeni___3_.docx | property_equipment_binding/6aea775d-3677-4020-a57c-c1e67ae5764f/f460ae63-6115-40ed-b556-0427786a416d/v001_Potvrzeni___3_.docx | subject/fd2bcfac-6ca3-40b6-a472-de9677499ea6/491f42dc-08b0-4554-aa2d-fed15b9dd926/v009_v008_subject_roles_rows_1__3_.csv,10
+public,v_document_latest_version,file_name,15,text,documents_rows (1).csv | v008_subject_roles_rows_1_ (3).csv | Výpis z katastru byt.pdf,10
+public,v_document_latest_version,mime_type,16,text,application/pdf | application/vnd.openxmlformats-officedocument.wordprocessingml.document | application/x-iwork-pages-sffpages,10
+public,v_document_latest_version,file_size,17,bigint,10207 | 195257 | 28831,10
+public,v_document_latest_version,version_created_at,18,timestamp with time zone,2025-12-30 15:27:47.565847+00 | 2025-12-31 17:24:46.10708+00 | 2026-01-21 21:06:22.550153+00,10
+public,v_document_latest_version,version_created_by,19,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,10
+public,v_document_latest_version,version_created_by_name,20,text,Páťa,10
+public,v_document_latest_version,version_is_archived,21,boolean,false,10
+public,v_property_equipment_list,id,1,uuid,053334d9-6562-4fd8-adf9-59117d4c4fa4 | 11bf4780-1f38-4b15-b629-ff73f409e4a5 | 282eed48-b9b9-4864-9a8c-7d31b1a079de,6
+public,v_property_equipment_list,property_id,2,uuid,f4b385d3-4708-472c-a96c-cf8d7a843feb,6
+public,v_property_equipment_list,equipment_id,3,uuid,27e0608a-3b82-4db1-afc9-58c4ee4be751 | 2e311a73-1f09-4955-a1d2-55a2cb02a1cd | 720c2a81-27e2-4a14-98c5-8684fbd9ec08,6
+public,v_property_equipment_list,quantity,4,integer,1,6
+public,v_property_equipment_list,state,5,text,good,6
+public,v_property_equipment_list,installed_at,6,date,(prázdná tabulka),6
+public,v_property_equipment_list,note,7,text,(prázdná tabulka),6
+public,v_property_equipment_list,created_at,8,timestamp with time zone,2026-02-04 08:24:20.955454+00 | 2026-02-04 22:00:03.0079+00 | 2026-02-05 07:33:00.355537+00,6
+public,v_property_equipment_list,updated_at,9,timestamp with time zone,2026-02-04 22:01:04.624591+00 | 2026-02-05 07:33:00.355537+00 | 2026-02-05 07:33:13.877559+00,6
+public,v_property_equipment_list,is_archived,10,boolean,false,6
+public,v_property_equipment_list,name,11,text,Balkonové dveře | Čipový systém | Datové zásuvky,6
+public,v_property_equipment_list,type,12,text,(prázdná tabulka),6
+public,v_property_equipment_list,description,13,text,(prázdná tabulka),6
+public,v_property_equipment_list,purchase_price,14,numeric,(prázdná tabulka),6
+public,v_property_equipment_list,lifespan_months,15,integer,(prázdná tabulka),6
+public,v_property_equipment_list,last_revision,16,date,(prázdná tabulka),6
+public,v_property_equipment_list,photo_attachment_id,17,uuid,(prázdná tabulka),6
+public,v_property_equipment_list,equipment_type_id,18,uuid,8206dd55-e272-465c-9e52-2959d24d4a78,6
+public,v_property_equipment_list,room_type_id,19,uuid,928d44b4-96ef-4f02-803a-3a6961e7b5d0,6
+public,v_property_equipment_list,catalog_equipment_name,20,text,Balkonové dveře | Čipový systém | Datové zásuvky,6
+public,v_property_equipment_list,catalog_equipment_type_id,21,uuid,1b2f0fe4-a9a1-4010-8302-d55292d69053 | 2bbe1458-5b8c-4d97-9a71-763aa635314d | 8206dd55-e272-465c-9e52-2959d24d4a78,6
+public,v_property_equipment_list,catalog_purchase_price,22,numeric,(prázdná tabulka),6
+public,v_property_equipment_list,catalog_purchase_date,23,date,(prázdná tabulka),6
+public,v_property_equipment_list,equipment_type_name,24,text,Bezpečnost a požár | Přístupy a zabezpečení | Stavební prvky,6
+public,v_property_equipment_list,equipment_type_icon,25,text,fire | hammer | laptop,6
+public,v_property_equipment_list,room_type_name,26,text,Kuchyně,6
+public,v_property_equipment_list,room_type_icon,27,text,kitchen,6
+public,v_property_equipment_list,total_price,28,numeric,(prázdná tabulka),6
+public,v_subject_invite_latest,subject_id,1,uuid,45ed734f-2ffc-4d41-96c7-1c6df1e887b9 | 7504d2ed-090d-4e1a-a9c2-672cac914d41 | 91a475d4-8c98-4719-aab5-a6a143e3ec9e,4
+public,v_subject_invite_latest,invite_id,2,uuid,1738069e-14f6-4412-bbc9-789df74bbc8f | 271f1c5a-46eb-418d-98c1-a008bf2b8432 | 45bda23d-14bc-43b4-a7f6-6f1eddf88c63,4
+public,v_subject_invite_latest,status,3,text,pending,4
+public,v_subject_invite_latest,sent_at,4,timestamp with time zone,(prázdná tabulka),4
+public,v_subject_invite_latest,expires_at,5,timestamp with time zone,2026-01-02 19:56:42.608061+00 | 2026-01-11 08:09:12.659163+00 | 2026-01-11 08:14:54.28701+00,4
+public,v_subject_invite_latest,accepted_at,6,timestamp with time zone,(prázdná tabulka),4
+public,v_subject_invite_latest,created_at,7,timestamp with time zone,2025-12-22 18:40:15.678949+00 | 2025-12-26 19:56:42.608061+00 | 2026-01-04 08:14:54.28701+00,4
+public,v_subject_invite_latest,invite_state,8,text,expired,4
+public,v_subject_invite_state,subject_id,1,uuid,45ed734f-2ffc-4d41-96c7-1c6df1e887b9 | 7504d2ed-090d-4e1a-a9c2-672cac914d41 | 91a475d4-8c98-4719-aab5-a6a143e3ec9e,4
+public,v_subject_invite_state,invite_id,2,uuid,1738069e-14f6-4412-bbc9-789df74bbc8f | 271f1c5a-46eb-418d-98c1-a008bf2b8432 | 45bda23d-14bc-43b4-a7f6-6f1eddf88c63,4
+public,v_subject_invite_state,status,3,text,pending,4
+public,v_subject_invite_state,sent_at,4,timestamp with time zone,(prázdná tabulka),4
+public,v_subject_invite_state,expires_at,5,timestamp with time zone,2026-01-02 19:56:42.608061+00 | 2026-01-11 08:09:12.659163+00 | 2026-01-11 08:14:54.28701+00,4
+public,v_subject_invite_state,accepted_at,6,timestamp with time zone,(prázdná tabulka),4
+public,v_subject_invite_state,invite_state,7,text,expired,4
+public,v_subject_public,id,1,uuid,04d800a2-ed25-43d7-8b9e-1e37960eb7ac | 11cba08e-81a4-4aba-8fdf-d1779a9c71c5 | 138080be-8622-4204-8a36-fdc88021d5f0,28
+public,v_subject_public,auth_user_id,2,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,28
+public,v_subject_public,display_name,3,text,Eva Horáková | FISH-COM | Spolek přátel architektury,28
+public,v_unit_equipment_list,id,1,uuid,00222b75-0ae2-4b18-a801-2d990e8fcae8,1
+public,v_unit_equipment_list,unit_id,2,uuid,0188018f-ed0c-4f61-94bd-25d5af963a6d,1
+public,v_unit_equipment_list,equipment_id,3,uuid,13e45eae-2b9a-4bca-8164-ceda65a0d798,1
+public,v_unit_equipment_list,quantity,4,integer,1,1
+public,v_unit_equipment_list,state,5,text,good,1
+public,v_unit_equipment_list,installed_at,6,date,(prázdná tabulka),1
+public,v_unit_equipment_list,note,7,text,(prázdná tabulka),1
+public,v_unit_equipment_list,created_at,8,timestamp with time zone,2026-02-04 07:53:25.397151+00,1
+public,v_unit_equipment_list,updated_at,9,timestamp with time zone,2026-02-04 07:53:25.397151+00,1
+public,v_unit_equipment_list,is_archived,10,boolean,false,1
+public,v_unit_equipment_list,name,11,text,Anténa DVB-T,1
+public,v_unit_equipment_list,type,12,text,(prázdná tabulka),1
+public,v_unit_equipment_list,description,13,text,(prázdná tabulka),1
+public,v_unit_equipment_list,purchase_price,14,numeric,(prázdná tabulka),1
+public,v_unit_equipment_list,lifespan_months,15,integer,(prázdná tabulka),1
+public,v_unit_equipment_list,last_revision,16,date,(prázdná tabulka),1
+public,v_unit_equipment_list,photo_attachment_id,17,uuid,(prázdná tabulka),1
+public,v_unit_equipment_list,equipment_type_id,18,uuid,(prázdná tabulka),1
+public,v_unit_equipment_list,room_type_id,19,uuid,(prázdná tabulka),1
+public,v_unit_equipment_list,catalog_equipment_name,20,text,Anténa DVB-T,1
+public,v_unit_equipment_list,catalog_equipment_type_id,21,uuid,fc70327c-16ef-4955-bb6d-f728898d1a1a,1
+public,v_unit_equipment_list,catalog_purchase_price,22,numeric,(prázdná tabulka),1
+public,v_unit_equipment_list,catalog_purchase_date,23,date,(prázdná tabulka),1
+public,v_unit_equipment_list,equipment_type_name,24,text,Technika,1
+public,v_unit_equipment_list,equipment_type_icon,25,text,laptop,1
+public,v_unit_equipment_list,room_type_name,26,text,(prázdná tabulka),1
+public,v_unit_equipment_list,room_type_icon,27,text,(prázdná tabulka),1
+public,v_unit_equipment_list,total_price,28,numeric,(prázdná tabulka),1
+public,v_units_list,id,1,uuid,04c2b230-f7f7-4b14-bbd5-4cc99902ce49 | 05545ec3-279a-41a0-a603-7d06d606713a | 5ca848c7-8aed-412a-9a2d-e04e0743fac7,9
+public,v_units_list,property_id,2,uuid,2b99779e-8924-4d55-bf5f-10624e4daea2 | 40823a5c-4cb3-42e0-b58e-2a6222edeebf | 55664ae9-72ae-4e76-b5c8-2a1e4c2c1a6b,9
+public,v_units_list,display_name,3,text,"Byt 2+1, 3. patro | Byt 3+kk, 5. patro | Garáž G12",9
+public,v_units_list,internal_code,4,text,HP-P01 | KOM-K1A | KOM-K2B,9
+public,v_units_list,street,5,text,Korunní | Milady Horákové | Na Pankráci,9
+public,v_units_list,house_number,6,text,123 | 15 | 25,9
+public,v_units_list,city,7,text,Praha,9
+public,v_units_list,zip,8,text,12000 | 14000 | 15000,9
+public,v_units_list,country,9,text,CZ,9
+public,v_units_list,region,10,text,PHA,9
+public,v_units_list,floor,11,integer,-1 | 1 | 2,9
+public,v_units_list,door_number,12,text,1A | 2B | 301,9
+public,v_units_list,area,13,numeric,15.00 | 18.00 | 8.00,9
+public,v_units_list,rooms,14,numeric,1.0 | 2.0 | 3.0,9
+public,v_units_list,status,15,text,available | occupied | reserved,9
+public,v_units_list,note,16,text,"Byt s balkonem, orientace jih | Kancelář pro 4 osoby, klimatizace | Nový byt, velký balkon, výhled na park",9
+public,v_units_list,origin_module,17,text,040-nemovitost,9
+public,v_units_list,created_at,18,timestamp with time zone,2026-01-18 09:39:15.213681+00,9
+public,v_units_list,updated_at,19,timestamp with time zone,2026-01-25 11:36:55.278482+00 | 2026-01-25 20:13:56.855925+00,9
+public,v_units_list,is_archived,20,boolean,false,9
+public,v_units_list,unit_type_id,21,uuid,003fdd9e-c73a-4387-bf97-f451efa6fe3e | 2709aca0-373c-4916-9619-d27e0e2e2942 | a0af90c8-07a4-4406-b654-35377c87fa31,9
+public,v_units_list,property_name,22,text,Bytový dům Vinohrady | Kanceláře Pankrác | Obchodní prostory Anděl,9
+public,v_units_list,landlord_id,23,uuid,5455149a-1f70-48a1-9464-66b81442bed3 | f168a6f4-daea-45c5-980e-7b84e49ba5e3,9
+public,v_units_list,property_type_id,24,uuid,19fce34e-802d-4697-9ff7-1b747b3fde8d | 69642a59-abf4-4c3d-aea3-cb62ddf18912 | ccf37a92-6807-4701-8132-9891e7e4671a,9
+public,v_units_list,property_build_year,25,integer,1936 | 1998 | 2005,9
+public,v_units_list,property_reconstruction_year,26,integer,2015 | 2018 | 2019,9
+public,v_units_list,area_ratio_percent,27,numeric,0.44 | 0.75 | 0.83,9
+public,v_units_list,user_count,28,integer,0,9
+public,v_units_list,unit_type_name,29,text,Byt | Garáž - Parking | Jiná jednotka,9
+public,v_units_list,unit_type_icon,30,text,archive | briefcase | car,9
+public,v_user_permissions,subject_id,1,uuid,7504d2ed-090d-4e1a-a9c2-672cac914d41 | 91a475d4-8c98-4719-aab5-a6a143e3ec9e | c5cf15b5-383c-4972-88c1-048b8ea198b6,5
+public,v_user_permissions,permission_code,2,text,admin_full | manage_full | read_limited,5
+public,v_users_detail,id,1,uuid,04d800a2-ed25-43d7-8b9e-1e37960eb7ac | 11cba08e-81a4-4aba-8fdf-d1779a9c71c5 | 138080be-8622-4204-8a36-fdc88021d5f0,28
+public,v_users_detail,subject_type,2,text,osoba | spolek | zastupce,28
+public,v_users_detail,auth_user_id,3,uuid,fd2bcfac-6ca3-40b6-a472-de9677499ea6,28
+public,v_users_detail,title_before,4,text,Ing. | JUDr. | Mgr.,28
+public,v_users_detail,first_name,5,text,Marie | Patrik | Tomáš,28
+public,v_users_detail,last_name,6,text,Čechlovský | Dvořák | Procházková,28
+public,v_users_detail,company_name,7,text,"Český úřad zeměměřický a katastrální | Český zahrádkářský svaz, z.s. | Krajský úřad Ústeckého kraje",28
+public,v_users_detail,display_name,8,text,Eva Horáková | FISH-COM | Spolek přátel architektury,28
+public,v_users_detail,ic,9,text,22334455 | 33445566 | 44556677,28
+public,v_users_detail,dic,10,text,CZ12345678 | CZ22334455 | CZ34567890,28
+public,v_users_detail,ic_valid,11,boolean,false | true,28
+public,v_users_detail,dic_valid,12,boolean,false | true,28
+public,v_users_detail,birth_date,13,date,1985-05-15 | 1988-11-05 | 1995-03-10,28
+public,v_users_detail,id_doc_type,14,text,OP | PAS,28
+public,v_users_detail,id_doc_number,15,text,AB123456 | CD987654 | EF111222,28
+public,v_users_detail,country,16,text,CZ,28
+public,v_users_detail,city,17,text,Ostrava | Plzeň | Praha,28
+public,v_users_detail,street,18,text,Mírové náměstí | Nová | Velká Hradební,28
+public,v_users_detail,house_number,19,text,12 | 123 | 67,28
+public,v_users_detail,orientation_number,20,text,(prázdná tabulka),28
+public,v_users_detail,postal_code,21,text,(prázdná tabulka),28
+public,v_users_detail,address_source,22,text,(prázdná tabulka),28
+public,v_users_detail,phone,23,text,+420 606 222 000 | +420 606 666 777 | +420 606 888 999,28
+public,v_users_detail,email,24,text,info@klubtouristu-najemnik.cz | info@sokol-najemnik.cz | marie.svobodova.osvc@test.cz,28
+public,v_users_detail,bank_account_id,25,uuid,(prázdná tabulka),28
+public,v_users_detail,delegate_id,26,uuid,(prázdná tabulka),28
+public,v_users_detail,login,27,text,patrik.cechlovsky@centrum.cz,28
+public,v_users_detail,password_hash,28,text,(prázdná tabulka),28
+public,v_users_detail,unit_label,29,text,(prázdná tabulka),28
+public,v_users_detail,ares_json,30,jsonb,(prázdná tabulka),28
+public,v_users_detail,audit,31,jsonb,(prázdná tabulka),28
+public,v_users_detail,origin_module,32,text,010 | 030 | 050,28
+public,v_users_detail,origin_entity,33,text,user,28
+public,v_users_detail,created_at,34,timestamp with time zone,2025-12-15 20:51:06.712132+00 | 2025-12-22 18:40:15.435353+00 | 2026-01-16 16:16:51.516585+00,28
+public,v_users_detail,updated_at,35,timestamp with time zone,2026-01-19 08:01:30.492351+00,28
+public,v_users_detail,created_by,36,uuid,(prázdná tabulka),28
+public,v_users_detail,is_archived,37,boolean,false,28
+public,v_users_detail,archived_at,38,timestamp with time zone,(prázdná tabulka),28
+public,v_users_detail,archived_by,39,uuid,(prázdná tabulka),28
+public,v_users_detail,role_code,40,text,admin | manager | pronajimatel,28
+public,v_users_invite_gate,id,1,uuid,04d800a2-ed25-43d7-8b9e-1e37960eb7ac | 11cba08e-81a4-4aba-8fdf-d1779a9c71c5 | 138080be-8622-4204-8a36-fdc88021d5f0,28
+public,v_users_invite_gate,display_name,2,text,Eva Horáková | FISH-COM | Spolek přátel architektury,28
+public,v_users_invite_gate,email,3,text,info@klubtouristu-najemnik.cz | info@sokol-najemnik.cz | marie.svobodova.osvc@test.cz,28
+public,v_users_invite_gate,phone,4,text,+420 606 222 000 | +420 606 666 777 | +420 606 888 999,28
+public,v_users_invite_gate,subject_type,5,text,osoba | spolek | zastupce,28
+public,v_users_invite_gate,is_archived,6,boolean,false,28
+public,v_users_invite_gate,created_at,7,timestamp with time zone,2025-12-15 20:51:06.712132+00 | 2025-12-22 18:40:15.435353+00 | 2026-01-16 16:16:51.516585+00,28
+public,v_users_invite_gate,title_before,8,text,Ing. | JUDr. | Mgr.,28
+public,v_users_invite_gate,first_name,9,text,Marie | Patrik | Tomáš,28
+public,v_users_invite_gate,last_name,10,text,Čechlovský | Dvořák | Procházková,28
+public,v_users_invite_gate,first_login_at,11,timestamp with time zone,2025-12-22 22:35:52.977958+00,28
+public,v_users_invite_gate,last_login_at,12,timestamp with time zone,(prázdná tabulka),28
+public,v_users_invite_gate,is_user,13,boolean,false | true,28
+public,v_users_invite_gate,is_landlord,14,boolean,false | true,28
+public,v_users_invite_gate,is_tenant,15,boolean,false | true,28
+public,v_users_invite_gate,is_delegate,16,boolean,false,28
+public,v_users_invite_gate,role_code,17,text,admin | manager | pronajimatel,28
+public,v_users_invite_gate,last_invite_sent_at,18,timestamp with time zone,(prázdná tabulka),28
+public,v_users_invite_gate,last_invite_expires_at,19,timestamp with time zone,2025-12-29 18:40:15.678949+00 | 2026-01-02 19:56:42.608061+00 | 2026-01-11 08:09:12.659163+00,28
+public,v_users_invite_gate,last_invite_status,20,text,pending,28
+public,v_users_invite_gate,has_pending_invite,21,boolean,false,28
+public,v_users_list,id,1,uuid,04d800a2-ed25-43d7-8b9e-1e37960eb7ac | 11cba08e-81a4-4aba-8fdf-d1779a9c71c5 | 138080be-8622-4204-8a36-fdc88021d5f0,28
+public,v_users_list,display_name,2,text,Eva Horáková | FISH-COM | Spolek přátel architektury,28
+public,v_users_list,email,3,text,info@klubtouristu-najemnik.cz | info@sokol-najemnik.cz | marie.svobodova.osvc@test.cz,28
+public,v_users_list,phone,4,text,+420 606 222 000 | +420 606 666 777 | +420 606 888 999,28
+public,v_users_list,subject_type,5,text,osoba | spolek | zastupce,28
+public,v_users_list,is_archived,6,boolean,false,28
+public,v_users_list,created_at,7,timestamp with time zone,2025-12-15 20:51:06.712132+00 | 2025-12-22 18:40:15.435353+00 | 2026-01-16 16:16:51.516585+00,28
+public,v_users_list,title_before,8,text,Ing. | JUDr. | Mgr.,28
+public,v_users_list,first_name,9,text,Marie | Patrik | Tomáš,28
+public,v_users_list,last_name,10,text,Čechlovský | Dvořák | Procházková,28
+public,v_users_list,first_login_at,11,timestamp with time zone,2025-12-22 22:35:52.977958+00,28
+public,v_users_list,last_login_at,12,timestamp with time zone,(prázdná tabulka),28
+public,v_users_list,is_user,13,boolean,false | true,28
+public,v_users_list,is_landlord,14,boolean,false | true,28
+public,v_users_list,is_tenant,15,boolean,false | true,28
+public,v_users_list,is_delegate,16,boolean,false,28
+public,v_users_list,role_code,17,text,admin | manager | pronajimatel,28
+public,v_users_list,last_invite_sent_at,18,timestamp with time zone,(prázdná tabulka),28
+public,v_users_list,last_invite_expires_at,19,timestamp with time zone,2025-12-29 18:40:15.678949+00 | 2026-01-02 19:56:42.608061+00 | 2026-01-11 08:09:12.659163+00,28
+public,v_users_list,last_invite_status,20,text,pending,28
