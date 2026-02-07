@@ -209,7 +209,7 @@ export default {
         {
           id: 'units-type-zahrada',
           label: 'Zahrada',
-          icon: 'tree',
+          icon: 'leaf',
           component: createUnitTypeTile('zahrada'),
           unitTypeCode: 'zahrada',
           dynamicLabel: true,
@@ -238,7 +238,7 @@ export default {
     {
       id: 'equipment-catalog',
       label: 'Katalog vybavení',
-      icon: 'toolbox',
+      icon: 'wrench',
       component: EquipmentCatalogTile,
       order: 30,
       children: [

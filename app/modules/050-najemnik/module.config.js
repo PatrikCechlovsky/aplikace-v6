@@ -33,7 +33,7 @@ export default {
   id: '050-najemnik',
   order: 50,
   label: 'Nájemníci',
-  icon: 'groups',
+  icon: 'users',
   enabled: true,
 
   tiles: [
