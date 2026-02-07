@@ -747,13 +747,13 @@ export default function UnitRelationsHub({ unitId, unitLabel }: Props) {
 
   const tabs: DetailTabItem[] = useMemo(() => {
     return [
-      { id: 'unit', label: `Jednotka (${unitRows.length})` },
-      { id: 'property', label: `Nemovitost (${propertyRows.length})` },
-      { id: 'tenant', label: `Nájemník (${tenantsRows.length})` },
       { id: 'landlord', label: `Pronajímatel (${landlordsRows.length})` },
+      { id: 'property', label: `Nemovitost (${propertyRows.length})` },
+      { id: 'unit', label: `Jednotka (${unitRows.length})` },
+      { id: 'tenant', label: `Nájemník (${tenantsRows.length})` },
       { id: 'contracts', label: 'Smlouvy (0)' },
-      { id: 'energy', label: 'Energie (0)' },
       { id: 'payments', label: 'Platby (0)' },
+      { id: 'energy', label: 'Energie (0)' },
     ]
   }, [unitRows.length, propertyRows.length, tenantsRows.length, landlordsRows.length])
 

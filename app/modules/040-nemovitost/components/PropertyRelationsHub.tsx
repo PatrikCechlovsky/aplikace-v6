@@ -707,13 +707,13 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
 
   const tabs: DetailTabItem[] = useMemo(() => {
     return [
+      { id: 'landlord', label: `Pronajímatel (${landlordsRows.length})` },
       { id: 'property', label: `Nemovitost (${propertyRows.length})` },
       { id: 'units', label: `Jednotky (${unitsRows.length})` },
       { id: 'tenants', label: `Nájemníci (${tenantsRows.length})` },
-      { id: 'landlord', label: `Pronajímatel (${landlordsRows.length})` },
       { id: 'contracts', label: 'Smlouvy (0)' },
-      { id: 'energy', label: 'Energie (0)' },
       { id: 'payments', label: 'Platby (0)' },
+      { id: 'energy', label: 'Energie (0)' },
     ]
   }, [propertyRows.length, unitsRows.length, tenantsRows.length, landlordsRows.length])
 

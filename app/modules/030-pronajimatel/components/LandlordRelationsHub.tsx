@@ -754,8 +754,8 @@ export default function LandlordRelationsHub({ landlordId, landlordLabel }: Prop
       { id: 'units', label: `Jednotky (${unitRows.length})` },
       { id: 'tenants', label: `Nájemníci (${tenantRows.length})` },
       { id: 'contracts', label: 'Smlouvy (0)' },
-      { id: 'energy', label: 'Energie (0)' },
       { id: 'payments', label: 'Platby (0)' },
+      { id: 'energy', label: 'Energie (0)' },
     ]
   }, [landlordRows.length, propertyRows.length, unitRows.length, tenantRows.length])
 
