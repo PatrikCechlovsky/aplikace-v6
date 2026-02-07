@@ -1162,6 +1162,35 @@ export default function TenantsTile({
     )
   }
 
+  // ✅ ATTACHMENTS MANAGER VIEW
+  if ((viewMode as LocalViewMode) === 'attachments-manager' && attachmentsManagerSubjectId) {
+    const tenant = tenants.find((l) => l.id === attachmentsManagerSubjectId) ?? detailTenant
+    const label = tenant?.displayName || 'Nájemník'
+
+    return (
+      <AttachmentsManagerFrame
+        entityType="tenant"
+        entityId={attachmentsManagerSubjectId}
+        entityLabel={label}
+        canManage={true}
+        onRegisterManagerApi={(api) => {
+          attachmentsManagerApiRef.current = api
+        }}
+        onManagerStateChange={(state) => {
+          setAttachmentsManagerUi(state)
+        }}
+      />
+    )
+  }
+
+  // RELATIONS VIEW
+  if ((viewMode as LocalViewMode) === 'relations' && relationsTenantId) {
+    const tenant = tenants.find((l) => l.id === relationsTenantId) ?? detailTenant
+    const label = tenant?.displayName || 'Nájemník'
+
+    return <TenantRelationsHub tenantId={relationsTenantId} tenantLabel={label} />
+  }
+
   // CREATE / EDIT / READ mode - zobrazit TenantDetailFrame
   if (viewMode === 'create' || viewMode === 'edit' || viewMode === 'read') {
     // Pro create režim: pokud není vybrán typ subjektu, zobrazit výběr typu
@@ -1275,35 +1304,6 @@ export default function TenantsTile({
           </div>
         </div>
       )
-    }
-
-    // ✅ ATTACHMENTS MANAGER VIEW
-    if ((viewMode as LocalViewMode) === 'attachments-manager' && attachmentsManagerSubjectId) {
-      const tenant = tenants.find((l) => l.id === attachmentsManagerSubjectId) ?? detailTenant
-      const label = tenant?.displayName || 'Nájemník'
-      
-      return (
-        <AttachmentsManagerFrame
-          entityType="tenant"
-          entityId={attachmentsManagerSubjectId}
-          entityLabel={label}
-          canManage={true}
-          onRegisterManagerApi={(api) => {
-            attachmentsManagerApiRef.current = api
-          }}
-          onManagerStateChange={(state) => {
-            setAttachmentsManagerUi(state)
-          }}
-        />
-      )
-    }
-
-    // RELATIONS VIEW
-    if ((viewMode as LocalViewMode) === 'relations' && relationsTenantId) {
-      const tenant = tenants.find((l) => l.id === relationsTenantId) ?? detailTenant
-      const label = tenant?.displayName || 'Nájemník'
-
-      return <TenantRelationsHub tenantId={relationsTenantId} tenantLabel={label} />
     }
 
     // Zobrazit TenantDetailFrame když je vybrán typ (create) nebo pro edit/read
