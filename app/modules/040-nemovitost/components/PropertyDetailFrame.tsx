@@ -404,7 +404,7 @@ export default function PropertyDetailFrame({
                     <option value="">— vyberte typ nemovitosti —</option>
                     {propertyTypes.map((type) => (
                       <option key={type.id} value={type.id}>
-                        {type.icon ? `${type.icon} ` : ''}{type.name}
+                        {type.name}
                       </option>
                     ))}
                   </select>

@@ -420,7 +420,7 @@ export default function UnitDetailFrame({
                     <option value="">— vyberte typ jednotky —</option>
                     {unitTypes.map((type) => (
                       <option key={type.id} value={type.id}>
-                        {type.icon ? `${type.icon} ` : ''}{type.name}
+                        {type.name}
                       </option>
                     ))}
                   </select>
