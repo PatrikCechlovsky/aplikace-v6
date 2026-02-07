@@ -14,7 +14,7 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type Vi
 import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/landlordsColumns'
 import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/propertiesColumns'
 import { UNITS_BASE_COLUMNS } from '@/app/modules/040-nemovitost/unitsColumns'
-import { TENANTS_BASE_COLUMNS } from '@/app/modules/050-najemnik/tiles/TenantsTile'
+import { TENANTS_BASE_COLUMNS } from '@/app/modules/050-najemnik/tenantsColumns'
 import { getLandlordRelations, type LandlordRelationProperty, type LandlordRelationTenant, type LandlordRelationUnit } from '@/app/lib/services/landlordRelations'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
 import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/properties'

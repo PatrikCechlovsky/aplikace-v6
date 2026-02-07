@@ -19,7 +19,7 @@ import { getTenantDetail, type TenantDetailRow } from '@/app/lib/services/tenant
 import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/landlordsColumns'
 import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/propertiesColumns'
 import { UNITS_BASE_COLUMNS } from '@/app/modules/040-nemovitost/unitsColumns'
-import { TENANTS_BASE_COLUMNS } from '@/app/modules/050-najemnik/tiles/TenantsTile'
+import { TENANTS_BASE_COLUMNS } from '@/app/modules/050-najemnik/tenantsColumns'
 
 import LandlordDetailFrame, { type UiLandlord } from '@/app/modules/030-pronajimatel/forms/LandlordDetailFrame'
 import PropertyDetailFrame, { type UiProperty } from '@/app/modules/040-nemovitost/components/PropertyDetailFrame'

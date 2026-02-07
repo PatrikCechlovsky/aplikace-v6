@@ -10,9 +10,10 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import TenantDetailFrame, { type UiTenant as DetailUiTenant } from '../forms/TenantDetailFrame'
+import TenantRelationsHub from '../components/TenantRelationsHub'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { listTenants, getTenantDetail, type TenantsListRow } from '@/app/lib/services/tenants'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
@@ -29,6 +30,7 @@ import {
   getIsDirty,
   shouldCloseAttachmentsPanel 
 } from '@/app/lib/attachments/attachmentsManagerUtils'
+import { TENANTS_BASE_COLUMNS } from '../tenantsColumns'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/PaletteCard.css'
@@ -43,23 +45,9 @@ type TenantsTileProps = {
   onNavigate?: (tileId: string) => void // Callback pro navigaci na jiný tile
 }
 
-type LocalViewMode = ViewMode | 'list' | 'attachments-manager'
+type LocalViewMode = ViewMode | 'list' | 'attachments-manager' | 'relations'
 
 const VIEW_KEY = '030.tenants.list'
-
-// Export pro znovupoužití v EntityHub a ContractWizard
-export const TENANTS_BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'subjectTypeLabel', label: 'Typ nájemníka', width: 160, sortable: true },
-  { key: 'displayName', label: 'Zobrazované jméno', width: 220, sortable: true },
-  { key: 'fullAddress', label: 'Adresa', width: 300, sortable: true },
-  { key: 'email', label: 'E-mail', width: 260, sortable: true },
-  { key: 'phone', label: 'Telefon', width: 180, sortable: true },
-  { key: 'companyName', label: 'Název společnosti', width: 220, sortable: true },
-  { key: 'ic', label: 'IČ', width: 120, sortable: true },
-  { key: 'firstName', label: 'Jméno', width: 160, sortable: true },
-  { key: 'lastName', label: 'Příjmení', width: 180, sortable: true },
-  { key: 'isArchived', label: 'Archivován', width: 120, align: 'center', sortable: true },
-]
 
 const BASE_COLUMNS = TENANTS_BASE_COLUMNS
 
@@ -253,6 +241,7 @@ export default function TenantsTile({
 
   const [viewMode, setViewMode] = useState<LocalViewMode>('list')
   const [detailTenant, setDetailTenant] = useState<DetailUiTenant | null>(null)
+  const [relationsTenantId, setRelationsTenantId] = useState<string | null>(null)
 
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
 
@@ -539,6 +528,13 @@ export default function TenantsTile({
       return
     }
 
+    if (id && vm === 'relations') {
+      setSelectedId(id)
+      setRelationsTenantId(id)
+      setViewMode('relations')
+      return
+    }
+
     setSelectedId(id)
     setViewMode(id ? vm : 'list')
 
@@ -723,19 +719,21 @@ export default function TenantsTile({
       // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
       actions.push('add')
       if (selectedId) {
-        actions.push('view', 'edit', 'attachments') // Všechny akce najednou když je vybrán řádek
+        actions.push('view', 'edit', 'relations', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
       actions.push('columnSettings', 'close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
-        actions.push('save', 'attachments', 'close') // V edit mode: "Uložit", "Přílohy", "Zavřít"
+        actions.push('save', 'relations', 'attachments', 'close') // V edit mode: "Uložit", "Vazby", "Přílohy", "Zavřít"
       } else {
         actions.push('save', 'close') // V create mode: "Uložit" a "Zavřít" (bez příloh)
       }
     } else if (viewMode === 'read') {
-      actions.push('edit', 'attachments', 'close')
+      actions.push('edit', 'relations', 'attachments', 'close')
       // TODO: Přidat delete a archive po implementaci
       // actions.push('delete', 'archive')
+    } else if (viewMode === 'relations') {
+      actions.push('close')
     }
 
     onRegisterCommonActions?.(actions)
@@ -744,11 +742,12 @@ export default function TenantsTile({
     const mappedViewMode = mapAttachmentsViewMode(viewMode as any, attachmentsManagerUi.mode ?? 'list')
     const mappedHasSelection = getHasSelection(viewMode as any, selectedId, attachmentsManagerUi)
     const mappedIsDirty = getIsDirty(viewMode as any, isDirty, attachmentsManagerUi)
+    const relationsView = viewMode === 'relations'
 
     onRegisterCommonActionsState?.({
-      viewMode: mappedViewMode,
-      hasSelection: mappedHasSelection,
-      isDirty: mappedIsDirty,
+      viewMode: relationsView ? 'read' : mappedViewMode,
+      hasSelection: relationsView ? true : mappedHasSelection,
+      isDirty: relationsView ? false : mappedIsDirty,
     })
   }, [viewMode, selectedId, isDirty, attachmentsManagerUi.mode, attachmentsManagerUi.hasSelection, attachmentsManagerUi.isDirty, onRegisterCommonActions, onRegisterCommonActionsState])
 
@@ -756,6 +755,29 @@ export default function TenantsTile({
     if (!onRegisterCommonActionHandler) return
 
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
+      // RELATIONS MODE
+      if (viewMode === 'relations') {
+        if (id === 'close') {
+          const backId = relationsTenantId ?? detailTenant?.id ?? selectedId
+          if (!backId) {
+            closeToList()
+            return
+          }
+
+          const listBackTenant = tenants.find((l) => l.id === backId)
+          if (listBackTenant) {
+            openDetail(listBackTenant, 'read', 'detail')
+          } else if (detailTenant?.id === backId) {
+            setViewMode('read')
+            setSelectedId(backId)
+            setUrl({ t: 'tenants-list', id: backId, vm: 'read' }, 'push')
+          } else {
+            closeToList()
+          }
+          return
+        }
+      }
+
       // ATTACHMENTS MANAGER ACTIONS
       if (viewMode === 'attachments-manager') {
         const api = attachmentsManagerApiRef.current
@@ -822,6 +844,21 @@ export default function TenantsTile({
           }
           return
         }
+        return
+      }
+
+      // RELATIONS open
+      if (id === 'relations') {
+        if (viewMode === 'edit' && isDirty) {
+          toast.showWarning('Máš neuložené změny. Nejdřív ulož nebo zavři změny a pak otevři vazby.')
+          return
+        }
+        const targetId = selectedId ?? detailTenant?.id ?? null
+        if (!targetId) return
+        setRelationsTenantId(targetId)
+        setSelectedId(targetId)
+        setViewMode('relations')
+        setUrl({ t: 'tenants-list', id: targetId, vm: 'relations' }, 'push')
         return
       }
 
@@ -1259,6 +1296,14 @@ export default function TenantsTile({
           }}
         />
       )
+    }
+
+    // RELATIONS VIEW
+    if ((viewMode as LocalViewMode) === 'relations' && relationsTenantId) {
+      const tenant = tenants.find((l) => l.id === relationsTenantId) ?? detailTenant
+      const label = tenant?.displayName || 'Nájemník'
+
+      return <TenantRelationsHub tenantId={relationsTenantId} tenantLabel={label} />
     }
 
     // Zobrazit TenantDetailFrame když je vybrán typ (create) nebo pro edit/read
