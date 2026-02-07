@@ -9,7 +9,7 @@ Tento dokument obsahuje **úplný přehled všech dokumentů** v projektu.
 - **Hlavní dokumenty:** 10 (01-10.md)
 - **Core dokumenty:** 8 (základní koncepty)
 - **Moduly:** 6 složek (010, 020, 030, 030-alt, 050, 03-ui)
-- **Changelogy:** 2 (implementace)
+- **Changelogy:** 5 (implementace)
 - **Guides:** 3 (návody)
 - **Data:** 3 soubory (CSV/Excel)
 - **Celkem .md souborů:** ~70
@@ -121,6 +121,9 @@ Historie implementací a změn:
 | [changelogs/README.md](changelogs/README.md) | - | 📋 Pravidla pro changelogy |
 | [changelogs/CHANGELOG-ADDRESS-LOGIN-PERSONAL-FIELDS.md](changelogs/CHANGELOG-ADDRESS-LOGIN-PERSONAL-FIELDS.md) | 10.1.2026 | 🏠 Adresní autocomplete + osobní pole |
 | [changelogs/CHANGELOG-TENANT-USERS-DEBOUNCE.md](changelogs/CHANGELOG-TENANT-USERS-DEBOUNCE.md) | 18.1.2026 | 👥 Uživatelé nájemníka + debounce |
+| [changelogs/CHANGELOG-NAVIGATION-PATTERN-LIST-TO-ADD.md](changelogs/CHANGELOG-NAVIGATION-PATTERN-LIST-TO-ADD.md) | 20.1.2026 | 🧭 Navigation pattern List→Add |
+| [changelogs/CHANGELOG-EQUIPMENT-CATALOG-CRUD-TILES.md](changelogs/CHANGELOG-EQUIPMENT-CATALOG-CRUD-TILES.md) | 1.2.2026 | 🧰 Katalog vybavení (CRUD) |
+| [changelogs/CHANGELOG-RELATIONS-LIST-BADGES.md](changelogs/CHANGELOG-RELATIONS-LIST-BADGES.md) | 25.1.2026 | 🎨 Vazby + badge + statusy |
 
 ---
 
