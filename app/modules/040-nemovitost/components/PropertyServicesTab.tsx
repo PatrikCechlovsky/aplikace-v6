@@ -218,18 +218,24 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
   }, [selectedId, selectService])
 
   const openDetailEdit = useCallback(() => {
-    if (!selectedId || readOnly) return
+    if (!selectedId || readOnly) {
+      if (readOnly) toast.showWarning('Nemovitost musí být v režimu úprav, abyste mohli službu upravit.')
+      return
+    }
     selectService(selectedId)
     setDetailMode('edit')
     setViewMode('detail')
-  }, [selectedId, selectService, readOnly])
+  }, [selectedId, selectService, readOnly, toast])
 
   const openDetailCreate = useCallback(() => {
-    if (readOnly) return
+    if (readOnly) {
+      toast.showWarning('Nemovitost musí být v režimu úprav, abyste mohli přidat službu.')
+      return
+    }
     handleAdd()
     setDetailMode('create')
     setViewMode('detail')
-  }, [handleAdd, readOnly])
+  }, [handleAdd, readOnly, toast])
 
   const closeDetail = useCallback(() => {
     setViewMode('list')
