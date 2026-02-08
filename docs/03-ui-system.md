@@ -1717,7 +1717,7 @@ AppShell předává všem tiles callback `onNavigate`:
 
 **Chování:**
 - Callback volá standardní `handleModuleSelect`
-- URL se aktualizuje: `/?m=module-id&t=target-tile-id`
+- URL se aktualizuje: `/module-id?t=target-tile-id`
 - Sidebar se automaticky synchronizuje (zavře children)
 - Force remount mechanismus funguje korektně
 

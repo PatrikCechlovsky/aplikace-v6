@@ -167,7 +167,7 @@ AppShell onNavigate callback
   ↓
 handleModuleSelect({ moduleId: '050-najemnik', tileId: 'create-tenant' })
   ↓
-URL update: /?m=050-najemnik&t=create-tenant
+URL update: /050-najemnik?t=create-tenant
   ↓
 Sidebar sync (zavření children)
   ↓
@@ -287,7 +287,7 @@ tiles: [
 7. ✅ CommonActions zůstávají viditelné
 
 ### Test 2: URL state
-1. Po navigaci zkontroluj URL: `/?m=030-pronajimatel&t=create-landlord`
+1. Po navigaci zkontroluj URL: `/030-pronajimatel?t=create-landlord`
 2. Refresh stránky
 3. ✅ Otevře se přímo create tile (bez otevřených filtrů)
 
