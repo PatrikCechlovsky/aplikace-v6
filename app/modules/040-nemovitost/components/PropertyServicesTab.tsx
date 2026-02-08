@@ -562,31 +562,33 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
               <label className="detail-form__label" style={{ marginBottom: 8 }}>
                 Typ služby
               </label>
-              <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <input
-                  type="radio"
-                  name="service-type"
-                  checked={!isCustomService}
-                  onChange={() => {
-                    setIsCustomService(false)
-                  }}
-                  disabled={isFormReadOnly}
-                />
-                <span>Z katalogu</span>
-              </label>
-              <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 }}>
-                <input
-                  type="radio"
-                  name="service-type"
-                  checked={isCustomService}
-                  onChange={() => {
-                    setIsCustomService(true)
-                    setFormValue((prev) => ({ ...prev, serviceId: '' }))
-                  }}
-                  disabled={isFormReadOnly}
-                />
-                <span>Vlastní služba</span>
-              </label>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <input
+                    type="radio"
+                    name="service-type"
+                    checked={!isCustomService}
+                    onChange={() => {
+                      setIsCustomService(false)
+                    }}
+                    disabled={isFormReadOnly}
+                  />
+                  <span>Z katalogu</span>
+                </label>
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <input
+                    type="radio"
+                    name="service-type"
+                    checked={isCustomService}
+                    onChange={() => {
+                      setIsCustomService(true)
+                      setFormValue((prev) => ({ ...prev, serviceId: '' }))
+                    }}
+                    disabled={isFormReadOnly}
+                  />
+                  <span>Vlastní služba</span>
+                </label>
+              </div>
             </div>
 
             {!isCustomService && (
