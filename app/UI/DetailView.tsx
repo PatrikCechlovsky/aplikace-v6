@@ -17,6 +17,7 @@ export type DetailSectionId =
   | 'accounts'
   | 'delegates'
   | 'units'
+  | 'services'
   | 'attachments'
   | 'system'
 
@@ -75,6 +76,7 @@ export type DetailViewCtx = {
 
   unitsContent?: React.ReactNode
   equipmentContent?: React.ReactNode
+  servicesContent?: React.ReactNode
 
   systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
   systemContent?: React.ReactNode
@@ -446,6 +448,15 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     render: (ctx: any) => ctx?.equipmentContent ?? <div style={{ padding: '2rem' }}>Seznam vybavení (placeholder)</div>,
   },
 }
+
+  services: {
+    id: 'services',
+    label: 'Služby',
+    order: 75,
+    icon: getIcon('maintenance'),
+    visibleWhen: (ctx) => !!(ctx as any)?.servicesContent,
+    render: (ctx: any) => ctx?.servicesContent ?? null,
+  },
 
 export default function DetailView({
   mode,

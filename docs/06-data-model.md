@@ -582,20 +582,26 @@ Pravidelné služby vázané na nemovitost (náklady pronajímatele).
 Pole – návrh:
 - `id` (uuid, PK)
 - `property_id` (FK → properties.id)
-- `service_id` (FK → service_catalog.id)
-- `payer_side` (enum: `landlord`) *(default)*
+- `service_id` (FK → service_catalog.id, NULL = vlastní služba)
+- `name` (text, vlastní název služby)
+- `category_id` (FK → generic_types, category = `service_types`)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `unit_id` (FK → generic_types, category = `service_units`)
+- `vat_rate_id` (FK → generic_types, category = `vat_rates`)
+- `amount` (numeric)
+- `periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `billing_periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `payer_side` (enum: `tenant` | `landlord`) *(default: tenant)*
 - `is_rebillable` (bool)
 - `split_to_units` (bool)
-- `split_basis` (enum: m² | ks | osoby | měřidlo | poměr plochy)
-- `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
-- `billing_periodicity` (enum: měsíčně | ročně | čtvrtletně…)
-- `amount` (numeric)
-- `currency` (text)
-- `meter_id` (FK → meters.id, volitelně)
+- `split_basis` (text, např. m² | osoby | jednotky)
 - `note` (text)
-- `owner_id` (FK → subjects.id)
-- `created_at`, `created_by`, `updated_at`, `updated_by`
+- `created_at`, `updated_at`
 - `is_archived` (bool)
+
+Přílohy:
+- `entity_type = property_service_binding`
+- `entity_id = property_services.id`
 
 ---
 #### 4) `contract_services`
