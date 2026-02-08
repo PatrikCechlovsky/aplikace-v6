@@ -16,6 +16,10 @@ import PaymentTypesTile from './tiles/PaymentTypesTile'
 import RoomTypesTile from './tiles/RoomTypesTile'
 import EquipmentTypesTile from './tiles/EquipmentTypesTile'
 import AppViewSettingsTile from './tiles/AppViewSettingsTile'
+import ServiceTypesTile from './tiles/ServiceTypesTile'
+import ServiceBillingTypesTile from './tiles/ServiceBillingTypesTile'
+import VatRatesTile from './tiles/VatRatesTile'
+import ServiceUnitsTile from './tiles/ServiceUnitsTile'
 
 export default {
   id: '900-nastaveni',
@@ -109,6 +113,38 @@ export default {
       sectionId: 'types-settings',
       component: EquipmentTypesTile,
       order: 56,
+    },
+    {
+      id: 'service-types',
+      label: 'Kategorie služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServiceTypesTile,
+      order: 60,
+    },
+    {
+      id: 'service-billing-types',
+      label: 'Typy účtování služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServiceBillingTypesTile,
+      order: 61,
+    },
+    {
+      id: 'vat-rates',
+      label: 'DPH sazby',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: VatRatesTile,
+      order: 62,
+    },
+    {
+      id: 'service-units',
+      label: 'Jednotky služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServiceUnitsTile,
+      order: 63,
     },
     {
       id: 'payment-types',

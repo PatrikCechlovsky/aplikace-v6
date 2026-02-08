@@ -627,5 +627,5 @@ Startovní seed:
 - **service_types**: energie, voda, správní_poplatky, doplnkove_sluzby, najemne, jine_sluzby
 - **service_billing_types**: pevna_sazba, merena_spotreba, na_pocet_osob, na_m2, procento_z_najmu, pomer_plochy
 - **vat_rates**: 0.00, 0.10, 0.12, 0.15, 0.21
-- **service_units**: Kč/měsíc, Kč/rok, Kč/m³, Kč/kWh, Kč/m², Kč/osoba, Kč/ks
+- **service_units**: Kč, Kč/měsíc, Kč/čtvrtrok, Kč/půlrok, Kč/rok, Kč/m³, Kč/kWh, Kč/m², Kč/osoba, Kč/ks
 

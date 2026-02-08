@@ -17,6 +17,10 @@ export type GenericTypeCategory =
   | 'unit_dispositions'
   | 'room_types'
   | 'equipment_states'
+  | 'service_types'
+  | 'service_billing_types'
+  | 'vat_rates'
+  | 'service_units'
 
 /**
  * Datový typ přesně podle tabulky generic_types
