@@ -25,7 +25,7 @@ SELECT
   bill.id AS billing_type_id,
   unit.id AS unit_id,
   vat.id AS vat_rate_id,
-  v.base_price,
+  v.base_price::numeric,
   v.active,
   v.note
 FROM (
