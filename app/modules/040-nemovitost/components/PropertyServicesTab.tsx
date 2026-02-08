@@ -11,6 +11,7 @@ import { supabase } from '@/app/lib/supabaseClient'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
+import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import { getIcon, type IconKey } from '@/app/UI/icons'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 
@@ -78,8 +79,9 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detailMode, setDetailMode] = useState<DetailMode>('read')
-  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'detail' | 'attachments'>('list')
   const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
+  const [attachmentsReturnView, setAttachmentsReturnView] = useState<'list' | 'detail'>('list')
   const currentIndexRef = useRef(-1)
 
   const [formValue, setFormValue] = useState<ServiceFormValue>(() => buildEmptyFormValue())
@@ -249,15 +251,19 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     setActiveTab('form')
   }, [])
 
-  const openAttachmentsManager = useCallback(() => {
-    if (!selectedId) return
-    setActiveTab('attachments')
-    setViewMode('detail')
-  }, [selectedId])
+  const openAttachmentsManager = useCallback(
+    (returnTo: 'list' | 'detail') => {
+      if (!selectedId) return
+      setAttachmentsReturnView(returnTo)
+      setViewMode('attachments')
+    },
+    [selectedId]
+  )
 
   const closeAttachmentsManager = useCallback(() => {
+    setViewMode(attachmentsReturnView)
     setActiveTab('form')
-  }, [])
+  }, [attachmentsReturnView])
 
   const handlePrevious = useCallback(() => {
     if (currentIndexRef.current > 0) {
@@ -400,7 +406,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
                       <span className="common-actions__label">Upravit</span>
                     </button>
                   )}
-                  <button type="button" className="common-actions__btn" onClick={openAttachmentsManager}>
+                  <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('list')}>
                     <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
                     <span className="common-actions__label">Přílohy</span>
                   </button>
@@ -511,7 +517,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
                 </>
               )}
               {selectedId && (
-                <button type="button" className="common-actions__btn" onClick={openAttachmentsManager}>
+                <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('detail')}>
                   <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
                   <span className="common-actions__label">Přílohy</span>
                 </button>
@@ -561,249 +567,259 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
           </div>
 
           {activeTab === 'form' && (
-          <div className="detail-form__grid detail-form__grid--narrow">
-            <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
-              <label className="detail-form__label" style={{ marginBottom: 8 }}>
-                Typ služby
-              </label>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <input
-                    type="radio"
-                    name="service-type"
-                    checked={!isCustomService}
-                    onChange={() => {
-                      setIsCustomService(false)
-                    }}
-                    disabled={isFormReadOnly}
-                  />
-                  <span>Z katalogu</span>
-                </label>
-                <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <input
-                    type="radio"
-                    name="service-type"
-                    checked={isCustomService}
-                    onChange={() => {
-                      setIsCustomService(true)
-                      setFormValue((prev) => ({ ...prev, serviceId: '' }))
-                    }}
-                    disabled={isFormReadOnly}
-                  />
-                  <span>Vlastní služba</span>
-                </label>
-              </div>
-            </div>
-
-            {!isCustomService && (
+            <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
-                <label className="detail-form__label" style={{ marginBottom: 8 }}>Katalogová služba</label>
+                <label className="detail-form__label" style={{ marginBottom: 8 }}>
+                  Typ služby
+                </label>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      name="service-type"
+                      checked={!isCustomService}
+                      onChange={() => {
+                        setIsCustomService(false)
+                      }}
+                      disabled={isFormReadOnly}
+                    />
+                    <span>Z katalogu</span>
+                  </label>
+                  <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      name="service-type"
+                      checked={isCustomService}
+                      onChange={() => {
+                        setIsCustomService(true)
+                        setFormValue((prev) => ({ ...prev, serviceId: '' }))
+                      }}
+                      disabled={isFormReadOnly}
+                    />
+                    <span>Vlastní služba</span>
+                  </label>
+                </div>
+              </div>
+
+              {!isCustomService && (
+                <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
+                  <label className="detail-form__label" style={{ marginBottom: 8 }}>Katalogová služba</label>
+                  <select
+                    className="detail-form__input"
+                    value={formValue.serviceId}
+                    onChange={(e) => handleCatalogChange(e.target.value)}
+                    disabled={isFormReadOnly || loadingCatalog}
+                  >
+                    <option value="">— vyber službu —</option>
+                    {catalog.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Název služby</label>
+                <input
+                  className="detail-form__input"
+                  value={formValue.name}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, name: e.target.value }))}
+                  readOnly={isFormReadOnly}
+                />
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Kategorie</label>
                 <select
                   className="detail-form__input"
-                  value={formValue.serviceId}
-                  onChange={(e) => handleCatalogChange(e.target.value)}
-                  disabled={isFormReadOnly || loadingCatalog}
+                  value={formValue.categoryId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, categoryId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
                 >
-                  <option value="">— vyber službu —</option>
-                  {catalog.map((c) => (
+                  <option value="">—</option>
+                  {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
                 </select>
               </div>
-            )}
 
-            <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">Název služby</label>
-              <input
-                className="detail-form__input"
-                value={formValue.name}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, name: e.target.value }))}
-                readOnly={isFormReadOnly}
-              />
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">Kategorie</label>
-              <select
-                className="detail-form__input"
-                value={formValue.categoryId ?? ''}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, categoryId: e.target.value || null }))}
-                disabled={isFormReadOnly}
-              >
-                <option value="">—</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">Účtování</label>
-              <select
-                className="detail-form__input"
-                value={formValue.billingTypeId ?? ''}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, billingTypeId: e.target.value || null }))}
-                disabled={isFormReadOnly}
-              >
-                <option value="">—</option>
-                {billingTypes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">Jednotka</label>
-              <select
-                className="detail-form__input"
-                value={formValue.unitId ?? ''}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, unitId: e.target.value || null }))}
-                disabled={isFormReadOnly}
-              >
-                <option value="">—</option>
-                {units.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">DPH</label>
-              <select
-                className="detail-form__input"
-                value={formValue.vatRateId ?? ''}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, vatRateId: e.target.value || null }))}
-                disabled={isFormReadOnly}
-              >
-                <option value="">—</option>
-                {vatRates.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">Částka</label>
-              <input
-                type="number"
-                className="detail-form__input"
-                value={formValue.amount ?? ''}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, amount: e.target.value === '' ? null : Number(e.target.value) }))}
-                readOnly={isFormReadOnly}
-              />
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">Periodicita</label>
-              <select
-                className="detail-form__input"
-                value={formValue.periodicityId ?? ''}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, periodicityId: e.target.value || null }))}
-                disabled={isFormReadOnly}
-              >
-                <option value="">—</option>
-                {periodicities.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">Vyúčtování</label>
-              <select
-                className="detail-form__input"
-                value={formValue.billingPeriodicityId ?? ''}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, billingPeriodicityId: e.target.value || null }))}
-                disabled={isFormReadOnly}
-              >
-                <option value="">—</option>
-                {periodicities.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="detail-form__field">
-              <label className="detail-form__label">Kdo hradí</label>
-              <select
-                className="detail-form__input"
-                value={formValue.payerSide}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, payerSide: e.target.value as 'tenant' | 'landlord' }))}
-                disabled={isFormReadOnly}
-              >
-                <option value="tenant">Nájemník</option>
-                <option value="landlord">Pronajímatel</option>
-              </select>
-            </div>
-
-            <div className="detail-form__field">
-              <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 22 }}>
-                <input
-                  type="checkbox"
-                  checked={formValue.isRebillable}
-                  onChange={(e) => setFormValue((prev) => ({ ...prev, isRebillable: e.target.checked }))}
-                  disabled={isFormReadOnly}
-                />
-                <span>Lze přeúčtovat nájemníkům</span>
-              </label>
-            </div>
-
-            <div className="detail-form__field">
-              <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 22 }}>
-                <input
-                  type="checkbox"
-                  checked={formValue.splitToUnits}
-                  onChange={(e) => setFormValue((prev) => ({ ...prev, splitToUnits: e.target.checked }))}
-                  disabled={isFormReadOnly}
-                />
-                <span>Rozpočítat na jednotky</span>
-              </label>
-            </div>
-
-            {formValue.splitToUnits && (
-              <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Základ rozpočtu</label>
-                <input
+              <div className="detail-form__field">
+                <label className="detail-form__label">Účtování</label>
+                <select
                   className="detail-form__input"
-                  value={formValue.splitBasis}
-                  onChange={(e) => setFormValue((prev) => ({ ...prev, splitBasis: e.target.value }))}
+                  value={formValue.billingTypeId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, billingTypeId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {billingTypes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Jednotka</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.unitId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, unitId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {units.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">DPH</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.vatRateId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, vatRateId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {vatRates.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Částka</label>
+                <input
+                  type="number"
+                  className="detail-form__input"
+                  value={formValue.amount ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, amount: e.target.value === '' ? null : Number(e.target.value) }))}
                   readOnly={isFormReadOnly}
-                  placeholder="např. m2, osoby, jednotky"
                 />
               </div>
-            )}
 
-            <div className="detail-form__field detail-form__field--span-2">
-              <label className="detail-form__label">Poznámka</label>
-              <textarea
-                className="detail-form__input"
-                value={formValue.note}
-                onChange={(e) => setFormValue((prev) => ({ ...prev, note: e.target.value }))}
-                readOnly={isFormReadOnly}
-              />
+              <div className="detail-form__field">
+                <label className="detail-form__label">Periodicita</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.periodicityId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, periodicityId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {periodicities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Vyúčtování</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.billingPeriodicityId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, billingPeriodicityId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {periodicities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Kdo hradí</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.payerSide}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, payerSide: e.target.value as 'tenant' | 'landlord' }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="tenant">Nájemník</option>
+                  <option value="landlord">Pronajímatel</option>
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 22 }}>
+                  <input
+                    type="checkbox"
+                    checked={formValue.isRebillable}
+                    onChange={(e) => setFormValue((prev) => ({ ...prev, isRebillable: e.target.checked }))}
+                    disabled={isFormReadOnly}
+                  />
+                  <span>Lze přeúčtovat nájemníkům</span>
+                </label>
+              </div>
+
+              <div className="detail-form__field">
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 22 }}>
+                  <input
+                    type="checkbox"
+                    checked={formValue.splitToUnits}
+                    onChange={(e) => setFormValue((prev) => ({ ...prev, splitToUnits: e.target.checked }))}
+                    disabled={isFormReadOnly}
+                  />
+                  <span>Rozpočítat na jednotky</span>
+                </label>
+              </div>
+
+              {formValue.splitToUnits && (
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Základ rozpočtu</label>
+                  <input
+                    className="detail-form__input"
+                    value={formValue.splitBasis}
+                    onChange={(e) => setFormValue((prev) => ({ ...prev, splitBasis: e.target.value }))}
+                    readOnly={isFormReadOnly}
+                    placeholder="např. m2, osoby, jednotky"
+                  />
+                </div>
+              )}
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Poznámka</label>
+                <textarea
+                  className="detail-form__input"
+                  value={formValue.note}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, note: e.target.value }))}
+                  readOnly={isFormReadOnly}
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {activeTab === 'attachments' && selectedId && (
+            <DetailAttachmentsSection
+              entityType="property_service_binding"
+              entityId={selectedId}
+              entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
+              mode="view"
+            />
           )}
         </section>
       )}
-      {viewMode === 'detail' && activeTab === 'attachments' && selectedId && (
+
+      {viewMode === 'attachments' && selectedId && (
         <section className="detail-form__section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">Přílohy služby</h3>
+            <h3 className="detail-form__section-title">Správa příloh</h3>
             <div style={{ display: 'flex', gap: 8 }}>
               {(attachmentsUiState.mode === 'edit' || attachmentsUiState.mode === 'new') && (
                 <button
