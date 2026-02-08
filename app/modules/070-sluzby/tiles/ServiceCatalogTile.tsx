@@ -245,11 +245,11 @@ export default function ServiceCatalogTile({
   }, [sort])
 
   const handleRowClick = useCallback((row: ListViewRow<UiServiceCatalog>) => {
-    setSelectedId(row.id)
+    setSelectedId(String(row.id))
   }, [])
 
   const handleRowDoubleClick = useCallback((row: ListViewRow<UiServiceCatalog>) => {
-    setSelectedId(row.id)
+    setSelectedId(String(row.id))
     setLocalViewMode('view')
   }, [])
 
