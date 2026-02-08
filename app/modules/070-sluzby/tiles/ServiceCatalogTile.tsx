@@ -351,6 +351,7 @@ export default function ServiceCatalogTile({
     async function loadDetail() {
       try {
         setDetailLoading(true)
+        if (!selectedId) return
         const detail = await getServiceCatalogById(selectedId)
         if (!detail) {
           setCurrentService(null)
