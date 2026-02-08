@@ -452,7 +452,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     id: 'services',
     label: 'Služby',
     order: 75,
-    icon: getIcon('maintenance'),
     visibleWhen: (ctx) => !!(ctx as any)?.servicesContent,
     render: (ctx: any) => ctx?.servicesContent ?? null,
   },

@@ -348,18 +348,22 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
                 <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
                 <span className="common-actions__label">Nová</span>
               </button>
-              <button type="button" className="common-actions__btn" onClick={openDetailRead} disabled={!selectedId}>
-                <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
-                <span className="common-actions__label">Detail</span>
-              </button>
-              <button type="button" className="common-actions__btn" onClick={openDetailEdit} disabled={!selectedId || readOnly}>
-                <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                <span className="common-actions__label">Upravit</span>
-              </button>
-              <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('list')} disabled={!selectedId}>
-                <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
-                <span className="common-actions__label">Přílohy</span>
-              </button>
+              {selectedId && (
+                <>
+                  <button type="button" className="common-actions__btn" onClick={openDetailRead}>
+                    <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
+                    <span className="common-actions__label">Detail</span>
+                  </button>
+                  <button type="button" className="common-actions__btn" onClick={openDetailEdit} disabled={readOnly}>
+                    <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                    <span className="common-actions__label">Upravit</span>
+                  </button>
+                  <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('list')}>
+                    <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
+                    <span className="common-actions__label">Přílohy</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -434,6 +438,18 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
               {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
             </h3>
             <div style={{ display: 'flex', gap: 8 }}>
+              {!isFormReadOnly && (
+                <button type="button" className="common-actions__btn" onClick={handleSave} disabled={saving}>
+                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                  <span className="common-actions__label">Uložit</span>
+                </button>
+              )}
+              {selectedId && (
+                <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('detail')}>
+                  <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
+                  <span className="common-actions__label">Přílohy</span>
+                </button>
+              )}
               <button type="button" className="common-actions__btn" onClick={closeDetail}>
                 <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
                 <span className="common-actions__label">Zavřít</span>
@@ -662,18 +678,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
               />
             </div>
 
-            <div style={{ display: 'flex', gap: 8 }}>
-              {!isFormReadOnly && (
-                <button type="button" className="common-actions__btn" onClick={handleSave} disabled={saving}>
-                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-                  <span className="common-actions__label">Uložit</span>
-                </button>
-              )}
-              <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('detail')} disabled={!selectedId}>
-                <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
-                <span className="common-actions__label">Přílohy</span>
-              </button>
-            </div>
           </div>
         </section>
       )}
