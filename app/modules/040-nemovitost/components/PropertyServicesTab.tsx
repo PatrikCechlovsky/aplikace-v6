@@ -13,7 +13,17 @@ import createLogger from '@/app/lib/logger'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import { getIcon, type IconKey } from '@/app/UI/icons'
-import { getContrastTextColor } from '@/app/lib/colorUtils'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
+import {
+  SERVICE_CATALOG_BASE_COLUMNS,
+  SERVICE_CATALOG_DEFAULT_SORT,
+  SERVICE_CATALOG_VIEW_KEY,
+  buildServiceCatalogListRow,
+  getServiceCatalogSortValue,
+  type ServiceCatalogListItem,
+} from '@/app/modules/070-sluzby/serviceCatalogListConfig'
 
 import '@/app/styles/components/DetailForm.css'
 
@@ -78,6 +88,15 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const [vatRates, setVatRates] = useState<Array<{ id: string; name: string }>>([])
   const [periodicities, setPeriodicities] = useState<Array<{ id: string; name: string }>>([])
 
+  const [searchText, setSearchText] = useState('')
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+  const [sort, setSort] = useState<ListViewSortState>(SERVICE_CATALOG_DEFAULT_SORT)
+  const [colsOpen, setColsOpen] = useState(false)
+
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detailMode, setDetailMode] = useState<DetailMode>('read')
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'attachments'>('list')
@@ -135,6 +154,37 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
       cancelled = true
     }
   }, [toast])
+
+  useEffect(() => {
+    let active = true
+
+    async function loadPrefs() {
+      const prefs = await loadViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+        v: 1,
+        sort: null,
+        colWidths: {},
+        colOrder: [],
+        colHidden: [],
+      })
+
+      if (!active) return
+
+      setColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+
+      if (prefs.sort?.key) {
+        setSort(prefs.sort as ListViewSortState)
+      }
+    }
+
+    void loadPrefs()
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -357,6 +407,74 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
     }
   }, [formValue, isCustomService, propertyId, reloadServices, selectedId, selectService, services.length, toast])
 
+  const handleSortChange = useCallback((nextSort: ListViewSortState) => {
+    setSort(nextSort)
+    void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
+      sort: nextSort,
+    })
+  }, [colPrefs])
+
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((prev) => {
+      const next = { ...prev, colWidths: { ...(prev.colWidths ?? {}), [key]: px } }
+      void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+        colWidths: next.colWidths ?? {},
+        colOrder: next.colOrder ?? [],
+        colHidden: next.colHidden ?? [],
+        sort: sort,
+      })
+      return next
+    })
+  }, [sort])
+
+  const listItems = useMemo<ServiceCatalogListItem[]>(() => {
+    return services.map((row) => ({
+      id: row.id,
+      name: row.service_name ?? row.name ?? '—',
+      categoryName: row.category_name ?? '—',
+      categoryColor: row.category_color ?? null,
+      billingTypeName: row.billing_type_name ?? '—',
+      billingTypeColor: row.billing_type_color ?? null,
+      unitName: row.unit_name ?? '—',
+      basePrice: row.amount ?? row.catalog_base_price ?? null,
+      vatRateName: row.vat_rate_name ?? '—',
+      active: !(row.is_archived ?? false),
+      isArchived: !!row.is_archived,
+    }))
+  }, [services])
+
+  const filteredItems = useMemo(() => {
+    const q = searchText.trim().toLowerCase()
+    if (!q) return listItems
+    return listItems.filter((item) => {
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.categoryName.toLowerCase().includes(q) ||
+        item.billingTypeName.toLowerCase().includes(q) ||
+        item.unitName.toLowerCase().includes(q) ||
+        item.vatRateName.toLowerCase().includes(q)
+      )
+    })
+  }, [listItems, searchText])
+
+  const columns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
+
+  const sortedRows = useMemo(() => {
+    const rows = filteredItems.map(buildServiceCatalogListRow)
+    if (!sort?.key) return rows
+    const dir = sort.dir === 'desc' ? -1 : 1
+    return [...rows].sort((a, b) => {
+      const aVal = getServiceCatalogSortValue(a.raw as ServiceCatalogListItem, sort.key)
+      const bVal = getServiceCatalogSortValue(b.raw as ServiceCatalogListItem, sort.key)
+      if (aVal < bVal) return -1 * dir
+      if (aVal > bVal) return 1 * dir
+      return 0
+    })
+  }, [filteredItems, sort])
+
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
   const selectedIndex = useMemo(() => (selectedId ? services.findIndex((s) => s.id === selectedId) : -1), [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
@@ -384,99 +502,110 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   return (
     <div className="detail-form">
       {viewMode === 'list' && (
-        <section className="detail-form__section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">Seznam služeb</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {!readOnly && (
-                <button type="button" className="common-actions__btn" onClick={openDetailCreate}>
-                  <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                  <span className="common-actions__label">Nová</span>
-                </button>
-              )}
-              {selectedId && (
-                <>
-                  <button type="button" className="common-actions__btn" onClick={openDetailRead}>
-                    <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
-                    <span className="common-actions__label">Detail</span>
+        <>
+          <section className="detail-form__section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 className="detail-form__section-title">Seznam služeb</h3>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {!readOnly && (
+                  <button type="button" className="common-actions__btn" onClick={openDetailCreate}>
+                    <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                    <span className="common-actions__label">Nová</span>
                   </button>
-                  {!readOnly && (
-                    <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
-                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                      <span className="common-actions__label">Upravit</span>
+                )}
+                {selectedId && (
+                  <>
+                    <button type="button" className="common-actions__btn" onClick={openDetailRead}>
+                      <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
+                      <span className="common-actions__label">Detail</span>
                     </button>
-                  )}
-                  <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('list')}>
-                    <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
-                    <span className="common-actions__label">Přílohy</span>
-                  </button>
-                </>
-              )}
+                    {!readOnly && (
+                      <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                    )}
+                    <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('list')}>
+                      <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
+                      <span className="common-actions__label">Přílohy</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
 
-          {loading ? (
-            <div className="detail-form__hint">Načítám služby...</div>
-          ) : services.length === 0 ? (
-            <div className="detail-form__hint">Zatím nejsou přiřazeny žádné služby.</div>
-          ) : (
-            <table className="data-table" style={{ width: '100%' }}>
-              <thead>
-                <tr>
-                  <th>Název</th>
-                  <th>Kategorie</th>
-                  <th>Účtování</th>
-                  <th>Jednotka</th>
-                  <th>Částka</th>
-                  <th>Periodicita</th>
-                  <th>Přeúčtovat</th>
-                </tr>
-              </thead>
-              <tbody>
-                {services.map((s) => {
-                  const isActive = s.id === selectedId
-                  return (
-                    <tr
-                      key={s.id}
-                      onClick={() => setSelectedId(s.id)}
-                      style={{ backgroundColor: isActive ? 'var(--color-bg-2)' : undefined, cursor: 'pointer' }}
-                    >
-                      <td>{s.service_name ?? s.name ?? '—'}</td>
-                      <td>
-                        {s.category_color ? (
-                          <span
-                            className="generic-type__name-badge"
-                            style={{ backgroundColor: s.category_color, color: getContrastTextColor(s.category_color) }}
-                          >
-                            {s.category_name ?? '—'}
-                          </span>
-                        ) : (
-                          s.category_name ?? '—'
-                        )}
-                      </td>
-                      <td>
-                        {s.billing_type_color ? (
-                          <span
-                            className="generic-type__name-badge"
-                            style={{ backgroundColor: s.billing_type_color, color: getContrastTextColor(s.billing_type_color) }}
-                          >
-                            {s.billing_type_name ?? '—'}
-                          </span>
-                        ) : (
-                          s.billing_type_name ?? '—'
-                        )}
-                      </td>
-                      <td>{s.unit_name ?? '—'}</td>
-                      <td style={{ textAlign: 'right' }}>{s.amount != null ? `${s.amount.toFixed(2)} Kč` : '—'}</td>
-                      <td>{s.periodicity_name ?? '—'}</td>
-                      <td>{s.is_rebillable ? 'Ano' : 'Ne'}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </section>
+            {loading ? (
+              <div className="detail-form__hint">Načítám služby...</div>
+            ) : services.length === 0 ? (
+              <div className="detail-form__hint">Zatím nejsou přiřazeny žádné služby.</div>
+            ) : (
+              <ListView
+                columns={columns}
+                rows={sortedRows}
+                filterValue={searchText}
+                onFilterChange={setSearchText}
+                selectedId={selectedId}
+                onRowClick={(row: ListViewRow) => setSelectedId(String(row.id))}
+                onRowDoubleClick={(row: ListViewRow) => {
+                  setSelectedId(String(row.id))
+                  openDetailRead()
+                }}
+                sort={sort}
+                onSortChange={handleSortChange}
+                onColumnResize={handleColumnResize}
+                toolbarRight={(
+                  <button type="button" className="common-actions__btn" onClick={() => setColsOpen(true)}>
+                    <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
+                    <span className="common-actions__label">Sloupce</span>
+                  </button>
+                )}
+              />
+            )}
+          </section>
+
+          <ListViewColumnsDrawer
+            open={colsOpen}
+            onClose={() => setColsOpen(false)}
+            columns={SERVICE_CATALOG_BASE_COLUMNS}
+            fixedFirstKey="category"
+            requiredKeys={['name']}
+            value={{
+              order: colPrefs.colOrder ?? [],
+              hidden: colPrefs.colHidden ?? [],
+            }}
+            sortBy={sort ?? undefined}
+            onChange={(next) => {
+              setColPrefs((prev) => {
+                const updated = {
+                  ...prev,
+                  colOrder: next.order,
+                  colHidden: next.hidden,
+                }
+                void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+                  colWidths: updated.colWidths ?? {},
+                  colOrder: updated.colOrder ?? [],
+                  colHidden: updated.colHidden ?? [],
+                  sort: sort,
+                })
+                return updated
+              })
+            }}
+            onSortChange={(nextSort) => handleSortChange(nextSort)}
+            onReset={() => {
+              const resetPrefs = {
+                colWidths: {},
+                colOrder: [],
+                colHidden: [],
+              }
+              setColPrefs(resetPrefs)
+              setSort(SERVICE_CATALOG_DEFAULT_SORT)
+              void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+                ...resetPrefs,
+                sort: SERVICE_CATALOG_DEFAULT_SORT,
+              })
+            }}
+          />
+        </>
       )}
 
       {viewMode === 'detail' && (

@@ -5,7 +5,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import {
   listServiceCatalog,
@@ -19,43 +19,26 @@ import type { ServiceCatalogFormValue } from '../forms/ServiceCatalogDetailForm'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
-import { getContrastTextColor } from '@/app/lib/colorUtils'
+import {
+  SERVICE_CATALOG_BASE_COLUMNS,
+  SERVICE_CATALOG_DEFAULT_SORT,
+  SERVICE_CATALOG_VIEW_KEY,
+  buildServiceCatalogListRow,
+  getServiceCatalogSortValue,
+  type ServiceCatalogListItem,
+} from '../serviceCatalogListConfig'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import '@/app/styles/components/TileLayout.css'
 
 const logger = createLogger('070 ServiceCatalogTile')
 
-const VIEW_KEY = '070.service-catalog.list'
-
 type LocalViewMode = 'list' | 'view' | 'edit' | 'create'
-
-const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'category', label: 'Kategorie', width: 200, sortable: true },
-  { key: 'name', label: 'Název', width: 240, sortable: true },
-  { key: 'billingType', label: 'Typ účtování', width: 180, sortable: true },
-  { key: 'unit', label: 'Jednotka', width: 140, sortable: true },
-  { key: 'basePrice', label: 'Základní cena', width: 140, sortable: true, align: 'right' },
-  { key: 'vatRate', label: 'DPH', width: 100, sortable: true },
-  { key: 'active', label: 'Aktivní', width: 90, sortable: true },
-]
-
-type UiServiceCatalog = {
-  id: string
+type UiServiceCatalog = ServiceCatalogListItem & {
   code: string
-  name: string
   categoryId: string | null
-  categoryName: string
-  categoryColor: string | null
   billingTypeId: string | null
-  billingTypeName: string
-  billingTypeColor: string | null
   unitId: string | null
-  unitName: string
   vatRateId: string | null
-  vatRateName: string
-  basePrice: number | null
-  active: boolean
-  isArchived: boolean
 }
 
 function mapRowToUi(row: ServiceCatalogRow): UiServiceCatalog {
@@ -79,58 +62,11 @@ function mapRowToUi(row: ServiceCatalogRow): UiServiceCatalog {
   }
 }
 
-function toRow(e: UiServiceCatalog): ListViewRow<UiServiceCatalog> {
-  return {
-    id: e.id,
-    data: {
-      category: e.categoryColor ? (
-        <span className="generic-type__name-badge" style={{ backgroundColor: e.categoryColor, color: getContrastTextColor(e.categoryColor) }}>
-          {e.categoryName}
-        </span>
-      ) : (
-        <span>{e.categoryName}</span>
-      ),
-      name: e.name,
-      billingType: e.billingTypeColor ? (
-        <span className="generic-type__name-badge" style={{ backgroundColor: e.billingTypeColor, color: getContrastTextColor(e.billingTypeColor) }}>
-          {e.billingTypeName}
-        </span>
-      ) : (
-        <span>{e.billingTypeName}</span>
-      ),
-      unit: e.unitName,
-      basePrice: e.basePrice != null ? `${e.basePrice.toFixed(2)} Kč` : '—',
-      vatRate: e.vatRateName,
-      active: e.active ? 'Ano' : 'Ne',
-    },
-    className: e.isArchived ? 'row--archived' : undefined,
-    raw: e,
-  }
+const toRow = (e: UiServiceCatalog): ListViewRow<UiServiceCatalog> => {
+  const row = buildServiceCatalogListRow(e)
+  return { ...row, raw: e } as ListViewRow<UiServiceCatalog>
 }
-
-function getSortValue(e: UiServiceCatalog | undefined, key: string): string | number {
-  if (!e) return ''
-  const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-
-  switch (key) {
-    case 'name':
-      return norm(e.name)
-    case 'category':
-      return norm(e.categoryName)
-    case 'billingType':
-      return norm(e.billingTypeName)
-    case 'unit':
-      return norm(e.unitName)
-    case 'vatRate':
-      return norm(e.vatRateName)
-    case 'basePrice':
-      return e.basePrice ?? 0
-    case 'active':
-      return e.active ? 1 : 0
-    default:
-      return ''
-  }
-}
+const getSortValue = (e: UiServiceCatalog | undefined, key: string): string | number => getServiceCatalogSortValue(e, key)
 
 type ServiceCatalogTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
@@ -161,8 +97,7 @@ export default function ServiceCatalogTile({
     colOrder: [],
     colHidden: [],
   })
-  const DEFAULT_SORT = { key: 'category', dir: 'asc' as const }
-  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
+  const [sort, setSort] = useState<ListViewSortState>(SERVICE_CATALOG_DEFAULT_SORT)
   const [showColumnsDrawer, setShowColumnsDrawer] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -189,7 +124,7 @@ export default function ServiceCatalogTile({
 
   useEffect(() => {
     async function loadPrefs() {
-      const prefs = await loadViewPrefs(VIEW_KEY, {
+      const prefs = await loadViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
         v: 1,
         sort: null,
         colWidths: {},
@@ -210,7 +145,7 @@ export default function ServiceCatalogTile({
     void loadPrefs()
   }, [])
 
-  const columns = useMemo(() => applyColumnPrefs(BASE_COLUMNS, colPrefs), [colPrefs])
+  const columns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
   const sortedData = useMemo(() => {
     const rows = data.map(toRow)
@@ -227,7 +162,7 @@ export default function ServiceCatalogTile({
 
   const handleSortChange = useCallback((newSort: ListViewSortState) => {
     setSort(newSort)
-    void saveViewPrefs(VIEW_KEY, {
+    void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
       colWidths: colPrefs.colWidths ?? {},
       colOrder: colPrefs.colOrder ?? [],
       colHidden: colPrefs.colHidden ?? [],
@@ -238,7 +173,7 @@ export default function ServiceCatalogTile({
   const handleColumnResize = useCallback((key: string, px: number) => {
     setColPrefs((p) => {
       const newWidths = { ...(p.colWidths ?? {}), [key]: px }
-      void saveViewPrefs(VIEW_KEY, {
+      void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
         colWidths: newWidths,
         colOrder: p.colOrder ?? [],
         colHidden: p.colHidden ?? [],
@@ -465,7 +400,7 @@ export default function ServiceCatalogTile({
       <ListViewColumnsDrawer
         open={showColumnsDrawer}
         onClose={() => setShowColumnsDrawer(false)}
-        columns={BASE_COLUMNS}
+        columns={SERVICE_CATALOG_BASE_COLUMNS}
         fixedFirstKey="category"
         requiredKeys={['name']}
         value={{
@@ -480,7 +415,7 @@ export default function ServiceCatalogTile({
               colOrder: next.order,
               colHidden: next.hidden,
             }
-            void saveViewPrefs(VIEW_KEY, {
+            void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
               colWidths: updated.colWidths ?? {},
               colOrder: updated.colOrder ?? [],
               colHidden: updated.colHidden ?? [],
@@ -497,10 +432,10 @@ export default function ServiceCatalogTile({
             colHidden: [],
           }
           setColPrefs(resetPrefs)
-          setSort(DEFAULT_SORT)
-          void saveViewPrefs(VIEW_KEY, {
+          setSort(SERVICE_CATALOG_DEFAULT_SORT)
+          void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
             ...resetPrefs,
-            sort: DEFAULT_SORT,
+            sort: SERVICE_CATALOG_DEFAULT_SORT,
           })
         }}
       />

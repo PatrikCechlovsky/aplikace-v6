@@ -5,7 +5,7 @@
 // URL state: t=equipment-catalog, id + vm (detail: view/edit/create)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { 
   listEquipmentCatalog, 
@@ -20,8 +20,14 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
-import { getContrastTextColor } from '@/app/lib/colorUtils'
-import { EQUIPMENT_STATES } from '@/app/lib/constants/properties'
+import {
+  EQUIPMENT_CATALOG_BASE_COLUMNS,
+  EQUIPMENT_CATALOG_DEFAULT_SORT,
+  EQUIPMENT_CATALOG_VIEW_KEY,
+  buildEquipmentCatalogListRow,
+  getEquipmentCatalogSortValue,
+  type EquipmentCatalogListItem,
+} from '../equipmentCatalogListConfig'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { supabase } from '@/app/lib/supabaseClient'
 
@@ -29,37 +35,15 @@ import '@/app/styles/components/TileLayout.css'
 
 const logger = createLogger('040 EquipmentCatalogTile')
 
-const VIEW_KEY = '040.equipment-catalog.list'
-
 type LocalViewMode = 'list' | 'view' | 'edit' | 'create'
-
-const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'equipmentTypeName', label: 'Typ', width: 180, sortable: true },
-  { key: 'equipmentName', label: 'Název', width: 250, sortable: true },
-  { key: 'roomTypeName', label: 'Místnost', width: 150, sortable: true },
-  { key: 'purchasePrice', label: 'Cena', width: 120, sortable: true },
-  { key: 'defaultLifespanMonths', label: 'Životnost', width: 120, sortable: true },
-  { key: 'defaultState', label: 'Stav', width: 120, sortable: true },
-]
-
-type UiEquipmentCatalog = {
-  id: string
-  equipmentName: string
+type UiEquipmentCatalog = EquipmentCatalogListItem & {
   equipmentTypeId: string | null
-  equipmentTypeName: string
   equipmentTypeIcon: string | null
-  equipmentTypeColor: string | null
   roomTypeId: string | null
-  roomTypeName: string
   roomTypeIcon: string | null
-  roomTypeColor: string | null
-  purchasePrice: number | null
   purchaseDate: string | null
-  defaultLifespanMonths: number | null
   defaultRevisionInterval: number | null
-  defaultState: string | null
   defaultDescription: string | null
-  isArchived: boolean
 }
 
 function mapRowToUi(row: EquipmentCatalogRow): UiEquipmentCatalog {
@@ -84,60 +68,11 @@ function mapRowToUi(row: EquipmentCatalogRow): UiEquipmentCatalog {
   }
 }
 
-function toRow(e: UiEquipmentCatalog): ListViewRow<UiEquipmentCatalog> {
-  const stateInfo = e.defaultState ? EQUIPMENT_STATES.find(s => s.value === e.defaultState) : null
-
-  return {
-    id: e.id,
-    data: {
-      equipmentTypeName: e.equipmentTypeColor ? (
-        <span className="generic-type__name-badge" style={{ backgroundColor: e.equipmentTypeColor, color: getContrastTextColor(e.equipmentTypeColor) }}>
-          {e.equipmentTypeName}
-        </span>
-      ) : (
-        <span>{e.equipmentTypeName}</span>
-      ),
-      equipmentName: e.equipmentName,
-      roomTypeName: e.roomTypeColor ? (
-        <span className="generic-type__name-badge" style={{ backgroundColor: e.roomTypeColor, color: getContrastTextColor(e.roomTypeColor) }}>
-          {e.roomTypeName}
-        </span>
-      ) : (
-        <span>{e.roomTypeName}</span>
-      ),
-      purchasePrice: e.purchasePrice ? `${e.purchasePrice.toFixed(2)} Kč` : '—',
-      defaultLifespanMonths: e.defaultLifespanMonths ? `${e.defaultLifespanMonths} měs.` : '—',
-      defaultState: stateInfo ? (
-        <span style={{ color: stateInfo.color }}>
-          {stateInfo.icon} {stateInfo.label}
-        </span>
-      ) : '—',
-    },
-    className: e.isArchived ? 'row--archived' : undefined,
-    raw: e,
-  }
+const toRow = (e: UiEquipmentCatalog): ListViewRow<UiEquipmentCatalog> => {
+  const row = buildEquipmentCatalogListRow(e)
+  return { ...row, raw: e } as ListViewRow<UiEquipmentCatalog>
 }
-
-function getSortValue(e: UiEquipmentCatalog, key: string): string | number {
-  const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-
-  switch (key) {
-    case 'equipmentTypeName':
-      return norm(e.equipmentTypeName)
-    case 'equipmentName':
-      return norm(e.equipmentName)
-    case 'roomTypeName':
-      return norm(e.roomTypeName)
-    case 'purchasePrice':
-      return e.purchasePrice ?? 0
-    case 'defaultLifespanMonths':
-      return e.defaultLifespanMonths ?? 0
-    case 'defaultState':
-      return norm(e.defaultState || '')
-    default:
-      return ''
-  }
-}
+const getSortValue = (e: UiEquipmentCatalog, key: string): string | number => getEquipmentCatalogSortValue(e, key)
 
 type EquipmentCatalogTileProps = {
   equipmentTypeFilter?: string | null // Pro filtrování podle typu (použito v EquipmentTypeTile)
@@ -180,8 +115,7 @@ export default function EquipmentCatalogTile({
     colOrder: [],
     colHidden: [],
   })
-  const DEFAULT_SORT = { key: 'equipmentTypeName', dir: 'asc' as const }
-  const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
+  const [sort, setSort] = useState<ListViewSortState>(EQUIPMENT_CATALOG_DEFAULT_SORT)
   const [showColumnsDrawer, setShowColumnsDrawer] = useState(false)
 
   // Sync external equipment type filter (from EquipmentTypeTile) and convert code to ID
@@ -281,11 +215,11 @@ export default function EquipmentCatalogTile({
   // Load view prefs
   useEffect(() => {
     async function loadPrefs() {
-      const prefs = await loadViewPrefs(VIEW_KEY, {
+      const prefs = await loadViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
         colWidths: {},
         colOrder: [],
         colHidden: [],
-        sort: DEFAULT_SORT,
+        sort: EQUIPMENT_CATALOG_DEFAULT_SORT,
       })
       if (prefs) {
         setColPrefs({
@@ -316,7 +250,7 @@ export default function EquipmentCatalogTile({
 
   // Columns with prefs
   const columns = useMemo(() => {
-    return applyColumnPrefs(BASE_COLUMNS, colPrefs)
+    return applyColumnPrefs(EQUIPMENT_CATALOG_BASE_COLUMNS, colPrefs)
   }, [colPrefs])
 
   // Row click - pouze vybrat, nezobrazit detail
@@ -333,7 +267,7 @@ export default function EquipmentCatalogTile({
   // Sort change
   const handleSortChange = useCallback((newSort: ListViewSortState) => {
     setSort(newSort)
-    void saveViewPrefs(VIEW_KEY, {
+    void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
       colWidths: colPrefs.colWidths ?? {},
       colOrder: colPrefs.colOrder ?? [],
       colHidden: colPrefs.colHidden ?? [],
@@ -346,7 +280,7 @@ export default function EquipmentCatalogTile({
     setColPrefs((p) => {
       const newWidths = { ...(p.colWidths ?? {}), [key]: px }
       // Save to preferences
-      void saveViewPrefs(VIEW_KEY, {
+      void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
         colWidths: newWidths,
         colOrder: p.colOrder ?? [],
         colHidden: p.colHidden ?? [],
@@ -583,7 +517,7 @@ export default function EquipmentCatalogTile({
       <ListViewColumnsDrawer
         open={showColumnsDrawer}
         onClose={() => setShowColumnsDrawer(false)}
-        columns={BASE_COLUMNS}
+        columns={EQUIPMENT_CATALOG_BASE_COLUMNS}
         fixedFirstKey="equipmentTypeName"
         requiredKeys={['equipmentName']}
         value={{
@@ -599,7 +533,7 @@ export default function EquipmentCatalogTile({
               colHidden: next.hidden,
             }
             // Save to DB
-            void saveViewPrefs(VIEW_KEY, {
+            void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
               colWidths: updated.colWidths ?? {},
               colOrder: updated.colOrder ?? [],
               colHidden: updated.colHidden ?? [],
@@ -616,11 +550,11 @@ export default function EquipmentCatalogTile({
             colHidden: [],
           }
           setColPrefs(resetPrefs)
-          setSort(DEFAULT_SORT)
+          setSort(EQUIPMENT_CATALOG_DEFAULT_SORT)
           // Save reset to DB
-          void saveViewPrefs(VIEW_KEY, {
+          void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
             ...resetPrefs,
-            sort: DEFAULT_SORT,
+            sort: EQUIPMENT_CATALOG_DEFAULT_SORT,
           })
         }}
       />

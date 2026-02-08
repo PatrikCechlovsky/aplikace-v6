@@ -806,6 +806,9 @@ které sloupce chce v daném seznamu vidět.
 jeden společný technický seznam.
 
 ColumnPicker se používá nad **ListView** (hlavní přehledy a seznamy ve vazbách),
+aby si uživatel mohl nastavit pořadí a viditelnost sloupců.
+Pro sdílené tabulky (např. katalog ↔ vazby) používej sdílené list configy se stejným `VIEW_KEY`
+(`serviceCatalogListConfig`, `equipmentCatalogListConfig`). Zaručí stejné sloupce, pořadí a šířky.
 nikoliv uvnitř nízkoúrovňové komponenty EntityList.
 
 ---

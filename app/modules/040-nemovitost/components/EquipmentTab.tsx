@@ -23,28 +23,22 @@ import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
-import type { ListViewColumn } from '@/app/UI/ListView'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
+import {
+  EQUIPMENT_CATALOG_BASE_COLUMNS,
+  EQUIPMENT_CATALOG_DEFAULT_SORT,
+  EQUIPMENT_CATALOG_VIEW_KEY,
+  buildEquipmentCatalogListRow,
+  getEquipmentCatalogSortValue,
+  type EquipmentCatalogListItem,
+} from '../equipmentCatalogListConfig'
 
 import '@/app/styles/components/DetailForm.css'
 
 const logger = createLogger('EquipmentTab')
-
-// =====================
-// COLUMNS & PREFS
-// =====================
-
-const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'catalog_equipment_name', label: 'Název', sortable: true },
-  { key: 'equipment_type_name', label: 'Typ', sortable: false },
-  { key: 'room_type_name', label: 'Místnost', sortable: false },
-  { key: 'quantity', label: 'Množství', sortable: false, align: 'center' },
-  { key: 'state', label: 'Stav', sortable: false },
-  { key: 'catalog_purchase_price', label: 'Cena (ks)', sortable: false, align: 'right' },
-  { key: 'total_price', label: 'Celkem', sortable: false, align: 'right' },
-]
 
 // =====================
 // TYPES
@@ -115,20 +109,15 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   const [isDirty, setIsDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   
-  // Column prefs
+  const [searchText, setSearchText] = useState('')
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
     colOrder: [],
     colHidden: [],
   })
-  
-  const columns = useMemo(() => {
-    return applyColumnPrefs(BASE_COLUMNS, colPrefs)
-  }, [colPrefs])
-  
+  const [sort, setSort] = useState<ListViewSortState>(EQUIPMENT_CATALOG_DEFAULT_SORT)
+  const columns = useMemo(() => applyColumnPrefs(EQUIPMENT_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
   const [colsOpen, setColsOpen] = useState(false)
-  const prefsLoadedRef = useRef(false)
-  const saveTimerRef = useRef<any>(null)
   
   // Režim: katalog vs vlastní
   const [isCustomEquipment, setIsCustomEquipment] = useState(false)
@@ -182,37 +171,23 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
 
   // Načíst column prefs
   useEffect(() => {
-    const VIEW_KEY = `equipment-table:${entityType}:${entityId}`
-    
+    let active = true
     void (async () => {
-      const prefs = await loadViewPrefs(VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+      const prefs = await loadViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+      if (!active) return
       setColPrefs({
         colWidths: prefs.colWidths ?? {},
         colOrder: prefs.colOrder ?? [],
         colHidden: prefs.colHidden ?? [],
       })
-      prefsLoadedRef.current = true
+      if (prefs.sort?.key) {
+        setSort(prefs.sort as ListViewSortState)
+      }
     })()
-  }, [entityType, entityId])
-
-  // Uložit column prefs (debounced)
-  useEffect(() => {
-    if (!prefsLoadedRef.current) return
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-
-    const VIEW_KEY = `equipment-table:${entityType}:${entityId}`
-    const payload: ViewPrefs = {
-      v: 1,
-      sort: null,
-      colWidths: colPrefs.colWidths ?? {},
-      colOrder: colPrefs.colOrder ?? [],
-      colHidden: colPrefs.colHidden ?? [],
+    return () => {
+      active = false
     }
-
-    saveTimerRef.current = setTimeout(() => {
-      void saveViewPrefs(VIEW_KEY, payload)
-    }, 500)
-  }, [entityType, entityId, colPrefs])
+  }, [])
 
   // Načíst generic types pro filtry
   useEffect(() => {
@@ -507,6 +482,103 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
     }
   }, [selectedEquipmentId, entityType, entityId, formValue, selectEquipment, toast])
 
+  const handleSortChange = useCallback((nextSort: ListViewSortState) => {
+    setSort(nextSort)
+    void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+      colWidths: colPrefs.colWidths ?? {},
+      colOrder: colPrefs.colOrder ?? [],
+      colHidden: colPrefs.colHidden ?? [],
+      sort: nextSort,
+    })
+  }, [colPrefs])
+
+  const handleColumnResize = useCallback((key: string, px: number) => {
+    setColPrefs((prev) => {
+      const next = { ...prev, colWidths: { ...(prev.colWidths ?? {}), [key]: px } }
+      void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+        colWidths: next.colWidths ?? {},
+        colOrder: next.colOrder ?? [],
+        colHidden: next.colHidden ?? [],
+        sort: sort,
+      })
+      return next
+    })
+  }, [sort])
+
+  const catalogMap = useMemo(() => {
+    const map = new Map<string, EquipmentCatalogRow>()
+    catalog.forEach((item) => {
+      map.set(item.id, item)
+    })
+    return map
+  }, [catalog])
+
+  const listItems = useMemo<EquipmentCatalogListItem[]>(() => {
+    return equipmentList.map((row) => {
+      const catalogItem = catalogMap.get((row as any).equipment_id)
+
+      const equipmentName =
+        catalogItem?.equipment_name ||
+        (row as any).catalog_equipment_name ||
+        (row as any).name ||
+        '—'
+
+      const equipmentTypeName =
+        catalogItem?.equipment_type_name ||
+        (row as any).equipment_type_name ||
+        '—'
+
+      const roomTypeName = catalogItem?.room_type_name || '—'
+
+      const purchasePrice =
+        catalogItem?.purchase_price ??
+        (row as any).catalog_purchase_price ??
+        null
+
+      const defaultLifespanMonths = catalogItem?.default_lifespan_months ?? null
+
+      const defaultState = (row as any).state || catalogItem?.default_state || null
+
+      return {
+        id: row.id,
+        equipmentName,
+        equipmentTypeName,
+        equipmentTypeColor: catalogItem?.equipment_type_color ?? null,
+        roomTypeName,
+        roomTypeColor: catalogItem?.room_type_color ?? null,
+        purchasePrice,
+        defaultLifespanMonths,
+        defaultState,
+        isArchived: !!(row as any).is_archived,
+      }
+    })
+  }, [equipmentList, catalogMap])
+
+  const filteredItems = useMemo(() => {
+    const q = searchText.trim().toLowerCase()
+    if (!q) return listItems
+    return listItems.filter((item) => {
+      return (
+        item.equipmentName.toLowerCase().includes(q) ||
+        item.equipmentTypeName.toLowerCase().includes(q) ||
+        item.roomTypeName.toLowerCase().includes(q)
+      )
+    })
+  }, [listItems, searchText])
+
+  const sortedRows = useMemo(() => {
+    const rows = filteredItems.map(buildEquipmentCatalogListRow)
+    if (!sort?.key) return rows
+    const dir = sort.dir === 'desc' ? -1 : 1
+    return [...rows].sort((a, b) => {
+      const aVal = getEquipmentCatalogSortValue(a.raw as EquipmentCatalogListItem, sort.key)
+      const bVal = getEquipmentCatalogSortValue(b.raw as EquipmentCatalogListItem, sort.key)
+      if (aVal < bVal) return -1 * dir
+      if (aVal > bVal) return 1 * dir
+      return 0
+    })
+  }, [filteredItems, sort])
+
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < equipmentList.length - 1
   const isFormReadOnly = readOnly || detailMode === 'read'
@@ -522,15 +594,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Seznam vybavení</h3>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => setColsOpen(true)}
-                className="common-actions__btn"
-                title="Nastavit sloupce"
-              >
-                <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
-                <span className="common-actions__label">Sloupce</span>
-              </button>
               {!readOnly && (
                 <button
                   type="button"
@@ -582,70 +645,34 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
           {!loading && equipmentList.length === 0 && <div className="detail-form__hint">Zatím žádné vybavení.</div>}
 
           {!loading && equipmentList.length > 0 && (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    {columns.map((col) => (
-                      <th
-                        key={col.key}
-                        style={{
-                          padding: '8px',
-                          textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
-                          fontWeight: 600,
-                          width: col.width,
-                        }}
-                      >
-                        {col.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {equipmentList.map((equipment) => (
-                    <tr
-                      key={equipment.id}
-                      onClick={() => selectEquipment(equipment.id)}
-                      onDoubleClick={() => {
-                        selectEquipment(equipment.id)
-                        setDetailMode('read')
-                        setViewMode('detail')
-                        setActiveTab('form')
-                      }}
-                      style={{
-                        cursor: 'pointer',
-                        borderBottom: '1px solid var(--color-border-soft)',
-                        backgroundColor: selectedEquipmentId === equipment.id ? 'var(--color-primary-soft)' : 'transparent',
-                        height: '32px',
-                      }}
-                    >
-                      {columns.map((col) => (
-                        <td
-                          key={col.key}
-                          style={{
-                            padding: '8px',
-                            textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
-                            width: col.width,
-                          }}
-                        >
-                          {col.key === 'catalog_equipment_name' && (equipment.catalog_equipment_name || '—')}
-                          {col.key === 'equipment_type_name' && (equipment.equipment_type_name || '—')}
-                          {col.key === 'room_type_name' && (equipment.room_type_name || '—')}
-                          {col.key === 'quantity' && `${equipment.quantity || 1}×`}
-                          {col.key === 'state' && (EQUIPMENT_STATES.find((s) => s.value === equipment.state)?.label || equipment.state)}
-                          {col.key === 'catalog_purchase_price' && (
-                            equipment.catalog_purchase_price ? `${equipment.catalog_purchase_price.toLocaleString('cs-CZ')} Kč` : '—'
-                          )}
-                          {col.key === 'total_price' && (
-                            equipment.total_price ? `${equipment.total_price.toLocaleString('cs-CZ')} Kč` : '—'
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ListView
+              columns={columns}
+              rows={sortedRows}
+              filterValue={searchText}
+              onFilterChange={setSearchText}
+              selectedId={selectedEquipmentId}
+              onRowClick={(row: ListViewRow) => selectEquipment(String(row.id))}
+              onRowDoubleClick={(row: ListViewRow) => {
+                selectEquipment(String(row.id))
+                setDetailMode('read')
+                setViewMode('detail')
+                setActiveTab('form')
+              }}
+              sort={sort}
+              onSortChange={handleSortChange}
+              onColumnResize={handleColumnResize}
+              toolbarRight={(
+                <button
+                  type="button"
+                  onClick={() => setColsOpen(true)}
+                  className="common-actions__btn"
+                  title="Nastavit sloupce"
+                >
+                  <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
+                  <span className="common-actions__label">Sloupce</span>
+                </button>
+              )}
+            />
           )}
         </section>
       )}
@@ -1267,26 +1294,43 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
       <ListViewColumnsDrawer
         open={colsOpen}
         title="Sloupce vybavení"
-        columns={BASE_COLUMNS}
-        fixedFirstKey="catalog_equipment_name"
-        requiredKeys={['catalog_equipment_name']}
+        columns={EQUIPMENT_CATALOG_BASE_COLUMNS}
+        fixedFirstKey="equipmentTypeName"
+        requiredKeys={['equipmentName']}
         value={{
           order: colPrefs.colOrder ?? [],
           hidden: colPrefs.colHidden ?? [],
         }}
         onChange={(next) => {
-          setColPrefs((p) => ({
-            ...p,
-            colOrder: next.order,
-            colHidden: next.hidden,
-          }))
+          setColPrefs((p) => {
+            const updated = {
+              ...p,
+              colOrder: next.order,
+              colHidden: next.hidden,
+            }
+            void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+              colWidths: updated.colWidths ?? {},
+              colOrder: updated.colOrder ?? [],
+              colHidden: updated.colHidden ?? [],
+              sort: sort,
+            })
+            return updated
+          })
         }}
+        sortBy={sort ?? undefined}
+        onSortChange={(nextSort) => handleSortChange(nextSort)}
         onReset={() => {
-          setColPrefs((p) => ({
-            ...p,
+          const resetPrefs = {
+            colWidths: {},
             colOrder: [],
             colHidden: [],
-          }))
+          }
+          setColPrefs(resetPrefs)
+          setSort(EQUIPMENT_CATALOG_DEFAULT_SORT)
+          void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+            ...resetPrefs,
+            sort: EQUIPMENT_CATALOG_DEFAULT_SORT,
+          })
         }}
         onClose={() => setColsOpen(false)}
       />
