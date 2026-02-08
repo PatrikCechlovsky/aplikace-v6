@@ -102,7 +102,8 @@ function toRow(e: UiServiceCatalog): ListViewRow<UiServiceCatalog> {
   }
 }
 
-function getSortValue(e: UiServiceCatalog, key: string): string | number {
+function getSortValue(e: UiServiceCatalog | undefined, key: string): string | number {
+  if (!e) return ''
   const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
   switch (key) {
