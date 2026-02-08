@@ -566,6 +566,7 @@ Pole – návrh:
 - `is_rebillable` (bool) *(rozúčtovatelný náklad)*
 - `allocation_rule` (enum: m² | osoba | měřidlo | pevná | % nájmu | poměr plochy)
 - `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `billing_periodicity` (enum: měsíčně | ročně | čtvrtletně…)
 - `amount` (numeric)
 - `currency` (text)
 - `meter_id` (FK → meters.id, volitelně)
@@ -587,6 +588,7 @@ Pole – návrh:
 - `split_to_units` (bool)
 - `split_basis` (enum: m² | ks | osoby | měřidlo | poměr plochy)
 - `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `billing_periodicity` (enum: měsíčně | ročně | čtvrtletně…)
 - `amount` (numeric)
 - `currency` (text)
 - `meter_id` (FK → meters.id, volitelně)
@@ -606,6 +608,7 @@ Pole – návrh:
 - `billing_type_id` (FK → generic_types, category = `service_billing_types`)
 - `allocation_rule` (enum: m² | osoba | měřidlo | pevná | % nájmu | poměr plochy)
 - `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `billing_periodicity` (enum: měsíčně | ročně | čtvrtletně…)
 - `amount` (numeric)
 - `currency` (text)
 - `meter_id` (FK → meters.id, volitelně)
@@ -622,10 +625,13 @@ Použít generic_types s kategoriemi:
 - `settings.service_billing_types` – typ účtování
 - `settings.vat_rates` – DPH sazby
 - `settings.service_units` – jednotky (volitelné)
+- `settings.service_units` – jednotky (volitelné)
+- `settings.service_periodicities` – periodicita (měsíčně, čtvrtletně, půlročně, ročně)
 
 Startovní seed:
 - **service_types**: energie, voda, správní_poplatky, doplnkove_sluzby, najemne, jine_sluzby
 - **service_billing_types**: pevna_sazba, merena_spotreba, na_pocet_osob, na_m2, procento_z_najmu, pomer_plochy
 - **vat_rates**: 0.00, 0.10, 0.12, 0.15, 0.21
 - **service_units**: Kč, Kč/měsíc, Kč/čtvrtrok, Kč/půlrok, Kč/rok, Kč/m³, Kč/kWh, Kč/m², Kč/osoba, Kč/ks
+- **service_periodicities**: měsíčně, čtvrtletně, půlročně, ročně
 

@@ -21,6 +21,7 @@ export type GenericTypeCategory =
   | 'service_billing_types'
   | 'vat_rates'
   | 'service_units'
+  | 'service_periodicities'
 
 /**
  * Datový typ přesně podle tabulky generic_types

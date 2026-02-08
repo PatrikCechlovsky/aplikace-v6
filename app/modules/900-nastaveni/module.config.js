@@ -20,6 +20,7 @@ import ServiceTypesTile from './tiles/ServiceTypesTile'
 import ServiceBillingTypesTile from './tiles/ServiceBillingTypesTile'
 import VatRatesTile from './tiles/VatRatesTile'
 import ServiceUnitsTile from './tiles/ServiceUnitsTile'
+import ServicePeriodicitiesTile from './tiles/ServicePeriodicitiesTile'
 
 export default {
   id: '900-nastaveni',
@@ -145,6 +146,14 @@ export default {
       sectionId: 'types-settings',
       component: ServiceUnitsTile,
       order: 63,
+    },
+    {
+      id: 'service-periodicities',
+      label: 'Periodicita služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServicePeriodicitiesTile,
+      order: 64,
     },
     {
       id: 'payment-types',
