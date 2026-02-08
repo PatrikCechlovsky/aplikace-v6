@@ -158,6 +158,7 @@ export default function DetailAttachmentsSection({
 
   const [includeArchived, setIncludeArchived] = useState(false)
   const [showEquipmentAttachments, setShowEquipmentAttachments] = useState(false)
+  const [showServiceAttachments, setShowServiceAttachments] = useState(false)
   const [filterText, setFilterText] = useState('')
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -368,6 +369,19 @@ export default function DetailAttachmentsSection({
     void loadAttachments()
   }, [canLoad, loadAttachments])
 
+  const isPropertyEntity = useMemo(
+    () => normalizedEntityType === 'property' || normalizedEntityType === 'properties',
+    [normalizedEntityType]
+  )
+
+  const equipmentDocCount = useMemo(() => {
+    return rows.filter((r) => r.entity_type === 'equipment_binding' || r.entity_type === 'property_equipment_binding').length
+  }, [rows])
+
+  const serviceDocCount = useMemo(() => {
+    return rows.filter((r) => r.entity_type === 'property_service_binding').length
+  }, [rows])
+
   const filteredRows = useMemo(() => {
     let filtered = rows
 
@@ -377,6 +391,10 @@ export default function DetailAttachmentsSection({
       filtered = filtered.filter(
         (r) => r.entity_type !== 'equipment_binding' && r.entity_type !== 'property_equipment_binding'
       )
+    }
+
+    if (!isManager && isPropertyEntity && !showServiceAttachments) {
+      filtered = filtered.filter((r) => r.entity_type !== 'property_service_binding')
     }
 
     // ✅ Textový filtr
@@ -390,7 +408,7 @@ export default function DetailAttachmentsSection({
       const e = (r.equipment_name ?? '').toLowerCase()
       return a.includes(t) || b.includes(t) || c.includes(t) || e.includes(t)
     })
-  }, [rows, filterText, showEquipmentAttachments, isManager, isUnitOrProperty])
+  }, [rows, filterText, showEquipmentAttachments, showServiceAttachments, isManager, isUnitOrProperty, isPropertyEntity])
 
   // ============================================================================
   // SORTED ROWS (Attachments)
@@ -822,8 +840,10 @@ export default function DetailAttachmentsSection({
     )
   }
 
+  const filteredCount = filteredRows.length
+
   // V manager variantě nechceme zobrazovat nadpis "Přílohy" - je to v TileLayout
-  const sectionTitle = isManager ? null : 'Přílohy (read-only)'
+  const sectionTitle = isManager ? null : `Přílohy (read-only) (${filteredCount})`
 
 
   const sharedColumnsBase = useMemo(() => {
@@ -952,7 +972,17 @@ export default function DetailAttachmentsSection({
                         checked={showEquipmentAttachments}
                         onChange={(e) => setShowEquipmentAttachments(e.target.checked)}
                       />
-                      <span>Zobrazit dokumenty k vybavení</span>
+                      <span>Dokumenty k vybavení ({equipmentDocCount})</span>
+                    </label>
+                  )}
+                  {isPropertyEntity && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={showServiceAttachments}
+                        onChange={(e) => setShowServiceAttachments(e.target.checked)}
+                      />
+                      <span>Dokumenty ke službám ({serviceDocCount})</span>
                     </label>
                   )}
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
