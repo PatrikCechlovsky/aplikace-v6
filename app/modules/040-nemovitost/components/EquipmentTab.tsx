@@ -1247,7 +1247,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
             entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
             entityId={selectedEquipmentId}
             entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
-            canManage={!readOnly}
+            canManage={true}
             onRegisterManagerApi={(api) => {
               attachmentsApiRef.current = api
             }}

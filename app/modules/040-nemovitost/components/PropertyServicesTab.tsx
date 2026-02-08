@@ -382,20 +382,24 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Seznam služeb</h3>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="common-actions__btn" onClick={openDetailCreate} disabled={readOnly}>
-                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                <span className="common-actions__label">Nová</span>
-              </button>
+              {!readOnly && (
+                <button type="button" className="common-actions__btn" onClick={openDetailCreate}>
+                  <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                  <span className="common-actions__label">Nová</span>
+                </button>
+              )}
               {selectedId && (
                 <>
                   <button type="button" className="common-actions__btn" onClick={openDetailRead}>
                     <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
                     <span className="common-actions__label">Detail</span>
                   </button>
-                  <button type="button" className="common-actions__btn" onClick={openDetailEdit} disabled={readOnly}>
-                    <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                    <span className="common-actions__label">Upravit</span>
-                  </button>
+                  {!readOnly && (
+                    <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
+                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                      <span className="common-actions__label">Upravit</span>
+                    </button>
+                  )}
                   <button type="button" className="common-actions__btn" onClick={openAttachmentsManager}>
                     <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
                     <span className="common-actions__label">Přílohy</span>
@@ -825,7 +829,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
             entityType="property_service_binding"
             entityId={selectedId}
             entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
-            canManage={!readOnly}
+            canManage={true}
             onRegisterManagerApi={(api) => {
               attachmentsApiRef.current = api
             }}
