@@ -1845,3 +1845,41 @@ if (id === 'add') {
 **Commity:**
 - `2b892f1` - feat: tlačítko Přidat naviguje na create-landlord tile
 - `275b4a9` - feat: tlačítko Přidat naviguje na create-tenant tile + zavírá Sidebar přehledy
+
+---
+## DOPLNĚNÍ (2026-02-08) – Záložky „Služby“ pro Nemovitost a Jednotku
+
+### Cíl
+Sjednotit UI pro evidenci pravidelných služeb/nákladů na úrovni nemovitosti a jednotky
+v souladu se systémem List/Detail a CommonActions.
+
+---
+### Detail Nemovitosti → záložka „Služby“
+Použití **RelationListWithDetail**:
+- **Horní seznam**: služby přiřazené k nemovitosti
+- **Dolní detail**: detail vybrané služby
+
+**Standardní chování:**
+- Filtrace a hledání v horním seznamu
+- ColumnPicker aktivní
+- Správa příloh pouze přes 📎 (CommonActions)
+- Záložka Přílohy v detailu je read‑only
+
+---
+### Detail Jednotky → záložka „Služby“
+Použití **RelationListWithDetail**:
+- **Horní seznam**: služby přiřazené k jednotce
+- **Dolní detail**: detail vybrané služby
+
+**Standardní chování:**
+- Filtrace a hledání v horním seznamu
+- ColumnPicker aktivní
+- Správa příloh pouze přes 📎 (CommonActions)
+- Záložka Přílohy v detailu je read‑only
+
+---
+### Společné UI zásady
+- Záložky detailu vždy: **Detail / Přílohy / Systém**
+- Akce přes **CommonActions** (add/edit/archive/save/reject)
+- Žádné přímé mazání – pouze archivace
+

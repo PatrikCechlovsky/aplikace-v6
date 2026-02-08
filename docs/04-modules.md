@@ -843,3 +843,31 @@ Pokud se změna v Nastavení neprojeví:
 - Odchylky musí být výslovně zdokumentovány.
 - Nezdokumentovaná výjimka je považována za chybu návrhu.
 
+---
+## DOPLNĚNÍ (2026-02-08) – Modul 070 Služby (rozsah a integrace)
+
+### Rozsah modulu
+Modul **070 – Služby** řeší:
+
+1) **Katalog služeb** (centrální definice)
+2) **Služby na jednotce** (pravidelné náklady/platby na úrovni jednotky)
+3) **Služby na nemovitosti** (pravidelné náklady/platby na úrovni nemovitosti)
+4) **Smluvní služby** (účtované nájemníkovi v rámci smlouvy – viz modul 060)
+
+Rozlišení vrstev je důležité kvůli vyúčtování a oddělení nákladů pronajímatele.
+
+---
+### Vazby na jiné moduly
+- **040 Nemovitost**: detail nemovitosti obsahuje záložku „Služby“ (property_services).
+- **040 Jednotka**: detail jednotky obsahuje záložku „Služby“ (unit_services).
+- **060 Smlouva** (budoucí): výběr služeb z katalogu + nastavení účtování (contract_services).
+- **900 Nastavení**: správa generic types pro služby (kategorie, typ účtování, DPH, jednotky).
+
+---
+### Povinné záložky detailu
+Pro entity se službami platí standardní záložky:
+- **Detail** (vlastní pole)
+- **Přílohy** (read‑only)
+- **Systém** (metadata)
+
+

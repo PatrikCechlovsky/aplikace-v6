@@ -517,3 +517,115 @@ Jsou ponechány kvůli historii projektu.
 ---
 
 # 📌 Konec historických částí 06B
+
+---
+## DOPLNĚNÍ (2026-02-08) – Modul Služby: katalog, vazby a generické typy
+
+### Cíl
+Zavést jednotný katalog služeb a dvě vazební vrstvy nákladů (na jednotku a na nemovitost),
+plus smluvní služby. Tím vznikají 4 datové vrstvy:
+
+1) **Katalog služeb** (definice)
+2) **Smluvní služby** (platí nájemník)
+3) **Owner cost – rozúčtovatelný**
+4) **Owner cost – nerozúčtovatelný**
+
+Rozdíl mezi (3) a (4) je vyjádřen příznakem `is_rebillable`.
+
+---
+### Navrhované tabulky
+
+#### 1) `service_catalog`
+Katalog služeb (výběr do smluv i nákladů pronajímatele).
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `code` (text, unique)
+- `name` (text)
+- `category_id` (FK → generic_types, category = `service_types`)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `unit_label` (text) *(nebo `unit_id` přes generic_types `service_units`)*
+- `base_price` (numeric)
+- `vat_rate_id` (FK → generic_types, category = `vat_rates`)
+- `description` (text)
+- `active` (bool)
+- `is_archived` (bool)
+- `note` (text)
+- `owner_id` (FK → subjects.id)
+- `created_at`, `created_by`, `updated_at`, `updated_by`
+
+---
+#### 2) `unit_services`
+Pravidelné služby vázané na jednotku (náklad pronajímatele nebo nájemníka).
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `unit_id` (FK → units.id)
+- `service_id` (FK → service_catalog.id)
+- `payer_side` (enum: `landlord` | `tenant`)
+- `is_rebillable` (bool) *(rozúčtovatelný náklad)*
+- `allocation_rule` (enum: m² | osoba | měřidlo | pevná | % nájmu | poměr plochy)
+- `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `amount` (numeric)
+- `currency` (text)
+- `meter_id` (FK → meters.id, volitelně)
+- `note` (text)
+- `owner_id` (FK → subjects.id)
+- `created_at`, `created_by`, `updated_at`, `updated_by`
+- `is_archived` (bool)
+
+---
+#### 3) `property_services`
+Pravidelné služby vázané na nemovitost (náklady pronajímatele).
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `property_id` (FK → properties.id)
+- `service_id` (FK → service_catalog.id)
+- `payer_side` (enum: `landlord`) *(default)*
+- `is_rebillable` (bool)
+- `split_to_units` (bool)
+- `split_basis` (enum: m² | ks | osoby | měřidlo | poměr plochy)
+- `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `amount` (numeric)
+- `currency` (text)
+- `meter_id` (FK → meters.id, volitelně)
+- `note` (text)
+- `owner_id` (FK → subjects.id)
+- `created_at`, `created_by`, `updated_at`, `updated_by`
+- `is_archived` (bool)
+
+---
+#### 4) `contract_services`
+Služby účtované nájemníkovi v rámci smlouvy.
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `contract_id` (FK → contracts.id)
+- `service_id` (FK → service_catalog.id)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `allocation_rule` (enum: m² | osoba | měřidlo | pevná | % nájmu | poměr plochy)
+- `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `amount` (numeric)
+- `currency` (text)
+- `meter_id` (FK → meters.id, volitelně)
+- `note` (text)
+- `owner_id` (FK → subjects.id)
+- `created_at`, `created_by`, `updated_at`, `updated_by`
+- `is_archived` (bool)
+
+---
+### Generic types (konfigurovatelné selecty)
+Použít generic_types s kategoriemi:
+
+- `settings.service_types` – kategorie služeb
+- `settings.service_billing_types` – typ účtování
+- `settings.vat_rates` – DPH sazby
+- `settings.service_units` – jednotky (volitelné)
+
+Startovní seed:
+- **service_types**: energie, voda, správní_poplatky, doplnkove_sluzby, najemne, jine_sluzby
+- **service_billing_types**: pevna_sazba, merena_spotreba, na_pocet_osob, na_m2, procento_z_najmu, pomer_plochy
+- **vat_rates**: 0.00, 0.10, 0.12, 0.15, 0.21
+- **service_units**: Kč/měsíc, Kč/rok, Kč/m³, Kč/kWh, Kč/m², Kč/osoba, Kč/ks
+
