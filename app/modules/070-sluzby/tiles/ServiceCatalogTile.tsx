@@ -184,7 +184,13 @@ export default function ServiceCatalogTile({
 
   useEffect(() => {
     async function loadPrefs() {
-      const prefs = await loadViewPrefs(VIEW_KEY)
+      const prefs = await loadViewPrefs(VIEW_KEY, {
+        v: 1,
+        sort: null,
+        colWidths: {},
+        colOrder: [],
+        colHidden: [],
+      })
       if (prefs) {
         setColPrefs({
           colWidths: prefs.colWidths ?? {},
