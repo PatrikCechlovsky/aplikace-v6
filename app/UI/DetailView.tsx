@@ -447,7 +447,6 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId && ctx.entityId !== 'new',
     render: (ctx: any) => ctx?.equipmentContent ?? <div style={{ padding: '2rem' }}>Seznam vybavení (placeholder)</div>,
   },
-}
 
   services: {
     id: 'services',
@@ -457,6 +456,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     visibleWhen: (ctx) => !!(ctx as any)?.servicesContent,
     render: (ctx: any) => ctx?.servicesContent ?? null,
   },
+}
 
 export default function DetailView({
   mode,
