@@ -24,6 +24,7 @@ type DetailMode = 'read' | 'edit' | 'create'
 type Props = {
   propertyId: string
   readOnly?: boolean
+  onCountChange?: (count: number) => void
 }
 
 type ServiceFormValue = {
@@ -62,7 +63,7 @@ function buildEmptyFormValue(): ServiceFormValue {
   }
 }
 
-export default function PropertyServicesTab({ propertyId, readOnly = false }: Props) {
+export default function PropertyServicesTab({ propertyId, readOnly = false, onCountChange }: Props) {
   const toast = useToast()
 
   const [services, setServices] = useState<PropertyServiceRow[]>([])
@@ -82,7 +83,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'attachments'>('list')
   const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
   const [attachmentsReturnView, setAttachmentsReturnView] = useState<'list' | 'detail'>('list')
-  const currentIndexRef = useRef(-1)
 
   const [formValue, setFormValue] = useState<ServiceFormValue>(() => buildEmptyFormValue())
   const [isCustomService, setIsCustomService] = useState(false)
@@ -180,7 +180,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     (id: string) => {
       const row = services.find((s) => s.id === id)
       if (!row) return
-      currentIndexRef.current = services.findIndex((s) => s.id === id)
       setSelectedId(row.id)
       const resolvedCategoryId = row.resolved_category_id ?? row.category_id ?? null
       const resolvedBillingTypeId = row.resolved_billing_type_id ?? row.billing_type_id ?? null
@@ -212,7 +211,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     setSelectedId(null)
     setFormValue(buildEmptyFormValue())
     setIsCustomService(false)
-    currentIndexRef.current = -1
   }, [])
 
   const openDetailRead = useCallback(() => {
@@ -266,22 +264,26 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
   }, [attachmentsReturnView])
 
   const handlePrevious = useCallback(() => {
-    if (currentIndexRef.current > 0) {
-      const prevService = services[currentIndexRef.current - 1]
+    if (!selectedId) return
+    const index = services.findIndex((s) => s.id === selectedId)
+    if (index > 0) {
+      const prevService = services[index - 1]
       if (prevService) {
         selectService(prevService.id)
       }
     }
-  }, [services, selectService])
+  }, [services, selectService, selectedId])
 
   const handleNext = useCallback(() => {
-    if (currentIndexRef.current >= 0 && currentIndexRef.current < services.length - 1) {
-      const nextService = services[currentIndexRef.current + 1]
+    if (!selectedId) return
+    const index = services.findIndex((s) => s.id === selectedId)
+    if (index >= 0 && index < services.length - 1) {
+      const nextService = services[index + 1]
       if (nextService) {
         selectService(nextService.id)
       }
     }
-  }, [services, selectService])
+  }, [services, selectService, selectedId])
 
   const handleCatalogChange = useCallback(
     (serviceId: string) => {
@@ -356,17 +358,15 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
   }, [formValue, isCustomService, propertyId, reloadServices, selectedId, selectService, services.length, toast])
 
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
+  const selectedIndex = useMemo(() => (selectedId ? services.findIndex((s) => s.id === selectedId) : -1), [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
-  const canGoPrevious = currentIndexRef.current > 0
-  const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < services.length - 1
+  const canGoPrevious = selectedIndex > 0
+  const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
+  const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${services.length}` : null
 
   useEffect(() => {
-    if (!selectedId) {
-      currentIndexRef.current = -1
-      return
-    }
-    currentIndexRef.current = services.findIndex((s) => s.id === selectedId)
-  }, [selectedId, services])
+    onCountChange?.(services.length)
+  }, [services.length, onCountChange])
 
   if (!propertyId || propertyId === 'new') {
     return (
@@ -485,14 +485,25 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
             <h3 className="detail-form__section-title">
               {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
             </h3>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {detailMode === 'read' && !readOnly && selectedId && (
+                <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
+                  <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                  <span className="common-actions__label">Upravit</span>
+                </button>
+              )}
               {!isFormReadOnly && (
                 <button type="button" className="common-actions__btn" onClick={handleSave} disabled={saving}>
                   <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
                   <span className="common-actions__label">Uložit</span>
                 </button>
               )}
-              {detailMode === 'edit' && !readOnly && (
+              {detailMode !== 'create' && selectedId && positionLabel && (
+                <span className="detail-form__hint" style={{ marginLeft: 4, marginRight: 4 }}>
+                  {positionLabel}
+                </span>
+              )}
+              {detailMode !== 'create' && selectedId && (
                 <>
                   <button
                     type="button"

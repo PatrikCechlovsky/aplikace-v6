@@ -362,6 +362,10 @@ V jedné sekci může být:
 
 Sekce mohou být dynamické a mohou obsahovat vlastní logiku.
 
+DetailTabs podporuje jednotný zápis počtů v záložkách:
+- `DetailTabItem.count` → label se automaticky zobrazí jako „{label} (count)“.
+- v DetailView lze počty předat přes `ctx.sectionCounts` (mapa `sectionId → count`).
+
 ---
 
 ## 3.10.5 Renderování polí

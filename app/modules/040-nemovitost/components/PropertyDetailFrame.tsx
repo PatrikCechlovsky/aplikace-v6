@@ -15,6 +15,9 @@ import { useToast } from '@/app/UI/Toast'
 import { supabase } from '@/app/lib/supabaseClient'
 import EquipmentTab from './EquipmentTab'
 import PropertyServicesTab from './PropertyServicesTab'
+import { listPropertyEquipment } from '@/app/lib/services/equipment'
+import { listPropertyServices } from '@/app/lib/services/propertyServices'
+import { listAttachments } from '@/app/lib/attachments'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -147,6 +150,9 @@ export default function PropertyDetailFrame({
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; name: string; icon?: string | null }>>([])
   const [selectedPropertyTypeId, setSelectedPropertyTypeId] = useState<string | null>(property.propertyTypeId ?? null)
   const [units, setUnits] = useState<Array<{ id: string; display_name: string | null; internal_code: string | null; status: string | null }>>([])
+  const [equipmentCount, setEquipmentCount] = useState(0)
+  const [servicesCount, setServicesCount] = useState(0)
+  const [attachmentsCount, setAttachmentsCount] = useState(0)
 
   useEffect(() => {
     formValueRef.current = formValue
@@ -189,6 +195,38 @@ export default function PropertyDetailFrame({
       }
     })()
   }, [property.id])
+
+  useEffect(() => {
+    if (isNewId(resolvedProperty.id)) {
+      setEquipmentCount(0)
+      setServicesCount(0)
+      setAttachmentsCount(0)
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const [equipmentRows, servicesRows, attachmentRows] = await Promise.all([
+          listPropertyEquipment(resolvedProperty.id),
+          listPropertyServices(resolvedProperty.id),
+          listAttachments({ entityType: 'properties', entityId: resolvedProperty.id, includeArchived: false }),
+        ])
+
+        if (cancelled) return
+        setEquipmentCount(equipmentRows.length)
+        setServicesCount(servicesRows.length)
+        setAttachmentsCount(attachmentRows.length)
+      } catch (err) {
+        logger.error('Failed to load property counts', err)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedProperty.id])
 
   useEffect(() => {
     if (isNewId(property.id)) {
@@ -487,6 +525,12 @@ export default function PropertyDetailFrame({
         entityLabel: resolvedProperty.displayName ?? null,
         showSystemEntityHeader: false,
         mode: detailViewMode,
+        sectionCounts: {
+          units: units.length,
+          equipment: equipmentCount,
+          services: servicesCount,
+          attachments: attachmentsCount,
+        },
 
         detailContent: (
           <PropertyDetailFormComponent
@@ -550,6 +594,7 @@ export default function PropertyDetailFrame({
             entityType="property"
             entityId={resolvedProperty.id}
             readOnly={readOnly}
+            onCountChange={setEquipmentCount}
           />
         ),
 
@@ -557,6 +602,7 @@ export default function PropertyDetailFrame({
           <PropertyServicesTab
             propertyId={resolvedProperty.id}
             readOnly={readOnly}
+            onCountChange={setServicesCount}
           />
         ),
 

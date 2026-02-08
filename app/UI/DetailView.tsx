@@ -64,6 +64,8 @@ export type DetailViewCtx = {
   mode?: DetailViewMode
   showSystemEntityHeader?: boolean
 
+  sectionCounts?: Partial<Record<DetailSectionId, number>>
+
   detailContent?: React.ReactNode
 
   relationsContent?: React.ReactNode
@@ -477,7 +479,12 @@ export default function DetailView({
   const tabs: DetailTabItem[] = useMemo(() => {
     return sections
       .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
-      .map((s) => ({ id: s.id, label: s.label, icon: s.icon }))
+      .map((s) => ({
+        id: s.id,
+        label: s.label,
+        icon: s.icon,
+        count: ctx?.sectionCounts?.[s.id],
+      }))
   }, [sections, ctx])
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'

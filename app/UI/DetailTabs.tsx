@@ -11,6 +11,7 @@ export type DetailTabItem = {
   label: string
   icon?: React.ReactNode
   disabled?: boolean
+  count?: number
 }
 
 type Props = {
@@ -31,6 +32,7 @@ export default function DetailTabs({
       <div className="detail-tabs__rail" role="tablist">
         {items.map((it) => {
           const isActive = it.id === activeId
+          const displayLabel = typeof it.count === 'number' ? `${it.label} (${it.count})` : it.label
           return (
             <button
               key={it.id}
@@ -45,7 +47,7 @@ export default function DetailTabs({
               onClick={() => onChange(it.id)}
             >
               {it.icon && <span className="detail-tabs__icon">{it.icon}</span>}
-              <span className="detail-tabs__label">{it.label}</span>
+              <span className="detail-tabs__label">{displayLabel}</span>
             </button>
           )
         })}

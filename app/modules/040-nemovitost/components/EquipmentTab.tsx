@@ -59,6 +59,7 @@ type Props = {
   entityType: EntityType
   entityId: string
   readOnly?: boolean
+  onCountChange?: (count: number) => void
 }
 
 type EquipmentFormValue = {
@@ -80,7 +81,7 @@ type EquipmentFormValue = {
 // COMPONENT
 // =====================
 
-export default function EquipmentTab({ entityType, entityId, readOnly = false }: Props) {
+export default function EquipmentTab({ entityType, entityId, readOnly = false, onCountChange }: Props) {
   const toast = useToast()
   
   const [equipmentList, setEquipmentList] = useState<EquipmentRow[]>([])
@@ -147,6 +148,10 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false }:
     isDirty: false,
     mode: 'list',
   })
+
+  useEffect(() => {
+    onCountChange?.(equipmentList.length)
+  }, [equipmentList.length, onCountChange])
   
   // Načíst seznam vybavení
   useEffect(() => {
