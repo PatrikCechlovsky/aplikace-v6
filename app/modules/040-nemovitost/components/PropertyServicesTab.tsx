@@ -78,8 +78,9 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detailMode, setDetailMode] = useState<DetailMode>('read')
-  const [viewMode, setViewMode] = useState<'list' | 'detail' | 'attachments'>('list')
-  const [attachmentsReturnView, setAttachmentsReturnView] = useState<'list' | 'detail'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
+  const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
+  const currentIndexRef = useRef(-1)
 
   const [formValue, setFormValue] = useState<ServiceFormValue>(() => buildEmptyFormValue())
   const [isCustomService, setIsCustomService] = useState(false)
@@ -177,6 +178,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     (id: string) => {
       const row = services.find((s) => s.id === id)
       if (!row) return
+      currentIndexRef.current = services.findIndex((s) => s.id === id)
       setSelectedId(row.id)
       const resolvedCategoryId = row.resolved_category_id ?? row.category_id ?? null
       const resolvedBillingTypeId = row.resolved_billing_type_id ?? row.billing_type_id ?? null
@@ -208,6 +210,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     setSelectedId(null)
     setFormValue(buildEmptyFormValue())
     setIsCustomService(false)
+    currentIndexRef.current = -1
   }, [])
 
   const openDetailRead = useCallback(() => {
@@ -215,6 +218,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     selectService(selectedId)
     setDetailMode('read')
     setViewMode('detail')
+    setActiveTab('form')
   }, [selectedId, selectService])
 
   const openDetailEdit = useCallback(() => {
@@ -225,6 +229,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     selectService(selectedId)
     setDetailMode('edit')
     setViewMode('detail')
+    setActiveTab('form')
   }, [selectedId, selectService, readOnly, toast])
 
   const openDetailCreate = useCallback(() => {
@@ -235,25 +240,42 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
     handleAdd()
     setDetailMode('create')
     setViewMode('detail')
+    setActiveTab('form')
   }, [handleAdd, readOnly, toast])
 
   const closeDetail = useCallback(() => {
     setViewMode('list')
     setDetailMode('read')
+    setActiveTab('form')
   }, [])
 
-  const openAttachmentsManager = useCallback(
-    (returnTo: 'list' | 'detail') => {
-      if (!selectedId) return
-      setAttachmentsReturnView(returnTo)
-      setViewMode('attachments')
-    },
-    [selectedId]
-  )
+  const openAttachmentsManager = useCallback(() => {
+    if (!selectedId) return
+    setActiveTab('attachments')
+    setViewMode('detail')
+  }, [selectedId])
 
   const closeAttachmentsManager = useCallback(() => {
-    setViewMode(attachmentsReturnView)
-  }, [attachmentsReturnView])
+    setActiveTab('form')
+  }, [])
+
+  const handlePrevious = useCallback(() => {
+    if (currentIndexRef.current > 0) {
+      const prevService = services[currentIndexRef.current - 1]
+      if (prevService) {
+        selectService(prevService.id)
+      }
+    }
+  }, [services, selectService])
+
+  const handleNext = useCallback(() => {
+    if (currentIndexRef.current >= 0 && currentIndexRef.current < services.length - 1) {
+      const nextService = services[currentIndexRef.current + 1]
+      if (nextService) {
+        selectService(nextService.id)
+      }
+    }
+  }, [services, selectService])
 
   const handleCatalogChange = useCallback(
     (serviceId: string) => {
@@ -329,6 +351,16 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
 
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
+  const canGoPrevious = currentIndexRef.current > 0
+  const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < services.length - 1
+
+  useEffect(() => {
+    if (!selectedId) {
+      currentIndexRef.current = -1
+      return
+    }
+    currentIndexRef.current = services.findIndex((s) => s.id === selectedId)
+  }, [selectedId, services])
 
   if (!propertyId || propertyId === 'new') {
     return (
@@ -364,7 +396,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
                     <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
                     <span className="common-actions__label">Upravit</span>
                   </button>
-                  <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('list')}>
+                  <button type="button" className="common-actions__btn" onClick={openAttachmentsManager}>
                     <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
                     <span className="common-actions__label">Přílohy</span>
                   </button>
@@ -450,8 +482,32 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
                   <span className="common-actions__label">Uložit</span>
                 </button>
               )}
+              {detailMode === 'edit' && !readOnly && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevious}
+                    disabled={!canGoPrevious}
+                    className="common-actions__btn"
+                    title="Předchozí služba"
+                  >
+                    <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
+                    <span className="common-actions__label">Předchozí</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={!canGoNext}
+                    className="common-actions__btn"
+                    title="Další služba"
+                  >
+                    <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
+                    <span className="common-actions__label">Další</span>
+                  </button>
+                </>
+              )}
               {selectedId && (
-                <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('detail')}>
+                <button type="button" className="common-actions__btn" onClick={openAttachmentsManager}>
                   <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
                   <span className="common-actions__label">Přílohy</span>
                 </button>
@@ -463,6 +519,44 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
             </div>
           </div>
 
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab('form')}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderBottom: activeTab === 'form' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                color: activeTab === 'form' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+              }}
+            >
+              Formulář
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('attachments')}
+              disabled={!selectedId}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                background: 'transparent',
+                cursor: selectedId ? 'pointer' : 'not-allowed',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderBottom: activeTab === 'attachments' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                color: activeTab === 'attachments' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                opacity: selectedId ? 1 : 0.5,
+              }}
+            >
+              📎 Přílohy
+            </button>
+          </div>
+
+          {activeTab === 'form' && (
           <div className="detail-form__grid detail-form__grid--narrow">
             <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
               <label className="detail-form__label" style={{ marginBottom: 8 }}>
@@ -470,24 +564,34 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
               </label>
               <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <input
-                  type="checkbox"
-                  checked={isCustomService}
-                  onChange={(e) => {
-                    const checked = e.target.checked
-                    setIsCustomService(checked)
-                    if (checked) {
-                      setFormValue((prev) => ({ ...prev, serviceId: '' }))
-                    }
+                  type="radio"
+                  name="service-type"
+                  checked={!isCustomService}
+                  onChange={() => {
+                    setIsCustomService(false)
                   }}
                   disabled={isFormReadOnly}
                 />
-                <span>Vlastní služba (bez katalogu)</span>
+                <span>Z katalogu</span>
+              </label>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 }}>
+                <input
+                  type="radio"
+                  name="service-type"
+                  checked={isCustomService}
+                  onChange={() => {
+                    setIsCustomService(true)
+                    setFormValue((prev) => ({ ...prev, serviceId: '' }))
+                  }}
+                  disabled={isFormReadOnly}
+                />
+                <span>Vlastní služba</span>
               </label>
             </div>
 
             {!isCustomService && (
-              <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Katalogová služba</label>
+              <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
+                <label className="detail-form__label" style={{ marginBottom: 8 }}>Katalogová služba</label>
                 <select
                   className="detail-form__input"
                   value={formValue.serviceId}
@@ -687,10 +791,10 @@ export default function PropertyServicesTab({ propertyId, readOnly = false }: Pr
               />
             </div>
           </div>
+          )}
         </section>
       )}
-
-      {viewMode === 'attachments' && selectedId && (
+      {viewMode === 'detail' && activeTab === 'attachments' && selectedId && (
         <section className="detail-form__section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Přílohy služby</h3>
