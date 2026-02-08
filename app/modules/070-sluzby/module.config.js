@@ -7,13 +7,13 @@ export default {
   id: '070-sluzby',
   order: 70,
   label: 'Služby',
-  icon: 'services',
+  icon: 'maintenance',
   enabled: true,
   tiles: [
     {
       id: 'service-catalog',
       label: 'Katalog služeb',
-      icon: 'list_alt',
+      icon: 'list',
       component: ServiceCatalogTile,
       order: 10,
     },

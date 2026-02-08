@@ -30,9 +30,8 @@ const VIEW_KEY = '070.service-catalog.list'
 type LocalViewMode = 'list' | 'view' | 'edit' | 'create'
 
 const BASE_COLUMNS: ListViewColumn[] = [
-  { key: 'code', label: 'Kód', width: 140, sortable: true },
+  { key: 'category', label: 'Kategorie', width: 200, sortable: true },
   { key: 'name', label: 'Název', width: 240, sortable: true },
-  { key: 'category', label: 'Kategorie', width: 180, sortable: true },
   { key: 'billingType', label: 'Typ účtování', width: 180, sortable: true },
   { key: 'unit', label: 'Jednotka', width: 140, sortable: true },
   { key: 'basePrice', label: 'Základní cena', width: 140, sortable: true, align: 'right' },
@@ -82,8 +81,6 @@ function toRow(e: UiServiceCatalog): ListViewRow<UiServiceCatalog> {
   return {
     id: e.id,
     data: {
-      code: e.code,
-      name: e.name,
       category: e.categoryColor ? (
         <span className="generic-type__name-badge" style={{ backgroundColor: e.categoryColor, color: getContrastTextColor(e.categoryColor) }}>
           {e.categoryName}
@@ -91,6 +88,7 @@ function toRow(e: UiServiceCatalog): ListViewRow<UiServiceCatalog> {
       ) : (
         <span>{e.categoryName}</span>
       ),
+      name: e.name,
       billingType: e.billingTypeName,
       unit: e.unitName,
       basePrice: e.basePrice != null ? `${e.basePrice.toFixed(2)} Kč` : '—',
@@ -107,8 +105,6 @@ function getSortValue(e: UiServiceCatalog | undefined, key: string): string | nu
   const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
   switch (key) {
-    case 'code':
-      return norm(e.code)
     case 'name':
       return norm(e.name)
     case 'category':
@@ -157,7 +153,7 @@ export default function ServiceCatalogTile({
     colOrder: [],
     colHidden: [],
   })
-  const DEFAULT_SORT = { key: 'name', dir: 'asc' as const }
+  const DEFAULT_SORT = { key: 'category', dir: 'asc' as const }
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
   const [showColumnsDrawer, setShowColumnsDrawer] = useState(false)
 
@@ -462,7 +458,7 @@ export default function ServiceCatalogTile({
         open={showColumnsDrawer}
         onClose={() => setShowColumnsDrawer(false)}
         columns={BASE_COLUMNS}
-        fixedFirstKey="code"
+        fixedFirstKey="category"
         requiredKeys={['name']}
         value={{
           order: colPrefs.colOrder ?? [],
