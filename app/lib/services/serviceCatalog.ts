@@ -33,6 +33,7 @@ export type ServiceCatalogRow = {
   billing_type_name?: string | null
   unit_name?: string | null
   vat_rate_name?: string | null
+  billing_type_color?: string | null
 }
 
 export async function listServiceCatalog(params: ServiceCatalogParams = {}): Promise<ServiceCatalogRow[]> {
@@ -60,7 +61,7 @@ export async function listServiceCatalog(params: ServiceCatalogParams = {}): Pro
         is_archived,
         created_at,
         category:category_id(name, color),
-        billing_type:billing_type_id(name),
+        billing_type:billing_type_id(name, color),
         unit:unit_id(name),
         vat_rate:vat_rate_id(name)
       `
@@ -100,6 +101,7 @@ export async function listServiceCatalog(params: ServiceCatalogParams = {}): Pro
       category_name: category?.name ?? null,
       category_color: category?.color ?? null,
       billing_type_name: billingType?.name ?? null,
+      billing_type_color: billingType?.color ?? null,
       unit_name: unit?.name ?? null,
       vat_rate_name: vatRate?.name ?? null,
     } as ServiceCatalogRow

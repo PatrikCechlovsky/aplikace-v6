@@ -48,6 +48,7 @@ type UiServiceCatalog = {
   categoryColor: string | null
   billingTypeId: string | null
   billingTypeName: string
+  billingTypeColor: string | null
   unitId: string | null
   unitName: string
   vatRateId: string | null
@@ -67,6 +68,7 @@ function mapRowToUi(row: ServiceCatalogRow): UiServiceCatalog {
     categoryColor: row.category_color || null,
     billingTypeId: row.billing_type_id || null,
     billingTypeName: row.billing_type_name || '—',
+    billingTypeColor: row.billing_type_color || null,
     unitId: row.unit_id || null,
     unitName: row.unit_name || '—',
     vatRateId: row.vat_rate_id || null,
@@ -89,7 +91,13 @@ function toRow(e: UiServiceCatalog): ListViewRow<UiServiceCatalog> {
         <span>{e.categoryName}</span>
       ),
       name: e.name,
-      billingType: e.billingTypeName,
+      billingType: e.billingTypeColor ? (
+        <span className="generic-type__name-badge" style={{ backgroundColor: e.billingTypeColor, color: getContrastTextColor(e.billingTypeColor) }}>
+          {e.billingTypeName}
+        </span>
+      ) : (
+        <span>{e.billingTypeName}</span>
+      ),
       unit: e.unitName,
       basePrice: e.basePrice != null ? `${e.basePrice.toFixed(2)} Kč` : '—',
       vatRate: e.vatRateName,
