@@ -37,7 +37,11 @@ INSERT INTO public.generic_types (id, category, code, name, description, order_i
 (gen_random_uuid(), 'service_periodicities', 'mesicne', 'Měsíčně', 'Měsíční periodicita', 10, true),
 (gen_random_uuid(), 'service_periodicities', 'ctvrtletne', 'Čtvrtletně', 'Čtvrtletní periodicita', 20, true),
 (gen_random_uuid(), 'service_periodicities', 'pulrocne', 'Půlročně', 'Půlroční periodicita', 30, true),
-(gen_random_uuid(), 'service_periodicities', 'rocne', 'Ročně', 'Roční periodicita', 40, true)
+(gen_random_uuid(), 'service_periodicities', 'rocne', 'Ročně', 'Roční periodicita', 40, true),
+(gen_random_uuid(), 'service_periodicities', 'dvojlete', 'Dvouleté', 'Perioda 2 roky', 50, true),
+(gen_random_uuid(), 'service_periodicities', 'trilete', 'Tříleté', 'Perioda 3 roky', 60, true),
+(gen_random_uuid(), 'service_periodicities', 'ctyrlete', 'Čtyřleté', 'Perioda 4 roky', 70, true),
+(gen_random_uuid(), 'service_periodicities', 'petilete', 'Pětileté', 'Perioda 5 let', 80, true)
 ON CONFLICT (category, code) DO NOTHING;
 
 -- ============================================================================

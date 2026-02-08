@@ -626,12 +626,12 @@ Použít generic_types s kategoriemi:
 - `settings.vat_rates` – DPH sazby
 - `settings.service_units` – jednotky (volitelné)
 - `settings.service_units` – jednotky (volitelné)
-- `settings.service_periodicities` – periodicita (měsíčně, čtvrtletně, půlročně, ročně)
+- `settings.service_periodicities` – periodicita (měsíčně, čtvrtletně, půlročně, ročně, 2–5 let)
 
 Startovní seed:
 - **service_types**: energie, voda, správní_poplatky, doplnkove_sluzby, najemne, jine_sluzby
 - **service_billing_types**: pevna_sazba, merena_spotreba, na_pocet_osob, na_m2, procento_z_najmu, pomer_plochy
 - **vat_rates**: 0.00, 0.10, 0.12, 0.15, 0.21
 - **service_units**: Kč, Kč/měsíc, Kč/čtvrtrok, Kč/půlrok, Kč/rok, Kč/m³, Kč/kWh, Kč/m², Kč/osoba, Kč/ks
-- **service_periodicities**: měsíčně, čtvrtletně, půlročně, ročně
+- **service_periodicities**: měsíčně, čtvrtletně, půlročně, ročně, dvouleté, tříleté, čtyřleté, pětileté
 
