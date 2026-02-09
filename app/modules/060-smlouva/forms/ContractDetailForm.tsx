@@ -157,14 +157,10 @@ export default function ContractDetailForm({
       patch.landlordId = selectedUnit.landlordId ?? ''
     }
 
-    if (!formVal.tenantId) {
-      patch.tenantId = selectedUnit.tenantId ?? ''
-    }
-
     if (Object.keys(patch).length) {
       update(patch)
     }
-  }, [selectedUnit, formVal.propertyId, formVal.landlordId, formVal.tenantId, update])
+  }, [selectedUnit, formVal.propertyId, formVal.landlordId, update])
 
   useEffect(() => {
     if (!selectedUnit || !selectedProperty) {
@@ -325,7 +321,7 @@ export default function ContractDetailForm({
                 </option>
               ))}
             </select>
-            <div className="detail-form__hint">Výběr jednotky automaticky doplní vazby na nemovitost, pronajímatele a nájemníka.</div>
+            <div className="detail-form__hint">Výběr jednotky automaticky doplní vazby na nemovitost a pronajímatele. Nájemníka vybírej ručně.</div>
           </div>
         </div>
 
