@@ -147,6 +147,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
       if (mode === 'push') router.push(nextUrl)
       else router.replace(nextUrl)
+
+      if (typeof window !== 'undefined') {
+        const expected = nextUrl
+        setTimeout(() => {
+          const current = `${window.location.pathname}${window.location.search}`
+          if (current !== expected) {
+            window.location.assign(expected)
+          }
+        }, 200)
+      }
     },
     [pathname, router, searchParams]
   )
