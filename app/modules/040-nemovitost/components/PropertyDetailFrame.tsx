@@ -920,10 +920,12 @@ export default function PropertyDetailFrame({
 
             {unitsViewMode === 'detail' && (
               <section className="detail-form__section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <h3 className="detail-form__section-title">Detail jednotky</h3>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                  <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail jednotky</h3>
+                  <div style={{ flex: 1, textAlign: 'center' }}>
+                    {selectedUnitIndex >= 0 && <span className="detail-form__hint">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <button
                       type="button"
                       onClick={() => {

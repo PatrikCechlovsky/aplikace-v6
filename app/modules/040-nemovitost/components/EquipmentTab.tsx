@@ -718,12 +718,14 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
       {/* Detail vybavení */}
       {viewMode === 'detail' && (
       <section className="detail-form__section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 className="detail-form__section-title">Detail vybavení</h3>
-          <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+          <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail vybavení</h3>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            {positionLabel && <span className="detail-form__hint">{positionLabel}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {detailMode === 'read' && (
               <>
-                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 <button
                   type="button"
                   onClick={handlePrevious}
@@ -815,7 +817,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
 
             {detailMode === 'edit' && !readOnly && (
               <>
-                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 <button
                   type="button"
                   onClick={handlePrevious}
