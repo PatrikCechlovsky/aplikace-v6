@@ -213,6 +213,27 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     setCommonActionHandler(() => fn)
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const w = window as any
+    const getState = () => ({
+      commonActionsUi,
+      activeSelection,
+      urlState,
+      searchParams: Object.fromEntries(searchParams?.entries() || []),
+    })
+
+    w.__appDebug = {
+      getState,
+      dump: () => console.log('APP_DEBUG', getState()),
+    }
+
+    return () => {
+      if (w.__appDebug) delete w.__appDebug
+    }
+  }, [commonActionsUi, activeSelection, urlState, searchParams])
+
   const getDefaultTileId = useCallback(
     (moduleId?: string | null) => {
       if (!moduleId) return null
