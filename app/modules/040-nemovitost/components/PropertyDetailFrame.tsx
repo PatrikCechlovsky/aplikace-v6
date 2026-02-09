@@ -28,6 +28,7 @@ import { getUnitDetail, listUnits, type UnitDetailRow, type UnitsListRow } from 
 import { UNITS_BASE_COLUMNS } from '@/app/modules/040-nemovitost/unitsColumns'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
 import { renderUnitStatus } from '@/app/modules/040-nemovitost/unitsStatus'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -840,6 +841,7 @@ export default function PropertyDetailFrame({
                       className="common-actions__btn"
                       title="Číst vybranou jednotku"
                     >
+                      <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
                       <span className="common-actions__label">Číst</span>
                     </button>
                     <button
@@ -849,6 +851,7 @@ export default function PropertyDetailFrame({
                       className="common-actions__btn"
                       title="Upravit v přehledu jednotek"
                     >
+                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
                       <span className="common-actions__label">Upravit</span>
                     </button>
                   </div>
@@ -931,6 +934,7 @@ export default function PropertyDetailFrame({
                       className="common-actions__btn"
                       title="Předchozí jednotka"
                     >
+                      <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
                       <span className="common-actions__label">Předchozí</span>
                     </button>
                     <button
@@ -944,6 +948,7 @@ export default function PropertyDetailFrame({
                       className="common-actions__btn"
                       title="Další jednotka"
                     >
+                      <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                       <span className="common-actions__label">Další</span>
                     </button>
                     <button
@@ -953,6 +958,7 @@ export default function PropertyDetailFrame({
                       className="common-actions__btn"
                       title="Upravit v přehledu jednotek"
                     >
+                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
                       <span className="common-actions__label">Upravit</span>
                     </button>
                     <button
@@ -961,6 +967,7 @@ export default function PropertyDetailFrame({
                       className="common-actions__btn"
                       title="Zpět na seznam"
                     >
+                      <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
                       <span className="common-actions__label">Zpět</span>
                     </button>
                   </div>
