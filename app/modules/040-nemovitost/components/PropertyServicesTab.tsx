@@ -647,22 +647,8 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
               {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
             </h3>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {detailMode === 'read' && !readOnly && selectedId && (
-                <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
-                  <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                  <span className="common-actions__label">Upravit</span>
-                </button>
-              )}
-              {!isFormReadOnly && (
-                <button type="button" className="common-actions__btn" onClick={handleSave} disabled={saving}>
-                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-                  <span className="common-actions__label">Uložit</span>
-                </button>
-              )}
               {detailMode !== 'create' && selectedId && positionLabel && (
-                <span className="detail-form__hint" style={{ marginLeft: 4, marginRight: 4 }}>
-                  {positionLabel}
-                </span>
+                <span className="common-actions__counter">{positionLabel}</span>
               )}
               {detailMode !== 'create' && selectedId && (
                 <>
@@ -687,6 +673,30 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                     <span className="common-actions__label">Další</span>
                   </button>
                 </>
+              )}
+              {!readOnly && detailMode !== 'create' && (
+                <button type="button" className="common-actions__btn" onClick={openDetailCreate}>
+                  <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                  <span className="common-actions__label">Přidat</span>
+                </button>
+              )}
+              {detailMode !== 'read' && selectedId && (
+                <button type="button" className="common-actions__btn" onClick={openDetailRead}>
+                  <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                  <span className="common-actions__label">Číst</span>
+                </button>
+              )}
+              {detailMode === 'read' && !readOnly && selectedId && (
+                <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
+                  <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                  <span className="common-actions__label">Editovat</span>
+                </button>
+              )}
+              {!isFormReadOnly && (
+                <button type="button" className="common-actions__btn" onClick={handleSave} disabled={saving}>
+                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                  <span className="common-actions__label">Uložit</span>
+                </button>
               )}
               {selectedId && (
                 <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('detail')}>
@@ -993,6 +1003,15 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Správa příloh</h3>
             <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => void attachmentsApiRef.current?.add()}
+                className="common-actions__btn"
+                title="Přidat přílohu"
+              >
+                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                <span className="common-actions__label">Přidat</span>
+              </button>
               {(attachmentsUiState.mode === 'edit' || attachmentsUiState.mode === 'new') && (
                 <button
                   type="button"
@@ -1005,7 +1024,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                   <span className="common-actions__label">Uložit</span>
                 </button>
               )}
-
               <button type="button" onClick={closeAttachmentsManager} className="common-actions__btn" title="Zavřít správu příloh">
                 <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
                 <span className="common-actions__label">Zavřít</span>
