@@ -5,7 +5,7 @@
 // URL state: t=units-list, id + vm (detail: read/edit/create), am=1 (attachments manager)
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listUnits, type UnitsListRow } from '@/app/lib/services/units'
@@ -183,6 +183,7 @@ export default function UnitsTile({
   console.log('🔍 UnitsTile: Renderuji s filtry:', { propertyId, unitTypeCode, status })
   const toast = useToast()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [units, setUnits] = useState<UiUnitRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -230,6 +231,39 @@ export default function UnitsTile({
 
   const fixedFirstKey = 'unitTypeName'
   const requiredKeys = ['displayName']
+
+  useEffect(() => {
+    const id = searchParams?.get('id')?.trim() ?? null
+    const vm = (searchParams?.get('vm')?.trim() || 'list') as LocalViewMode
+
+    if (!id) return
+
+    setSelectedId(id)
+    setViewMode(vm)
+    if (vm === 'relations') {
+      setRelationsUnitId(id)
+      return
+    }
+
+    if (vm !== 'list') {
+      const found = units.find((u) => u.id === id)
+      const minimal = found
+        ? createMinimalUiUnit({
+            id: found.id,
+            propertyId: found.propertyId,
+            unitTypeId: found.unitTypeId,
+            displayName: found.displayName,
+            floor: found.floor,
+            area: found.area,
+            rooms: found.rooms,
+            status: found.status,
+            isArchived: found.isArchived,
+          })
+        : createMinimalUiUnit({ id })
+
+      setDetailUnit(minimal)
+    }
+  }, [searchParams, units])
 
   // Load view prefs
   useEffect(() => {

@@ -464,10 +464,24 @@ export default function PropertyDetailFrame({
 
   const selectedUnitForm = useMemo(() => (selectedUnitDetail ? buildUnitFormValue(selectedUnitDetail) : null), [selectedUnitDetail])
 
-  const openUnitInModule = useCallback((mode: 'read' | 'edit' = 'read') => {
+  const hasUnsavedPropertyChanges = useCallback(() => {
+    const currentSnap = JSON.stringify(formValueRef.current)
+    return currentSnap !== initialSnapshotRef.current
+  }, [])
+
+  const openUnitInModule = useCallback(async (mode: 'read' | 'edit' = 'read') => {
     if (!selectedUnitId) return
+
+    if (hasUnsavedPropertyChanges()) {
+      const shouldSave = window.confirm('Máš neuložené změny v nemovitosti. Chceš je uložit před otevřením jednotky?')
+      if (shouldSave) {
+        const saved = await handleSubmit()
+        if (!saved) return
+      }
+    }
+
     router.push(`/040-nemovitost?t=units-list&id=${selectedUnitId}&vm=${mode}`)
-  }, [router, selectedUnitId])
+  }, [handleSubmit, hasUnsavedPropertyChanges, router, selectedUnitId])
 
   useEffect(() => {
     if (isNewId(resolvedProperty.id)) {
