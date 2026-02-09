@@ -227,12 +227,13 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
     w.__appDebug = {
       getState,
       dump: () => console.log('APP_DEBUG', getState()),
+      navigate: (selection: SidebarSelection) => handleModuleSelect(selection),
     }
 
     return () => {
       if (w.__appDebug) delete w.__appDebug
     }
-  }, [commonActionsUi, activeSelection, urlState, searchParams])
+  }, [commonActionsUi, activeSelection, urlState, searchParams, handleModuleSelect])
 
   const getDefaultTileId = useCallback(
     (moduleId?: string | null) => {
