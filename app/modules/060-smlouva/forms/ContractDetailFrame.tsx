@@ -461,8 +461,8 @@ export default function ContractDetailFrame({
             statusOptions={statusOptions}
             rentPeriodOptions={rentPeriodOptions}
             paymentDayOptions={paymentDayOptions}
-            onDirtyChange={(dirty) => {
-              if (dirty) markDirtyIfChanged(formValue)
+            onDirtyChange={() => {
+              markDirtyIfChanged(formValueRef.current)
             }}
             onValueChange={(val) => {
               setFormValue(val)
