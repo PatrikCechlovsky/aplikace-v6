@@ -63,6 +63,7 @@ export type UiContract = {
 type Props = {
   contract: UiContract
   viewMode: ViewMode
+  embedded?: boolean
   initialSectionId?: DetailSectionId
   onActiveSectionChange?: (id: DetailSectionId) => void
   onRegisterSubmit?: (fn: () => Promise<UiContract | null>) => void
@@ -106,6 +107,7 @@ function isNewId(id: string | null | undefined) {
 export default function ContractDetailFrame({
   contract,
   viewMode,
+  embedded = false,
   initialSectionId,
   onActiveSectionChange,
   onRegisterSubmit,
@@ -379,6 +381,11 @@ export default function ContractDetailFrame({
   }, [viewMode])
 
   const readOnly = detailViewMode === 'view'
+  const title = useMemo(() => {
+    if (detailViewMode === 'create') return 'Nová smlouva'
+    if (detailViewMode === 'edit') return `Editace: ${formValue.cisloSmlouvy || 'smlouva'}`
+    return formValue.cisloSmlouvy || 'Smlouva'
+  }, [detailViewMode, formValue.cisloSmlouvy])
   const systemBlocks = useMemo(() => {
     return [
       {
@@ -410,7 +417,7 @@ export default function ContractDetailFrame({
     ]
   }, [resolvedContract.createdAt, resolvedContract.updatedAt])
 
-  return (
+  const content = (
     <DetailView
       mode={detailViewMode}
       sectionIds={['detail', 'attachments', 'system']}
@@ -448,5 +455,18 @@ export default function ContractDetailFrame({
         systemBlocks,
       }}
     />
+  )
+
+  if (embedded) {
+    return <div className="tile-layout__content">{content}</div>
+  }
+
+  return (
+    <div className="tile-layout">
+      <div className="tile-layout__header">
+        <h1 className="tile-layout__title">{title}</h1>
+      </div>
+      <div className="tile-layout__content">{content}</div>
+    </div>
   )
 }
