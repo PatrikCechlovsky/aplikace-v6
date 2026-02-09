@@ -628,6 +628,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
 
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < equipmentList.length - 1
+  const positionLabel = currentIndexRef.current >= 0 ? `${currentIndexRef.current + 1}/${equipmentList.length}` : null
   const isFormReadOnly = readOnly || detailMode === 'read'
 
   // =====================
@@ -742,6 +743,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
                   <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                   <span className="common-actions__label">Další</span>
                 </button>
+                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 {!readOnly && (
                   <button
                     type="button"
@@ -833,6 +835,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
                   <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                   <span className="common-actions__label">Další</span>
                 </button>
+                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 <button
                   type="button"
                   onClick={handleSave}
