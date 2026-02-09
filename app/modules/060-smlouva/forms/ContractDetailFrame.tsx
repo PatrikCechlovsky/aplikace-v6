@@ -15,6 +15,7 @@ import { listUnits } from '@/app/lib/services/units'
 import { listProperties } from '@/app/lib/services/properties'
 import { listLandlords } from '@/app/lib/services/landlords'
 import { listTenants } from '@/app/lib/services/tenants'
+import { listSubjects } from '@/app/lib/services/subjects'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 import { saveContract, type SaveContractInput } from '@/app/lib/services/contracts'
 import ContractDetailForm, {
@@ -127,6 +128,7 @@ export default function ContractDetailFrame({
   const [properties, setProperties] = useState<PropertyLookupOption[]>([])
   const [landlords, setLandlords] = useState<LookupOption[]>([])
   const [tenants, setTenants] = useState<LookupOption[]>([])
+  const [tenantFallbackActive, setTenantFallbackActive] = useState(false)
   const [statusOptions, setStatusOptions] = useState<LookupOption[]>([])
   const [rentPeriodOptions, setRentPeriodOptions] = useState<LookupOption[]>([])
 
@@ -207,7 +209,23 @@ export default function ContractDetailFrame({
         )
 
         setLandlords(landlordRows.map((l) => ({ id: l.id, label: l.display_name || '—' })))
-        setTenants(tenantRows.map((t) => ({ id: t.id, label: t.display_name || '—' })))
+
+        let resolvedTenants = tenantRows
+        let fallbackUsed = false
+
+        if (!tenantRows.length) {
+          try {
+            resolvedTenants = await listSubjects({ includeArchived: false, limit: 1000 })
+            fallbackUsed = true
+          } catch (fallbackErr) {
+            logger.error('Failed to load tenant fallback subjects', fallbackErr)
+          }
+        }
+
+        if (!mounted) return
+
+        setTenantFallbackActive(fallbackUsed)
+        setTenants(resolvedTenants.map((t) => ({ id: t.id, label: t.display_name || '—' })))
       } catch (err) {
         logger.error('Failed to load contract lookups', err)
       }
@@ -439,6 +457,7 @@ export default function ContractDetailFrame({
             properties={properties}
             landlords={landlords}
             tenants={tenants}
+            tenantFallbackActive={tenantFallbackActive}
             statusOptions={statusOptions}
             rentPeriodOptions={rentPeriodOptions}
             paymentDayOptions={paymentDayOptions}

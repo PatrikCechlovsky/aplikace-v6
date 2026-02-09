@@ -56,6 +56,7 @@ export type ContractDetailFormProps = {
   properties: PropertyLookupOption[]
   landlords: LookupOption[]
   tenants: LookupOption[]
+  tenantFallbackActive?: boolean
   statusOptions: LookupOption[]
   rentPeriodOptions: LookupOption[]
   paymentDayOptions: LookupOption[]
@@ -80,6 +81,7 @@ export default function ContractDetailForm({
   properties,
   landlords,
   tenants,
+  tenantFallbackActive = false,
   statusOptions,
   rentPeriodOptions,
   paymentDayOptions,
@@ -381,6 +383,9 @@ export default function ContractDetailForm({
             {tenants.length === 0 && (
               <div className="detail-form__hint">Nejsou dostupní žádní nájemníci. Zkontroluj, že má subjekt nastaveno „Je nájemník“.</div>
             )}
+              {tenantFallbackActive && tenants.length > 0 && (
+                <div className="detail-form__hint">Pozor: nejsou označení nájemníci, proto jsou nabídnuté všechny subjekty.</div>
+              )}
           </div>
 
           <div className="detail-form__field">

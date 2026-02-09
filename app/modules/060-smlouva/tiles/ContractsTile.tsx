@@ -348,7 +348,8 @@ export default function ContractsTile({
     setViewMode('list')
     setSelectedId(null)
     setAttachmentsManagerContractId(null)
-  }, [])
+    router.push(`${pathname}?t=contracts-list`)
+  }, [router, pathname])
 
   const closeListToModule = useCallback(() => {
     router.push('/')
