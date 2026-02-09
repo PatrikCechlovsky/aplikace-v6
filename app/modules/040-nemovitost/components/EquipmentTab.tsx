@@ -653,38 +653,39 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
                   <span className="common-actions__label">Přidat</span>
                 </button>
               )}
-              <button
-                type="button"
-                onClick={openDetailRead}
-                disabled={!selectedEquipmentId}
-                className="common-actions__btn"
-                title="Číst vybrané vybavení"
-              >
-                <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
-                <span className="common-actions__label">Číst</span>
-              </button>
-              {!readOnly && (
-                <button
-                  type="button"
-                  onClick={openDetailEdit}
-                  disabled={!selectedEquipmentId}
-                  className="common-actions__btn"
-                  title="Upravit vybrané vybavení"
-                >
-                  <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                  <span className="common-actions__label">Editovat</span>
-                </button>
+              {selectedEquipmentId && (
+                <>
+                  <button
+                    type="button"
+                    onClick={openDetailRead}
+                    className="common-actions__btn"
+                    title="Číst vybrané vybavení"
+                  >
+                    <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                    <span className="common-actions__label">Číst</span>
+                  </button>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={openDetailEdit}
+                      className="common-actions__btn"
+                      title="Upravit vybrané vybavení"
+                    >
+                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                      <span className="common-actions__label">Editovat</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openAttachmentsManager('list')}
+                    className="common-actions__btn"
+                    title="Správa příloh vybraného vybavení"
+                  >
+                    <span className="common-actions__icon">{getIcon('attach' as IconKey)}</span>
+                    <span className="common-actions__label">Přílohy</span>
+                  </button>
+                </>
               )}
-              <button
-                type="button"
-                onClick={() => openAttachmentsManager('list')}
-                disabled={!selectedEquipmentId}
-                className="common-actions__btn"
-                title="Správa příloh vybraného vybavení"
-              >
-                <span className="common-actions__icon">{getIcon('attach' as IconKey)}</span>
-                <span className="common-actions__label">Přílohy</span>
-              </button>
             </div>
           </div>
 

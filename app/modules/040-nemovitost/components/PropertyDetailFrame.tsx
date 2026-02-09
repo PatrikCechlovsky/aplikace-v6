@@ -336,8 +336,8 @@ export default function PropertyDetailFrame({
       setUnits(mapped)
       if (mapped.length === 0) {
         setSelectedUnitId(null)
-      } else if (!selectedUnitId || !mapped.some((u) => u.id === selectedUnitId)) {
-        setSelectedUnitId(String(mapped[0].id))
+      } else if (selectedUnitId && !mapped.some((u) => u.id === selectedUnitId)) {
+        setSelectedUnitId(null)
       }
     } catch (err) {
       logger.error('Failed to load property units', err)
@@ -851,31 +851,28 @@ export default function PropertyDetailFrame({
               <section className="detail-form__section">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!selectedUnitId) return
-                        setUnitsViewMode('detail')
-                      }}
-                      disabled={!selectedUnitId}
-                      className="common-actions__btn"
-                      title="Číst vybranou jednotku"
-                    >
-                      <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
-                      <span className="common-actions__label">Číst</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openUnitInModule('edit')}
-                      disabled={!selectedUnitId}
-                      className="common-actions__btn"
-                      title="Upravit v přehledu jednotek"
-                    >
-                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                      <span className="common-actions__label">Upravit</span>
-                    </button>
-                  </div>
+                  {selectedUnitId && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setUnitsViewMode('detail')}
+                        className="common-actions__btn"
+                        title="Číst vybranou jednotku"
+                      >
+                        <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                        <span className="common-actions__label">Číst</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openUnitInModule('edit')}
+                        className="common-actions__btn"
+                        title="Upravit v přehledu jednotek"
+                      >
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {unitsLoading && <div className="detail-form__hint">Načítám jednotky…</div>}
