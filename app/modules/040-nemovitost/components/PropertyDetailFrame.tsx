@@ -786,12 +786,19 @@ export default function PropertyDetailFrame({
     return propertyName
   }, [detailViewMode, propertyName, propertyTypeName])
 
+  const handleSectionChange = useCallback((id: DetailSectionId) => {
+    if (id !== 'units') {
+      setUnitsViewMode('list')
+    }
+    onActiveSectionChange?.(id)
+  }, [onActiveSectionChange])
+
   const content = (
     <DetailView
       mode={detailViewMode}
       sectionIds={sectionIds}
       initialActiveId={initialSectionId ?? 'detail'}
-      onActiveSectionChange={onActiveSectionChange}
+      onActiveSectionChange={handleSectionChange}
       ctx={{
         entityType: 'properties',
         entityId: resolvedProperty.id === 'new' ? 'new' : resolvedProperty.id || undefined,
@@ -922,8 +929,8 @@ export default function PropertyDetailFrame({
               <section className="detail-form__section">
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
                   <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail jednotky</h3>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    {selectedUnitIndex >= 0 && <span className="detail-form__hint">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <button

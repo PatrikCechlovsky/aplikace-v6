@@ -720,8 +720,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
       <section className="detail-form__section">
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
           <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail vybavení</h3>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            {positionLabel && <span className="detail-form__hint">{positionLabel}</span>}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {detailMode === 'read' && (
