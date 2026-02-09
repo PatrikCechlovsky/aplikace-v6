@@ -723,6 +723,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
           <div style={{ display: 'flex', gap: 8 }}>
             {detailMode === 'read' && (
               <>
+                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 <button
                   type="button"
                   onClick={handlePrevious}
@@ -743,7 +744,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
                   <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                   <span className="common-actions__label">Další</span>
                 </button>
-                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 {!readOnly && (
                   <button
                     type="button"
@@ -815,6 +815,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
 
             {detailMode === 'edit' && !readOnly && (
               <>
+                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 <button
                   type="button"
                   onClick={handlePrevious}
@@ -835,7 +836,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
                   <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
                   <span className="common-actions__label">Další</span>
                 </button>
-                {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
                 <button
                   type="button"
                   onClick={handleSave}

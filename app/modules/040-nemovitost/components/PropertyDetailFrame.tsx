@@ -923,6 +923,7 @@ export default function PropertyDetailFrame({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <h3 className="detail-form__section-title">Detail jednotky</h3>
                   <div style={{ display: 'flex', gap: 8 }}>
+                    {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
                     <button
                       type="button"
                       onClick={() => {
