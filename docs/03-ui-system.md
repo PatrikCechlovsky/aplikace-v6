@@ -693,6 +693,9 @@ EntityList je obalen:
 - CommonActions (bez nastavení sloupců)
 - ColumnPicker (ikona sloupců je v tabulce hned za hledáním)
 
+Pozn.: U vazeb **služeb a vybavení** v detailu nemovitosti/jednotky se archivace provádí
+přímo v tabulce přes checkbox ve sloupci „Aktivní“ a archivované položky se v seznamu nezobrazují.
+
 EntityList zde vykresluje pouze tabulku.
 
 ---

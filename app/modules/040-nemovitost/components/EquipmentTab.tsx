@@ -8,6 +8,8 @@ import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
   listPropertyEquipment,
   listUnitEquipment,
+  setPropertyEquipmentArchived,
+  setUnitEquipmentArchived,
   type PropertyEquipmentRow,
   type UnitEquipmentRow,
   savePropertyEquipment,
@@ -29,8 +31,9 @@ import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsMa
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import {
   EQUIPMENT_CATALOG_BASE_COLUMNS,
+  EQUIPMENT_BINDING_BASE_COLUMNS,
   EQUIPMENT_CATALOG_DEFAULT_SORT,
-  EQUIPMENT_CATALOG_VIEW_KEY,
+  EQUIPMENT_BINDING_VIEW_KEY,
   buildEquipmentCatalogListRow,
   getEquipmentCatalogSortValue,
   type EquipmentCatalogListItem,
@@ -116,7 +119,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
     colHidden: [],
   })
   const [sort, setSort] = useState<ListViewSortState>(EQUIPMENT_CATALOG_DEFAULT_SORT)
-  const columns = useMemo(() => applyColumnPrefs(EQUIPMENT_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
+  const columns = useMemo(() => applyColumnPrefs(EQUIPMENT_BINDING_BASE_COLUMNS, colPrefs), [colPrefs])
   const [colsOpen, setColsOpen] = useState(false)
   
   // Režim: katalog vs vlastní
@@ -143,37 +146,40 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   }, [equipmentList.length, onCountChange])
   
   // Načíst seznam vybavení
+  const reloadEquipment = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = entityType === 'property'
+        ? await listPropertyEquipment(entityId)
+        : await listUnitEquipment(entityId)
+      setEquipmentList(data)
+    } catch (e: any) {
+      logger.error('listEquipment failed', e)
+      toast.showError(e?.message ?? 'Chyba při načítání vybavení')
+    } finally {
+      setLoading(false)
+    }
+  }, [entityId, entityType, toast])
+
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      try {
-        setLoading(true)
-        const data = entityType === 'property' 
-          ? await listPropertyEquipment(entityId)
-          : await listUnitEquipment(entityId)
-        if (cancelled) return
-        setEquipmentList(data)
-      } catch (e: any) {
-        if (cancelled) return
-        logger.error('listEquipment failed', e)
-        toast.showError(e?.message ?? 'Chyba při načítání vybavení')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+      if (cancelled) return
+      await reloadEquipment()
     }
 
     void load()
     return () => {
       cancelled = true
     }
-  }, [entityType, entityId, toast])
+  }, [reloadEquipment])
 
   // Načíst column prefs
   useEffect(() => {
     let active = true
     void (async () => {
-      const prefs = await loadViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+      const prefs = await loadViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
       if (!active) return
       setColPrefs({
         colWidths: prefs.colWidths ?? {},
@@ -484,7 +490,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
 
   const handleSortChange = useCallback((nextSort: ListViewSortState) => {
     setSort(nextSort)
-    void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+    void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
       colWidths: colPrefs.colWidths ?? {},
       colOrder: colPrefs.colOrder ?? [],
       colHidden: colPrefs.colHidden ?? [],
@@ -495,7 +501,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   const handleColumnResize = useCallback((key: string, px: number) => {
     setColPrefs((prev) => {
       const next = { ...prev, colWidths: { ...(prev.colWidths ?? {}), [key]: px } }
-      void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+      void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
         colWidths: next.colWidths ?? {},
         colOrder: next.colOrder ?? [],
         colHidden: next.colHidden ?? [],
@@ -512,6 +518,27 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
     })
     return map
   }, [catalog])
+
+  const handleArchiveToggle = useCallback(
+    async (bindingId: string, nextActive: boolean) => {
+      if (readOnly) return
+      try {
+        if (entityType === 'property') {
+          await setPropertyEquipmentArchived(bindingId, !nextActive)
+        } else {
+          await setUnitEquipmentArchived(bindingId, !nextActive)
+        }
+        if (!nextActive && selectedEquipmentId === bindingId) {
+          setSelectedEquipmentId(null)
+        }
+        await reloadEquipment()
+      } catch (e: any) {
+        logger.error('setEquipmentArchived failed', e)
+        toast.showError(e?.message ?? 'Chyba při archivaci vybavení')
+      }
+    },
+    [entityType, readOnly, reloadEquipment, selectedEquipmentId, toast]
+  )
 
   const listItems = useMemo<EquipmentCatalogListItem[]>(() => {
     return equipmentList.map((row) => {
@@ -549,6 +576,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
         purchasePrice,
         defaultLifespanMonths,
         defaultState,
+        active: !(row as any).is_archived,
         isArchived: !!(row as any).is_archived,
       }
     })
@@ -567,7 +595,27 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   }, [listItems, searchText])
 
   const sortedRows = useMemo(() => {
-    const rows = filteredItems.map(buildEquipmentCatalogListRow)
+    const rows = filteredItems.map((item) => {
+      const row = buildEquipmentCatalogListRow(item)
+      const isActive = !!item.active
+      return {
+        ...row,
+        data: {
+          ...row.data,
+          active: (
+            <input
+              type="checkbox"
+              checked={isActive}
+              disabled={readOnly}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => handleArchiveToggle(String(row.id), e.target.checked)}
+              aria-label={isActive ? 'Označit jako archivované' : 'Označit jako aktivní'}
+              title={isActive ? 'Archivovat' : 'Obnovit'}
+            />
+          ),
+        },
+      }
+    })
     if (!sort?.key) return rows
     const dir = sort.dir === 'desc' ? -1 : 1
     return [...rows].sort((a, b) => {
@@ -577,7 +625,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
       if (aVal > bVal) return 1 * dir
       return 0
     })
-  }, [filteredItems, sort])
+  }, [filteredItems, handleArchiveToggle, readOnly, sort])
 
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < equipmentList.length - 1
@@ -1283,7 +1331,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
       {/* Columns Drawer */}
       <ListViewColumnsDrawer
         open={colsOpen}
-        title="Sloupce vybavení"
+        columns={EQUIPMENT_BINDING_BASE_COLUMNS}
         columns={EQUIPMENT_CATALOG_BASE_COLUMNS}
         fixedFirstKey="equipmentTypeName"
         requiredKeys={['equipmentName']}
@@ -1297,8 +1345,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
               ...p,
               colOrder: next.order,
               colHidden: next.hidden,
-            }
-            void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+            void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
+            void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
               colWidths: updated.colWidths ?? {},
               colOrder: updated.colOrder ?? [],
               colHidden: updated.colHidden ?? [],
@@ -1316,8 +1364,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
             colHidden: [],
           }
           setColPrefs(resetPrefs)
-          setSort(EQUIPMENT_CATALOG_DEFAULT_SORT)
-          void saveViewPrefs(EQUIPMENT_CATALOG_VIEW_KEY, {
+          void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
+          void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
             ...resetPrefs,
             sort: EQUIPMENT_CATALOG_DEFAULT_SORT,
           })

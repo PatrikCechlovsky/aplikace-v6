@@ -461,12 +461,17 @@ export type UnitEquipmentRow = {
   room_type_name?: string | null
 }
 
-export async function listUnitEquipment(unitId: string): Promise<UnitEquipmentRow[]> {
-  const { data, error } = await supabase
+export async function listUnitEquipment(unitId: string, includeArchived: boolean = false): Promise<UnitEquipmentRow[]> {
+  let query = supabase
     .from('v_unit_equipment_list')
     .select('*')
     .eq('unit_id', unitId)
-    .order('catalog_equipment_name', { ascending: true })
+
+  if (!includeArchived) {
+    query = query.or('is_archived.is.null,is_archived.eq.false')
+  }
+
+  const { data, error } = await query.order('catalog_equipment_name', { ascending: true })
 
   if (error) throw new Error(error.message)
 
@@ -530,6 +535,12 @@ export async function deleteUnitEquipment(id: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+export async function setUnitEquipmentArchived(id: string, isArchived: boolean): Promise<void> {
+  const { error } = await supabase.from('unit_equipment').update({ is_archived: isArchived }).eq('id', id)
+
+  if (error) throw new Error(error.message)
+}
+
 /* =========================
    PROPERTY EQUIPMENT
    ========================= */
@@ -561,12 +572,17 @@ export type PropertyEquipmentRow = {
   room_type_name?: string | null
 }
 
-export async function listPropertyEquipment(propertyId: string): Promise<PropertyEquipmentRow[]> {
-  const { data, error } = await supabase
+export async function listPropertyEquipment(propertyId: string, includeArchived: boolean = false): Promise<PropertyEquipmentRow[]> {
+  let query = supabase
     .from('v_property_equipment_list')
     .select('*')
     .eq('property_id', propertyId)
-    .order('catalog_equipment_name', { ascending: true })
+
+  if (!includeArchived) {
+    query = query.or('is_archived.is.null,is_archived.eq.false')
+  }
+
+  const { data, error } = await query.order('catalog_equipment_name', { ascending: true })
 
   if (error) throw new Error(error.message)
 
@@ -626,6 +642,12 @@ export async function savePropertyEquipment(input: SavePropertyEquipmentInput): 
 
 export async function deletePropertyEquipment(id: string): Promise<void> {
   const { error } = await supabase.from('property_equipment').update({ is_archived: true }).eq('id', id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function setPropertyEquipmentArchived(id: string, isArchived: boolean): Promise<void> {
+  const { error } = await supabase.from('property_equipment').update({ is_archived: isArchived }).eq('id', id)
 
   if (error) throw new Error(error.message)
 }

@@ -5,7 +5,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { listUnitServices, saveUnitService, type UnitServiceRow } from '@/app/lib/services/unitServices'
+import { listUnitServices, saveUnitService, setUnitServiceArchived, type UnitServiceRow } from '@/app/lib/services/unitServices'
 import { listServiceCatalog, type ServiceCatalogRow } from '@/app/lib/services/serviceCatalog'
 import { supabase } from '@/app/lib/supabaseClient'
 import { useToast } from '@/app/UI/Toast'
@@ -382,6 +382,23 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     [colPrefs]
   )
 
+  const handleArchiveToggle = useCallback(
+    async (serviceId: string, nextActive: boolean) => {
+      if (readOnly) return
+      try {
+        await setUnitServiceArchived(serviceId, !nextActive)
+        if (!nextActive && selectedId === serviceId) {
+          setSelectedId(null)
+        }
+        await reloadServices()
+      } catch (e: any) {
+        logger.error('setUnitServiceArchived failed', e)
+        toast.showError(e?.message ?? 'Chyba při archivaci služby')
+      }
+    },
+    [readOnly, reloadServices, selectedId, toast]
+  )
+
   const listItems = useMemo<ServiceCatalogListItem[]>(() => {
     return services.map((row) => ({
       id: row.id,
@@ -415,7 +432,27 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const preparedColumns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
   const sortedRows = useMemo(() => {
-    const rows = filteredItems.map(buildServiceCatalogListRow)
+    const rows = filteredItems.map((item) => {
+      const row = buildServiceCatalogListRow(item)
+      const isActive = !!item.active
+      return {
+        ...row,
+        data: {
+          ...row.data,
+          active: (
+            <input
+              type="checkbox"
+              checked={isActive}
+              disabled={readOnly}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => handleArchiveToggle(String(row.id), e.target.checked)}
+              aria-label={isActive ? 'Označit jako archivované' : 'Označit jako aktivní'}
+              title={isActive ? 'Archivovat' : 'Obnovit'}
+            />
+          ),
+        },
+      }
+    })
     if (!sort?.key) return rows
     const dir = sort.dir === 'desc' ? -1 : 1
     return [...rows].sort((a, b) => {
@@ -425,7 +462,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       if (aVal > bVal) return 1 * dir
       return 0
     })
-  }, [filteredItems, sort])
+  }, [filteredItems, handleArchiveToggle, readOnly, sort])
 
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'

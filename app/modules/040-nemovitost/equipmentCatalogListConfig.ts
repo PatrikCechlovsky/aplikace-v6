@@ -9,6 +9,8 @@ import { EQUIPMENT_STATES } from '@/app/lib/constants/properties'
 
 export const EQUIPMENT_CATALOG_VIEW_KEY = '040.equipment-catalog.list'
 
+export const EQUIPMENT_BINDING_VIEW_KEY = '040.equipment-binding.list'
+
 export const EQUIPMENT_CATALOG_BASE_COLUMNS: ListViewColumn[] = [
   { key: 'equipmentTypeName', label: 'Typ', width: 180, sortable: true },
   { key: 'equipmentName', label: 'Název', width: 250, sortable: true },
@@ -16,6 +18,11 @@ export const EQUIPMENT_CATALOG_BASE_COLUMNS: ListViewColumn[] = [
   { key: 'purchasePrice', label: 'Cena', width: 120, sortable: true },
   { key: 'defaultLifespanMonths', label: 'Životnost', width: 120, sortable: true },
   { key: 'defaultState', label: 'Stav', width: 120, sortable: true },
+]
+
+export const EQUIPMENT_BINDING_BASE_COLUMNS: ListViewColumn[] = [
+  ...EQUIPMENT_CATALOG_BASE_COLUMNS,
+  { key: 'active', label: 'Aktivní', width: 90, sortable: true, align: 'center' },
 ]
 
 export const EQUIPMENT_CATALOG_DEFAULT_SORT = { key: 'equipmentTypeName', dir: 'asc' as const }
@@ -30,6 +37,7 @@ export type EquipmentCatalogListItem = {
   purchasePrice: number | null
   defaultLifespanMonths: number | null
   defaultState: string | null
+  active?: boolean
   isArchived?: boolean
 }
 
@@ -75,6 +83,7 @@ export function buildEquipmentCatalogListRow(item: EquipmentCatalogListItem): Li
       purchasePrice: item.purchasePrice != null ? `${item.purchasePrice.toFixed(2)} Kč` : '—',
       defaultLifespanMonths: item.defaultLifespanMonths != null ? `${item.defaultLifespanMonths} měs.` : '—',
       defaultState: stateNode,
+      active: typeof item.active === 'boolean' ? (item.active ? 'Ano' : 'Ne') : '—',
     },
     className: item.isArchived ? 'row--archived' : undefined,
     raw: item,
@@ -98,6 +107,8 @@ export function getEquipmentCatalogSortValue(item: EquipmentCatalogListItem | un
       return item.defaultLifespanMonths ?? 0
     case 'defaultState':
       return norm(item.defaultState || '')
+    case 'active':
+      return item.active ? 1 : 0
     default:
       return ''
   }

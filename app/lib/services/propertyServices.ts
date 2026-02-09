@@ -62,16 +62,27 @@ export type SavePropertyServiceInput = {
   is_archived?: boolean | null
 }
 
-export async function listPropertyServices(propertyId: string): Promise<PropertyServiceRow[]> {
-  const { data, error } = await supabase
+export async function listPropertyServices(propertyId: string, includeArchived: boolean = false): Promise<PropertyServiceRow[]> {
+  let query = supabase
     .from('v_property_services_list')
     .select('*')
     .eq('property_id', propertyId)
-    .order('service_name', { ascending: true })
+
+  if (!includeArchived) {
+    query = query.or('is_archived.is.null,is_archived.eq.false')
+  }
+
+  const { data, error } = await query.order('service_name', { ascending: true })
 
   if (error) throw new Error(error.message)
 
   return (data ?? []) as PropertyServiceRow[]
+}
+
+export async function setPropertyServiceArchived(id: string, isArchived: boolean): Promise<void> {
+  const { error } = await supabase.from('property_services').update({ is_archived: isArchived }).eq('id', id)
+
+  if (error) throw new Error(error.message)
 }
 
 export async function savePropertyService(input: SavePropertyServiceInput): Promise<PropertyServiceRow> {

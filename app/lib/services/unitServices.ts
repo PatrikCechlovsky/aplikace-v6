@@ -62,15 +62,26 @@ export type SaveUnitServiceInput = {
   is_archived?: boolean | null
 }
 
-export async function listUnitServices(unitId: string): Promise<UnitServiceRow[]> {
-  const { data, error } = await supabase
+export async function listUnitServices(unitId: string, includeArchived: boolean = false): Promise<UnitServiceRow[]> {
+  let query = supabase
     .from('v_unit_services_list')
     .select('*')
     .eq('unit_id', unitId)
-    .order('service_name', { ascending: true, nullsFirst: false })
+
+  if (!includeArchived) {
+    query = query.or('is_archived.is.null,is_archived.eq.false')
+  }
+
+  const { data, error } = await query.order('service_name', { ascending: true, nullsFirst: false })
 
   if (error) throw new Error(error.message)
   return (data ?? []) as UnitServiceRow[]
+}
+
+export async function setUnitServiceArchived(id: string, isArchived: boolean): Promise<void> {
+  const { error } = await supabase.from('unit_services').update({ is_archived: isArchived }).eq('id', id)
+
+  if (error) throw new Error(error.message)
 }
 
 export async function saveUnitService(input: SaveUnitServiceInput): Promise<UnitServiceRow> {
