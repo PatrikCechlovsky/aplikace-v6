@@ -82,7 +82,7 @@ export default function CreateContractTile({
           const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
           if (!ok) return
         }
-        router.push('/modules/060-smlouva?t=contracts-list')
+        router.push('/060-smlouva?t=contracts-list')
         return
       }
 
@@ -91,7 +91,7 @@ export default function CreateContractTile({
           const saved = await submitRef.current()
           if (saved) {
             toast.showSuccess('Smlouva byla úspěšně vytvořena')
-            router.push(`/modules/060-smlouva?t=contracts-list&id=${saved.id}&vm=read`)
+            router.push(`/060-smlouva?t=contracts-list&id=${saved.id}&vm=read`)
           }
         }
       }
@@ -106,7 +106,7 @@ export default function CreateContractTile({
       onDirtyChange={setIsDirty}
       onSaved={(saved) => {
         setIsDirty(false)
-        router.push(`/modules/060-smlouva?t=contracts-list&id=${saved.id}&vm=read`)
+        router.push(`/060-smlouva?t=contracts-list&id=${saved.id}&vm=read`)
       }}
     />
   )
