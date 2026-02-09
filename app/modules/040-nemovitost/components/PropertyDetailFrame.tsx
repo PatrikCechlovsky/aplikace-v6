@@ -469,6 +469,20 @@ export default function PropertyDetailFrame({
     return currentSnap !== initialSnapshotRef.current
   }, [])
 
+  const refreshAttachmentsCount = useCallback(async () => {
+    if (isNewId(resolvedProperty.id)) {
+      setAttachmentsCount(0)
+      return
+    }
+
+    try {
+      const attachmentRows = await listAttachments({ entityType: 'properties', entityId: resolvedProperty.id, includeArchived: false })
+      setAttachmentsCount(attachmentRows.length)
+    } catch (err) {
+      logger.error('Failed to load property attachments count', err)
+    }
+  }, [resolvedProperty.id])
+
   useEffect(() => {
     if (isNewId(resolvedProperty.id)) {
       setEquipmentCount(0)
@@ -481,16 +495,15 @@ export default function PropertyDetailFrame({
 
     ;(async () => {
       try {
-        const [equipmentRows, servicesRows, attachmentRows] = await Promise.all([
+        const [equipmentRows, servicesRows] = await Promise.all([
           listPropertyEquipment(resolvedProperty.id),
           listPropertyServices(resolvedProperty.id),
-          listAttachments({ entityType: 'properties', entityId: resolvedProperty.id, includeArchived: false }),
         ])
 
         if (cancelled) return
         setEquipmentCount(equipmentRows.length)
         setServicesCount(servicesRows.length)
-        setAttachmentsCount(attachmentRows.length)
+        void refreshAttachmentsCount()
       } catch (err) {
         logger.error('Failed to load property counts', err)
       }
@@ -499,7 +512,7 @@ export default function PropertyDetailFrame({
     return () => {
       cancelled = true
     }
-  }, [resolvedProperty.id])
+  }, [refreshAttachmentsCount, resolvedProperty.id])
 
   useEffect(() => {
     if (isNewId(property.id)) {
@@ -819,6 +832,7 @@ export default function PropertyDetailFrame({
         entityLabel: resolvedProperty.displayName ?? null,
         showSystemEntityHeader: false,
         mode: detailViewMode,
+          onAttachmentsCountChange: setAttachmentsCount,
         sectionCounts: {
           units: units.length,
           equipment: equipmentCount,
@@ -1023,6 +1037,7 @@ export default function PropertyDetailFrame({
             entityId={resolvedProperty.id}
             readOnly={readOnly}
             onCountChange={setEquipmentCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
           />
         ),
 
@@ -1031,6 +1046,7 @@ export default function PropertyDetailFrame({
             propertyId={resolvedProperty.id}
             readOnly={readOnly}
             onCountChange={setServicesCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
           />
         ),
 

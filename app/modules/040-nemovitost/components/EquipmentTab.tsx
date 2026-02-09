@@ -56,6 +56,7 @@ type Props = {
   entityId: string
   readOnly?: boolean
   onCountChange?: (count: number) => void
+  onAttachmentsChanged?: () => void
 }
 
 type EquipmentFormValue = {
@@ -77,7 +78,7 @@ type EquipmentFormValue = {
 // COMPONENT
 // =====================
 
-export default function EquipmentTab({ entityType, entityId, readOnly = false, onCountChange }: Props) {
+export default function EquipmentTab({ entityType, entityId, readOnly = false, onCountChange, onAttachmentsChanged }: Props) {
   const toast = useToast()
   
   const [equipmentList, setEquipmentList] = useState<EquipmentRow[]>([])
@@ -394,7 +395,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   const closeAttachmentsManager = useCallback(() => {
     setViewMode(attachmentsReturnView)
     setActiveTab('form')
-  }, [attachmentsReturnView])
+    onAttachmentsChanged?.()
+  }, [attachmentsReturnView, onAttachmentsChanged])
 
   // Předchozí/Další
   const handlePrevious = useCallback(() => {

@@ -35,6 +35,7 @@ type Props = {
   unitId: string
   readOnly?: boolean
   onCountChange?: (count: number) => void
+  onAttachmentsChanged?: () => void
 }
 
 type ServiceFormValue = {
@@ -73,7 +74,7 @@ function buildEmptyFormValue(): ServiceFormValue {
   }
 }
 
-export default function UnitServicesTab({ unitId, readOnly = false, onCountChange }: Props) {
+export default function UnitServicesTab({ unitId, readOnly = false, onCountChange, onAttachmentsChanged }: Props) {
   const toast = useToast()
 
   const [services, setServices] = useState<UnitServiceRow[]>([])
@@ -310,7 +311,8 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
 
   const closeAttachmentsManager = useCallback(() => {
     setViewMode(attachmentsReturnView)
-  }, [attachmentsReturnView])
+    onAttachmentsChanged?.()
+  }, [attachmentsReturnView, onAttachmentsChanged])
 
   const handleSave = useCallback(async () => {
     if (detailMode === 'read') return

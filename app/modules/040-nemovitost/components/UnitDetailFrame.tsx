@@ -89,14 +89,14 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     propertyId: u.propertyId || '',
     unitTypeId: u.unitTypeId || '',
     landlordId: u.landlordId || '',
-    
+
     street: u.street || '',
     houseNumber: u.houseNumber || '',
     city: u.city || '',
     zip: u.zip || '',
     country: u.country || 'CZ',
     region: u.region || '',
-    
+
     floor: u.floor,
     doorNumber: u.doorNumber || '',
     area: u.area,
@@ -107,11 +107,11 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     orientationNumber: u.orientationNumber || '',
     yearRenovated: u.yearRenovated,
     managerName: u.managerName || '',
-    
+
     cadastralArea: u.cadastralArea || '',
     parcelNumber: u.parcelNumber || '',
     lvNumber: u.lvNumber || '',
-    
+
     note: u.note || '',
     originModule: u.originModule || '040-nemovitost',
     isArchived: u.isArchived || false,
@@ -154,6 +154,24 @@ export default function UnitDetailFrame({
   const [servicesCount, setServicesCount] = useState(0)
   const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [propertyLandlordId, setPropertyLandlordId] = useState<string | null>(null)
+
+  const refreshAttachmentsCount = useCallback(async () => {
+    if (isNewId(resolvedUnit.id)) {
+      setAttachmentsCount(0)
+      return
+    }
+
+    try {
+      const attachmentRows = await listAttachments({ entityType: 'units', entityId: resolvedUnit.id, includeArchived: false })
+      setAttachmentsCount(attachmentRows.length)
+    } catch (err) {
+      logger.error('Failed to load unit attachments count', err)
+    }
+  }, [resolvedUnit.id])
+
+  useEffect(() => {
+    void refreshAttachmentsCount()
+  }, [refreshAttachmentsCount])
   
   // Load unit types from generic_types
   useEffect(() => {
@@ -286,29 +304,6 @@ export default function UnitDetailFrame({
       }
     })()
   }, [unit.id, toast])
-
-  useEffect(() => {
-    if (isNewId(resolvedUnit.id)) {
-      setAttachmentsCount(0)
-      return
-    }
-
-    let cancelled = false
-
-    ;(async () => {
-      try {
-        const attachmentRows = await listAttachments({ entityType: 'units', entityId: resolvedUnit.id, includeArchived: false })
-        if (cancelled) return
-        setAttachmentsCount(attachmentRows.length)
-      } catch (err) {
-        logger.error('Failed to load unit attachments count', err)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [resolvedUnit.id])
 
   const handleSubmit = useCallback(async () => {
     const isNew = isNewId(resolvedUnit.id)
@@ -530,6 +525,7 @@ export default function UnitDetailFrame({
         entityLabel: resolvedUnit.displayName ?? null,
         showSystemEntityHeader: false,
         mode: detailViewMode,
+          onAttachmentsCountChange: setAttachmentsCount,
         sectionCounts: {
           equipment: equipmentCount,
           services: servicesCount,
@@ -562,6 +558,7 @@ export default function UnitDetailFrame({
             entityId={resolvedUnit.id}
             readOnly={readOnly}
             onCountChange={setEquipmentCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
           />
         ),
 
@@ -570,6 +567,7 @@ export default function UnitDetailFrame({
             unitId={resolvedUnit.id}
             readOnly={readOnly}
             onCountChange={setServicesCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
           />
         ),
 

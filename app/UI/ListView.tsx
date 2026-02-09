@@ -65,6 +65,9 @@ export type ListViewProps<TData = any> = {
   onColumnSettings?: () => void
   columnSettingsAriaLabel?: string
 
+  /** extra obsah do pravé části toolbaru */
+  toolbarRightSlot?: React.ReactNode
+
   /** max výška scrollovatelné tabulky (např. pro vazby) */
   tableWrapperMaxHeight?: string | number
 }
@@ -125,6 +128,7 @@ export default function ListView<TData = any>({
   onColumnResize,
   onColumnSettings,
   columnSettingsAriaLabel = 'Nastavit sloupce',
+  toolbarRightSlot,
   tableWrapperMaxHeight,
 }: ListViewProps<TData>) {
   const tableWrapperStyle = typeof tableWrapperMaxHeight !== 'undefined'
@@ -196,6 +200,7 @@ export default function ListView<TData = any>({
         </div>
 
         <div className="listview__toolbar-right">
+          {toolbarRightSlot}
           {typeof onShowArchivedChange === 'function' ? (
             <label className="generic-type__checkbox-label">
               <input type="checkbox" checked={showArchived} onChange={(e) => onShowArchivedChange?.(e.target.checked)} />

@@ -64,6 +64,8 @@ export type DetailViewCtx = {
   mode?: DetailViewMode
   showSystemEntityHeader?: boolean
 
+  onAttachmentsCountChange?: (count: number) => void
+
   sectionCounts?: Partial<Record<DetailSectionId, number>>
 
   detailContent?: React.ReactNode
@@ -302,6 +304,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
           entityId={ctx.entityId}
           entityLabel={ctx.entityLabel ?? null}
           mode={ctx.mode ?? 'view'}
+          onCountChange={ctx.onAttachmentsCountChange}
         />
       )
     },

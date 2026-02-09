@@ -79,6 +79,9 @@ export type DetailAttachmentsSectionProps = {
 
   /** Manager: hlášení state změn (aby se přepínal Save apod.) */
   onManagerStateChange?: (s: AttachmentsManagerUiState) => void
+
+  /** Volitelně hlásit počet příloh */
+  onCountChange?: (count: number) => void
 }
 
 // ============================================================================
@@ -167,6 +170,7 @@ export default function DetailAttachmentsSection({
   readOnlyReason = null,
   onRegisterManagerApi,
   onManagerStateChange,
+  onCountChange,
 }: DetailAttachmentsSectionProps) {
   const isManagerRequested = variant === 'manager'
   const isManager = isManagerRequested
@@ -393,6 +397,10 @@ export default function DetailAttachmentsSection({
     if (!canLoad) return
     void loadAttachments()
   }, [canLoad, loadAttachments])
+
+  useEffect(() => {
+    onCountChange?.(rows.length)
+  }, [rows.length, onCountChange])
 
   const entityTypeStats = useMemo(() => {
     const map = new Map<string, { type: string; label: string; count: number }>()
@@ -1048,57 +1056,44 @@ export default function DetailAttachmentsSection({
             {!loading && !errorText && listRows.length === 0 && <div className="detail-form__hint">Zatím žádné přílohy.</div>}
 
             {!loading && !errorText && listRows.length > 0 && (
-              <>
-                <div
-                  style={{
-                    marginBottom: '12px',
-                    display: 'flex',
-                    gap: '16px',
-                    fontSize: '13px',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    width: '100%',
-                  }}
-                >
-                  {entityTypeStats.map((item) => (
-                    <label key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={entityTypeFilters[item.type] ?? true}
-                        onChange={(e) =>
-                          setEntityTypeFilters((prev) => ({
-                            ...prev,
-                            [item.type]: e.target.checked,
-                          }))
-                        }
-                      />
-                      <span>
-                        {item.label} ({item.count})
-                      </span>
-                    </label>
-                  ))}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={includeArchived}
-                      onChange={(e) => setIncludeArchived(e.target.checked)}
-                    />
-                    <span>Zobrazit archivované</span>
-                  </label>
-                </div>
-                <ListView
-                  columns={sharedColumns}
-                  rows={listRows}
-                  sort={sort}
-                  onSortChange={handleSortChange}
-                  filterValue={filterText}
-                  onFilterChange={setFilterText}
-                  filterPlaceholder="Hledat podle názvu, popisu, souboru nebo entity..."
-                  onColumnSettings={() => setColsOpen(true)}
-                  onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
-                  onColumnResize={handleColumnResize}
-                />
-              </>
+              <ListView
+                columns={sharedColumns}
+                rows={listRows}
+                sort={sort}
+                onSortChange={handleSortChange}
+                filterValue={filterText}
+                onFilterChange={setFilterText}
+                filterPlaceholder="Hledat podle názvu, popisu, souboru nebo entity..."
+                onColumnSettings={() => setColsOpen(true)}
+                onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
+                onColumnResize={handleColumnResize}
+                showArchived={includeArchived}
+                onShowArchivedChange={setIncludeArchived}
+                showArchivedLabel="Zobrazit archivované"
+                toolbarRightSlot={
+                  entityTypeStats.length > 0 ? (
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '13px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {entityTypeStats.map((item) => (
+                        <label key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={entityTypeFilters[item.type] ?? true}
+                            onChange={(e) =>
+                              setEntityTypeFilters((prev) => ({
+                                ...prev,
+                                [item.type]: e.target.checked,
+                              }))
+                            }
+                          />
+                          <span>
+                            {item.label} ({item.count})
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : null
+                }
+              />
             )}
 
             {/* ✅ Sloupce (Drawer) */}
@@ -1326,36 +1321,6 @@ export default function DetailAttachmentsSection({
               <div className="detail-attachments__manager-layout">
                 {/* Hlavní tabulka: flex 1 + scroll uvnitř ListView */}
                 <div className="detail-attachments__list-scroll">
-                  {entityTypeStats.length > 0 && (
-                    <div
-                      style={{
-                        marginBottom: '12px',
-                        display: 'flex',
-                        gap: '16px',
-                        fontSize: '13px',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      {entityTypeStats.map((item) => (
-                        <label key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                          <input
-                            type="checkbox"
-                            checked={entityTypeFilters[item.type] ?? true}
-                            onChange={(e) =>
-                              setEntityTypeFilters((prev) => ({
-                                ...prev,
-                                [item.type]: e.target.checked,
-                              }))
-                            }
-                          />
-                          <span>
-                            {item.label} ({item.count})
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
                   {!loading && managerRows.length > 0 && (
                 <div className="detail-attachments__lv-shell">
                   <ListView
@@ -1370,6 +1335,29 @@ export default function DetailAttachmentsSection({
                     showArchived={includeArchived}
                     onShowArchivedChange={setIncludeArchived}
                     showArchivedLabel="Zobrazit archivované"
+                    toolbarRightSlot={
+                      entityTypeStats.length > 0 ? (
+                        <div style={{ display: 'flex', gap: '16px', fontSize: '13px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {entityTypeStats.map((item) => (
+                            <label key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={entityTypeFilters[item.type] ?? true}
+                                onChange={(e) =>
+                                  setEntityTypeFilters((prev) => ({
+                                    ...prev,
+                                    [item.type]: e.target.checked,
+                                  }))
+                                }
+                              />
+                              <span>
+                                {item.label} ({item.count})
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : null
+                    }
                     selectedId={selectedDocId}
                     onRowClick={(row) => {
                       // Zrušit timeout z předchozího kliknutí (pokud existuje)
