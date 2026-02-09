@@ -24,11 +24,6 @@ export type GenericTypeCategory =
   | 'service_periodicities'
   | 'contract_types'
   | 'contract_statuses'
-  | 'rent_periods'
-  | 'payment_days'
-  | 'deposit_states'
-  | 'rent_payment_states'
-  | 'contract_payment_states'
   | 'handover_protocol_types'
   | 'handover_protocol_statuses'
 

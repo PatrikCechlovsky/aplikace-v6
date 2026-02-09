@@ -37,13 +37,10 @@ Předávací protokoly navázané na smlouvu.
 Modul používá číselníky spravované v Nastavení:
 - `contract_types`
 - `contract_statuses`
-- `rent_periods`
-- `payment_days`
-- `deposit_states`
-- `rent_payment_states`
-- `contract_payment_states`
 - `handover_protocol_types`
 - `handover_protocol_statuses`
+
+Poznámka: Periodicita nájmu používá `service_periodicities` (shodné s periodicitou služeb).
 
 ## UI
 - **Seznam smluv** (ListView) s filtrem a archivací

@@ -127,10 +127,12 @@ export default function ContractDetailFrame({
   const [tenants, setTenants] = useState<LookupOption[]>([])
   const [statusOptions, setStatusOptions] = useState<LookupOption[]>([])
   const [rentPeriodOptions, setRentPeriodOptions] = useState<LookupOption[]>([])
-  const [paymentDayOptions, setPaymentDayOptions] = useState<LookupOption[]>([])
-  const [depositStateOptions, setDepositStateOptions] = useState<LookupOption[]>([])
-  const [rentPaymentStateOptions, setRentPaymentStateOptions] = useState<LookupOption[]>([])
-  const [contractPaymentStateOptions, setContractPaymentStateOptions] = useState<LookupOption[]>([])
+
+  const paymentDayOptions = useMemo<LookupOption[]>(() => {
+    return Array.from({ length: 28 }, (_, i) => ({ id: String(i + 1), label: String(i + 1) })).concat([
+      { id: 'last_day', label: 'Poslední den v měsíci' },
+    ])
+  }, [])
 
   useEffect(() => {
     formValueRef.current = formValue
@@ -220,37 +222,15 @@ export default function ContractDetailFrame({
 
     async function loadGenericOptions() {
       try {
-        const [
-          statusRows,
-          rentPeriodRows,
-          paymentDayRows,
-          depositStateRows,
-          rentPaymentRows,
-          contractPaymentRows,
-        ] = await Promise.all([
+        const [statusRows, rentPeriodRows] = await Promise.all([
           listActiveByCategory('contract_statuses'),
-          listActiveByCategory('rent_periods'),
-          listActiveByCategory('payment_days'),
-          listActiveByCategory('deposit_states'),
-          listActiveByCategory('rent_payment_states'),
-          listActiveByCategory('contract_payment_states'),
+          listActiveByCategory('service_periodicities'),
         ])
 
         if (!mounted) return
 
         setStatusOptions(statusRows.map((r) => ({ id: r.code, label: r.name })))
         setRentPeriodOptions(rentPeriodRows.map((r) => ({ id: r.code, label: r.name })))
-
-        const paymentOptions = paymentDayRows.length
-          ? paymentDayRows.map((r) => ({ id: r.code, label: r.name }))
-          : Array.from({ length: 28 }, (_, i) => ({ id: String(i + 1), label: String(i + 1) })).concat([
-              { id: 'last_day', label: 'Poslední den v měsíci' },
-            ])
-
-        setPaymentDayOptions(paymentOptions)
-        setDepositStateOptions(depositStateRows.map((r) => ({ id: r.code, label: r.name })))
-        setRentPaymentStateOptions(rentPaymentRows.map((r) => ({ id: r.code, label: r.name })))
-        setContractPaymentStateOptions(contractPaymentRows.map((r) => ({ id: r.code, label: r.name })))
       } catch (err) {
         logger.error('Failed to load contract generic types', err)
       }
@@ -455,9 +435,6 @@ export default function ContractDetailFrame({
             statusOptions={statusOptions}
             rentPeriodOptions={rentPeriodOptions}
             paymentDayOptions={paymentDayOptions}
-            depositStateOptions={depositStateOptions}
-            rentPaymentStateOptions={rentPaymentStateOptions}
-            contractPaymentStateOptions={contractPaymentStateOptions}
             onDirtyChange={(dirty) => {
               if (dirty) markDirtyIfChanged(formValue)
             }}
