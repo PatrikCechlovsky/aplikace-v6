@@ -57,6 +57,9 @@ export type AttachmentRow = {
   // ✅ Pro equipment attachments (když je entity_type='equipment_binding')
   equipment_name?: string | null
   equipment_id?: string | null
+
+  // ✅ Pro služby (property_service_binding / unit_service_binding)
+  service_name?: string | null
 }
 
 export type AttachmentVersionRow = {
@@ -220,6 +223,30 @@ export async function listAttachments(args: ListAttachmentsArgs): Promise<Attach
     }
   }
 
+  // ✅ Pokud načítáme přímo službu binding, doplň název služby
+  if (entityType === 'property_service_binding' || entityType === 'unit_service_binding') {
+    try {
+      const isUnitService = entityType === 'unit_service_binding'
+      const serviceTable = isUnitService ? 'v_unit_services_list' : 'v_property_services_list'
+
+      const { data: serviceRow, error: svcError } = await supabase
+        .from(serviceTable)
+        .select('id, service_name, name')
+        .eq('id', args.entityId)
+        .maybeSingle()
+
+      if (!svcError && serviceRow) {
+        const resolvedName = (serviceRow as any)?.service_name ?? (serviceRow as any)?.name ?? null
+        rows = rows.map((attach) => ({
+          ...attach,
+          service_name: resolvedName,
+        }))
+      }
+    } catch (e) {
+      // pokud se načtení služby nezdařilo, pokračuj bez názvu
+    }
+  }
+
   // ✅ Pro jednotku/nemovitost: také načti dokumenty k jejímu vybavení
   if (entityType === 'unit' || entityType === 'units' || entityType === 'property' || entityType === 'properties') {
     try {
@@ -271,6 +298,54 @@ export async function listAttachments(args: ListAttachmentsArgs): Promise<Attach
       }
     } catch (e) {
       // pokud se načtení vybavení nezdařilo, stačí si poradit jen s hlavními dokumenty
+    }
+  }
+
+  // ✅ Pro jednotku/nemovitost: také načti dokumenty k jejím službám
+  if (entityType === 'unit' || entityType === 'units' || entityType === 'property' || entityType === 'properties') {
+    try {
+      const isUnit = entityType === 'unit' || entityType === 'units'
+      const bindingEntityType = isUnit ? 'unit_service_binding' : 'property_service_binding'
+      const serviceTable = isUnit ? 'v_unit_services_list' : 'v_property_services_list'
+      const filterCol = isUnit ? 'unit_id' : 'property_id'
+
+      const { data: services, error: svcError } = await supabase
+        .from(serviceTable)
+        .select('id, service_name, name')
+        .eq(filterCol, args.entityId)
+
+      if (svcError || !services) throw svcError
+
+      if (services.length > 0) {
+        const serviceIds = services.map((s) => (s as any).id)
+
+        let attachQ = supabase
+          .from('v_document_latest_version')
+          .select('*')
+          .eq('entity_type', bindingEntityType)
+          .in('entity_id', serviceIds)
+          .order('version_created_at', { ascending: false })
+
+        if (!args.includeArchived) attachQ = attachQ.eq('is_archived', false)
+
+        const { data: attachData, error: attachError } = await attachQ
+        if (attachError) throw attachError
+
+        if (attachData) {
+          const attachWithService = (attachData as AttachmentRow[]).map((attach) => {
+            const svc = services.find((s) => (s as any).id === attach.entity_id)
+            const resolvedName = (svc as any)?.service_name ?? (svc as any)?.name ?? null
+            return {
+              ...attach,
+              service_name: resolvedName,
+            }
+          })
+
+          rows = rows.concat(attachWithService)
+        }
+      }
+    } catch (e) {
+      // pokud se načtení služeb nezdařilo, pokračuj bez nich
     }
   }
 

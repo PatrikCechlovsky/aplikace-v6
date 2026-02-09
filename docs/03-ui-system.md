@@ -440,6 +440,10 @@ Funkce:
 - stav nahrávání
 - možnost více souborů
 
+Poznámky k seznamu:
+- seznam příloh zobrazuje sloupce **Typ entity** a **Entita**
+- typy entit lze filtrovat pomocí checkboxů
+
 Přílohy patří **jen k této entitě**.  
 Nejde o globální modul dokumentů.
 

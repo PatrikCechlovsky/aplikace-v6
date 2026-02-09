@@ -115,6 +115,32 @@ function dateToTs(v: any): number {
   return Number.isFinite(t) ? t : 0
 }
 
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+  subject: 'Subjekt',
+  subjects: 'Subjekt',
+  property: 'Nemovitost',
+  properties: 'Nemovitost',
+  unit: 'Jednotka',
+  units: 'Jednotka',
+  contract: 'Smlouva',
+  contracts: 'Smlouva',
+  payment: 'Platba',
+  payments: 'Platba',
+  document: 'Dokument',
+  documents: 'Dokument',
+  tenant: 'Nájemník',
+  tenants: 'Nájemník',
+  equipment_binding: 'Vybavení (jednotka)',
+  property_equipment_binding: 'Vybavení (nemovitost)',
+  property_service_binding: 'Služba (nemovitost)',
+  unit_service_binding: 'Služba (jednotka)',
+}
+
+function getEntityTypeLabel(entityType?: string | null): string {
+  const key = String(entityType ?? '').trim().toLowerCase()
+  return ENTITY_TYPE_LABELS[key] ?? key ?? '—'
+}
+
 function getAttachmentSortValue(row: any, key: string): string | number {
   // klíče: title, description, file, ver, uploaded (odpovídá sharedColumns)
   if (key === 'title') return normalizeString(row?.title)
@@ -148,7 +174,6 @@ export default function DetailAttachmentsSection({
   const isLimitedWrite = isManagerRequested && canManage === false
 
   const normalizedEntityType = useMemo(() => (entityType ?? '').trim().toLowerCase(), [entityType])
-  const isUnitOrProperty = normalizedEntityType === 'unit' || normalizedEntityType === 'units' || normalizedEntityType === 'property' || normalizedEntityType === 'properties'
 
   // ✅ viewKey per-variant (list vs manager)
   const VIEW_KEY = ATTACHMENTS_VIEW_KEY
@@ -157,8 +182,7 @@ export default function DetailAttachmentsSection({
   const canLoad = useMemo(() => !!entityType && !!entityId && entityId !== 'new', [entityType, entityId])
 
   const [includeArchived, setIncludeArchived] = useState(false)
-  const [showEquipmentAttachments, setShowEquipmentAttachments] = useState(false)
-  const [showServiceAttachments, setShowServiceAttachments] = useState(false)
+  const [entityTypeFilters, setEntityTypeFilters] = useState<Record<string, boolean>>({})
   const [filterText, setFilterText] = useState('')
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -369,46 +393,94 @@ export default function DetailAttachmentsSection({
     void loadAttachments()
   }, [canLoad, loadAttachments])
 
-  const isPropertyEntity = useMemo(
-    () => normalizedEntityType === 'property' || normalizedEntityType === 'properties',
-    [normalizedEntityType]
+  const entityTypeStats = useMemo(() => {
+    const map = new Map<string, { type: string; label: string; count: number }>()
+
+    rows.forEach((r) => {
+      const typeKey = String(r.entity_type ?? '').trim().toLowerCase()
+      const label = getEntityTypeLabel(typeKey)
+      const current = map.get(typeKey)
+      if (current) {
+        current.count += 1
+      } else {
+        map.set(typeKey, { type: typeKey, label, count: 1 })
+      }
+    })
+
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, 'cs'))
+  }, [rows])
+
+  useEffect(() => {
+    setEntityTypeFilters((prev) => {
+      const next: Record<string, boolean> = { ...prev }
+      let changed = false
+      const valid = new Set(entityTypeStats.map((s) => s.type))
+
+      for (const type of valid) {
+        if (next[type] === undefined) {
+          next[type] = true
+          changed = true
+        }
+      }
+
+      for (const key of Object.keys(next)) {
+        if (!valid.has(key)) {
+          delete next[key]
+          changed = true
+        }
+      }
+
+      return changed ? next : prev
+    })
+  }, [entityTypeStats])
+
+  const resolveEntityTypeLabel = useCallback((row: AttachmentRow) => getEntityTypeLabel(row.entity_type), [])
+
+  const resolveEntityName = useCallback(
+    (row: AttachmentRow) => {
+      const rowType = String(row.entity_type ?? '').trim().toLowerCase()
+      if (rowType === normalizedEntityType) {
+        return entityLabel?.trim() ? entityLabel : row.entity_id ?? '—'
+      }
+      if (rowType === 'equipment_binding' || rowType === 'property_equipment_binding') {
+        return row.equipment_name ?? '—'
+      }
+      if (rowType === 'property_service_binding' || rowType === 'unit_service_binding') {
+        return row.service_name ?? '—'
+      }
+      return '—'
+    },
+    [entityLabel, normalizedEntityType]
   )
-
-  const equipmentDocCount = useMemo(() => {
-    return rows.filter((r) => r.entity_type === 'equipment_binding' || r.entity_type === 'property_equipment_binding').length
-  }, [rows])
-
-  const serviceDocCount = useMemo(() => {
-    return rows.filter((r) => r.entity_type === 'property_service_binding').length
-  }, [rows])
 
   const filteredRows = useMemo(() => {
     let filtered = rows
 
-    // ✅ Filtr: zobrazit dokumenty k vybavení?
-    if (!isManager && isUnitOrProperty && !showEquipmentAttachments) {
-      // Skryj dokumenty s entity_type equipment_binding nebo property_equipment_binding
-      filtered = filtered.filter(
-        (r) => r.entity_type !== 'equipment_binding' && r.entity_type !== 'property_equipment_binding'
-      )
-    }
+    const activeTypes = Object.entries(entityTypeFilters)
+      .filter(([, enabled]) => enabled)
+      .map(([type]) => type)
 
-    if (!isManager && isPropertyEntity && !showServiceAttachments) {
-      filtered = filtered.filter((r) => r.entity_type !== 'property_service_binding')
+    if (entityTypeStats.length > 0) {
+      if (activeTypes.length === 0) return []
+
+      if (activeTypes.length < entityTypeStats.length) {
+        filtered = filtered.filter((r) => activeTypes.includes(String(r.entity_type ?? '').trim().toLowerCase()))
+      }
     }
 
     // ✅ Textový filtr
     const t = filterText.trim().toLowerCase()
     if (!t) return filtered
-  
+
     return filtered.filter((r) => {
       const a = (r.title ?? '').toLowerCase()
       const b = (r.description ?? '').toLowerCase()
       const c = (r.file_name ?? '').toLowerCase()
-      const e = (r.equipment_name ?? '').toLowerCase()
-      return a.includes(t) || b.includes(t) || c.includes(t) || e.includes(t)
+      const d = resolveEntityTypeLabel(r).toLowerCase()
+      const e = resolveEntityName(r).toLowerCase()
+      return a.includes(t) || b.includes(t) || c.includes(t) || d.includes(t) || e.includes(t)
     })
-  }, [rows, filterText, showEquipmentAttachments, showServiceAttachments, isManager, isUnitOrProperty, isPropertyEntity])
+  }, [rows, filterText, entityTypeFilters, entityTypeStats.length, resolveEntityTypeLabel, resolveEntityName])
 
   // ============================================================================
   // SORTED ROWS (Attachments)
@@ -417,26 +489,36 @@ export default function DetailAttachmentsSection({
     const key = String(sort.key ?? '').trim()
     const dir = sort.dir === 'asc' ? 1 : -1
     const arr = [...filteredRows]
-  
+
     arr.sort((a, b) => {
-      const av = getAttachmentSortValue(a, key)
-      const bv = getAttachmentSortValue(b, key)
-  
+      const av =
+        key === 'entityType'
+          ? normalizeString(resolveEntityTypeLabel(a))
+          : key === 'entityName'
+            ? normalizeString(resolveEntityName(a))
+            : getAttachmentSortValue(a, key)
+      const bv =
+        key === 'entityType'
+          ? normalizeString(resolveEntityTypeLabel(b))
+          : key === 'entityName'
+            ? normalizeString(resolveEntityName(b))
+            : getAttachmentSortValue(b, key)
+
       if (typeof av === 'number' && typeof bv === 'number') {
         if (av < bv) return -1 * dir
         if (av > bv) return 1 * dir
         return 0
       }
-  
+
       const as = String(av ?? '')
       const bs = String(bv ?? '')
       if (as < bs) return -1 * dir
       if (as > bs) return 1 * dir
       return 0
     })
-  
+
     return arr
-  }, [filteredRows, sort])
+  }, [filteredRows, sort, resolveEntityTypeLabel, resolveEntityName])
 
 
   const resolveName = useCallback(
@@ -882,16 +964,11 @@ export default function DetailAttachmentsSection({
             </span>
           ),
           description: <span className="detail-attachments__muted">{r.description ?? '—'}</span>,
-          equipment: (
+          entityType: <span className="detail-attachments__muted">{resolveEntityTypeLabel(r)}</span>,
+          entityName: (
             <span className="detail-attachments__muted">
-              {r.equipment_name ? (
-                <>
-                  {r.equipment_name}
-                  {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
-                </>
-              ) : (
-                '—'
-              )}
+              {resolveEntityName(r)}
+              {r.is_archived ? <span className="detail-attachments__archived-badge">archiv</span> : null}
             </span>
           ),
           file: (
@@ -922,7 +999,7 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [viewRows, resolveName, handleOpenLatestByPath])
+  }, [viewRows, resolveName, handleOpenLatestByPath, resolveEntityTypeLabel, resolveEntityName])
 
 
   // READ-ONLY UI (nebo manager bez práv)
@@ -965,26 +1042,23 @@ export default function DetailAttachmentsSection({
                     width: '100%',
                   }}
                 >
-                  {isUnitOrProperty && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  {entityTypeStats.map((item) => (
+                    <label key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                       <input
                         type="checkbox"
-                        checked={showEquipmentAttachments}
-                        onChange={(e) => setShowEquipmentAttachments(e.target.checked)}
+                        checked={entityTypeFilters[item.type] ?? true}
+                        onChange={(e) =>
+                          setEntityTypeFilters((prev) => ({
+                            ...prev,
+                            [item.type]: e.target.checked,
+                          }))
+                        }
                       />
-                      <span>Dokumenty k vybavení ({equipmentDocCount})</span>
+                      <span>
+                        {item.label} ({item.count})
+                      </span>
                     </label>
-                  )}
-                  {isPropertyEntity && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={showServiceAttachments}
-                        onChange={(e) => setShowServiceAttachments(e.target.checked)}
-                      />
-                      <span>Dokumenty ke službám ({serviceDocCount})</span>
-                    </label>
-                  )}
+                  ))}
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
@@ -1001,7 +1075,7 @@ export default function DetailAttachmentsSection({
                   onSortChange={handleSortChange}
                   filterValue={filterText}
                   onFilterChange={setFilterText}
-                  filterPlaceholder="Hledat podle názvu, popisu, souboru nebo vybavení..."
+                  filterPlaceholder="Hledat podle názvu, popisu, souboru nebo entity..."
                   onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
                   onColumnResize={handleColumnResize}
                 />
@@ -1049,6 +1123,8 @@ export default function DetailAttachmentsSection({
   // Filtr z historie byl odstraněn podle požadavku uživatele
   const historyRows: ListViewRow<AttachmentVersionRow>[] = useMemo(() => {
     if (!expandedDocId) return []
+    const entityTypeLabel = selectedRow ? resolveEntityTypeLabel(selectedRow) : '—'
+    const entityName = selectedRow ? resolveEntityName(selectedRow) : '—'
     return expandedVersions.map((v) => {
       const who = resolveName(null, v.created_by)
 
@@ -1067,6 +1143,8 @@ export default function DetailAttachmentsSection({
             </span>
           ),
           description: <span className="detail-attachments__muted">{vDesc}</span>,
+          entityType: <span className="detail-attachments__muted">{entityTypeLabel}</span>,
+          entityName: <span className="detail-attachments__muted">{entityName}</span>,
           file: (
             <button
               type="button"
@@ -1088,7 +1166,7 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [expandedDocId, expandedVersions, resolveName, openFileByPath, selectedRow])
+  }, [expandedDocId, expandedVersions, resolveName, openFileByPath, selectedRow, resolveEntityTypeLabel, resolveEntityName])
 
   const selectedTitle = selectedRow?.title?.trim() ? selectedRow.title : '—'
 
@@ -1219,6 +1297,36 @@ export default function DetailAttachmentsSection({
               <div className="detail-attachments__manager-layout">
                 {/* Hlavní tabulka: flex 1 + scroll uvnitř ListView */}
                 <div className="detail-attachments__list-scroll">
+                  {entityTypeStats.length > 0 && (
+                    <div
+                      style={{
+                        marginBottom: '12px',
+                        display: 'flex',
+                        gap: '16px',
+                        fontSize: '13px',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      {entityTypeStats.map((item) => (
+                        <label key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={entityTypeFilters[item.type] ?? true}
+                            onChange={(e) =>
+                              setEntityTypeFilters((prev) => ({
+                                ...prev,
+                                [item.type]: e.target.checked,
+                              }))
+                            }
+                          />
+                          <span>
+                            {item.label} ({item.count})
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                   {!loading && managerRows.length > 0 && (
                 <div className="detail-attachments__lv-shell">
                   <ListView
@@ -1228,7 +1336,7 @@ export default function DetailAttachmentsSection({
                     onSortChange={handleSortChange}
                     filterValue={filterText}
                     onFilterChange={setFilterText}
-                    filterPlaceholder="Hledat podle názvu, popisu nebo souboru."
+                    filterPlaceholder="Hledat podle názvu, popisu, souboru nebo entity."
                     showArchived={includeArchived}
                     onShowArchivedChange={setIncludeArchived}
                     showArchivedLabel="Zobrazit archivované"
