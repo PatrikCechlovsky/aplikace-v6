@@ -147,12 +147,24 @@ export default function ContractDetailForm({
   useEffect(() => {
     if (!selectedUnit) return
 
-    update({
-      propertyId: selectedUnit.propertyId ?? '',
-      landlordId: selectedUnit.landlordId ?? '',
-      tenantId: selectedUnit.tenantId ?? '',
-    })
-  }, [selectedUnit, update])
+    const patch: Partial<ContractFormValue> = {}
+
+    if (!formVal.propertyId) {
+      patch.propertyId = selectedUnit.propertyId ?? ''
+    }
+
+    if (!formVal.landlordId) {
+      patch.landlordId = selectedUnit.landlordId ?? ''
+    }
+
+    if (!formVal.tenantId) {
+      patch.tenantId = selectedUnit.tenantId ?? ''
+    }
+
+    if (Object.keys(patch).length) {
+      update(patch)
+    }
+  }, [selectedUnit, formVal.propertyId, formVal.landlordId, formVal.tenantId, update])
 
   useEffect(() => {
     if (!selectedUnit || !selectedProperty) {
@@ -363,12 +375,16 @@ export default function ContractDetailForm({
               disabled={readOnly}
             >
               <option value="">— vyberte nájemníka —</option>
+              {tenants.length === 0 && <option value="" disabled>— žádní nájemníci —</option>}
               {tenants.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.label}
                 </option>
               ))}
             </select>
+            {tenants.length === 0 && (
+              <div className="detail-form__hint">Nejsou dostupní žádní nájemníci. Zkontroluj, že má subjekt nastaveno „Je nájemník“.</div>
+            )}
           </div>
 
           <div className="detail-form__field">
