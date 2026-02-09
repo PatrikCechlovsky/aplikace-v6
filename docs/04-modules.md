@@ -138,6 +138,7 @@ Z aplikace:
 090 – Finance
 100 – Měřidla
 110 – Dokumenty
+800 – Subjekty
 900 – Nastavení
 ```
 

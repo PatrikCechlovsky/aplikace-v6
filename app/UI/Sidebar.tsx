@@ -14,6 +14,7 @@ import { MODULE_SOURCES } from '@/app/modules.index.js'
 import { getIcon } from './icons'
 import { uiConfig } from '../lib/uiConfig'
 import { getLandlordCountsByType } from '@/app/lib/services/landlords'
+import { getSubjectCountsByType } from '@/app/lib/services/subjects'
 import { getTenantCountsByType } from '@/app/lib/services/tenants'
 import { getPropertyCountsByType } from '@/app/lib/services/properties'
 import { getUnitCountsByType } from '@/app/lib/services/units'
@@ -159,6 +160,47 @@ export default function Sidebar({
               })
             } catch (countErr) {
               console.error('Sidebar: Chyba při načítání počtů pronajímatelů:', countErr)
+            }
+          }
+
+          // Pro modul 800 (Subjekty) načteme počty podle typů a aktualizujeme children labels + ikony
+          if (conf.id === '800-subjekty' && Array.isArray(tiles)) {
+            try {
+              const counts = await getSubjectCountsByType(false)
+              const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+
+              const subjectTypes = await listActiveByCategory('subject_types')
+              const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+
+              tiles = tiles.map((tile) => {
+                if (tile.id === 'subjects-list' && tile.children) {
+                  return {
+                    ...tile,
+                    children: tile.children.map((child: any) => {
+                      const originalChild = conf.tiles
+                        .find((t: any) => t.id === 'subjects-list')
+                        ?.children?.find((c: any) => c.id === child.id)
+
+                      if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                        const count = countsMap.get(originalChild.subjectType) ?? 0
+                        const typeDef = typesMap.get(originalChild.subjectType)
+                        const typeLabel = typeDef?.name || child.label
+                        const icon = typeDef?.icon || child.icon || 'user'
+
+                        return {
+                          ...child,
+                          label: `${typeLabel} (${count})`,
+                          icon: icon,
+                        }
+                      }
+                      return child
+                    }),
+                  }
+                }
+                return tile
+              })
+            } catch (countErr) {
+              console.error('Sidebar: Chyba při načítání počtů subjektů:', countErr)
             }
           }
 

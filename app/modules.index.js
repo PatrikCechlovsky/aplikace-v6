@@ -11,6 +11,7 @@ export const MODULE_SOURCES = [
   () => import('./modules/070-sluzby/module.config.js'),
   () => import('./modules/080-platby/module.config.js'),
   () => import('./modules/090-finance/module.config.js'),
+  () => import('./modules/800-subjekty/module.config.js'),
   // () => import('./modules/100-energie/module.config.js'),
   // () => import('./modules/110-udrzba/module.config.js'),
   () => import('./modules/120-dokumenty/module.config.js'),
