@@ -70,19 +70,32 @@
   - State pro isDirty a selectedTypeForCreate
   - CommonActions logika pro všechny módy
   - Připraveno pro PropertyDetailFrame
-- **Status:** Handlery jsou placeholdery (chybí PropertyDetailFrame)
+- **Status:** Handlery jsou placeholdery (dolaďit napojení detailu)
+
+#### 7. **Výběr jednotky v detailu nemovitosti**
+- **Soubor:** `app/modules/040-nemovitost/components/PropertyDetailFrame.tsx`
+- **Funkce:**
+  - Výběr jednotky ze seznamu (dropdown i klik v tabulce)
+  - Načtení detailu vybrané jednotky přes `getUnitDetail`
+  - Vložení detailu jednotky do záložky „Jednotky“ (read-only, embedded)
+
+#### 8. **Služby jednotky + počty v záložkách**
+- **Soubory:**
+  - `app/modules/040-nemovitost/components/UnitServicesTab.tsx`
+  - `app/modules/040-nemovitost/components/UnitDetailFrame.tsx`
+  - `app/lib/services/unitServices.ts`
+- **Funkce:**
+  - Stejný systém služeb jako u nemovitostí (list → detail → přílohy)
+  - Entity type pro přílohy: `unit_service_binding`
+  - Počty v záložkách jednotky: vybavení, služby, přílohy
 
 ---
 
 ## 🚧 V implementaci
 
-### ⏳ PropertyDetailFrame
-- **Status:** Nepokračováno
-- **Potřeba:** 
-  - Vytvořit `PropertyDetailFrame.tsx` (analog UnitDetailFrame)
-  - Type select na Systém tab
-  - Napojení na PropertiesTile
-  - Type selector tiles pro create mode
+### ✅ PropertyDetailFrame
+- **Status:** Základ hotový (detail, jednotky, vybavení, služby, přílohy, systém)
+- **Další kroky:** Dolaďování UX a vazeb dle potřeby
 
 ### ⏳ Tab Přílohy (Attachments)
 - **Status:** Tlačítko připraveno (placeholder)

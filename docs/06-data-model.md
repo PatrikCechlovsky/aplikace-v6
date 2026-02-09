@@ -556,24 +556,31 @@ Pole – návrh:
 
 ---
 #### 2) `unit_services`
-Pravidelné služby vázané na jednotku (náklad pronajímatele nebo nájemníka).
+Pravidelné služby vázané na jednotku (katalogové i vlastní).
 
 Pole – návrh:
 - `id` (uuid, PK)
 - `unit_id` (FK → units.id)
-- `service_id` (FK → service_catalog.id)
-- `payer_side` (enum: `landlord` | `tenant`)
-- `is_rebillable` (bool) *(rozúčtovatelný náklad)*
-- `allocation_rule` (enum: m² | osoba | měřidlo | pevná | % nájmu | poměr plochy)
-- `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
-- `billing_periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `service_id` (FK → service_catalog.id, NULL = vlastní služba)
+- `name` (text, vlastní název služby)
+- `category_id` (FK → generic_types, category = `service_types`)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `service_unit_id` (FK → generic_types, category = `service_units`)
+- `vat_rate_id` (FK → generic_types, category = `vat_rates`)
 - `amount` (numeric)
-- `currency` (text)
-- `meter_id` (FK → meters.id, volitelně)
+- `periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `billing_periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `payer_side` (enum: `tenant` | `landlord`) *(default: tenant)*
+- `is_rebillable` (bool)
+- `split_to_units` (bool)
+- `split_basis` (text, např. m² | osoby | jednotky)
 - `note` (text)
-- `owner_id` (FK → subjects.id)
-- `created_at`, `created_by`, `updated_at`, `updated_by`
+- `created_at`, `updated_at`
 - `is_archived` (bool)
+
+Přílohy:
+- `entity_type = unit_service_binding`
+- `entity_id = unit_services.id`
 
 ---
 #### 3) `property_services`

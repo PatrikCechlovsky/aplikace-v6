@@ -14,6 +14,8 @@ import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
 import { supabase } from '@/app/lib/supabaseClient'
 import EquipmentTab from './EquipmentTab'
+import UnitServicesTab from './UnitServicesTab'
+import { listAttachments } from '@/app/lib/attachments'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -148,6 +150,9 @@ export default function UnitDetailFrame({
   const [unitTypes, setUnitTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null }>>([])
   const [selectedUnitTypeId, setSelectedUnitTypeId] = useState<string | null>(unit.unitTypeId)
   const [propertyAddress, setPropertyAddress] = useState<PropertyAddress | null>(null)
+  const [equipmentCount, setEquipmentCount] = useState(0)
+  const [servicesCount, setServicesCount] = useState(0)
+  const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [propertyLandlordId, setPropertyLandlordId] = useState<string | null>(null)
   
   // Load unit types from generic_types
@@ -281,6 +286,29 @@ export default function UnitDetailFrame({
       }
     })()
   }, [unit.id, toast])
+
+  useEffect(() => {
+    if (isNewId(resolvedUnit.id)) {
+      setAttachmentsCount(0)
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const attachmentRows = await listAttachments({ entityType: 'units', entityId: resolvedUnit.id, includeArchived: false })
+        if (cancelled) return
+        setAttachmentsCount(attachmentRows.length)
+      } catch (err) {
+        logger.error('Failed to load unit attachments count', err)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedUnit.id])
 
   const handleSubmit = useCallback(async () => {
     const isNew = isNewId(resolvedUnit.id)
@@ -471,7 +499,7 @@ export default function UnitDetailFrame({
   
   const sectionIds: DetailSectionId[] = isNewId(resolvedUnit.id) 
     ? ['detail', 'attachments', 'system'] 
-    : ['detail', 'equipment', 'attachments', 'system']
+    : ['detail', 'equipment', 'services', 'attachments', 'system']
   
   // Dynamický title podle typu jednotky
   const unitTypeName = useMemo(() => {
@@ -502,6 +530,11 @@ export default function UnitDetailFrame({
         entityLabel: resolvedUnit.displayName ?? null,
         showSystemEntityHeader: false,
         mode: detailViewMode,
+        sectionCounts: {
+          equipment: equipmentCount,
+          services: servicesCount,
+          attachments: attachmentsCount,
+        },
 
         detailContent: (
           <UnitDetailForm
@@ -528,6 +561,15 @@ export default function UnitDetailFrame({
             entityType="unit"
             entityId={resolvedUnit.id}
             readOnly={readOnly}
+            onCountChange={setEquipmentCount}
+          />
+        ),
+
+        servicesContent: (
+          <UnitServicesTab
+            unitId={resolvedUnit.id}
+            readOnly={readOnly}
+            onCountChange={setServicesCount}
           />
         ),
 

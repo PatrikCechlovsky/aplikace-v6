@@ -78,6 +78,9 @@ Sidebar → Pronajímatelé
         ├── Tab: Účty (AccountsSection) – bankovní účty
         ├── Tab: Dokumenty (AttachmentsSection)
         └── Tab: Historie (AuditLogSection)
+
+Poznámka:
+- Záložky se seznamy (Účty, Zástupci, Přílohy) zobrazují počty položek v názvu.
 ```
 
 ---

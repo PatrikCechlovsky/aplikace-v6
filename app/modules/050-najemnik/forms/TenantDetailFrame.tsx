@@ -1,7 +1,7 @@
 'use client'
 
-// FILE: app/modules/030-pronajimatel/forms/TenantDetailFrame.tsx
-// PURPOSE: Detail view pro pronajimatele (read/edit mode) - bez role/permissions
+// FILE: app/modules/050-najemnik/forms/TenantDetailFrame.tsx
+// PURPOSE: Detail view pro nájemníka (read/edit mode) - bez role/permissions
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -15,6 +15,10 @@ import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
+import { listBankAccounts } from '@/app/lib/services/bankAccounts'
+import { getLandlordDelegates } from '@/app/lib/services/landlords'
+import { listTenantUsers } from '@/app/lib/services/tenantUsers'
+import { listAttachments } from '@/app/lib/attachments'
 import { supabase } from '@/app/lib/supabaseClient'
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -163,6 +167,10 @@ export default function TenantDetailFrame({
   // Subject types pro změnu typu v edit mode
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   const [selectedSubjectType, setSelectedSubjectType] = useState<string | null>(tenant.subjectType || null)
+  const [usersCount, setUsersCount] = useState(0)
+  const [accountsCount, setAccountsCount] = useState(0)
+  const [delegatesCount, setDelegatesCount] = useState(0)
+  const [attachmentsCount, setAttachmentsCount] = useState(0)
 
   // Units - pro select jednotky
   const [units, setUnits] = useState<Array<{ id: string; display_name: string | null; property_id: string | null; property_name?: string | null }>>([])
@@ -526,6 +534,41 @@ export default function TenantDetailFrame({
       mounted = false
     }
   }, [tenant?.id, tenant?.subjectType, viewMode, toast, onDirtyChange, logger]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (isNewId(resolvedTenant.id)) {
+      setUsersCount(0)
+      setAccountsCount(0)
+      setDelegatesCount(0)
+      setAttachmentsCount(0)
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const [users, accounts, delegates, attachments] = await Promise.all([
+          listTenantUsers(resolvedTenant.id, false),
+          listBankAccounts(resolvedTenant.id),
+          getLandlordDelegates(resolvedTenant.id),
+          listAttachments({ entityType: 'subjects', entityId: resolvedTenant.id, includeArchived: false }),
+        ])
+
+        if (cancelled) return
+        setUsersCount(users.length + 1)
+        setAccountsCount(accounts.filter((a) => !a.is_archived).length)
+        setDelegatesCount(delegates.length)
+        setAttachmentsCount(attachments.length)
+      } catch (err) {
+        if (!cancelled) logger.error('Failed to load tenant counts', err)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedTenant.id])
 
   // =====================
   // 4) ACTION HANDLERS
@@ -893,6 +936,12 @@ export default function TenantDetailFrame({
           entityLabel: resolvedTenant.displayName ?? null,
           showSystemEntityHeader: false,
           mode: detailMode,
+          sectionCounts: {
+            users: usersCount,
+            accounts: accountsCount,
+            delegates: delegatesCount,
+            attachments: attachmentsCount,
+          },
           onCreateDelegateFromUser, // Předat do DelegatesSection přes ctx
           onOpenNewDelegateForm, // Předat do DelegatesSection přes ctx
 

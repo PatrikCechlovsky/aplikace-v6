@@ -94,6 +94,9 @@ Sidebar → Nájemníci
         ├── Tab: Účty (AccountsSection)
         ├── Tab: Dokumenty (AttachmentsSection)
         └── Tab: Historie (AuditLogSection)
+
+   Poznámka:
+   - Záložky se seznamy (Uživatelé, Účty, Zástupci, Přílohy) zobrazují počty položek v názvu.
 ```
 
 ---

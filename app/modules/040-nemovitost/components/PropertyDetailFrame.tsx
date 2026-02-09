@@ -15,9 +15,11 @@ import { useToast } from '@/app/UI/Toast'
 import { supabase } from '@/app/lib/supabaseClient'
 import EquipmentTab from './EquipmentTab'
 import PropertyServicesTab from './PropertyServicesTab'
+import UnitDetailFrame, { type UiUnit } from './UnitDetailFrame'
 import { listPropertyEquipment } from '@/app/lib/services/equipment'
 import { listPropertyServices } from '@/app/lib/services/propertyServices'
 import { listAttachments } from '@/app/lib/attachments'
+import { getUnitDetail, type UnitDetailRow } from '@/app/lib/services/units'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -123,6 +125,45 @@ function isNewId(id: string | null | undefined) {
   return !s || s === 'new'
 }
 
+function mapUnitDetailToUi(row: UnitDetailRow): UiUnit {
+  return {
+    id: row.id,
+    propertyId: row.property_id ?? null,
+    unitTypeId: row.unit_type_id ?? null,
+    landlordId: row.landlord_id ?? null,
+    displayName: row.display_name ?? null,
+    internalCode: row.internal_code ?? null,
+
+    street: row.street ?? null,
+    houseNumber: row.house_number ?? null,
+    city: row.city ?? null,
+    zip: row.zip ?? null,
+    country: row.country ?? null,
+    region: row.region ?? null,
+
+    floor: row.floor ?? null,
+    doorNumber: row.door_number ?? null,
+    area: row.area ?? null,
+    rooms: row.rooms ?? null,
+    disposition: row.disposition ?? null,
+    status: row.status ?? null,
+    tenantId: row.tenant_id ?? null,
+    orientationNumber: row.orientation_number ?? null,
+    yearRenovated: row.year_renovated ?? null,
+    managerName: row.manager_name ?? null,
+
+    cadastralArea: row.cadastral_area ?? null,
+    parcelNumber: row.parcel_number ?? null,
+    lvNumber: row.lv_number ?? null,
+
+    note: row.note ?? null,
+    originModule: row.origin_module ?? null,
+    isArchived: row.is_archived ?? null,
+    createdAt: row.created_at ?? null,
+    updatedAt: row.updated_at ?? null,
+  }
+}
+
 // =====================
 // COMPONENT
 // =====================
@@ -150,6 +191,9 @@ export default function PropertyDetailFrame({
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; name: string; icon?: string | null }>>([])
   const [selectedPropertyTypeId, setSelectedPropertyTypeId] = useState<string | null>(property.propertyTypeId ?? null)
   const [units, setUnits] = useState<Array<{ id: string; display_name: string | null; internal_code: string | null; status: string | null }>>([])
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null)
+  const [selectedUnitDetail, setSelectedUnitDetail] = useState<UiUnit | null>(null)
+  const [selectedUnitLoading, setSelectedUnitLoading] = useState(false)
   const [equipmentCount, setEquipmentCount] = useState(0)
   const [servicesCount, setServicesCount] = useState(0)
   const [attachmentsCount, setAttachmentsCount] = useState(0)
@@ -178,6 +222,7 @@ export default function PropertyDetailFrame({
   useEffect(() => {
     if (isNewId(property.id)) {
       setUnits([])
+      setSelectedUnitId(null)
       return
     }
 
@@ -189,12 +234,53 @@ export default function PropertyDetailFrame({
           .eq('property_id', property.id)
           .order('display_name', { ascending: true, nullsFirst: false })
 
-        setUnits((data ?? []) as any)
+        const nextUnits = (data ?? []) as any
+        setUnits(nextUnits)
+        if (nextUnits.length === 0) {
+          setSelectedUnitId(null)
+        } else if (!selectedUnitId || !nextUnits.some((u: any) => u.id === selectedUnitId)) {
+          setSelectedUnitId(String(nextUnits[0].id))
+        }
       } catch (err) {
         logger.error('Failed to load property units', err)
       }
     })()
-  }, [property.id])
+  }, [property.id, selectedUnitId])
+
+  useEffect(() => {
+    let active = true
+    const unitId = selectedUnitId?.trim()
+
+    if (!unitId) {
+      setSelectedUnitDetail(null)
+      return () => {
+        active = false
+      }
+    }
+
+    setSelectedUnitLoading(true)
+
+    ;(async () => {
+      try {
+        const detail = await getUnitDetail(unitId)
+        if (!active) return
+        setSelectedUnitDetail(mapUnitDetailToUi(detail.unit))
+      } catch (err) {
+        if (active) {
+          logger.error('Failed to load selected unit detail', err)
+          setSelectedUnitDetail(null)
+        }
+      } finally {
+        if (active) {
+          setSelectedUnitLoading(false)
+        }
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [selectedUnitId])
 
   useEffect(() => {
     if (isNewId(resolvedProperty.id)) {
@@ -560,32 +646,79 @@ export default function PropertyDetailFrame({
                   Zatím nejsou přiřazeny žádné jednotky.
                 </p>
               ) : (
-                <table className="data-table" style={{ width: '100%' }}>
-                  <thead>
-                    <tr>
-                      <th>Název</th>
-                      <th>Interní kód</th>
-                      <th>Stav</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {units.map((unit) => (
-                      <tr key={unit.id}>
-                        <td>{unit.display_name}</td>
-                        <td>{unit.internal_code || '—'}</td>
-                        <td>
-                          {unit.status === 'available' && '🟢 Volná'}
-                          {unit.status === 'occupied' && '🔴 Obsazená'}
-                          {unit.status === 'reserved' && '🟡 Rezervovaná'}
-                          {unit.status === 'renovation' && '🟤 V rekonstrukci'}
-                          {!unit.status && '—'}
-                        </td>
+                <>
+                  <div className="detail-form__grid detail-form__grid--narrow">
+                    <div className="detail-form__field">
+                      <label className="detail-form__label">Vybraná jednotka</label>
+                      <select
+                        className="detail-form__input"
+                        value={selectedUnitId ?? ''}
+                        onChange={(e) => setSelectedUnitId(e.target.value || null)}
+                      >
+                        <option value="">—</option>
+                        {units.map((unit) => (
+                          <option key={unit.id} value={unit.id}>
+                            {unit.display_name || 'Bez názvu'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <table className="data-table" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th>Název</th>
+                        <th>Interní kód</th>
+                        <th>Stav</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {units.map((unit) => {
+                        const isSelected = selectedUnitId === unit.id
+                        return (
+                          <tr
+                            key={unit.id}
+                            onClick={() => setSelectedUnitId(unit.id)}
+                            style={{
+                              cursor: 'pointer',
+                              background: isSelected ? 'var(--color-surface-hover)' : undefined,
+                            }}
+                          >
+                            <td>{unit.display_name}</td>
+                            <td>{unit.internal_code || '—'}</td>
+                            <td>
+                              {unit.status === 'available' && '🟢 Volná'}
+                              {unit.status === 'occupied' && '🔴 Obsazená'}
+                              {unit.status === 'reserved' && '🟡 Rezervovaná'}
+                              {unit.status === 'renovation' && '🟤 V rekonstrukci'}
+                              {!unit.status && '—'}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </>
               )}
             </section>
+
+            {units.length > 0 && selectedUnitId && (
+              <section className="detail-form__section">
+                <h3 className="detail-form__section-title">Detail vybrané jednotky</h3>
+                {selectedUnitLoading && (
+                  <p style={{ color: 'var(--color-text-muted)', padding: '0.5rem 0' }}>Načítám detail…</p>
+                )}
+                {!selectedUnitLoading && selectedUnitDetail && (
+                  <UnitDetailFrame unit={selectedUnitDetail} viewMode="read" embedded />
+                )}
+                {!selectedUnitLoading && !selectedUnitDetail && (
+                  <p style={{ color: 'var(--color-danger)', padding: '0.5rem 0' }}>
+                    Detail jednotky se nepodařilo načíst.
+                  </p>
+                )}
+              </section>
+            )}
           </div>
         ),
 
