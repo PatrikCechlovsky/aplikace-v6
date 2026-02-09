@@ -289,6 +289,7 @@ export default function PropertyDetailFrame({
     colHidden: [],
   })
   const [unitsColsOpen, setUnitsColsOpen] = useState(false)
+  const [unitsViewMode, setUnitsViewMode] = useState<'list' | 'detail'>('list')
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null)
   const [selectedUnitDetail, setSelectedUnitDetail] = useState<UiUnit | null>(null)
   const [selectedUnitLoading, setSelectedUnitLoading] = useState(false)
@@ -824,69 +825,100 @@ export default function PropertyDetailFrame({
 
         unitsContent: (
           <div className="detail-form">
-            <section className="detail-form__section">
-              <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
-              {unitsLoading && <div className="detail-form__hint">Načítám jednotky…</div>}
-
-              {!unitsLoading && unitsRows.length === 0 && (
-                <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
-                  Zatím nejsou přiřazeny žádné jednotky.
-                </p>
-              )}
-
-              {!unitsLoading && unitsRows.length > 0 && (
-                <>
-                  <ListView
-                    columns={unitsColumns}
-                    rows={unitsRows}
-                    filterValue={unitsFilter}
-                    onFilterChange={setUnitsFilter}
-                    showArchived={unitsShowArchived}
-                    onShowArchivedChange={setUnitsShowArchived}
-                    selectedId={selectedUnitId}
-                    onRowClick={(row: ListViewRow<UnitsListUiRow>) => setSelectedUnitId(String(row.id))}
-                    onRowDoubleClick={(row: ListViewRow<UnitsListUiRow>) => setSelectedUnitId(String(row.id))}
-                    sort={unitsSort}
-                    onSortChange={setUnitsSort}
-                    onColumnResize={(key, px) => {
-                      setUnitsColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
-                    }}
-                    onColumnSettings={() => setUnitsColsOpen(true)}
-                    emptyText="Nemovitost nemá žádné jednotky."
-                  />
-
-                  <ListViewColumnsDrawer
-                    open={unitsColsOpen}
-                    onClose={() => setUnitsColsOpen(false)}
-                    columns={UNITS_BASE_COLUMNS}
-                    fixedFirstKey="unitTypeName"
-                    requiredKeys={['displayName']}
-                    value={{
-                      order: unitsColPrefs.colOrder ?? [],
-                      hidden: unitsColPrefs.colHidden ?? [],
-                    }}
-                    sortBy={unitsSort ?? undefined}
-                    onChange={(next) => {
-                      setUnitsColPrefs((p) => ({
-                        ...p,
-                        colOrder: next.order,
-                        colHidden: next.hidden,
-                      }))
-                    }}
-                    onSortChange={(nextSort) => setUnitsSort(nextSort)}
-                    onReset={() => {
-                      setUnitsColPrefs({ colWidths: {}, colOrder: [], colHidden: [] })
-                      setUnitsSort(DEFAULT_UNITS_SORT)
-                    }}
-                  />
-                </>
-              )}
-            </section>
-
-            {unitsRows.length > 0 && selectedUnitId && (
+            {unitsViewMode === 'list' && (
               <section className="detail-form__section">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <h3 className="detail-form__section-title">Detail vybrané jednotky</h3>
+                  <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!selectedUnitId) return
+                        setUnitsViewMode('detail')
+                      }}
+                      disabled={!selectedUnitId}
+                      className="common-actions__btn"
+                      title="Číst vybranou jednotku"
+                    >
+                      <span className="common-actions__label">Číst</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openUnitInModule('edit')}
+                      disabled={!selectedUnitId}
+                      className="common-actions__btn"
+                      title="Upravit v přehledu jednotek"
+                    >
+                      <span className="common-actions__label">Upravit</span>
+                    </button>
+                  </div>
+                </div>
+
+                {unitsLoading && <div className="detail-form__hint">Načítám jednotky…</div>}
+
+                {!unitsLoading && unitsRows.length === 0 && (
+                  <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
+                    Zatím nejsou přiřazeny žádné jednotky.
+                  </p>
+                )}
+
+                {!unitsLoading && unitsRows.length > 0 && (
+                  <>
+                    <ListView
+                      columns={unitsColumns}
+                      rows={unitsRows}
+                      filterValue={unitsFilter}
+                      onFilterChange={setUnitsFilter}
+                      showArchived={unitsShowArchived}
+                      onShowArchivedChange={setUnitsShowArchived}
+                      selectedId={selectedUnitId}
+                      onRowClick={(row: ListViewRow<UnitsListUiRow>) => setSelectedUnitId(String(row.id))}
+                      onRowDoubleClick={(row: ListViewRow<UnitsListUiRow>) => {
+                        setSelectedUnitId(String(row.id))
+                        setUnitsViewMode('detail')
+                      }}
+                      sort={unitsSort}
+                      onSortChange={setUnitsSort}
+                      onColumnResize={(key, px) => {
+                        setUnitsColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+                      }}
+                      onColumnSettings={() => setUnitsColsOpen(true)}
+                      emptyText="Nemovitost nemá žádné jednotky."
+                    />
+
+                    <ListViewColumnsDrawer
+                      open={unitsColsOpen}
+                      onClose={() => setUnitsColsOpen(false)}
+                      columns={UNITS_BASE_COLUMNS}
+                      fixedFirstKey="unitTypeName"
+                      requiredKeys={['displayName']}
+                      value={{
+                        order: unitsColPrefs.colOrder ?? [],
+                        hidden: unitsColPrefs.colHidden ?? [],
+                      }}
+                      sortBy={unitsSort ?? undefined}
+                      onChange={(next) => {
+                        setUnitsColPrefs((p) => ({
+                          ...p,
+                          colOrder: next.order,
+                          colHidden: next.hidden,
+                        }))
+                      }}
+                      onSortChange={(nextSort) => setUnitsSort(nextSort)}
+                      onReset={() => {
+                        setUnitsColPrefs({ colWidths: {}, colOrder: [], colHidden: [] })
+                        setUnitsSort(DEFAULT_UNITS_SORT)
+                      }}
+                    />
+                  </>
+                )}
+              </section>
+            )}
+
+            {unitsViewMode === 'detail' && (
+              <section className="detail-form__section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h3 className="detail-form__section-title">Detail jednotky</h3>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       type="button"
@@ -916,19 +948,20 @@ export default function PropertyDetailFrame({
                     </button>
                     <button
                       type="button"
-                      onClick={() => openUnitInModule('read')}
+                      onClick={() => openUnitInModule('edit')}
+                      disabled={!selectedUnitId}
                       className="common-actions__btn"
-                      title="Otevřít v přehledu jednotek"
+                      title="Upravit v přehledu jednotek"
                     >
-                      <span className="common-actions__label">Otevřít v jednotkách</span>
+                      <span className="common-actions__label">Upravit</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSelectedUnitId(null)}
+                      onClick={() => setUnitsViewMode('list')}
                       className="common-actions__btn"
-                      title="Zavřít detail"
+                      title="Zpět na seznam"
                     >
-                      <span className="common-actions__label">Zavřít detail</span>
+                      <span className="common-actions__label">Zpět</span>
                     </button>
                   </div>
                 </div>
