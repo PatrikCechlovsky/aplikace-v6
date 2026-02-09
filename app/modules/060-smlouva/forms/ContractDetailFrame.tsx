@@ -1,0 +1,475 @@
+// FILE: app/modules/060-smlouva/forms/ContractDetailFrame.tsx
+// PURPOSE: Detail view pro smlouvu (read/edit) s DetailView a vazbami
+// NOTES: Využívá service layer pro data a číselníky
+
+'use client'
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
+import type { ViewMode } from '@/app/UI/CommonActions'
+import { useToast } from '@/app/UI/Toast'
+import createLogger from '@/app/lib/logger'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
+import { listAttachments } from '@/app/lib/attachments'
+import { listUnits } from '@/app/lib/services/units'
+import { listProperties } from '@/app/lib/services/properties'
+import { listLandlords } from '@/app/lib/services/landlords'
+import { listTenants } from '@/app/lib/services/tenants'
+import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
+import { saveContract, type SaveContractInput } from '@/app/lib/services/contracts'
+import ContractDetailForm, {
+  type ContractFormValue,
+  type LookupOption,
+  type UnitLookupOption,
+  type PropertyLookupOption,
+} from './ContractDetailForm'
+
+import '@/app/styles/components/TileLayout.css'
+import '@/app/styles/components/DetailForm.css'
+
+const logger = createLogger('ContractDetailFrame')
+
+export type UiContract = {
+  id: string
+  cisloSmlouvy: string | null
+  stav: string | null
+  landlordId: string | null
+  tenantId: string | null
+  pocetUzivatelu: number | null
+  propertyId: string | null
+  unitId: string | null
+  pomerPlochyKNemovitosti: string | null
+  datumPodpisu: string | null
+  datumZacatek: string | null
+  datumKonec: string | null
+  dobaNeurcita: boolean | null
+  najemVyse: number | null
+  periodicitaNajmu: string | null
+  denPlatby: string | null
+  kaucePotreba: boolean | null
+  kauceCastka: number | null
+  pozadovanyDatumKauce: string | null
+  stavKauce: string | null
+  stavNajmu: string | null
+  stavPlatebSmlouvy: string | null
+  poznamky: string | null
+  isArchived: boolean | null
+  createdAt: string | null
+  createdBy: string | null
+  updatedAt: string | null
+  updatedBy: string | null
+}
+
+type Props = {
+  contract: UiContract
+  viewMode: ViewMode
+  initialSectionId?: DetailSectionId
+  onActiveSectionChange?: (id: DetailSectionId) => void
+  onRegisterSubmit?: (fn: () => Promise<UiContract | null>) => void
+  onDirtyChange?: (dirty: boolean) => void
+  onSaved?: (contract: UiContract) => void
+}
+
+function buildInitialFormValue(c: UiContract): ContractFormValue {
+  return {
+    cisloSmlouvy: c.cisloSmlouvy || '',
+    stav: c.stav || '',
+    landlordId: c.landlordId || '',
+    tenantId: c.tenantId || '',
+    pocetUzivatelu: c.pocetUzivatelu ?? null,
+    propertyId: c.propertyId || '',
+    unitId: c.unitId || '',
+    pomerPlochyKNemovitosti: c.pomerPlochyKNemovitosti || '',
+    datumPodpisu: c.datumPodpisu || '',
+    datumZacatek: c.datumZacatek || '',
+    datumKonec: c.datumKonec || '',
+    dobaNeurcita: !!c.dobaNeurcita,
+    najemVyse: c.najemVyse ?? null,
+    periodicitaNajmu: c.periodicitaNajmu || '',
+    denPlatby: c.denPlatby || '',
+    kaucePotreba: !!c.kaucePotreba,
+    kauceCastka: c.kauceCastka ?? null,
+    pozadovanyDatumKauce: c.pozadovanyDatumKauce || '',
+    stavKauce: c.stavKauce || '',
+    stavNajmu: c.stavNajmu || '',
+    stavPlatebSmlouvy: c.stavPlatebSmlouvy || '',
+    poznamky: c.poznamky || '',
+    isArchived: !!c.isArchived,
+  }
+}
+
+function isNewId(id: string | null | undefined) {
+  const s = String(id ?? '').trim()
+  return !s || s === 'new'
+}
+
+export default function ContractDetailFrame({
+  contract,
+  viewMode,
+  initialSectionId,
+  onActiveSectionChange,
+  onRegisterSubmit,
+  onDirtyChange,
+  onSaved,
+}: Props) {
+  const [resolvedContract, setResolvedContract] = useState<UiContract>(contract)
+  const [formValue, setFormValue] = useState<ContractFormValue>(() => buildInitialFormValue(contract))
+  const formValueRef = useRef<ContractFormValue>(formValue)
+  const initialSnapshotRef = useRef<string>('')
+  const firstRenderRef = useRef(true)
+  const toast = useToast()
+
+  const [attachmentsCount, setAttachmentsCount] = useState(0)
+
+  const [units, setUnits] = useState<UnitLookupOption[]>([])
+  const [properties, setProperties] = useState<PropertyLookupOption[]>([])
+  const [landlords, setLandlords] = useState<LookupOption[]>([])
+  const [tenants, setTenants] = useState<LookupOption[]>([])
+  const [statusOptions, setStatusOptions] = useState<LookupOption[]>([])
+  const [rentPeriodOptions, setRentPeriodOptions] = useState<LookupOption[]>([])
+  const [paymentDayOptions, setPaymentDayOptions] = useState<LookupOption[]>([])
+  const [depositStateOptions, setDepositStateOptions] = useState<LookupOption[]>([])
+  const [rentPaymentStateOptions, setRentPaymentStateOptions] = useState<LookupOption[]>([])
+  const [contractPaymentStateOptions, setContractPaymentStateOptions] = useState<LookupOption[]>([])
+
+  useEffect(() => {
+    formValueRef.current = formValue
+  }, [formValue])
+
+  useEffect(() => {
+    if (firstRenderRef.current) {
+      initialSnapshotRef.current = JSON.stringify(formValue)
+      firstRenderRef.current = false
+    }
+  }, [formValue])
+
+  const markDirtyIfChanged = useCallback(
+    (next: ContractFormValue) => {
+      const isDirty = JSON.stringify(next) !== initialSnapshotRef.current
+      onDirtyChange?.(isDirty)
+    },
+    [onDirtyChange]
+  )
+
+  const refreshAttachmentsCount = useCallback(async () => {
+    if (isNewId(resolvedContract.id)) {
+      setAttachmentsCount(0)
+      return
+    }
+
+    try {
+      const rows = await listAttachments({ entityType: 'contracts', entityId: resolvedContract.id, includeArchived: false })
+      setAttachmentsCount(rows.length)
+    } catch (err) {
+      logger.error('Failed to load contract attachments count', err)
+    }
+  }, [resolvedContract.id])
+
+  useEffect(() => {
+    void refreshAttachmentsCount()
+  }, [refreshAttachmentsCount])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadLookups() {
+      try {
+        const [unitsRows, propertyRows, landlordRows, tenantRows] = await Promise.all([
+          listUnits({ includeArchived: false, limit: 1000 }),
+          listProperties({ includeArchived: false, limit: 1000 }),
+          listLandlords({ includeArchived: false, limit: 1000 }),
+          listTenants({ includeArchived: false, limit: 1000 }),
+        ])
+
+        if (!mounted) return
+
+        setUnits(
+          unitsRows.map((u) => ({
+            id: u.id,
+            label: u.display_name || '—',
+            propertyId: u.property_id ?? null,
+            landlordId: u.landlord_id ?? null,
+            tenantId: u.tenant_id ?? null,
+            area: u.area ?? null,
+          }))
+        )
+
+        setProperties(
+          propertyRows.map((p) => ({
+            id: p.id,
+            label: p.display_name || '—',
+            buildingArea: p.building_area ?? null,
+          }))
+        )
+
+        setLandlords(landlordRows.map((l) => ({ id: l.id, label: l.display_name || '—' })))
+        setTenants(tenantRows.map((t) => ({ id: t.id, label: t.display_name || '—' })))
+      } catch (err) {
+        logger.error('Failed to load contract lookups', err)
+      }
+    }
+
+    void loadLookups()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadGenericOptions() {
+      try {
+        const [
+          statusRows,
+          rentPeriodRows,
+          paymentDayRows,
+          depositStateRows,
+          rentPaymentRows,
+          contractPaymentRows,
+        ] = await Promise.all([
+          listActiveByCategory('contract_statuses'),
+          listActiveByCategory('rent_periods'),
+          listActiveByCategory('payment_days'),
+          listActiveByCategory('deposit_states'),
+          listActiveByCategory('rent_payment_states'),
+          listActiveByCategory('contract_payment_states'),
+        ])
+
+        if (!mounted) return
+
+        setStatusOptions(statusRows.map((r) => ({ id: r.code, label: r.name })))
+        setRentPeriodOptions(rentPeriodRows.map((r) => ({ id: r.code, label: r.name })))
+
+        const paymentOptions = paymentDayRows.length
+          ? paymentDayRows.map((r) => ({ id: r.code, label: r.name }))
+          : Array.from({ length: 28 }, (_, i) => ({ id: String(i + 1), label: String(i + 1) })).concat([
+              { id: 'last_day', label: 'Poslední den v měsíci' },
+            ])
+
+        setPaymentDayOptions(paymentOptions)
+        setDepositStateOptions(depositStateRows.map((r) => ({ id: r.code, label: r.name })))
+        setRentPaymentStateOptions(rentPaymentRows.map((r) => ({ id: r.code, label: r.name })))
+        setContractPaymentStateOptions(contractPaymentRows.map((r) => ({ id: r.code, label: r.name })))
+      } catch (err) {
+        logger.error('Failed to load contract generic types', err)
+      }
+    }
+
+    void loadGenericOptions()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const handleSubmit = useCallback(async (): Promise<UiContract | null> => {
+    const current = formValueRef.current
+
+    if (!current.cisloSmlouvy?.trim()) {
+      toast.showWarning('Číslo smlouvy je povinné.')
+      return null
+    }
+
+    if (!current.stav?.trim()) {
+      toast.showWarning('Stav smlouvy je povinný.')
+      return null
+    }
+
+    if (!current.unitId?.trim()) {
+      toast.showWarning('Jednotka je povinná.')
+      return null
+    }
+
+    if (!current.propertyId?.trim()) {
+      toast.showWarning('Nemovitost je povinná.')
+      return null
+    }
+
+    if (!current.landlordId?.trim()) {
+      toast.showWarning('Pronajímatel je povinný.')
+      return null
+    }
+
+    if (!current.tenantId?.trim()) {
+      toast.showWarning('Nájemník je povinný.')
+      return null
+    }
+
+    if (!current.datumZacatek?.trim()) {
+      toast.showWarning('Datum začátku je povinné.')
+      return null
+    }
+
+    if (!current.periodicitaNajmu?.trim()) {
+      toast.showWarning('Periodicita nájmu je povinná.')
+      return null
+    }
+
+    if (!current.denPlatby?.trim()) {
+      toast.showWarning('Den platby je povinný.')
+      return null
+    }
+
+    try {
+      const input: SaveContractInput = {
+        id: isNewId(resolvedContract.id) ? null : resolvedContract.id,
+        cislo_smlouvy: current.cisloSmlouvy,
+        stav: current.stav,
+        landlord_id: current.landlordId || null,
+        tenant_id: current.tenantId || null,
+        pocet_uzivatelu: current.pocetUzivatelu ?? null,
+        property_id: current.propertyId || null,
+        unit_id: current.unitId || null,
+        pomer_plochy_k_nemovitosti: current.pomerPlochyKNemovitosti || null,
+        datum_podpisu: current.datumPodpisu || null,
+        datum_zacatek: current.datumZacatek,
+        datum_konec: current.dobaNeurcita ? null : current.datumKonec || null,
+        doba_neurcita: current.dobaNeurcita,
+        najem_vyse: current.najemVyse ?? null,
+        periodicita_najmu: current.periodicitaNajmu,
+        den_platby: current.denPlatby,
+        kauce_potreba: current.kaucePotreba,
+        kauce_castka: current.kauceCastka ?? null,
+        pozadovany_datum_kauce: current.kaucePotreba ? current.pozadovanyDatumKauce || null : null,
+        stav_kauce: current.stavKauce || null,
+        stav_najmu: current.stavNajmu || null,
+        stav_plateb_smlouvy: current.stavPlatebSmlouvy || null,
+        poznamky: current.poznamky || null,
+        is_archived: current.isArchived,
+      }
+
+      const savedRow = await saveContract(input)
+
+      const saved: UiContract = {
+        id: savedRow.id,
+        cisloSmlouvy: savedRow.cislo_smlouvy,
+        stav: savedRow.stav,
+        landlordId: savedRow.landlord_id,
+        tenantId: savedRow.tenant_id,
+        pocetUzivatelu: savedRow.pocet_uzivatelu,
+        propertyId: savedRow.property_id,
+        unitId: savedRow.unit_id,
+        pomerPlochyKNemovitosti: savedRow.pomer_plochy_k_nemovitosti,
+        datumPodpisu: savedRow.datum_podpisu,
+        datumZacatek: savedRow.datum_zacatek,
+        datumKonec: savedRow.datum_konec,
+        dobaNeurcita: savedRow.doba_neurcita,
+        najemVyse: savedRow.najem_vyse,
+        periodicitaNajmu: savedRow.periodicita_najmu,
+        denPlatby: savedRow.den_platby,
+        kaucePotreba: savedRow.kauce_potreba,
+        kauceCastka: savedRow.kauce_castka,
+        pozadovanyDatumKauce: savedRow.pozadovany_datum_kauce,
+        stavKauce: savedRow.stav_kauce,
+        stavNajmu: savedRow.stav_najmu,
+        stavPlatebSmlouvy: savedRow.stav_plateb_smlouvy,
+        poznamky: savedRow.poznamky,
+        isArchived: savedRow.is_archived,
+        createdAt: savedRow.created_at,
+        createdBy: savedRow.created_by,
+        updatedAt: savedRow.updated_at,
+        updatedBy: savedRow.updated_by,
+      }
+
+      setResolvedContract(saved)
+      const newInitial = buildInitialFormValue(saved)
+      setFormValue(newInitial)
+      initialSnapshotRef.current = JSON.stringify(newInitial)
+      onDirtyChange?.(false)
+
+      toast.showSuccess(isNewId(contract.id) ? 'Smlouva vytvořena' : 'Smlouva uložena')
+      onSaved?.(saved)
+
+      return saved
+    } catch (err) {
+      logger.error('Failed to save contract', err)
+      toast.showError(err instanceof Error ? err.message : 'Chyba při ukládání smlouvy')
+      return null
+    }
+  }, [contract.id, resolvedContract.id, toast, onDirtyChange, onSaved])
+
+  useEffect(() => {
+    onRegisterSubmit?.(handleSubmit)
+  }, [handleSubmit, onRegisterSubmit])
+
+  const detailViewMode: DetailViewMode = useMemo(() => {
+    if (viewMode === 'create') return 'create'
+    if (viewMode === 'edit') return 'edit'
+    return 'view'
+  }, [viewMode])
+
+  const readOnly = detailViewMode === 'view'
+  const systemBlocks = useMemo(() => {
+    return [
+      {
+        title: 'Metadata',
+        visible: true,
+        content: (
+          <div className="detail-form">
+            <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field">
+                <label className="detail-form__label">Vytvořeno</label>
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={resolvedContract.createdAt ? formatDateTime(resolvedContract.createdAt) : '—'}
+                  readOnly
+                />
+              </div>
+              <div className="detail-form__field">
+                <label className="detail-form__label">Aktualizováno</label>
+                <input
+                  className="detail-form__input detail-form__input--readonly"
+                  value={resolvedContract.updatedAt ? formatDateTime(resolvedContract.updatedAt) : '—'}
+                  readOnly
+                />
+              </div>
+            </div>
+          </div>
+        ),
+      },
+    ]
+  }, [resolvedContract.createdAt, resolvedContract.updatedAt])
+
+  return (
+    <DetailView
+      mode={detailViewMode}
+      sectionIds={['detail', 'attachments', 'system']}
+      initialActiveId={initialSectionId ?? 'detail'}
+      onActiveSectionChange={onActiveSectionChange}
+      ctx={{
+        entityType: 'contracts',
+        entityId: resolvedContract.id === 'new' ? 'new' : resolvedContract.id || undefined,
+        entityLabel: formValue.cisloSmlouvy || null,
+        showSystemEntityHeader: false,
+        mode: detailViewMode,
+        onAttachmentsCountChange: setAttachmentsCount,
+        sectionCounts: { attachments: attachmentsCount },
+        detailContent: (
+          <ContractDetailForm
+            contract={formValue}
+            readOnly={readOnly}
+            units={units}
+            properties={properties}
+            landlords={landlords}
+            tenants={tenants}
+            statusOptions={statusOptions}
+            rentPeriodOptions={rentPeriodOptions}
+            paymentDayOptions={paymentDayOptions}
+            depositStateOptions={depositStateOptions}
+            rentPaymentStateOptions={rentPaymentStateOptions}
+            contractPaymentStateOptions={contractPaymentStateOptions}
+            onDirtyChange={(dirty) => {
+              if (dirty) markDirtyIfChanged(formValue)
+            }}
+            onValueChange={(val) => {
+              setFormValue(val)
+              formValueRef.current = val
+              markDirtyIfChanged(val)
+            }}
+          />
+        ),
+        systemBlocks,
+      }}
+    />
+  )
+}

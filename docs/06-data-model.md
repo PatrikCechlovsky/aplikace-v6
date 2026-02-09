@@ -45,6 +45,8 @@ Základní entita pro všechny osoby a firmy.
 - `ic`, `dic`
 - `email`, `phone`
 - `address_id` (FK na tabulku adres, pokud bude oddělená)
+- `is_landlord`, `is_tenant`, `is_user`
+- `is_landlord_delegate`, `is_tenant_delegate`, `is_maintenance`, `is_maintenance_delegate`
 - `created_at`, `created_by`
 - `updated_at`, `updated_by`
 - `is_active`
@@ -146,16 +148,15 @@ Reprezentuje nájemní/podnájemní smlouvy.
 - `unit_id` (FK)
 - `landlord_id` (FK → subjects.id – pronajímatel)
 - `tenant_id` (FK → subjects.id – nájemník)
-- `contract_number`
-- `contract_type` (nájem, podnájem, krátkodobý pronájem…)
+- `cislo_smlouvy`
+- `stav` (koncept, aktivní, ukončená…)
 - `valid_from`
 - `valid_to`
-- `rent_amount`
-- `rent_currency`
-- `deposit_amount`
-- `deposit_currency`
-- `payment_day` (den v měsíci)
-- `state` (aktivní, ukončená, připravovaná, v prodlení…)
+- `doba_neurcita`
+- `periodicita_najmu`
+- `den_platby` (den v měsíci)
+- `kauce_potreba`, `kauce_castka`, `pozadovany_datum_kauce`
+- `stav_kauce`, `stav_najmu`, `stav_plateb_smlouvy`
 - `note`
 - `created_at`, `created_by`
 - `updated_at`, `updated_by`
@@ -186,6 +187,23 @@ Definuje, **co má nájemník platit** a v jakém intervalu.
 - `due_day`
 - `valid_from`, `valid_to`
 - `is_active`
+
+---
+
+## 4.3 Předávací protokoly
+
+Tabulka `handover_protocols` navazuje na smlouvy a uchovává předání/převzetí.
+
+**Pole – příklad:**
+- `id`
+- `contract_id` (FK → contracts)
+- `typ_protokolu` (předání, převzetí, ukončení)
+- `stav_protokolu` (koncept, podepsaný, archivovaný)
+- `datum_predani`, `cas_predani`, `misto_predani`
+- `meraky_stav`, `poznamky`
+- `predavajici_id`, `prebirajici_id` (FK → subjects)
+- `photo_attachments_id`, `podpis_predavajiciho_id`, `podpis_prebirajiciho_id`
+- `created_at`, `created_by`, `updated_at`, `updated_by`
 
 ### 5.2 Tabulka `payments` (skutečné platby)
 

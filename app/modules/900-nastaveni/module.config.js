@@ -21,6 +21,15 @@ import ServiceBillingTypesTile from './tiles/ServiceBillingTypesTile'
 import VatRatesTile from './tiles/VatRatesTile'
 import ServiceUnitsTile from './tiles/ServiceUnitsTile'
 import ServicePeriodicitiesTile from './tiles/ServicePeriodicitiesTile'
+import ContractTypesTile from './tiles/ContractTypesTile'
+import ContractStatusesTile from './tiles/ContractStatusesTile'
+import RentPeriodsTile from './tiles/RentPeriodsTile'
+import PaymentDaysTile from './tiles/PaymentDaysTile'
+import DepositStatesTile from './tiles/DepositStatesTile'
+import RentPaymentStatesTile from './tiles/RentPaymentStatesTile'
+import ContractPaymentStatesTile from './tiles/ContractPaymentStatesTile'
+import HandoverProtocolTypesTile from './tiles/HandoverProtocolTypesTile'
+import HandoverProtocolStatusesTile from './tiles/HandoverProtocolStatusesTile'
 
 export default {
   id: '900-nastaveni',
@@ -154,6 +163,78 @@ export default {
       sectionId: 'types-settings',
       component: ServicePeriodicitiesTile,
       order: 64,
+    },
+    {
+      id: 'contract-types',
+      label: 'Typy smluv',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ContractTypesTile,
+      order: 70,
+    },
+    {
+      id: 'contract-statuses',
+      label: 'Stavy smluv',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ContractStatusesTile,
+      order: 71,
+    },
+    {
+      id: 'rent-periods',
+      label: 'Periodicita nájmu',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: RentPeriodsTile,
+      order: 72,
+    },
+    {
+      id: 'payment-days',
+      label: 'Dny splatnosti',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: PaymentDaysTile,
+      order: 73,
+    },
+    {
+      id: 'deposit-states',
+      label: 'Stavy kauce',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: DepositStatesTile,
+      order: 74,
+    },
+    {
+      id: 'rent-payment-states',
+      label: 'Stavy nájmu',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: RentPaymentStatesTile,
+      order: 75,
+    },
+    {
+      id: 'contract-payment-states',
+      label: 'Stavy plateb smlouvy',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ContractPaymentStatesTile,
+      order: 76,
+    },
+    {
+      id: 'handover-protocol-types',
+      label: 'Typy předávacích protokolů',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: HandoverProtocolTypesTile,
+      order: 77,
+    },
+    {
+      id: 'handover-protocol-statuses',
+      label: 'Stavy předávacích protokolů',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: HandoverProtocolStatusesTile,
+      order: 78,
     },
     {
       id: 'payment-types',
