@@ -30,7 +30,6 @@ import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import {
-  EQUIPMENT_CATALOG_BASE_COLUMNS,
   EQUIPMENT_BINDING_BASE_COLUMNS,
   EQUIPMENT_CATALOG_DEFAULT_SORT,
   EQUIPMENT_BINDING_VIEW_KEY,
@@ -1332,7 +1331,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
       <ListViewColumnsDrawer
         open={colsOpen}
         columns={EQUIPMENT_BINDING_BASE_COLUMNS}
-        columns={EQUIPMENT_CATALOG_BASE_COLUMNS}
         fixedFirstKey="equipmentTypeName"
         requiredKeys={['equipmentName']}
         value={{
@@ -1345,7 +1343,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
               ...p,
               colOrder: next.order,
               colHidden: next.hidden,
-            void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
+            }
             void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
               colWidths: updated.colWidths ?? {},
               colOrder: updated.colOrder ?? [],
@@ -1364,7 +1362,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
             colHidden: [],
           }
           setColPrefs(resetPrefs)
-          void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
           void saveViewPrefs(EQUIPMENT_BINDING_VIEW_KEY, {
             ...resetPrefs,
             sort: EQUIPMENT_CATALOG_DEFAULT_SORT,
