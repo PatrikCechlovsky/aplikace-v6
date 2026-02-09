@@ -553,12 +553,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                 sort={sort}
                 onSortChange={handleSortChange}
                 onColumnResize={handleColumnResize}
-                toolbarRight={(
-                  <button type="button" className="common-actions__btn" onClick={() => setColsOpen(true)}>
-                    <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
-                    <span className="common-actions__label">Sloupce</span>
-                  </button>
-                )}
+                onColumnSettings={() => setColsOpen(true)}
               />
             )}
           </section>

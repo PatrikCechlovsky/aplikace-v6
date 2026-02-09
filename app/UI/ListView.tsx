@@ -10,6 +10,7 @@
  */
 
 import React, { useCallback, useEffect, useRef } from 'react'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 import '@/app/styles/components/ListView.css'
 
 // ============================================================================
@@ -60,8 +61,9 @@ export type ListViewProps<TData = any> = {
 
   onColumnResize?: (columnKey: string, widthPx: number) => void
 
-  /** extra akce napravo v toolbaru (např. Sloupce) */
-  toolbarRight?: React.ReactNode
+  /** otevřít dialog nastavení sloupců */
+  onColumnSettings?: () => void
+  columnSettingsAriaLabel?: string
 
   /** max výška scrollovatelné tabulky (např. pro vazby) */
   tableWrapperMaxHeight?: string | number
@@ -121,7 +123,8 @@ export default function ListView<TData = any>({
   sort = null,
   onSortChange,
   onColumnResize,
-  toolbarRight,
+  onColumnSettings,
+  columnSettingsAriaLabel = 'Nastavit sloupce',
   tableWrapperMaxHeight,
 }: ListViewProps<TData>) {
   const tableWrapperStyle = typeof tableWrapperMaxHeight !== 'undefined'
@@ -171,24 +174,33 @@ export default function ListView<TData = any>({
   return (
     <div className="listview">
       <div className="listview__toolbar">
-        <input
-          type="text"
-          className="generic-type__filter-input"
-          placeholder={filterPlaceholder}
-          value={filterValue}
-          onChange={(e) => onFilterChange(e.target.value)}
-        />
-
-        <div className="generic-type__list-toolbar-right">
-          {toolbarRight}
-          
+        <div className="listview__toolbar-left">
           {typeof onShowArchivedChange === 'function' ? (
             <label className="generic-type__checkbox-label">
               <input type="checkbox" checked={showArchived} onChange={(e) => onShowArchivedChange?.(e.target.checked)} />
               <span>{showArchivedLabel}</span>
             </label>
-          ) : (
-            <div style={{ width: 180, height: 20 }} />
+          ) : null}
+        </div>
+
+        <div className="listview__toolbar-right">
+          <input
+            type="text"
+            className="generic-type__filter-input"
+            placeholder={filterPlaceholder}
+            value={filterValue}
+            onChange={(e) => onFilterChange(e.target.value)}
+          />
+          {typeof onColumnSettings === 'function' && (
+            <button
+              type="button"
+              className="listview__columns-btn"
+              onClick={onColumnSettings}
+              title={columnSettingsAriaLabel}
+              aria-label={columnSettingsAriaLabel}
+            >
+              {getIcon('settings' as IconKey)}
+            </button>
           )}
         </div>
       </div>

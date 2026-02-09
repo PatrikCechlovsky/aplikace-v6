@@ -25,6 +25,34 @@
   flex-shrink: 0; /* MUSÍ zůstat viditelný! */
 }
 
+.listview__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.listview__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.listview__columns-btn {
+  border: 1px solid var(--color-border);
+  background: transparent;
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.listview__columns-btn:hover {
+  background: var(--color-surface-hover);
+}
+
 /* Tabulka wrapper
    - JEDINÝ scroll container (X i Y)
    - sticky header funguje pouze pokud scrolluje tento element

@@ -331,7 +331,7 @@ export default function EquipmentCatalogTile({
       if (selectedId) {
         actions.push('view', 'edit')
       }
-      actions.push('columnSettings', 'close')
+      actions.push('close')
     } else if (localViewMode === 'view') {
       actions.push('edit', 'close')
     } else if (localViewMode === 'edit' || localViewMode === 'create') {
@@ -364,8 +364,6 @@ export default function EquipmentCatalogTile({
           is_archived: false,
         })
         setLocalViewMode('create')
-      } else if (actionId === 'columnSettings') {
-        setShowColumnsDrawer(true)
       } else if (actionId === 'view') {
         if (!selectedId) return
         setLocalViewMode('view')
@@ -511,6 +509,7 @@ export default function EquipmentCatalogTile({
           sort={sort}
           onSortChange={handleSortChange}
           onColumnResize={handleColumnResize}
+          onColumnSettings={() => setShowColumnsDrawer(true)}
         />
       </div>
 

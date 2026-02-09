@@ -661,17 +661,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
               sort={sort}
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
-              toolbarRight={(
-                <button
-                  type="button"
-                  onClick={() => setColsOpen(true)}
-                  className="common-actions__btn"
-                  title="Nastavit sloupce"
-                >
-                  <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
-                  <span className="common-actions__label">Sloupce</span>
-                </button>
-              )}
+              onColumnSettings={() => setColsOpen(true)}
             />
           )}
         </section>

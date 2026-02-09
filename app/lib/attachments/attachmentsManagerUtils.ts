@@ -29,7 +29,7 @@ export function getAttachmentsManagerActions(
   if (hasSelection) {
     actions.push('view', 'edit')
   }
-  actions.push('attachmentsNewVersion', 'columnSettings', 'close')
+  actions.push('attachmentsNewVersion', 'close')
   return actions
 }
 

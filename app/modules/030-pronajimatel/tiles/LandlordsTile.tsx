@@ -696,12 +696,12 @@ export default function LandlordsTile({
     }
     // LIST MODE
     else if (viewMode === 'list') {
-      // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
+      // Pořadí: add, (view/edit/attachments když je vybrán řádek), close
       actions.push('add')
       if (selectedId) {
         actions.push('view', 'edit', 'relations', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
-      actions.push('columnSettings', 'close')
+      actions.push('close')
     }
     // EDIT / CREATE MODE
     else if (viewMode === 'edit' || viewMode === 'create') {
@@ -835,10 +835,6 @@ export default function LandlordsTile({
           api.newVersion()
           return
         }
-        if (id === 'columnSettings') {
-          api.columnSettings()
-          return
-        }
       }
 
       // CLOSE (pro ostatní režimy)
@@ -902,12 +898,6 @@ export default function LandlordsTile({
           setUrl({ t: 'landlords-list', id: detailLandlord.id, vm: 'attachments-manager' }, 'push')
           return
         }
-        return
-      }
-
-      // COLUMN SETTINGS
-      if (id === 'columnSettings') {
-        setColsOpen(true)
         return
       }
 
@@ -1105,6 +1095,7 @@ export default function LandlordsTile({
               sort={sort}
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
+              onColumnSettings={() => setColsOpen(true)}
               emptyText="Žádní pronajímatelé."
             />
           </div>

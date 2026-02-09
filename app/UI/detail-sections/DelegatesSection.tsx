@@ -47,6 +47,7 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
   const [availableDelegates, setAvailableDelegates] = useState<DelegateOption[]>([])
   const [loadingAvailable, setLoadingAvailable] = useState(false)
   const [searchText, setSearchText] = useState('')
+  const [listFilter, setListFilter] = useState('')
   const [sort, setSort] = useState<ListViewSortState>(DEFAULT_SORT)
 
   const [selectedAvailableDelegateId, setSelectedAvailableDelegateId] = useState<string | null>(null)
@@ -263,7 +264,22 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
 
   // Převést zástupce na ListView řádky
   const delegateRows: ListViewRow<DelegateOption>[] = useMemo(() => {
-    return delegates.map((delegate) => ({
+    const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const q = norm(listFilter)
+
+    const filtered = q
+      ? delegates.filter((delegate) => {
+          return (
+            norm(delegate.displayName).includes(q) ||
+            norm(delegate.email).includes(q) ||
+            norm(delegate.phone).includes(q) ||
+            norm(delegate.subjectType).includes(q) ||
+            norm(delegate.roleCode).includes(q)
+          )
+        })
+      : delegates
+
+    return filtered.map((delegate) => ({
       id: delegate.id,
       data: {
         displayName: delegate.displayName || '—',
@@ -299,7 +315,7 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
       },
       raw: delegate,
     }))
-  }, [delegates, readOnly, handleRemove])
+  }, [delegates, listFilter, readOnly, handleRemove])
 
   return (
     <div className="detail-form">
@@ -315,8 +331,8 @@ export default function DelegatesSection({ subjectId, mode = 'edit', onCreateDel
           <ListView
             columns={DELEGATES_COLUMNS}
             rows={delegateRows}
-            filterValue=""
-            onFilterChange={() => {}}
+            filterValue={listFilter}
+            onFilterChange={setListFilter}
             emptyText="Žádní zástupci"
             selectedId={null}
             onRowClick={() => {}}

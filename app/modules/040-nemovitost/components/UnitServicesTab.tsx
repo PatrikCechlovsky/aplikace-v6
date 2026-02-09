@@ -477,10 +477,6 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                   </>
                 )}
 
-                <button type="button" className="common-actions__btn" onClick={() => setColsOpen(true)}>
-                  <span className="common-actions__icon">{getIcon('settings' as IconKey)}</span>
-                  <span className="common-actions__label">Sloupce</span>
-                </button>
               </div>
             </div>
 
@@ -502,6 +498,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 }}
                 sort={sort}
                 onSortChange={handleSortChange}
+                onColumnSettings={() => setColsOpen(true)}
                 onColumnResize={(key, width) => {
                   setColPrefs((prev) => {
                     const next = { ...prev, colWidths: { ...prev.colWidths, [key]: width } }

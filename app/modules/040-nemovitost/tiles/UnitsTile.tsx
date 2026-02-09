@@ -319,7 +319,7 @@ export default function UnitsTile({
       if (selectedId) {
         actions.push('view', 'edit', 'relations', 'attachments')
       }
-      actions.push('columnSettings', 'close')
+      actions.push('close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
         actions.push('save', 'relations', 'attachments', 'close')
@@ -562,9 +562,6 @@ export default function UnitsTile({
           }
           break
         
-        case 'columnSettings':
-          setColsOpen(true)
-          break
         
         default:
           logger.warn(`Unknown action: ${id}`)
@@ -713,6 +710,7 @@ export default function UnitsTile({
               sort={sort}
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
+              onColumnSettings={() => setColsOpen(true)}
             />
             
             {units.length === 0 && (

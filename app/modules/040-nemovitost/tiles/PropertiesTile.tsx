@@ -150,6 +150,7 @@ export default function PropertiesTile({
   const [properties, setProperties] = useState<UiProperty[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchText, setSearchText] = useState('')
   
   const [showArchived, setShowArchived] = useState(false)
   const [propertyTypeId, setPropertyTypeId] = useState<string | null>(null)
@@ -278,7 +279,7 @@ export default function PropertiesTile({
       if (selectedId) {
         actions.push('view', 'edit', 'relations', 'attachments')
       }
-      actions.push('columnSettings', 'close')
+      actions.push('close')
     }
     // EDIT / CREATE MODE
     else if (viewMode === 'edit' || viewMode === 'create') {
@@ -498,10 +499,6 @@ export default function PropertiesTile({
           api.newVersion()
           return
         }
-        if (id === 'columnSettings') {
-          api.columnSettings()
-          return
-        }
       }
 
       // CLOSE (pro ostatní režimy)
@@ -534,10 +531,6 @@ export default function PropertiesTile({
       }
 
       // COLUMN SETTINGS
-      if (id === 'columnSettings') {
-        setColsOpen(true)
-        return
-      }
 
       // ATTACHMENTS open manager
       if (id === 'attachments') {
@@ -677,7 +670,21 @@ export default function PropertiesTile({
 
   // Filter, sort, map rows
   const rows = useMemo(() => {
+    const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const q = norm(searchText)
+
     let filtered = properties.slice()
+
+    if (q) {
+      filtered = filtered.filter((p) => {
+        return (
+          norm(p.displayName).includes(q) ||
+          norm(p.fullAddress).includes(q) ||
+          norm(p.landlordName).includes(q) ||
+          norm(p.propertyTypeName).includes(q)
+        )
+      })
+    }
 
     // Sort
     if (sort) {
@@ -692,7 +699,7 @@ export default function PropertiesTile({
     }
 
     return filtered.map(toRow)
-  }, [properties, sort])
+  }, [properties, sort, searchText])
 
   const pageTitle = useMemo(() => {
     if (!propertyTypeCode) return 'Přehled nemovitostí'
@@ -729,10 +736,11 @@ export default function PropertiesTile({
             <ListView
               columns={columns}
               rows={rows}
-              filterValue=""
-              onFilterChange={() => {}}
+              filterValue={searchText}
+              onFilterChange={setSearchText}
               showArchived={showArchived}
               onShowArchivedChange={setShowArchived}
+              onColumnSettings={() => setColsOpen(true)}
               selectedId={selectedId ?? null}
               onRowClick={handleRowClick}
               onRowDoubleClick={handleRowDoubleClick}

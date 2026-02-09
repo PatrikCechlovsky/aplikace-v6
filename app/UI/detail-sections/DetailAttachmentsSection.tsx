@@ -184,6 +184,7 @@ export default function DetailAttachmentsSection({
   const [includeArchived, setIncludeArchived] = useState(false)
   const [entityTypeFilters, setEntityTypeFilters] = useState<Record<string, boolean>>({})
   const [filterText, setFilterText] = useState('')
+  const [historyFilter, setHistoryFilter] = useState('')
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
@@ -416,12 +417,12 @@ export default function DetailAttachmentsSection({
       let changed = false
       const valid = new Set(entityTypeStats.map((s) => s.type))
 
-      for (const type of valid) {
+      valid.forEach((type) => {
         if (next[type] === undefined) {
           next[type] = true
           changed = true
         }
-      }
+      })
 
       for (const key of Object.keys(next)) {
         if (!valid.has(key)) {
@@ -1076,6 +1077,7 @@ export default function DetailAttachmentsSection({
                   filterValue={filterText}
                   onFilterChange={setFilterText}
                   filterPlaceholder="Hledat podle názvu, popisu, souboru nebo entity..."
+                  onColumnSettings={() => setColsOpen(true)}
                   onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
                   onColumnResize={handleColumnResize}
                 />
@@ -1125,7 +1127,17 @@ export default function DetailAttachmentsSection({
     if (!expandedDocId) return []
     const entityTypeLabel = selectedRow ? resolveEntityTypeLabel(selectedRow) : '—'
     const entityName = selectedRow ? resolveEntityName(selectedRow) : '—'
-    return expandedVersions.map((v) => {
+    const q = historyFilter.trim().toLowerCase()
+    const filteredVersions = q
+      ? expandedVersions.filter((v) => {
+          const title = (v.title ?? selectedRow?.title ?? '').toLowerCase()
+          const desc = (v.description ?? selectedRow?.description ?? '').toLowerCase()
+          const file = (v.file_name ?? '').toLowerCase()
+          return title.includes(q) || desc.includes(q) || file.includes(q)
+        })
+      : expandedVersions
+
+    return filteredVersions.map((v) => {
       const who = resolveName(null, v.created_by)
 
       // ✅ snapshot metadat pro konkrétní verzi (fallback pro staré řádky)
@@ -1166,7 +1178,7 @@ export default function DetailAttachmentsSection({
         },
       }
     })
-  }, [expandedDocId, expandedVersions, resolveName, openFileByPath, selectedRow, resolveEntityTypeLabel, resolveEntityName])
+  }, [expandedDocId, expandedVersions, historyFilter, resolveName, openFileByPath, selectedRow, resolveEntityTypeLabel, resolveEntityName])
 
   const selectedTitle = selectedRow?.title?.trim() ? selectedRow.title : '—'
 
@@ -1337,6 +1349,7 @@ export default function DetailAttachmentsSection({
                     filterValue={filterText}
                     onFilterChange={setFilterText}
                     filterPlaceholder="Hledat podle názvu, popisu, souboru nebo entity."
+                    onColumnSettings={() => setColsOpen(true)}
                     showArchived={includeArchived}
                     onShowArchivedChange={setIncludeArchived}
                     showArchivedLabel="Zobrazit archivované"
@@ -1461,8 +1474,9 @@ export default function DetailAttachmentsSection({
                         rows={historyRows}
                         sort={sort}
                         onSortChange={handleSortChange}
-                        filterValue=""
-                        onFilterChange={() => {}} // Filtr z historie byl odstraněn
+                        filterValue={historyFilter}
+                        onFilterChange={setHistoryFilter}
+                        onColumnSettings={() => setColsOpen(true)}
                         onRowDoubleClick={(row) => void handleOpenLatestByPath(row.raw?.file_path)}
                         onColumnResize={handleColumnResize}
                       />
