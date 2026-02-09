@@ -466,7 +466,7 @@ export default function PropertyDetailFrame({
 
   const openUnitInModule = useCallback((mode: 'read' | 'edit' = 'read') => {
     if (!selectedUnitId) return
-    router.push(`/modules/040-nemovitost?t=units-list&id=${selectedUnitId}&vm=${mode}`)
+    router.push(`/040-nemovitost?t=units-list&id=${selectedUnitId}&vm=${mode}`)
   }, [router, selectedUnitId])
 
   useEffect(() => {
@@ -929,10 +929,9 @@ export default function PropertyDetailFrame({
               <section className="detail-form__section">
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
                   <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail jednotky</h3>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
-                  </div>
+                  <div style={{ flex: 1 }} />
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
                     <button
                       type="button"
                       onClick={() => {
