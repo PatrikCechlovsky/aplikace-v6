@@ -85,6 +85,7 @@ function createMinimalUiUnit(partial: Partial<UiUnit>): UiUnit {
 type UiUnitRow = {
   id: string
   displayName: string
+  internalCode: string | null
   propertyId: string | null
   propertyName: string | null
   unitTypeId: string | null
@@ -103,6 +104,7 @@ export function mapUnitRowToUi(row: UnitsListRow): UiUnitRow {
   return {
     id: row.id,
     displayName: row.display_name || '—',
+    internalCode: row.internal_code ?? null,
     propertyId: row.property_id,
     propertyName: row.property_name || '—',
     unitTypeId: row.unit_type_id,
@@ -115,6 +117,14 @@ export function mapUnitRowToUi(row: UnitsListRow): UiUnitRow {
     status: row.status,
     isArchived: !!row.is_archived,
   }
+}
+
+function normalizeText(value: string) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
 // Local alias for internal use
@@ -579,6 +589,7 @@ export default function UnitsTile({
         propertyId: propertyId || undefined,
         unitTypeId: unitTypeId || undefined,
         status: status || undefined,
+        includeArchived: showArchived,
       })
       
       const mapped = rows.map(mapRowToUi)
@@ -591,7 +602,7 @@ export default function UnitsTile({
     } finally {
       setLoading(false)
     }
-  }, [propertyId, unitTypeId, status, toast])
+  }, [propertyId, unitTypeId, status, showArchived, toast])
 
   useEffect(() => {
     fetchUnits()
@@ -626,11 +637,22 @@ export default function UnitsTile({
     setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
   }, [])
 
+  const filteredUnits = useMemo(() => {
+    const f = normalizeText(filterInput)
+    if (!f) return units
+    return units.filter((u) => {
+      const hay = normalizeText([u.unitTypeName, u.displayName, u.internalCode, u.propertyName, u.status, u.floor, u.rooms, u.area]
+        .filter(Boolean)
+        .join(' '))
+      return hay.includes(f)
+    })
+  }, [filterInput, units])
+
   // Sorted rows
   const sortedRows = useMemo(() => {
-    if (!sort) return units
+    if (!sort) return filteredUnits
 
-    return [...units].sort((a, b) => {
+    return [...filteredUnits].sort((a, b) => {
       const aVal = a[sort.key as keyof UiUnitRow]
       const bVal = b[sort.key as keyof UiUnitRow]
       
@@ -646,7 +668,7 @@ export default function UnitsTile({
       const bStr = String(bVal).toLowerCase()
       return sort.dir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
     })
-  }, [units, sort])
+  }, [filteredUnits, sort])
 
   const viewRows = sortedRows.map(toRow)
   
@@ -713,7 +735,7 @@ export default function UnitsTile({
               onColumnSettings={() => setColsOpen(true)}
             />
             
-            {units.length === 0 && (
+            {filteredUnits.length === 0 && (
               <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
                 {filterInput ? 'Žádné jednotky nenalezeny' : 'Zatím nemáte žádné jednotky'}
               </div>
