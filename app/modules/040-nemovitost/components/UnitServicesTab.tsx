@@ -913,6 +913,15 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Správa příloh</h3>
             <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => void attachmentsApiRef.current?.add()}
+                className="common-actions__btn"
+                title="Přidat přílohu"
+              >
+                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                <span className="common-actions__label">Přidat</span>
+              </button>
               {(attachmentsUiState.mode === 'edit' || attachmentsUiState.mode === 'new') && (
                 <button
                   type="button"
