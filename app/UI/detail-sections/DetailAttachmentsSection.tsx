@@ -132,8 +132,8 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   tenants: 'Nájemník',
   equipment_binding: 'Vybavení (jednotka)',
   property_equipment_binding: 'Vybavení (nemovitost)',
-  property_service_binding: 'Služba (nemovitost)',
-  unit_service_binding: 'Služba (jednotka)',
+  property_service_binding: 'Služby (nemovitost)',
+  unit_service_binding: 'Služby (jednotka)',
 }
 
 function getEntityTypeLabel(entityType?: string | null): string {
@@ -408,8 +408,25 @@ export default function DetailAttachmentsSection({
       }
     })
 
-    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, 'cs'))
-  }, [rows])
+    const stats = Array.from(map.values())
+    const entityOrder = normalizedEntityType === 'properties' || normalizedEntityType === 'property'
+      ? ['properties', 'property', 'property_equipment_binding', 'property_service_binding']
+      : normalizedEntityType === 'units' || normalizedEntityType === 'unit'
+        ? ['units', 'unit', 'equipment_binding', 'unit_service_binding']
+        : []
+
+    const orderIndex = (type: string) => {
+      const idx = entityOrder.indexOf(type)
+      return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
+    }
+
+    return stats.sort((a, b) => {
+      const aIdx = orderIndex(a.type)
+      const bIdx = orderIndex(b.type)
+      if (aIdx !== bIdx) return aIdx - bIdx
+      return a.label.localeCompare(b.label, 'cs')
+    })
+  }, [rows, normalizedEntityType])
 
   useEffect(() => {
     setEntityTypeFilters((prev) => {

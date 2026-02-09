@@ -112,6 +112,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   const [saving, setSaving] = useState(false)
   
   const [searchText, setSearchText] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
     colOrder: [],
@@ -149,8 +150,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
     try {
       setLoading(true)
       const data = entityType === 'property'
-        ? await listPropertyEquipment(entityId)
-        : await listUnitEquipment(entityId)
+        ? await listPropertyEquipment(entityId, showArchived)
+        : await listUnitEquipment(entityId, showArchived)
       setEquipmentList(data)
     } catch (e: any) {
       logger.error('listEquipment failed', e)
@@ -158,7 +159,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
     } finally {
       setLoading(false)
     }
-  }, [entityId, entityType, toast])
+  }, [entityId, entityType, showArchived, toast])
 
   useEffect(() => {
     let cancelled = false
@@ -699,6 +700,8 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
               rows={sortedRows}
               filterValue={searchText}
               onFilterChange={setSearchText}
+              showArchived={showArchived}
+              onShowArchivedChange={setShowArchived}
               selectedId={selectedEquipmentId}
               onRowClick={(row: ListViewRow) => selectEquipment(String(row.id))}
               onRowDoubleClick={(row: ListViewRow) => {
