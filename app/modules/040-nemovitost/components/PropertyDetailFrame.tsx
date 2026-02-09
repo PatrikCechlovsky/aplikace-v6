@@ -469,20 +469,6 @@ export default function PropertyDetailFrame({
     return currentSnap !== initialSnapshotRef.current
   }, [])
 
-  const openUnitInModule = useCallback(async (mode: 'read' | 'edit' = 'read') => {
-    if (!selectedUnitId) return
-
-    if (hasUnsavedPropertyChanges()) {
-      const shouldSave = window.confirm('Máš neuložené změny v nemovitosti. Chceš je uložit před otevřením jednotky?')
-      if (shouldSave) {
-        const saved = await handleSubmit()
-        if (!saved) return
-      }
-    }
-
-    router.push(`/040-nemovitost?t=units-list&id=${selectedUnitId}&vm=${mode}`)
-  }, [handleSubmit, hasUnsavedPropertyChanges, router, selectedUnitId])
-
   useEffect(() => {
     if (isNewId(resolvedProperty.id)) {
       setEquipmentCount(0)
@@ -691,6 +677,20 @@ export default function PropertyDetailFrame({
   useEffect(() => {
     onRegisterSubmit?.(handleSubmit)
   }, [handleSubmit, onRegisterSubmit])
+
+  const openUnitInModule = useCallback(async (mode: 'read' | 'edit' = 'read') => {
+    if (!selectedUnitId) return
+
+    if (hasUnsavedPropertyChanges()) {
+      const shouldSave = window.confirm('Máš neuložené změny v nemovitosti. Chceš je uložit před otevřením jednotky?')
+      if (shouldSave) {
+        const saved = await handleSubmit()
+        if (!saved) return
+      }
+    }
+
+    router.push(`/040-nemovitost?t=units-list&id=${selectedUnitId}&vm=${mode}`)
+  }, [handleSubmit, hasUnsavedPropertyChanges, router, selectedUnitId])
   
   // Convert ViewMode to DetailViewMode
   const detailViewMode: DetailViewMode = useMemo(() => {
