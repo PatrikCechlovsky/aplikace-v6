@@ -175,15 +175,6 @@ export default function ListView<TData = any>({
     <div className="listview">
       <div className="listview__toolbar">
         <div className="listview__toolbar-left">
-          {typeof onShowArchivedChange === 'function' ? (
-            <label className="generic-type__checkbox-label">
-              <input type="checkbox" checked={showArchived} onChange={(e) => onShowArchivedChange?.(e.target.checked)} />
-              <span>{showArchivedLabel}</span>
-            </label>
-          ) : null}
-        </div>
-
-        <div className="listview__toolbar-right">
           <input
             type="text"
             className="generic-type__filter-input"
@@ -202,6 +193,15 @@ export default function ListView<TData = any>({
               {getIcon('settings' as IconKey)}
             </button>
           )}
+        </div>
+
+        <div className="listview__toolbar-right">
+          {typeof onShowArchivedChange === 'function' ? (
+            <label className="generic-type__checkbox-label">
+              <input type="checkbox" checked={showArchived} onChange={(e) => onShowArchivedChange?.(e.target.checked)} />
+              <span>{showArchivedLabel}</span>
+            </label>
+          ) : null}
         </div>
       </div>
 

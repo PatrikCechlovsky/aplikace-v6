@@ -687,8 +687,8 @@ Paging (stránkování) řeší vyšší vrstva, ne EntityList.
 ### Kontext A: ListView (hlavní seznam)
 EntityList je obalen:
 
-- filtrem (vpravo)
-- archivovanými (vlevo)
+- filtrem (vlevo)
+- archivovanými (vpravo)
 - řazením (ListView řídí pořadí)
 - CommonActions (bez nastavení sloupců)
 - ColumnPicker (ikona sloupců je v tabulce hned za hledáním)
