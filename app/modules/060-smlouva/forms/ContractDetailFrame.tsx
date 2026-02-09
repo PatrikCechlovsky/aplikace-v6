@@ -123,6 +123,7 @@ export default function ContractDetailFrame({
   const toast = useToast()
 
   const [attachmentsCount, setAttachmentsCount] = useState(0)
+  const [formResetToken, setFormResetToken] = useState(0)
 
   const [units, setUnits] = useState<UnitLookupOption[]>([])
   const [properties, setProperties] = useState<PropertyLookupOption[]>([])
@@ -376,6 +377,7 @@ export default function ContractDetailFrame({
       setFormValue(newInitial)
       initialSnapshotRef.current = JSON.stringify(newInitial)
       onDirtyChange?.(false)
+      setFormResetToken((prev) => prev + 1)
 
       toast.showSuccess(isNewId(contract.id) ? 'Smlouva vytvořena' : 'Smlouva uložena')
       onSaved?.(saved)
@@ -461,6 +463,7 @@ export default function ContractDetailFrame({
             statusOptions={statusOptions}
             rentPeriodOptions={rentPeriodOptions}
             paymentDayOptions={paymentDayOptions}
+            resetToken={formResetToken}
             onDirtyChange={() => {
               markDirtyIfChanged(formValueRef.current)
             }}

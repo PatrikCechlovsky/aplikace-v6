@@ -60,6 +60,7 @@ export type ContractDetailFormProps = {
   statusOptions: LookupOption[]
   rentPeriodOptions: LookupOption[]
   paymentDayOptions: LookupOption[]
+  resetToken?: number
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: ContractFormValue) => void
 }
@@ -85,40 +86,51 @@ export default function ContractDetailForm({
   statusOptions,
   rentPeriodOptions,
   paymentDayOptions,
+  resetToken = 0,
   onDirtyChange,
   onValueChange,
 }: ContractDetailFormProps) {
-  const [formVal, setFormVal] = useState<ContractFormValue>(() => ({
-    cisloSmlouvy: safeString(contract.cisloSmlouvy),
-    stav: safeString(contract.stav),
-    landlordId: safeString(contract.landlordId),
-    tenantId: safeString(contract.tenantId),
-    pocetUzivatelu: safeNumber(contract.pocetUzivatelu),
-    propertyId: safeString(contract.propertyId),
-    unitId: safeString(contract.unitId),
-    pomerPlochyKNemovitosti: safeString(contract.pomerPlochyKNemovitosti),
-    datumPodpisu: safeString(contract.datumPodpisu),
-    datumZacatek: safeString(contract.datumZacatek),
-    datumKonec: safeString(contract.datumKonec),
-    dobaNeurcita: !!contract.dobaNeurcita,
-    najemVyse: safeNumber(contract.najemVyse),
-    periodicitaNajmu: safeString(contract.periodicitaNajmu),
-    denPlatby: safeString(contract.denPlatby),
-    kaucePotreba: !!contract.kaucePotreba,
-    kauceCastka: safeNumber(contract.kauceCastka),
-    pozadovanyDatumKauce: safeString(contract.pozadovanyDatumKauce),
-    stavKauce: safeString(contract.stavKauce),
-    stavNajmu: safeString(contract.stavNajmu),
-    stavPlatebSmlouvy: safeString(contract.stavPlatebSmlouvy),
-    poznamky: safeString(contract.poznamky),
-    isArchived: !!contract.isArchived,
-  }))
+  const buildFormValue = (input: Partial<ContractFormValue>) => ({
+    cisloSmlouvy: safeString(input.cisloSmlouvy),
+    stav: safeString(input.stav),
+    landlordId: safeString(input.landlordId),
+    tenantId: safeString(input.tenantId),
+    pocetUzivatelu: safeNumber(input.pocetUzivatelu),
+    propertyId: safeString(input.propertyId),
+    unitId: safeString(input.unitId),
+    pomerPlochyKNemovitosti: safeString(input.pomerPlochyKNemovitosti),
+    datumPodpisu: safeString(input.datumPodpisu),
+    datumZacatek: safeString(input.datumZacatek),
+    datumKonec: safeString(input.datumKonec),
+    dobaNeurcita: !!input.dobaNeurcita,
+    najemVyse: safeNumber(input.najemVyse),
+    periodicitaNajmu: safeString(input.periodicitaNajmu),
+    denPlatby: safeString(input.denPlatby),
+    kaucePotreba: !!input.kaucePotreba,
+    kauceCastka: safeNumber(input.kauceCastka),
+    pozadovanyDatumKauce: safeString(input.pozadovanyDatumKauce),
+    stavKauce: safeString(input.stavKauce),
+    stavNajmu: safeString(input.stavNajmu),
+    stavPlatebSmlouvy: safeString(input.stavPlatebSmlouvy),
+    poznamky: safeString(input.poznamky),
+    isArchived: !!input.isArchived,
+  })
+
+  const [formVal, setFormVal] = useState<ContractFormValue>(() => buildFormValue(contract))
+  const contractRef = useRef(contract)
 
   const initialSnapshotRef = useRef<string>('')
 
   useEffect(() => {
-    initialSnapshotRef.current = JSON.stringify(formVal)
-  }, [])
+    contractRef.current = contract
+  }, [contract])
+
+  useEffect(() => {
+    const next = buildFormValue(contractRef.current)
+    setFormVal(next)
+    initialSnapshotRef.current = JSON.stringify(next)
+    onDirtyChange?.(false)
+  }, [resetToken, onDirtyChange])
 
   useEffect(() => {
     onValueChange?.(formVal)
