@@ -1,3 +1,7 @@
+// FILE: app/UI/DetailView.tsx
+// PURPOSE: DetailView s tabs a řízeným vnitřním scrollováním obsahu
+// NOTES: Při mountu dočasně vypne scroll na .layout__content
+
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -505,6 +509,7 @@ export default function DetailView({
   const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? firstTabId)
 
   const lastInitialRef = useRef<string>('')
+  const layoutOverflowRef = useRef<string | null>(null)
 
   useEffect(() => {
     const key = `${ctx?.entityType ?? ''}:${ctx?.entityId ?? ''}:${initialActiveId ?? ''}`
@@ -518,6 +523,18 @@ export default function DetailView({
   useEffect(() => {
     onActiveSectionChange?.(activeId)
   }, [activeId, onActiveSectionChange])
+
+  useEffect(() => {
+    const layoutContent = document.querySelector('.layout__content') as HTMLElement | null
+    if (!layoutContent) return
+
+    layoutOverflowRef.current = layoutContent.style.overflow
+    layoutContent.style.overflow = 'hidden'
+
+    return () => {
+      layoutContent.style.overflow = layoutOverflowRef.current ?? ''
+    }
+  }, [])
 
   const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
 
