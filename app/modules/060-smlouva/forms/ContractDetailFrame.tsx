@@ -185,6 +185,31 @@ export default function ContractDetailFrame({
   useEffect(() => {
     let mounted = true
 
+    async function loadServicesCount() {
+      const unitId = formValueRef.current.unitId
+      if (!unitId || unitId === 'new') {
+        if (mounted) setServicesCount(0)
+        return
+      }
+
+      try {
+        const rows = await listUnitServices(unitId)
+        if (!mounted) return
+        setServicesCount(rows.length)
+      } catch (err) {
+        logger.error('Failed to load unit services count', err)
+      }
+    }
+
+    void loadServicesCount()
+    return () => {
+      mounted = false
+    }
+  }, [formValue.unitId])
+
+  useEffect(() => {
+    let mounted = true
+
     async function loadTenantUsersCount() {
       const tenantId = formValueRef.current.tenantId
       if (!tenantId || tenantId === 'new') {
