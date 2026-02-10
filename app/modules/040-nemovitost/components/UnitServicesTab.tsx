@@ -55,6 +55,24 @@ type ServiceFormValue = {
   note: string
 }
 
+function normalizeName(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+}
+
+function resolvePeriodicityId(
+  items: Array<{ id: string; name: string }>,
+  preferredNames: string[]
+): string | null {
+  if (!items.length) return null
+  const normalizedPreferred = preferredNames.map((n) => normalizeName(n))
+  const found = items.find((i) => normalizedPreferred.includes(normalizeName(i.name)))
+  return found?.id ?? null
+}
+
 function buildEmptyFormValue(): ServiceFormValue {
   return {
     serviceId: '',
@@ -66,7 +84,7 @@ function buildEmptyFormValue(): ServiceFormValue {
     amount: null,
     periodicityId: null,
     billingPeriodicityId: null,
-    payerSide: 'tenant',
+    payerSide: 'landlord',
     isRebillable: true,
     splitToUnits: false,
     splitBasis: '',
@@ -164,6 +182,21 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       cancelled = true
     }
   }, [toast])
+
+  useEffect(() => {
+    if (detailMode !== 'create') return
+    if (periodicities.length === 0) return
+
+    const monthlyId = resolvePeriodicityId(periodicities, ['Měsíčně', 'Mesicne'])
+    const yearlyId = resolvePeriodicityId(periodicities, ['Ročně', 'Rocne', 'Roční', 'Rocni'])
+
+    setFormValue((prev) => ({
+      ...prev,
+      periodicityId: prev.periodicityId ?? monthlyId,
+      billingPeriodicityId: prev.billingPeriodicityId ?? yearlyId,
+      payerSide: prev.payerSide ?? 'landlord',
+    }))
+  }, [detailMode, periodicities])
 
   useEffect(() => {
     let cancelled = false
