@@ -75,6 +75,13 @@ type ServiceCatalogTileProps = {
   initialMode?: LocalViewMode
 }
 
+const EMPTY_SERVICE: ServiceCatalogFormValue = {
+  code: '',
+  name: '',
+  active: true,
+  is_archived: false,
+}
+
 export default function ServiceCatalogTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
@@ -86,7 +93,9 @@ export default function ServiceCatalogTile({
   const [localViewMode, setLocalViewMode] = useState<LocalViewMode>(initialMode ?? 'list')
   const [data, setData] = useState<UiServiceCatalog[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [currentService, setCurrentService] = useState<ServiceCatalogFormValue | null>(null)
+  const [currentService, setCurrentService] = useState<ServiceCatalogFormValue | null>(
+    initialMode === 'create' ? EMPTY_SERVICE : null
+  )
   const [detailLoading, setDetailLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -105,12 +114,7 @@ export default function ServiceCatalogTile({
   useEffect(() => {
     if (initialMode !== 'create') return
     setSelectedId(null)
-    setCurrentService({
-      code: '',
-      name: '',
-      active: true,
-      is_archived: false,
-    })
+    setCurrentService(EMPTY_SERVICE)
     setLocalViewMode('create')
   }, [initialMode])
 
@@ -294,7 +298,8 @@ export default function ServiceCatalogTile({
   }, [onRegisterCommonActionHandler, selectedId, handleSave, closeToList])
 
   useEffect(() => {
-    if (!selectedId || localViewMode === 'create') {
+    if (localViewMode === 'create') return
+    if (!selectedId) {
       setCurrentService(null)
       return
     }
