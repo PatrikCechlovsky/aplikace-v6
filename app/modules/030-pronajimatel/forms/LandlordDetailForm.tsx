@@ -993,18 +993,20 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
               Pronajímatel
             </label>
           </div>
-          <div className="detail-form__field">
-            <label className="detail-form__checkbox-label">
-              <input
-                type="checkbox"
-                checked={val.isLandlordDelegate}
-                disabled={readOnly}
-                onChange={(e) => update({ isLandlordDelegate: e.target.checked })}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Zástupce pronajimatele
-            </label>
-          </div>
+          {isPerson && (
+            <div className="detail-form__field">
+              <label className="detail-form__checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={val.isLandlordDelegate}
+                  disabled={readOnly}
+                  onChange={(e) => update({ isLandlordDelegate: e.target.checked })}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                Zástupce pronajimatele
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Oddělovač pro mobil */}
@@ -1024,18 +1026,20 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
               Nájemník
             </label>
           </div>
-          <div className="detail-form__field">
-            <label className="detail-form__checkbox-label">
-              <input
-                type="checkbox"
-                checked={val.isTenantDelegate}
-                disabled={readOnly}
-                onChange={(e) => update({ isTenantDelegate: e.target.checked })}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Zástupce nájemníka
-            </label>
-          </div>
+          {isPerson && (
+            <div className="detail-form__field">
+              <label className="detail-form__checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={val.isTenantDelegate}
+                  disabled={readOnly}
+                  onChange={(e) => update({ isTenantDelegate: e.target.checked })}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                Zástupce nájemníka
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Oddělovač pro mobil */}
@@ -1055,18 +1059,20 @@ const LandlordDetailForm = React.forwardRef<LandlordDetailFormRef, LandlordDetai
               Údržba
             </label>
           </div>
-          <div className="detail-form__field">
-            <label className="detail-form__checkbox-label">
-              <input
-                type="checkbox"
-                checked={val.isMaintenanceDelegate}
-                disabled={readOnly}
-                onChange={(e) => update({ isMaintenanceDelegate: e.target.checked })}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Zástupce údržby
-            </label>
-          </div>
+          {isPerson && (
+            <div className="detail-form__field">
+              <label className="detail-form__checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={val.isMaintenanceDelegate}
+                  disabled={readOnly}
+                  onChange={(e) => update({ isMaintenanceDelegate: e.target.checked })}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                Zástupce údržby
+              </label>
+            </div>
+          )}
         </div>
       </div>
 

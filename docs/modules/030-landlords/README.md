@@ -87,22 +87,24 @@ Poznámka:
 
 ## ✅ Checkboxy pro role
 
-V detailu pronajímatele (TenantDetailForm):
+V detailu pronajímatele (LandlordDetailForm):
 
 **Řádek 1: Základní typ**
 - ☑️ Pronajímatel (`is_landlord`)
 
-**Řádek 2: Delegáti**
+**Řádek 2: Delegáti (pouze osoba/OSVČ/zástupce)**
 - ☑️ Zástupce pronajimatele (`is_landlord_delegate`)
-- ☑️ Má uživatelský účet (`is_landlord_user`)
 
 **Řádek 3: Další role**
 - ☑️ Nájemník (`is_tenant`)
-- ☑️ Zástupce nájemníka (`is_tenant_delegate`)
+- ☑️ Zástupce nájemníka (`is_tenant_delegate`) *(jen osoba/OSVČ/zástupce)*
 
 **Řádek 4: Údržba**
 - ☑️ Údržbář (`is_maintenance`)
-- ☑️ Zástupce údržby (`is_maintenance_delegate`)
+- ☑️ Zástupce údržby (`is_maintenance_delegate`) *(jen osoba/OSVČ/zástupce)*
+
+Poznámka:
+- Zaškrtnutí `is_landlord_delegate` zpřístupní subjekt v záložce **Zástupci** jako dostupného zástupce.
 
 ---
 

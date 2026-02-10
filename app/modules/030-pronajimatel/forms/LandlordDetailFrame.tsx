@@ -367,6 +367,14 @@ export default function LandlordDetailFrame({
           zip: s.zip ?? landlord.zip ?? null,
           houseNumber: s.house_number ?? landlord.houseNumber ?? null,
           country: s.country ?? landlord.country ?? 'CZ',
+
+          isUser: s.is_user ?? landlord.isUser ?? null,
+          isLandlord: s.is_landlord ?? landlord.isLandlord ?? null,
+          isLandlordDelegate: s.is_landlord_delegate ?? landlord.isLandlordDelegate ?? null,
+          isTenant: s.is_tenant ?? landlord.isTenant ?? null,
+          isTenantDelegate: s.is_tenant_delegate ?? landlord.isTenantDelegate ?? null,
+          isMaintenance: s.is_maintenance ?? landlord.isMaintenance ?? null,
+          isMaintenanceDelegate: s.is_maintenance_delegate ?? landlord.isMaintenanceDelegate ?? null,
         }
 
         setResolvedLandlord(nextLandlord)

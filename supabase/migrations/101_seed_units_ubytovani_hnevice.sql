@@ -37,7 +37,7 @@ SELECT
   v.note,
   '040-nemovitost'
 FROM unit_type ut
-JOIN (
+CROSS JOIN (
   VALUES
     ('apartmán č. 1', 38.6, '1+1', 1, 1, '1', 'Budova A'),
     ('apartmán č. 2', 137.0, '3+1', 3, 2, '2', 'Budova A'),
@@ -48,7 +48,14 @@ JOIN (
     ('apartmán č. 7', 32.8, '1+kk', 1, 1, '7', 'Budova B'),
     ('apartmán č. 8', 37.9, '1+kk', 1, 1, '8', 'Budova B')
 ) AS v(display_name, area, disposition, rooms, floor, door_number, note)
-ON CONFLICT DO NOTHING;
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.units u
+  WHERE u.property_id = 'da467771-ebba-42b3-991d-4519a3573b3f'::uuid
+    AND u.display_name = v.display_name
+    AND COALESCE(u.door_number, '') = COALESCE(v.door_number, '')
+    AND u.is_archived = FALSE
+);
 
 DO $$
 BEGIN
