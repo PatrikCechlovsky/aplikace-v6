@@ -232,11 +232,11 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
     async function loadGenericTypes() {
       try {
         const [cats, bills, unitsRes, vats, periods] = await Promise.all([
-          supabase.from('generic_types').select('id, name, color').eq('category', 'service_types').order('order_index'),
-          supabase.from('generic_types').select('id, name, color').eq('category', 'service_billing_types').order('order_index'),
-          supabase.from('generic_types').select('id, name').eq('category', 'service_units').order('order_index'),
-          supabase.from('generic_types').select('id, name').eq('category', 'vat_rates').order('order_index'),
-          supabase.from('generic_types').select('id, name').eq('category', 'service_periodicities').order('order_index'),
+          supabase.from('generic_types').select('id, name, color').eq('category', 'service_types').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name, color').eq('category', 'service_billing_types').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name').eq('category', 'service_units').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name').eq('category', 'vat_rates').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name').eq('category', 'service_periodicities').eq('active', true).order('order_index'),
         ])
 
         if (cats.error) throw cats.error
