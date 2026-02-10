@@ -48,6 +48,7 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 Poznámka ke scrollu v detailu:
 - scrolluje pouze obsah detailu (DetailView content),
 - záložky a horní akce zůstávají fixně viditelné.
+- režim aktivuje třída layout__content--detail-scroll.
 
 ... (soubor pokračuje beze změn až k sekci Přílohy)
 

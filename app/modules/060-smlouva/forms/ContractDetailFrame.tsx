@@ -175,6 +175,22 @@ export default function ContractDetailFrame({
     [onDirtyChange]
   )
 
+  const handleFormDirtyChange = useCallback(
+    (dirty: boolean) => {
+      onDirtyChange?.(dirty)
+    },
+    [onDirtyChange]
+  )
+
+  const handleFormValueChange = useCallback(
+    (val: ContractFormValue) => {
+      setFormValue(val)
+      formValueRef.current = val
+      markDirtyIfChanged(val)
+    },
+    [markDirtyIfChanged]
+  )
+
   const refreshAttachmentsCount = useCallback(async () => {
     if (isNewId(resolvedContract.id)) {
       setAttachmentsCount(0)
@@ -612,14 +628,8 @@ export default function ContractDetailFrame({
             resetToken={formResetToken}
             rentAmountOverride={servicesTotal}
             userCountOverride={contractUsersCount}
-            onDirtyChange={() => {
-              markDirtyIfChanged(formValueRef.current)
-            }}
-            onValueChange={(val) => {
-              setFormValue(val)
-              formValueRef.current = val
-              markDirtyIfChanged(val)
-            }}
+            onDirtyChange={handleFormDirtyChange}
+            onValueChange={handleFormValueChange}
           />
         ),
         usersContent: (

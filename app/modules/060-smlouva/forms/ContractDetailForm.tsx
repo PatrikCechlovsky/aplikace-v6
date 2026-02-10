@@ -144,20 +144,17 @@ export default function ContractDetailForm({
     onDirtyChange?.(false)
   }, [resetToken, onDirtyChange])
 
-  useEffect(() => {
-    onValueChange?.(formVal)
-  }, [formVal, onValueChange])
-
   const update = useCallback(
     (patch: Partial<ContractFormValue>) => {
       setFormVal((prev) => {
         const next = { ...prev, ...patch }
         const isDirty = JSON.stringify(next) !== initialSnapshotRef.current
         onDirtyChange?.(isDirty)
+        onValueChange?.(next)
         return next
       })
     },
-    [onDirtyChange]
+    [onDirtyChange, onValueChange]
   )
 
   const selectedUnit = useMemo(

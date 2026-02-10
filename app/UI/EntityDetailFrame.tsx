@@ -101,7 +101,7 @@ export default function EntityDetailFrame({
           padding: var(--entity-frame-pad, 12px 16px 20px);
           box-sizing: border-box;
           width: 100%;
-          height: 100%;
+          min-height: 0;
 
           /* typography */
           --_title-font: var(--entity-title-font, 22px);

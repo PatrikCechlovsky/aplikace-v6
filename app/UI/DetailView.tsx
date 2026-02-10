@@ -509,7 +509,6 @@ export default function DetailView({
   const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? firstTabId)
 
   const lastInitialRef = useRef<string>('')
-  const layoutOverflowRef = useRef<string | null>(null)
 
   useEffect(() => {
     const key = `${ctx?.entityType ?? ''}:${ctx?.entityId ?? ''}:${initialActiveId ?? ''}`
@@ -528,11 +527,10 @@ export default function DetailView({
     const layoutContent = document.querySelector('.layout__content') as HTMLElement | null
     if (!layoutContent) return
 
-    layoutOverflowRef.current = layoutContent.style.overflow
-    layoutContent.style.overflow = 'hidden'
+    layoutContent.classList.add('layout__content--detail-scroll')
 
     return () => {
-      layoutContent.style.overflow = layoutOverflowRef.current ?? ''
+      layoutContent.classList.remove('layout__content--detail-scroll')
     }
   }, [])
 
