@@ -106,6 +106,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const [units, setUnits] = useState<Array<{ id: string; name: string }>>([])
   const [vatRates, setVatRates] = useState<Array<{ id: string; name: string }>>([])
   const [periodicities, setPeriodicities] = useState<Array<{ id: string; name: string }>>([])
+  const [categoryFilterId, setCategoryFilterId] = useState<string>('')
 
   const [searchText, setSearchText] = useState('')
   const [sort, setSort] = useState<ListViewSortState>(SERVICE_CATALOG_DEFAULT_SORT)
@@ -438,6 +439,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     return services.map((row) => ({
       id: row.id,
       name: row.service_name ?? row.name ?? '—',
+      categoryId: row.resolved_category_id ?? row.category_id ?? null,
       categoryName: row.category_name ?? '—',
       categoryColor: row.category_color ?? null,
       billingTypeName: row.billing_type_name ?? '—',
@@ -452,17 +454,19 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
 
   const filteredItems = useMemo(() => {
     const q = searchText.trim().toLowerCase()
-    if (!q) return listItems
-    return listItems.filter((item) => {
-      return (
-        item.name.toLowerCase().includes(q) ||
-        item.categoryName.toLowerCase().includes(q) ||
-        item.billingTypeName.toLowerCase().includes(q) ||
-        item.unitName.toLowerCase().includes(q) ||
-        item.vatRateName.toLowerCase().includes(q)
-      )
-    })
-  }, [listItems, searchText])
+    const byCategory = categoryFilterId
+      ? listItems.filter((item) => item.categoryId === categoryFilterId)
+      : listItems
+
+    if (!q) return byCategory
+    return byCategory.filter((item) => (
+      item.name.toLowerCase().includes(q) ||
+      item.categoryName.toLowerCase().includes(q) ||
+      item.billingTypeName.toLowerCase().includes(q) ||
+      item.unitName.toLowerCase().includes(q) ||
+      item.vatRateName.toLowerCase().includes(q)
+    ))
+  }, [listItems, searchText, categoryFilterId])
 
   const preparedColumns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
@@ -549,6 +553,24 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                   </>
                 )}
 
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+              <div className="detail-form__field" style={{ minWidth: 220 }}>
+                <label className="detail-form__label">Kategorie</label>
+                <select
+                  className="detail-form__input"
+                  value={categoryFilterId}
+                  onChange={(e) => setCategoryFilterId(e.target.value)}
+                >
+                  <option value="">— všechny kategorie —</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

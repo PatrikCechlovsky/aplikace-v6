@@ -23,6 +23,7 @@ export const SERVICE_CATALOG_DEFAULT_SORT = { key: 'category', dir: 'asc' as con
 export type ServiceCatalogListItem = {
   id: string
   name: string
+  categoryId?: string | null
   categoryName: string
   categoryColor: string | null
   billingTypeName: string
