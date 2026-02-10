@@ -588,7 +588,7 @@ export default function ContractsTile({
           onRowDoubleClick={(row) => {
             const found = contracts.find((c) => c.id === row.id)
             if (found) {
-              router.push(`${pathname}?t=contracts-list&id=${found.id}&vm=read`)
+              void openDetail(found, 'read')
             }
           }}
           sort={sort}
