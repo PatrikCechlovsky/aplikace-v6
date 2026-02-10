@@ -16,6 +16,7 @@ import { listProperties } from '@/app/lib/services/properties'
 import { listLandlords } from '@/app/lib/services/landlords'
 import { listTenants } from '@/app/lib/services/tenants'
 import { listUnitServices } from '@/app/lib/services/unitServices'
+import { listTenantUsers } from '@/app/lib/services/tenantUsers'
 import { listSubjects } from '@/app/lib/services/subjects'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 import { saveContract, type SaveContractInput } from '@/app/lib/services/contracts'
@@ -128,6 +129,7 @@ export default function ContractDetailFrame({
   const [formResetToken, setFormResetToken] = useState(0)
   const [servicesCount, setServicesCount] = useState(0)
   const [servicesTotal, setServicesTotal] = useState<number | null>(null)
+  const [tenantUsersCount, setTenantUsersCount] = useState<number | null>(null)
 
   const [units, setUnits] = useState<UnitLookupOption[]>([])
   const [properties, setProperties] = useState<PropertyLookupOption[]>([])
@@ -179,6 +181,31 @@ export default function ContractDetailFrame({
   useEffect(() => {
     void refreshAttachmentsCount()
   }, [refreshAttachmentsCount])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadTenantUsersCount() {
+      const tenantId = formValueRef.current.tenantId
+      if (!tenantId || tenantId === 'new') {
+        if (mounted) setTenantUsersCount(null)
+        return
+      }
+
+      try {
+        const rows = await listTenantUsers(tenantId, false)
+        if (!mounted) return
+        setTenantUsersCount(rows.length + 1)
+      } catch (err) {
+        logger.error('Failed to load tenant users count', err)
+      }
+    }
+
+    void loadTenantUsersCount()
+    return () => {
+      mounted = false
+    }
+  }, [formValue.tenantId])
 
   useEffect(() => {
     let mounted = true
@@ -348,7 +375,7 @@ export default function ContractDetailFrame({
         stav: current.stav,
         landlord_id: current.landlordId || null,
         tenant_id: current.tenantId || null,
-        pocet_uzivatelu: current.pocetUzivatelu ?? null,
+        pocet_uzivatelu: tenantUsersCount ?? current.pocetUzivatelu ?? null,
         property_id: current.propertyId || null,
         unit_id: current.unitId || null,
         pomer_plochy_k_nemovitosti: current.pomerPlochyKNemovitosti || null,
@@ -495,6 +522,7 @@ export default function ContractDetailFrame({
             paymentDayOptions={paymentDayOptions}
             resetToken={formResetToken}
             rentAmountOverride={servicesTotal}
+            userCountOverride={tenantUsersCount}
             onDirtyChange={() => {
               markDirtyIfChanged(formValueRef.current)
             }}

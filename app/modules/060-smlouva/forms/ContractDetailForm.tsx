@@ -62,6 +62,7 @@ export type ContractDetailFormProps = {
   paymentDayOptions: LookupOption[]
   resetToken?: number
   rentAmountOverride?: number | null
+  userCountOverride?: number | null
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: ContractFormValue) => void
 }
@@ -89,6 +90,7 @@ export default function ContractDetailForm({
   paymentDayOptions,
   resetToken = 0,
   rentAmountOverride = null,
+  userCountOverride = null,
   onDirtyChange,
   onValueChange,
 }: ContractDetailFormProps) {
@@ -406,7 +408,7 @@ export default function ContractDetailForm({
             <label className="detail-form__label">Počet uživatelů</label>
             <input
               className="detail-form__input detail-form__input--readonly"
-              value={formVal.pocetUzivatelu ?? ''}
+              value={userCountOverride ?? formVal.pocetUzivatelu ?? ''}
               readOnly
             />
           </div>

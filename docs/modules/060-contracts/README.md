@@ -54,5 +54,6 @@ Poznámka: Periodicita nájmu používá `service_periodicities` (shodné s peri
 
 ## Poznámky
 - Volba **jednotky** automaticky doplní vazby na **nemovitost a pronajímatele**. Nájemník se vybírá ručně.
+- Pole **Počet uživatelů** se odvozuje z nájemníka (1 nájemník + spolubydlící).
 - **Konec smlouvy** je skrytý, pokud je nastavena **doba neurčitá**.
 - Výpočty plateb a stavů budou napojeny na modul Plateb.
