@@ -2,6 +2,7 @@
 // PURPOSE: Konfigurace modulu Služby + registrace tiles
 
 import ServiceCatalogTile from './tiles/ServiceCatalogTile'
+import ServiceCatalogCreateTile from './tiles/ServiceCatalogCreateTile'
 
 export default {
   id: '070-sluzby',
@@ -16,6 +17,13 @@ export default {
       icon: 'list',
       component: ServiceCatalogTile,
       order: 10,
+    },
+    {
+      id: 'service-catalog-create',
+      label: 'Nová služba',
+      icon: 'plus',
+      component: ServiceCatalogCreateTile,
+      order: 15,
     },
   ],
 }

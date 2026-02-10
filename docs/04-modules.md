@@ -855,6 +855,10 @@ Modul **070 – Služby** řeší:
 3) **Služby na nemovitosti** (pravidelné náklady/platby na úrovni nemovitosti)
 4) **Smluvní služby** (účtované nájemníkovi v rámci smlouvy – viz modul 060)
 
+Sidebar modulu 070 obsahuje:
+- **Katalog služeb** (seznam)
+- **Nová služba** (rychlé vytvoření – otevře detail v režimu create)
+
 Rozlišení vrstev je důležité kvůli vyúčtování a oddělení nákladů pronajímatele.
 
 ---

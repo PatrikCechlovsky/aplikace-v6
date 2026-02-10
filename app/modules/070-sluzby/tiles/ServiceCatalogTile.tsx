@@ -72,16 +72,18 @@ type ServiceCatalogTileProps = {
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
+  initialMode?: LocalViewMode
 }
 
 export default function ServiceCatalogTile({
   onRegisterCommonActions,
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
+  initialMode,
 }: ServiceCatalogTileProps) {
   const { showToast } = useToast()
 
-  const [localViewMode, setLocalViewMode] = useState<LocalViewMode>('list')
+  const [localViewMode, setLocalViewMode] = useState<LocalViewMode>(initialMode ?? 'list')
   const [data, setData] = useState<UiServiceCatalog[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [currentService, setCurrentService] = useState<ServiceCatalogFormValue | null>(null)
@@ -99,6 +101,18 @@ export default function ServiceCatalogTile({
   })
   const [sort, setSort] = useState<ListViewSortState>(SERVICE_CATALOG_DEFAULT_SORT)
   const [showColumnsDrawer, setShowColumnsDrawer] = useState(false)
+
+  useEffect(() => {
+    if (initialMode !== 'create') return
+    setSelectedId(null)
+    setCurrentService({
+      code: '',
+      name: '',
+      active: true,
+      is_archived: false,
+    })
+    setLocalViewMode('create')
+  }, [initialMode])
 
   const loadData = useCallback(async () => {
     try {
