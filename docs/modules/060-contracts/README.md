@@ -9,24 +9,23 @@ Modul **060 – Smlouvy** slouží pro evidenci nájemních smluv a jejich vazeb
 Smlouva navázaná na jednotku, nájemníka a pronajímatele.
 
 **Klíčová pole:**
-- `cislo_smlouvy` – lidské číslo smlouvy (např. 2025-001)
-- `stav` – stav smlouvy (koncept, aktivní, ukončená…)
+
+- `cislo_smlouvy` – číslo smlouvy
+- `stav` – stav smlouvy
 - `property_id`, `unit_id`, `landlord_id`, `tenant_id`
 - `datum_zacatek`, `datum_konec`, `doba_neurcita`
 - `periodicita_najmu`, `den_platby`
-- `kauce_potreba`, `kauce_castka`, `pozadovany_datum_kauce`
-- `stav_kauce`, `stav_najmu`, `stav_plateb_smlouvy`
-- `is_archived` + audit pole (`created_at`, `created_by`, `updated_at`, `updated_by`)
+- `najem_vyse`
+
+## ✅ Co umí modul
+- seznam smluv
+- detail a editace smlouvy
+- přílohy smlouvy (read-only tab + manager přes 📎)
+- záložka **Služby** – připojení služeb na jednotku a výpočet součtu do „Výše nájmu"
 
 ### 2) `handover_protocols`
-Předávací protokoly navázané na smlouvu.
-
-**Klíčová pole:**
 - `contract_id` – vazba na smlouvu
 - `typ_protokolu`, `stav_protokolu`
-- `datum_predani`, `cas_predani`, `misto_predani`
-- `meraky_stav`, `poznamky`, podpisy/přílohy
-- `is_archived` + audit pole
 
 ## Vazby
 - **Smlouva** → **Jednotka** → **Nemovitost**
@@ -54,6 +53,6 @@ Poznámka: Periodicita nájmu používá `service_periodicities` (shodné s peri
   - Systémová metadata
 
 ## Poznámky
-- Volba **jednotky** automaticky doplní vazby na **nemovitost, pronajímatele a nájemníka**.
+- Volba **jednotky** automaticky doplní vazby na **nemovitost a pronajímatele**. Nájemník se vybírá ručně.
 - **Konec smlouvy** je skrytý, pokud je nastavena **doba neurčitá**.
 - Výpočty plateb a stavů budou napojeny na modul Plateb.

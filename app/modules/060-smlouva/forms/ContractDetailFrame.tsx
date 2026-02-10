@@ -15,6 +15,7 @@ import { listUnits } from '@/app/lib/services/units'
 import { listProperties } from '@/app/lib/services/properties'
 import { listLandlords } from '@/app/lib/services/landlords'
 import { listTenants } from '@/app/lib/services/tenants'
+import { listUnitServices } from '@/app/lib/services/unitServices'
 import { listSubjects } from '@/app/lib/services/subjects'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 import { saveContract, type SaveContractInput } from '@/app/lib/services/contracts'
@@ -24,6 +25,7 @@ import ContractDetailForm, {
   type UnitLookupOption,
   type PropertyLookupOption,
 } from './ContractDetailForm'
+import UnitServicesTab from '@/app/modules/040-nemovitost/components/UnitServicesTab'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -124,6 +126,8 @@ export default function ContractDetailFrame({
 
   const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [formResetToken, setFormResetToken] = useState(0)
+  const [servicesCount, setServicesCount] = useState(0)
+  const [servicesTotal, setServicesTotal] = useState<number | null>(null)
 
   const [units, setUnits] = useState<UnitLookupOption[]>([])
   const [properties, setProperties] = useState<PropertyLookupOption[]>([])
@@ -175,6 +179,32 @@ export default function ContractDetailFrame({
   useEffect(() => {
     void refreshAttachmentsCount()
   }, [refreshAttachmentsCount])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadServicesTotal() {
+      const unitId = formValueRef.current.unitId
+      if (!unitId || unitId === 'new') {
+        if (mounted) setServicesTotal(null)
+        return
+      }
+
+      try {
+        const rows = await listUnitServices(unitId)
+        if (!mounted) return
+        const total = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0)
+        setServicesTotal(total)
+      } catch (err) {
+        logger.error('Failed to load unit services total', err)
+      }
+    }
+
+    void loadServicesTotal()
+    return () => {
+      mounted = false
+    }
+  }, [formValue.unitId, servicesCount])
 
   useEffect(() => {
     let mounted = true
@@ -326,7 +356,7 @@ export default function ContractDetailFrame({
         datum_zacatek: current.datumZacatek,
         datum_konec: current.dobaNeurcita ? null : current.datumKonec || null,
         doba_neurcita: current.dobaNeurcita,
-        najem_vyse: current.najemVyse ?? null,
+        najem_vyse: servicesTotal ?? current.najemVyse ?? null,
         periodicita_najmu: current.periodicitaNajmu,
         den_platby: current.denPlatby,
         kauce_potreba: current.kaucePotreba,
@@ -440,7 +470,7 @@ export default function ContractDetailFrame({
   const content = (
     <DetailView
       mode={detailViewMode}
-      sectionIds={['detail', 'attachments', 'system']}
+      sectionIds={['detail', 'services', 'attachments', 'system']}
       initialActiveId={initialSectionId ?? 'detail'}
       onActiveSectionChange={onActiveSectionChange}
       ctx={{
@@ -450,7 +480,7 @@ export default function ContractDetailFrame({
         showSystemEntityHeader: false,
         mode: detailViewMode,
         onAttachmentsCountChange: setAttachmentsCount,
-        sectionCounts: { attachments: attachmentsCount },
+        sectionCounts: { attachments: attachmentsCount, services: servicesCount },
         detailContent: (
           <ContractDetailForm
             contract={formValue}
@@ -464,6 +494,7 @@ export default function ContractDetailFrame({
             rentPeriodOptions={rentPeriodOptions}
             paymentDayOptions={paymentDayOptions}
             resetToken={formResetToken}
+            rentAmountOverride={servicesTotal}
             onDirtyChange={() => {
               markDirtyIfChanged(formValueRef.current)
             }}
@@ -472,6 +503,13 @@ export default function ContractDetailFrame({
               formValueRef.current = val
               markDirtyIfChanged(val)
             }}
+          />
+        ),
+        servicesContent: (
+          <UnitServicesTab
+            unitId={formValue.unitId || 'new'}
+            readOnly={readOnly}
+            onCountChange={(count) => setServicesCount(count)}
           />
         ),
         systemBlocks,
