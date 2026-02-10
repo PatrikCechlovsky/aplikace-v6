@@ -364,6 +364,8 @@ async function assertEmailUnique(email: string | null, ignoreSubjectId?: string 
 export async function saveSubject(input: SaveSubjectInput): Promise<SubjectDetailRow> {
   const isNew = !input.id || input.id === 'new'
 
+  const canBeDelegate = ['osoba', 'osvc', 'zastupce'].includes(String(input.subjectType || '').trim())
+
   const email = normalizeEmail(input.email)
 
   // kontrola duplicitního emailu
@@ -380,11 +382,11 @@ export async function saveSubject(input: SaveSubjectInput): Promise<SubjectDetai
     // ✅ Role flags
     is_user: !!input.isUser,
     is_landlord: !!input.isLandlord,
-    is_landlord_delegate: !!input.isLandlordDelegate,
+    is_landlord_delegate: canBeDelegate ? !!input.isLandlordDelegate : false,
     is_tenant: !!input.isTenant,
-    is_tenant_delegate: !!input.isTenantDelegate,
+    is_tenant_delegate: canBeDelegate ? !!input.isTenantDelegate : false,
     is_maintenance: !!input.isMaintenance,
-    is_maintenance_delegate: !!input.isMaintenanceDelegate,
+    is_maintenance_delegate: canBeDelegate ? !!input.isMaintenanceDelegate : false,
 
     // PERSON fields
     title_before: (input.titleBefore ?? '').trim() || null,

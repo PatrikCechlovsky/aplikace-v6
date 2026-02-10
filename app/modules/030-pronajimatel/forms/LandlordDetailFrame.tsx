@@ -548,6 +548,14 @@ export default function LandlordDetailFrame({
           zip: v.zip.trim() || null,
           houseNumber: v.houseNumber.trim() || null,
           country: v.country.trim() || null,
+
+          isUser: v.isUser,
+          isLandlord: v.isLandlord,
+          isLandlordDelegate: v.isLandlordDelegate,
+          isTenant: v.isTenant,
+          isTenantDelegate: v.isTenantDelegate,
+          isMaintenance: v.isMaintenance,
+          isMaintenanceDelegate: v.isMaintenanceDelegate,
         }
 
         const saved = await saveLandlord(input)
@@ -588,6 +596,14 @@ export default function LandlordDetailFrame({
           zip: saved.zip ?? null,
           houseNumber: saved.house_number ?? null,
           country: saved.country ?? 'CZ',
+
+          isUser: saved.is_user ?? false,
+          isLandlord: saved.is_landlord ?? false,
+          isLandlordDelegate: saved.is_landlord_delegate ?? false,
+          isTenant: saved.is_tenant ?? false,
+          isTenantDelegate: saved.is_tenant_delegate ?? false,
+          isMaintenance: saved.is_maintenance ?? false,
+          isMaintenanceDelegate: saved.is_maintenance_delegate ?? false,
         }
 
         setResolvedLandlord(updated)

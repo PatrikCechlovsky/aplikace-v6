@@ -467,7 +467,15 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     city,
     zip,
     house_number,
-    country
+    country,
+
+    is_user,
+    is_landlord,
+    is_landlord_delegate,
+    is_tenant,
+    is_tenant_delegate,
+    is_maintenance,
+    is_maintenance_delegate
   `
 
   if (isNew) {
