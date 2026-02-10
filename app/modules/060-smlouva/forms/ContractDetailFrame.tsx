@@ -16,7 +16,7 @@ import { listProperties } from '@/app/lib/services/properties'
 import { listLandlords } from '@/app/lib/services/landlords'
 import { listTenants } from '@/app/lib/services/tenants'
 import { listUnitServices } from '@/app/lib/services/unitServices'
-import { listTenantUsers } from '@/app/lib/services/tenantUsers'
+import { listContractUsers } from '@/app/lib/services/contractUsers'
 import { listSubjects } from '@/app/lib/services/subjects'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 import { saveContract, type SaveContractInput } from '@/app/lib/services/contracts'
@@ -27,6 +27,9 @@ import ContractDetailForm, {
   type PropertyLookupOption,
 } from './ContractDetailForm'
 import UnitServicesTab from '@/app/modules/040-nemovitost/components/UnitServicesTab'
+import ContractUsersTab from '../components/ContractUsersTab'
+import ContractDelegatesTab from '../components/ContractDelegatesTab'
+import ContractAccountsTab from '../components/ContractAccountsTab'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -39,6 +42,10 @@ export type UiContract = {
   stav: string | null
   landlordId: string | null
   tenantId: string | null
+  landlordAccountId: string | null
+  tenantAccountId: string | null
+  landlordDelegateId: string | null
+  tenantDelegateId: string | null
   pocetUzivatelu: number | null
   propertyId: string | null
   unitId: string | null
@@ -81,6 +88,10 @@ function buildInitialFormValue(c: UiContract): ContractFormValue {
     stav: c.stav || '',
     landlordId: c.landlordId || '',
     tenantId: c.tenantId || '',
+    landlordAccountId: c.landlordAccountId || '',
+    tenantAccountId: c.tenantAccountId || '',
+    landlordDelegateId: c.landlordDelegateId || '',
+    tenantDelegateId: c.tenantDelegateId || '',
     pocetUzivatelu: c.pocetUzivatelu ?? null,
     propertyId: c.propertyId || '',
     unitId: c.unitId || '',
@@ -129,7 +140,7 @@ export default function ContractDetailFrame({
   const [formResetToken, setFormResetToken] = useState(0)
   const [servicesCount, setServicesCount] = useState(0)
   const [servicesTotal, setServicesTotal] = useState<number | null>(null)
-  const [tenantUsersCount, setTenantUsersCount] = useState<number | null>(null)
+  const [contractUsersCount, setContractUsersCount] = useState<number | null>(null)
 
   const [units, setUnits] = useState<UnitLookupOption[]>([])
   const [properties, setProperties] = useState<PropertyLookupOption[]>([])
@@ -210,27 +221,34 @@ export default function ContractDetailFrame({
   useEffect(() => {
     let mounted = true
 
-    async function loadTenantUsersCount() {
+    async function loadContractUsersCount() {
       const tenantId = formValueRef.current.tenantId
+      const contractId = resolvedContract.id
+
       if (!tenantId || tenantId === 'new') {
-        if (mounted) setTenantUsersCount(null)
+        if (mounted) setContractUsersCount(null)
+        return
+      }
+
+      if (!contractId || contractId === 'new') {
+        if (mounted) setContractUsersCount(1)
         return
       }
 
       try {
-        const rows = await listTenantUsers(tenantId, false)
+        const rows = await listContractUsers(contractId, false)
         if (!mounted) return
-        setTenantUsersCount(rows.length + 1)
+        setContractUsersCount(rows.length + 1)
       } catch (err) {
-        logger.error('Failed to load tenant users count', err)
+        logger.error('Failed to load contract users count', err)
       }
     }
 
-    void loadTenantUsersCount()
+    void loadContractUsersCount()
     return () => {
       mounted = false
     }
-  }, [formValue.tenantId])
+  }, [formValue.tenantId, resolvedContract.id])
 
   useEffect(() => {
     let mounted = true
@@ -291,7 +309,7 @@ export default function ContractDetailFrame({
           }))
         )
 
-        setLandlords(landlordRows.map((l) => ({ id: l.id, label: l.display_name || '—' })))
+        setLandlords(landlordRows.map((l) => ({ id: l.id, label: l.display_name || '—', subjectType: l.subject_type ?? null })))
 
         let resolvedTenants = tenantRows
         let fallbackUsed = false
@@ -308,7 +326,7 @@ export default function ContractDetailFrame({
         if (!mounted) return
 
         setTenantFallbackActive(fallbackUsed)
-        setTenants(resolvedTenants.map((t) => ({ id: t.id, label: t.display_name || '—' })))
+        setTenants(resolvedTenants.map((t) => ({ id: t.id, label: t.display_name || '—', subjectType: (t as any).subject_type ?? null })))
       } catch (err) {
         logger.error('Failed to load contract lookups', err)
       }
@@ -345,6 +363,15 @@ export default function ContractDetailFrame({
     }
   }, [])
 
+  const tenantSubjectType = useMemo(
+    () => tenants.find((t) => t.id === formValue.tenantId)?.subjectType ?? null,
+    [tenants, formValue.tenantId]
+  )
+  const landlordSubjectType = useMemo(
+    () => landlords.find((l) => l.id === formValue.landlordId)?.subjectType ?? null,
+    [landlords, formValue.landlordId]
+  )
+
   const handleSubmit = useCallback(async (): Promise<UiContract | null> => {
     const current = formValueRef.current
 
@@ -378,6 +405,31 @@ export default function ContractDetailFrame({
       return null
     }
 
+    if (!current.tenantAccountId?.trim()) {
+      toast.showWarning('Účet nájemníka je povinný.')
+      return null
+    }
+
+    if (!current.landlordAccountId?.trim()) {
+      toast.showWarning('Účet pronajímatele je povinný.')
+      return null
+    }
+
+    if (current.stav === 'aktivni') {
+      const tenantRequiresDelegate = ['firma', 'spolek'].includes(String(tenantSubjectType || ''))
+      const landlordRequiresDelegate = ['firma', 'spolek'].includes(String(landlordSubjectType || ''))
+
+      if (tenantRequiresDelegate && !current.tenantDelegateId?.trim()) {
+        toast.showWarning('Zástupce nájemníka je povinný pro aktivní smlouvu.')
+        return null
+      }
+
+      if (landlordRequiresDelegate && !current.landlordDelegateId?.trim()) {
+        toast.showWarning('Zástupce pronajímatele je povinný pro aktivní smlouvu.')
+        return null
+      }
+    }
+
     if (!current.datumZacatek?.trim()) {
       toast.showWarning('Datum začátku je povinné.')
       return null
@@ -400,7 +452,11 @@ export default function ContractDetailFrame({
         stav: current.stav,
         landlord_id: current.landlordId || null,
         tenant_id: current.tenantId || null,
-        pocet_uzivatelu: tenantUsersCount ?? current.pocetUzivatelu ?? null,
+        landlord_account_id: current.landlordAccountId || null,
+        tenant_account_id: current.tenantAccountId || null,
+        landlord_delegate_id: current.landlordDelegateId || null,
+        tenant_delegate_id: current.tenantDelegateId || null,
+        pocet_uzivatelu: contractUsersCount ?? current.pocetUzivatelu ?? null,
         property_id: current.propertyId || null,
         unit_id: current.unitId || null,
         pomer_plochy_k_nemovitosti: current.pomerPlochyKNemovitosti || null,
@@ -429,6 +485,10 @@ export default function ContractDetailFrame({
         stav: savedRow.stav,
         landlordId: savedRow.landlord_id,
         tenantId: savedRow.tenant_id,
+        landlordAccountId: (savedRow as any).landlord_account_id,
+        tenantAccountId: (savedRow as any).tenant_account_id,
+        landlordDelegateId: (savedRow as any).landlord_delegate_id,
+        tenantDelegateId: (savedRow as any).tenant_delegate_id,
         pocetUzivatelu: savedRow.pocet_uzivatelu,
         propertyId: savedRow.property_id,
         unitId: savedRow.unit_id,
@@ -470,7 +530,7 @@ export default function ContractDetailFrame({
       toast.showError(err instanceof Error ? err.message : 'Chyba při ukládání smlouvy')
       return null
     }
-  }, [contract.id, resolvedContract.id, toast, onDirtyChange, onSaved])
+  }, [contract.id, resolvedContract.id, toast, onDirtyChange, onSaved, tenantSubjectType, landlordSubjectType, contractUsersCount, servicesTotal])
 
   useEffect(() => {
     onRegisterSubmit?.(handleSubmit)
@@ -522,7 +582,7 @@ export default function ContractDetailFrame({
   const content = (
     <DetailView
       mode={detailViewMode}
-      sectionIds={['detail', 'services', 'attachments', 'system']}
+      sectionIds={['detail', 'users', 'delegates', 'accounts', 'services', 'attachments', 'system']}
       initialActiveId={initialSectionId ?? 'detail'}
       onActiveSectionChange={onActiveSectionChange}
       ctx={{
@@ -532,7 +592,11 @@ export default function ContractDetailFrame({
         showSystemEntityHeader: false,
         mode: detailViewMode,
         onAttachmentsCountChange: setAttachmentsCount,
-        sectionCounts: { attachments: attachmentsCount, services: servicesCount },
+        sectionCounts: {
+          attachments: attachmentsCount,
+          services: servicesCount,
+          users: typeof contractUsersCount === 'number' ? contractUsersCount : undefined,
+        },
         detailContent: (
           <ContractDetailForm
             contract={formValue}
@@ -547,7 +611,7 @@ export default function ContractDetailFrame({
             paymentDayOptions={paymentDayOptions}
             resetToken={formResetToken}
             rentAmountOverride={servicesTotal}
-            userCountOverride={tenantUsersCount}
+            userCountOverride={contractUsersCount}
             onDirtyChange={() => {
               markDirtyIfChanged(formValueRef.current)
             }}
@@ -555,6 +619,55 @@ export default function ContractDetailFrame({
               setFormValue(val)
               formValueRef.current = val
               markDirtyIfChanged(val)
+            }}
+          />
+        ),
+        usersContent: (
+          <ContractUsersTab
+            contractId={resolvedContract.id}
+            tenantId={formValue.tenantId || null}
+            tenantLabel={tenants.find((t) => t.id === formValue.tenantId)?.label ?? null}
+            readOnly={readOnly}
+            onSelectionCountChange={(count) => setContractUsersCount(count)}
+          />
+        ),
+        delegatesContent: (
+          <ContractDelegatesTab
+            tenantId={formValue.tenantId || null}
+            landlordId={formValue.landlordId || null}
+            tenantSubjectType={tenantSubjectType}
+            landlordSubjectType={landlordSubjectType}
+            tenantDelegateId={formValue.tenantDelegateId || null}
+            landlordDelegateId={formValue.landlordDelegateId || null}
+            readOnly={readOnly}
+            onChangeTenantDelegate={(id) => {
+              setFormValue((prev) => ({ ...prev, tenantDelegateId: id || '' }))
+              formValueRef.current = { ...formValueRef.current, tenantDelegateId: id || '' }
+              markDirtyIfChanged(formValueRef.current)
+            }}
+            onChangeLandlordDelegate={(id) => {
+              setFormValue((prev) => ({ ...prev, landlordDelegateId: id || '' }))
+              formValueRef.current = { ...formValueRef.current, landlordDelegateId: id || '' }
+              markDirtyIfChanged(formValueRef.current)
+            }}
+          />
+        ),
+        accountsContent: (
+          <ContractAccountsTab
+            tenantId={formValue.tenantId || null}
+            landlordId={formValue.landlordId || null}
+            tenantAccountId={formValue.tenantAccountId || null}
+            landlordAccountId={formValue.landlordAccountId || null}
+            readOnly={readOnly}
+            onChangeTenantAccount={(id) => {
+              setFormValue((prev) => ({ ...prev, tenantAccountId: id || '' }))
+              formValueRef.current = { ...formValueRef.current, tenantAccountId: id || '' }
+              markDirtyIfChanged(formValueRef.current)
+            }}
+            onChangeLandlordAccount={(id) => {
+              setFormValue((prev) => ({ ...prev, landlordAccountId: id || '' }))
+              formValueRef.current = { ...formValueRef.current, landlordAccountId: id || '' }
+              markDirtyIfChanged(formValueRef.current)
             }}
           />
         ),

@@ -1,0 +1,17 @@
+/* FILE: app/styles/components/DetailView.css */
+/* PURPOSE: Řízení vnitřního scrollu v DetailView (tabs nahoře, scroll jen v obsahu) */
+/* NOTES: Udržuje stálou pozici záložek a akcí, scrolluje pouze obsah sekce. */
+
+.detail-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.detail-view__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}

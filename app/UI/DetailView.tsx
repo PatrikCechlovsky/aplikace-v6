@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import '@/app/styles/components/DetailView.css'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
 import { getIcon } from '@/app/UI/icons'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
@@ -69,6 +70,10 @@ export type DetailViewCtx = {
   sectionCounts?: Partial<Record<DetailSectionId, number>>
 
   detailContent?: React.ReactNode
+
+  usersContent?: React.ReactNode
+  accountsContent?: React.ReactNode
+  delegatesContent?: React.ReactNode
 
   relationsContent?: React.ReactNode
 
@@ -358,6 +363,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 30,
     // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
     visibleWhen: (ctx) => {
+      if ((ctx as any)?.usersContent) return true
       if (!ctx.entityType) return false
       // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
       if (ctx.mode === 'create' || ctx.mode === 'edit') return true
@@ -365,6 +371,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return !!(ctx as any)?.entityId
     },
     render: (ctx) => {
+      if ((ctx as any)?.usersContent) return (ctx as any).usersContent
       const entityId = (ctx as any)?.entityId
       // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
       if (!entityId || entityId === 'new') {
@@ -385,6 +392,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 50,
     // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
     visibleWhen: (ctx) => {
+      if ((ctx as any)?.accountsContent) return true
       if (!ctx.entityType) return false
       // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
       if (ctx.mode === 'create' || ctx.mode === 'edit') return true
@@ -392,6 +400,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return !!(ctx as any)?.entityId
     },
     render: (ctx) => {
+      if ((ctx as any)?.accountsContent) return (ctx as any).accountsContent
       const entityId = (ctx as any)?.entityId
       // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
       if (!entityId || entityId === 'new') {
@@ -413,6 +422,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 55,
     // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
     visibleWhen: (ctx) => {
+      if ((ctx as any)?.delegatesContent) return true
       if (!ctx.entityType) return false
       // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
       if (ctx.mode === 'create' || ctx.mode === 'edit') return true
@@ -420,6 +430,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return !!(ctx as any)?.entityId
     },
     render: (ctx) => {
+      if ((ctx as any)?.delegatesContent) return (ctx as any).delegatesContent
       const entityId = (ctx as any)?.entityId
       const onCreateDelegateFromUser = (ctx as any)?.onCreateDelegateFromUser
       const onOpenNewDelegateForm = (ctx as any)?.onOpenNewDelegateForm

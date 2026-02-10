@@ -45,6 +45,10 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 │              │ 6: Footer / stavová lišta (volitelně)          │
 └──────────────┴───────────────────────────────────────────────┘
 
+Poznámka ke scrollu v detailu:
+- scrolluje pouze obsah detailu (DetailView content),
+- záložky a horní akce zůstávají fixně viditelné.
+
 ... (soubor pokračuje beze změn až k sekci Přílohy)
 
 ### (5) Sekce Přílohy (povinná součást každého detailu)

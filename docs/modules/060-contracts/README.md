@@ -22,6 +22,9 @@ Smlouva navázaná na jednotku, nájemníka a pronajímatele.
 - detail a editace smlouvy
 - přílohy smlouvy (read-only tab + manager přes 📎)
 - záložka **Služby** – připojení služeb na jednotku a výpočet součtu do „Výše nájmu"
+- záložka **Uživatelé** – výběr uživatelů nájemníka pro konkrétní smlouvu
+- záložka **Zástupci** – výběr zástupců nájemníka a pronajímatele
+- záložka **Účty** – výběr účtu nájemníka a pronajímatele
 
 ### 2) `handover_protocols`
 - `contract_id` – vazba na smlouvu
@@ -55,5 +58,7 @@ Poznámka: Periodicita nájmu používá `service_periodicities` (shodné s peri
 ## Poznámky
 - Volba **jednotky** automaticky doplní vazby na **nemovitost a pronajímatele**. Nájemník se vybírá ručně.
 - Pole **Počet uživatelů** se odvozuje z nájemníka (1 nájemník + spolubydlící).
+- Účty jsou povinné pro aktivaci smlouvy.
+- Zástupce je povinný pro firmu/spolek při aktivaci smlouvy.
 - **Konec smlouvy** je skrytý, pokud je nastavena **doba neurčitá**.
 - Výpočty plateb a stavů budou napojeny na modul Plateb.

@@ -11,6 +11,10 @@ export type ContractFormValue = {
   stav: string
   landlordId: string
   tenantId: string
+  landlordAccountId: string
+  tenantAccountId: string
+  landlordDelegateId: string
+  tenantDelegateId: string
   pocetUzivatelu: number | null
   propertyId: string
   unitId: string
@@ -32,7 +36,7 @@ export type ContractFormValue = {
   isArchived: boolean
 }
 
-export type LookupOption = { id: string; label: string }
+export type LookupOption = { id: string; label: string; subjectType?: string | null }
 
 export type UnitLookupOption = {
   id: string
@@ -99,6 +103,10 @@ export default function ContractDetailForm({
     stav: safeString(input.stav),
     landlordId: safeString(input.landlordId),
     tenantId: safeString(input.tenantId),
+    landlordAccountId: safeString(input.landlordAccountId),
+    tenantAccountId: safeString(input.tenantAccountId),
+    landlordDelegateId: safeString(input.landlordDelegateId),
+    tenantDelegateId: safeString(input.tenantDelegateId),
     pocetUzivatelu: safeNumber(input.pocetUzivatelu),
     propertyId: safeString(input.propertyId),
     unitId: safeString(input.unitId),

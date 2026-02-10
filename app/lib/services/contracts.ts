@@ -108,6 +108,10 @@ export type ContractDetailRow = {
   stav: string | null
   landlord_id: string | null
   tenant_id: string | null
+  landlord_account_id?: string | null
+  tenant_account_id?: string | null
+  landlord_delegate_id?: string | null
+  tenant_delegate_id?: string | null
   pocet_uzivatelu: number | null
   property_id: string | null
   unit_id: string | null
@@ -182,6 +186,10 @@ export type SaveContractInput = {
   stav: string
   landlord_id: string | null
   tenant_id: string | null
+  landlord_account_id?: string | null
+  tenant_account_id?: string | null
+  landlord_delegate_id?: string | null
+  tenant_delegate_id?: string | null
   pocet_uzivatelu?: number | null
   property_id: string | null
   unit_id: string | null
@@ -209,6 +217,10 @@ export async function saveContract(input: SaveContractInput): Promise<ContractDe
     stav: input.stav?.trim() || null,
     landlord_id: input.landlord_id || null,
     tenant_id: input.tenant_id || null,
+    landlord_account_id: input.landlord_account_id || null,
+    tenant_account_id: input.tenant_account_id || null,
+    landlord_delegate_id: input.landlord_delegate_id || null,
+    tenant_delegate_id: input.tenant_delegate_id || null,
     pocet_uzivatelu: input.pocet_uzivatelu ?? null,
     property_id: input.property_id || null,
     unit_id: input.unit_id || null,

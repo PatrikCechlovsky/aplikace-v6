@@ -148,6 +148,10 @@ Reprezentuje nájemní/podnájemní smlouvy.
 - `unit_id` (FK)
 - `landlord_id` (FK → subjects.id – pronajímatel)
 - `tenant_id` (FK → subjects.id – nájemník)
+- `landlord_account_id` (FK → bank_accounts.id)
+- `tenant_account_id` (FK → bank_accounts.id)
+- `landlord_delegate_id` (FK → subjects.id)
+- `tenant_delegate_id` (FK → subjects.id)
 - `cislo_smlouvy`
 - `stav` (koncept, aktivní, ukončená…)
 - `valid_from`
@@ -160,6 +164,17 @@ Reprezentuje nájemní/podnájemní smlouvy.
 - `note`
 - `created_at`, `created_by`
 - `updated_at`, `updated_by`
+
+### 4.1.1 Tabulka `contract_users`
+
+Výběr uživatelů nájemníka pro konkrétní smlouvu.
+
+**Pole – příklad:**
+- `id`
+- `contract_id` (FK → contracts.id)
+- `tenant_user_id` (FK → tenant_users.id)
+- `is_archived`
+- `created_at`, `updated_at`
 
 ### 4.2 Vazby smluv
 
