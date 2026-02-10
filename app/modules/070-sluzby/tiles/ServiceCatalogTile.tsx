@@ -99,6 +99,7 @@ export default function ServiceCatalogTile({
   const [detailLoading, setDetailLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
 
   const [searchText, setSearchText] = useState('')
   const [showArchived, setShowArchived] = useState(false)
@@ -214,6 +215,7 @@ export default function ServiceCatalogTile({
     setLocalViewMode('list')
     setSelectedId(null)
     setCurrentService(null)
+    setIsDirty(false)
   }, [])
 
   const handleSave = useCallback(async () => {
@@ -232,6 +234,7 @@ export default function ServiceCatalogTile({
       setLocalViewMode('list')
       setSelectedId(null)
       setCurrentService(null)
+      setIsDirty(false)
     } catch (err: any) {
       logger.error('Chyba při ukládání služby:', err)
       showToast(err.message || 'Nepodařilo se uložit službu', 'error')
@@ -264,9 +267,9 @@ export default function ServiceCatalogTile({
     onRegisterCommonActionsState({
       viewMode,
       hasSelection: !!selectedId,
-      isDirty: false,
+      isDirty,
     })
-  }, [localViewMode, selectedId, onRegisterCommonActionsState])
+  }, [localViewMode, selectedId, onRegisterCommonActionsState, isDirty])
 
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
@@ -281,6 +284,7 @@ export default function ServiceCatalogTile({
           is_archived: false,
         })
         setLocalViewMode('create')
+        setIsDirty(false)
       } else if (actionId === 'view') {
         if (!selectedId) return
         setLocalViewMode('view')
@@ -289,18 +293,23 @@ export default function ServiceCatalogTile({
       } else if (actionId === 'save') {
         handleSave()
       } else if (actionId === 'close') {
+        if (isDirty) {
+          const ok = confirm('Máš neuložené změny. Opravdu chceš zavřít?')
+          if (!ok) return
+        }
         closeToList()
       }
     }
 
     onRegisterCommonActionHandler(handler)
     return () => onRegisterCommonActionHandler(null)
-  }, [onRegisterCommonActionHandler, selectedId, handleSave, closeToList])
+  }, [onRegisterCommonActionHandler, selectedId, handleSave, closeToList, isDirty])
 
   useEffect(() => {
     if (localViewMode === 'create') return
     if (!selectedId) {
       setCurrentService(null)
+      setIsDirty(false)
       return
     }
 
@@ -326,6 +335,7 @@ export default function ServiceCatalogTile({
           active: detail.active ?? true,
           is_archived: detail.is_archived ?? false,
         })
+        setIsDirty(false)
       } catch (err: any) {
         logger.error('Chyba při načítání detailu služby:', err)
         showToast(err.message || 'Nepodařilo se načíst detail služby', 'error')
@@ -380,6 +390,7 @@ export default function ServiceCatalogTile({
             <ServiceCatalogDetailFormComponent
               service={currentService}
               readOnly={readOnly}
+              onDirtyChange={setIsDirty}
               onValueChange={setCurrentService}
             />
           ) : (
