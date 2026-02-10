@@ -108,7 +108,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const [units, setUnits] = useState<Array<{ id: string; name: string }>>([])
   const [vatRates, setVatRates] = useState<Array<{ id: string; name: string }>>([])
   const [periodicities, setPeriodicities] = useState<Array<{ id: string; name: string }>>([])
-  const [categoryFilterId, setCategoryFilterId] = useState<string>('')
 
   const [searchText, setSearchText] = useState('')
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
@@ -508,19 +507,15 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
 
   const filteredItems = useMemo(() => {
     const q = searchText.trim().toLowerCase()
-    const byCategory = categoryFilterId
-      ? listItems.filter((item) => item.categoryId === categoryFilterId)
-      : listItems
-
-    if (!q) return byCategory
-    return byCategory.filter((item) => (
+    if (!q) return listItems
+    return listItems.filter((item) => (
       item.name.toLowerCase().includes(q) ||
       item.categoryName.toLowerCase().includes(q) ||
       item.billingTypeName.toLowerCase().includes(q) ||
       item.unitName.toLowerCase().includes(q) ||
       item.vatRateName.toLowerCase().includes(q)
     ))
-  }, [listItems, searchText, categoryFilterId])
+  }, [listItems, searchText])
 
   const columns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
@@ -613,24 +608,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                     </button>
                   </>
                 )}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-              <div className="detail-form__field" style={{ minWidth: 220 }}>
-                <label className="detail-form__label">Kategorie</label>
-                <select
-                  className="detail-form__input"
-                  value={categoryFilterId}
-                  onChange={(e) => setCategoryFilterId(e.target.value)}
-                >
-                  <option value="">— všechny kategorie —</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 
