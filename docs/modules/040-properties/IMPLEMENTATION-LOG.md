@@ -89,6 +89,14 @@
   - Entity type pro přílohy: `unit_service_binding`
   - Počty v záložkách jednotky: vybavení, služby, přílohy
 
+#### 9. **Filtry katalogu služeb při přidávání**
+- **Soubory:**
+  - `app/modules/040-nemovitost/components/PropertyServicesTab.tsx`
+  - `app/modules/040-nemovitost/components/UnitServicesTab.tsx`
+- **Funkce:**
+  - Fulltext vyhledávání v katalogu služeb při přidávání
+  - Předfiltr podle kategorie služeb (stejně jako u vybavení)
+
 ---
 
 ## 🚧 V implementaci

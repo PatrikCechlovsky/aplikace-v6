@@ -100,6 +100,8 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
 
   const [catalog, setCatalog] = useState<ServiceCatalogRow[]>([])
   const [loadingCatalog, setLoadingCatalog] = useState(true)
+  const [catalogSearchText, setCatalogSearchText] = useState('')
+  const [catalogCategoryId, setCatalogCategoryId] = useState<string | null>(null)
 
   const [categories, setCategories] = useState<Array<{ id: string; name: string; color?: string | null }>>([])
   const [billingTypes, setBillingTypes] = useState<Array<{ id: string; name: string; color?: string | null }>>([])
@@ -166,7 +168,11 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     ;(async () => {
       try {
         setLoadingCatalog(true)
-        const data = await listServiceCatalog()
+        const data = await listServiceCatalog({
+          includeArchived: false,
+          searchText: catalogSearchText,
+          categoryId: catalogCategoryId,
+        })
         if (cancelled) return
         setCatalog(data)
       } catch (e: any) {
@@ -182,7 +188,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     return () => {
       cancelled = true
     }
-  }, [toast])
+  }, [catalogSearchText, catalogCategoryId, toast])
 
   useEffect(() => {
     if (detailMode !== 'create') return
@@ -734,6 +740,29 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
               {!isCustomService && (
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Katalogová služba</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                    <input
+                      type="text"
+                      className="detail-form__input"
+                      placeholder="Hledat název, kód nebo popis..."
+                      value={catalogSearchText}
+                      onChange={(e) => setCatalogSearchText(e.target.value)}
+                      disabled={isFormReadOnly}
+                    />
+                    <select
+                      className="detail-form__input"
+                      value={catalogCategoryId || ''}
+                      onChange={(e) => setCatalogCategoryId(e.target.value || null)}
+                      disabled={isFormReadOnly}
+                    >
+                      <option value="">— všechny kategorie —</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <select
                     className="detail-form__input"
                     value={formValue.serviceId}
@@ -754,8 +783,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                     }}
                     disabled={isFormReadOnly}
                   >
-                    <option value="">— vyberte službu —</option>
-                    {loadingCatalog && <option value="">Načítám katalog...</option>}
+                    <option value="">{loadingCatalog ? 'Načítám katalog...' : '— vyberte službu —'}</option>
                     {!loadingCatalog && catalog.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
