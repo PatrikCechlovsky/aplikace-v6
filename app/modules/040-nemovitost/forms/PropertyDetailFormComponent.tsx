@@ -63,6 +63,12 @@ function safeNum(v: any): number | null {
   return isNaN(n) ? null : n
 }
 
+function formatZip(value: string): string {
+  const digits = (value ?? '').toString().replace(/\D+/g, '').slice(0, 5)
+  if (digits.length <= 3) return digits
+  return `${digits.slice(0, 3)} ${digits.slice(3)}`
+}
+
 // =====================
 // COMPONENT
 // =====================
@@ -85,7 +91,7 @@ export default function PropertyDetailFormComponent({
     street: property.street ?? '',
     house_number: property.house_number ?? '',
     city: property.city ?? '',
-    zip: property.zip ?? '',
+    zip: formatZip(property.zip ?? ''),
     country: property.country ?? 'CZ',
     region: property.region ?? '',
     
@@ -231,7 +237,7 @@ export default function PropertyDetailFormComponent({
                       street: address.street || '',
                       house_number: address.houseNumber || '',
                       city: address.city || '',
-                      zip: address.zip || '',
+                      zip: formatZip(address.zip || ''),
                     })
                   }}
                   disabled={readOnly}
@@ -280,8 +286,8 @@ export default function PropertyDetailFormComponent({
                 <input
                   className="detail-form__input"
                   value={formVal.zip}
-                  onChange={(e) => update({ zip: e.target.value.replace(/\D+/g, '') })}
-                  placeholder="19000"
+                  onChange={(e) => update({ zip: formatZip(e.target.value) })}
+                  placeholder="190 00"
                   pattern="^[0-9]{5}$"
                   required
                 />
