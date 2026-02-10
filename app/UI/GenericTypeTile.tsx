@@ -393,7 +393,7 @@ export default function GenericTypeTile({
         typeof form.sort_order === 'number' && Number.isFinite(form.sort_order)
           ? form.sort_order
           : null,
-      active: form.active ?? true,
+      active: selectedCode ? (form.active ?? true) : true,
     }
 
     // LOGY – můžeš pak zase odstranit
