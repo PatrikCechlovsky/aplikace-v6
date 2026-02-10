@@ -285,6 +285,11 @@ export type SavePropertyInput = {
 export async function saveProperty(input: SavePropertyInput): Promise<PropertyDetailRow> {
   const isUpdate = !!input.id
 
+  const normalizedZip = (input.zip ?? '')
+    .toString()
+    .replace(/\D+/g, '')
+    .trim() || null
+
   const payload: any = {
     landlord_id: input.landlord_id,
     property_type_id: input.property_type_id,
@@ -293,7 +298,7 @@ export async function saveProperty(input: SavePropertyInput): Promise<PropertyDe
     street: input.street ?? null,
     house_number: input.house_number ?? null,
     city: input.city ?? null,
-    zip: input.zip ?? null,
+    zip: normalizedZip,
     country: input.country ?? null,
     region: input.region ?? null,
     land_area: input.land_area ?? null,

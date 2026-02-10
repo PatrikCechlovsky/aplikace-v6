@@ -280,7 +280,7 @@ export default function PropertyDetailFormComponent({
                 <input
                   className="detail-form__input"
                   value={formVal.zip}
-                  onChange={(e) => update({ zip: e.target.value })}
+                  onChange={(e) => update({ zip: e.target.value.replace(/\D+/g, '') })}
                   placeholder="19000"
                   pattern="^[0-9]{5}$"
                   required
