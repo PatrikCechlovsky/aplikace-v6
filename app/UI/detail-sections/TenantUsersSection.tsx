@@ -12,6 +12,7 @@ import {
   type TenantUser,
   type TenantUserFormData,
 } from '@/app/lib/services/tenantUsers'
+import { getTenantDetail } from '@/app/lib/services/tenants'
 import { useToast } from '@/app/UI/Toast'
 import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
@@ -26,6 +27,7 @@ type TenantUsersSectionProps = {
 export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSectionProps) {
   const toast = useToast()
   const [users, setUsers] = useState<TenantUser[]>([])
+  const [tenantRow, setTenantRow] = useState<TenantUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
@@ -43,6 +45,7 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
   const loadUsers = useCallback(async () => {
     if (tenantId === 'new') {
       setUsers([])
+      setTenantRow(null)
       setLoading(false)
       return
     }
@@ -62,6 +65,46 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
   useEffect(() => {
     loadUsers()
   }, [loadUsers])
+
+  useEffect(() => {
+    let active = true
+
+    async function loadTenant() {
+      if (tenantId === 'new') {
+        setTenantRow(null)
+        return
+      }
+
+      try {
+        const tenant = await getTenantDetail(tenantId)
+        if (!active) return
+
+        const isCompany = !!tenant.company_name && !tenant.first_name && !tenant.last_name
+        const firstName = isCompany ? tenant.display_name ?? 'Nájemník' : tenant.first_name ?? ''
+        const lastName = isCompany ? '' : tenant.last_name ?? ''
+
+        setTenantRow({
+          id: `tenant:${tenant.id}`,
+          tenant_id: tenant.id,
+          first_name: firstName,
+          last_name: lastName,
+          birth_date: tenant.birth_date ?? '',
+          note: 'Nájemník',
+          is_archived: !!tenant.is_archived,
+          created_at: tenant.created_at ?? '',
+          updated_at: tenant.updated_at ?? '',
+          created_by: null,
+        })
+      } catch (err) {
+        logger.error('loadTenant failed', err)
+      }
+    }
+
+    void loadTenant()
+    return () => {
+      active = false
+    }
+  }, [tenantId])
 
   const selectUser = useCallback(
     (userId: string | null) => {
@@ -146,8 +189,9 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
 
   const canGoPrevious = currentIndexRef.current > 0
   const canGoNext = currentIndexRef.current >= 0 && currentIndexRef.current < users.length - 1
-  const totalCount = users.length + 1 // +1 za nájemníka
+  const totalCount = (tenantRow ? 1 : 0) + users.length
   const readOnly = viewMode === 'view'
+  const displayRows = tenantRow ? [tenantRow, ...users] : users
 
   if (tenantId === 'new') {
     return (
@@ -164,15 +208,15 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
         <h3 className="detail-form__section-title">
           Seznam uživatelů
           <span style={{ marginLeft: '12px', fontWeight: 400, fontSize: '14px', color: 'var(--color-text-subtle)' }}>
-            Počet celkem: {totalCount} (1 nájemník + {users.length} spolubydlících)
+            Počet celkem: {totalCount} uživatelů
           </span>
         </h3>
 
         {loading && <div className="detail-form__hint">Načítám uživatele…</div>}
 
-        {!loading && users.length === 0 && <div className="detail-form__hint">Zatím žádní uživatelé.</div>}
+        {!loading && displayRows.length === 0 && <div className="detail-form__hint">Zatím žádní uživatelé.</div>}
 
-        {!loading && users.length > 0 && (
+        {!loading && displayRows.length > 0 && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
@@ -184,10 +228,14 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {displayRows.map((user) => (
                   <tr
                     key={user.id}
-                    onClick={() => !readOnly && selectUser(user.id)}
+                    onClick={() => {
+                      if (readOnly) return
+                      if (user.id.startsWith('tenant:')) return
+                      selectUser(user.id)
+                    }}
                     style={{
                       cursor: !readOnly ? 'pointer' : 'default',
                       borderBottom: '1px solid var(--color-border-soft)',
@@ -196,7 +244,9 @@ export default function TenantUsersSection({ tenantId, viewMode }: TenantUsersSe
                   >
                     <td style={{ padding: '8px' }}>{user.first_name}</td>
                     <td style={{ padding: '8px' }}>{user.last_name}</td>
-                    <td style={{ padding: '8px' }}>{new Date(user.birth_date).toLocaleDateString('cs-CZ')}</td>
+                    <td style={{ padding: '8px' }}>
+                      {user.birth_date ? new Date(user.birth_date).toLocaleDateString('cs-CZ') : '—'}
+                    </td>
                     <td style={{ padding: '8px' }}>{user.note || '—'}</td>
                   </tr>
                 ))}
