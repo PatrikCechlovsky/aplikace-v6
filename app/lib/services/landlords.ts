@@ -203,6 +203,15 @@ export type LandlordDetailRow = {
   zip?: string | null
   house_number?: string | null
   country?: string | null
+
+  // Role flags
+  is_user?: boolean | null
+  is_landlord?: boolean | null
+  is_landlord_delegate?: boolean | null
+  is_tenant?: boolean | null
+  is_tenant_delegate?: boolean | null
+  is_maintenance?: boolean | null
+  is_maintenance_delegate?: boolean | null
 }
 
 /* =========================
