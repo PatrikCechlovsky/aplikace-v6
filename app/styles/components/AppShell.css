@@ -68,6 +68,15 @@
   min-height: 0;
 }
 
+/* Detail režim: .content a .content__section musí být flex, aby propadla výška */
+.layout__content--detail-scroll .content,
+.layout__content--detail-scroll .content__section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 /* SIDEBAR: vynutit, že obsah actions řádku nebude nalepený */
 .layout:not(.layout--topmenu) .layout__actions > * {
   margin: 0;
