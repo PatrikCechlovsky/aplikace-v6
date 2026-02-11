@@ -683,8 +683,10 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
             </button>
           </div>
 
-          {activeTab === 'form' && (
-            <div className="detail-form__grid detail-form__grid--narrow">
+          {/* Scrollovací oblast pro obsah */}
+          <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+            {activeTab === 'form' && (
+              <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
                 <label className="detail-form__label" style={{ marginBottom: 8 }}>
                   Typ služby
@@ -955,17 +957,18 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 />
               </div>
             </div>
-          )}
+            )}
 
-          {activeTab === 'attachments' && selectedId && (
-            <DetailAttachmentsSection
-              entityType="unit_service_binding"
-              entityId={selectedId}
-              entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
-              mode="view"
-            />
-          )}
-        </section>
+            {activeTab === 'attachments' && selectedId && (
+              <DetailAttachmentsSection
+                entityType="unit_service_binding"
+                entityId={selectedId}
+                entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
+                mode="view"
+              />
+            )}
+          </div>
+        </div>
       )}
 
       {viewMode === 'attachments' && selectedId && (

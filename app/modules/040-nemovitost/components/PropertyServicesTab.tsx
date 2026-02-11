@@ -681,9 +681,10 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
       )}
 
       {viewMode === 'detail' && (
-        <section className="detail-form__section detail-form__section--scroll">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
+          {/* Toolbar fixní nahoře */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
+            <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
               {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
             </h3>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -788,8 +789,10 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
             </button>
           </div>
 
-          {activeTab === 'form' && (
-            <div className="detail-form__grid detail-form__grid--narrow">
+          {/* Scrollovací oblast pro obsah */}
+          <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+            {activeTab === 'form' && (
+              <div className="detail-form__grid detail-form__grid--narrow">
               <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
                 <label className="detail-form__label" style={{ marginBottom: 8 }}>
                   Typ služby
@@ -1048,17 +1051,18 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                 />
               </div>
             </div>
-          )}
+            )}
 
-          {activeTab === 'attachments' && selectedId && (
-            <DetailAttachmentsSection
-              entityType="property_service_binding"
-              entityId={selectedId}
-              entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
-              mode="view"
-            />
-          )}
-        </section>
+            {activeTab === 'attachments' && selectedId && (
+              <DetailAttachmentsSection
+                entityType="property_service_binding"
+                entityId={selectedId}
+                entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
+                mode="view"
+              />
+            )}
+          </div>
+        </div>
       )}
 
       {viewMode === 'attachments' && selectedId && (
