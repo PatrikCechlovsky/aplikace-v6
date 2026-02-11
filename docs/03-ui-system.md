@@ -51,6 +51,7 @@ Poznámka ke scrollu v detailu:
 - režim aktivuje třída layout__content--detail-scroll.
 - v řetězci wrapperů musí mít flex kontejnery `min-height: 0` a hlavní obsah `flex: 1 1 0` (např. `.entity-detail__main`).
 - samotný obsah sekce používá `overflow-y: auto` (např. `.detail-view__content`).
+- pokud je potřeba držet toolbar v rámci sekce a scrollovat jen obsah, použij `.detail-form__section--scroll` (vnitřní scroll gridu).
 
 ... (soubor pokračuje beze změn až k sekci Přílohy)
 
