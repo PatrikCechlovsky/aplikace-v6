@@ -45,16 +45,133 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 │              │ 6: Footer / stavová lišta (volitelně)          │
 └──────────────┴───────────────────────────────────────────────┘
 
-Poznámka ke scrollu v detailu:
-- scrolluje pouze obsah detailu (DetailView content),
-- záložky a horní akce zůstávají fixně viditelné.
-- režim aktivuje třída layout__content--detail-scroll.
-- v řetězci wrapperů musí mít flex kontejnery `min-height: 0` a hlavní obsah `flex: 1 1 0` (např. `.entity-detail__main`).
-- samotný obsah sekce používá `overflow-y: auto` (např. `.detail-view__content`).
-- pokud je potřeba držet toolbar v rámci sekce a scrollovat jen obsah, použij `.detail-form__section--scroll` (vnitřní scroll gridu).
-- kontejnery detailu musí mít explicitní výšku (`height: 100%`) tam, kde je detail vnořený do flex/grid (`.layout__content--detail-scroll`, `.tile-layout__content`, `.detail-view__content`).
-- fallback: pokud detail stále nescrolluje, povol scroll na `.layout__content--detail-scroll .tile-layout__content`.
-- ListView má jediný scroll uvnitř `.listview__table-wrapper` (ne v celém contentu), takže toolbar i hlavička tabulky zůstávají viditelné.
+### Scroll systém v detailu
+
+**Základní princip**: V detailu entity scrolluje **pouze obsah**, zatímco záložky, toolbar a CommonActions zůstávají **fixně viditelné nahoře**.
+
+#### A) Detail entity (formuláře a záložky)
+
+**Aktivace**: Třída `.layout__content--detail-scroll` na `<main>`
+
+**Struktura CSS**:
+```
+.layout__content--detail-scroll (overflow: hidden)
+  └─ .content (flex: 1 1 0, min-height: 0)
+      └─ .content__section (flex: 1 1 0, min-height: 0)
+          └─ .tile-layout__content (flex container)
+              └─ .detail-view (flex: 1 1 0)
+                  ├─ .detail-tabs (flex-shrink: 0) ← fixní
+                  └─ .detail-view__content (overflow-y: auto) ← scrolluje
+```
+
+**Klíčová pravidla**:
+1. `.detail-view__content` má `overflow-y: auto` a `flex: 1 1 0`
+2. Když obsahuje ListView, musí mít `overflow: hidden` (scroll je uvnitř ListView)
+3. `.detail-form` v tomto kontextu musí mít `flex: 1 1 0` pokud obsahuje ListView
+4. `.detail-form__section` s ListView musí být flex container (`flex: 1 1 0`)
+
+**Relevantní CSS soubory**:
+- `app/styles/components/DetailView.css` - hlavní scroll kontrola
+- `app/styles/components/DetailForm.css` - flex propagace pro formuláře
+- `app/styles/components/AppShell.css` - layout structure
+
+#### B) ListView v detail tabech
+
+**Princip**: Toolbar + hlavička tabulky **fixní**, scrollují **pouze řádky tabulky**.
+
+**Struktura CSS**:
+```
+.detail-view__content
+  └─ .detail-form (flex: 1 1 0 když má ListView)
+      └─ .detail-form__section (flex: 1 1 0 když má ListView)
+          └─ .listview (flex: 1 1 0, height: 100%)
+              ├─ .listview__toolbar (flex-shrink: 0) ← fixní
+              └─ .listview__table-wrapper (overflow: auto) ← scrolluje
+                  └─ table (sticky header)
+```
+
+**Klíčová pravidla**:
+1. `.listview` má `flex: 1 1 0` a `height: 100%` v `.detail-view__content`
+2. `.listview__table-wrapper` má `flex: 1 1 0` a `overflow: auto`
+3. Toolbar a `<thead>` mají `position: sticky` nebo `flex-shrink: 0`
+4. `.detail-view__content:has(.listview)` má `overflow: hidden` (vypne vlastní scroll)
+
+**Relevantní CSS soubory**:
+- `app/styles/components/ListView.css` - table scroll kontrola
+
+#### C) Relation detail (vazby entity)
+
+**Princip**: Horní toolbar fixní, obsah vazby (formulář nebo seznam) scrolluje.
+
+**Struktura CSS**:
+```
+.tile-layout__content (height constraint)
+  └─ .relation-pane (grid, height: 100%)
+      ├─ .relation-pane__list (200px) ← horní seznam
+      └─ .relation-pane__detail (minmax(220px, 1fr))
+          └─ .relation-detail (grid, height: 100%)
+              ├─ .relation-detail__toolbar (auto) ← fixní
+              └─ .relation-detail__content (overflow: auto) ← scrolluje
+```
+
+**Klíčová pravidla**:
+1. `.relation-pane` má `height: 100%` a `min-height: 0`
+2. `.relation-detail` má `height: 100%` a `grid-template-rows: auto 1fr`
+3. `.relation-detail__content` má `overflow: auto` a `display: flex; flex-direction: column`
+4. Vnořený `.detail-view__content` scrolluje samostatně
+
+**Relevantní CSS soubory**:
+- `app/styles/components/Entity.css` - relation pane layout
+
+#### D) Sub-detail záložky (služby, vybavení)
+
+**Princip**: Záložky sub-detailu fixní nahoře, scrolluje pouze obsah záložky.
+
+**Struktura CSS**:
+```
+.detail-view__content
+  └─ .detail-subdetail (flex: 1 1 0)
+      ├─ .detail-subdetail__header (flex-shrink: 0) ← fixní
+      ├─ .detail-subdetail__tabs (flex-shrink: 0) ← fixní
+      └─ .detail-subdetail__content (overflow: auto) ← scrolluje
+```
+
+**Klíčová pravidla**:
+1. `.detail-subdetail` má `flex: 1 1 0` a `min-height: 0`
+2. Header a tabs mají `flex-shrink: 0`
+3. Content má `overflow: auto` a obsahuje scrollovatelný wrapper
+
+**Relevantní CSS soubory**:
+- `app/styles/components/DetailForm.css` - sub-detail helpers
+
+#### Diagnostika scroll problémů
+
+Pokud scroll nefunguje správně, zkontroluj v DevTools konzoli:
+
+```javascript
+// Najdi elementy s overflow: auto/scroll a zjisti, který má scrollHeight > clientHeight
+(() => {
+  const all = Array.from(document.querySelectorAll('*')).map(el => {
+    const style = getComputedStyle(el);
+    return {
+      el, tag: el.tagName.toLowerCase(), class: el.className,
+      overflowY: style.overflowY, h: el.clientHeight, sh: el.scrollHeight,
+      hasScroll: /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight
+    };
+  });
+  
+  const withAuto = all.filter(x => /(auto|scroll)/.test(x.overflowY));
+  console.table(withAuto.map(x => ({
+    tag: x.tag, class: x.class, overflowY: x.overflowY,
+    h: x.h, sh: x.sh, hasScroll: x.hasScroll
+  })));
+})();
+```
+
+**Typické problémy**:
+- Element má `overflow: auto` ale `scrollHeight === clientHeight` → chybí omezení výšky rodiče
+- Parent nemá `flex: 1 1 0` nebo `min-height: 0` → výška se nepropaguje dolů
+- Element má `height: auto` místo `flex: 1` → roztáhne se na celý obsah místo containeru
 
 ... (soubor pokračuje beze změn až k sekci Přílohy)
 
