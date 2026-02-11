@@ -27,6 +27,12 @@
   min-height: 0;
 }
 
+/* Když detail-form obsahuje ListView, musí se roztáhnout na plnou výšku */
+.detail-view__content .detail-form:has(.listview) {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 /* ===== SEKCE FORMULÁŘE (Profil, Účet, …) ===== */
 
 .detail-form__section {
