@@ -135,6 +135,8 @@ export default function EntityDetailFrame({
 
         .entity-detail__main {
           width: 100%;
+          flex: 1 1 0;
+          min-height: 0;
         }
 
         /* Varianta s pravým panelem – použijeme později pro přílohy / systém */
