@@ -21,6 +21,12 @@
   background: transparent; /* Žádné vlastní pozadí - respektuje pozadí z TileLayout */
 }
 
+/* Detail/tab vnořený do DetailView - vyplní dostupnou výšku */
+.detail-form--fill {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 /* ===== SEKCE FORMULÁŘE (Profil, Účet, …) ===== */
 
 .detail-form__section {
@@ -37,6 +43,26 @@
   min-height: 0;
   max-height: 100%;
   overflow: hidden;
+}
+
+/* Pod-detail: fixní hlavička + scrollovatelný obsah */
+.detail-subdetail {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.detail-subdetail__header,
+.detail-subdetail__tabs {
+  flex-shrink: 0;
+}
+
+.detail-subdetail__content {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .detail-form__section--scroll .detail-form__grid {

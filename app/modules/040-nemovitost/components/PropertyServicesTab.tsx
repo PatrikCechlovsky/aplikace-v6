@@ -577,7 +577,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   }
 
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
         <>
           <section className="detail-form__section">
@@ -681,13 +681,14 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
       )}
 
       {viewMode === 'detail' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
-          {/* Toolbar fixní nahoře */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
-            <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
-              {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
-            </h3>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <section className="detail-form__section detail-form__section--scroll">
+          <div className="detail-subdetail">
+            {/* Toolbar fixní nahoře */}
+            <div className="detail-subdetail__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
+                {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
+              </h3>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {detailMode !== 'create' && selectedId && positionLabel && (
                 <span className="common-actions__counter">{positionLabel}</span>
               )}
@@ -750,50 +751,50 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                 <span className="common-actions__label">Zavřít</span>
               </button>
             </div>
-          </div>
+            </div>
 
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('form')}
-              style={{
-                padding: '8px 16px',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 500,
-                borderBottom: activeTab === 'form' ? '2px solid var(--color-primary)' : '2px solid transparent',
-                color: activeTab === 'form' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-              }}
-            >
-              Formulář
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('attachments')}
-              disabled={!selectedId}
-              style={{
-                padding: '8px 16px',
-                border: 'none',
-                background: 'transparent',
-                cursor: selectedId ? 'pointer' : 'not-allowed',
-                fontSize: '14px',
-                fontWeight: 500,
-                borderBottom: activeTab === 'attachments' ? '2px solid var(--color-primary)' : '2px solid transparent',
-                color: activeTab === 'attachments' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                opacity: selectedId ? 1 : 0.5,
-              }}
-            >
-              📎 Přílohy
-            </button>
-          </div>
+            <div className="detail-subdetail__tabs" style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('form')}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  borderBottom: activeTab === 'form' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  color: activeTab === 'form' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                }}
+              >
+                Formulář
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('attachments')}
+                disabled={!selectedId}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: selectedId ? 'pointer' : 'not-allowed',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  borderBottom: activeTab === 'attachments' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  color: activeTab === 'attachments' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                  opacity: selectedId ? 1 : 0.5,
+                }}
+              >
+                📎 Přílohy
+              </button>
+            </div>
 
-          {/* Scrollovací oblast pro obsah */}
-          <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
-            {activeTab === 'form' && (
-              <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
+            {/* Scrollovací oblast pro obsah */}
+            <div className="detail-subdetail__content">
+              {activeTab === 'form' && (
+                <div className="detail-form__grid detail-form__grid--narrow">
+                <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
                 <label className="detail-form__label" style={{ marginBottom: 8 }}>
                   Typ služby
                 </label>
@@ -1051,18 +1052,19 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                 />
               </div>
             </div>
-            )}
+              )}
 
-            {activeTab === 'attachments' && selectedId && (
-              <DetailAttachmentsSection
-                entityType="property_service_binding"
-                entityId={selectedId}
-                entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
-                mode="view"
-              />
-            )}
+              {activeTab === 'attachments' && selectedId && (
+                <DetailAttachmentsSection
+                  entityType="property_service_binding"
+                  entityId={selectedId}
+                  entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
+                  mode="view"
+                />
+              )}
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
       {viewMode === 'attachments' && selectedId && (

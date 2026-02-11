@@ -639,7 +639,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   // =====================
   
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
         <section className="detail-form__section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -723,11 +723,12 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
 
       {/* Detail vybavení */}
       {viewMode === 'detail' && (
-      <section className="detail-form__section">
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-          <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail vybavení</h3>
-          <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <section className="detail-form__section detail-form__section--scroll">
+        <div className="detail-subdetail">
+          <div className="detail-subdetail__header" style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+            <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail vybavení</h3>
+            <div style={{ flex: 1 }} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {positionLabel && <span className="common-actions__counter">{positionLabel}</span>}
             {detailMode === 'read' && (
               <>
@@ -873,11 +874,11 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
                 </button>
               </>
             )}
+            </div>
           </div>
-        </div>
 
           {/* Záložky: Formulář / Přílohy */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
+          <div className="detail-subdetail__tabs" style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
             <button
               type="button"
               onClick={() => setActiveTab('form')}
@@ -914,9 +915,10 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
             </button>
           </div>
 
-          {/* Tab Content: Formulář */}
-          {activeTab === 'form' && (
-          <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-subdetail__content">
+            {/* Tab Content: Formulář */}
+            {activeTab === 'form' && (
+            <div className="detail-form__grid detail-form__grid--narrow">
             {/* Toggle: Katalog vs Vlastní */}
             <div className="detail-form__field detail-form__field--span-2" style={{ marginBottom: 16, padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
               <label className="detail-form__label" style={{ marginBottom: 8 }}>Typ vybavení</label>
@@ -1213,22 +1215,24 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
                 placeholder="Poznámky k vybavení..."
               />
             </div>
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Tab Content: Přílohy */}
-        {activeTab === 'attachments' && selectedEquipmentId && (
-          <div style={{ marginTop: '20px' }}>
-            <DetailAttachmentsSection
-              entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
-              entityId={selectedEquipmentId}
-              entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
-              mode="view"
-              variant="list"
-              canManage={false}
-            />
+          {/* Tab Content: Přílohy */}
+          {activeTab === 'attachments' && selectedEquipmentId && (
+            <div style={{ marginTop: '20px' }}>
+              <DetailAttachmentsSection
+                entityType={entityType === 'property' ? 'property_equipment_binding' : 'equipment_binding'}
+                entityId={selectedEquipmentId}
+                entityLabel={equipmentList.find((e) => e.id === selectedEquipmentId)?.catalog_equipment_name || equipmentList.find((e) => e.id === selectedEquipmentId)?.name || 'Vybavení'}
+                mode="view"
+                variant="list"
+                canManage={false}
+              />
+            </div>
+          )}
           </div>
-        )}
+        </div>
       </section>
       )}
 

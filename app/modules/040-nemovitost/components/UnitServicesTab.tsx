@@ -521,7 +521,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   }
 
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
         <>
           <section className="detail-form__section">
@@ -627,13 +627,14 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       )}
 
       {viewMode === 'detail' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
-          {/* Toolbar fixní nahoře */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
-            <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
-              {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
-            </h3>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <section className="detail-form__section detail-form__section--scroll">
+          <div className="detail-subdetail">
+            {/* Toolbar fixní nahoře */}
+            <div className="detail-subdetail__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
+                {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
+              </h3>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {detailMode === 'read' && !readOnly && selectedId && (
                 <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
                   <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
@@ -660,35 +661,35 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 </button>
               )}
             </div>
-          </div>
+            </div>
 
-          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <button
-              type="button"
-              className={activeTab === 'form' ? 'common-actions__btn common-actions__btn--active' : 'common-actions__btn'}
-              onClick={() => setActiveTab('form')}
-            >
-              Formulář
-            </button>
+            <div className="detail-subdetail__tabs" style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              <button
+                type="button"
+                className={activeTab === 'form' ? 'common-actions__btn common-actions__btn--active' : 'common-actions__btn'}
+                onClick={() => setActiveTab('form')}
+              >
+                Formulář
+              </button>
 
-            <button
-              type="button"
-              className={activeTab === 'attachments' ? 'common-actions__btn common-actions__btn--active' : 'common-actions__btn'}
-              onClick={() => setActiveTab('attachments')}
-              disabled={!selectedId}
-              style={{
-                opacity: selectedId ? 1 : 0.5,
-              }}
-            >
-              📎 Přílohy
-            </button>
-          </div>
+              <button
+                type="button"
+                className={activeTab === 'attachments' ? 'common-actions__btn common-actions__btn--active' : 'common-actions__btn'}
+                onClick={() => setActiveTab('attachments')}
+                disabled={!selectedId}
+                style={{
+                  opacity: selectedId ? 1 : 0.5,
+                }}
+              >
+                📎 Přílohy
+              </button>
+            </div>
 
-          {/* Scrollovací oblast pro obsah */}
-          <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
-            {activeTab === 'form' && (
-              <div className="detail-form__grid detail-form__grid--narrow">
-              <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
+            {/* Scrollovací oblast pro obsah */}
+            <div className="detail-subdetail__content">
+              {activeTab === 'form' && (
+                <div className="detail-form__grid detail-form__grid--narrow">
+                <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
                 <label className="detail-form__label" style={{ marginBottom: 8 }}>
                   Typ služby
                 </label>
@@ -958,18 +959,19 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 />
               </div>
             </div>
-            )}
+              )}
 
-            {activeTab === 'attachments' && selectedId && (
-              <DetailAttachmentsSection
-                entityType="unit_service_binding"
-                entityId={selectedId}
-                entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
-                mode="view"
-              />
-            )}
+              {activeTab === 'attachments' && selectedId && (
+                <DetailAttachmentsSection
+                  entityType="unit_service_binding"
+                  entityId={selectedId}
+                  entityLabel={selectedRow?.service_name ?? selectedRow?.name ?? 'Služba'}
+                  mode="view"
+                />
+              )}
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
       {viewMode === 'attachments' && selectedId && (
