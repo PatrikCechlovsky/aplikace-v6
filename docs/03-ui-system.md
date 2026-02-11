@@ -53,6 +53,7 @@ Poznámka ke scrollu v detailu:
 - samotný obsah sekce používá `overflow-y: auto` (např. `.detail-view__content`).
 - pokud je potřeba držet toolbar v rámci sekce a scrollovat jen obsah, použij `.detail-form__section--scroll` (vnitřní scroll gridu).
 - kontejnery detailu musí mít explicitní výšku (`height: 100%`) tam, kde je detail vnořený do flex/grid (`.layout__content--detail-scroll`, `.tile-layout__content`, `.detail-view__content`).
+- fallback: pokud detail stále nescrolluje, povol scroll na `.layout__content--detail-scroll .tile-layout__content`.
 
 ... (soubor pokračuje beze změn až k sekci Přílohy)
 

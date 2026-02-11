@@ -55,6 +55,11 @@
   overflow: hidden; /* Scroll je v table-wrapper! */
 }
 
+/* Detail režim: umožnit scroll v contentu, když detail interně nescrolluje */
+.layout__content--detail-scroll .tile-layout__content {
+  overflow: auto;
+}
+
 /* DetailView v content oblasti - odstranit vlastní padding */
 .tile-layout__content .detail-view {
   padding: 0;
