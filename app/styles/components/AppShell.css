@@ -60,9 +60,9 @@
   overflow: auto; /* ✅ jediný scroll v appce */
 }
 
-/* DetailView: scroll pouze uvnitř detailu (layout content bez scrollu) */
+/* DetailView: scroll v layout__content (fallback pokud vnitřní kontejnery nezvládnou) */
 .layout__content.layout__content--detail-scroll {
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
