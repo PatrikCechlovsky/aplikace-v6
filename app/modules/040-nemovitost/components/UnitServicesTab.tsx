@@ -627,9 +627,10 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       )}
 
       {viewMode === 'detail' && (
-        <section className="detail-form__section detail-form__section--scroll">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
+          {/* Toolbar fixní nahoře */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
+            <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
               {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
             </h3>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
