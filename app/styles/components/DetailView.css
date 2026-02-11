@@ -3,21 +3,22 @@
 /* NOTES: Udržuje stálou pozici záložek a akcí, scrolluje pouze obsah sekce. */
 
 .detail-view {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  flex: 1 1 0;
-  min-height: 0;
-  min-width: 0;
-  height: 100%;
-}
-
-.detail-view__content {
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
   height: 100%;
-  max-height: 100%;
+}
+
+.detail-tabs {
+  flex-shrink: 0; /* Záložky fixní nahoře */
+}
+
+.detail-view__content {
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }

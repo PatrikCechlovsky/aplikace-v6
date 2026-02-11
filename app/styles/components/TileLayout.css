@@ -52,12 +52,7 @@
   flex-direction: column;
   background: var(--color-surface-subtle);
   padding: 1rem 1.5rem;
-  overflow: hidden; /* Scroll je v table-wrapper! */
-}
-
-/* Detail režim: umožnit scroll v contentu, když detail interně nescrolluje */
-.layout__content--detail-scroll .tile-layout__content {
-  overflow: auto;
+  overflow: hidden; /* Scroll je v table-wrapper nebo detail-view__content! */
 }
 
 /* DetailView v content oblasti - odstranit vlastní padding */
