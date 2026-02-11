@@ -12,6 +12,7 @@ Tento adresář obsahuje detailní dokumentaci všech významných implementací
 | [CHANGELOG-TENANT-USERS-DEBOUNCE.md](CHANGELOG-TENANT-USERS-DEBOUNCE.md) | 18.1.2026 | 👥 **Uživatelé nájemníka + Debounce vyhledávání**<br/>- Tab "Uživatelé" v detailu nájemníka (spolubydlící)<br/>- Migrace 052: tenant_users tabulka<br/>- Debounce (500ms) ve všech list view<br/>- Opravy checkboxů (landlord/tenant roles) |
 | [CHANGELOG-NAVIGATION-PATTERN-LIST-TO-ADD.md](CHANGELOG-NAVIGATION-PATTERN-LIST-TO-ADD.md) | 20.1.2026 | 🧭 **Navigation Pattern List→Add**<br/>- onNavigate callback pattern pro navigaci mezi tiles<br/>- Tlačítko Přidat naviguje na create tile místo lokálního mode<br/>- Automatické zavírání Sidebar filtrů<br/>- Odstraněno 80+ řádků duplicitního kódu<br/>- Implementováno: moduly 030, 050 |
 | [CHANGELOG-RELATIONS-LIST-BADGES.md](CHANGELOG-RELATIONS-LIST-BADGES.md) | 25.1.2026 | 🎨 **Barevné štítky a statusy ve vazbách**<br/>- Vazby používají stejné barevné badge jako entity<br/>- Status jednotky má český popisek + ikonu<br/>- Aktualizováno napříč moduly 030/040/050 |
+| [CHANGELOG-2026-02-services-and-rls.md](CHANGELOG-2026-02-services-and-rls.md) | 11.2.2026 | 🧾 **Služby + RLS + kvalita dat**<br/>- Nová služba v sidebaru + create form<br/>- Filtry katalogu při přidávání služeb<br/>- RLS pro delegáty (účty, nemovitosti, jednotky)<br/>- Sync bank list dle ČNB + PSČ formátování |
 
 ---
 
