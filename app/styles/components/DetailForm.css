@@ -36,6 +36,14 @@
   padding: 16px;
 }
 
+/* Sekce s ListView - musí propagovat flex layout */
+.detail-form__section:has(.listview) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 /* Volitelně: sekce s vnitřním scrollováním gridu (toolbar zůstane nahoře) */
 .detail-form__section--scroll {
   display: flex;
