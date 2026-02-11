@@ -3,8 +3,8 @@
 /* NOTES: Udržuje stálou pozici záložek a akcí, scrolluje pouze obsah sekce. */
 
 .detail-view {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
