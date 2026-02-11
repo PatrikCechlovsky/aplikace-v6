@@ -23,7 +23,7 @@
   flex-direction: column;
 }
 
-/* Pokud detail-view__content obsahuje přímo listview, nesmí scrollovat */
-.detail-view__content:has(> .listview) {
+/* Pokud detail-view__content obsahuje listview (i zanořený), nesmí scrollovat */
+.detail-view__content:has(.listview) {
   overflow: hidden;
 }
