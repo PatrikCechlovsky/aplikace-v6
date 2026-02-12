@@ -48,7 +48,6 @@ export default function EvidenceSheetDetailFrame({
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
   const [replaceOptions, setReplaceOptions] = useState<{ id: string; label: string }[]>([])
   const [attachmentsCount, setAttachmentsCount] = useState(0)
-  const [totalPersons, setTotalPersons] = useState(1)
 
   useEffect(() => {
     let mounted = true
@@ -60,8 +59,7 @@ export default function EvidenceSheetDetailFrame({
         if (!mounted) return
 
         setSheet(current)
-        setTotalPersons(current?.total_persons ?? 1)
-        
+
         setReplaceOptions([])
       } catch (err: any) {
         logger.error('load evidence sheet failed', err)
@@ -139,13 +137,11 @@ export default function EvidenceSheetDetailFrame({
             tenantId={tenantId}
             tenantLabel={tenantLabel}
             readOnly={isLocked}
-            onCountChange={(count) => setTotalPersons(count)}
           />
         ),
         servicesContent: (
           <EvidenceSheetServicesTab
             sheetId={sheet.id}
-            totalPersons={totalPersons}
             readOnly={isLocked}
           />
         ),

@@ -1,22 +1,20 @@
 // FILE: app/modules/060-smlouva/components/EvidenceSheetServicesTab.tsx
-// PURPOSE: Záložka služeb evidenčního listu (seznam + detail)
-// NOTES: Položky služeb s jednotkou byt/osoba a výpočtem celku. Identické jako UnitServicesTab.
+// PURPOSE: Záložka služeb v evidenčním listu – seznam + detail + přílohy
+// NOTES: Umožňuje přidat službu z katalogu i vlastní položku
 
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  listEvidenceSheetServices,
-  saveEvidenceSheetServices,
-  type EvidenceSheetServiceInput,
-} from '@/app/lib/services/contractEvidenceSheets'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { listEvidenceSheetServices, saveEvidenceSheetServices, setEvidenceSheetServiceArchived, type EvidenceSheetServiceInput, type EvidenceSheetServiceRow } from '@/app/lib/services/contractEvidenceSheets'
 import { listServiceCatalog, type ServiceCatalogRow } from '@/app/lib/services/serviceCatalog'
 import { supabase } from '@/app/lib/supabaseClient'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
-import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
-import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
+import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
+import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import { getIcon, type IconKey } from '@/app/UI/icons'
+import ListView, { type ListViewSortState } from '@/app/UI/ListView'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import {
   SERVICE_CATALOG_BASE_COLUMNS,
@@ -27,62 +25,90 @@ import {
   type ServiceCatalogListItem,
 } from '@/app/modules/070-sluzby/serviceCatalogListConfig'
 
+import '@/app/styles/components/DetailForm.css'
+
 const logger = createLogger('EvidenceSheetServicesTab')
 
-type ServiceRow = EvidenceSheetServiceInput & {
-  id: string
-  category_name?: string | null
-  category_color?: string | null
-  billing_type_name?: string | null
-  billing_type_color?: string | null
-  unit_name?: string | null
-  vat_rate_name?: string | null
-  catalog_base_price?: number | null
-  is_archived?: boolean | null
-}
-
-type GenericType = {
-  id: string
-  name: string
-  color?: string | null
-}
+type DetailMode = 'read' | 'edit' | 'create'
 
 type Props = {
   sheetId: string
-  totalPersons: number
   readOnly?: boolean
-  onTotalChange?: (total: number) => void
+  onCountChange?: (count: number) => void
+  onAttachmentsChanged?: () => void
 }
 
-const emptyRow = (): ServiceRow => ({
-  id: `tmp-${Math.random().toString(36).slice(2)}`,
-  service_id: null,
-  service_name: '',
-  unit_type: 'flat',
-  unit_price: 0,
-  quantity: 1,
-  total_amount: 0,
-})
+type ServiceFormValue = {
+  serviceId: string
+  name: string
+  categoryId: string | null
+  billingTypeId: string | null
+  sheetId: string | null
+  vatRateId: string | null
+  amount: number | null
+  periodicityId: string | null
+  billingPeriodicityId: string | null
+  payerSide: 'tenant' | 'landlord'
+  isRebillable: boolean
+  splitToUnits: boolean
+  splitBasis: string
+  note: string
+}
 
-export default function EvidenceSheetServicesTab({
-  sheetId,
-  totalPersons,
-  readOnly = false,
-  onTotalChange,
-}: Props) {
+function normalizeName(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+}
+
+function resolvePeriodicityId(
+  items: Array<{ id: string; name: string }>,
+  preferredNames: string[]
+): string | null {
+  if (!items.length) return null
+  const normalizedPreferred = preferredNames.map((n) => normalizeName(n))
+  const found = items.find((i) => normalizedPreferred.includes(normalizeName(i.name)))
+  return found?.id ?? null
+}
+
+function buildEmptyFormValue(): ServiceFormValue {
+  return {
+    serviceId: '',
+    name: '',
+    categoryId: null,
+    billingTypeId: null,
+    sheetId: null,
+    vatRateId: null,
+    amount: null,
+    periodicityId: null,
+    billingPeriodicityId: null,
+    payerSide: 'landlord',
+    isRebillable: true,
+    splitToUnits: false,
+    splitBasis: '',
+    note: '',
+  }
+}
+
+export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, onCountChange, onAttachmentsChanged }: Props) {
   const toast = useToast()
-  const [rows, setRows] = useState<ServiceRow[]>([])
+
+  const [services, setServices] = useState<EvidenceSheetServiceRow[]>([])
   const [loading, setLoading] = useState(true)
+
   const [catalog, setCatalog] = useState<ServiceCatalogRow[]>([])
   const [loadingCatalog, setLoadingCatalog] = useState(true)
-  const [categories, setCategories] = useState<GenericType[]>([])
   const [catalogSearchText, setCatalogSearchText] = useState('')
   const [catalogCategoryId, setCatalogCategoryId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
-  const [detailMode, setDetailMode] = useState<'read' | 'edit' | 'create'>('read')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [formValue, setFormValue] = useState<ServiceRow>(() => emptyRow())
-  const [isCustomService, setIsCustomService] = useState(false)
+
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; color?: string | null }>>([])
+  const [billingTypes, setBillingTypes] = useState<Array<{ id: string; name: string; color?: string | null }>>([])
+  const [units, setUnits] = useState<Array<{ id: string; name: string }>>([])
+  const [vatRates, setVatRates] = useState<Array<{ id: string; name: string }>>([])
+  const [periodicities, setPeriodicities] = useState<Array<{ id: string; name: string }>>([])
+
   const [searchText, setSearchText] = useState('')
   const [sort, setSort] = useState<ListViewSortState>(SERVICE_CATALOG_DEFAULT_SORT)
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
@@ -91,70 +117,118 @@ export default function EvidenceSheetServicesTab({
     colHidden: [],
   })
   const [colsOpen, setColsOpen] = useState(false)
+
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [detailMode, setDetailMode] = useState<DetailMode>('read')
+  const [viewMode, setViewMode] = useState<'list' | 'detail' | 'attachments'>('list')
+  const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
+  const [attachmentsReturnView, setAttachmentsReturnView] = useState<'list' | 'detail'>('list')
+
+  const [formValue, setFormValue] = useState<ServiceFormValue>(() => buildEmptyFormValue())
+  const [isCustomService, setIsCustomService] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const recomputeRow = useCallback((row: ServiceRow) => {
-    const quantity = row.unit_type === 'person' ? totalPersons : row.quantity || 1
-    const total = Number(row.unit_price || 0) * quantity
-    return { ...row, quantity, total_amount: total }
-  }, [totalPersons])
+  const attachmentsApiRef = useRef<AttachmentsManagerApi | null>(null)
+  const [attachmentsUiState, setAttachmentsUiState] = useState<AttachmentsManagerUiState>({
+    hasSelection: false,
+    isDirty: false,
+    mode: 'list',
+  })
 
-  const servicesTotal = useMemo(() => rows.reduce((sum, r) => sum + (r.total_amount || 0), 0), [rows])
-
-  useEffect(() => {
-    onTotalChange?.(servicesTotal)
-  }, [servicesTotal, onTotalChange])
-
-  const load = useCallback(async () => {
+  const reloadServices = useCallback(async () => {
     try {
       setLoading(true)
       const data = await listEvidenceSheetServices(sheetId)
-      const mapped: ServiceRow[] = data.map((s, idx) => ({
-        id: s.id,
-        service_id: s.service_id ?? null,
-        service_name: s.service_name,
-        unit_type: s.unit_type,
-        unit_price: Number(s.unit_price),
-        quantity: s.quantity,
-        total_amount: Number(s.total_amount),
-        order_index: s.order_index ?? idx,
-        category_name: s.category_name ?? null,
-        category_color: s.category_color ?? null,
-        billing_type_name: s.billing_type_name ?? null,
-        billing_type_color: s.billing_type_color ?? null,
-        unit_name: s.unit_name ?? null,
-        vat_rate_name: s.vat_rate_name ?? null,
-        catalog_base_price: s.catalog_base_price ?? null,
-        is_archived: s.is_archived ?? false,
-      }))
-
-      setRows(mapped.map(recomputeRow))
-      setSelectedId(null)
-    } catch (err: any) {
-      logger.error('load services failed', err)
-      toast.showError(err?.message ?? 'Nepodařilo se načíst služby evidenčního listu')
+      setServices(data)
+    } catch (e: any) {
+      logger.error('listEvidenceSheetServices failed', e)
+      toast.showError(e?.message ?? 'Chyba při načítání služeb')
     } finally {
       setLoading(false)
     }
-  }, [sheetId, toast, recomputeRow])
+  }, [toast, sheetId])
 
   useEffect(() => {
-    void load()
-  }, [load])
+    if (!sheetId || sheetId === 'new') {
+      setServices([])
+      setLoading(false)
+      return
+    }
+    void reloadServices()
+  }, [sheetId, reloadServices])
+
+  useEffect(() => {
+    onCountChange?.(services.length)
+  }, [services.length, onCountChange])
+
+  useEffect(() => {
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        setLoadingCatalog(true)
+        const data = await listServiceCatalog({
+          includeArchived: false,
+          searchText: catalogSearchText,
+          categoryId: catalogCategoryId,
+        })
+        if (cancelled) return
+        setCatalog(data)
+      } catch (e: any) {
+        if (!cancelled) {
+          logger.error('listServiceCatalog failed', e)
+          toast.showError('Chyba při načítání katalogu služeb')
+        }
+      } finally {
+        if (!cancelled) setLoadingCatalog(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [catalogSearchText, catalogCategoryId, toast])
+
+  useEffect(() => {
+    if (detailMode !== 'create') return
+    if (periodicities.length === 0) return
+
+    const monthlyId = resolvePeriodicityId(periodicities, ['Měsíčně', 'Mesicne'])
+    const yearlyId = resolvePeriodicityId(periodicities, ['Ročně', 'Rocne', 'Roční', 'Rocni'])
+
+    setFormValue((prev) => ({
+      ...prev,
+      periodicityId: prev.periodicityId ?? monthlyId,
+      billingPeriodicityId: prev.billingPeriodicityId ?? yearlyId,
+      payerSide: prev.payerSide ?? 'landlord',
+    }))
+  }, [detailMode, periodicities])
 
   useEffect(() => {
     let cancelled = false
 
     async function loadGenericTypes() {
       try {
-        const [cats] = await Promise.all([
+        const [cats, bills, unitsRes, vats, periods] = await Promise.all([
           supabase.from('generic_types').select('id, name, color').eq('category', 'service_types').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name, color').eq('category', 'service_billing_types').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name').eq('category', 'service_units').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name').eq('category', 'vat_rates').eq('active', true).order('order_index'),
+          supabase.from('generic_types').select('id, name').eq('category', 'service_periodicities').eq('active', true).order('order_index'),
         ])
 
         if (cats.error) throw cats.error
+        if (bills.error) throw bills.error
+        if (unitsRes.error) throw unitsRes.error
+        if (vats.error) throw vats.error
+        if (periods.error) throw periods.error
 
         if (cancelled) return
         setCategories((cats.data ?? []) as any)
+        setBillingTypes((bills.data ?? []) as any)
+        setUnits((unitsRes.data ?? []) as any)
+        setVatRates((vats.data ?? []) as any)
+        setPeriodicities((periods.data ?? []) as any)
       } catch (e: any) {
         if (!cancelled) {
           logger.error('loadGenericTypes failed', e)
@@ -171,157 +245,208 @@ export default function EvidenceSheetServicesTab({
   }, [toast])
 
   useEffect(() => {
-    let mounted = true
-
-    void (async () => {
-      const prefs = await loadViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
-        colWidths: {},
-        colOrder: [],
-        colHidden: [],
-        sort: SERVICE_CATALOG_DEFAULT_SORT,
-      })
-
-      if (!mounted) return
-      setColPrefs({
-        colWidths: prefs.colWidths ?? {},
-        colOrder: prefs.colOrder ?? [],
-        colHidden: prefs.colHidden ?? [],
-      })
-      if (prefs.sort) setSort(prefs.sort)
-    })()
-
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  useEffect(() => {
     let cancelled = false
 
     ;(async () => {
       try {
-        setLoadingCatalog(true)
-        const data = await listServiceCatalog({
-          includeArchived: false,
-          searchText: catalogSearchText,
+        const prefs = await loadViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+          colWidths: {},
+          colOrder: [],
+          colHidden: [],
+          sort: SERVICE_CATALOG_DEFAULT_SORT,
         })
-        if (!cancelled) setCatalog(data)
-      } catch (err: any) {
-        if (!cancelled) {
-          logger.error('load service catalog failed', err)
-          toast.showError(err?.message ?? 'Nepodařilo se načíst katalog služeb')
+        if (cancelled) return
+        if (prefs) {
+          setColPrefs({
+            colWidths: prefs.colWidths ?? {},
+            colOrder: prefs.colOrder ?? [],
+            colHidden: prefs.colHidden ?? [],
+          })
+          if (prefs.sort) setSort(prefs.sort)
         }
-      } finally {
-        if (!cancelled) setLoadingCatalog(false)
+      } catch (e: any) {
+        if (!cancelled) logger.error('loadViewPrefs failed', e)
       }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [catalogSearchText, toast])
-
-  useEffect(() => {
-    setRows((prev) => prev.map(recomputeRow))
-    setFormValue((prev) => recomputeRow(prev))
-  }, [recomputeRow])
-
-  const openDetailRead = useCallback((id?: string) => {
-    const resolvedId = id ?? selectedId
-    if (!resolvedId) return
-    const row = rows.find((r) => r.id === resolvedId)
-    if (!row) return
-    setFormValue({ ...row })
-    setIsCustomService(!row.service_id)
-    setDetailMode('read')
-    setViewMode('detail')
-  }, [rows, selectedId])
-
-  const openDetailEdit = useCallback(() => {
-    if (!selectedId) return
-    const row = rows.find((r) => r.id === selectedId)
-    if (!row) return
-    setFormValue({ ...row })
-    setIsCustomService(!row.service_id)
-    setDetailMode('edit')
-    setViewMode('detail')
-  }, [rows, selectedId])
-
-  const openDetailCreate = useCallback(() => {
-    setFormValue(recomputeRow(emptyRow()))
-    setIsCustomService(false)
-    setDetailMode('create')
-    setViewMode('detail')
-  }, [recomputeRow])
-
-  const closeDetail = useCallback(() => {
-    setViewMode('list')
   }, [])
 
-  const persistRows = useCallback(async (nextRows: ServiceRow[]) => {
-    const payload: EvidenceSheetServiceInput[] = nextRows.map((r, idx) => ({
-      service_id: r.service_id ?? null,
-      service_name: r.service_name,
-      unit_type: r.unit_type,
-      unit_price: r.unit_price,
-      quantity: r.unit_type === 'person' ? totalPersons : r.quantity,
-      total_amount: r.total_amount,
-      order_index: idx,
-    }))
+  const selectService = useCallback(
+    (id: string) => {
+      const row = services.find((s) => s.id === id)
+      if (!row) return
+      setSelectedId(row.id)
 
-    await saveEvidenceSheetServices(sheetId, payload)
-  }, [sheetId, totalPersons])
+      setFormValue({
+        serviceId: row.service_id ?? '',
+        name: row.service_name ?? '',
+        categoryId: null,
+        billingTypeId: null,
+        sheetId: null,
+        vatRateId: null,
+        amount: row.unit_price ?? null,
+        periodicityId: null,
+        billingPeriodicityId: null,
+        payerSide: 'landlord',
+        isRebillable: true,
+        splitToUnits: false,
+        splitBasis: '',
+        note: '',
+      })
+      setIsCustomService(!row.service_id)
+    },
+    [services]
+  )
+
+  const openDetailRead = useCallback(() => {
+    if (!selectedId) return
+    selectService(selectedId)
+    setDetailMode('read')
+    setViewMode('detail')
+    setActiveTab('form')
+  }, [selectedId, selectService])
+
+  const openDetailEdit = useCallback(() => {
+    if (!selectedId || readOnly) {
+      toast.showWarning('Nejprve vyberte službu')
+      return
+    }
+    selectService(selectedId)
+    setDetailMode('edit')
+    setViewMode('detail')
+    setActiveTab('form')
+  }, [selectedId, selectService, readOnly, toast])
+
+  const openCreate = useCallback(() => {
+    if (readOnly) return
+    setDetailMode('create')
+    setViewMode('detail')
+    setActiveTab('form')
+    setFormValue(buildEmptyFormValue())
+    setIsCustomService(false)
+  }, [readOnly])
+
+  const closeDetail = useCallback(() => {
+    if (viewMode !== 'detail') return
+    setViewMode('list')
+    setDetailMode('read')
+  }, [viewMode])
+
+  const openAttachmentsManager = useCallback(
+    (returnView: 'list' | 'detail') => {
+      if (!selectedId) return
+      setAttachmentsReturnView(returnView)
+      setViewMode('attachments')
+    },
+    [selectedId]
+  )
+
+  const closeAttachmentsManager = useCallback(() => {
+    setViewMode(attachmentsReturnView)
+    onAttachmentsChanged?.()
+  }, [attachmentsReturnView, onAttachmentsChanged])
 
   const handleSave = useCallback(async () => {
-    if (readOnly) return
+    if (detailMode === 'read') return
 
-    if (!isCustomService && !formValue.service_id) {
-      toast.showError('Vyberte službu z katalogu')
+    if (!isCustomService && !formValue.serviceId) {
+      toast.showWarning('Vyberte službu z katalogu nebo zapněte režim "Vlastní služba".')
       return
     }
 
-    if (isCustomService && !formValue.service_name.trim()) {
-      toast.showError('Vyplňte název služby')
+    if (isCustomService && !formValue.name?.trim()) {
+      toast.showWarning('Vyplňte název vlastní služby.')
       return
     }
 
     try {
       setSaving(true)
-      const updatedValue = recomputeRow({
-        ...formValue,
-        service_id: isCustomService ? null : formValue.service_id ?? null,
-        service_name: isCustomService ? formValue.service_name : (formValue.service_name || ''),
-      })
-      const nextRows = detailMode === 'create'
-        ? [...rows, updatedValue]
-        : rows.map((r) => (r.id === updatedValue.id ? updatedValue : r))
 
-      await persistRows(nextRows)
-      toast.showSuccess('Služby evidenčního listu uloženy')
-      await load()
-      setViewMode('list')
-    } catch (err: any) {
-      logger.error('save services failed', err)
-      toast.showError(err?.message ?? 'Nepodařilo se uložit služby evidenčního listu')
+      const payload: EvidenceSheetServiceInput[] = [
+        {
+          service_id: formValue.serviceId || null,
+          service_name: formValue.name || '',
+          unit_type: 'flat',
+          unit_price: formValue.amount ?? 0,
+          quantity: 1,
+          total_amount: formValue.amount ?? 0,
+          order_index: 0,
+        },
+      ]
+
+      await saveEvidenceSheetServices(sheetId, payload)
+
+      await reloadServices()
+      toast.showSuccess('Služba uložena')
+
+      if (!selectedId && services.length >= 0) {
+        const next = await listEvidenceSheetServices(sheetId)
+        const last = next[next.length - 1]
+        if (last) {
+          setSelectedId(last.id)
+          selectService(last.id)
+        }
+      }
+
+      setDetailMode('read')
+      setViewMode('detail')
+    } catch (e: any) {
+      logger.error('saveEvidenceSheetServices failed', e)
+      toast.showError(e?.message ?? 'Chyba při ukládání služby')
     } finally {
       setSaving(false)
     }
-  }, [detailMode, formValue, isCustomService, load, persistRows, readOnly, rows, toast, recomputeRow])
+  }, [detailMode, formValue, isCustomService, reloadServices, selectedId, selectService, services.length, toast, sheetId])
 
-  const listItems = useMemo<ServiceCatalogListItem[]>(() => rows.map((row) => ({
-    id: row.id,
-    name: row.service_name || '—',
-    categoryId: null,
-    categoryName: row.category_name ?? '—',
-    categoryColor: row.category_color ?? null,
-    billingTypeName: row.billing_type_name ?? '—',
-    billingTypeColor: row.billing_type_color ?? null,
-    unitName: row.unit_name ?? '—',
-    basePrice: row.unit_price ?? row.catalog_base_price ?? null,
-    vatRateName: row.vat_rate_name ?? '—',
-    active: !(row.is_archived ?? false),
-    isArchived: !!row.is_archived,
-  })), [rows])
+  const handleSortChange = useCallback(
+    (nextSort: ListViewSortState) => {
+      setSort(nextSort)
+      void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+        colWidths: colPrefs.colWidths,
+        colOrder: colPrefs.colOrder,
+        colHidden: colPrefs.colHidden,
+        sort: nextSort,
+      })
+    },
+    [colPrefs]
+  )
+
+  const handleArchiveToggle = useCallback(
+    async (serviceId: string, nextActive: boolean) => {
+      if (readOnly) return
+      try {
+        await setEvidenceSheetServiceArchived(serviceId, !nextActive)
+        if (!nextActive && selectedId === serviceId) {
+          setSelectedId(null)
+        }
+        await reloadServices()
+      } catch (e: any) {
+        logger.error('setEvidenceSheetServiceArchived failed', e)
+        toast.showError(e?.message ?? 'Chyba při archivaci služby')
+      }
+    },
+    [readOnly, reloadServices, selectedId, toast]
+  )
+
+  const listItems = useMemo<ServiceCatalogListItem[]>(() => {
+    return services.map((row) => ({
+      id: row.id,
+      name: row.service_name ?? '—',
+      categoryId: null,
+      categoryName: row.category_name ?? '—',
+      categoryColor: row.category_color ?? null,
+      billingTypeName: row.billing_type_name ?? '—',
+      billingTypeColor: row.billing_type_color ?? null,
+      unitName: row.unit_name ?? '—',
+      basePrice: row.catalog_base_price ?? null,
+      vatRateName: row.vat_rate_name ?? '—',
+      active: !(row.is_archived ?? false),
+      isArchived: !!row.is_archived,
+    }))
+  }, [services])
 
   const filteredItems = useMemo(() => {
     const q = searchText.trim().toLowerCase()
@@ -337,8 +462,28 @@ export default function EvidenceSheetServicesTab({
 
   const preparedColumns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
-  const listRows: ListViewRow<ServiceCatalogListItem>[] = useMemo(() => {
-    const rows = filteredItems.map((item) => buildServiceCatalogListRow(item))
+  const sortedRows = useMemo(() => {
+    const rows = filteredItems.map((item) => {
+      const row = buildServiceCatalogListRow(item)
+      const isActive = !!item.active
+      return {
+        ...row,
+        data: {
+          ...row.data,
+          active: (
+            <input
+              type="checkbox"
+              checked={isActive}
+              disabled={readOnly}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => handleArchiveToggle(String(row.id), e.target.checked)}
+              aria-label={isActive ? 'Označit jako archivované' : 'Označit jako aktivní'}
+              title={isActive ? 'Archivovat' : 'Obnovit'}
+            />
+          ),
+        },
+      }
+    })
     if (!sort?.key) return rows
     const dir = sort.dir === 'desc' ? -1 : 1
     return [...rows].sort((a, b) => {
@@ -348,348 +493,524 @@ export default function EvidenceSheetServicesTab({
       if (aVal > bVal) return 1 * dir
       return 0
     })
-  }, [filteredItems, sort])
+  }, [filteredItems, handleArchiveToggle, readOnly, sort])
 
-  if (loading) {
-    return <div className="detail-form__hint">Načítám služby…</div>
-  }
-
+  const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
+
+  if (!sheetId || sheetId === 'new') {
+    return (
+      <div className="detail-form">
+        <section className="detail-form__section">
+          <h3 className="detail-form__section-title">Služby</h3>
+          <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
+            Služby budou dostupné po uložení jednotky.
+          </p>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
         <>
-        <section className="detail-form__section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">Seznam služeb</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {!readOnly && (
-                <button type="button" className="common-actions__btn" onClick={openDetailCreate}>
-                  <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                  <span className="common-actions__label">Nová</span>
-                </button>
-              )}
-              {selectedId && (
-                <>
-                  <button type="button" className="common-actions__btn" onClick={() => openDetailRead()}>
-                    <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
-                    <span className="common-actions__label">Detail</span>
+          <section className="detail-form__section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 className="detail-form__section-title">Seznam služeb</h3>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {!readOnly && (
+                  <button type="button" className="common-actions__btn" onClick={openCreate}>
+                    <span className="common-actions__icon">{getIcon('plus' as IconKey)}</span>
+                    <span className="common-actions__label">Přidat</span>
                   </button>
-                  {!readOnly && (
-                    <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
-                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                      <span className="common-actions__label">Upravit</span>
+                )}
+
+                {selectedId && (
+                  <>
+                    <button type="button" className="common-actions__btn" onClick={openDetailRead}>
+                      <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
+                      <span className="common-actions__label">Detail</span>
                     </button>
-                  )}
-                </>
-              )}
+                    {!readOnly && (
+                      <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                    )}
+                    <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('list')}>
+                      <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
+                      <span className="common-actions__label">Přílohy</span>
+                    </button>
+                  </>
+                )}
+
+              </div>
             </div>
-          </div>
 
-          {rows.length === 0 ? (
-            <div className="detail-form__hint">Zatím nejsou přiřazeny žádné služby.</div>
-          ) : (
-            <ListView
-              columns={preparedColumns}
-              rows={listRows}
-              filterValue={searchText}
-              onFilterChange={setSearchText}
-              selectedId={selectedId}
-              onRowClick={(row: ListViewRow) => setSelectedId(String(row.id))}
-              onRowDoubleClick={(row: ListViewRow) => {
-                setSelectedId(String(row.id))
-                openDetailRead(String(row.id))
-              }}
-              sort={sort}
-              onSortChange={(next) => {
-                setSort(next)
-                void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
-                  colWidths: colPrefs.colWidths ?? {},
-                  colOrder: colPrefs.colOrder ?? [],
-                  colHidden: colPrefs.colHidden ?? [],
-                  sort: next,
-                })
-              }}
-              onColumnResize={(key, width) => {
-                setColPrefs((prev) => {
-                  const next = { ...prev, colWidths: { ...prev.colWidths, [key]: width } }
-                  void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, { ...next, sort })
-                  return next
-                })
-              }}
-              onColumnSettings={() => setColsOpen(true)}
-              emptyText="Zatím nejsou přiřazeny žádné služby."
-            />
-          )}
+            {loading && <div className="detail-form__hint">Načítám služby...</div>}
 
-          <div className="detail-form__hint" style={{ marginTop: 12 }}>
-            Služby celkem: <strong>{servicesTotal} Kč</strong>
-          </div>
-        </section>
+            {!loading && filteredItems.length === 0 && <div className="detail-form__hint">Zatím nejsou přiřazeny žádné služby.</div>}
 
-        <ListViewColumnsDrawer
-          open={colsOpen}
-          onClose={() => setColsOpen(false)}
-          columns={SERVICE_CATALOG_BASE_COLUMNS}
-          fixedFirstKey="category"
-          requiredKeys={['name']}
-          value={{
-            order: colPrefs.colOrder ?? [],
-            hidden: colPrefs.colHidden ?? [],
-          }}
-          sortBy={sort ?? undefined}
-          onChange={(next) => {
-            setColPrefs((prev) => {
-              const updated = {
-                ...prev,
-                colOrder: next.order,
-                colHidden: next.hidden,
-              }
-              void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
-                colWidths: updated.colWidths ?? {},
-                colOrder: updated.colOrder ?? [],
-                colHidden: updated.colHidden ?? [],
-                sort,
+            {!loading && filteredItems.length > 0 && (
+              <ListView
+                columns={preparedColumns}
+                rows={sortedRows}
+                filterValue={searchText}
+                onFilterChange={setSearchText}
+                selectedId={selectedId}
+                onRowClick={(row) => setSelectedId(String(row.id))}
+                onRowDoubleClick={(row) => {
+                  setSelectedId(String(row.id))
+                  openDetailRead()
+                }}
+                sort={sort}
+                onSortChange={handleSortChange}
+                onColumnSettings={() => setColsOpen(true)}
+                onColumnResize={(key, width) => {
+                  setColPrefs((prev) => {
+                    const next = { ...prev, colWidths: { ...prev.colWidths, [key]: width } }
+                    void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, { ...next, sort })
+                    return next
+                  })
+                }}
+                emptyText="Zatím nejsou přiřazeny žádné služby."
+              />
+            )}
+          </section>
+
+          <ListViewColumnsDrawer
+            open={colsOpen}
+            onClose={() => setColsOpen(false)}
+            columns={SERVICE_CATALOG_BASE_COLUMNS}
+            fixedFirstKey="category"
+            requiredKeys={['name']}
+            value={{
+              order: colPrefs.colOrder ?? [],
+              hidden: colPrefs.colHidden ?? [],
+            }}
+            onChange={(next) => {
+              setColPrefs((prev) => {
+                const updated = {
+                  ...prev,
+                  colOrder: next.order,
+                  colHidden: next.hidden,
+                }
+                void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, { ...updated, sort })
+                return updated
               })
-              return updated
-            })
-          }}
-          onSortChange={(nextSort) => {
-            setSort(nextSort)
-            void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
-              colWidths: colPrefs.colWidths ?? {},
-              colOrder: colPrefs.colOrder ?? [],
-              colHidden: colPrefs.colHidden ?? [],
-              sort: nextSort,
-            })
-          }}
-          onReset={() => {
-            const resetPrefs = {
-              colWidths: {},
-              colOrder: [],
-              colHidden: [],
-            }
-            setColPrefs(resetPrefs)
-            setSort(SERVICE_CATALOG_DEFAULT_SORT)
-            void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
-              ...resetPrefs,
-              sort: SERVICE_CATALOG_DEFAULT_SORT,
-            })
-          }}
-        />
+            }}
+            onReset={() => {
+              const resetPrefs = {
+                colWidths: {},
+                colOrder: [],
+                colHidden: [],
+              }
+              setColPrefs(resetPrefs)
+              void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+                ...resetPrefs,
+                sort: SERVICE_CATALOG_DEFAULT_SORT,
+              })
+              setSort(SERVICE_CATALOG_DEFAULT_SORT)
+            }}
+          />
         </>
       )}
 
       {viewMode === 'detail' && (
         <section className="detail-form__section detail-form__section--scroll">
           <div className="detail-subdetail">
+            {/* Toolbar fixní nahoře */}
             <div className="detail-subdetail__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
                 {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
               </h3>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {detailMode === 'read' && !readOnly && selectedId && (
-                  <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
-                    <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                    <span className="common-actions__label">Upravit</span>
-                  </button>
-                )}
-
-                {(detailMode === 'edit' || detailMode === 'create') && (
-                  <button type="button" className="common-actions__btn" onClick={() => void handleSave()} disabled={saving}>
-                    <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-                    <span className="common-actions__label">Uložit</span>
-                  </button>
-                )}
-
-                <button type="button" className="common-actions__btn" onClick={closeDetail}>
-                  <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                  <span className="common-actions__label">Zavřít</span>
+              {detailMode === 'read' && !readOnly && selectedId && (
+                <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
+                  <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                  <span className="common-actions__label">Upravit</span>
                 </button>
-              </div>
+              )}
+
+              {(detailMode === 'edit' || detailMode === 'create') && (
+                <button type="button" className="common-actions__btn" onClick={() => void handleSave()} disabled={saving}>
+                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                  <span className="common-actions__label">Uložit</span>
+                </button>
+              )}
+
+              <button type="button" className="common-actions__btn" onClick={closeDetail}>
+                <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                <span className="common-actions__label">Zavřít</span>
+              </button>
+
+              {selectedId && (
+                <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('detail')}>
+                  <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
+                  <span className="common-actions__label">Přílohy</span>
+                </button>
+              )}
+            </div>
             </div>
 
+            <div className="detail-subdetail__tabs" style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              <button
+                type="button"
+                className={activeTab === 'form' ? 'common-actions__btn common-actions__btn--active' : 'common-actions__btn'}
+                onClick={() => setActiveTab('form')}
+              >
+                Formulář
+              </button>
+
+              <button
+                type="button"
+                className={activeTab === 'attachments' ? 'common-actions__btn common-actions__btn--active' : 'common-actions__btn'}
+                onClick={() => setActiveTab('attachments')}
+                disabled={!selectedId}
+                style={{
+                  opacity: selectedId ? 1 : 0.5,
+                }}
+              >
+                📎 Přílohy
+              </button>
+            </div>
+
+            {/* Scrollovací oblast pro obsah */}
             <div className="detail-subdetail__content">
-              <div className="detail-form__grid detail-form__grid--narrow">
+              {activeTab === 'form' && (
+                <div className="detail-form__grid detail-form__grid--narrow">
                 <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
-                  <label className="detail-form__label" style={{ marginBottom: 8 }}>
-                    Typ služby
+                <label className="detail-form__label" style={{ marginBottom: 8 }}>
+                  Typ služby
+                </label>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      name="service-type"
+                      checked={!isCustomService}
+                      onChange={() => setIsCustomService(false)}
+                      disabled={isFormReadOnly}
+                    />
+                    <span>Služba z katalogu</span>
                   </label>
-                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                      <input
-                        type="radio"
-                        name="service-type"
-                        checked={!isCustomService}
-                        onChange={() => setIsCustomService(false)}
-                        disabled={isFormReadOnly}
-                      />
-                      <span>Služba z katalogu</span>
-                    </label>
 
-                    <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                      <input
-                        type="radio"
-                        name="service-type"
-                        checked={isCustomService}
-                        onChange={() => setIsCustomService(true)}
-                        disabled={isFormReadOnly}
-                      />
-                      <span>Vlastní služba</span>
-                    </label>
-                  </div>
+                  <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      name="service-type"
+                      checked={isCustomService}
+                      onChange={() => setIsCustomService(true)}
+                      disabled={isFormReadOnly}
+                    />
+                    <span>Vlastní služba</span>
+                  </label>
                 </div>
+              </div>
 
-                {!isCustomService && (
-                  <div className="detail-form__field detail-form__field--span-2">
-                    <label className="detail-form__label">Katalogová služba</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                      <input
-                        type="text"
-                        className="detail-form__input"
-                        placeholder="Hledat název, kód nebo popis..."
-                        value={catalogSearchText}
-                        onChange={(e) => setCatalogSearchText(e.target.value)}
-                        disabled={isFormReadOnly}
-                      />
-                      <select
-                        className="detail-form__input"
-                        value={catalogCategoryId || ''}
-                        onChange={(e) => setCatalogCategoryId(e.target.value || null)}
-                        disabled={isFormReadOnly}
-                      >
-                        <option value="">— všechny kategorie —</option>
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              {!isCustomService && (
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Katalogová služba</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                    <input
+                      type="text"
+                      className="detail-form__input"
+                      placeholder="Hledat název, kód nebo popis..."
+                      value={catalogSearchText}
+                      onChange={(e) => setCatalogSearchText(e.target.value)}
+                      disabled={isFormReadOnly}
+                    />
                     <select
                       className="detail-form__input"
-                      value={formValue.service_id || ''}
-                      onChange={(e) => {
-                        const id = e.target.value
-                        const svc = catalog.find((c) => c.id === id)
-
-                        setFormValue((prev) => recomputeRow({
-                          ...prev,
-                          service_id: id || null,
-                          service_name: svc?.name ?? '',
-                          unit_price: svc?.base_price ?? prev.unit_price,
-                          catalog_base_price: svc?.base_price ?? null,
-                          category_name: svc?.category_name ?? null,
-                          category_color: svc?.category_color ?? null,
-                          billing_type_name: svc?.billing_type_name ?? null,
-                          billing_type_color: svc?.billing_type_color ?? null,
-                          unit_name: svc?.unit_name ?? null,
-                          vat_rate_name: svc?.vat_rate_name ?? null,
-                        }))
-                      }}
+                      value={catalogCategoryId || ''}
+                      onChange={(e) => setCatalogCategoryId(e.target.value || null)}
                       disabled={isFormReadOnly}
                     >
-                      <option value="">{loadingCatalog ? 'Načítám katalog...' : '— vyberte službu —'}</option>
-                      {!loadingCatalog && catalog.map((c) => (
+                      <option value="">— všechny kategorie —</option>
+                      {categories.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.code ? `${c.code} – ${c.name}` : c.name}
+                          {c.name}
                         </option>
                       ))}
                     </select>
                   </div>
-                )}
-
-                {isCustomService && (
-                  <div className="detail-form__field detail-form__field--span-2">
-                    <label className="detail-form__label">Název služby</label>
-                    <input
-                      className="detail-form__input"
-                      value={formValue.service_name}
-                      onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, service_name: e.target.value }))}
-                      readOnly={isFormReadOnly}
-                    />
-                  </div>
-                )}
-
-                <div className="detail-form__field">
-                  <label className="detail-form__label">Kategorie</label>
                   <select
                     className="detail-form__input"
-                    value={formValue.category_name ?? ''}
-                    onChange={() => {}}
-                    disabled={true}
-                  >
-                    <option value="">{formValue.category_name ?? '—'}</option>
-                  </select>
-                </div>
+                    value={formValue.serviceId}
+                    onChange={(e) => {
+                      const id = e.target.value
+                      const svc = catalog.find((c) => c.id === id)
 
-                <div className="detail-form__field">
-                  <label className="detail-form__label">Účtování</label>
-                  <select
-                    className="detail-form__input"
-                    value={formValue.billing_type_name ?? ''}
-                    onChange={() => {}}
-                    disabled={true}
-                  >
-                    <option value="">{formValue.billing_type_name ?? '—'}</option>
-                  </select>
-                </div>
-
-                <div className="detail-form__field">
-                  <label className="detail-form__label">Jednotka</label>
-                  <select
-                    className="detail-form__input"
-                    value={formValue.unit_type}
-                    onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, unit_type: e.target.value as ServiceRow['unit_type'] }))}
+                      setFormValue((prev) => ({
+                        ...prev,
+                        serviceId: id,
+                        name: svc?.name ?? '',
+                        categoryId: svc?.category_id ?? null,
+                        billingTypeId: svc?.billing_type_id ?? null,
+                        sheetId: svc?.unit_id ?? null,
+                        vatRateId: svc?.vat_rate_id ?? null,
+                        amount: svc?.base_price ?? null,
+                      }))
+                    }}
                     disabled={isFormReadOnly}
                   >
-                    <option value="flat">byt</option>
-                    <option value="person">osoba</option>
+                    <option value="">{loadingCatalog ? 'Načítám katalog...' : '— vyberte službu —'}</option>
+                    {!loadingCatalog && catalog.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
+              )}
 
-                <div className="detail-form__field">
-                  <label className="detail-form__label">DPH</label>
-                  <select
-                    className="detail-form__input"
-                    value={formValue.vat_rate_name ?? ''}
-                    onChange={() => {}}
-                    disabled={true}
-                  >
-                    <option value="">{formValue.vat_rate_name ?? '—'}</option>
-                  </select>
-                </div>
-
-                <div className="detail-form__field">
-                  <label className="detail-form__label">Cena / jednotku</label>
+              {isCustomService && (
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Název služby</label>
                   <input
                     className="detail-form__input"
-                    type="number"
-                    value={formValue.unit_price}
-                    onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, unit_price: Number(e.target.value || 0) }))}
+                    value={formValue.name}
+                    onChange={(e) => setFormValue((prev) => ({ ...prev, name: e.target.value }))}
                     readOnly={isFormReadOnly}
                   />
                 </div>
+              )}
 
-                <div className="detail-form__field">
-                  <label className="detail-form__label">Počet</label>
+              <div className="detail-form__field">
+                <label className="detail-form__label">Kategorie</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.categoryId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, categoryId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Účtování</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.billingTypeId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, billingTypeId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {billingTypes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Jednotka</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.sheetId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, sheetId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {units.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">DPH</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.vatRateId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, vatRateId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {vatRates.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Částka</label>
+                <input
+                  className="detail-form__input"
+                  type="number"
+                  value={formValue.amount ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, amount: e.target.value ? Number(e.target.value) : null }))}
+                  readOnly={isFormReadOnly}
+                />
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Periodicita</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.periodicityId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, periodicityId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {periodicities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Periodicita vyúčtování</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.billingPeriodicityId ?? ''}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, billingPeriodicityId: e.target.value || null }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="">—</option>
+                  {periodicities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label className="detail-form__label">Kdo hradí</label>
+                <select
+                  className="detail-form__input"
+                  value={formValue.payerSide}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, payerSide: e.target.value as 'tenant' | 'landlord' }))}
+                  disabled={isFormReadOnly}
+                >
+                  <option value="tenant">Nájemník</option>
+                  <option value="landlord">Pronajímatel</option>
+                </select>
+              </div>
+
+              <div className="detail-form__field">
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 22 }}>
+                  <input
+                    type="checkbox"
+                    checked={formValue.isRebillable}
+                    onChange={(e) => setFormValue((prev) => ({ ...prev, isRebillable: e.target.checked }))}
+                    disabled={isFormReadOnly}
+                  />
+                  <span>Lze přeúčtovat</span>
+                </label>
+              </div>
+
+              <div className="detail-form__field">
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 22 }}>
+                  <input
+                    type="checkbox"
+                    checked={formValue.splitToUnits}
+                    onChange={(e) => setFormValue((prev) => ({ ...prev, splitToUnits: e.target.checked }))}
+                    disabled={isFormReadOnly}
+                  />
+                  <span>Rozpočítat na jednotky</span>
+                </label>
+              </div>
+
+              {formValue.splitToUnits && (
+                <div className="detail-form__field detail-form__field--span-2">
+                  <label className="detail-form__label">Základ rozpočtu</label>
                   <input
                     className="detail-form__input"
-                    type="number"
-                    value={formValue.unit_type === 'person' ? totalPersons : formValue.quantity}
-                    onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, quantity: Number(e.target.value || 1) }))}
-                    readOnly={isFormReadOnly || formValue.unit_type === 'person'}
+                    value={formValue.splitBasis}
+                    onChange={(e) => setFormValue((prev) => ({ ...prev, splitBasis: e.target.value }))}
+                    readOnly={isFormReadOnly}
+                    placeholder="např. m2, osoby, jednotky"
                   />
                 </div>
+              )}
 
-                <div className="detail-form__field">
-                  <label className="detail-form__label">Celkem</label>
-                  <input className="detail-form__input detail-form__input--readonly" value={formValue.total_amount} readOnly />
-                </div>
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Poznámka</label>
+                <textarea
+                  className="detail-form__input"
+                  value={formValue.note}
+                  onChange={(e) => setFormValue((prev) => ({ ...prev, note: e.target.value }))}
+                  readOnly={isFormReadOnly}
+                />
               </div>
             </div>
+              )}
+
+              {activeTab === 'attachments' && selectedId && (
+                <DetailAttachmentsSection
+                  entityType="evidence_sheet_service_binding"
+                  entityId={selectedId}
+                  entityLabel={selectedRow?.service_name ?? 'Služba'}
+                  mode="view"
+                />
+              )}
+            </div>
           </div>
+        </section>
+      )}
+
+      {viewMode === 'attachments' && selectedId && (
+        <section className="detail-form__section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 className="detail-form__section-title">Správa příloh</h3>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => void attachmentsApiRef.current?.add()}
+                className="common-actions__btn"
+                title="Přidat přílohu"
+              >
+                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                <span className="common-actions__label">Přidat</span>
+              </button>
+              {(attachmentsUiState.mode === 'edit' || attachmentsUiState.mode === 'new') && (
+                <button
+                  type="button"
+                  onClick={() => void attachmentsApiRef.current?.save()}
+                  disabled={!attachmentsUiState.isDirty}
+                  className="common-actions__btn"
+                  title="Uložit"
+                >
+                  <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
+                  <span className="common-actions__label">Uložit</span>
+                </button>
+              )}
+
+              <button type="button" onClick={closeAttachmentsManager} className="common-actions__btn" title="Zavřít správu příloh">
+                <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                <span className="common-actions__label">Zavřít</span>
+              </button>
+            </div>
+          </div>
+
+          <AttachmentsManagerFrame
+            entityType="evidence_sheet_service_binding"
+            entityId={selectedId}
+            entityLabel={selectedRow?.service_name ?? 'Služba'}
+            canManage={true}
+            onRegisterManagerApi={(api) => {
+              attachmentsApiRef.current = api
+            }}
+            onManagerStateChange={(state) => {
+              setAttachmentsUiState(state)
+            }}
+          />
         </section>
       )}
     </div>

@@ -55,7 +55,6 @@ export default function EvidenceSheetModal({
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
   const [replaceOptions, setReplaceOptions] = useState<{ id: string; label: string }[]>([])
   const [attachmentsCount, setAttachmentsCount] = useState(0)
-  const [totalPersons, setTotalPersons] = useState(1)
   const [pendingValue, setPendingValue] = useState<EvidenceSheetFormValue | null>(null)
 
   useEffect(() => {
@@ -71,7 +70,6 @@ export default function EvidenceSheetModal({
         if (!mounted) return
 
         setSheet(current)
-        setTotalPersons(current?.total_persons ?? 1)
         setPendingValue(null)
 
         setReplaceOptions(
@@ -181,13 +179,11 @@ export default function EvidenceSheetModal({
                 tenantId={tenantId}
                 tenantLabel={tenantLabel}
                 readOnly={isLocked}
-                onCountChange={(count) => setTotalPersons(count)}
               />
             ),
             servicesContent: (
               <EvidenceSheetServicesTab
                 sheetId={sheet.id}
-                totalPersons={totalPersons}
                 readOnly={isLocked}
               />
             ),

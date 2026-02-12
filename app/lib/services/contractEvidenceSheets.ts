@@ -389,3 +389,17 @@ export async function saveEvidenceSheetServices(sheetId: string, services: Evide
     await updateEvidenceSheet(sheetId, { services_total: servicesTotal, total_amount: totalAmount })
   }
 }
+
+export async function setEvidenceSheetServiceArchived(id: string, isArchived: boolean): Promise<void> {
+  logger.debug('setEvidenceSheetServiceArchived', { id, isArchived })
+
+  const { error } = await supabase
+    .from('contract_evidence_sheet_services')
+    .update({ is_archived: isArchived })
+    .eq('id', id)
+
+  if (error) {
+    logger.error('setEvidenceSheetServiceArchived failed', error)
+    throw new Error(`Nepodařilo se archivovat službu: ${error.message}`)
+  }
+}
