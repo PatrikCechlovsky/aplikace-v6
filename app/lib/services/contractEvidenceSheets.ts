@@ -28,7 +28,6 @@ export type EvidenceSheetRow = {
   created_at: string
   updated_at: string
 }
-
 export type EvidenceSheetUserRow = {
   id: string
   sheet_id: string
@@ -45,6 +44,7 @@ export type EvidenceSheetUserRow = {
 export type EvidenceSheetServiceRow = {
   id: string
   sheet_id: string
+  service_id: string | null
   service_name: string
   unit_type: 'flat' | 'person'
   unit_price: number
@@ -54,9 +54,18 @@ export type EvidenceSheetServiceRow = {
   is_archived: boolean
   created_at: string
   updated_at: string
+
+  category_name?: string | null
+  category_color?: string | null
+  billing_type_name?: string | null
+  billing_type_color?: string | null
+  unit_name?: string | null
+  vat_rate_name?: string | null
+  catalog_base_price?: number | null
 }
 
 export type EvidenceSheetServiceInput = {
+  service_id?: string | null
   service_name: string
   unit_type: 'flat' | 'person'
   unit_price: number
@@ -75,7 +84,6 @@ export type EvidenceSheetUserInput = {
 
 export async function listEvidenceSheets(contractId: string, includeArchived = false): Promise<EvidenceSheetRow[]> {
   logger.debug('listEvidenceSheets', { contractId, includeArchived })
-
   let query = supabase
     .from('contract_evidence_sheets')
     .select('*')
@@ -193,6 +201,7 @@ async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
     const quantity = s.unit_type === 'person' ? totalPersons : s.quantity
     const total = Number(s.unit_price) * quantity
     return {
+      service_id: s.service_id ?? null,
       service_name: s.service_name,
       unit_type: s.unit_type,
       unit_price: Number(s.unit_price),
@@ -293,9 +302,21 @@ export async function listEvidenceSheetServices(sheetId: string): Promise<Eviden
 
   const { data, error } = await supabase
     .from('contract_evidence_sheet_services')
-    .select('*')
+    .select(
+      `
+        *,
+        service:service_id(
+          id,
+          name,
+          base_price,
+          category:category_id(name, color),
+          billing_type:billing_type_id(name, color),
+          unit:unit_id(name),
+          vat_rate:vat_rate_id(name)
+        )
+      `
+    )
     .eq('sheet_id', sheetId)
-    .eq('is_archived', false)
     .order('order_index', { ascending: true })
 
   if (error) {
@@ -303,7 +324,26 @@ export async function listEvidenceSheetServices(sheetId: string): Promise<Eviden
     throw new Error(`Nepodařilo se načíst služby evidenčního listu: ${error.message}`)
   }
 
-  return data || []
+  return (data ?? []).map((row: any) => {
+    const service = Array.isArray(row.service) ? row.service[0] : row.service
+    const category = Array.isArray(service?.category) ? service?.category[0] : service?.category
+    const billingType = Array.isArray(service?.billing_type) ? service?.billing_type[0] : service?.billing_type
+    const unit = Array.isArray(service?.unit) ? service?.unit[0] : service?.unit
+    const vatRate = Array.isArray(service?.vat_rate) ? service?.vat_rate[0] : service?.vat_rate
+
+    return {
+      ...row,
+      service_id: row.service_id ?? service?.id ?? null,
+      service_name: row.service_name ?? service?.name ?? '',
+      catalog_base_price: service?.base_price ?? null,
+      category_name: category?.name ?? null,
+      category_color: category?.color ?? null,
+      billing_type_name: billingType?.name ?? null,
+      billing_type_color: billingType?.color ?? null,
+      unit_name: unit?.name ?? null,
+      vat_rate_name: vatRate?.name ?? null,
+    } as EvidenceSheetServiceRow
+  })
 }
 
 export async function saveEvidenceSheetServices(sheetId: string, services: EvidenceSheetServiceInput[]): Promise<void> {
@@ -322,6 +362,7 @@ export async function saveEvidenceSheetServices(sheetId: string, services: Evide
   if (services.length) {
     const payload = services.map((s, idx) => ({
       sheet_id: sheetId,
+      service_id: s.service_id ?? null,
       service_name: s.service_name,
       unit_type: s.unit_type,
       unit_price: s.unit_price,

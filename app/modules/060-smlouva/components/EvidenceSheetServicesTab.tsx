@@ -10,14 +10,35 @@ import {
   saveEvidenceSheetServices,
   type EvidenceSheetServiceInput,
 } from '@/app/lib/services/contractEvidenceSheets'
+import { listServiceCatalog, type ServiceCatalogRow } from '@/app/lib/services/serviceCatalog'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
-import ListView, { type ListViewColumn, type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { getIcon, type IconKey } from '@/app/UI/icons'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
+import {
+  SERVICE_CATALOG_BASE_COLUMNS,
+  SERVICE_CATALOG_DEFAULT_SORT,
+  SERVICE_CATALOG_VIEW_KEY,
+  buildServiceCatalogListRow,
+  getServiceCatalogSortValue,
+  type ServiceCatalogListItem,
+} from '@/app/modules/070-sluzby/serviceCatalogListConfig'
 
 const logger = createLogger('EvidenceSheetServicesTab')
 
-type ServiceRow = EvidenceSheetServiceInput & { id: string }
+type ServiceRow = EvidenceSheetServiceInput & {
+  id: string
+  category_name?: string | null
+  category_color?: string | null
+  billing_type_name?: string | null
+  billing_type_color?: string | null
+  unit_name?: string | null
+  vat_rate_name?: string | null
+  catalog_base_price?: number | null
+  is_archived?: boolean | null
+}
 
 type Props = {
   sheetId: string
@@ -28,41 +49,13 @@ type Props = {
 
 const emptyRow = (): ServiceRow => ({
   id: `tmp-${Math.random().toString(36).slice(2)}`,
+  service_id: null,
   service_name: '',
   unit_type: 'flat',
   unit_price: 0,
   quantity: 1,
   total_amount: 0,
 })
-
-const columns: ListViewColumn[] = [
-  { key: 'service_name', label: 'Služba', sortable: true, resizable: true, minWidthPx: 180 },
-  { key: 'unit_type', label: 'Jednotka', sortable: true, resizable: true, minWidthPx: 100 },
-  { key: 'unit_price', label: 'Cena / jednotku', sortable: true, align: 'right', resizable: true, minWidthPx: 140 },
-  { key: 'quantity', label: 'Počet', sortable: true, align: 'right', resizable: true, minWidthPx: 90 },
-  { key: 'total_amount', label: 'Celkem', sortable: true, align: 'right', resizable: true, minWidthPx: 120 },
-]
-
-function getUnitLabel(value: ServiceRow['unit_type']) {
-  return value === 'person' ? 'osoba' : 'byt'
-}
-
-function getSortValue(row: ServiceRow, key: string): string | number {
-  switch (key) {
-    case 'service_name':
-      return row.service_name?.toLowerCase() ?? ''
-    case 'unit_type':
-      return row.unit_type
-    case 'unit_price':
-      return row.unit_price ?? 0
-    case 'quantity':
-      return row.quantity ?? 0
-    case 'total_amount':
-      return row.total_amount ?? 0
-    default:
-      return ''
-  }
-}
 
 export default function EvidenceSheetServicesTab({
   sheetId,
@@ -73,12 +66,22 @@ export default function EvidenceSheetServicesTab({
   const toast = useToast()
   const [rows, setRows] = useState<ServiceRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [catalog, setCatalog] = useState<ServiceCatalogRow[]>([])
+  const [loadingCatalog, setLoadingCatalog] = useState(true)
+  const [catalogSearchText, setCatalogSearchText] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
   const [detailMode, setDetailMode] = useState<'read' | 'edit' | 'create'>('read')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [formValue, setFormValue] = useState<ServiceRow>(() => emptyRow())
+  const [isCustomService, setIsCustomService] = useState(false)
   const [searchText, setSearchText] = useState('')
-  const [sort, setSort] = useState<ListViewSortState>({ key: 'service_name', dir: 'asc' })
+  const [sort, setSort] = useState<ListViewSortState>(SERVICE_CATALOG_DEFAULT_SORT)
+  const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+  const [colsOpen, setColsOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const recomputeRow = useCallback((row: ServiceRow) => {
@@ -99,12 +102,21 @@ export default function EvidenceSheetServicesTab({
       const data = await listEvidenceSheetServices(sheetId)
       const mapped: ServiceRow[] = data.map((s, idx) => ({
         id: s.id,
+        service_id: s.service_id ?? null,
         service_name: s.service_name,
         unit_type: s.unit_type,
         unit_price: Number(s.unit_price),
         quantity: s.quantity,
         total_amount: Number(s.total_amount),
         order_index: s.order_index ?? idx,
+        category_name: s.category_name ?? null,
+        category_color: s.category_color ?? null,
+        billing_type_name: s.billing_type_name ?? null,
+        billing_type_color: s.billing_type_color ?? null,
+        unit_name: s.unit_name ?? null,
+        vat_rate_name: s.vat_rate_name ?? null,
+        catalog_base_price: s.catalog_base_price ?? null,
+        is_archived: s.is_archived ?? false,
       }))
 
       setRows(mapped.map(recomputeRow))
@@ -122,6 +134,57 @@ export default function EvidenceSheetServicesTab({
   }, [load])
 
   useEffect(() => {
+    let mounted = true
+
+    void (async () => {
+      const prefs = await loadViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+        colWidths: {},
+        colOrder: [],
+        colHidden: [],
+        sort: SERVICE_CATALOG_DEFAULT_SORT,
+      })
+
+      if (!mounted) return
+      setColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+      if (prefs.sort) setSort(prefs.sort)
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        setLoadingCatalog(true)
+        const data = await listServiceCatalog({
+          includeArchived: false,
+          searchText: catalogSearchText,
+        })
+        if (!cancelled) setCatalog(data)
+      } catch (err: any) {
+        if (!cancelled) {
+          logger.error('load service catalog failed', err)
+          toast.showError(err?.message ?? 'Nepodařilo se načíst katalog služeb')
+        }
+      } finally {
+        if (!cancelled) setLoadingCatalog(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [catalogSearchText, toast])
+
+  useEffect(() => {
     setRows((prev) => prev.map(recomputeRow))
     setFormValue((prev) => recomputeRow(prev))
   }, [recomputeRow])
@@ -132,6 +195,7 @@ export default function EvidenceSheetServicesTab({
     const row = rows.find((r) => r.id === resolvedId)
     if (!row) return
     setFormValue({ ...row })
+    setIsCustomService(!row.service_id)
     setDetailMode('read')
     setViewMode('detail')
   }, [rows, selectedId])
@@ -141,12 +205,14 @@ export default function EvidenceSheetServicesTab({
     const row = rows.find((r) => r.id === selectedId)
     if (!row) return
     setFormValue({ ...row })
+    setIsCustomService(!row.service_id)
     setDetailMode('edit')
     setViewMode('detail')
   }, [rows, selectedId])
 
   const openDetailCreate = useCallback(() => {
     setFormValue(recomputeRow(emptyRow()))
+    setIsCustomService(false)
     setDetailMode('create')
     setViewMode('detail')
   }, [recomputeRow])
@@ -157,6 +223,7 @@ export default function EvidenceSheetServicesTab({
 
   const persistRows = useCallback(async (nextRows: ServiceRow[]) => {
     const payload: EvidenceSheetServiceInput[] = nextRows.map((r, idx) => ({
+      service_id: r.service_id ?? null,
       service_name: r.service_name,
       unit_type: r.unit_type,
       unit_price: r.unit_price,
@@ -171,14 +238,23 @@ export default function EvidenceSheetServicesTab({
   const handleSave = useCallback(async () => {
     if (readOnly) return
 
-    if (!formValue.service_name.trim()) {
+    if (!isCustomService && !formValue.service_id) {
+      toast.showError('Vyberte službu z katalogu')
+      return
+    }
+
+    if (isCustomService && !formValue.service_name.trim()) {
       toast.showError('Vyplňte název služby')
       return
     }
 
     try {
       setSaving(true)
-      const updatedValue = recomputeRow(formValue)
+      const updatedValue = recomputeRow({
+        ...formValue,
+        service_id: isCustomService ? null : formValue.service_id ?? null,
+        service_name: isCustomService ? formValue.service_name : (formValue.service_name || ''),
+      })
       const nextRows = detailMode === 'create'
         ? [...rows, updatedValue]
         : rows.map((r) => (r.id === updatedValue.id ? updatedValue : r))
@@ -193,7 +269,7 @@ export default function EvidenceSheetServicesTab({
     } finally {
       setSaving(false)
     }
-  }, [detailMode, formValue, load, persistRows, readOnly, rows, toast, recomputeRow])
+  }, [detailMode, formValue, isCustomService, load, persistRows, readOnly, rows, toast, recomputeRow])
 
   const handleDelete = useCallback(async () => {
     if (readOnly || !selectedId) return
@@ -217,36 +293,47 @@ export default function EvidenceSheetServicesTab({
     }
   }, [load, persistRows, readOnly, rows, selectedId, toast])
 
-  const filteredRows = useMemo(() => {
-    const query = searchText.trim().toLowerCase()
-    if (!query) return rows
-    return rows.filter((row) => row.service_name.toLowerCase().includes(query))
-  }, [rows, searchText])
+  const listItems = useMemo<ServiceCatalogListItem[]>(() => rows.map((row) => ({
+    id: row.id,
+    name: row.service_name || '—',
+    categoryId: null,
+    categoryName: row.category_name ?? '—',
+    categoryColor: row.category_color ?? null,
+    billingTypeName: row.billing_type_name ?? '—',
+    billingTypeColor: row.billing_type_color ?? null,
+    unitName: row.unit_name ?? '—',
+    basePrice: row.unit_price ?? row.catalog_base_price ?? null,
+    vatRateName: row.vat_rate_name ?? '—',
+    active: !(row.is_archived ?? false),
+    isArchived: !!row.is_archived,
+  })), [rows])
 
-  const sortedRows = useMemo(() => {
-    const data = [...filteredRows]
-    if (!sort) return data
-    const dir = sort.dir === 'asc' ? 1 : -1
-    return data.sort((a, b) => {
-      const aVal = getSortValue(a, sort.key)
-      const bVal = getSortValue(b, sort.key)
+  const filteredItems = useMemo(() => {
+    const q = searchText.trim().toLowerCase()
+    if (!q) return listItems
+    return listItems.filter((item) => (
+      item.name.toLowerCase().includes(q) ||
+      item.categoryName.toLowerCase().includes(q) ||
+      item.billingTypeName.toLowerCase().includes(q) ||
+      item.unitName.toLowerCase().includes(q) ||
+      item.vatRateName.toLowerCase().includes(q)
+    ))
+  }, [listItems, searchText])
+
+  const preparedColumns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
+
+  const listRows: ListViewRow<ServiceCatalogListItem>[] = useMemo(() => {
+    const rows = filteredItems.map((item) => buildServiceCatalogListRow(item))
+    if (!sort?.key) return rows
+    const dir = sort.dir === 'desc' ? -1 : 1
+    return [...rows].sort((a, b) => {
+      const aVal = getServiceCatalogSortValue(a.raw as ServiceCatalogListItem, sort.key)
+      const bVal = getServiceCatalogSortValue(b.raw as ServiceCatalogListItem, sort.key)
       if (aVal < bVal) return -1 * dir
       if (aVal > bVal) return 1 * dir
       return 0
     })
-  }, [filteredRows, sort])
-
-  const listRows: ListViewRow<ServiceRow>[] = useMemo(() => sortedRows.map((row) => ({
-    id: row.id,
-    raw: row,
-    data: {
-      service_name: row.service_name || '—',
-      unit_type: getUnitLabel(row.unit_type),
-      unit_price: row.unit_price ?? 0,
-      quantity: row.quantity ?? 0,
-      total_amount: row.total_amount ?? 0,
-    },
-  })), [sortedRows])
+  }, [filteredItems, sort])
 
   if (loading) {
     return <div className="detail-form__hint">Načítám služby…</div>
@@ -254,10 +341,15 @@ export default function EvidenceSheetServicesTab({
 
   const isFormReadOnly = readOnly || detailMode === 'read'
   const inputClass = isFormReadOnly ? 'detail-form__input detail-form__input--readonly' : 'detail-form__input'
+  const selectedCatalog = useMemo(
+    () => catalog.find((item) => item.id === formValue.service_id) ?? null,
+    [catalog, formValue.service_id]
+  )
 
   return (
     <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
+        <>
         <section className="detail-form__section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Seznam služeb</h3>
@@ -289,7 +381,7 @@ export default function EvidenceSheetServicesTab({
             <div className="detail-form__hint">Zatím nejsou přiřazeny žádné služby.</div>
           ) : (
             <ListView
-              columns={columns}
+              columns={preparedColumns}
               rows={listRows}
               filterValue={searchText}
               onFilterChange={setSearchText}
@@ -300,7 +392,23 @@ export default function EvidenceSheetServicesTab({
                 openDetailRead(String(row.id))
               }}
               sort={sort}
-              onSortChange={setSort}
+              onSortChange={(next) => {
+                setSort(next)
+                void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+                  colWidths: colPrefs.colWidths ?? {},
+                  colOrder: colPrefs.colOrder ?? [],
+                  colHidden: colPrefs.colHidden ?? [],
+                  sort: next,
+                })
+              }}
+              onColumnResize={(key, width) => {
+                setColPrefs((prev) => {
+                  const next = { ...prev, colWidths: { ...prev.colWidths, [key]: width } }
+                  void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, { ...next, sort })
+                  return next
+                })
+              }}
+              onColumnSettings={() => setColsOpen(true)}
               emptyText="Zatím nejsou přiřazeny žádné služby."
             />
           )}
@@ -309,6 +417,58 @@ export default function EvidenceSheetServicesTab({
             Služby celkem: <strong>{servicesTotal} Kč</strong>
           </div>
         </section>
+
+        <ListViewColumnsDrawer
+          open={colsOpen}
+          onClose={() => setColsOpen(false)}
+          columns={SERVICE_CATALOG_BASE_COLUMNS}
+          fixedFirstKey="category"
+          requiredKeys={['name']}
+          value={{
+            order: colPrefs.colOrder ?? [],
+            hidden: colPrefs.colHidden ?? [],
+          }}
+          sortBy={sort ?? undefined}
+          onChange={(next) => {
+            setColPrefs((prev) => {
+              const updated = {
+                ...prev,
+                colOrder: next.order,
+                colHidden: next.hidden,
+              }
+              void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+                colWidths: updated.colWidths ?? {},
+                colOrder: updated.colOrder ?? [],
+                colHidden: updated.colHidden ?? [],
+                sort,
+              })
+              return updated
+            })
+          }}
+          onSortChange={(nextSort) => {
+            setSort(nextSort)
+            void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+              colWidths: colPrefs.colWidths ?? {},
+              colOrder: colPrefs.colOrder ?? [],
+              colHidden: colPrefs.colHidden ?? [],
+              sort: nextSort,
+            })
+          }}
+          onReset={() => {
+            const resetPrefs = {
+              colWidths: {},
+              colOrder: [],
+              colHidden: [],
+            }
+            setColPrefs(resetPrefs)
+            setSort(SERVICE_CATALOG_DEFAULT_SORT)
+            void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+              ...resetPrefs,
+              sort: SERVICE_CATALOG_DEFAULT_SORT,
+            })
+          }}
+        />
+        </>
       )}
 
       {viewMode === 'detail' && (
@@ -349,15 +509,112 @@ export default function EvidenceSheetServicesTab({
 
             <div className="detail-subdetail__content">
               <div className="detail-form__grid detail-form__grid--narrow">
-                <div className="detail-form__field detail-form__field--span-2">
-                  <label className="detail-form__label">Služba *</label>
-                  <input
-                    className={inputClass}
-                    value={formValue.service_name}
-                    onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, service_name: e.target.value }))}
-                    readOnly={isFormReadOnly}
-                  />
+                <div className="detail-form__field detail-form__field--span-2" style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 4 }}>
+                  <label className="detail-form__label" style={{ marginBottom: 8 }}>
+                    Typ služby
+                  </label>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <input
+                        type="radio"
+                        name="service-type"
+                        checked={!isCustomService}
+                        onChange={() => {
+                          if (isFormReadOnly) return
+                          setIsCustomService(false)
+                        }}
+                        disabled={isFormReadOnly}
+                      />
+                      <span>Služba z katalogu</span>
+                    </label>
+
+                    <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <input
+                        type="radio"
+                        name="service-type"
+                        checked={isCustomService}
+                        onChange={() => {
+                          if (isFormReadOnly) return
+                          setIsCustomService(true)
+                          setFormValue((prev) => ({
+                            ...prev,
+                            service_id: null,
+                            catalog_base_price: null,
+                            category_name: null,
+                            category_color: null,
+                            billing_type_name: null,
+                            billing_type_color: null,
+                            unit_name: null,
+                            vat_rate_name: null,
+                          }))
+                        }}
+                        disabled={isFormReadOnly}
+                      />
+                      <span>Vlastní služba</span>
+                    </label>
+                  </div>
                 </div>
+
+                {!isCustomService && (
+                  <>
+                    <div className="detail-form__field detail-form__field--span-2">
+                      <label className="detail-form__label">Katalogová služba *</label>
+                      <input
+                        className={inputClass}
+                        value={catalogSearchText}
+                        onChange={(e) => setCatalogSearchText(e.target.value)}
+                        placeholder="Hledat název nebo kód služby..."
+                        readOnly={isFormReadOnly}
+                      />
+                    </div>
+                    <div className="detail-form__field detail-form__field--span-2">
+                      <select
+                        className={inputClass}
+                        value={formValue.service_id ?? ''}
+                        onChange={(e) => {
+                          const nextId = e.target.value || null
+                          const next = catalog.find((item) => item.id === nextId) ?? null
+                          setFormValue((prev) => recomputeRow({
+                            ...prev,
+                            service_id: nextId,
+                            service_name: next?.name ?? prev.service_name,
+                            unit_price: next?.base_price ?? prev.unit_price,
+                            catalog_base_price: next?.base_price ?? null,
+                            category_name: next?.category_name ?? null,
+                            category_color: next?.category_color ?? null,
+                            billing_type_name: next?.billing_type_name ?? null,
+                            billing_type_color: next?.billing_type_color ?? null,
+                            unit_name: next?.unit_name ?? null,
+                            vat_rate_name: next?.vat_rate_name ?? null,
+                          }))
+                        }}
+                        disabled={isFormReadOnly}
+                      >
+                        <option value="">— vyberte —</option>
+                        {catalog.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.code ? `${item.code} – ${item.name}` : item.name}
+                          </option>
+                        ))}
+                      </select>
+                      {loadingCatalog && (
+                        <div className="detail-form__hint" style={{ marginTop: 6 }}>Načítám katalog…</div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {isCustomService && (
+                  <div className="detail-form__field detail-form__field--span-2">
+                    <label className="detail-form__label">Název služby *</label>
+                    <input
+                      className={inputClass}
+                      value={formValue.service_name}
+                      onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, service_name: e.target.value }))}
+                      readOnly={isFormReadOnly}
+                    />
+                  </div>
+                )}
 
                 <div className="detail-form__field">
                   <label className="detail-form__label">Jednotka</label>
@@ -381,6 +638,11 @@ export default function EvidenceSheetServicesTab({
                     onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, unit_price: Number(e.target.value || 0) }))}
                     readOnly={isFormReadOnly}
                   />
+                  {selectedCatalog?.base_price != null && !isCustomService && (
+                    <div className="detail-form__hint" style={{ marginTop: 6 }}>
+                      Základní cena z katalogu: {selectedCatalog.base_price.toFixed(2)} Kč
+                    </div>
+                  )}
                 </div>
 
                 <div className="detail-form__field">

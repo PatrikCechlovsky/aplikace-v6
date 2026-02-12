@@ -37,6 +37,7 @@
 - **099_fix_bank_accounts_rls_delegates.sql** – RLS pro delegáty u bankovních účtů.
 - **100_fix_properties_units_rls_delegates.sql** – RLS pro delegáty u nemovitostí a jednotek.
 - **101_seed_units_ubytovani_hnevice.sql** – seed 8 jednotek pro konkrétní nemovitost.
+- **104_add_evidence_sheet_service_catalog.sql** – vazba služeb evidenčního listu na katalog.
 
 ---
 
@@ -65,6 +66,11 @@
   - filtrace pouze aktivních generic_types v selectech.
 - `app/modules/040-nemovitost/components/UnitServicesTab.tsx`
   - totéž jako u nemovitosti.
+
+### Smlouva – Evidenční list
+- `app/modules/060-smlouva/components/EvidenceSheetServicesTab.tsx`
+  - seznam služeb sjednocen s katalogovým nastavením sloupců (stejné jako nemovitost/jednotka).
+  - výběr služby z katalogu při zakládání položky evidenčního listu.
 - `app/modules/040-nemovitost/forms/PropertyDetailFormComponent.tsx`
   - zobrazení PSČ s mezerou.
 
