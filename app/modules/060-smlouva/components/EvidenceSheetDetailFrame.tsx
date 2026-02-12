@@ -45,9 +45,26 @@ export default function EvidenceSheetDetailFrame({
   const toast = useToast()
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
   const [replaceOptions, setReplaceOptions] = useState<{ id: string; label: string }[]>([])
+  const [allSheets, setAllSheets] = useState<EvidenceSheetRow[]>([])
   const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [totalPersons, setTotalPersons] = useState(1)
   const [pendingValue, setPendingValue] = useState<EvidenceSheetFormValue | null>(null)
+
+  const buildValueFromSheet = useCallback(
+    (row: EvidenceSheetRow): EvidenceSheetFormValue => ({
+      sheetNumber: row.sheet_number,
+      validFrom: row.valid_from ?? '',
+      validTo: row.valid_to ?? '',
+      replacesSheetId: row.replaces_sheet_id ?? '',
+      rentAmount: row.rent_amount ?? null,
+      totalPersons: row.total_persons ?? 1,
+      servicesTotal: row.services_total ?? 0,
+      totalAmount: row.total_amount ?? 0,
+      description: row.description ?? '',
+      notes: row.notes ?? '',
+    }),
+    []
+  )
 
   useEffect(() => {
     let mounted = true
@@ -62,6 +79,7 @@ export default function EvidenceSheetDetailFrame({
         if (!mounted) return
 
         setSheet(current)
+        setAllSheets(all)
         setTotalPersons(current?.total_persons ?? 1)
         
         setPendingValue(null)
@@ -92,7 +110,7 @@ export default function EvidenceSheetDetailFrame({
 
       try {
         const updated = await updateEvidenceSheet(sheet.id, {
-          valid_from: val.validFrom,
+          valid_from: val.validFrom || null,
           valid_to: val.validTo || null,
           replaces_sheet_id: val.replacesSheetId || null,
           rent_amount: val.rentAmount ?? null,
@@ -110,6 +128,63 @@ export default function EvidenceSheetDetailFrame({
     [sheet, toast, onUpdated]
   )
 
+  const handleActivate = useCallback(async () => {
+    if (!sheet) return
+
+    const sourceValue = pendingValue ?? buildValueFromSheet(sheet)
+
+    if (!sourceValue.validFrom) {
+      toast.showError('Vyplňte datum "Platný od"')
+      return
+    }
+
+    if (sourceValue.validTo && sourceValue.validTo < sourceValue.validFrom) {
+      toast.showError('Datum "Platný do" nesmí být dřívější než "Platný od"')
+      return
+    }
+
+    const previousId = sourceValue.replacesSheetId || sheet.replaces_sheet_id
+    const previous = allSheets.find((s) => s.id === previousId) ?? null
+
+    if (previous?.id) {
+      const prevEnd = new Date(sourceValue.validFrom)
+      prevEnd.setDate(prevEnd.getDate() - 1)
+      const prevEndDate = prevEnd.toISOString().split('T')[0]
+
+      const shouldContinue = window.confirm(
+        `Evidenční list č. ${previous.sheet_number} bude ukončen k ${prevEndDate}. Pokračovat?`
+      )
+
+      if (!shouldContinue) return
+    }
+
+    try {
+      const updated = await updateEvidenceSheet(sheet.id, {
+        valid_from: sourceValue.validFrom,
+        valid_to: sourceValue.validTo || null,
+        replaces_sheet_id: sourceValue.replacesSheetId || null,
+        rent_amount: sourceValue.rentAmount ?? null,
+        description: sourceValue.description || null,
+        notes: sourceValue.notes || null,
+        status: 'active',
+      })
+
+      if (previous?.id) {
+        const prevEnd = new Date(sourceValue.validFrom)
+        prevEnd.setDate(prevEnd.getDate() - 1)
+        const prevEndDate = prevEnd.toISOString().split('T')[0]
+        await updateEvidenceSheet(previous.id, { valid_to: prevEndDate, status: 'archived' })
+      }
+
+      setSheet(updated)
+      toast.showSuccess('Evidenční list potvrzen')
+      onUpdated?.()
+    } catch (err: any) {
+      logger.error('activate evidence sheet failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se potvrdit evidenční list')
+    }
+  }, [sheet, pendingValue, allSheets, toast, onUpdated, buildValueFromSheet])
+
   if (!sheet) {
     return <div className="detail-form__hint">Načítám evidenční list…</div>
   }
@@ -121,6 +196,10 @@ export default function EvidenceSheetDetailFrame({
       content: (
         <div className="detail-form">
           <div className="detail-form__grid detail-form__grid--narrow">
+              <div className="detail-form__field">
+                <label className="detail-form__label">Stav</label>
+                <input className="detail-form__input detail-form__input--readonly" value={sheet.status} readOnly />
+              </div>
             <div className="detail-form__field">
               <label className="detail-form__label">Vytvořeno</label>
               <input className="detail-form__input detail-form__input--readonly" value={formatDateTime(sheet.created_at)} readOnly />
@@ -135,7 +214,8 @@ export default function EvidenceSheetDetailFrame({
     },
   ]
 
-  const detailViewMode: DetailViewMode = readOnly ? 'view' : 'edit'
+  const isLocked = readOnly || sheet.status !== 'draft'
+  const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
 
   return (
     <DetailView
@@ -152,7 +232,7 @@ export default function EvidenceSheetDetailFrame({
         },
         detailContent: (
           <div>
-            {!readOnly && (
+            {!isLocked && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
                 <button
                   type="button"
@@ -162,13 +242,22 @@ export default function EvidenceSheetDetailFrame({
                 >
                   Uložit změny
                 </button>
+                <button
+                  type="button"
+                  className="common-actions__btn"
+                  onClick={handleActivate}
+                  disabled={!pendingValue}
+                  style={{ marginLeft: 8 }}
+                >
+                  Potvrdit list
+                </button>
               </div>
             )}
             <EvidenceSheetDetailForm
               sheet={sheet}
               contractNumber={contractNumber}
               contractSignedAt={contractSignedAt}
-              readOnly={readOnly}
+              readOnly={isLocked}
               replaceOptions={replaceOptions}
               onValueChange={(val) => setPendingValue(val)}
             />
@@ -179,7 +268,7 @@ export default function EvidenceSheetDetailFrame({
             sheetId={sheet.id}
             tenantId={tenantId}
             tenantLabel={tenantLabel}
-            readOnly={readOnly}
+            readOnly={isLocked}
             onCountChange={(count) => setTotalPersons(count)}
           />
         ),
@@ -187,7 +276,7 @@ export default function EvidenceSheetDetailFrame({
           <EvidenceSheetServicesTab
             sheetId={sheet.id}
             totalPersons={totalPersons}
-            readOnly={readOnly}
+            readOnly={isLocked}
           />
         ),
         systemBlocks,

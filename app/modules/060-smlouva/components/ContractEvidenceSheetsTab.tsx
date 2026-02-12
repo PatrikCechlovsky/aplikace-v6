@@ -10,7 +10,7 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import {
   listEvidenceSheets,
-  createEvidenceSheet,
+  createEvidenceSheetDraft,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 import EvidenceSheetDetailFrame from './EvidenceSheetDetailFrame'
@@ -32,7 +32,19 @@ function isActiveSheet(row: EvidenceSheetRow): boolean {
   const today = new Date().toISOString().split('T')[0]
   const validFrom = row.valid_from
   const validTo = row.valid_to
-  return validFrom <= today && (!validTo || validTo >= today)
+  return !!validFrom && validFrom <= today && (!validTo || validTo >= today)
+}
+
+function getSheetBadge(row: EvidenceSheetRow): string | undefined {
+  if (row.status === 'draft') return 'KONCEPT'
+  if (row.status === 'archived') return 'ARCHIV'
+
+  const today = new Date().toISOString().split('T')[0]
+  if (row.valid_to && row.valid_to < today) return 'UKONČENÝ'
+  if (row.valid_from && row.valid_from > today) return `AKTIVNÍ OD ${row.valid_from}`
+  if (isActiveSheet(row)) return 'AKTIVNÍ'
+
+  return undefined
 }
 
 export default function ContractEvidenceSheetsTab({
@@ -48,7 +60,6 @@ export default function ContractEvidenceSheetsTab({
   const toast = useToast()
   const [rows, setRows] = useState<EvidenceSheetRow[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [newValidFrom, setNewValidFrom] = useState<string>(() => new Date().toISOString().split('T')[0])
 
   if (!contractId || contractId === 'new') {
     return (
@@ -76,28 +87,29 @@ export default function ContractEvidenceSheetsTab({
 
   const handleCreate = useCallback(async () => {
     try {
-      const created = await createEvidenceSheet({
+      const created = await createEvidenceSheetDraft({
         contractId,
-        validFrom: newValidFrom,
         rentAmount,
         copyFromLatest: true,
       })
       await load()
       setSelectedId(created.id)
-      toast.showSuccess('Evidenční list vytvořen')
+      toast.showSuccess('Evidenční list vytvořen jako koncept')
     } catch (err: any) {
       logger.error('create evidence sheet failed', err)
       toast.showError(err?.message ?? 'Nepodařilo se vytvořit evidenční list')
     }
-  }, [contractId, newValidFrom, rentAmount, load, toast])
+  }, [contractId, rentAmount, load, toast])
 
   const items = useMemo(
     () =>
       rows.map((row) => ({
         id: row.id,
         primary: `Evidenční list č. ${row.sheet_number}`,
-        secondary: `Platný od ${row.valid_from}${row.valid_to ? ` do ${row.valid_to}` : ''}`,
-        badge: isActiveSheet(row) ? 'AKTIVNÍ' : undefined,
+        secondary: row.valid_from
+          ? `Platný od ${row.valid_from}${row.valid_to ? ` do ${row.valid_to}` : ''}`
+          : 'Platnost od není nastavena',
+        badge: getSheetBadge(row),
       })),
     [rows]
   )
@@ -106,15 +118,6 @@ export default function ContractEvidenceSheetsTab({
     <div>
       {!readOnly && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-          <label className="detail-form__label" style={{ marginBottom: 0 }}>
-            Platný od
-          </label>
-          <input
-            className="detail-form__input"
-            type="date"
-            value={newValidFrom}
-            onChange={(e) => setNewValidFrom(e.target.value)}
-          />
           <button type="button" className="common-actions__btn" onClick={handleCreate}>
             Nový evidenční list
           </button>

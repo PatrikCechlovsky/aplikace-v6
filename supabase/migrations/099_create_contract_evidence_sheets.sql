@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.contract_evidence_sheets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   contract_id UUID NOT NULL REFERENCES public.contracts(id) ON DELETE CASCADE,
   sheet_number INTEGER NOT NULL,
-  valid_from DATE NOT NULL,
+  valid_from DATE,
   valid_to DATE,
   replaces_sheet_id UUID REFERENCES public.contract_evidence_sheets(id) ON DELETE SET NULL,
   rent_amount NUMERIC,
@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.contract_evidence_sheets (
   total_amount NUMERIC DEFAULT 0,
   description TEXT,
   notes TEXT,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),
   is_archived BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -30,6 +31,7 @@ COMMENT ON COLUMN public.contract_evidence_sheets.contract_id IS 'FK → contrac
 COMMENT ON COLUMN public.contract_evidence_sheets.sheet_number IS 'Pořadí evidenčního listu ke smlouvě';
 COMMENT ON COLUMN public.contract_evidence_sheets.replaces_sheet_id IS 'Evidenční list, který je nahrazen';
 COMMENT ON COLUMN public.contract_evidence_sheets.total_persons IS 'Celkový počet osob (nájemník + spolubydlící)';
+COMMENT ON COLUMN public.contract_evidence_sheets.status IS 'draft|active|archived (stav listu)';
 
 CREATE INDEX IF NOT EXISTS idx_contract_evidence_sheets_contract ON public.contract_evidence_sheets(contract_id) WHERE is_archived = FALSE;
 CREATE INDEX IF NOT EXISTS idx_contract_evidence_sheets_valid ON public.contract_evidence_sheets(valid_from, valid_to) WHERE is_archived = FALSE;

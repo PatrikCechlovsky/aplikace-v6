@@ -8,11 +8,13 @@ import type { TenantUser } from './tenantUsers'
 
 const logger = createLogger('contractEvidenceSheets.service')
 
+export type EvidenceSheetStatus = 'draft' | 'active' | 'archived'
+
 export type EvidenceSheetRow = {
   id: string
   contract_id: string
   sheet_number: number
-  valid_from: string
+  valid_from: string | null
   valid_to: string | null
   replaces_sheet_id: string | null
   rent_amount: number | null
@@ -21,7 +23,7 @@ export type EvidenceSheetRow = {
   total_amount: number
   description: string | null
   notes: string | null
-  pdf_document_id: string | null
+  status: EvidenceSheetStatus
   is_archived: boolean
   created_at: string
   updated_at: string
@@ -71,10 +73,6 @@ export type EvidenceSheetUserInput = {
   note?: string | null
 }
 
-function dateToISODate(d: Date): string {
-  return d.toISOString().split('T')[0]
-}
-
 export async function listEvidenceSheets(contractId: string, includeArchived = false): Promise<EvidenceSheetRow[]> {
   logger.debug('listEvidenceSheets', { contractId, includeArchived })
 
@@ -114,17 +112,16 @@ export async function getEvidenceSheet(sheetId: string): Promise<EvidenceSheetRo
   return data
 }
 
-export async function createEvidenceSheet(params: {
+export async function createEvidenceSheetDraft(params: {
   contractId: string
-  validFrom: string
   rentAmount: number | null
   copyFromLatest?: boolean
 }): Promise<EvidenceSheetRow> {
-  logger.debug('createEvidenceSheet', params)
+  logger.debug('createEvidenceSheetDraft', params)
 
   const { data: latestRows, error: latestErr } = await supabase
     .from('contract_evidence_sheets')
-    .select('id, sheet_number, valid_to')
+    .select('id, sheet_number, valid_from, valid_to')
     .eq('contract_id', params.contractId)
     .order('sheet_number', { ascending: false })
     .limit(1)
@@ -136,19 +133,24 @@ export async function createEvidenceSheet(params: {
 
   const latest = latestRows?.[0] ?? null
   const nextNumber = latest ? latest.sheet_number + 1 : 1
+  const replaceNote = latest
+    ? `Nahrazuje list č. ${latest.sheet_number}${latest.valid_from ? ` ze dne ${latest.valid_from}` : ''}`
+    : null
 
   const { data: inserted, error: insertErr } = await supabase
     .from('contract_evidence_sheets')
     .insert({
       contract_id: params.contractId,
       sheet_number: nextNumber,
-      valid_from: params.validFrom,
+      valid_from: null,
       valid_to: null,
       replaces_sheet_id: latest?.id ?? null,
       rent_amount: params.rentAmount,
       total_persons: 1,
       services_total: 0,
       total_amount: params.rentAmount ?? 0,
+      notes: replaceNote,
+      status: 'draft',
     })
     .select()
     .single()
@@ -156,22 +158,6 @@ export async function createEvidenceSheet(params: {
   if (insertErr) {
     logger.error('createEvidenceSheet insert failed', insertErr)
     throw new Error(`Nepodařilo se vytvořit evidenční list: ${insertErr.message}`)
-  }
-
-  if (latest?.id) {
-    const prevEnd = new Date(params.validFrom)
-    prevEnd.setDate(prevEnd.getDate() - 1)
-    const prevEndDate = dateToISODate(prevEnd)
-
-    const { error: updatePrevErr } = await supabase
-      .from('contract_evidence_sheets')
-      .update({ valid_to: prevEndDate })
-      .eq('id', latest.id)
-
-    if (updatePrevErr) {
-      logger.error('createEvidenceSheet update previous failed', updatePrevErr)
-      throw new Error(`Nepodařilo se ukončit předchozí evidenční list: ${updatePrevErr.message}`)
-    }
   }
 
   if (params.copyFromLatest && latest?.id) {
