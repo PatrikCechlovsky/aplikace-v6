@@ -4,7 +4,7 @@
 
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import EvidenceSheetDetailForm, { type EvidenceSheetFormValue } from './EvidenceSheetDetailForm'
 import EvidenceSheetUsersTab from './EvidenceSheetUsersTab'
@@ -15,10 +15,8 @@ import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
   getEvidenceSheet,
   listEvidenceSheets,
-  updateEvidenceSheet,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
-import { getIcon, type IconKey } from '@/app/UI/icons'
 
 const logger = createLogger('EvidenceSheetModal')
 
@@ -50,35 +48,15 @@ export default function EvidenceSheetModal({
   propertyName,
   unitName,
   readOnly = false,
-  onClose,
-  onUpdated,
   onRegisterCommonActions,
   onRegisterCommonActionsState,
 }: Props) {
   const toast = useToast()
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
   const [replaceOptions, setReplaceOptions] = useState<{ id: string; label: string }[]>([])
-  const [allSheets, setAllSheets] = useState<EvidenceSheetRow[]>([])
   const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [totalPersons, setTotalPersons] = useState(1)
   const [pendingValue, setPendingValue] = useState<EvidenceSheetFormValue | null>(null)
-  const [viewMode, setViewMode] = useState<'view' | 'edit'>('view')
-
-  const buildValueFromSheet = useCallback(
-    (row: EvidenceSheetRow): EvidenceSheetFormValue => ({
-      sheetNumber: row.sheet_number,
-      validFrom: row.valid_from ?? '',
-      validTo: row.valid_to ?? '',
-      replacesSheetId: row.replaces_sheet_id ?? '',
-      rentAmount: row.rent_amount ?? null,
-      totalPersons: row.total_persons ?? 1,
-      servicesTotal: row.services_total ?? 0,
-      totalAmount: row.total_amount ?? 0,
-      description: row.description ?? '',
-      notes: row.notes ?? '',
-    }),
-    []
-  )
 
   useEffect(() => {
     let mounted = true
@@ -93,7 +71,6 @@ export default function EvidenceSheetModal({
         if (!mounted) return
 
         setSheet(current)
-        setAllSheets(all)
         setTotalPersons(current?.total_persons ?? 1)
         setPendingValue(null)
 
@@ -117,101 +94,19 @@ export default function EvidenceSheetModal({
     }
   }, [sheetId, contractId, toast])
 
-  // Register CommonActions
   useEffect(() => {
+    if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
+
     const isLocked = readOnly || sheet?.status !== 'draft'
-    const actions = ['new', 'read', 'edit', 'attachments', 'close']
-    
-    onRegisterCommonActions?.(actions)
-    onRegisterCommonActionsState?.({
+    const actions = ['close']
+
+    onRegisterCommonActions(actions)
+    onRegisterCommonActionsState({
       viewMode: isLocked ? 'view' : 'edit',
       hasSelection: !!sheet?.id,
       isDirty: !!pendingValue,
     })
   }, [sheet, pendingValue, readOnly, onRegisterCommonActions, onRegisterCommonActionsState])
-
-  const handleSave = useCallback(
-    async (val: EvidenceSheetFormValue) => {
-      if (!sheet) return
-
-      try {
-        const updated = await updateEvidenceSheet(sheet.id, {
-          valid_from: val.validFrom || null,
-          valid_to: val.validTo || null,
-          replaces_sheet_id: val.replacesSheetId || null,
-          rent_amount: val.rentAmount ?? null,
-          description: val.description || null,
-          notes: val.notes || null,
-        })
-        setSheet(updated)
-        toast.showSuccess('Evidenční list uložen')
-        onUpdated?.()
-      } catch (err: any) {
-        logger.error('save evidence sheet failed', err)
-        toast.showError(err?.message ?? 'Nepodařilo se uložit evidenční list')
-      }
-    },
-    [sheet, toast, onUpdated]
-  )
-
-  const handleActivate = useCallback(async () => {
-    if (!sheet) return
-
-    const sourceValue = pendingValue ?? buildValueFromSheet(sheet)
-
-    if (!sourceValue.validFrom) {
-      toast.showError('Vyplňte datum "Platný od"')
-      return
-    }
-
-    if (sourceValue.validTo && sourceValue.validTo < sourceValue.validFrom) {
-      toast.showError('Datum "Platný do" nesmí být dřívější než "Platný od"')
-      return
-    }
-
-    const previousId = sourceValue.replacesSheetId || sheet.replaces_sheet_id
-    const previous = allSheets.find((s) => s.id === previousId) ?? null
-
-    if (previous?.id) {
-      const prevEnd = new Date(sourceValue.validFrom)
-      prevEnd.setDate(prevEnd.getDate() - 1)
-      const prevEndDate = prevEnd.toISOString().split('T')[0]
-
-      const shouldContinue = window.confirm(
-        `Evidenční list č. ${previous.sheet_number} bude ukončen k ${prevEndDate}. Pokračovat?`
-      )
-
-      if (!shouldContinue) return
-    }
-
-    try {
-      const updated = await updateEvidenceSheet(sheet.id, {
-        valid_from: sourceValue.validFrom,
-        valid_to: sourceValue.validTo || null,
-        replaces_sheet_id: sourceValue.replacesSheetId || null,
-        rent_amount: sourceValue.rentAmount ?? null,
-        description: sourceValue.description || null,
-        notes: sourceValue.notes || null,
-        status: 'active',
-      })
-
-      if (previous?.id) {
-        const prevEnd = new Date(sourceValue.validFrom)
-        prevEnd.setDate(prevEnd.getDate() - 1)
-        const prevEndDate = prevEnd.toISOString().split('T')[0]
-        await updateEvidenceSheet(previous.id, { valid_to: prevEndDate, status: 'archived' })
-      }
-
-      setSheet(updated)
-      setViewMode('view')
-      setPendingValue(null)
-      toast.showSuccess('Evidenční list potvrzen')
-      onUpdated?.()
-    } catch (err: any) {
-      logger.error('activate evidence sheet failed', err)
-      toast.showError(err?.message ?? 'Nepodařilo se potvrdit evidenční list')
-    }
-  }, [sheet, pendingValue, allSheets, toast, onUpdated, buildValueFromSheet])
 
   if (!sheet) {
     return <div className="detail-form__hint">Načítám evidenční list…</div>
@@ -243,45 +138,13 @@ export default function EvidenceSheetModal({
   ]
 
   const isLocked = readOnly || sheet.status !== 'draft'
-  const detailViewMode: DetailViewMode = viewMode === 'edit' && !isLocked ? 'edit' : 'view'
+  const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Modal Header */}
-      <div style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)' }}>
         <h2 style={{ margin: 0 }}>Evidenční list č. {sheet.sheet_number}</h2>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {!isLocked && (
-            <button
-              type="button"
-              className="common-actions__btn"
-              onClick={() => pendingValue && handleSave(pendingValue)}
-              disabled={!pendingValue}
-              title="Uložit změny"
-            >
-              <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
-            </button>
-          )}
-          {!isLocked && (
-            <button
-              type="button"
-              className="common-actions__btn"
-              onClick={handleActivate}
-              disabled={!pendingValue}
-              title="Potvrdit list a ukončit předchozí"
-            >
-              <span className="common-actions__icon">{getIcon('check' as IconKey)}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            className="common-actions__btn"
-            onClick={onClose}
-            title="Zavřít"
-          >
-            <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-          </button>
-        </div>
       </div>
 
       {/* Modal Content */}
