@@ -401,31 +401,28 @@ export default function ContractEvidenceSheetsTab({
         </section>
       )}
 
-      {/* Detail View - replaces list when viewing */}
       {viewMode === 'detail' && selectedId && (
         <section className="detail-form__section detail-form__section--scroll">
-          <div className="detail-subdetail">
-            <div className="detail-subdetail__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
-                Detail evidenčního listu
-              </h3>
-              <button type="button" className="common-actions__btn" onClick={() => setViewMode('list')}>
-                <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                <span className="common-actions__label">Zavřít</span>
-              </button>
-            </div>
-
-            <EvidenceSheetDetailFrame
-              sheetId={selectedId}
-              contractId={contractId}
-              tenantId={tenantId}
-              tenantLabel={tenantLabel}
-              contractNumber={contractNumber}
-              contractSignedAt={contractSignedAt}
-              readOnly={readOnly}
-              onUpdated={load}
-            />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
+              Detail evidenčního listu
+            </h3>
+            <button type="button" className="common-actions__btn" onClick={() => setViewMode('list')}>
+              <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+              <span className="common-actions__label">Zavřít</span>
+            </button>
           </div>
+
+          <EvidenceSheetDetailFrame
+            sheetId={selectedId}
+            contractId={contractId}
+            tenantId={tenantId}
+            tenantLabel={tenantLabel}
+            contractNumber={contractNumber}
+            contractSignedAt={contractSignedAt}
+            readOnly={readOnly}
+            onUpdated={load}
+          />
         </section>
       )}
     </div>
