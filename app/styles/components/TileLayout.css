@@ -19,7 +19,7 @@
 
 /* Když je aktivní vnitřní scroll detailu, tile musí být flex item */
 .layout__content--detail-scroll .tile-layout {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
 }
 

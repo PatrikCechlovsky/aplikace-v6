@@ -176,6 +176,48 @@ Výběr uživatelů nájemníka pro konkrétní smlouvu.
 - `is_archived`
 - `created_at`, `updated_at`
 
+### 4.1.2 Tabulka `contract_evidence_sheets`
+
+Verzované evidenční listy ke smlouvě (přílohy se službami a osobami).
+
+**Pole – příklad:**
+- `id`
+- `contract_id` (FK → contracts.id)
+- `sheet_number` (1,2,3…)
+- `valid_from`, `valid_to`
+- `replaces_sheet_id` (FK → contract_evidence_sheets.id)
+- `rent_amount`
+- `total_persons`
+- `services_total`
+- `total_amount`
+- `description`, `notes`
+- `pdf_document_id` (FK → attachments.id)
+- `created_at`, `updated_at`, `is_archived`
+
+### 4.1.3 Tabulka `contract_evidence_sheet_users`
+
+Snapshot spolubydlících pro konkrétní evidenční list.
+
+**Pole – příklad:**
+- `id`
+- `sheet_id` (FK → contract_evidence_sheets.id)
+- `tenant_user_id` (FK → tenant_users.id)
+- `first_name`, `last_name`, `birth_date`, `note`
+- `created_at`, `updated_at`, `is_archived`
+
+### 4.1.4 Tabulka `contract_evidence_sheet_services`
+
+Položky služeb evidenčního listu (byt/osoba).
+
+**Pole – příklad:**
+- `id`
+- `sheet_id` (FK → contract_evidence_sheets.id)
+- `service_name`
+- `unit_type` (flat|person)
+- `unit_price`, `quantity`, `total_amount`
+- `order_index`
+- `created_at`, `updated_at`, `is_archived`
+
 ### 4.2 Vazby smluv
 
 - Smlouva se váže na:

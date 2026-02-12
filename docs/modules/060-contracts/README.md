@@ -25,6 +25,7 @@ Smlouva navázaná na jednotku, nájemníka a pronajímatele.
 - záložka **Uživatelé** – výběr uživatelů nájemníka pro konkrétní smlouvu
 - záložka **Zástupci** – výběr zástupců nájemníka a pronajímatele
 - záložka **Účty** – výběr účtu nájemníka a pronajímatele
+- záložka **Evidenční listy** – verzované přílohy ke smlouvě (osoby + služby)
 
 ### 2) `handover_protocols`
 - `contract_id` – vazba na smlouvu
@@ -49,6 +50,7 @@ Poznámka: Periodicita nájmu používá `service_periodicities` (shodné s peri
 - **Detail smlouvy** (DetailView):
   - Základní údaje
   - Vazby
+  - Evidenční listy (detail listu: osoby, služby, přílohy)
   - Finance
   - Poznámky
   - Archivace
@@ -60,5 +62,7 @@ Poznámka: Periodicita nájmu používá `service_periodicities` (shodné s peri
 - Pole **Počet uživatelů** se odvozuje z nájemníka (1 nájemník + spolubydlící).
 - Účty jsou povinné pro aktivaci smlouvy.
 - Zástupce je povinný pro firmu/spolek při aktivaci smlouvy.
+- Evidenční listy se číslují od 1 výše a vždy mohou nahradit předchozí list.
+- Změny osob/služeb se provádí vždy vytvořením nového evidenčního listu (předchozí se ukončí).
 - **Konec smlouvy** je skrytý, pokud je nastavena **doba neurčitá**.
 - Výpočty plateb a stavů budou napojeny na modul Plateb.

@@ -127,6 +127,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   units: 'Jednotka',
   contract: 'Smlouva',
   contracts: 'Smlouva',
+  contract_evidence_sheets: 'Evidenční list',
   payment: 'Platba',
   payments: 'Platba',
   document: 'Dokument',

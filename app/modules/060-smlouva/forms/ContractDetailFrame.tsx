@@ -17,6 +17,7 @@ import { listLandlords } from '@/app/lib/services/landlords'
 import { listTenants } from '@/app/lib/services/tenants'
 import { listUnitServices } from '@/app/lib/services/unitServices'
 import { listContractUsers } from '@/app/lib/services/contractUsers'
+import { listEvidenceSheets } from '@/app/lib/services/contractEvidenceSheets'
 import { listSubjects } from '@/app/lib/services/subjects'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 import { saveContract, type SaveContractInput } from '@/app/lib/services/contracts'
@@ -30,6 +31,7 @@ import UnitServicesTab from '@/app/modules/040-nemovitost/components/UnitService
 import ContractUsersTab from '../components/ContractUsersTab'
 import ContractDelegatesTab from '../components/ContractDelegatesTab'
 import ContractAccountsTab from '../components/ContractAccountsTab'
+import ContractEvidenceSheetsTab from '../components/ContractEvidenceSheetsTab'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -141,6 +143,7 @@ export default function ContractDetailFrame({
   const [servicesCount, setServicesCount] = useState(0)
   const [servicesTotal, setServicesTotal] = useState<number | null>(null)
   const [contractUsersCount, setContractUsersCount] = useState<number | null>(null)
+  const [evidenceSheetsCount, setEvidenceSheetsCount] = useState(0)
 
   const [units, setUnits] = useState<UnitLookupOption[]>([])
   const [properties, setProperties] = useState<PropertyLookupOption[]>([])
@@ -291,6 +294,31 @@ export default function ContractDetailFrame({
       mounted = false
     }
   }, [formValue.unitId, servicesCount])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadEvidenceCount() {
+      const contractId = resolvedContract.id
+      if (!contractId || contractId === 'new') {
+        if (mounted) setEvidenceSheetsCount(0)
+        return
+      }
+
+      try {
+        const rows = await listEvidenceSheets(contractId, false)
+        if (!mounted) return
+        setEvidenceSheetsCount(rows.length)
+      } catch (err) {
+        logger.error('Failed to load evidence sheets count', err)
+      }
+    }
+
+    void loadEvidenceCount()
+    return () => {
+      mounted = false
+    }
+  }, [resolvedContract.id])
 
   useEffect(() => {
     let mounted = true
@@ -598,7 +626,7 @@ export default function ContractDetailFrame({
   const content = (
     <DetailView
       mode={detailViewMode}
-      sectionIds={['detail', 'users', 'delegates', 'accounts', 'services', 'attachments', 'system']}
+      sectionIds={['detail', 'users', 'evidence', 'delegates', 'accounts', 'services', 'attachments', 'system']}
       initialActiveId={initialSectionId ?? 'detail'}
       onActiveSectionChange={onActiveSectionChange}
       ctx={{
@@ -612,6 +640,7 @@ export default function ContractDetailFrame({
           attachments: attachmentsCount,
           services: servicesCount,
           users: typeof contractUsersCount === 'number' ? contractUsersCount : undefined,
+          evidence: evidenceSheetsCount,
         },
         detailContent: (
           <ContractDetailForm
@@ -639,6 +668,18 @@ export default function ContractDetailFrame({
             tenantLabel={tenants.find((t) => t.id === formValue.tenantId)?.label ?? null}
             readOnly={readOnly}
             onSelectionCountChange={(count) => setContractUsersCount(count)}
+          />
+        ),
+        evidenceContent: (
+          <ContractEvidenceSheetsTab
+            contractId={resolvedContract.id}
+            contractNumber={formValue.cisloSmlouvy || null}
+            contractSignedAt={formValue.datumPodpisu || null}
+            tenantId={formValue.tenantId || null}
+            tenantLabel={tenants.find((t) => t.id === formValue.tenantId)?.label ?? null}
+            rentAmount={formValue.najemVyse ?? null}
+            readOnly={readOnly}
+            onCountChange={(count) => setEvidenceSheetsCount(count)}
           />
         ),
         delegatesContent: (

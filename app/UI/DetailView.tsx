@@ -21,6 +21,7 @@ export type DetailSectionId =
   | 'equipment'
   | 'accounts'
   | 'delegates'
+  | 'evidence'
   | 'units'
   | 'services'
   | 'attachments'
@@ -78,6 +79,8 @@ export type DetailViewCtx = {
   usersContent?: React.ReactNode
   accountsContent?: React.ReactNode
   delegatesContent?: React.ReactNode
+
+  evidenceContent?: React.ReactNode
 
   relationsContent?: React.ReactNode
 
@@ -474,6 +477,14 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 75,
     visibleWhen: (ctx) => !!(ctx as any)?.servicesContent,
     render: (ctx: any) => ctx?.servicesContent ?? null,
+  },
+
+  evidence: {
+    id: 'evidence',
+    label: 'Evidenční listy',
+    order: 72,
+    visibleWhen: (ctx) => !!(ctx as any)?.evidenceContent,
+    render: (ctx: any) => ctx?.evidenceContent ?? null,
   },
 }
 
