@@ -423,6 +423,17 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     [colPrefs]
   )
 
+  const handleColumnResize = useCallback(
+    (key: string, width: number) => {
+      setColPrefs((prev) => {
+        const next = { ...prev, colWidths: { ...prev.colWidths, [key]: width } }
+        void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, { ...next, sort })
+        return next
+      })
+    },
+    [sort]
+  )
+
   const handleArchiveToggle = useCallback(
     async (serviceId: string, nextActive: boolean) => {
       if (readOnly) return
@@ -530,8 +541,8 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
               <div style={{ display: 'flex', gap: 8 }}>
                 {!readOnly && (
                   <button type="button" className="common-actions__btn" onClick={openCreate}>
-                    <span className="common-actions__icon">{getIcon('plus' as IconKey)}</span>
-                    <span className="common-actions__label">Přidat</span>
+                    <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                    <span className="common-actions__label">Nová</span>
                   </button>
                 )}
 
@@ -576,13 +587,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 sort={sort}
                 onSortChange={handleSortChange}
                 onColumnSettings={() => setColsOpen(true)}
-                onColumnResize={(key, width) => {
-                  setColPrefs((prev) => {
-                    const next = { ...prev, colWidths: { ...prev.colWidths, [key]: width } }
-                    void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, { ...next, sort })
-                    return next
-                  })
-                }}
+                onColumnResize={handleColumnResize}
                 emptyText="Zatím nejsou přiřazeny žádné služby."
               />
             )}
@@ -598,6 +603,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
               order: colPrefs.colOrder ?? [],
               hidden: colPrefs.colHidden ?? [],
             }}
+            sortBy={sort ?? undefined}
             onChange={(next) => {
               setColPrefs((prev) => {
                 const updated = {
@@ -605,10 +611,16 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                   colOrder: next.order,
                   colHidden: next.hidden,
                 }
-                void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, { ...updated, sort })
+                void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
+                  colWidths: updated.colWidths ?? {},
+                  colOrder: updated.colOrder ?? [],
+                  colHidden: updated.colHidden ?? [],
+                  sort: sort,
+                })
                 return updated
               })
             }}
+            onSortChange={(nextSort) => handleSortChange(nextSort)}
             onReset={() => {
               const resetPrefs = {
                 colWidths: {},
@@ -616,11 +628,11 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 colHidden: [],
               }
               setColPrefs(resetPrefs)
+              setSort(SERVICE_CATALOG_DEFAULT_SORT)
               void saveViewPrefs(SERVICE_CATALOG_VIEW_KEY, {
                 ...resetPrefs,
                 sort: SERVICE_CATALOG_DEFAULT_SORT,
               })
-              setSort(SERVICE_CATALOG_DEFAULT_SORT)
             }}
           />
         </>
