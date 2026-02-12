@@ -1,6 +1,6 @@
 // FILE: app/modules/060-smlouva/components/EvidenceSheetServicesTab.tsx
 // PURPOSE: Záložka služeb evidenčního listu (seznam + detail)
-// NOTES: Položky služeb s jednotkou byt/osoba a výpočtem celku
+// NOTES: Položky služeb s jednotkou byt/osoba a výpočtem celku. Identické jako UnitServicesTab.
 
 'use client'
 
@@ -11,6 +11,7 @@ import {
   type EvidenceSheetServiceInput,
 } from '@/app/lib/services/contractEvidenceSheets'
 import { listServiceCatalog, type ServiceCatalogRow } from '@/app/lib/services/serviceCatalog'
+import { supabase } from '@/app/lib/supabaseClient'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
@@ -38,6 +39,12 @@ type ServiceRow = EvidenceSheetServiceInput & {
   vat_rate_name?: string | null
   catalog_base_price?: number | null
   is_archived?: boolean | null
+}
+
+type GenericType = {
+  id: string
+  name: string
+  color?: string | null
 }
 
 type Props = {
@@ -68,7 +75,9 @@ export default function EvidenceSheetServicesTab({
   const [loading, setLoading] = useState(true)
   const [catalog, setCatalog] = useState<ServiceCatalogRow[]>([])
   const [loadingCatalog, setLoadingCatalog] = useState(true)
+  const [categories, setCategories] = useState<GenericType[]>([])
   const [catalogSearchText, setCatalogSearchText] = useState('')
+  const [catalogCategoryId, setCatalogCategoryId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
   const [detailMode, setDetailMode] = useState<'read' | 'edit' | 'create'>('read')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -132,6 +141,34 @@ export default function EvidenceSheetServicesTab({
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadGenericTypes() {
+      try {
+        const [cats] = await Promise.all([
+          supabase.from('generic_types').select('id, name, color').eq('category', 'service_types').eq('active', true).order('order_index'),
+        ])
+
+        if (cats.error) throw cats.error
+
+        if (cancelled) return
+        setCategories((cats.data ?? []) as any)
+      } catch (e: any) {
+        if (!cancelled) {
+          logger.error('loadGenericTypes failed', e)
+          toast.showError('Chyba při načítání číselníků')
+        }
+      }
+    }
+
+    void loadGenericTypes()
+
+    return () => {
+      cancelled = true
+    }
+  }, [toast])
 
   useEffect(() => {
     let mounted = true
@@ -335,17 +372,11 @@ export default function EvidenceSheetServicesTab({
     })
   }, [filteredItems, sort])
 
-  const selectedCatalog = useMemo(
-    () => catalog.find((item) => item.id === formValue.service_id) ?? null,
-    [catalog, formValue.service_id]
-  )
-
   if (loading) {
     return <div className="detail-form__hint">Načítám služby…</div>
   }
 
   const isFormReadOnly = readOnly || detailMode === 'read'
-  const inputClass = isFormReadOnly ? 'detail-form__input detail-form__input--readonly' : 'detail-form__input'
 
   return (
     <div className="detail-form detail-form--fill">
@@ -520,10 +551,7 @@ export default function EvidenceSheetServicesTab({
                         type="radio"
                         name="service-type"
                         checked={!isCustomService}
-                        onChange={() => {
-                          if (isFormReadOnly) return
-                          setIsCustomService(false)
-                        }}
+                        onChange={() => setIsCustomService(false)}
                         disabled={isFormReadOnly}
                       />
                       <span>Služba z katalogu</span>
@@ -534,21 +562,7 @@ export default function EvidenceSheetServicesTab({
                         type="radio"
                         name="service-type"
                         checked={isCustomService}
-                        onChange={() => {
-                          if (isFormReadOnly) return
-                          setIsCustomService(true)
-                          setFormValue((prev) => ({
-                            ...prev,
-                            service_id: null,
-                            catalog_base_price: null,
-                            category_name: null,
-                            category_color: null,
-                            billing_type_name: null,
-                            billing_type_color: null,
-                            unit_name: null,
-                            vat_rate_name: null,
-                          }))
-                        }}
+                        onChange={() => setIsCustomService(true)}
                         disabled={isFormReadOnly}
                       />
                       <span>Vlastní služba</span>
@@ -557,59 +571,69 @@ export default function EvidenceSheetServicesTab({
                 </div>
 
                 {!isCustomService && (
-                  <>
-                    <div className="detail-form__field detail-form__field--span-2">
-                      <label className="detail-form__label">Katalogová služba *</label>
+                  <div className="detail-form__field detail-form__field--span-2">
+                    <label className="detail-form__label">Katalogová služba</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                       <input
-                        className={inputClass}
+                        type="text"
+                        className="detail-form__input"
+                        placeholder="Hledat název, kód nebo popis..."
                         value={catalogSearchText}
                         onChange={(e) => setCatalogSearchText(e.target.value)}
-                        placeholder="Hledat název nebo kód služby..."
-                        readOnly={isFormReadOnly}
+                        disabled={isFormReadOnly}
                       />
-                    </div>
-                    <div className="detail-form__field detail-form__field--span-2">
                       <select
-                        className={inputClass}
-                        value={formValue.service_id ?? ''}
-                        onChange={(e) => {
-                          const nextId = e.target.value || null
-                          const next = catalog.find((item) => item.id === nextId) ?? null
-                          setFormValue((prev) => recomputeRow({
-                            ...prev,
-                            service_id: nextId,
-                            service_name: next?.name ?? prev.service_name,
-                            unit_price: next?.base_price ?? prev.unit_price,
-                            catalog_base_price: next?.base_price ?? null,
-                            category_name: next?.category_name ?? null,
-                            category_color: next?.category_color ?? null,
-                            billing_type_name: next?.billing_type_name ?? null,
-                            billing_type_color: next?.billing_type_color ?? null,
-                            unit_name: next?.unit_name ?? null,
-                            vat_rate_name: next?.vat_rate_name ?? null,
-                          }))
-                        }}
+                        className="detail-form__input"
+                        value={catalogCategoryId || ''}
+                        onChange={(e) => setCatalogCategoryId(e.target.value || null)}
                         disabled={isFormReadOnly}
                       >
-                        <option value="">— vyberte —</option>
-                        {catalog.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.code ? `${item.code} – ${item.name}` : item.name}
+                        <option value="">— všechny kategorie —</option>
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
                           </option>
                         ))}
                       </select>
-                      {loadingCatalog && (
-                        <div className="detail-form__hint" style={{ marginTop: 6 }}>Načítám katalog…</div>
-                      )}
                     </div>
-                  </>
+                    <select
+                      className="detail-form__input"
+                      value={formValue.service_id || ''}
+                      onChange={(e) => {
+                        const id = e.target.value
+                        const svc = catalog.find((c) => c.id === id)
+
+                        setFormValue((prev) => recomputeRow({
+                          ...prev,
+                          service_id: id || null,
+                          service_name: svc?.name ?? '',
+                          unit_price: svc?.base_price ?? prev.unit_price,
+                          catalog_base_price: svc?.base_price ?? null,
+                          category_name: svc?.category_name ?? null,
+                          category_color: svc?.category_color ?? null,
+                          billing_type_name: svc?.billing_type_name ?? null,
+                          billing_type_color: svc?.billing_type_color ?? null,
+                          unit_name: svc?.unit_name ?? null,
+                          vat_rate_name: svc?.vat_rate_name ?? null,
+                        }))
+                      }}
+                      disabled={isFormReadOnly}
+                    >
+                      <option value="">{loadingCatalog ? 'Načítám katalog...' : '— vyberte službu —'}</option>
+                      {!loadingCatalog && catalog.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.code ? `${c.code} – ${c.name}` : c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 )}
 
                 {isCustomService && (
                   <div className="detail-form__field detail-form__field--span-2">
-                    <label className="detail-form__label">Název služby *</label>
+                    <label className="detail-form__label">Název služby</label>
                     <input
-                      className={inputClass}
+                      className="detail-form__input"
                       value={formValue.service_name}
                       onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, service_name: e.target.value }))}
                       readOnly={isFormReadOnly}
@@ -618,9 +642,33 @@ export default function EvidenceSheetServicesTab({
                 )}
 
                 <div className="detail-form__field">
+                  <label className="detail-form__label">Kategorie</label>
+                  <select
+                    className="detail-form__input"
+                    value={formValue.category_name ?? ''}
+                    onChange={() => {}}
+                    disabled={true}
+                  >
+                    <option value="">{formValue.category_name ?? '—'}</option>
+                  </select>
+                </div>
+
+                <div className="detail-form__field">
+                  <label className="detail-form__label">Účtování</label>
+                  <select
+                    className="detail-form__input"
+                    value={formValue.billing_type_name ?? ''}
+                    onChange={() => {}}
+                    disabled={true}
+                  >
+                    <option value="">{formValue.billing_type_name ?? '—'}</option>
+                  </select>
+                </div>
+
+                <div className="detail-form__field">
                   <label className="detail-form__label">Jednotka</label>
                   <select
-                    className={inputClass}
+                    className="detail-form__input"
                     value={formValue.unit_type}
                     onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, unit_type: e.target.value as ServiceRow['unit_type'] }))}
                     disabled={isFormReadOnly}
@@ -631,25 +679,32 @@ export default function EvidenceSheetServicesTab({
                 </div>
 
                 <div className="detail-form__field">
+                  <label className="detail-form__label">DPH</label>
+                  <select
+                    className="detail-form__input"
+                    value={formValue.vat_rate_name ?? ''}
+                    onChange={() => {}}
+                    disabled={true}
+                  >
+                    <option value="">{formValue.vat_rate_name ?? '—'}</option>
+                  </select>
+                </div>
+
+                <div className="detail-form__field">
                   <label className="detail-form__label">Cena / jednotku</label>
                   <input
-                    className={inputClass}
+                    className="detail-form__input"
                     type="number"
                     value={formValue.unit_price}
                     onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, unit_price: Number(e.target.value || 0) }))}
                     readOnly={isFormReadOnly}
                   />
-                  {selectedCatalog?.base_price != null && !isCustomService && (
-                    <div className="detail-form__hint" style={{ marginTop: 6 }}>
-                      Základní cena z katalogu: {selectedCatalog.base_price.toFixed(2)} Kč
-                    </div>
-                  )}
                 </div>
 
                 <div className="detail-form__field">
                   <label className="detail-form__label">Počet</label>
                   <input
-                    className={inputClass}
+                    className="detail-form__input"
                     type="number"
                     value={formValue.unit_type === 'person' ? totalPersons : formValue.quantity}
                     onChange={(e) => setFormValue((prev) => recomputeRow({ ...prev, quantity: Number(e.target.value || 1) }))}
