@@ -143,7 +143,7 @@ export default function EvidenceSheetUsersTab({
 
         {!loading && users.length === 0 && <div className="detail-form__hint">Zatím žádní spolubydlící.</div>}
 
-        {!loading && users.length > 0 && (
+        {!loading && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
@@ -151,10 +151,20 @@ export default function EvidenceSheetUsersTab({
                   <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Vybrat</th>
                   <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Jméno</th>
                   <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Příjmení</th>
+                  <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Název firmy</th>
                   <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Datum narození</th>
                 </tr>
               </thead>
               <tbody>
+                <tr style={{ borderBottom: '1px solid var(--color-border-soft)', background: 'var(--color-bg-subtle)' }}>
+                  <td style={{ padding: '8px' }}>
+                    <input type="checkbox" checked disabled />
+                  </td>
+                  <td style={{ padding: '8px' }}>—</td>
+                  <td style={{ padding: '8px' }}>—</td>
+                  <td style={{ padding: '8px' }}>{tenantLabel || '—'}</td>
+                  <td style={{ padding: '8px' }}>—</td>
+                </tr>
                 {users.map((user) => (
                   <tr key={user.id} style={{ borderBottom: '1px solid var(--color-border-soft)' }}>
                     <td style={{ padding: '8px' }}>
@@ -167,6 +177,7 @@ export default function EvidenceSheetUsersTab({
                     </td>
                     <td style={{ padding: '8px' }}>{user.first_name}</td>
                     <td style={{ padding: '8px' }}>{user.last_name}</td>
+                    <td style={{ padding: '8px' }}>—</td>
                     <td style={{ padding: '8px' }}>
                       {user.birth_date ? new Date(user.birth_date).toLocaleDateString('cs-CZ') : '—'}
                     </td>
