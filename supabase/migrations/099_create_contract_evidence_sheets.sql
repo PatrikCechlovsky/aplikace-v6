@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS public.contract_evidence_sheets (
   total_amount NUMERIC DEFAULT 0,
   description TEXT,
   notes TEXT,
-  pdf_document_id UUID REFERENCES public.attachments(id) ON DELETE SET NULL,
   is_archived BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
