@@ -1,6 +1,6 @@
 // FILE: app/modules/060-smlouva/components/ContractEvidenceSheetsTab.tsx
-// PURPOSE: Záložka evidenčních listů smlouvy (list + detail)
-// NOTES: Umožňuje vytvořit pokračující list a ukončit předchozí
+// PURPOSE: Záložka evidenčních listů smlouvy (list view)
+// NOTES: Kliknutí otevře modální dialog, list se refreshuje po zavření
 
 'use client'
 
@@ -21,7 +21,7 @@ import {
   EVIDENCE_SHEETS_DEFAULT_SORT,
   EVIDENCE_SHEETS_VIEW_KEY,
 } from '../evidenceSheetsColumns'
-import EvidenceSheetDetailFrame from './EvidenceSheetDetailFrame'
+import EvidenceSheetModal from './EvidenceSheetModal'
 
 const logger = createLogger('ContractEvidenceSheetsTab')
 
@@ -54,8 +54,6 @@ function getSheetBadge(row: EvidenceSheetRow): string | undefined {
 
   return undefined
 }
-
-type DetailMode = 'read' | 'edit'
 
 type EvidenceSheetListItem = {
   id: string
@@ -108,8 +106,8 @@ export default function ContractEvidenceSheetsTab({
   const toast = useToast()
   const [rows, setRows] = useState<EvidenceSheetRow[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
-  const [detailMode, setDetailMode] = useState<DetailMode>('read')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'read' | 'edit'>('read')
   const [searchText, setSearchText] = useState('')
   const [sort, setSort] = useState<ListViewSortState>(EVIDENCE_SHEETS_DEFAULT_SORT)
   const [colsOpen, setColsOpen] = useState(false)
@@ -134,14 +132,13 @@ export default function ContractEvidenceSheetsTab({
       const data = await listEvidenceSheets(contractId, false)
       setRows(data)
       onCountChange?.(data.length)
-      if (data.length && !selectedId) setSelectedId(data[0].id)
     } catch (err: any) {
       logger.error('load evidence sheets failed', err)
       toast.showError(err?.message ?? 'Nepodařilo se načíst evidenční listy')
     } finally {
       setLoading(false)
     }
-  }, [contractId, toast, selectedId, onCountChange])
+  }, [contractId, toast, onCountChange])
 
   useEffect(() => {
     void load()
@@ -186,8 +183,8 @@ export default function ContractEvidenceSheetsTab({
       })
       await load()
       setSelectedId(created.id)
-      setDetailMode('edit')
-      setViewMode('detail')
+      setModalMode('edit')
+      setModalOpen(true)
       toast.showSuccess('Evidenční list vytvořen jako koncept')
     } catch (err: any) {
       logger.error('create evidence sheet failed', err)
@@ -195,26 +192,31 @@ export default function ContractEvidenceSheetsTab({
     }
   }, [contractId, rentAmount, load, toast])
 
-  const openDetailRead = useCallback((forcedId?: string) => {
+  const openModalRead = useCallback((forcedId?: string) => {
     const resolvedId = forcedId ?? selectedId
     if (!resolvedId) {
       toast.showWarning('Nejprve vyberte evidenční list')
       return
     }
     if (forcedId) setSelectedId(forcedId)
-    setDetailMode('read')
-    setViewMode('detail')
+    setModalMode('read')
+    setModalOpen(true)
   }, [selectedId, toast])
 
-  const openDetailEdit = useCallback(() => {
+  const openModalEdit = useCallback(() => {
     if (!selectedId) {
       toast.showWarning('Nejprve vyberte evidenční list')
       return
     }
     if (readOnly) return
-    setDetailMode('edit')
-    setViewMode('detail')
+    setModalMode('edit')
+    setModalOpen(true)
   }, [selectedId, readOnly, toast])
+
+  const handleCloseModal = useCallback(() => {
+    setModalOpen(false)
+    setSelectedId(null)
+  }, [])
 
   const listItems = useMemo<EvidenceSheetListItem[]>(
     () =>
@@ -307,148 +309,137 @@ export default function ContractEvidenceSheetsTab({
 
   return (
     <div className="detail-form detail-form--fill">
-      {viewMode === 'list' && (
-        <section className="detail-form__section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 className="detail-form__section-title">Seznam evidenčních listů</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {!readOnly && (
-                <button type="button" className="common-actions__btn" onClick={handleCreate}>
-                  <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                  <span className="common-actions__label">Nový</span>
+      <section className="detail-form__section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 className="detail-form__section-title">Seznam evidenčních listů</h3>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {!readOnly && (
+              <button type="button" className="common-actions__btn" onClick={handleCreate}>
+                <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                <span className="common-actions__label">Nový</span>
+              </button>
+            )}
+            {selectedId && (
+              <>
+                <button type="button" className="common-actions__btn" onClick={() => openModalRead()}>
+                  <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
+                  <span className="common-actions__label">Číst</span>
                 </button>
-              )}
-              {selectedId && (
-                <>
-                  <button type="button" className="common-actions__btn" onClick={() => openDetailRead()}>
-                    <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
-                    <span className="common-actions__label">Číst</span>
-                  </button>
-                  {!readOnly && (
-                    <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
-                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                      <span className="common-actions__label">Editovat</span>
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="detail-form__hint">Načítám evidenční listy...</div>
-          ) : rows.length === 0 ? (
-            <div className="detail-form__hint">Smlouva zatím nemá žádné evidenční listy.</div>
-          ) : (
-            <ListView
-              columns={columns}
-              rows={listRows}
-              filterValue={searchText}
-              onFilterChange={setSearchText}
-              selectedId={selectedId}
-              onRowClick={(row) => setSelectedId(String(row.id))}
-              onRowDoubleClick={(row) => openDetailRead(String(row.id))}
-              sort={sort}
-              onSortChange={handleSortChange}
-              onColumnResize={handleColumnResize}
-              onColumnSettings={() => setColsOpen(true)}
-            />
-          )}
-
-          <ListViewColumnsDrawer
-            open={colsOpen}
-            onClose={() => setColsOpen(false)}
-            columns={EVIDENCE_SHEETS_BASE_COLUMNS}
-            fixedFirstKey="sheetNumber"
-            requiredKeys={['sheetNumber']}
-            value={{
-              order: colPrefs.colOrder ?? [],
-              hidden: colPrefs.colHidden ?? [],
-            }}
-            sortBy={sort ?? undefined}
-            onChange={(next) => {
-              setColPrefs((prev) => {
-                const updated = {
-                  ...prev,
-                  colOrder: next.order,
-                  colHidden: next.hidden,
-                }
-                void saveViewPrefs(EVIDENCE_SHEETS_VIEW_KEY, {
-                  colWidths: updated.colWidths ?? {},
-                  colOrder: updated.colOrder ?? [],
-                  colHidden: updated.colHidden ?? [],
-                  sort,
-                })
-                return updated
-              })
-            }}
-            onSortChange={(nextSort) => handleSortChange(nextSort)}
-            onReset={() => {
-              const resetPrefs = {
-                colWidths: {},
-                colOrder: [],
-                colHidden: [],
-              }
-              setColPrefs(resetPrefs)
-              setSort(EVIDENCE_SHEETS_DEFAULT_SORT)
-              void saveViewPrefs(EVIDENCE_SHEETS_VIEW_KEY, {
-                ...resetPrefs,
-                sort: EVIDENCE_SHEETS_DEFAULT_SORT,
-              })
-            }}
-          />
-        </section>
-      )}
-
-      {viewMode === 'detail' && (
-        <section className="detail-form__section detail-form__section--scroll">
-          <div className="detail-subdetail">
-            <div className="detail-subdetail__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
-                {detailMode === 'edit' ? 'Editace evidenčního listu' : 'Detail evidenčního listu'}
-              </h3>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {!readOnly && (
-                  <button type="button" className="common-actions__btn" onClick={handleCreate}>
-                    <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
-                    <span className="common-actions__label">Nový</span>
-                  </button>
-                )}
-                {detailMode !== 'read' && selectedId && (
-                  <button type="button" className="common-actions__btn" onClick={() => openDetailRead()}>
-                    <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
-                    <span className="common-actions__label">Číst</span>
-                  </button>
-                )}
-                {detailMode === 'read' && !readOnly && selectedId && (
-                  <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
+                  <button type="button" className="common-actions__btn" onClick={openModalEdit}>
                     <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
                     <span className="common-actions__label">Editovat</span>
                   </button>
                 )}
-                <button type="button" className="common-actions__btn" onClick={() => setViewMode('list')}>
-                  <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                  <span className="common-actions__label">Zavřít</span>
-                </button>
-              </div>
-            </div>
-
-            {selectedId ? (
-              <EvidenceSheetDetailFrame
-                sheetId={selectedId}
-                contractId={contractId}
-                tenantId={tenantId}
-                tenantLabel={tenantLabel}
-                contractNumber={contractNumber}
-                contractSignedAt={contractSignedAt}
-                readOnly={readOnly || detailMode === 'read'}
-                onUpdated={load}
-              />
-            ) : (
-              <div className="detail-form__hint">Nejprve vyberte evidenční list.</div>
+              </>
             )}
           </div>
-        </section>
+        </div>
+
+        {loading ? (
+          <div className="detail-form__hint">Načítám evidenční listy...</div>
+        ) : rows.length === 0 ? (
+          <div className="detail-form__hint">Smlouva zatím nemá žádné evidenční listy.</div>
+        ) : (
+          <ListView
+            columns={columns}
+            rows={listRows}
+            filterValue={searchText}
+            onFilterChange={setSearchText}
+            selectedId={selectedId}
+            onRowClick={(row) => setSelectedId(String(row.id))}
+            onRowDoubleClick={(row) => openModalRead(String(row.id))}
+            sort={sort}
+            onSortChange={handleSortChange}
+            onColumnResize={handleColumnResize}
+            onColumnSettings={() => setColsOpen(true)}
+          />
+        )}
+
+        <ListViewColumnsDrawer
+          open={colsOpen}
+          onClose={() => setColsOpen(false)}
+          columns={EVIDENCE_SHEETS_BASE_COLUMNS}
+          fixedFirstKey="sheetNumber"
+          requiredKeys={['sheetNumber']}
+          value={{
+            order: colPrefs.colOrder ?? [],
+            hidden: colPrefs.colHidden ?? [],
+          }}
+          sortBy={sort ?? undefined}
+          onChange={(next) => {
+            setColPrefs((prev) => {
+              const updated = {
+                ...prev,
+                colOrder: next.order,
+                colHidden: next.hidden,
+              }
+              void saveViewPrefs(EVIDENCE_SHEETS_VIEW_KEY, {
+                colWidths: updated.colWidths ?? {},
+                colOrder: updated.colOrder ?? [],
+                colHidden: updated.colHidden ?? [],
+                sort,
+              })
+              return updated
+            })
+          }}
+          onSortChange={(nextSort) => handleSortChange(nextSort)}
+          onReset={() => {
+            const resetPrefs = {
+              colWidths: {},
+              colOrder: [],
+              colHidden: [],
+            }
+            setColPrefs(resetPrefs)
+            setSort(EVIDENCE_SHEETS_DEFAULT_SORT)
+            void saveViewPrefs(EVIDENCE_SHEETS_VIEW_KEY, {
+              ...resetPrefs,
+              sort: EVIDENCE_SHEETS_DEFAULT_SORT,
+            })
+          }}
+        />
+      </section>
+
+      {/* Modal Dialog */}
+      {modalOpen && selectedId && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={handleCloseModal}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-bg)',
+              borderRadius: 'var(--radius-base)',
+              width: '90%',
+              height: '90%',
+              maxWidth: '1200px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <EvidenceSheetModal
+              sheetId={selectedId}
+              contractId={contractId}
+              tenantId={tenantId}
+              tenantLabel={tenantLabel}
+              contractNumber={contractNumber}
+              contractSignedAt={contractSignedAt}
+              readOnly={readOnly || modalMode === 'read'}
+              onClose={handleCloseModal}
+              onUpdated={load}
+            />
+          </div>
+        </div>
       )}
     </div>
   )
