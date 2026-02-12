@@ -247,28 +247,6 @@ export default function EvidenceSheetModal({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Context Header */}
-      <div style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', fontSize: '12px' }}>
-          <div>
-            <div style={{ color: 'var(--color-text-muted)', marginBottom: '4px' }}>Pronajímatel</div>
-            <div style={{ fontWeight: 500 }}>{landlordName || '—'}</div>
-          </div>
-          <div>
-            <div style={{ color: 'var(--color-text-muted)', marginBottom: '4px' }}>Nemovitost</div>
-            <div style={{ fontWeight: 500 }}>{propertyName || '—'}</div>
-          </div>
-          <div>
-            <div style={{ color: 'var(--color-text-muted)', marginBottom: '4px' }}>Jednotka</div>
-            <div style={{ fontWeight: 500 }}>{unitName || '—'}</div>
-          </div>
-          <div>
-            <div style={{ color: 'var(--color-text-muted)', marginBottom: '4px' }}>Nájemník</div>
-            <div style={{ fontWeight: 500 }}>{tenantLabel || '—'}</div>
-          </div>
-        </div>
-      </div>
-
       {/* Modal Header */}
       <div style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0 }}>Evidenční list č. {sheet.sheet_number}</h2>
@@ -325,6 +303,10 @@ export default function EvidenceSheetModal({
                 sheet={sheet}
                 contractNumber={contractNumber}
                 contractSignedAt={contractSignedAt}
+                landlordName={landlordName}
+                propertyName={propertyName}
+                unitName={unitName}
+                tenantLabel={tenantLabel}
                 readOnly={isLocked}
                 replaceOptions={replaceOptions}
                 onValueChange={(val) => setPendingValue(val)}
