@@ -67,6 +67,10 @@ export type UiContract = {
   createdBy: string | null
   updatedAt: string | null
   updatedBy: string | null
+  landlord_name?: string | null
+  tenant_name?: string | null
+  property_name?: string | null
+  unit_name?: string | null
 }
 
 type Props = {

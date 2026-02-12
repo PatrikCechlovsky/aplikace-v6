@@ -19,6 +19,7 @@ import createLogger from '@/app/lib/logger'
 import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '@/app/lib/services/viewPrefs'
 import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsManagerUiState } from '@/app/UI/attachments/AttachmentsManagerFrame'
 import { getContractDetail, listContracts, type ContractsListRow } from '@/app/lib/services/contracts'
+import { listTenants } from '@/app/lib/services/tenants'
 import { formatDate } from '@/app/lib/formatters/formatDateTime'
 import ContractDetailFrame, { type UiContract as DetailUiContract } from '../forms/ContractDetailFrame'
 import EvidenceSheetModal from '../components/EvidenceSheetModal'
@@ -190,6 +191,7 @@ export default function ContractsTile({
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [isDirty, setIsDirty] = useState(false)
   const [evidenceSheetId, setEvidenceSheetId] = useState<string | null>(null)
+  const [tenants, setTenants] = useState<Array<{ id: string; label: string }>>([]) // For tenant label resolution
   const submitRef = useRef<null | (() => Promise<DetailUiContract | null>)>(null)
 
   const [attachmentsManagerContractId, setAttachmentsManagerContractId] = useState<string | null>(null)
@@ -373,7 +375,10 @@ export default function ContractsTile({
   const openDetail = useCallback(
     async (c: UiContractRow, vm: 'read' | 'edit', sectionId: DetailSectionId = 'detail') => {
       try {
-        const detail = await getContractDetail(c.id)
+        const [detail, tenantsData] = await Promise.all([
+          getContractDetail(c.id),
+          listTenants(),
+        ])
         const d = detail.contract
         const resolved: DetailUiContract = {
           id: d.id,
@@ -408,9 +413,14 @@ export default function ContractsTile({
           createdBy: d.created_by,
           updatedAt: d.updated_at,
           updatedBy: d.updated_by,
+          landlord_name: d.landlord_name || null,
+          tenant_name: d.tenant_name || null,
+          property_name: d.property_name || null,
+          unit_name: d.unit_name || null,
         }
 
         setDetailContract(resolved)
+        setTenants(tenantsData.map((t) => ({ id: t.id, label: t.display_name || 'Bez jména' })))
         setDetailInitialSectionId(sectionId)
         setViewMode(vm)
       } catch (err: any) {
@@ -567,15 +577,19 @@ export default function ContractsTile({
 
   // Evidence sheet view
   if (evidenceSheetId && selectedId && detailContract) {
+    const tenantLabel = tenants.find((t) => t.id === detailContract.tenantId)?.label ?? null
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <EvidenceSheetModal
           sheetId={evidenceSheetId}
           contractId={selectedId}
           tenantId={detailContract.tenantId || null}
-          tenantLabel={null}
+          tenantLabel={tenantLabel}
           contractNumber={detailContract.cisloSmlouvy || null}
           contractSignedAt={detailContract.datumPodpisu || null}
+          landlordName={detailContract.landlord_name || null}
+          propertyName={detailContract.property_name || null}
+          unitName={detailContract.unit_name || null}
           readOnly={detailContract.stav === 'archivní' || false}
           onClose={() => {
             router.push(`${pathname}?t=contracts-list&id=${selectedId}&vm=read`)
