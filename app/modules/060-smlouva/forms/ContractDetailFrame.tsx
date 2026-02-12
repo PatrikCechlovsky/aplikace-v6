@@ -15,8 +15,6 @@ import { listUnits } from '@/app/lib/services/units'
 import { listProperties } from '@/app/lib/services/properties'
 import { listLandlords } from '@/app/lib/services/landlords'
 import { listTenants } from '@/app/lib/services/tenants'
-import { listUnitServices } from '@/app/lib/services/unitServices'
-import { listContractUsers } from '@/app/lib/services/contractUsers'
 import { listEvidenceSheets } from '@/app/lib/services/contractEvidenceSheets'
 import { listSubjects } from '@/app/lib/services/subjects'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
@@ -27,8 +25,6 @@ import ContractDetailForm, {
   type UnitLookupOption,
   type PropertyLookupOption,
 } from './ContractDetailForm'
-import UnitServicesTab from '@/app/modules/040-nemovitost/components/UnitServicesTab'
-import ContractUsersTab from '../components/ContractUsersTab'
 import ContractDelegatesTab from '../components/ContractDelegatesTab'
 import ContractAccountsTab from '../components/ContractAccountsTab'
 import ContractEvidenceSheetsTab from '../components/ContractEvidenceSheetsTab'
@@ -140,9 +136,6 @@ export default function ContractDetailFrame({
 
   const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [formResetToken, setFormResetToken] = useState(0)
-  const [servicesCount, setServicesCount] = useState(0)
-  const [servicesTotal, setServicesTotal] = useState<number | null>(null)
-  const [contractUsersCount, setContractUsersCount] = useState<number | null>(null)
   const [evidenceSheetsCount, setEvidenceSheetsCount] = useState(0)
 
   const [units, setUnits] = useState<UnitLookupOption[]>([])
@@ -212,88 +205,6 @@ export default function ContractDetailFrame({
     void refreshAttachmentsCount()
   }, [refreshAttachmentsCount])
 
-  useEffect(() => {
-    let mounted = true
-
-    async function loadServicesCount() {
-      const unitId = formValueRef.current.unitId
-      if (!unitId || unitId === 'new') {
-        if (mounted) setServicesCount(0)
-        return
-      }
-
-      try {
-        const rows = await listUnitServices(unitId)
-        if (!mounted) return
-        setServicesCount(rows.length)
-      } catch (err) {
-        logger.error('Failed to load unit services count', err)
-      }
-    }
-
-    void loadServicesCount()
-    return () => {
-      mounted = false
-    }
-  }, [formValue.unitId])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function loadContractUsersCount() {
-      const tenantId = formValueRef.current.tenantId
-      const contractId = resolvedContract.id
-
-      if (!tenantId || tenantId === 'new') {
-        if (mounted) setContractUsersCount(null)
-        return
-      }
-
-      if (!contractId || contractId === 'new') {
-        if (mounted) setContractUsersCount(1)
-        return
-      }
-
-      try {
-        const rows = await listContractUsers(contractId, false)
-        if (!mounted) return
-        setContractUsersCount(rows.length + 1)
-      } catch (err) {
-        logger.error('Failed to load contract users count', err)
-      }
-    }
-
-    void loadContractUsersCount()
-    return () => {
-      mounted = false
-    }
-  }, [formValue.tenantId, resolvedContract.id])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function loadServicesTotal() {
-      const unitId = formValueRef.current.unitId
-      if (!unitId || unitId === 'new') {
-        if (mounted) setServicesTotal(null)
-        return
-      }
-
-      try {
-        const rows = await listUnitServices(unitId)
-        if (!mounted) return
-        const total = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0)
-        setServicesTotal(total)
-      } catch (err) {
-        logger.error('Failed to load unit services total', err)
-      }
-    }
-
-    void loadServicesTotal()
-    return () => {
-      mounted = false
-    }
-  }, [formValue.unitId, servicesCount])
 
   useEffect(() => {
     let mounted = true
@@ -500,7 +411,7 @@ export default function ContractDetailFrame({
         tenant_account_id: current.tenantAccountId || null,
         landlord_delegate_id: current.landlordDelegateId || null,
         tenant_delegate_id: current.tenantDelegateId || null,
-        pocet_uzivatelu: contractUsersCount ?? current.pocetUzivatelu ?? null,
+        pocet_uzivatelu: current.pocetUzivatelu ?? null,
         property_id: current.propertyId || null,
         unit_id: current.unitId || null,
         pomer_plochy_k_nemovitosti: current.pomerPlochyKNemovitosti || null,
@@ -508,7 +419,7 @@ export default function ContractDetailFrame({
         datum_zacatek: current.datumZacatek,
         datum_konec: current.dobaNeurcita ? null : current.datumKonec || null,
         doba_neurcita: current.dobaNeurcita,
-        najem_vyse: servicesTotal ?? current.najemVyse ?? null,
+        najem_vyse: current.najemVyse ?? null,
         periodicita_najmu: current.periodicitaNajmu,
         den_platby: current.denPlatby,
         kauce_potreba: current.kaucePotreba,
@@ -574,7 +485,7 @@ export default function ContractDetailFrame({
       toast.showError(err instanceof Error ? err.message : 'Chyba při ukládání smlouvy')
       return null
     }
-  }, [contract.id, resolvedContract.id, toast, onDirtyChange, onSaved, tenantSubjectType, landlordSubjectType, contractUsersCount, servicesTotal])
+  }, [contract.id, resolvedContract.id, toast, onDirtyChange, onSaved, tenantSubjectType, landlordSubjectType])
 
   useEffect(() => {
     onRegisterSubmit?.(handleSubmit)
@@ -626,7 +537,7 @@ export default function ContractDetailFrame({
   const content = (
     <DetailView
       mode={detailViewMode}
-      sectionIds={['detail', 'users', 'evidence', 'delegates', 'accounts', 'services', 'attachments', 'system']}
+      sectionIds={['detail', 'evidence', 'delegates', 'accounts', 'attachments', 'system']}
       initialActiveId={initialSectionId ?? 'detail'}
       onActiveSectionChange={onActiveSectionChange}
       ctx={{
@@ -638,8 +549,6 @@ export default function ContractDetailFrame({
         onAttachmentsCountChange: setAttachmentsCount,
         sectionCounts: {
           attachments: attachmentsCount,
-          services: servicesCount,
-          users: typeof contractUsersCount === 'number' ? contractUsersCount : undefined,
           evidence: evidenceSheetsCount,
         },
         detailContent: (
@@ -655,19 +564,8 @@ export default function ContractDetailFrame({
             rentPeriodOptions={rentPeriodOptions}
             paymentDayOptions={paymentDayOptions}
             resetToken={formResetToken}
-            rentAmountOverride={servicesTotal}
-            userCountOverride={contractUsersCount}
             onDirtyChange={handleFormDirtyChange}
             onValueChange={handleFormValueChange}
-          />
-        ),
-        usersContent: (
-          <ContractUsersTab
-            contractId={resolvedContract.id}
-            tenantId={formValue.tenantId || null}
-            tenantLabel={tenants.find((t) => t.id === formValue.tenantId)?.label ?? null}
-            readOnly={readOnly}
-            onSelectionCountChange={(count) => setContractUsersCount(count)}
           />
         ),
         evidenceContent: (
@@ -720,13 +618,6 @@ export default function ContractDetailFrame({
               formValueRef.current = { ...formValueRef.current, landlordAccountId: id || '' }
               markDirtyIfChanged(formValueRef.current)
             }}
-          />
-        ),
-        servicesContent: (
-          <UnitServicesTab
-            unitId={formValue.unitId || 'new'}
-            readOnly={readOnly}
-            onCountChange={(count) => setServicesCount(count)}
           />
         ),
         systemBlocks,

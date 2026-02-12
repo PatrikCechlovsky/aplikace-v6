@@ -21,8 +21,6 @@ Smlouva navázaná na jednotku, nájemníka a pronajímatele.
 - seznam smluv
 - detail a editace smlouvy
 - přílohy smlouvy (read-only tab + manager přes 📎)
-- záložka **Služby** – připojení služeb na jednotku a výpočet součtu do „Výše nájmu"
-- záložka **Uživatelé** – výběr uživatelů nájemníka pro konkrétní smlouvu
 - záložka **Zástupci** – výběr zástupců nájemníka a pronajímatele
 - záložka **Účty** – výběr účtu nájemníka a pronajímatele
 - záložka **Evidenční listy** – verzované přílohy ke smlouvě (osoby + služby)
@@ -59,7 +57,7 @@ Poznámka: Periodicita nájmu používá `service_periodicities` (shodné s peri
 
 ## Poznámky
 - Volba **jednotky** automaticky doplní vazby na **nemovitost a pronajímatele**. Nájemník se vybírá ručně.
-- Pole **Počet uživatelů** se odvozuje z nájemníka (1 nájemník + spolubydlící).
+- Počet osob a služby se spravují v evidenčních listech, ne v detailu smlouvy.
 - Účty jsou povinné pro aktivaci smlouvy.
 - Zástupce je povinný pro firmu/spolek při aktivaci smlouvy.
 - Evidenční listy se číslují od 1 výše a vždy mohou nahradit předchozí list.
