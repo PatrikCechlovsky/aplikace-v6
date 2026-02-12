@@ -308,28 +308,6 @@ export default function EvidenceSheetServicesTab({
     }
   }, [detailMode, formValue, isCustomService, load, persistRows, readOnly, rows, toast, recomputeRow])
 
-  const handleDelete = useCallback(async () => {
-    if (readOnly || !selectedId) return
-    const row = rows.find((r) => r.id === selectedId)
-    if (!row) return
-    const shouldContinue = window.confirm(`Opravdu odebrat službu "${row.service_name}"?`)
-    if (!shouldContinue) return
-
-    try {
-      setSaving(true)
-      const nextRows = rows.filter((r) => r.id !== selectedId)
-      await persistRows(nextRows)
-      toast.showSuccess('Služba odebrána')
-      await load()
-      setViewMode('list')
-    } catch (err: any) {
-      logger.error('delete service failed', err)
-      toast.showError(err?.message ?? 'Nepodařilo se odebrat službu evidenčního listu')
-    } finally {
-      setSaving(false)
-    }
-  }, [load, persistRows, readOnly, rows, selectedId, toast])
-
   const listItems = useMemo<ServiceCatalogListItem[]>(() => rows.map((row) => ({
     id: row.id,
     name: row.service_name || '—',
@@ -522,13 +500,6 @@ export default function EvidenceSheetServicesTab({
                   <button type="button" className="common-actions__btn" onClick={() => void handleSave()} disabled={saving}>
                     <span className="common-actions__icon">{getIcon('save' as IconKey)}</span>
                     <span className="common-actions__label">Uložit</span>
-                  </button>
-                )}
-
-                {!readOnly && detailMode !== 'create' && (
-                  <button type="button" className="common-actions__btn" onClick={() => void handleDelete()} disabled={saving}>
-                    <span className="common-actions__icon">{getIcon('delete' as IconKey)}</span>
-                    <span className="common-actions__label">Odebrat</span>
                   </button>
                 )}
 
