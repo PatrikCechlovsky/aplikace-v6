@@ -430,7 +430,6 @@ export default function ContractEvidenceSheetsTab({
             contractNumber={contractNumber}
             contractSignedAt={contractSignedAt}
             readOnly={readOnly}
-            onUpdated={load}
           />
         </section>
       )}

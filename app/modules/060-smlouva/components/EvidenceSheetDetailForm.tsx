@@ -160,7 +160,7 @@ export default function EvidenceSheetDetailForm({
       </div>
 
       <div className="detail-form__section">
-        <h3 className="detail-form__section-title">Základní údaje</h3>
+        <h3 className="detail-form__section-title">Vazby</h3>
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
