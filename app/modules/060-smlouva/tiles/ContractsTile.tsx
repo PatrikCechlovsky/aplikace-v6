@@ -21,6 +21,7 @@ import AttachmentsManagerFrame, { type AttachmentsManagerApi, type AttachmentsMa
 import { getContractDetail, listContracts, type ContractsListRow } from '@/app/lib/services/contracts'
 import { formatDate } from '@/app/lib/formatters/formatDateTime'
 import ContractDetailFrame, { type UiContract as DetailUiContract } from '../forms/ContractDetailFrame'
+import EvidenceSheetModal from '../components/EvidenceSheetModal'
 import { CONTRACTS_BASE_COLUMNS } from '../contractsColumns'
 import {
   getAttachmentsManagerActions,
@@ -188,6 +189,7 @@ export default function ContractsTile({
   const [detailContract, setDetailContract] = useState<DetailUiContract | null>(null)
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [isDirty, setIsDirty] = useState(false)
+  const [evidenceSheetId, setEvidenceSheetId] = useState<string | null>(null)
   const submitRef = useRef<null | (() => Promise<DetailUiContract | null>)>(null)
 
   const [attachmentsManagerContractId, setAttachmentsManagerContractId] = useState<string | null>(null)
@@ -298,6 +300,15 @@ export default function ContractsTile({
     const id = searchParams.get('id')?.trim() ?? null
     const vm = (searchParams.get('vm')?.trim() || 'list') as LocalViewMode
     const am = searchParams.get('am')
+    const es = searchParams.get('es')?.trim() ?? null
+
+    // If evidence sheet is open, show it instead of contract detail
+    if (es) {
+      setEvidenceSheetId(es)
+      return
+    }
+
+    setEvidenceSheetId(null)
 
     if (am === '1' && id) {
       setViewMode('attachments-manager')
@@ -554,6 +565,42 @@ export default function ContractsTile({
     )
   }
 
+  // Evidence sheet view
+  if (evidenceSheetId && selectedId && detailContract) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <EvidenceSheetModal
+          sheetId={evidenceSheetId}
+          contractId={selectedId}
+          tenantId={detailContract.tenantId || null}
+          tenantLabel={null}
+          contractNumber={detailContract.cisloSmlouvy || null}
+          contractSignedAt={detailContract.datumPodpisu || null}
+          readOnly={detailContract.stav === 'archivní' || false}
+          onClose={() => {
+            router.push(`${pathname}?t=contracts-list&id=${selectedId}&vm=read`)
+          }}
+          onUpdated={() => {
+            // Refresh contract if needed
+          }}
+        />
+      </div>
+    )
+  }
+
+  if (viewMode === 'attachments-manager' && attachmentsManagerContractId) {
+    return (
+      <AttachmentsManagerFrame
+        entityType="contracts"
+        entityId={attachmentsManagerContractId}
+        entityLabel={detailContract?.cisloSmlouvy ?? null}
+        canManage={true}
+        onRegisterManagerApi={(api) => (attachmentsManagerApiRef.current = api)}
+        onManagerStateChange={setAttachmentsManagerUi}
+      />
+    )
+  }
+
   if (detailContract && (viewMode === 'read' || viewMode === 'edit' || viewMode === 'create')) {
     return (
       <ContractDetailFrame
@@ -569,6 +616,9 @@ export default function ContractsTile({
           setIsDirty(false)
           setSelectedId(saved.id)
           router.push(`${pathname}?t=contracts-list&id=${saved.id}&vm=read`)
+        }}
+        onNavigateToEvidenceSheet={(sheetId) => {
+          router.push(`${pathname}?t=contracts-list&id=${detailContract.id}&vm=read&es=${sheetId}`)
         }}
       />
     )

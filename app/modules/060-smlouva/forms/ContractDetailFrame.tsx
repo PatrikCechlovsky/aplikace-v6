@@ -78,6 +78,7 @@ type Props = {
   onRegisterSubmit?: (fn: () => Promise<UiContract | null>) => void
   onDirtyChange?: (dirty: boolean) => void
   onSaved?: (contract: UiContract) => void
+  onNavigateToEvidenceSheet?: (sheetId: string) => void
 }
 
 function buildInitialFormValue(c: UiContract): ContractFormValue {
@@ -126,6 +127,7 @@ export default function ContractDetailFrame({
   onRegisterSubmit,
   onDirtyChange,
   onSaved,
+  onNavigateToEvidenceSheet,
 }: Props) {
   const [resolvedContract, setResolvedContract] = useState<UiContract>(contract)
   const [formValue, setFormValue] = useState<ContractFormValue>(() => buildInitialFormValue(contract))
@@ -578,6 +580,7 @@ export default function ContractDetailFrame({
             rentAmount={formValue.najemVyse ?? null}
             readOnly={readOnly}
             onCountChange={(count) => setEvidenceSheetsCount(count)}
+            onNavigateToSheet={onNavigateToEvidenceSheet}
           />
         ),
         delegatesContent: (

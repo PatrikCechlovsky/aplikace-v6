@@ -34,6 +34,7 @@ type Props = {
   rentAmount: number | null
   readOnly?: boolean
   onCountChange?: (count: number) => void
+  onNavigateToSheet?: (sheetId: string) => void
 }
 
 function isActiveSheet(row: EvidenceSheetRow): boolean {
@@ -102,6 +103,7 @@ export default function ContractEvidenceSheetsTab({
   rentAmount,
   readOnly = false,
   onCountChange,
+  onNavigateToSheet,
 }: Props) {
   const toast = useToast()
   const [rows, setRows] = useState<EvidenceSheetRow[]>([])
@@ -196,9 +198,15 @@ export default function ContractEvidenceSheetsTab({
       toast.showWarning('Nejprve vyberte evidenční list')
       return
     }
+    // Pokud je callback na navigaci, použi jej - otevře list na úrovni aplikace
+    if (onNavigateToSheet) {
+      onNavigateToSheet(resolvedId)
+      return
+    }
+    // Fallback: inline detail view
     if (forcedId) setSelectedId(forcedId)
     setViewMode('detail')
-  }, [selectedId, toast])
+  }, [selectedId, toast, onNavigateToSheet])
 
   const openDetailEdit = useCallback(() => {
     if (!selectedId) {
