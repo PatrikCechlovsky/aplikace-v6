@@ -335,16 +335,17 @@ export default function EvidenceSheetServicesTab({
     })
   }, [filteredItems, sort])
 
+  const selectedCatalog = useMemo(
+    () => catalog.find((item) => item.id === formValue.service_id) ?? null,
+    [catalog, formValue.service_id]
+  )
+
   if (loading) {
     return <div className="detail-form__hint">Načítám služby…</div>
   }
 
   const isFormReadOnly = readOnly || detailMode === 'read'
   const inputClass = isFormReadOnly ? 'detail-form__input detail-form__input--readonly' : 'detail-form__input'
-  const selectedCatalog = useMemo(
-    () => catalog.find((item) => item.id === formValue.service_id) ?? null,
-    [catalog, formValue.service_id]
-  )
 
   return (
     <div className="detail-form detail-form--fill">
