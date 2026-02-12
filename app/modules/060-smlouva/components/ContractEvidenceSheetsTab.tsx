@@ -31,6 +31,9 @@ type Props = {
   contractSignedAt: string | null
   tenantId: string | null
   tenantLabel?: string | null
+  landlordName?: string | null
+  propertyName?: string | null
+  unitName?: string | null
   rentAmount: number | null
   readOnly?: boolean
   onCountChange?: (count: number) => void
@@ -100,6 +103,9 @@ export default function ContractEvidenceSheetsTab({
   contractSignedAt,
   tenantId,
   tenantLabel,
+  landlordName,
+  propertyName,
+  unitName,
   rentAmount,
   readOnly = false,
   onCountChange,
@@ -418,6 +424,9 @@ export default function ContractEvidenceSheetsTab({
             contractId={contractId}
             tenantId={tenantId}
             tenantLabel={tenantLabel}
+            landlordName={landlordName}
+            propertyName={propertyName}
+            unitName={unitName}
             contractNumber={contractNumber}
             contractSignedAt={contractSignedAt}
             readOnly={readOnly}

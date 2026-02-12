@@ -26,6 +26,10 @@ type Props = {
   sheet: EvidenceSheetRow
   contractNumber: string | null
   contractSignedAt: string | null
+  landlordName?: string | null
+  propertyName?: string | null
+  unitName?: string | null
+  tenantLabel?: string | null
   readOnly?: boolean
   replaceOptions: SheetOption[]
   onValueChange?: (val: EvidenceSheetFormValue) => void
@@ -45,6 +49,10 @@ export default function EvidenceSheetDetailForm({
   sheet,
   contractNumber,
   contractSignedAt,
+  landlordName,
+  propertyName,
+  unitName,
+  tenantLabel,
   readOnly = false,
   replaceOptions,
   onValueChange,
@@ -147,6 +155,32 @@ export default function EvidenceSheetDetailForm({
           <div className="detail-form__field">
             <label className="detail-form__label">Počet osob</label>
             <input className="detail-form__input detail-form__input--readonly" value={formVal.totalPersons} readOnly />
+          </div>
+        </div>
+      </div>
+
+      <div className="detail-form__section">
+        <h3 className="detail-form__section-title">Základní údaje</h3>
+
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Pronajímatel</label>
+            <input className="detail-form__input detail-form__input--readonly" value={landlordName || '—'} readOnly />
+          </div>
+          <div className="detail-form__field">
+            <label className="detail-form__label">Nemovitost</label>
+            <input className="detail-form__input detail-form__input--readonly" value={propertyName || '—'} readOnly />
+          </div>
+        </div>
+
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field">
+            <label className="detail-form__label">Jednotka</label>
+            <input className="detail-form__input detail-form__input--readonly" value={unitName || '—'} readOnly />
+          </div>
+          <div className="detail-form__field">
+            <label className="detail-form__label">Nájemník</label>
+            <input className="detail-form__input detail-form__input--readonly" value={tenantLabel || '—'} readOnly />
           </div>
         </div>
       </div>

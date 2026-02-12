@@ -28,6 +28,9 @@ type Props = {
   tenantLabel?: string | null
   contractNumber: string | null
   contractSignedAt: string | null
+  landlordName?: string | null
+  propertyName?: string | null
+  unitName?: string | null
   readOnly?: boolean
   onUpdated?: () => void
 }
@@ -39,6 +42,9 @@ export default function EvidenceSheetDetailFrame({
   tenantLabel,
   contractNumber,
   contractSignedAt,
+  landlordName,
+  propertyName,
+  unitName,
   readOnly = false,
   onUpdated,
 }: Props) {
@@ -231,37 +237,18 @@ export default function EvidenceSheetDetailFrame({
           attachments: attachmentsCount,
         },
         detailContent: (
-          <div>
-            {!isLocked && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                <button
-                  type="button"
-                  className="common-actions__btn"
-                  onClick={() => pendingValue && handleSave(pendingValue)}
-                  disabled={!pendingValue}
-                >
-                  Uložit změny
-                </button>
-                <button
-                  type="button"
-                  className="common-actions__btn"
-                  onClick={handleActivate}
-                  disabled={!pendingValue}
-                  style={{ marginLeft: 8 }}
-                >
-                  Potvrdit list
-                </button>
-              </div>
-            )}
-            <EvidenceSheetDetailForm
-              sheet={sheet}
-              contractNumber={contractNumber}
-              contractSignedAt={contractSignedAt}
-              readOnly={isLocked}
-              replaceOptions={replaceOptions}
-              onValueChange={(val) => setPendingValue(val)}
-            />
-          </div>
+          <EvidenceSheetDetailForm
+            sheet={sheet}
+            contractNumber={contractNumber}
+            contractSignedAt={contractSignedAt}
+            landlordName={landlordName}
+            propertyName={propertyName}
+            unitName={unitName}
+            tenantLabel={tenantLabel}
+            readOnly={isLocked}
+            replaceOptions={replaceOptions}
+            onValueChange={(val) => setPendingValue(val)}
+          />
         ),
         usersContent: (
           <EvidenceSheetUsersTab
