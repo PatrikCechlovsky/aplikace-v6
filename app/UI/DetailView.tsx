@@ -516,7 +516,7 @@ export default function DetailView({
       }))
     console.log('DetailView: tabs recomputed:', result.map(t => ({ id: t.id, count: t.count })))
     return result
-  }, [sections, ctx, ctx?.sectionCounts])
+  }, [sections, ctx, ctx?.sectionCounts?.detail, ctx?.sectionCounts?.users, ctx?.sectionCounts?.services, ctx?.sectionCounts?.attachments, ctx?.sectionCounts?.system])
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'
   const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? firstTabId)
