@@ -48,6 +48,7 @@ export default function EvidenceSheetDetailFrame({
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
   const [replaceOptions, setReplaceOptions] = useState<{ id: string; label: string }[]>([])
   const [attachmentsCount, setAttachmentsCount] = useState(0)
+  const [servicesCount, setServicesCount] = useState(0)
 
   useEffect(() => {
     let mounted = true
@@ -116,6 +117,7 @@ export default function EvidenceSheetDetailFrame({
         mode: detailViewMode,
         onAttachmentsCountChange: setAttachmentsCount,
         sectionCounts: {
+          services: servicesCount,
           attachments: attachmentsCount,
         },
         detailContent: (
@@ -142,6 +144,7 @@ export default function EvidenceSheetDetailFrame({
         servicesContent: (
           <EvidenceSheetServicesTab
             sheetId={sheet.id}
+            onCountChange={setServicesCount}
             readOnly={isLocked}
           />
         ),
