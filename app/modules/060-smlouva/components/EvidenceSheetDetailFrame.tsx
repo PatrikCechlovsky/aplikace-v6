@@ -15,6 +15,7 @@ import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
   getEvidenceSheet,
   listEvidenceSheetServices,
+  listEvidenceSheetUsers,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 
@@ -49,6 +50,7 @@ export default function EvidenceSheetDetailFrame({
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
   const [replaceOptions, setReplaceOptions] = useState<{ id: string; label: string }[]>([])
   const [attachmentsCount, setAttachmentsCount] = useState(0)
+  const [usersCount, setUsersCount] = useState(0)
   const [servicesCount, setServicesCount] = useState(0)
 
   useEffect(() => {
@@ -87,6 +89,26 @@ export default function EvidenceSheetDetailFrame({
         }
       } catch (err: any) {
         logger.error('Failed to load evidence sheet services count', err)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [sheetId])
+
+  // Load count for users
+  useEffect(() => {
+    let mounted = true
+
+    ;(async () => {
+      try {
+        const usersRows = await listEvidenceSheetUsers(sheetId)
+        if (mounted) {
+          setUsersCount(usersRows.length)
+        }
+      } catch (err: any) {
+        logger.error('Failed to load evidence sheet users count', err)
       }
     })()
 
@@ -138,6 +160,7 @@ export default function EvidenceSheetDetailFrame({
         mode: detailViewMode,
         onAttachmentsCountChange: setAttachmentsCount,
         sectionCounts: {
+          users: usersCount,
           services: servicesCount,
           attachments: attachmentsCount,
         },
@@ -160,6 +183,7 @@ export default function EvidenceSheetDetailFrame({
             tenantId={tenantId}
             tenantLabel={tenantLabel}
             readOnly={isLocked}
+            onCountChange={setUsersCount}
           />
         ),
         servicesContent: (
