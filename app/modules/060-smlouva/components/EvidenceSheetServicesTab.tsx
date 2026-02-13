@@ -158,6 +158,7 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
   }, [sheetId, reloadServices])
 
   useEffect(() => {
+    console.log('EvidenceSheetServicesTab: services.length changed to:', services.length, 'calling onCountChange')
     onCountChange?.(services.length)
   }, [services.length, onCountChange])
 

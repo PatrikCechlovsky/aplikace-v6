@@ -85,6 +85,7 @@ export default function EvidenceSheetDetailFrame({
       try {
         const servicesRows = await listEvidenceSheetServices(sheetId)
         if (mounted) {
+          console.log('EvidenceSheetDetailFrame: loaded services count:', servicesRows.length)
           setServicesCount(servicesRows.length)
         }
       } catch (err: any) {

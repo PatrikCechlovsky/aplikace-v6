@@ -506,7 +506,7 @@ export default function DetailView({
   }, [sectionIds])
 
   const tabs: DetailTabItem[] = useMemo(() => {
-    return sections
+    const result = sections
       .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
       .map((s) => ({
         id: s.id,
@@ -514,6 +514,8 @@ export default function DetailView({
         icon: s.icon,
         count: ctx?.sectionCounts?.[s.id],
       }))
+    console.log('DetailView: tabs recomputed:', result.map(t => ({ id: t.id, count: t.count })))
+    return result
   }, [sections, ctx, ctx?.sectionCounts])
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'
