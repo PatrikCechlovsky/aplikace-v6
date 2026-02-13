@@ -426,12 +426,15 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
         note: formValue.note || null,
       })
 
-      await reloadServices()
+      // Načíst aktualizovaný seznam služeb
+      const updatedServices = await listPropertyServices(propertyId)
+      setServices(updatedServices)
+      
       toast.showSuccess('Služba uložena')
 
-      if (!selectedId && services.length >= 0) {
-        const next = await listPropertyServices(propertyId)
-        const last = next[next.length - 1]
+      // Po vytvoření nové služby přepnout na poslední záznam
+      if (!selectedId) {
+        const last = updatedServices[updatedServices.length - 1]
         if (last) {
           setSelectedId(last.id)
           selectService(last.id)
@@ -476,16 +479,20 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
       if (readOnly) return
       try {
         await setPropertyServiceArchived(serviceId, !nextActive)
+        
+        // Aktualizovat seznam služeb
+        const updatedServices = await listPropertyServices(propertyId)
+        setServices(updatedServices)
+        
         if (!nextActive && selectedId === serviceId) {
           setSelectedId(null)
         }
-        await reloadServices()
       } catch (e: any) {
         logger.error('setPropertyServiceArchived failed', e)
         toast.showError(e?.message ?? 'Chyba při archivaci služby')
       }
     },
-    [readOnly, reloadServices, selectedId, toast]
+    [propertyId, readOnly, selectedId, toast]
   )
 
   const listItems = useMemo<ServiceCatalogListItem[]>(() => {

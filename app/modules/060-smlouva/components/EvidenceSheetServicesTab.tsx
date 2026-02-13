@@ -349,6 +349,28 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
     onAttachmentsChanged?.()
   }, [attachmentsReturnView, onAttachmentsChanged])
 
+  const handlePrevious = useCallback(() => {
+    if (!selectedId) return
+    const index = services.findIndex((s) => s.id === selectedId)
+    if (index > 0) {
+      const prevService = services[index - 1]
+      if (prevService) {
+        selectService(prevService.id)
+      }
+    }
+  }, [services, selectService, selectedId])
+
+  const handleNext = useCallback(() => {
+    if (!selectedId) return
+    const index = services.findIndex((s) => s.id === selectedId)
+    if (index >= 0 && index < services.length - 1) {
+      const nextService = services[index + 1]
+      if (nextService) {
+        selectService(nextService.id)
+      }
+    }
+  }, [services, selectService, selectedId])
+
   const handleSave = useCallback(async () => {
     if (detailMode === 'read') return
 
@@ -507,7 +529,11 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
   }, [filteredItems, handleArchiveToggle, readOnly, sort])
 
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
+  const selectedIndex = useMemo(() => (selectedId ? services.findIndex((s) => s.id === selectedId) : -1), [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
+  const canGoPrevious = selectedIndex > 0
+  const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
+  const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${services.length}` : null
 
   if (!sheetId || sheetId === 'new') {
     return (
@@ -638,6 +664,31 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
                 {detailMode === 'create' ? 'Nová služba' : 'Detail služby'}
               </h3>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {detailMode !== 'create' && selectedId && positionLabel && (
+                <span className="common-actions__counter">{positionLabel}</span>
+              )}
+              {detailMode !== 'create' && selectedId && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevious}
+                    disabled={!canGoPrevious}
+                    className="common-actions__btn"
+                    title="Předchozí"
+                  >
+                    <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={!canGoNext}
+                    className="common-actions__btn"
+                    title="Další"
+                  >
+                    <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
+                  </button>
+                </>
+              )}
               {detailMode === 'read' && !readOnly && selectedId && (
                 <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
                   <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
