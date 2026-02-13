@@ -150,6 +150,8 @@ export default function EvidenceSheetDetailFrame({
   const isLocked = readOnly || sheet.status !== 'draft'
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
 
+  console.log('EvidenceSheetDetailFrame: render with counts:', { usersCount, servicesCount, attachmentsCount })
+
   return (
     <DetailView
       mode={detailViewMode}
