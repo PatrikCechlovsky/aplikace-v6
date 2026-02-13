@@ -3,6 +3,7 @@
 
 .detail-tabs {
   margin: 6px 0 12px;
+  padding: 0 1.5rem; /* Horizontální padding pro zarovnání se zbytkem */
 }
 
 /* řádek s oušky */

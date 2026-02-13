@@ -514,7 +514,7 @@ export default function DetailView({
         icon: s.icon,
         count: ctx?.sectionCounts?.[s.id],
       }))
-  }, [sections, ctx])
+  }, [sections, ctx, ctx?.sectionCounts])
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'
   const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? firstTabId)

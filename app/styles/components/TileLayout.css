@@ -54,10 +54,10 @@
   overflow: hidden; /* Scroll je v table-wrapper nebo detail-view__content! */
 }
 
-/* DetailView v content oblasti - odstranit vlastní padding */
+/* DetailView v content oblasti - dát padding na záložky a obsah, ne na wrapper */
 .tile-layout__content .detail-view {
   padding: 0;
-  margin: 0;
+  margin: -1rem -1.5rem; /* Vytečení z paddingu tile-layout__content */
   flex: 1 1 auto;
   min-height: 0;
 }

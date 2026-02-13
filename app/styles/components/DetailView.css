@@ -15,5 +15,5 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1rem 1.5rem; /* Padding pro obsah (konzistentní s tile-layout__content) */
+  padding: 0 1.5rem 1rem 1.5rem; /* Horizontální padding + spodní, horní zajišťují sekce */
 }
