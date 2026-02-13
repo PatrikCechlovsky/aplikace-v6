@@ -14,6 +14,7 @@ import createLogger from '@/app/lib/logger'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
   getEvidenceSheet,
+  listEvidenceSheetServices,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 
@@ -73,6 +74,26 @@ export default function EvidenceSheetDetailFrame({
       mounted = false
     }
   }, [sheetId, contractId, toast])
+
+  // Load counts for services and attachments
+  useEffect(() => {
+    let mounted = true
+
+    ;(async () => {
+      try {
+        const servicesRows = await listEvidenceSheetServices(sheetId)
+        if (mounted) {
+          setServicesCount(servicesRows.length)
+        }
+      } catch (err: any) {
+        logger.error('Failed to load evidence sheet services count', err)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [sheetId])
 
   if (!sheet) {
     return <div className="detail-form__hint">Načítám evidenční list…</div>

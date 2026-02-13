@@ -16,6 +16,7 @@ import { supabase } from '@/app/lib/supabaseClient'
 import EquipmentTab from './EquipmentTab'
 import UnitServicesTab from './UnitServicesTab'
 import { listAttachments } from '@/app/lib/attachments'
+import { listUnitServices } from '@/app/lib/services/unitServices'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -172,6 +173,34 @@ export default function UnitDetailFrame({
   useEffect(() => {
     void refreshAttachmentsCount()
   }, [refreshAttachmentsCount])
+
+  // Load counts for equipment, services, attachments
+  useEffect(() => {
+    if (isNewId(resolvedUnit.id)) {
+      setEquipmentCount(0)
+      setServicesCount(0)
+      setAttachmentsCount(0)
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const servicesRows = await listUnitServices(resolvedUnit.id)
+        if (!cancelled) {
+          setServicesCount(servicesRows.length)
+        }
+        void refreshAttachmentsCount()
+      } catch (err) {
+        logger.error('Failed to load unit counts', err)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedUnit.id, refreshAttachmentsCount])
   
   // Load unit types from generic_types
   useEffect(() => {
