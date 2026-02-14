@@ -85,7 +85,6 @@ export default function EvidenceSheetDetailFrame({
       try {
         const servicesRows = await listEvidenceSheetServices(sheetId)
         if (mounted) {
-          console.log('EvidenceSheetDetailFrame: loaded services count:', servicesRows.length)
           setServicesCount(servicesRows.length)
         }
       } catch (err: any) {
@@ -106,7 +105,8 @@ export default function EvidenceSheetDetailFrame({
       try {
         const usersRows = await listEvidenceSheetUsers(sheetId)
         if (mounted) {
-          setUsersCount(usersRows.length)
+          const baseCount = tenantId ? 1 : 0
+          setUsersCount(baseCount + usersRows.length)
         }
       } catch (err: any) {
         logger.error('Failed to load evidence sheet users count', err)
@@ -116,7 +116,7 @@ export default function EvidenceSheetDetailFrame({
     return () => {
       mounted = false
     }
-  }, [sheetId])
+  }, [sheetId, tenantId])
 
   if (!sheet) {
     return <div className="detail-form__hint">Načítám evidenční list…</div>
@@ -149,8 +149,6 @@ export default function EvidenceSheetDetailFrame({
 
   const isLocked = readOnly || sheet.status !== 'draft'
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
-
-  console.log('EvidenceSheetDetailFrame: render with counts:', { usersCount, servicesCount, attachmentsCount })
 
   return (
     <DetailView

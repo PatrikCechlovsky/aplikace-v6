@@ -505,18 +505,14 @@ export default function DetailView({
     return sectionIds.map((id) => DETAIL_SECTIONS[id]).filter(Boolean).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   }, [sectionIds])
 
-  const tabs: DetailTabItem[] = useMemo(() => {
-    const result = sections
-      .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
-      .map((s) => ({
-        id: s.id,
-        label: s.label,
-        icon: s.icon,
-        count: ctx?.sectionCounts?.[s.id],
-      }))
-    console.log('DetailView: tabs recomputed:', result.map(t => ({ id: t.id, count: t.count })))
-    return result
-  }, [sections, ctx, ctx?.sectionCounts?.detail, ctx?.sectionCounts?.users, ctx?.sectionCounts?.services, ctx?.sectionCounts?.attachments, ctx?.sectionCounts?.system])
+  const tabs: DetailTabItem[] = sections
+    .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
+    .map((s) => ({
+      id: s.id,
+      label: s.label,
+      icon: s.icon,
+      count: ctx?.sectionCounts?.[s.id],
+    }))
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'
   const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? firstTabId)
