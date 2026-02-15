@@ -15,6 +15,8 @@ import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
   getEvidenceSheet,
   listEvidenceSheets,
+  listEvidenceSheetServices,
+  listEvidenceSheetUsers,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 
@@ -55,6 +57,8 @@ export default function EvidenceSheetModal({
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
   const [replaceOptions, setReplaceOptions] = useState<{ id: string; label: string }[]>([])
   const [attachmentsCount, setAttachmentsCount] = useState(0)
+  const [usersCount, setUsersCount] = useState(0)
+  const [servicesCount, setServicesCount] = useState(0)
   const [pendingValue, setPendingValue] = useState<EvidenceSheetFormValue | null>(null)
 
   useEffect(() => {
@@ -91,6 +95,48 @@ export default function EvidenceSheetModal({
       mounted = false
     }
   }, [sheetId, contractId, toast])
+
+  // Load counts for services
+  useEffect(() => {
+    let mounted = true
+
+    ;(async () => {
+      try {
+        const servicesRows = await listEvidenceSheetServices(sheetId)
+        if (mounted) {
+          setServicesCount(servicesRows.length)
+        }
+      } catch (err: any) {
+        logger.error('Failed to load evidence sheet services count', err)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [sheetId])
+
+  // Load count for users
+  useEffect(() => {
+    let mounted = true
+
+    ;(async () => {
+      try {
+        const usersRows = await listEvidenceSheetUsers(sheetId)
+        if (mounted) {
+          const baseCount = tenantId ? 1 : 0
+          const finalCount = baseCount + usersRows.length
+          setUsersCount(finalCount)
+        }
+      } catch (err: any) {
+        logger.error('Failed to load evidence sheet users count', err)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [sheetId, tenantId])
 
   useEffect(() => {
     if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
@@ -157,6 +203,8 @@ export default function EvidenceSheetModal({
             mode: detailViewMode,
             onAttachmentsCountChange: setAttachmentsCount,
             sectionCounts: {
+              users: usersCount,
+              services: servicesCount,
               attachments: attachmentsCount,
             },
             detailContent: (
@@ -179,12 +227,14 @@ export default function EvidenceSheetModal({
                 tenantId={tenantId}
                 tenantLabel={tenantLabel}
                 readOnly={isLocked}
+                onCountChange={setUsersCount}
               />
             ),
             servicesContent: (
               <EvidenceSheetServicesTab
                 sheetId={sheet.id}
                 readOnly={isLocked}
+                onCountChange={setServicesCount}
               />
             ),
             systemBlocks,
