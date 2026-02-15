@@ -130,6 +130,7 @@ export default function ContractDetailForm({
 
   const [formVal, setFormVal] = useState<ContractFormValue>(() => buildFormValue(contract))
   const contractRef = useRef(contract)
+  const lastEmittedRef = useRef<ContractFormValue | null>(null)
 
   const initialSnapshotRef = useRef<string>('')
 
@@ -141,8 +142,17 @@ export default function ContractDetailForm({
     const next = buildFormValue(contractRef.current)
     setFormVal(next)
     initialSnapshotRef.current = JSON.stringify(next)
+    lastEmittedRef.current = null
     onDirtyChange?.(false)
   }, [resetToken, onDirtyChange])
+
+  // Oddělíme onValueChange z React state update cyklu
+  useEffect(() => {
+    if (lastEmittedRef.current === null || JSON.stringify(formVal) !== JSON.stringify(lastEmittedRef.current)) {
+      onValueChange?.(formVal)
+      lastEmittedRef.current = formVal
+    }
+  }, [formVal, onValueChange])
 
   const update = useCallback(
     (patch: Partial<ContractFormValue>) => {
@@ -150,11 +160,10 @@ export default function ContractDetailForm({
         const next = { ...prev, ...patch }
         const isDirty = JSON.stringify(next) !== initialSnapshotRef.current
         onDirtyChange?.(isDirty)
-        onValueChange?.(next)
         return next
       })
     },
-    [onDirtyChange, onValueChange]
+    [onDirtyChange]
   )
 
   const selectedUnit = useMemo(
