@@ -147,7 +147,7 @@ export default function ContractDetailFrame({
   const [units, setUnits] = useState<UnitLookupOption[]>([])
   const [properties, setProperties] = useState<PropertyLookupOption[]>([])
   const [landlords, setLandlords] = useState<LookupOption[]>([])
-  const [tenants, setTenants] = useState<LookupOption[]>([])
+  const [tenants, setTenants] = useState<Array<LookupOption & { birthDate?: string | null }>>([])
   const [tenantFallbackActive, setTenantFallbackActive] = useState(false)
   const [statusOptions, setStatusOptions] = useState<LookupOption[]>([])
   const [rentPeriodOptions, setRentPeriodOptions] = useState<LookupOption[]>([])
@@ -287,7 +287,12 @@ export default function ContractDetailFrame({
         if (!mounted) return
 
         setTenantFallbackActive(fallbackUsed)
-        setTenants(resolvedTenants.map((t) => ({ id: t.id, label: t.display_name || '—', subjectType: (t as any).subject_type ?? null })))
+        setTenants(resolvedTenants.map((t) => ({
+          id: t.id,
+          label: t.display_name || '—',
+          subjectType: (t as any).subject_type ?? null,
+          birthDate: (t as any).birth_date ?? null,
+        })))
       } catch (err) {
         logger.error('Failed to load contract lookups', err)
       }
@@ -582,6 +587,7 @@ export default function ContractDetailFrame({
             tenantId={formValue.tenantId || null}
             tenantLabel={tenants.find((t) => t.id === formValue.tenantId)?.label ?? null}
             tenantSubjectType={tenantSubjectType}
+            tenantBirthDate={tenants.find((t) => t.id === formValue.tenantId)?.birthDate ?? null}
             landlordName={resolvedContract.landlord_name || null}
             propertyName={resolvedContract.property_name || null}
             unitName={resolvedContract.unit_name || null}

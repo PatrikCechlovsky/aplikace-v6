@@ -27,6 +27,7 @@ type Props = {
   tenantId: string | null
   tenantLabel?: string | null
   tenantSubjectType?: string | null
+  tenantBirthDate?: string | null
   contractNumber: string | null
   contractSignedAt: string | null
   landlordName?: string | null
@@ -41,6 +42,7 @@ export default function EvidenceSheetDetailFrame({
   tenantId,
   tenantLabel,
   tenantSubjectType,
+  tenantBirthDate,
   contractNumber,
   contractSignedAt,
   landlordName,
@@ -196,6 +198,7 @@ console.log('🎨 EvidenceSheetDetailFrame render:', {
             tenantId={tenantId}
             tenantLabel={tenantLabel}
             tenantSubjectType={tenantSubjectType}
+            tenantBirthDate={tenantBirthDate}
             readOnly={isLocked}
             onCountChange={setUsersCount}
           />

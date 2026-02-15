@@ -191,7 +191,7 @@ export default function ContractsTile({
   const [detailInitialSectionId, setDetailInitialSectionId] = useState<any>('detail')
   const [isDirty, setIsDirty] = useState(false)
   const [evidenceSheetId, setEvidenceSheetId] = useState<string | null>(null)
-  const [tenants, setTenants] = useState<Array<{ id: string; label: string; subjectType?: string | null }>>([]) // For tenant label resolution
+  const [tenants, setTenants] = useState<Array<{ id: string; label: string; subjectType?: string | null; birthDate?: string | null }>>([]) // For tenant label resolution
   const submitRef = useRef<null | (() => Promise<DetailUiContract | null>)>(null)
 
   const [attachmentsManagerContractId, setAttachmentsManagerContractId] = useState<string | null>(null)
@@ -424,6 +424,7 @@ export default function ContractsTile({
           id: t.id,
           label: t.display_name || 'Bez jména',
           subjectType: t.subject_type ?? null,
+          birthDate: t.birth_date ?? null,
         })))
         setDetailInitialSectionId(sectionId)
         setViewMode(vm)
@@ -583,6 +584,7 @@ export default function ContractsTile({
   if (evidenceSheetId && selectedId && detailContract) {
     const tenantLabel = tenants.find((t) => t.id === detailContract.tenantId)?.label ?? null
     const tenantSubjectType = tenants.find((t) => t.id === detailContract.tenantId)?.subjectType ?? null
+    const tenantBirthDate = tenants.find((t) => t.id === detailContract.tenantId)?.birthDate ?? null
     const evidenceReadOnly = viewMode === 'read' || detailContract.stav === 'archivní'
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -592,6 +594,7 @@ export default function ContractsTile({
           tenantId={detailContract.tenantId || null}
           tenantLabel={tenantLabel}
           tenantSubjectType={tenantSubjectType}
+          tenantBirthDate={tenantBirthDate}
           contractNumber={detailContract.cisloSmlouvy || null}
           contractSignedAt={detailContract.datumPodpisu || null}
           landlordName={detailContract.landlord_name || null}

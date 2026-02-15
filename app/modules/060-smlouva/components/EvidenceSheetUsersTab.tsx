@@ -17,6 +17,7 @@ type Props = {
   tenantId: string | null
   tenantLabel?: string | null
   tenantSubjectType?: string | null
+  tenantBirthDate?: string | null
   readOnly?: boolean
   onCountChange?: (count: number) => void
 }
@@ -24,6 +25,7 @@ type Props = {
 type SelectableUser = TenantUser & { selected: boolean }
 
 const COMPANY_SUBJECT_TYPES = new Set(['firma', 'spolek', 'statni'])
+const PERSON_SUBJECT_TYPES = new Set(['osoba', 'osvc'])
 
 function splitPersonLabel(label: string | null): { firstName: string; lastName: string } {
   const safe = (label || '').trim()
@@ -38,6 +40,7 @@ export default function EvidenceSheetUsersTab({
   tenantId,
   tenantLabel = null,
   tenantSubjectType = null,
+  tenantBirthDate = null,
   readOnly = false,
   onCountChange,
 }: Props) {
@@ -56,10 +59,17 @@ export default function EvidenceSheetUsersTab({
     () => COMPANY_SUBJECT_TYPES.has(String(tenantSubjectType || '')),
     [tenantSubjectType]
   )
+  const tenantIsPerson = useMemo(
+    () => PERSON_SUBJECT_TYPES.has(String(tenantSubjectType || '')),
+    [tenantSubjectType]
+  )
   const tenantPersonName = useMemo(() => splitPersonLabel(tenantLabel), [tenantLabel])
   const tenantFirstName = tenantIsCompany ? '—' : tenantPersonName.firstName
   const tenantLastName = tenantIsCompany ? '—' : tenantPersonName.lastName
   const tenantCompanyName = tenantIsCompany ? (tenantLabel || '—') : '—'
+  const tenantBirthLabel = tenantIsPerson && tenantBirthDate
+    ? new Date(tenantBirthDate).toLocaleDateString('cs-CZ')
+    : '—'
 
   const loadUsers = useCallback(async () => {
     if (!tenantId) {
@@ -184,7 +194,7 @@ export default function EvidenceSheetUsersTab({
                   <td style={{ padding: '8px' }}>{tenantFirstName}</td>
                   <td style={{ padding: '8px' }}>{tenantLastName}</td>
                   <td style={{ padding: '8px' }}>{tenantCompanyName}</td>
-                  <td style={{ padding: '8px' }}>—</td>
+                  <td style={{ padding: '8px' }}>{tenantBirthLabel}</td>
                 </tr>
                 {users.map((user) => (
                   <tr key={user.id} style={{ borderBottom: '1px solid var(--color-border-soft)' }}>

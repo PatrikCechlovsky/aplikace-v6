@@ -153,6 +153,7 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 - Zobrazení jméno/firma se řídí `subject_type`:
   - `osoba`, `osvc`, `zastupce` → vyplnit **Jméno + Příjmení**, **Název firmy** = `—`.
   - `firma`, `spolek`, `statni` → **Název firmy** = `display_name`, **Jméno/Příjmení** = `—`.
+  - `osoba`, `osvc` → **Datum narození** se zobrazuje z `subjects.birth_date`.
 
 **Služby (EvidenceSheetServicesTab)**
 - Sloupec **Základní cena** používá `unit_price` z evidenčního listu (ne katalogovou cenu).

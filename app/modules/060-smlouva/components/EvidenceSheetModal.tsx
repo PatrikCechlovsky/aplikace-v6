@@ -28,6 +28,7 @@ type Props = {
   tenantId: string | null
   tenantLabel?: string | null
   tenantSubjectType?: string | null
+  tenantBirthDate?: string | null
   contractNumber: string | null
   contractSignedAt: string | null
   landlordName?: string | null
@@ -46,6 +47,7 @@ export default function EvidenceSheetModal({
   tenantId,
   tenantLabel,
   tenantSubjectType,
+  tenantBirthDate,
   contractNumber,
   contractSignedAt,
   landlordName,
@@ -229,6 +231,7 @@ export default function EvidenceSheetModal({
                 tenantId={tenantId}
                 tenantLabel={tenantLabel}
                 tenantSubjectType={tenantSubjectType}
+                tenantBirthDate={tenantBirthDate}
                 readOnly={isLocked}
                 onCountChange={setUsersCount}
               />
