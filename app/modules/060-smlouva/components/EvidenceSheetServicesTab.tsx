@@ -554,7 +554,7 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
       billingTypeName: row.billing_type_name ?? '—',
       billingTypeColor: row.billing_type_color ?? null,
       unitName: row.unit_name ?? '—',
-      basePrice: row.catalog_base_price ?? null,
+      basePrice: row.unit_price ?? null,
       vatRateName: row.vat_rate_name ?? '—',
       active: !(row.is_archived ?? false),
       isArchived: !!row.is_archived,
