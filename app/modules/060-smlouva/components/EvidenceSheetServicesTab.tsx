@@ -140,13 +140,14 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
       setLoading(true)
       const data = await listEvidenceSheetServices(sheetId)
       setServices(data)
+      onCountChange?.(data.length)
     } catch (e: any) {
       logger.error('listEvidenceSheetServices failed', e)
       toast.showError(e?.message ?? 'Chyba při načítání služeb')
     } finally {
       setLoading(false)
     }
-  }, [toast, sheetId])
+  }, [toast, sheetId, onCountChange])
 
   useEffect(() => {
     if (!sheetId || sheetId === 'new') {
