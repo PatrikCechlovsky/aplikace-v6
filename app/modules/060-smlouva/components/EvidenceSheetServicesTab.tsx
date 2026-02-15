@@ -33,6 +33,8 @@ type DetailMode = 'read' | 'edit' | 'create'
 
 type Props = {
   sheetId: string
+  validFrom?: string | null
+  validTo?: string | null
   readOnly?: boolean
   onCountChange?: (count: number) => void
   onAttachmentsChanged?: () => void
@@ -53,6 +55,8 @@ type ServiceFormValue = {
   splitToUnits: boolean
   splitBasis: string
   note: string
+  validFrom: string | null
+  validTo: string | null
 }
 
 function normalizeName(value: string): string {
@@ -89,10 +93,12 @@ function buildEmptyFormValue(): ServiceFormValue {
     splitToUnits: false,
     splitBasis: '',
     note: '',
+    validFrom: null,
+    validTo: null,
   }
 }
 
-export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, onCountChange, onAttachmentsChanged }: Props) {
+export default function EvidenceSheetServicesTab({ sheetId, validFrom, validTo, readOnly = false, onCountChange, onAttachmentsChanged }: Props) {
   const toast = useToast()
 
   const [services, setServices] = useState<EvidenceSheetServiceRow[]>([])
@@ -328,6 +334,8 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
         splitToUnits: false,
         splitBasis: '',
         note: '',
+        validFrom: row.valid_from ?? null,
+        validTo: row.valid_to ?? null,
       })
       setIsCustomService(!row.service_id)
     },
@@ -440,6 +448,8 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
                 quantity: s.quantity,
                 total_amount: (formValue.amount ?? 0) * s.quantity,
                 order_index: s.order_index,
+                valid_from: validFrom || null,
+                valid_to: validTo || null,
               }
             : {
                 service_id: s.service_id,
@@ -449,6 +459,8 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
                 quantity: s.quantity,
                 total_amount: s.total_amount,
                 order_index: s.order_index,
+                valid_from: s.valid_from || null,
+                valid_to: s.valid_to || null,
               }
         )
       } else {
@@ -466,6 +478,8 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
             quantity: s.quantity,
             total_amount: s.total_amount,
             order_index: s.order_index,
+            valid_from: s.valid_from || null,
+            valid_to: s.valid_to || null,
           })),
           {
             service_id: formValue.serviceId || null,
@@ -475,6 +489,8 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
             quantity: 1,
             total_amount: formValue.amount ?? 0,
             order_index: maxOrderIndex + 1,
+            valid_from: validFrom || null,
+            valid_to: validTo || null,
           },
         ]
       }
@@ -1094,6 +1110,32 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
                   />
                 </div>
               )}
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Planost služby: od — do (nataženo z detailu EL)</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--color-text-subtle)' }}>Platí od</label>
+                    <input
+                      type="date"
+                      className="detail-form__input"
+                      value={validFrom ?? ''}
+                      disabled={true}
+                      style={{ backgroundColor: 'var(--color-bg-secondary)', cursor: 'not-allowed' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--color-text-subtle)' }}>Platí do</label>
+                    <input
+                      type="date"
+                      className="detail-form__input"
+                      value={validTo ?? ''}
+                      disabled={true}
+                      style={{ backgroundColor: 'var(--color-bg-secondary)', cursor: 'not-allowed' }}
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div className="detail-form__field detail-form__field--span-2">
                 <label className="detail-form__label">Poznámka</label>

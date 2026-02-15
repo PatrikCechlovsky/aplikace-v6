@@ -53,6 +53,8 @@ type ServiceFormValue = {
   splitToUnits: boolean
   splitBasis: string
   note: string
+  validFrom: string | null
+  validTo: string | null
 }
 
 function normalizeName(value: string): string {
@@ -89,7 +91,22 @@ function buildEmptyFormValue(): ServiceFormValue {
     splitToUnits: false,
     splitBasis: '',
     note: '',
+    validFrom: null,
+    validTo: null,
   }
+}
+
+function isServiceActive(today: Date, validFrom: string | null, validTo: string | null): boolean {
+  if (!validFrom && !validTo) return true // Bez omezení
+  if (validFrom) {
+    const fromDate = new Date(validFrom)
+    if (today < fromDate) return false // Ještě nezačala
+  }
+  if (validTo) {
+    const toDate = new Date(validTo)
+    if (today > toDate) return false // Již skončila
+  }
+  return true
 }
 
 export default function PropertyServicesTab({ propertyId, readOnly = false, onCountChange, onAttachmentsChanged }: Props) {
@@ -291,6 +308,8 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
         splitToUnits: row.split_to_units ?? false,
         splitBasis: row.split_basis ?? '',
         note: row.note ?? '',
+        validFrom: row.valid_from ?? null,
+        validTo: row.valid_to ?? null,
       })
       setIsCustomService(!row.service_id)
     },
@@ -424,6 +443,8 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
         split_to_units: formValue.splitToUnits,
         split_basis: formValue.splitBasis || null,
         note: formValue.note || null,
+        valid_from: formValue.validFrom || null,
+        valid_to: formValue.validTo || null,
       })
 
       // Načíst aktualizovaný seznam služeb
@@ -877,7 +898,28 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
               )}
 
               <div className="detail-form__field detail-form__field--span-2">
-                <label className="detail-form__label">Název služby</label>
+                <label className="detail-form__label">
+                  Název služby
+                  {formValue.validFrom || formValue.validTo ? (
+                    <span
+                      style={{
+                        marginLeft: 12,
+                        padding: '2px 8px',
+                        borderRadius: 4,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        backgroundColor: isServiceActive(new Date(), formValue.validFrom, formValue.validTo)
+                          ? 'var(--color-success-light)'
+                          : 'var(--color-warning-light)',
+                        color: isServiceActive(new Date(), formValue.validFrom, formValue.validTo)
+                          ? 'var(--color-success)'
+                          : 'var(--color-warning)',
+                      }}
+                    >
+                      {isServiceActive(new Date(), formValue.validFrom, formValue.validTo) ? '✓ Aktivní' : '⚠ Neaktivní'}
+                    </span>
+                  ) : null}
+                </label>
                 <input
                   className="detail-form__input"
                   value={formValue.name}
@@ -1048,6 +1090,32 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                   />
                 </div>
               )}
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Planost služby: od — do</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--color-text-subtle)' }}>Platí od</label>
+                    <input
+                      type="date"
+                      className="detail-form__input"
+                      value={formValue.validFrom ?? ''}
+                      onChange={(e) => setFormValue((prev) => ({ ...prev, validFrom: e.target.value || null }))}
+                      readOnly={isFormReadOnly}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--color-text-subtle)' }}>Platí do</label>
+                    <input
+                      type="date"
+                      className="detail-form__input"
+                      value={formValue.validTo ?? ''}
+                      onChange={(e) => setFormValue((prev) => ({ ...prev, validTo: e.target.value || null }))}
+                      readOnly={isFormReadOnly}
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div className="detail-form__field detail-form__field--span-2">
                 <label className="detail-form__label">Poznámka</label>

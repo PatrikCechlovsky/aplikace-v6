@@ -22,6 +22,8 @@ export type PropertyServiceRow = {
   split_basis: string | null
   note: string | null
   is_archived: boolean | null
+  valid_from: string | null
+  valid_to: string | null
   created_at: string | null
   updated_at: string | null
 
@@ -60,6 +62,8 @@ export type SavePropertyServiceInput = {
   split_basis?: string | null
   note?: string | null
   is_archived?: boolean | null
+  valid_from?: string | null
+  valid_to?: string | null
 }
 
 export async function listPropertyServices(propertyId: string, includeArchived: boolean = false): Promise<PropertyServiceRow[]> {
@@ -103,6 +107,8 @@ export async function savePropertyService(input: SavePropertyServiceInput): Prom
     split_basis: input.split_basis ?? null,
     note: input.note ?? null,
     is_archived: input.is_archived ?? false,
+    valid_from: input.valid_from ?? null,
+    valid_to: input.valid_to ?? null,
   }
 
   if (input.id) {

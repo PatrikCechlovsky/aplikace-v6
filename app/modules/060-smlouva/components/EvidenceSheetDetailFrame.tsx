@@ -206,6 +206,8 @@ console.log('🎨 EvidenceSheetDetailFrame render:', {
         servicesContent: (
           <EvidenceSheetServicesTab
             sheetId={sheet.id}
+            validFrom={sheet.valid_from}
+            validTo={sheet.valid_to}
             onCountChange={setServicesCount}
             readOnly={isLocked}
           />

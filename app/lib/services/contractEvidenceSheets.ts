@@ -52,6 +52,8 @@ export type EvidenceSheetServiceRow = {
   total_amount: number
   order_index: number
   is_archived: boolean
+  valid_from: string | null
+  valid_to: string | null
   created_at: string
   updated_at: string
 
@@ -72,6 +74,8 @@ export type EvidenceSheetServiceInput = {
   quantity: number
   total_amount: number
   order_index?: number
+  valid_from?: string | null
+  valid_to?: string | null
 }
 
 export type EvidenceSheetUserInput = {
@@ -369,6 +373,8 @@ export async function saveEvidenceSheetServices(sheetId: string, services: Evide
       quantity: s.quantity,
       total_amount: s.total_amount,
       order_index: s.order_index ?? idx,
+      valid_from: s.valid_from ?? null,
+      valid_to: s.valid_to ?? null,
     }))
 
     const { error: insertErr } = await supabase
