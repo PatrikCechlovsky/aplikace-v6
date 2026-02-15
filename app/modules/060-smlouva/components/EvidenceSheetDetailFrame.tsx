@@ -83,15 +83,11 @@ export default function EvidenceSheetDetailFrame({
 
     ;(async () => {
       try {
-        console.log('🔍 DEBUG: Načítám services pro sheetId:', sheetId)
         const servicesRows = await listEvidenceSheetServices(sheetId)
-        console.log('🔍 DEBUG: listEvidenceSheetServices returned:', servicesRows.length, 'services')
         if (mounted) {
-          console.log('🔍 DEBUG: Setting servicesCount to:', servicesRows.length)
           setServicesCount(servicesRows.length)
         }
       } catch (err: any) {
-        console.error('🔴 ERROR in listEvidenceSheetServices:', err)
         logger.error('Failed to load evidence sheet services count', err)
       }
     })()
@@ -107,17 +103,13 @@ export default function EvidenceSheetDetailFrame({
 
     ;(async () => {
       try {
-        console.log('🔍 DEBUG: Načítám users pro sheetId:', sheetId)
         const usersRows = await listEvidenceSheetUsers(sheetId)
-        console.log('🔍 DEBUG: listEvidenceSheetUsers returned:', usersRows.length, 'users')
         if (mounted) {
           const baseCount = tenantId ? 1 : 0
           const finalCount = baseCount + usersRows.length
-          console.log('🔍 DEBUG: Setting usersCount to:', finalCount, '(tenant:', baseCount, '+ users:', usersRows.length, ')')
           setUsersCount(finalCount)
         }
       } catch (err: any) {
-        console.error('🔴 ERROR in listEvidenceSheetUsers:', err)
         logger.error('Failed to load evidence sheet users count', err)
       }
     })()
@@ -158,12 +150,6 @@ export default function EvidenceSheetDetailFrame({
 
   const isLocked = readOnly || sheet.status !== 'draft'
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
-
-  console.log('🔍 DEBUG: EvidenceSheetDetailFrame rendering with counts:', {
-    users: usersCount,
-    services: servicesCount,
-    attachments: attachmentsCount,
-  })
 
   return (
     <DetailView
