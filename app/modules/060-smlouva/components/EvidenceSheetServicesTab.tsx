@@ -152,14 +152,11 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
     if (!sheetId || sheetId === 'new') {
       setServices([])
       setLoading(false)
+      onCountChange?.(0)
       return
     }
     void reloadServices()
-  }, [sheetId, reloadServices])
-
-  useEffect(() => {
-    onCountChange?.(services.length)
-  }, [services.length, onCountChange])
+  }, [sheetId, reloadServices, onCountChange])
 
   useEffect(() => {
     let cancelled = false

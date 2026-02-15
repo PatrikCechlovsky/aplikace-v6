@@ -40,15 +40,12 @@ export default function EvidenceSheetUsersTab({
     return (tenantId ? 1 : 0) + selected
   }, [users, tenantId])
 
-  useEffect(() => {
-    onCountChange?.(selectedCount)
-  }, [selectedCount, onCountChange])
-
   const loadUsers = useCallback(async () => {
     if (!tenantId) {
       setUsers([])
       setLoading(false)
       setDirty(false)
+      onCountChange?.(0)
       return
     }
 
@@ -71,6 +68,9 @@ export default function EvidenceSheetUsersTab({
       }))
 
       setUsers(mapped)
+      // Vyvolej callback s aktualizovaným počtem
+      const count = (tenantId ? 1 : 0) + selectedIds.length
+      onCountChange?.(count)
       setDirty(false)
     } catch (err: any) {
       logger.error('loadUsers failed', err)
@@ -78,7 +78,7 @@ export default function EvidenceSheetUsersTab({
     } finally {
       setLoading(false)
     }
-  }, [sheetId, tenantId, toast])
+  }, [sheetId, tenantId, toast, onCountChange])
 
   useEffect(() => {
     void loadUsers()
