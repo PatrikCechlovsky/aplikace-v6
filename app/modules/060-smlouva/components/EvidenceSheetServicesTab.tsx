@@ -384,17 +384,64 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
     try {
       setSaving(true)
 
-      const payload: EvidenceSheetServiceInput[] = [
-        {
-          service_id: formValue.serviceId || null,
-          service_name: formValue.name || '',
-          unit_type: 'flat',
-          unit_price: formValue.amount ?? 0,
-          quantity: 1,
-          total_amount: formValue.amount ?? 0,
-          order_index: 0,
-        },
-      ]
+      // Načíst existující služby
+      const existingServices = await listEvidenceSheetServices(sheetId)
+
+      // Najít, jestli editujeme existující nebo přidáváme novou
+      const editingExisting = selectedId && detailMode === 'edit'
+      
+      let payload: EvidenceSheetServiceInput[]
+      
+      if (editingExisting) {
+        // Editace - aktualizovat existující službu
+        payload = existingServices.map((s) =>
+          s.id === selectedId
+            ? {
+                service_id: formValue.serviceId || null,
+                service_name: formValue.name || '',
+                unit_type: s.unit_type,
+                unit_price: formValue.amount ?? 0,
+                quantity: s.quantity,
+                total_amount: (formValue.amount ?? 0) * s.quantity,
+                order_index: s.order_index,
+              }
+            : {
+                service_id: s.service_id,
+                service_name: s.service_name,
+                unit_type: s.unit_type,
+                unit_price: s.unit_price,
+                quantity: s.quantity,
+                total_amount: s.total_amount,
+                order_index: s.order_index,
+              }
+        )
+      } else {
+        // Nová služba - přidat na konec
+        const maxOrderIndex = existingServices.length > 0 
+          ? Math.max(...existingServices.map((s) => s.order_index ?? 0)) 
+          : -1
+        
+        payload = [
+          ...existingServices.map((s) => ({
+            service_id: s.service_id,
+            service_name: s.service_name,
+            unit_type: s.unit_type,
+            unit_price: s.unit_price,
+            quantity: s.quantity,
+            total_amount: s.total_amount,
+            order_index: s.order_index,
+          })),
+          {
+            service_id: formValue.serviceId || null,
+            service_name: formValue.name || '',
+            unit_type: 'flat',
+            unit_price: formValue.amount ?? 0,
+            quantity: 1,
+            total_amount: formValue.amount ?? 0,
+            order_index: maxOrderIndex + 1,
+          },
+        ]
+      }
 
       await saveEvidenceSheetServices(sheetId, payload)
 
