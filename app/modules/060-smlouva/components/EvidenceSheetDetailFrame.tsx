@@ -85,6 +85,7 @@ export default function EvidenceSheetDetailFrame({
       try {
         const servicesRows = await listEvidenceSheetServices(sheetId)
         if (mounted) {
+          console.log('🔢 EvidenceSheetDetailFrame: Setting servicesCount =', servicesRows.length)
           setServicesCount(servicesRows.length)
         }
       } catch (err: any) {
@@ -107,6 +108,7 @@ export default function EvidenceSheetDetailFrame({
         if (mounted) {
           const baseCount = tenantId ? 1 : 0
           const finalCount = baseCount + usersRows.length
+          console.log('🔢 EvidenceSheetDetailFrame: Setting usersCount =', finalCount, '(tenant:', baseCount, '+ users:', usersRows.length, ')')
           setUsersCount(finalCount)
         }
       } catch (err: any) {
@@ -148,9 +150,16 @@ export default function EvidenceSheetDetailFrame({
     },
   ]
 
-  const isLocked = readOnly || sheet.status !== 'draft'
+  const isLocked = readOnly
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
+console.log('🎨 EvidenceSheetDetailFrame render:', {
+    usersCount,
+    servicesCount,
+    attachmentsCount,
+    sectionCounts: { users: usersCount, services: servicesCount, attachments: attachmentsCount }
+  })
 
+  
   return (
     <DetailView
       mode={detailViewMode}

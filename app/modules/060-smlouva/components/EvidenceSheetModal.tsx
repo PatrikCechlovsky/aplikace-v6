@@ -141,7 +141,7 @@ export default function EvidenceSheetModal({
   useEffect(() => {
     if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
 
-    const isLocked = readOnly || sheet?.status !== 'draft'
+    const isLocked = readOnly
     const actions = ['close']
 
     onRegisterCommonActions(actions)
@@ -181,7 +181,7 @@ export default function EvidenceSheetModal({
     },
   ]
 
-  const isLocked = readOnly || sheet.status !== 'draft'
+  const isLocked = readOnly
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
 
   return (
