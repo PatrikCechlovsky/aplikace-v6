@@ -769,6 +769,18 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
                   </button>
                 </>
               )}
+              {detailMode === 'read' && !readOnly && (
+                <button type="button" className="common-actions__btn" onClick={openCreate}>
+                  <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
+                  <span className="common-actions__label">Přidat</span>
+                </button>
+              )}
+              {detailMode !== 'read' && selectedId && (
+                <button type="button" className="common-actions__btn" onClick={openDetailRead}>
+                  <span className="common-actions__icon">{getIcon('eye' as IconKey)}</span>
+                  <span className="common-actions__label">Číst</span>
+                </button>
+              )}
               {detailMode === 'read' && !readOnly && selectedId && (
                 <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
                   <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
@@ -783,17 +795,17 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
                 </button>
               )}
 
-              <button type="button" className="common-actions__btn" onClick={closeDetail}>
-                <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                <span className="common-actions__label">Zavřít</span>
-              </button>
-
               {selectedId && (
                 <button type="button" className="common-actions__btn" onClick={() => openAttachmentsManager('detail')}>
                   <span className="common-actions__icon">{getIcon('paperclip' as IconKey)}</span>
                   <span className="common-actions__label">Přílohy</span>
                 </button>
               )}
+
+              <button type="button" className="common-actions__btn" onClick={closeDetail}>
+                <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                <span className="common-actions__label">Zavřít</span>
+              </button>
             </div>
             </div>
 
