@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { listTenantUsers, type TenantUser } from '@/app/lib/services/tenantUsers'
 import { listEvidenceSheetUsers, setEvidenceSheetUsers } from '@/app/lib/services/contractEvidenceSheets'
 import { useToast } from '@/app/UI/Toast'
+import { getIcon } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 
 const logger = createLogger('EvidenceSheetUsersTab')
@@ -161,7 +162,8 @@ export default function EvidenceSheetUsersTab({
           </h3>
           {!readOnly && (
             <button type="button" className="common-actions__btn" onClick={handleSave} disabled={!dirty}>
-              Uložit výběr
+              <span className="common-actions__icon">{getIcon('save')}</span>
+              <span>Uložit výběr</span>
             </button>
           )}
         </div>
