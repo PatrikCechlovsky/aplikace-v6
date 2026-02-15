@@ -578,6 +578,7 @@ export default function ContractsTile({
   // Evidence sheet view
   if (evidenceSheetId && selectedId && detailContract) {
     const tenantLabel = tenants.find((t) => t.id === detailContract.tenantId)?.label ?? null
+    const evidenceReadOnly = viewMode === 'read' || detailContract.stav === 'archivní'
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <EvidenceSheetModal
@@ -590,7 +591,7 @@ export default function ContractsTile({
           landlordName={detailContract.landlord_name || null}
           propertyName={detailContract.property_name || null}
           unitName={detailContract.unit_name || null}
-          readOnly={detailContract.stav === 'archivní' || false}
+          readOnly={evidenceReadOnly}
           onClose={() => {
             router.push(`${pathname}?t=contracts-list&id=${selectedId}&vm=read`)
           }}
