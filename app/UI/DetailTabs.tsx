@@ -36,6 +36,7 @@ export default function DetailTabs({
           return (
             <button
               key={it.id}
+              id={`detail-tab-${it.id}`}
               type="button"
               role="tab"
               aria-selected={isActive}

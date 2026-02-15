@@ -548,7 +548,19 @@ export default function DetailView({
   return (
     <div className="detail-view">
       <DetailTabs items={tabs} activeId={activeId} onChange={(id) => setActiveId(id as DetailSectionId)} />
-      <div className="detail-view__content">{activeSection?.render({ ...ctx, mode })}</div>
+      <div className="detail-view__content">
+        {sections.map((section) => (
+          <div
+            key={section.id}
+            id={`detail-section-${section.id}`}
+            role="tabpanel"
+            aria-labelledby={`detail-tab-${section.id}`}
+            hidden={section.id !== activeId}
+          >
+            {section.render({ ...ctx, mode })}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
