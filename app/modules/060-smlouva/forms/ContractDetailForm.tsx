@@ -146,24 +146,23 @@ export default function ContractDetailForm({
     onDirtyChange?.(false)
   }, [resetToken, onDirtyChange])
 
-  // Oddělíme onValueChange z React state update cyklu
+  // Oddělíme onValueChange a onDirtyChange z React state update cyklu
   useEffect(() => {
     if (lastEmittedRef.current === null || JSON.stringify(formVal) !== JSON.stringify(lastEmittedRef.current)) {
       onValueChange?.(formVal)
       lastEmittedRef.current = formVal
     }
-  }, [formVal, onValueChange])
+    
+    // Compute and emit dirty state
+    const isDirty = JSON.stringify(formVal) !== initialSnapshotRef.current
+    onDirtyChange?.(isDirty)
+  }, [formVal, onValueChange, onDirtyChange])
 
   const update = useCallback(
     (patch: Partial<ContractFormValue>) => {
-      setFormVal((prev) => {
-        const next = { ...prev, ...patch }
-        const isDirty = JSON.stringify(next) !== initialSnapshotRef.current
-        onDirtyChange?.(isDirty)
-        return next
-      })
+      setFormVal((prev) => ({ ...prev, ...patch }))
     },
-    [onDirtyChange]
+    []
   )
 
   const selectedUnit = useMemo(
