@@ -543,8 +543,6 @@ export default function DetailView({
     }
   }, [])
 
-  const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
-
   return (
     <div className="detail-view">
       <DetailTabs items={tabs} activeId={activeId} onChange={(id) => setActiveId(id as DetailSectionId)} />
