@@ -144,6 +144,30 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 **Relevantní CSS soubory**:
 - `app/styles/components/DetailForm.css` - sub-detail helpers
 
+#### E) Evidenční list – osoby a služby (2026-02-15)
+
+**Cíl**: konzistentní UI chování v detailu evidenčního listu a správná data v tabulkách.
+
+**Osoby (EvidenceSheetUsersTab)**
+- Hlavní nájemník je **vždy započítán**.
+- Zobrazení jméno/firma se řídí `subject_type`:
+  - `osoba`, `osvc`, `zastupce` → vyplnit **Jméno + Příjmení**, **Název firmy** = `—`.
+  - `firma`, `spolek`, `statni` → **Název firmy** = `display_name`, **Jméno/Příjmení** = `—`.
+
+**Služby (EvidenceSheetServicesTab)**
+- Sloupec **Základní cena** používá `unit_price` z evidenčního listu (ne katalogovou cenu).
+- Ukládání služeb pracuje s **celým seznamem** (save nahrazuje všechny řádky).
+- Po načtení/uložení se **aktualizuje count** v záložce „Služby“.
+
+**Toolbar (detail služby)**
+- **Pořadí akcí je fixní**: předchozí → další → přidat → číst → upravit → uložit → přílohy → zavřít.
+- V režimu **read** se zobrazuje jen relevantní subset (read-only).
+- V režimu **edit/create** je dostupné Přidat/Upravit/Uložit dle stavu.
+
+**Režim čtení/zápisu (EvidenceSheetModal)**
+- `readOnly` se řídí režimem detailu (`vm=read`) nebo archivací.
+- V read režimu nejsou dostupné akce Přidat/Upravit.
+
 #### Diagnostika scroll problémů
 
 Pokud scroll nefunguje správně, zkontroluj v DevTools konzoli:

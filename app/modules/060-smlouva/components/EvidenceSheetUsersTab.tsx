@@ -16,16 +16,28 @@ type Props = {
   sheetId: string
   tenantId: string | null
   tenantLabel?: string | null
+  tenantSubjectType?: string | null
   readOnly?: boolean
   onCountChange?: (count: number) => void
 }
 
 type SelectableUser = TenantUser & { selected: boolean }
 
+const COMPANY_SUBJECT_TYPES = new Set(['firma', 'spolek', 'statni'])
+
+function splitPersonLabel(label: string | null): { firstName: string; lastName: string } {
+  const safe = (label || '').trim()
+  if (!safe) return { firstName: '—', lastName: '—' }
+  const parts = safe.split(/\s+/)
+  if (parts.length === 1) return { firstName: parts[0], lastName: '—' }
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') || '—' }
+}
+
 export default function EvidenceSheetUsersTab({
   sheetId,
   tenantId,
   tenantLabel = null,
+  tenantSubjectType = null,
   readOnly = false,
   onCountChange,
 }: Props) {
@@ -39,6 +51,15 @@ export default function EvidenceSheetUsersTab({
     const selected = users.filter((u) => u.selected).length
     return (tenantId ? 1 : 0) + selected
   }, [users, tenantId])
+
+  const tenantIsCompany = useMemo(
+    () => COMPANY_SUBJECT_TYPES.has(String(tenantSubjectType || '')),
+    [tenantSubjectType]
+  )
+  const tenantPersonName = useMemo(() => splitPersonLabel(tenantLabel), [tenantLabel])
+  const tenantFirstName = tenantIsCompany ? '—' : tenantPersonName.firstName
+  const tenantLastName = tenantIsCompany ? '—' : tenantPersonName.lastName
+  const tenantCompanyName = tenantIsCompany ? (tenantLabel || '—') : '—'
 
   const loadUsers = useCallback(async () => {
     if (!tenantId) {
@@ -160,9 +181,9 @@ export default function EvidenceSheetUsersTab({
                   <td style={{ padding: '8px' }}>
                     <input type="checkbox" checked disabled />
                   </td>
-                  <td style={{ padding: '8px' }}>—</td>
-                  <td style={{ padding: '8px' }}>—</td>
-                  <td style={{ padding: '8px' }}>{tenantLabel || '—'}</td>
+                  <td style={{ padding: '8px' }}>{tenantFirstName}</td>
+                  <td style={{ padding: '8px' }}>{tenantLastName}</td>
+                  <td style={{ padding: '8px' }}>{tenantCompanyName}</td>
                   <td style={{ padding: '8px' }}>—</td>
                 </tr>
                 {users.map((user) => (

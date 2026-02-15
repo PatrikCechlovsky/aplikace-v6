@@ -31,6 +31,7 @@ type Props = {
   contractSignedAt: string | null
   tenantId: string | null
   tenantLabel?: string | null
+  tenantSubjectType?: string | null
   landlordName?: string | null
   propertyName?: string | null
   unitName?: string | null
@@ -103,6 +104,7 @@ export default function ContractEvidenceSheetsTab({
   contractSignedAt,
   tenantId,
   tenantLabel,
+  tenantSubjectType,
   landlordName,
   propertyName,
   unitName,
@@ -424,6 +426,7 @@ export default function ContractEvidenceSheetsTab({
             contractId={contractId}
             tenantId={tenantId}
             tenantLabel={tenantLabel}
+            tenantSubjectType={tenantSubjectType}
             landlordName={landlordName}
             propertyName={propertyName}
             unitName={unitName}

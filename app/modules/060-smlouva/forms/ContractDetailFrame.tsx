@@ -581,6 +581,7 @@ export default function ContractDetailFrame({
             contractSignedAt={formValue.datumPodpisu || null}
             tenantId={formValue.tenantId || null}
             tenantLabel={tenants.find((t) => t.id === formValue.tenantId)?.label ?? null}
+            tenantSubjectType={tenantSubjectType}
             landlordName={resolvedContract.landlord_name || null}
             propertyName={resolvedContract.property_name || null}
             unitName={resolvedContract.unit_name || null}
