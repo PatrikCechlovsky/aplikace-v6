@@ -84,7 +84,9 @@ export default function EvidenceSheetDetailFrame({
     ;(async () => {
       try {
         const servicesRows = await listEvidenceSheetServices(sheetId)
+        console.log('🔍 DEBUG: listEvidenceSheetServices returned:', servicesRows.length, 'services')
         if (mounted) {
+          console.log('🔍 DEBUG: Setting servicesCount to:', servicesRows.length)
           setServicesCount(servicesRows.length)
         }
       } catch (err: any) {
@@ -104,9 +106,12 @@ export default function EvidenceSheetDetailFrame({
     ;(async () => {
       try {
         const usersRows = await listEvidenceSheetUsers(sheetId)
+        console.log('🔍 DEBUG: listEvidenceSheetUsers returned:', usersRows.length, 'users')
         if (mounted) {
           const baseCount = tenantId ? 1 : 0
-          setUsersCount(baseCount + usersRows.length)
+          const finalCount = baseCount + usersRows.length
+          console.log('🔍 DEBUG: Setting usersCount to:', finalCount, '(tenant:', baseCount, '+ users:', usersRows.length, ')')
+          setUsersCount(finalCount)
         }
       } catch (err: any) {
         logger.error('Failed to load evidence sheet users count', err)
@@ -149,6 +154,12 @@ export default function EvidenceSheetDetailFrame({
 
   const isLocked = readOnly || sheet.status !== 'draft'
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
+
+  console.log('🔍 DEBUG: EvidenceSheetDetailFrame rendering with counts:', {
+    users: usersCount,
+    services: servicesCount,
+    attachments: attachmentsCount,
+  })
 
   return (
     <DetailView
