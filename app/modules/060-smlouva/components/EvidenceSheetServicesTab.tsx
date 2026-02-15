@@ -128,6 +128,10 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
   const [isCustomService, setIsCustomService] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Track if component was "away" to reset viewMode when returning
+  const wasHiddenRef = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
   const attachmentsApiRef = useRef<AttachmentsManagerApi | null>(null)
   const [attachmentsUiState, setAttachmentsUiState] = useState<AttachmentsManagerUiState>({
     hasSelection: false,
@@ -158,6 +162,37 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
     }
     void reloadServices()
   }, [sheetId, reloadServices, onCountChange])
+
+  // Detect when tab becomes visible again and reset to list view
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && wasHiddenRef.current && viewMode === 'detail') {
+          // Tab became visible again and we were in detail mode - reset to list
+          setViewMode('list')
+          setSelectedId(null)
+        }
+        wasHiddenRef.current = !entry.isIntersecting
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(container)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [viewMode])
+
+  // Reset viewMode na list když není vybraná služba
+  useEffect(() => {
+    if (!selectedId && viewMode === 'detail') {
+      setViewMode('list')
+    }
+  }, [selectedId, viewMode])
 
   useEffect(() => {
     let cancelled = false
@@ -594,7 +629,7 @@ export default function EvidenceSheetServicesTab({ sheetId, readOnly = false, on
   }
 
   return (
-    <div className="detail-form detail-form--fill">
+    <div className="detail-form detail-form--fill" ref={containerRef}>
       {viewMode === 'list' && (
         <>
           <section className="detail-form__section">
