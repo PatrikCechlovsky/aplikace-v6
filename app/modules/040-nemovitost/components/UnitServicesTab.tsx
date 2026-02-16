@@ -458,6 +458,8 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     }
   }, [services, selectService, selectedId])
 
+  const isCopyMode = detailMode === 'create' && !!copySource
+
   const handleSave = useCallback(async () => {
     if (detailMode === 'read') return
 
@@ -651,7 +653,6 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
   const selectedIndex = useMemo(() => (selectedId ? services.findIndex((s) => s.id === selectedId) : -1), [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
-  const isCopyMode = detailMode === 'create' && !!copySource
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${services.length}` : null
