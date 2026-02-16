@@ -142,10 +142,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
     mode: 'list',
   })
 
-  useEffect(() => {
-    onCountChange?.(equipmentList.length)
-  }, [equipmentList.length, onCountChange])
-  
   // Načíst seznam vybavení
   const reloadEquipment = useCallback(async () => {
     try {
