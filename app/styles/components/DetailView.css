@@ -25,7 +25,7 @@
 }
 
 /* Tabpanely musí vyplnit dostupnou výšku, jinak vzniká prázdné místo */
-.detail-view__content > [role="tabpanel"] {
+.detail-view__content > [role="tabpanel"]:not([hidden]) {
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
