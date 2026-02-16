@@ -875,9 +875,9 @@ export default function PropertyDetailFrame({
         ),
 
         unitsContent: (
-          <div className="detail-form">
+          <div className="detail-form detail-form--fill">
             {unitsViewMode === 'list' && (
-              <section className="detail-form__section">
+              <section className="detail-form__section detail-form__section--scroll">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
                   {selectedUnitId && (
