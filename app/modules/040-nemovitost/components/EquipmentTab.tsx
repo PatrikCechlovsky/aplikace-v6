@@ -586,15 +586,20 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
 
   const filteredItems = useMemo(() => {
     const q = searchText.trim().toLowerCase()
-    if (!q) return listItems
-    return listItems.filter((item) => {
+    const base = showArchived ? listItems : listItems.filter((item) => item.active)
+    if (!q) return base
+    return base.filter((item) => {
       return (
         item.equipmentName.toLowerCase().includes(q) ||
         item.equipmentTypeName.toLowerCase().includes(q) ||
         item.roomTypeName.toLowerCase().includes(q)
       )
     })
-  }, [listItems, searchText])
+  }, [listItems, searchText, showArchived])
+
+  useEffect(() => {
+    onCountChange?.(filteredItems.length)
+  }, [filteredItems.length, onCountChange])
 
   const sortedRows = useMemo(() => {
     const rows = filteredItems.map((item) => {
@@ -704,6 +709,7 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
               onFilterChange={setSearchText}
               showArchived={showArchived}
               onShowArchivedChange={setShowArchived}
+              showArchivedLabel="Zobrazit neaktivní"
               selectedId={selectedEquipmentId}
               onRowClick={(row: ListViewRow) => selectEquipment(String(row.id))}
               onRowDoubleClick={(row: ListViewRow) => {
