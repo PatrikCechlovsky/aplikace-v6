@@ -709,12 +709,11 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                     <span className="common-actions__label">Nová</span>
                   </button>
                 )}
-                {!readOnly && (
+                {!readOnly && selectedId && (
                   <button
                     type="button"
                     className="common-actions__btn"
                     onClick={handleDuplicate}
-                    disabled={!selectedId}
                     title="Vytvořit kopii vybrané služby"
                   >
                     <span className="common-actions__icon">{getIcon('duplicate' as IconKey)}</span>
