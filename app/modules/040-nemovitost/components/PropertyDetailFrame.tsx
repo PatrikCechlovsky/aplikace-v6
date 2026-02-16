@@ -35,6 +35,19 @@ import '@/app/styles/components/DetailForm.css'
 
 const logger = createLogger('PropertyDetailFrame')
 
+function isServiceActive(today: Date, validFrom: string | null, validTo: string | null): boolean {
+  if (!validFrom && !validTo) return true
+  if (validFrom) {
+    const fromDate = new Date(validFrom)
+    if (today < fromDate) return false
+  }
+  if (validTo) {
+    const toDate = new Date(validTo)
+    if (today > toDate) return false
+  }
+  return true
+}
+
 // =====================
 // TYPES
 // =====================
@@ -502,7 +515,9 @@ export default function PropertyDetailFrame({
 
         if (cancelled) return
         setEquipmentCount(equipmentRows.length)
-        setServicesCount(servicesRows.length)
+        const today = new Date()
+        const activeCount = servicesRows.filter((row) => isServiceActive(today, row.valid_from ?? null, row.valid_to ?? null)).length
+        setServicesCount(activeCount)
         void refreshAttachmentsCount()
       } catch (err) {
         logger.error('Failed to load property counts', err)
