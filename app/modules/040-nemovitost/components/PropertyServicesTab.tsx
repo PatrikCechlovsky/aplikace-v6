@@ -747,14 +747,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 className="detail-form__section-title">Seznam služeb</h3>
               <div style={{ display: 'flex', gap: 8 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input
-                    type="checkbox"
-                    checked={showInactive}
-                    onChange={(e) => setShowInactive(e.target.checked)}
-                  />
-                  <span>Zobrazit neaktivní</span>
-                </label>
                 {!readOnly && (
                   <button type="button" className="common-actions__btn" onClick={openDetailCreate}>
                     <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
@@ -803,6 +795,9 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                 rows={sortedRows}
                 filterValue={searchText}
                 onFilterChange={setSearchText}
+                showArchived={showInactive}
+                onShowArchivedChange={setShowInactive}
+                showArchivedLabel="Zobrazit neaktivní"
                 selectedId={selectedId}
                 onRowClick={(row: ListViewRow) => setSelectedId(String(row.id))}
                 onRowDoubleClick={(row: ListViewRow) => {
