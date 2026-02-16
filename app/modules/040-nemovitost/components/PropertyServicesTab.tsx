@@ -695,6 +695,10 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
     ))
   }, [listItems, searchText, showInactive])
 
+  useEffect(() => {
+    onCountChange?.(filteredItems.length)
+  }, [filteredItems.length, onCountChange])
+
   const columns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
   const sortedRows = useMemo(() => {
@@ -740,9 +744,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${orderedServices.length}` : null
 
-  useEffect(() => {
-    onCountChange?.(services.length)
-  }, [services.length, onCountChange])
 
   if (!propertyId || propertyId === 'new') {
     return (

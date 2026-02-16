@@ -250,9 +250,6 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     void reloadServices()
   }, [unitId, reloadServices])
 
-  useEffect(() => {
-    onCountChange?.(services.length)
-  }, [services.length, onCountChange])
 
   useEffect(() => {
     let cancelled = false
@@ -669,6 +666,10 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       item.vatRateName.toLowerCase().includes(q)
     ))
   }, [listItems, searchText, showInactive])
+
+  useEffect(() => {
+    onCountChange?.(filteredItems.length)
+  }, [filteredItems.length, onCountChange])
 
   const preparedColumns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
