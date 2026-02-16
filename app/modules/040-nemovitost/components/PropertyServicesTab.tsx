@@ -177,6 +177,8 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'attachments'>('list')
   const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
   const [attachmentsReturnView, setAttachmentsReturnView] = useState<'list' | 'detail'>('list')
+  const [copySource, setCopySource] = useState<{ id: string; name: string } | null>(null)
+  const [copyValidFrom, setCopyValidFrom] = useState<string | null>(null)
 
   const [formValue, setFormValue] = useState<ServiceFormValue>(() => buildEmptyFormValue())
   const [isCustomService, setIsCustomService] = useState(false)
@@ -335,11 +337,15 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
     setSelectedId(null)
     setFormValue(buildEmptyFormValue())
     setIsCustomService(false)
+    setCopySource(null)
+    setCopyValidFrom(null)
   }, [])
 
   const openDetailRead = useCallback(() => {
     if (!selectedId) return
     selectService(selectedId)
+    setCopySource(null)
+    setCopyValidFrom(null)
     setDetailMode('read')
     setViewMode('detail')
     setActiveTab('form')
@@ -347,10 +353,12 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
 
   const openDetailEdit = useCallback(() => {
     if (!selectedId || readOnly) {
-      if (readOnly) toast.showWarning('Nemovitost musí být v režimu úprav, abyste mohli službu upravit.')
+      if (readOnly) toast.showSuccess('Nemovitost musí být v režimu úprav, abyste mohli službu upravit.')
       return
     }
     selectService(selectedId)
+    setCopySource(null)
+    setCopyValidFrom(null)
     setDetailMode('edit')
     setViewMode('detail')
     setActiveTab('form')
@@ -358,7 +366,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
 
   const openDetailCreate = useCallback(() => {
     if (readOnly) {
-      toast.showWarning('Nemovitost musí být v režimu úprav, abyste mohli přidat službu.')
+      toast.showSuccess('Nemovitost musí být v režimu úprav, abyste mohli přidat službu.')
       return
     }
     handleAdd()
@@ -369,31 +377,52 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
 
   const handleDuplicate = useCallback(() => {
     if (!selectedId) {
-      toast.showWarning('Nejprve vyberte službu')
+      toast.showSuccess('Nejprve vyberte službu')
       return
     }
     if (readOnly) {
-      toast.showWarning('Nemovitost musí být v režimu úprav, abyste mohli službu duplikovat.')
+      toast.showSuccess('Nemovitost musí být v režimu úprav, abyste mohli službu duplikovat.')
       return
     }
     const row = services.find((s) => s.id === selectedId)
     if (!row) return
+    if (!row.valid_to) {
+      toast.showSuccess('Nejprve vyplňte „Platí do“ u původní služby.')
+      setSelectedId(row.id)
+      selectService(row.id)
+      setDetailMode('edit')
+      setViewMode('detail')
+      setActiveTab('form')
+      return
+    }
+    const nextValidFrom = addDaysToDateString(row.valid_to, 1)
+    if (!nextValidFrom) {
+      toast.showSuccess('Nelze určit datum platnosti kopie. Zkontrolujte „Platí do“ u původní služby.')
+      return
+    }
     const baseForm = buildFormValueFromRow(row)
     setSelectedId(null)
+    setCopySource({ id: row.id, name: baseForm.name })
+    setCopyValidFrom(nextValidFrom)
     setDetailMode('create')
     setViewMode('detail')
     setActiveTab('form')
     setFormValue({
       ...baseForm,
-      validTo: addDaysToDateString(baseForm.validTo, 1),
+      name: baseForm.name ? `${baseForm.name} (kopie)` : baseForm.name,
+      validFrom: nextValidFrom,
+      validTo: null,
     })
     setIsCustomService(!row.service_id)
-  }, [readOnly, selectedId, services, toast])
+    toast.showSuccess(`Nová služba platí od ukončení původní, tj. od: ${nextValidFrom}.`)
+  }, [readOnly, selectedId, selectService, services, toast])
 
   const closeDetail = useCallback(() => {
     setViewMode('list')
     setDetailMode('read')
     setActiveTab('form')
+    setCopySource(null)
+    setCopyValidFrom(null)
   }, [])
 
   const openAttachmentsManager = useCallback(
@@ -453,12 +482,32 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
 
   const handleSave = useCallback(async () => {
     if (!formValue.name.trim()) {
-      toast.showWarning('Zadejte název služby.')
+      toast.showSuccess('Zadejte název služby.')
       return
     }
     if (!isCustomService && !formValue.serviceId.trim()) {
-      toast.showWarning('Vyberte službu z katalogu nebo zapněte režim "Vlastní služba".')
+      toast.showSuccess('Vyberte službu z katalogu nebo zapněte režim "Vlastní služba".')
       return
+    }
+
+    if (isCopyMode) {
+      if (!copyValidFrom) {
+        toast.showSuccess('Platnost kopie musí začínat dnem po ukončení původní služby.')
+        return
+      }
+      if (!formValue.validFrom) {
+        toast.showSuccess('Platí od u kopie je povinné.')
+        return
+      }
+      if (formValue.validFrom !== copyValidFrom) {
+        setFormValue((prev) => ({ ...prev, validFrom: copyValidFrom }))
+        toast.showSuccess(`Platí od u kopie je pevně nastaveno na ${copyValidFrom}.`)
+        return
+      }
+      if (copySource?.name && formValue.name.trim() === copySource.name.trim()) {
+        toast.showSuccess('Nová služba musí mít jiný název než původní.')
+        return
+      }
     }
 
     try {
@@ -502,13 +551,15 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
 
       setDetailMode('read')
       setViewMode('detail')
+      setCopySource(null)
+      setCopyValidFrom(null)
     } catch (e: any) {
       logger.error('savePropertyService failed', e)
       toast.showError(e?.message ?? 'Chyba při ukládání služby')
     } finally {
       setSaving(false)
     }
-  }, [formValue, isCustomService, propertyId, reloadServices, selectedId, selectService, services.length, toast])
+  }, [copySource?.name, copyValidFrom, formValue, isCopyMode, isCustomService, propertyId, selectedId, selectService, toast])
 
   const handleSortChange = useCallback((nextSort: ListViewSortState) => {
     setSort(nextSort)
@@ -621,6 +672,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
   const selectedIndex = useMemo(() => (selectedId ? services.findIndex((s) => s.id === selectedId) : -1), [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
+  const isCopyMode = detailMode === 'create' && !!copySource
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${services.length}` : null
@@ -1151,7 +1203,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                       className="detail-form__input"
                       value={formValue.validFrom ?? ''}
                       onChange={(e) => setFormValue((prev) => ({ ...prev, validFrom: e.target.value || null }))}
-                      readOnly={isFormReadOnly}
+                      disabled={isFormReadOnly || isCopyMode}
                     />
                   </div>
                   <div>

@@ -177,6 +177,8 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'attachments'>('list')
   const [activeTab, setActiveTab] = useState<'form' | 'attachments'>('form')
   const [attachmentsReturnView, setAttachmentsReturnView] = useState<'list' | 'detail'>('list')
+  const [copySource, setCopySource] = useState<{ id: string; name: string } | null>(null)
+  const [copyValidFrom, setCopyValidFrom] = useState<string | null>(null)
 
   const [formValue, setFormValue] = useState<ServiceFormValue>(() => buildEmptyFormValue())
   const [isCustomService, setIsCustomService] = useState(false)
@@ -342,6 +344,8 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const openDetailRead = useCallback(() => {
     if (!selectedId) return
     selectService(selectedId)
+    setCopySource(null)
+    setCopyValidFrom(null)
     setDetailMode('read')
     setViewMode('detail')
     setActiveTab('form')
@@ -349,10 +353,12 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
 
   const openDetailEdit = useCallback(() => {
     if (!selectedId || readOnly) {
-      toast.showWarning('Nejprve vyberte službu')
+      toast.showSuccess('Nejprve vyberte službu')
       return
     }
     selectService(selectedId)
+    setCopySource(null)
+    setCopyValidFrom(null)
     setDetailMode('edit')
     setViewMode('detail')
     setActiveTab('form')
@@ -365,32 +371,55 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     setActiveTab('form')
     setFormValue(buildEmptyFormValue())
     setIsCustomService(false)
+    setCopySource(null)
+    setCopyValidFrom(null)
   }, [readOnly])
 
   const handleDuplicate = useCallback(() => {
     if (!selectedId) {
-      toast.showWarning('Nejprve vyberte službu')
+      toast.showSuccess('Nejprve vyberte službu')
       return
     }
     if (readOnly) return
     const row = services.find((s) => s.id === selectedId)
     if (!row) return
+    if (!row.valid_to) {
+      toast.showSuccess('Nejprve vyplňte „Platí do“ u původní služby.')
+      setSelectedId(row.id)
+      selectService(row.id)
+      setDetailMode('edit')
+      setViewMode('detail')
+      setActiveTab('form')
+      return
+    }
+    const nextValidFrom = addDaysToDateString(row.valid_to, 1)
+    if (!nextValidFrom) {
+      toast.showSuccess('Nelze určit datum platnosti kopie. Zkontrolujte „Platí do“ u původní služby.')
+      return
+    }
     const baseForm = buildFormValueFromRow(row)
     setSelectedId(null)
+    setCopySource({ id: row.id, name: baseForm.name })
+    setCopyValidFrom(nextValidFrom)
     setDetailMode('create')
     setViewMode('detail')
     setActiveTab('form')
     setFormValue({
       ...baseForm,
-      validTo: addDaysToDateString(baseForm.validTo, 1),
+      name: baseForm.name ? `${baseForm.name} (kopie)` : baseForm.name,
+      validFrom: nextValidFrom,
+      validTo: null,
     })
     setIsCustomService(!row.service_id)
-  }, [readOnly, selectedId, services, toast])
+    toast.showSuccess(`Nová služba platí od ukončení původní, tj. od: ${nextValidFrom}.`)
+  }, [readOnly, selectedId, selectService, services, toast])
 
   const closeDetail = useCallback(() => {
     if (viewMode !== 'detail') return
     setViewMode('list')
     setDetailMode('read')
+    setCopySource(null)
+    setCopyValidFrom(null)
   }, [viewMode])
 
   const openAttachmentsManager = useCallback(
@@ -433,13 +462,37 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     if (detailMode === 'read') return
 
     if (!isCustomService && !formValue.serviceId) {
-      toast.showWarning('Vyberte službu z katalogu nebo zapněte režim "Vlastní služba".')
+      toast.showSuccess('Vyberte službu z katalogu nebo zapněte režim "Vlastní služba".')
       return
     }
 
     if (isCustomService && !formValue.name?.trim()) {
-      toast.showWarning('Vyplňte název vlastní služby.')
+      toast.showSuccess('Vyplňte název vlastní služby.')
       return
+    }
+
+    if (isCopyMode) {
+      if (!formValue.name?.trim()) {
+        toast.showSuccess('Vyplňte název služby.')
+        return
+      }
+      if (!copyValidFrom) {
+        toast.showSuccess('Platnost kopie musí začínat dnem po ukončení původní služby.')
+        return
+      }
+      if (!formValue.validFrom) {
+        toast.showSuccess('Platí od u kopie je povinné.')
+        return
+      }
+      if (formValue.validFrom !== copyValidFrom) {
+        setFormValue((prev) => ({ ...prev, validFrom: copyValidFrom }))
+        toast.showSuccess(`Platí od u kopie je pevně nastaveno na ${copyValidFrom}.`)
+        return
+      }
+      if (copySource?.name && formValue.name?.trim() === copySource.name.trim()) {
+        toast.showSuccess('Nová služba musí mít jiný název než původní.')
+        return
+      }
     }
 
     try {
@@ -480,13 +533,15 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
 
       setDetailMode('read')
       setViewMode('detail')
+      setCopySource(null)
+      setCopyValidFrom(null)
     } catch (e: any) {
       logger.error('saveUnitService failed', e)
       toast.showError(e?.message ?? 'Chyba při ukládání služby')
     } finally {
       setSaving(false)
     }
-  }, [detailMode, formValue, isCustomService, reloadServices, selectedId, selectService, services.length, toast, unitId])
+  }, [copySource?.name, copyValidFrom, detailMode, formValue, isCopyMode, isCustomService, reloadServices, selectedId, selectService, services.length, toast, unitId])
 
   const handleSortChange = useCallback(
     (nextSort: ListViewSortState) => {
@@ -596,6 +651,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
   const selectedIndex = useMemo(() => (selectedId ? services.findIndex((s) => s.id === selectedId) : -1), [services, selectedId])
   const isFormReadOnly = readOnly || detailMode === 'read'
+  const isCopyMode = detailMode === 'create' && !!copySource
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${services.length}` : null
@@ -905,7 +961,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 </div>
               )}
 
-              {isCustomService && (
+              {(isCustomService || isCopyMode) && (
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Název služby</label>
                   <input
@@ -1111,7 +1167,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                       className="detail-form__input"
                       value={formValue.validFrom ?? ''}
                       onChange={(e) => setFormValue((prev) => ({ ...prev, validFrom: e.target.value || null }))}
-                      readOnly={isFormReadOnly}
+                      disabled={isFormReadOnly || isCopyMode}
                     />
                   </div>
                   <div>
