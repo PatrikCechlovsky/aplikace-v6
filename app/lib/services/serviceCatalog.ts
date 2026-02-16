@@ -36,6 +36,11 @@ export type ServiceCatalogRow = {
   billing_type_color?: string | null
 }
 
+export type ServiceCatalogCountByType = {
+  category_id: string
+  count: number
+}
+
 export async function listServiceCatalog(params: ServiceCatalogParams = {}): Promise<ServiceCatalogRow[]> {
   const search = (params.searchText ?? '').trim()
   const includeArchived = !!params.includeArchived
@@ -196,4 +201,35 @@ export async function archiveServiceCatalog(id: string): Promise<void> {
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+}
+
+/**
+ * Vrací počet položek katalogu služeb podle typu služby (service_types).
+ * Používá se pro zobrazení počtů v menu.
+ */
+export async function getServiceCatalogCountsByType(includeArchived: boolean = false): Promise<ServiceCatalogCountByType[]> {
+  let q = supabase
+    .from('service_catalog')
+    .select('category_id')
+
+  if (!includeArchived) {
+    q = q.or('is_archived.is.null,is_archived.eq.false')
+  }
+
+  const { data, error } = await q
+
+  if (error) throw new Error(error.message)
+
+  const counts = new Map<string, number>()
+  for (const row of data ?? []) {
+    const categoryId = String(row?.category_id ?? '').trim()
+    if (categoryId) {
+      counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1)
+    }
+  }
+
+  return Array.from(counts.entries()).map(([category_id, count]) => ({
+    category_id,
+    count,
+  }))
 }

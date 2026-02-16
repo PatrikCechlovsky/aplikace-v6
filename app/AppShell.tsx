@@ -40,7 +40,12 @@ import { applyIconDisplayToLayout, loadIconDisplayFromLocalStorage } from '@/app
 import { getCurrentSession, onAuthStateChange, logout } from '@/app/lib/services/auth'
 import { getLandlordCountsByType } from '@/app/lib/services/landlords'
 import { getSubjectCountsByType } from '@/app/lib/services/subjects'
+import { getTenantCountsByType } from '@/app/lib/services/tenants'
+import { getPropertyCountsByType } from '@/app/lib/services/properties'
+import { getUnitCountsByType } from '@/app/lib/services/units'
+import { getServiceCatalogCountsByType } from '@/app/lib/services/serviceCatalog'
 import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
+import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
@@ -472,15 +477,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             // Pro modul 030 (Pronajímatelé) načteme počty podle typů a aktualizujeme labels + ikony
             if (cfg.id === '030-pronajimatel' && Array.isArray(cfg.tiles)) {
               try {
-                // Načíst počty podle typů
                 const counts = await getLandlordCountsByType(false)
                 const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
 
-                // Načíst typy subjektů z modulu 900 pro ikony a barvy
                 const subjectTypes = await fetchSubjectTypes()
                 const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
 
-                // Mapování typů subjektů na názvy (fallback, pokud není v DB)
                 const typeLabels: Record<string, string> = {
                   osoba: 'Osoba',
                   osvc: 'OSVČ',
@@ -490,35 +492,37 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   zastupce: 'Zástupce',
                 }
 
-                // Aktualizovat tiles s počty, ikonami a filtrovat jen ty s počtem > 0
-                const updatedTiles = cfg.tiles
-                  .map((tile: any) => {
-                    // Pokud je tile pro typ subjektu, aktualizovat label s počtem a ikonu z modulu 900
-                    if (tile.dynamicLabel && tile.subjectType) {
-                      const count = countsMap.get(tile.subjectType) ?? 0
-                      const typeDef = typesMap.get(tile.subjectType)
-                      const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
-                      const icon = typeDef?.icon || tile.icon || 'user' // Ikona z modulu 900 nebo fallback
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'landlords-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
 
-                      // Vrátit tile s aktualizovaným labelem a ikonou
-                      return {
-                        ...tile,
-                        label: `${typeLabel} (${count})`,
-                        icon: icon as IconKey,
-                        _count: count, // Uložit počet pro pozdější použití
-                        _color: typeDef?.color || null, // Uložit barvu pro pozdější použití
-                      }
+                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                          const count = countsMap.get(originalChild.subjectType) ?? 0
+                          const typeDef = typesMap.get(originalChild.subjectType)
+                          const typeLabel = typeDef?.name || typeLabels[originalChild.subjectType] || child.label
+                          const icon = typeDef?.icon || child.icon || 'user'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
                     }
-                    return tile
-                  })
-                  .filter((tile: any) => {
-                    // Filtrovat tiles s dynamicLabel - zobrazit jen pokud mají počet > 0
-                    if (tile.dynamicLabel && tile.subjectType) {
-                      const count = countsMap.get(tile.subjectType) ?? 0
-                      return count > 0
-                    }
-                    return true // Ostatní tiles zobrazit vždy (Přehled pronajímatelů, Přidat pronajimatele)
-                  })
+                  }
+
+                  return tile
+                })
 
                 loaded.push({
                   id: cfg.id,
@@ -563,31 +567,37 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   zastupce: 'Zástupce',
                 }
 
-                const updatedTiles = cfg.tiles
-                  .map((tile: any) => {
-                    if (tile.dynamicLabel && tile.subjectType) {
-                      const count = countsMap.get(tile.subjectType) ?? 0
-                      const typeDef = typesMap.get(tile.subjectType)
-                      const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
-                      const icon = typeDef?.icon || tile.icon || 'user'
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'subjects-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
 
-                      return {
-                        ...tile,
-                        label: `${typeLabel} (${count})`,
-                        icon: icon as IconKey,
-                        _count: count,
-                        _color: typeDef?.color || null,
-                      }
+                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                          const count = countsMap.get(originalChild.subjectType) ?? 0
+                          const typeDef = typesMap.get(originalChild.subjectType)
+                          const typeLabel = typeDef?.name || typeLabels[originalChild.subjectType] || child.label
+                          const icon = typeDef?.icon || child.icon || 'user'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
                     }
-                    return tile
-                  })
-                  .filter((tile: any) => {
-                    if (tile.dynamicLabel && tile.subjectType) {
-                      const count = countsMap.get(tile.subjectType) ?? 0
-                      return count > 0
-                    }
-                    return true
-                  })
+                  }
+
+                  return tile
+                })
 
                 loaded.push({
                   id: cfg.id,
@@ -602,6 +612,240 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 })
               } catch (countErr) {
                 console.error('Chyba při načítání počtů subjektů:', countErr)
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else if (cfg.id === '040-nemovitost' && Array.isArray(cfg.tiles)) {
+              try {
+                const propertyCounts = await getPropertyCountsByType(false)
+                const propertyCountsMap = new Map(propertyCounts.map((c) => [c.property_type_id, c.count]))
+                const propertyTypes = await listActiveByCategory('property_types')
+
+                const unitCounts = await getUnitCountsByType(false)
+                const unitCountsMap = new Map(unitCounts.map((c) => [c.unit_type_id, c.count]))
+                const unitTypes = await listActiveByCategory('unit_types')
+
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'properties-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+                        if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
+                          const propertyType = propertyTypes.find((t) => t.code === originalChild.propertyTypeCode)
+                          const count = propertyType ? (propertyCountsMap.get(propertyType.id) ?? 0) : 0
+                          const typeLabel = propertyType?.name || child.label
+                          const icon = propertyType?.icon || child.icon || 'building'
+                          const color = propertyType?.color || null
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                              color: color,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  if (tile.id === 'units-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+                        if (originalChild?.dynamicLabel && originalChild?.unitTypeCode) {
+                          const unitType = unitTypes.find((t) => t.code === originalChild.unitTypeCode)
+                          const count = unitType ? (unitCountsMap.get(unitType.id) ?? 0) : 0
+                          const typeLabel = unitType?.name || child.label
+                          const icon = unitType?.icon || child.icon || 'building'
+                          const color = unitType?.color || null
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                              color: color,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  return tile
+                })
+
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů nemovitostí/jednotek:', countErr)
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else if (cfg.id === '050-najemnik' && Array.isArray(cfg.tiles)) {
+              try {
+                const counts = await getTenantCountsByType(false)
+                const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+
+                const subjectTypes = await fetchSubjectTypes()
+                const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+
+                const typeLabels: Record<string, string> = {
+                  osoba: 'Osoba',
+                  osvc: 'OSVČ',
+                  firma: 'Firma',
+                  spolek: 'Spolek',
+                  statni: 'Státní',
+                  zastupce: 'Zástupce',
+                }
+
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'tenants-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+
+                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                          const count = countsMap.get(originalChild.subjectType) ?? 0
+                          const typeDef = typesMap.get(originalChild.subjectType)
+                          const typeLabel = typeDef?.name || typeLabels[originalChild.subjectType] || child.label
+                          const icon = typeDef?.icon || child.icon || 'user'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  return tile
+                })
+
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů nájemníků:', countErr)
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else if (cfg.id === '070-sluzby' && Array.isArray(cfg.tiles)) {
+              try {
+                const counts = await getServiceCatalogCountsByType(false)
+                const countsMap = new Map(counts.map((c) => [c.category_id, c.count]))
+                const serviceTypes = await listActiveByCategory('service_types')
+
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'service-catalog' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+
+                        if (originalChild?.dynamicLabel && originalChild?.serviceTypeCode) {
+                          const typeDef = serviceTypes.find((t) => t.code === originalChild.serviceTypeCode)
+                          const count = typeDef ? (countsMap.get(typeDef.id) ?? 0) : 0
+                          const typeLabel = typeDef?.name || child.label
+                          const icon = typeDef?.icon || child.icon || 'list'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  return tile
+                })
+
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů katalogu služeb:', countErr)
                 loaded.push({
                   id: cfg.id,
                   label: cfg.label ?? cfg.id,

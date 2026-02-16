@@ -857,6 +857,8 @@ Modul **070 – Služby** řeší:
 
 Sidebar modulu 070 obsahuje:
 - **Katalog služeb** (seznam)
+  - 3. úroveň: **typy služeb** (service_types) s počty
+  - Zobrazují se jen typy s počtem ≥ 1
 - **Nová služba** (rychlé vytvoření – otevře detail v režimu create)
 
 Rozlišení vrstev je důležité kvůli vyúčtování a oddělení nákladů pronajímatele.

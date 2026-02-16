@@ -18,6 +18,7 @@ import { getSubjectCountsByType } from '@/app/lib/services/subjects'
 import { getTenantCountsByType } from '@/app/lib/services/tenants'
 import { getPropertyCountsByType } from '@/app/lib/services/properties'
 import { getUnitCountsByType } from '@/app/lib/services/units'
+import { getServiceCatalogCountsByType } from '@/app/lib/services/serviceCatalog'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 
 /**
@@ -132,28 +133,30 @@ export default function Sidebar({
                 if (tile.id === 'landlords-list' && tile.children) {
                   return {
                     ...tile,
-                    children: tile.children
-                      .map((child: any) => {
-                        // Najít původní child config s metadata
-                        const originalChild = conf.tiles
-                          .find((t: any) => t.id === 'landlords-list')
-                          ?.children?.find((c: any) => c.id === child.id)
+                    children: tile.children.reduce((acc: any[], child: any) => {
+                      const originalChild = conf.tiles
+                        .find((t: any) => t.id === 'landlords-list')
+                        ?.children?.find((c: any) => c.id === child.id)
 
-                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
-                          const count = countsMap.get(originalChild.subjectType) ?? 0
-                          const typeDef = typesMap.get(originalChild.subjectType)
-                          const typeLabel = typeDef?.name || child.label
-                          const icon = typeDef?.icon || child.icon || 'user'
+                      if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                        const count = countsMap.get(originalChild.subjectType) ?? 0
+                        const typeDef = typesMap.get(originalChild.subjectType)
+                        const typeLabel = typeDef?.name || child.label
+                        const icon = typeDef?.icon || child.icon || 'user'
 
-                          return {
+                        if (count > 0) {
+                          acc.push({
                             ...child,
                             label: `${typeLabel} (${count})`,
                             icon: icon,
-                          }
+                          })
                         }
-                        return child
-                      }),
-                      // Filtr odstraněn - zobrazíme všechny typy i s 0 záznamů
+                        return acc
+                      }
+
+                      acc.push(child)
+                      return acc
+                    }, []),
                   }
                 }
                 return tile
@@ -176,7 +179,7 @@ export default function Sidebar({
                 if (tile.id === 'subjects-list' && tile.children) {
                   return {
                     ...tile,
-                    children: tile.children.map((child: any) => {
+                    children: tile.children.reduce((acc: any[], child: any) => {
                       const originalChild = conf.tiles
                         .find((t: any) => t.id === 'subjects-list')
                         ?.children?.find((c: any) => c.id === child.id)
@@ -187,14 +190,19 @@ export default function Sidebar({
                         const typeLabel = typeDef?.name || child.label
                         const icon = typeDef?.icon || child.icon || 'user'
 
-                        return {
-                          ...child,
-                          label: `${typeLabel} (${count})`,
-                          icon: icon,
+                        if (count > 0) {
+                          acc.push({
+                            ...child,
+                            label: `${typeLabel} (${count})`,
+                            icon: icon,
+                          })
                         }
+                        return acc
                       }
-                      return child
-                    }),
+
+                      acc.push(child)
+                      return acc
+                    }, []),
                   }
                 }
                 return tile
@@ -219,30 +227,32 @@ export default function Sidebar({
                 if (tile.id === 'properties-list' && tile.children) {
                   return {
                     ...tile,
-                    children: tile.children
-                      .map((child: any) => {
-                        // Najít původní child config s metadata
-                        const originalChild = conf.tiles
-                          .find((t: any) => t.id === 'properties-list')
-                          ?.children?.find((c: any) => c.id === child.id)
+                    children: tile.children.reduce((acc: any[], child: any) => {
+                      const originalChild = conf.tiles
+                        .find((t: any) => t.id === 'properties-list')
+                        ?.children?.find((c: any) => c.id === child.id)
 
-                        if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
-                          // Najít property type podle code
-                          const propertyType = propertyTypes.find((t) => t.code === originalChild.propertyTypeCode)
-                          const count = propertyType ? (countsMap.get(propertyType.id) ?? 0) : 0
-                          const typeLabel = propertyType?.name || child.label
-                          const icon = propertyType?.icon || child.icon || 'building'
-                          const color = propertyType?.color || null
+                      if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
+                        const propertyType = propertyTypes.find((t) => t.code === originalChild.propertyTypeCode)
+                        const count = propertyType ? (countsMap.get(propertyType.id) ?? 0) : 0
+                        const typeLabel = propertyType?.name || child.label
+                        const icon = propertyType?.icon || child.icon || 'building'
+                        const color = propertyType?.color || null
 
-                          return {
+                        if (count > 0) {
+                          acc.push({
                             ...child,
                             label: `${typeLabel} (${count})`,
                             icon: icon,
                             color: color,
-                          }
+                          })
                         }
-                        return child
-                      }),
+                        return acc
+                      }
+
+                      acc.push(child)
+                      return acc
+                    }, []),
                   }
                 }
 
@@ -262,28 +272,32 @@ export default function Sidebar({
                 if (tile.id === 'units-list' && tile.children) {
                   return {
                     ...tile,
-                    children: tile.children
-                      .map((child: any) => {
-                        const originalChild = conf.tiles
-                          .find((t: any) => t.id === 'units-list')
-                          ?.children?.find((c: any) => c.id === child.id)
+                    children: tile.children.reduce((acc: any[], child: any) => {
+                      const originalChild = conf.tiles
+                        .find((t: any) => t.id === 'units-list')
+                        ?.children?.find((c: any) => c.id === child.id)
 
-                        if (originalChild?.dynamicLabel && originalChild?.unitTypeCode) {
-                          const unitType = unitTypes.find((t) => t.code === originalChild.unitTypeCode)
-                          const count = unitType ? (unitCountsMap.get(unitType.id) ?? 0) : 0
-                          const typeLabel = unitType?.name || child.label
-                          const icon = unitType?.icon || child.icon || 'building'
-                          const color = unitType?.color || null
+                      if (originalChild?.dynamicLabel && originalChild?.unitTypeCode) {
+                        const unitType = unitTypes.find((t) => t.code === originalChild.unitTypeCode)
+                        const count = unitType ? (unitCountsMap.get(unitType.id) ?? 0) : 0
+                        const typeLabel = unitType?.name || child.label
+                        const icon = unitType?.icon || child.icon || 'building'
+                        const color = unitType?.color || null
 
-                          return {
+                        if (count > 0) {
+                          acc.push({
                             ...child,
                             label: `${typeLabel} (${count})`,
                             icon: icon,
                             color: color,
-                          }
+                          })
                         }
-                        return child
-                      }),
+                        return acc
+                      }
+
+                      acc.push(child)
+                      return acc
+                    }, []),
                   }
                 }
                 return tile
@@ -309,34 +323,81 @@ export default function Sidebar({
                 if (tile.id === 'tenants-list' && tile.children) {
                   return {
                     ...tile,
-                    children: tile.children
-                      .map((child: any) => {
-                        // Najít původní child config s metadata
-                        const originalChild = conf.tiles
-                          .find((t: any) => t.id === 'tenants-list')
-                          ?.children?.find((c: any) => c.id === child.id)
+                    children: tile.children.reduce((acc: any[], child: any) => {
+                      const originalChild = conf.tiles
+                        .find((t: any) => t.id === 'tenants-list')
+                        ?.children?.find((c: any) => c.id === child.id)
 
-                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
-                          const count = countsMap.get(originalChild.subjectType) ?? 0
-                          const typeDef = typesMap.get(originalChild.subjectType)
-                          const typeLabel = typeDef?.name || child.label
-                          const icon = typeDef?.icon || child.icon || 'user'
+                      if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                        const count = countsMap.get(originalChild.subjectType) ?? 0
+                        const typeDef = typesMap.get(originalChild.subjectType)
+                        const typeLabel = typeDef?.name || child.label
+                        const icon = typeDef?.icon || child.icon || 'user'
 
-                          return {
+                        if (count > 0) {
+                          acc.push({
                             ...child,
                             label: `${typeLabel} (${count})`,
                             icon: icon,
-                          }
+                          })
                         }
-                        return child
-                      }),
-                      // Filtr odstraněn - zobrazíme všechny typy i s 0 záznamů
+                        return acc
+                      }
+
+                      acc.push(child)
+                      return acc
+                    }, []),
                   }
                 }
                 return tile
               })
             } catch (countErr) {
               console.error('Sidebar: Chyba při načítání počtů nájemníků:', countErr)
+            }
+          }
+
+          // Pro modul 070 (Služby) načteme počty podle typu služby a aktualizujeme children labels + ikony
+          if (conf.id === '070-sluzby' && Array.isArray(tiles)) {
+            try {
+              const counts = await getServiceCatalogCountsByType(false)
+              const countsMap = new Map(counts.map((c) => [c.category_id, c.count]))
+
+              const serviceTypes = await listActiveByCategory('service_types')
+
+              tiles = tiles.map((tile) => {
+                if (tile.id === 'service-catalog' && tile.children) {
+                  return {
+                    ...tile,
+                    children: tile.children.reduce((acc: any[], child: any) => {
+                      const originalChild = conf.tiles
+                        .find((t: any) => t.id === 'service-catalog')
+                        ?.children?.find((c: any) => c.id === child.id)
+
+                      if (originalChild?.dynamicLabel && originalChild?.serviceTypeCode) {
+                        const typeDef = serviceTypes.find((t) => t.code === originalChild.serviceTypeCode)
+                        const count = typeDef ? (countsMap.get(typeDef.id) ?? 0) : 0
+                        const typeLabel = typeDef?.name || child.label
+                        const icon = typeDef?.icon || child.icon || 'list'
+
+                        if (count > 0) {
+                          acc.push({
+                            ...child,
+                            label: `${typeLabel} (${count})`,
+                            icon: icon,
+                          })
+                        }
+                        return acc
+                      }
+
+                      acc.push(child)
+                      return acc
+                    }, []),
+                  }
+                }
+                return tile
+              })
+            } catch (countErr) {
+              console.error('Sidebar: Chyba při načítání počtů katalogu služeb:', countErr)
             }
           }
 

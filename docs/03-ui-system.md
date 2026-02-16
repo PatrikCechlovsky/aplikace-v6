@@ -1987,6 +1987,8 @@ if (id === 'add') {
 6. ✅ Otevře se create tile "Přidat pronajímatele"
 7. ✅ Čistá obrazovka bez otevřených sekcí
 
+**Poznámka:** Třetí úroveň sidebaru (typové přehledy s počty) zobrazuje pouze položky s počtem ≥ 1.
+
 **Zpět na seznam:**
 - Klik na "Přehled pronajímatelů" v Sidebaru nebo breadcrumbs
 - Seznam se znovu načte (včetně filtrů s počty)

@@ -73,6 +73,8 @@ type ServiceCatalogTileProps = {
   onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
   initialMode?: LocalViewMode
+  categoryIdFilter?: string | null
+  categoryLabel?: string | null
 }
 
 const EMPTY_SERVICE: ServiceCatalogFormValue = {
@@ -87,6 +89,8 @@ export default function ServiceCatalogTile({
   onRegisterCommonActionsState,
   onRegisterCommonActionHandler,
   initialMode,
+  categoryIdFilter = null,
+  categoryLabel = null,
 }: ServiceCatalogTileProps) {
   const { showToast } = useToast()
 
@@ -127,6 +131,7 @@ export default function ServiceCatalogTile({
       const rows = await listServiceCatalog({
         searchText: searchText || undefined,
         includeArchived: showArchived,
+        categoryId: categoryIdFilter || undefined,
       })
       setData(rows.map(mapRowToUi))
     } catch (err: any) {
@@ -135,11 +140,16 @@ export default function ServiceCatalogTile({
     } finally {
       setLoading(false)
     }
-  }, [searchText, showArchived])
+  }, [categoryIdFilter, searchText, showArchived])
 
   useEffect(() => {
     void loadData()
   }, [loadData])
+
+  const listTitle = useMemo(() => {
+    if (categoryLabel?.trim()) return `📋 Katalog služeb – ${categoryLabel.trim()}`
+    return '📋 Katalog služeb'
+  }, [categoryLabel])
 
   useEffect(() => {
     async function loadPrefs() {
@@ -351,7 +361,7 @@ export default function ServiceCatalogTile({
     return (
       <div className="tile-layout">
         <div className="tile-layout__header">
-          <h1 className="tile-layout__title">📋 Katalog služeb</h1>
+          <h1 className="tile-layout__title">{listTitle}</h1>
         </div>
         <div className="tile-layout__content">Načítání…</div>
       </div>
@@ -362,7 +372,7 @@ export default function ServiceCatalogTile({
     return (
       <div className="tile-layout">
         <div className="tile-layout__header">
-          <h1 className="tile-layout__title">📋 Katalog služeb</h1>
+          <h1 className="tile-layout__title">{listTitle}</h1>
         </div>
         <div className="tile-layout__content">
           <div style={{ color: '#6b7280', marginBottom: '1.5rem' }}>{error}</div>
@@ -406,7 +416,7 @@ export default function ServiceCatalogTile({
   return (
     <div className="tile-layout">
       <div className="tile-layout__header">
-        <h1 className="tile-layout__title">📋 Katalog služeb</h1>
+        <h1 className="tile-layout__title">{listTitle}</h1>
       </div>
       <div className="tile-layout__content">
         <ListView
