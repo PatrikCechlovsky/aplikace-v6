@@ -44,6 +44,7 @@ import { getTenantCountsByType } from '@/app/lib/services/tenants'
 import { getPropertyCountsByType } from '@/app/lib/services/properties'
 import { getUnitCountsByType } from '@/app/lib/services/units'
 import { getServiceCatalogCountsByType } from '@/app/lib/services/serviceCatalog'
+import { getEquipmentCatalogCountsByType } from '@/app/lib/services/equipment'
 import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 
@@ -634,6 +635,10 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                 const unitCountsMap = new Map(unitCounts.map((c) => [c.unit_type_id, c.count]))
                 const unitTypes = await listActiveByCategory('unit_types')
 
+                const equipmentCounts = await getEquipmentCatalogCountsByType(false)
+                const equipmentCountsMap = new Map(equipmentCounts.map((c) => [c.equipment_type_id, c.count]))
+                const equipmentTypes = await listActiveByCategory('equipment_types')
+
                 const updatedTiles = cfg.tiles.map((tile: any) => {
                   if (tile.id === 'properties-list' && Array.isArray(tile.children)) {
                     return {
@@ -675,6 +680,35 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                           const typeLabel = unitType?.name || child.label
                           const icon = unitType?.icon || child.icon || 'building'
                           const color = unitType?.color || null
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                              color: color,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  if (tile.id === 'equipment-catalog' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+                        if (originalChild?.dynamicLabel && originalChild?.equipmentTypeCode) {
+                          const equipmentType = equipmentTypes.find((t) => t.code === originalChild.equipmentTypeCode)
+                          const count = equipmentType ? (equipmentCountsMap.get(equipmentType.id) ?? 0) : 0
+                          const typeLabel = equipmentType?.name || child.label
+                          const icon = equipmentType?.icon || child.icon || 'wrench'
+                          const color = equipmentType?.color || null
 
                           if (count > 0) {
                             acc.push({

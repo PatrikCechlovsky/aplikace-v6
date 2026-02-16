@@ -40,6 +40,7 @@ Vybavení může být přiřazeno k:
 - **EquipmentTypeTile (Factory)** – 16 filtrovaných pohledů podle typu
   - Kuchyňské spotřebiče, Sanitární technika, Vytápění, atd.
   - Každý filtr = samostatná dlaždice v menu
+  - Zobrazuje se jen typ s počtem ≥ 1 (počty z katalogu vybavení)
 - **EquipmentCatalogDetailFormComponent** – formulář pro detail vybavení
   - 4 sekce: Základní údaje, Cenové informace, Životnost a údržba, Systém
   - Dynamický nadpis: "Katalog vybavení - {název}"

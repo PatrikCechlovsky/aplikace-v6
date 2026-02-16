@@ -19,6 +19,7 @@ import { getTenantCountsByType } from '@/app/lib/services/tenants'
 import { getPropertyCountsByType } from '@/app/lib/services/properties'
 import { getUnitCountsByType } from '@/app/lib/services/units'
 import { getServiceCatalogCountsByType } from '@/app/lib/services/serviceCatalog'
+import { getEquipmentCatalogCountsByType } from '@/app/lib/services/equipment'
 import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 
 /**
@@ -304,6 +305,50 @@ export default function Sidebar({
               })
             } catch (countErr) {
               console.error('Sidebar: Chyba při načítání počtů jednotek:', countErr)
+            }
+
+            // Samostatně zpracovat katalog vybavení
+            try {
+              const equipmentCounts = await getEquipmentCatalogCountsByType(false)
+              const equipmentCountsMap = new Map(equipmentCounts.map((c) => [c.equipment_type_id, c.count]))
+              const equipmentTypes = await listActiveByCategory('equipment_types')
+
+              tiles = tiles.map((tile: any) => {
+                if (tile.id === 'equipment-catalog' && tile.children) {
+                  return {
+                    ...tile,
+                    children: tile.children.reduce((acc: any[], child: any) => {
+                      const originalChild = conf.tiles
+                        .find((t: any) => t.id === 'equipment-catalog')
+                        ?.children?.find((c: any) => c.id === child.id)
+
+                      if (originalChild?.dynamicLabel && originalChild?.equipmentTypeCode) {
+                        const equipmentType = equipmentTypes.find((t) => t.code === originalChild.equipmentTypeCode)
+                        const count = equipmentType ? (equipmentCountsMap.get(equipmentType.id) ?? 0) : 0
+                        const typeLabel = equipmentType?.name || child.label
+                        const icon = equipmentType?.icon || child.icon || 'wrench'
+                        const color = equipmentType?.color || null
+
+                        if (count > 0) {
+                          acc.push({
+                            ...child,
+                            label: `${typeLabel} (${count})`,
+                            icon: icon,
+                            color: color,
+                          })
+                        }
+                        return acc
+                      }
+
+                      acc.push(child)
+                      return acc
+                    }, []),
+                  }
+                }
+                return tile
+              })
+            } catch (countErr) {
+              console.error('Sidebar: Chyba při načítání počtů vybavení:', countErr)
             }
           }
 

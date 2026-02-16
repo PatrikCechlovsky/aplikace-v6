@@ -42,7 +42,6 @@ export type EquipmentCatalogRow = {
   active: boolean | null
   is_archived: boolean | null
   created_at: string | null
-  
   // joined data
   equipment_type_name?: string | null
   equipment_type_icon?: string | null
@@ -50,6 +49,11 @@ export type EquipmentCatalogRow = {
   room_type_name?: string | null
   room_type_icon?: string | null
   room_type_color?: string | null
+}
+
+export type EquipmentCatalogCountByType = {
+  equipment_type_id: string
+  count: number
 }
 
 export async function listEquipmentCatalog(params: EquipmentCatalogParams = {}): Promise<EquipmentCatalogRow[]> {
@@ -294,6 +298,37 @@ export async function deleteEquipmentCatalog(id: string): Promise<void> {
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+}
+
+/**
+ * Vrací počet položek katalogu vybavení podle typu (equipment_types).
+ * Používá se pro zobrazení počtů v menu.
+ */
+export async function getEquipmentCatalogCountsByType(includeArchived: boolean = false): Promise<EquipmentCatalogCountByType[]> {
+  let q = supabase
+    .from('equipment_catalog')
+    .select('equipment_type_id')
+
+  if (!includeArchived) {
+    q = q.or('is_archived.is.null,is_archived.eq.false')
+  }
+
+  const { data, error } = await q
+
+  if (error) throw new Error(error.message)
+
+  const counts = new Map<string, number>()
+  for (const row of data ?? []) {
+    const typeId = String(row?.equipment_type_id ?? '').trim()
+    if (typeId) {
+      counts.set(typeId, (counts.get(typeId) ?? 0) + 1)
+    }
+  }
+
+  return Array.from(counts.entries()).map(([equipment_type_id, count]) => ({
+    equipment_type_id,
+    count,
+  }))
 }
 
 export type EquipmentDetailRow = {
