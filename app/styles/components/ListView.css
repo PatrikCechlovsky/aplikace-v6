@@ -69,15 +69,14 @@
 /* Detail obsah: ListView vyplní dostupný prostor a table-wrapper scrolluje */
 .detail-view__content .listview,
 .detail-subdetail__content .listview {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   min-height: 0;
-  max-height: 100%;
-  height: 100%; /* Vynutit omezení výšky */
+  height: auto;
 }
 
 .detail-view__content .listview__table-wrapper,
 .detail-subdetail__content .listview__table-wrapper {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   min-height: 0;
 }
 
