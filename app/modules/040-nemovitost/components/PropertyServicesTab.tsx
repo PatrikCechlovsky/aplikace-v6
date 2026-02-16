@@ -137,6 +137,20 @@ function normalizeServiceName(value: string | null | undefined): string {
   return (value ?? '').trim()
 }
 
+function hasDuplicateServiceName(
+  services: PropertyServiceRow[],
+  currentId: string | null,
+  name: string | null | undefined
+): boolean {
+  const normalized = normalizeServiceName(name)
+  if (!normalized) return false
+  return services.some((s) => {
+    if (currentId && s.id === currentId) return false
+    const serviceName = s.name ?? s.service_name ?? s.catalog_service_name ?? ''
+    return normalizeServiceName(serviceName) === normalized
+  })
+}
+
 function isServiceActive(today: Date, validFrom: string | null, validTo: string | null): boolean {
   if (!validFrom && !validTo) return true // Bez omezení
   if (validFrom) {
@@ -510,8 +524,13 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
         toast.showSuccess(`Platí od u kopie je pevně nastaveno na ${copyValidFrom}.`)
         return
       }
-      if (normalizeServiceName(formValue.name) === normalizeServiceName(copySource?.name)) {
-        toast.showSuccess('Nová služba musí mít jiný název než původní.')
+    } else {
+      if (!normalizeServiceName(formValue.name)) {
+        toast.showSuccess('Vyplňte název služby.')
+        return
+      }
+      if (hasDuplicateServiceName(services, selectedId, formValue.name)) {
+        toast.showSuccess('Služba se stejným názvem už v nemovitosti existuje. Upravte název.')
         return
       }
     }
