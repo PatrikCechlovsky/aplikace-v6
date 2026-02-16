@@ -935,7 +935,6 @@ export default function PropertyDetailFrame({
                       onColumnSettings={() => setUnitsColsOpen(true)}
                       emptyText="Nemovitost nemá žádné jednotky."
                       tableWrapperMaxHeight="calc(100vh - 420px)"
-                      scrollBody
                     />
 
                     <ListViewColumnsDrawer

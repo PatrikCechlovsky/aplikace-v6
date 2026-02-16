@@ -66,34 +66,6 @@
   max-height: calc(100vh - 250px); /* pevná výška místo flex: 1 */
 }
 
-/* Varianta: scroll pouze na tbody (např. v detailu nemovitosti) */
-.listview--body-scroll .listview__table-wrapper {
-  overflow: visible;
-  max-height: none;
-}
-
-.listview--body-scroll .generic-type__table {
-  display: block;
-}
-
-.listview--body-scroll .generic-type__table thead,
-.listview--body-scroll .generic-type__table tbody {
-  display: block;
-}
-
-.listview--body-scroll .generic-type__table thead tr,
-.listview--body-scroll .generic-type__table tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
-.listview--body-scroll .generic-type__table tbody {
-  overflow: auto;
-  scrollbar-gutter: stable;
-  max-height: var(--listview-body-max-height, 360px);
-}
-
 /* Detail obsah: ListView vyplní dostupný prostor a table-wrapper scrolluje */
 .detail-view__content .listview,
 .detail-subdetail__content .listview {
