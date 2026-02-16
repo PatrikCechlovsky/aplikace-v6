@@ -115,7 +115,7 @@ function buildFormValueFromRow(row: UnitServiceRow): ServiceFormValue {
 
   return {
     serviceId: row.service_id ?? '',
-    name: row.name ?? row.service_name ?? '',
+    name: row.name ?? row.service_name ?? row.catalog_service_name ?? '',
     categoryId: resolvedCategoryId,
     billingTypeId: resolvedBillingTypeId,
     unitId: resolvedUnitId,
@@ -131,6 +131,10 @@ function buildFormValueFromRow(row: UnitServiceRow): ServiceFormValue {
     validFrom: row.valid_from ?? null,
     validTo: row.valid_to ?? null,
   }
+}
+
+function normalizeServiceName(value: string | null | undefined): string {
+  return (value ?? '').trim()
 }
 
 function isServiceActive(today: Date, validFrom: string | null, validTo: string | null): boolean {
@@ -491,7 +495,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
         toast.showSuccess(`Platí od u kopie je pevně nastaveno na ${copyValidFrom}.`)
         return
       }
-      if (copySource?.name && formValue.name?.trim() === copySource.name.trim()) {
+      if (normalizeServiceName(formValue.name) === normalizeServiceName(copySource?.name)) {
         toast.showSuccess('Nová služba musí mít jiný název než původní.')
         return
       }
