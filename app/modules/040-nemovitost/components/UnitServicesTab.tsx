@@ -96,6 +96,43 @@ function buildEmptyFormValue(): ServiceFormValue {
   }
 }
 
+function addDaysToDateString(dateString: string | null, days: number): string | null {
+  if (!dateString) return null
+  const parts = dateString.split('-').map(Number)
+  if (parts.length !== 3 || parts.some((p) => Number.isNaN(p))) return dateString
+  const [year, month, day] = parts
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (Number.isNaN(date.getTime())) return dateString
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+function buildFormValueFromRow(row: UnitServiceRow): ServiceFormValue {
+  const resolvedCategoryId = row.resolved_category_id ?? row.category_id ?? null
+  const resolvedBillingTypeId = row.resolved_billing_type_id ?? row.billing_type_id ?? null
+  const resolvedUnitId = row.resolved_unit_id ?? row.service_unit_id ?? null
+  const resolvedVatId = row.resolved_vat_rate_id ?? row.vat_rate_id ?? null
+
+  return {
+    serviceId: row.service_id ?? '',
+    name: row.name ?? row.service_name ?? '',
+    categoryId: resolvedCategoryId,
+    billingTypeId: resolvedBillingTypeId,
+    unitId: resolvedUnitId,
+    vatRateId: resolvedVatId,
+    amount: row.amount ?? row.catalog_base_price ?? null,
+    periodicityId: row.periodicity_id ?? null,
+    billingPeriodicityId: row.billing_periodicity_id ?? null,
+    payerSide: (row.payer_side as 'tenant' | 'landlord') ?? 'tenant',
+    isRebillable: row.is_rebillable ?? true,
+    splitToUnits: row.split_to_units ?? false,
+    splitBasis: row.split_basis ?? '',
+    note: row.note ?? '',
+    validFrom: row.valid_from ?? null,
+    validTo: row.valid_to ?? null,
+  }
+}
+
 function isServiceActive(today: Date, validFrom: string | null, validTo: string | null): boolean {
   if (!validFrom && !validTo) return true // Bez omezení
   if (validFrom) {
@@ -296,29 +333,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       const row = services.find((s) => s.id === id)
       if (!row) return
       setSelectedId(row.id)
-      const resolvedCategoryId = row.resolved_category_id ?? row.category_id ?? null
-      const resolvedBillingTypeId = row.resolved_billing_type_id ?? row.billing_type_id ?? null
-      const resolvedUnitId = row.resolved_unit_id ?? row.service_unit_id ?? null
-      const resolvedVatId = row.resolved_vat_rate_id ?? row.vat_rate_id ?? null
-
-      setFormValue({
-        serviceId: row.service_id ?? '',
-        name: row.name ?? row.service_name ?? '',
-        categoryId: resolvedCategoryId,
-        billingTypeId: resolvedBillingTypeId,
-        unitId: resolvedUnitId,
-        vatRateId: resolvedVatId,
-        amount: row.amount ?? row.catalog_base_price ?? null,
-        periodicityId: row.periodicity_id ?? null,
-        billingPeriodicityId: row.billing_periodicity_id ?? null,
-        payerSide: (row.payer_side as 'tenant' | 'landlord') ?? 'tenant',
-        isRebillable: row.is_rebillable ?? true,
-        splitToUnits: row.split_to_units ?? false,
-        splitBasis: row.split_basis ?? '',
-        note: row.note ?? '',
-        validFrom: row.valid_from ?? null,
-        validTo: row.valid_to ?? null,
-      })
+      setFormValue(buildFormValueFromRow(row))
       setIsCustomService(!row.service_id)
     },
     [services]
@@ -351,6 +366,26 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     setFormValue(buildEmptyFormValue())
     setIsCustomService(false)
   }, [readOnly])
+
+  const handleDuplicate = useCallback(() => {
+    if (!selectedId) {
+      toast.showWarning('Nejprve vyberte službu')
+      return
+    }
+    if (readOnly) return
+    const row = services.find((s) => s.id === selectedId)
+    if (!row) return
+    const baseForm = buildFormValueFromRow(row)
+    setSelectedId(null)
+    setDetailMode('create')
+    setViewMode('detail')
+    setActiveTab('form')
+    setFormValue({
+      ...baseForm,
+      validTo: addDaysToDateString(baseForm.validTo, 1),
+    })
+    setIsCustomService(!row.service_id)
+  }, [readOnly, selectedId, services, toast])
 
   const closeDetail = useCallback(() => {
     if (viewMode !== 'detail') return
@@ -590,6 +625,18 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                   <button type="button" className="common-actions__btn" onClick={openCreate}>
                     <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
                     <span className="common-actions__label">Nová</span>
+                  </button>
+                )}
+                {!readOnly && (
+                  <button
+                    type="button"
+                    className="common-actions__btn"
+                    onClick={handleDuplicate}
+                    disabled={!selectedId}
+                    title="Vytvořit kopii vybrané služby"
+                  >
+                    <span className="common-actions__icon">{getIcon('duplicate' as IconKey)}</span>
+                    <span className="common-actions__label">Kopie</span>
                   </button>
                 )}
 
