@@ -164,6 +164,24 @@ function isServiceActive(today: Date, validFrom: string | null, validTo: string 
   return true
 }
 
+function getServiceStatus(
+  today: Date,
+  validFrom: string | null,
+  validTo: string | null,
+  isArchived: boolean
+): string {
+  if (isArchived) return 'Archivováno'
+  if (validFrom) {
+    const fromDate = new Date(validFrom)
+    if (today < fromDate) return 'Čekající'
+  }
+  if (validTo) {
+    const toDate = new Date(validTo)
+    if (today > toDate) return 'Neaktivní'
+  }
+  return 'Aktivní'
+}
+
 export default function UnitServicesTab({ unitId, readOnly = false, onCountChange, onAttachmentsChanged }: Props) {
   const toast = useToast()
 
@@ -948,7 +966,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 </div>
               </div>
 
-              {!isCustomService && (
+              {!isCustomService && detailMode === 'create' && (
                 <div className="detail-form__field detail-form__field--span-2">
                   <label className="detail-form__label">Katalogová služba</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
@@ -1224,6 +1242,15 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="detail-form__field detail-form__field--span-2">
+                <label className="detail-form__label">Stav</label>
+                <input
+                  className="detail-form__input"
+                  value={getServiceStatus(new Date(), formValue.validFrom, formValue.validTo, !!selectedRow?.is_archived)}
+                  readOnly
+                />
               </div>
 
               <div className="detail-form__field detail-form__field--span-2">
