@@ -32,6 +32,8 @@ Vybavení může být přiřazeno k:
   - ListView s 6 sloupci (Typ, Název, Místnost, Cena, Životnost, Stav)
   - DetailView pro prohlížení/editaci položky
   - Podpora filtrování podle typu vybavení (equipmentTypeFilter prop)
+  - Přepínač **Zobrazit neaktivní** v ListView toolbaru (zobrazuje i archivované)
+  - Počet v záložce se řídí filtrem (aktivní vs. neaktivní)
 - **CreateEquipmentTile** – vytváření vybavení přes výběr typu (16 karet)
   - Pattern: Tile-based creation jako CreateUnitTile
   - Type selection cards s ikonami a barvami z generic_types
@@ -44,6 +46,10 @@ Vybavení může být přiřazeno k:
   - Archive pattern (is_archived), no delete
 - **EquipmentTypesTile** – správa typů vybavení (generic_types)
 - **RoomTypesTile** – správa typů místností (generic_types)
+
+### 🔎 Poznámky k view a archivaci
+- `v_unit_equipment_list` a `v_property_equipment_list` nesmí filtrovat `is_archived`.
+- Checkbox ve sloupci **Aktivní** provádí archivaci vazby (ruční).
 
 ### 🔧 V plánu
 - Vazba na jednotky (unit_equipment) - required fields při vazbě

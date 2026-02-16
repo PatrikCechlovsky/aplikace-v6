@@ -650,6 +650,8 @@ Pole – návrh:
 - `split_to_units` (bool)
 - `split_basis` (text, např. m² | osoby | jednotky)
 - `note` (text)
+- `valid_from` (date, platnost od)
+- `valid_to` (date, platnost do)
 - `created_at`, `updated_at`
 - `is_archived` (bool)
 
@@ -678,12 +680,19 @@ Pole – návrh:
 - `split_to_units` (bool)
 - `split_basis` (text, např. m² | osoby | jednotky)
 - `note` (text)
+- `valid_from` (date, platnost od)
+- `valid_to` (date, platnost do)
 - `created_at`, `updated_at`
 - `is_archived` (bool)
 
 Přílohy:
 - `entity_type = property_service_binding`
 - `entity_id = property_services.id`
+
+Poznámky k view:
+- `v_property_services_list` a `v_unit_services_list` musí být po přidání sloupců znovu vytvořeny, aby zahrnovaly `valid_from`/`valid_to`.
+- Viewy nesmí filtrovat `is_archived`, protože UI umožňuje „Zobrazit neaktivní/archivní“.
+  - Migrace: `106_add_valid_dates_to_services.sql`, `107_update_services_views.sql`, `109_update_services_views_include_archived.sql`.
 
 ---
 #### 4) `contract_services`

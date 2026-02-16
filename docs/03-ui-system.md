@@ -144,6 +144,26 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 **Relevantní CSS soubory**:
 - `app/styles/components/DetailForm.css` - sub-detail helpers
 
+#### F) Služby & Vybavení – seznam a detail (2026-02)
+
+**Seznam (ListView toolbar)**
+- Přepínač **Zobrazit neaktivní** je v toolbaru ListView (vedle filtru a nastavení sloupců).
+- Defaultně jsou vidět jen **aktivní** položky.
+- Počet v záložce se **řídí aktuálním filtrem** (aktivní vs. neaktivní).
+
+**Aktivita a archivace**
+- Aktivita služby se odvozuje z `valid_from`/`valid_to` (a `is_archived`).
+- Checkbox ve sloupci **Aktivní** slouží k **archivaci** (ruční), ne k přepnutí platnosti.
+- „Neaktivní“ zahrnuje **archivované** i **čekající** (platí od v budoucnu).
+
+**Detail služby**
+- Vyhledávání katalogu je dostupné **pouze při vytváření** (create). V read/edit je skryté.
+- Read‑only pole **Stav** je pod daty platnosti a zobrazuje: Aktivní / Čekající / Neaktivní / Archivováno.
+
+**Kopie služby**
+- Kopie může mít stejný název jako původní, ale **nesmí se časově překrývat** s původní službou.
+- Nová (nekopírovaná) služba musí mít **unikátní název** v rámci nemovitosti/jednotky.
+
 #### E) Evidenční list – osoby a služby (2026-02-15)
 
 **Cíl**: konzistentní UI chování v detailu evidenčního listu a správná data v tabulkách.
