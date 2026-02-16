@@ -188,6 +188,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     colOrder: [],
     colHidden: [],
   })
+  const [showInactive, setShowInactive] = useState(false)
   const [colsOpen, setColsOpen] = useState(false)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -454,27 +455,42 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     onAttachmentsChanged?.()
   }, [attachmentsReturnView, onAttachmentsChanged])
 
+  const orderedServices = useMemo(() => {
+    const items = [...services]
+    return items.sort((a, b) => {
+      const aDate = a.valid_from ? new Date(a.valid_from).getTime() : Number.NEGATIVE_INFINITY
+      const bDate = b.valid_from ? new Date(b.valid_from).getTime() : Number.NEGATIVE_INFINITY
+      if (aDate !== bDate) return bDate - aDate
+      const aTo = a.valid_to ? new Date(a.valid_to).getTime() : Number.NEGATIVE_INFINITY
+      const bTo = b.valid_to ? new Date(b.valid_to).getTime() : Number.NEGATIVE_INFINITY
+      if (aTo !== bTo) return bTo - aTo
+      const aName = normalizeServiceName(a.service_name ?? a.name ?? a.catalog_service_name ?? '')
+      const bName = normalizeServiceName(b.service_name ?? b.name ?? b.catalog_service_name ?? '')
+      return aName.localeCompare(bName, 'cs')
+    })
+  }, [services])
+
   const handlePrevious = useCallback(() => {
     if (!selectedId) return
-    const index = services.findIndex((s) => s.id === selectedId)
+    const index = orderedServices.findIndex((s) => s.id === selectedId)
     if (index > 0) {
-      const prevService = services[index - 1]
+      const prevService = orderedServices[index - 1]
       if (prevService) {
         selectService(prevService.id)
       }
     }
-  }, [services, selectService, selectedId])
+  }, [orderedServices, selectService, selectedId])
 
   const handleNext = useCallback(() => {
     if (!selectedId) return
-    const index = services.findIndex((s) => s.id === selectedId)
-    if (index >= 0 && index < services.length - 1) {
-      const nextService = services[index + 1]
+    const index = orderedServices.findIndex((s) => s.id === selectedId)
+    if (index >= 0 && index < orderedServices.length - 1) {
+      const nextService = orderedServices[index + 1]
       if (nextService) {
         selectService(nextService.id)
       }
     }
-  }, [services, selectService, selectedId])
+  }, [orderedServices, selectService, selectedId])
 
   const isCopyMode = detailMode === 'create' && !!copySource
 
@@ -606,7 +622,8 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   )
 
   const listItems = useMemo<ServiceCatalogListItem[]>(() => {
-    return services.map((row) => ({
+    const today = new Date()
+    return orderedServices.map((row) => ({
       id: row.id,
       name: row.service_name ?? row.name ?? '—',
       categoryId: row.resolved_category_id ?? row.category_id ?? null,
@@ -617,22 +634,23 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       unitName: row.unit_name ?? '—',
       basePrice: row.amount ?? row.catalog_base_price ?? null,
       vatRateName: row.vat_rate_name ?? '—',
-      active: !(row.is_archived ?? false),
+      active: !(row.is_archived ?? false) && isServiceActive(today, row.valid_from ?? null, row.valid_to ?? null),
       isArchived: !!row.is_archived,
     }))
-  }, [services])
+  }, [orderedServices])
 
   const filteredItems = useMemo(() => {
     const q = searchText.trim().toLowerCase()
-    if (!q) return listItems
-    return listItems.filter((item) => (
+    const base = showInactive ? listItems : listItems.filter((item) => item.active)
+    if (!q) return base
+    return base.filter((item) => (
       item.name.toLowerCase().includes(q) ||
       item.categoryName.toLowerCase().includes(q) ||
       item.billingTypeName.toLowerCase().includes(q) ||
       item.unitName.toLowerCase().includes(q) ||
       item.vatRateName.toLowerCase().includes(q)
     ))
-  }, [listItems, searchText])
+  }, [listItems, searchText, showInactive])
 
   const preparedColumns = useMemo(() => applyColumnPrefs(SERVICE_CATALOG_BASE_COLUMNS, colPrefs), [colPrefs])
 
@@ -670,11 +688,14 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   }, [filteredItems, handleArchiveToggle, readOnly, sort])
 
   const selectedRow = useMemo(() => services.find((s) => s.id === selectedId) ?? null, [services, selectedId])
-  const selectedIndex = useMemo(() => (selectedId ? services.findIndex((s) => s.id === selectedId) : -1), [services, selectedId])
+  const selectedIndex = useMemo(
+    () => (selectedId ? orderedServices.findIndex((s) => s.id === selectedId) : -1),
+    [orderedServices, selectedId]
+  )
   const isFormReadOnly = readOnly || detailMode === 'read'
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
-  const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${services.length}` : null
+  const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${orderedServices.length}` : null
 
   if (!unitId || unitId === 'new') {
     return (
@@ -697,6 +718,14 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 className="detail-form__section-title">Seznam služeb</h3>
               <div style={{ display: 'flex', gap: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="checkbox"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                  />
+                  <span>Zobrazit neaktivní</span>
+                </label>
                 {!readOnly && (
                   <button type="button" className="common-actions__btn" onClick={openCreate}>
                     <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
