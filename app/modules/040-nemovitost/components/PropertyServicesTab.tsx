@@ -231,7 +231,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const reloadServices = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await listPropertyServices(propertyId)
+      const data = await listPropertyServices(propertyId, showInactive)
       setServices(data)
     } catch (e: any) {
       logger.error('listPropertyServices failed', e)
@@ -239,7 +239,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
     } finally {
       setLoading(false)
     }
-  }, [propertyId, toast])
+  }, [propertyId, showInactive, toast])
 
   useEffect(() => {
     void reloadServices()
@@ -594,7 +594,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
       })
 
       // Načíst aktualizovaný seznam služeb
-      const updatedServices = await listPropertyServices(propertyId)
+      const updatedServices = await listPropertyServices(propertyId, showInactive)
       setServices(updatedServices)
       
       toast.showSuccess('Služba uložena')
@@ -650,7 +650,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
         await setPropertyServiceArchived(serviceId, !nextActive)
         
         // Aktualizovat seznam služeb
-        const updatedServices = await listPropertyServices(propertyId)
+        const updatedServices = await listPropertyServices(propertyId, showInactive)
         setServices(updatedServices)
         
         if (!nextActive && selectedId === serviceId) {

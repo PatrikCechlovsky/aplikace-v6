@@ -231,7 +231,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const reloadServices = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await listUnitServices(unitId)
+      const data = await listUnitServices(unitId, showInactive)
       setServices(data)
     } catch (e: any) {
       logger.error('listUnitServices failed', e)
@@ -239,7 +239,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     } finally {
       setLoading(false)
     }
-  }, [toast, unitId])
+  }, [showInactive, toast, unitId])
 
   useEffect(() => {
     if (!unitId || unitId === 'new') {
@@ -575,7 +575,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
       toast.showSuccess('Služba uložena')
 
       if (!selectedId && services.length >= 0) {
-        const next = await listUnitServices(unitId)
+        const next = await listUnitServices(unitId, showInactive)
         const last = next[next.length - 1]
         if (last) {
           setSelectedId(last.id)
