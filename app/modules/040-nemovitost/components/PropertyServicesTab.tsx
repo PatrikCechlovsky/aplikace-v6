@@ -743,6 +743,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${orderedServices.length}` : null
+  const tableMaxHeight = 'calc(100vh - 420px)'
 
 
   if (!propertyId || propertyId === 'new') {
@@ -827,6 +828,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                 onSortChange={handleSortChange}
                 onColumnResize={handleColumnResize}
                 onColumnSettings={() => setColsOpen(true)}
+                tableWrapperMaxHeight={tableMaxHeight}
               />
             )}
           </section>

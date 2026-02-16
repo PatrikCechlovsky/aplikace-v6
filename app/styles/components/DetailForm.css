@@ -54,6 +54,7 @@
 .detail-form__section--scroll {
   display: flex;
   flex-direction: column;
+  flex: 1 1 0;
   min-height: 0;
   max-height: 100%;
   overflow: hidden;

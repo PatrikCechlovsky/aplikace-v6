@@ -715,6 +715,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${orderedServices.length}` : null
+  const tableMaxHeight = 'calc(100vh - 420px)'
 
   if (!unitId || unitId === 'new') {
     return (
@@ -801,6 +802,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 onColumnSettings={() => setColsOpen(true)}
                 onColumnResize={handleColumnResize}
                 emptyText="Zatím nejsou přiřazeny žádné služby."
+                tableWrapperMaxHeight={tableMaxHeight}
               />
             )}
           </section>
