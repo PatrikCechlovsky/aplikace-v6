@@ -110,7 +110,7 @@ function addDaysToDateString(dateString: string | null, days: number): string | 
 function buildFormValueFromRow(row: PropertyServiceRow): ServiceFormValue {
   const resolvedCategoryId = row.resolved_category_id ?? row.category_id ?? null
   const resolvedBillingTypeId = row.resolved_billing_type_id ?? row.billing_type_id ?? null
-  const resolvedUnitId = row.resolved_unit_id ?? row.service_unit_id ?? null
+  const resolvedUnitId = row.resolved_unit_id ?? row.unit_id ?? null
   const resolvedVatId = row.resolved_vat_rate_id ?? row.vat_rate_id ?? null
 
   return {
