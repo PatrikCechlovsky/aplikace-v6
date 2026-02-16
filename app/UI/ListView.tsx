@@ -70,6 +70,9 @@ export type ListViewProps<TData = any> = {
 
   /** max výška scrollovatelné tabulky (např. pro vazby) */
   tableWrapperMaxHeight?: string | number
+
+  /** pokud true, scrolluje tbody místo wrapperu */
+  scrollBody?: boolean
 }
 
 // ============================================================================
@@ -130,9 +133,13 @@ export default function ListView<TData = any>({
   columnSettingsAriaLabel = 'Nastavit sloupce',
   toolbarRightSlot,
   tableWrapperMaxHeight,
+  scrollBody = false,
 }: ListViewProps<TData>) {
   const tableWrapperStyle = typeof tableWrapperMaxHeight !== 'undefined'
     ? { maxHeight: typeof tableWrapperMaxHeight === 'number' ? `${tableWrapperMaxHeight}px` : tableWrapperMaxHeight }
+    : undefined
+  const bodyScrollStyle = scrollBody && typeof tableWrapperMaxHeight !== 'undefined'
+    ? ({ ['--listview-body-max-height' as any]: typeof tableWrapperMaxHeight === 'number' ? `${tableWrapperMaxHeight}px` : tableWrapperMaxHeight })
     : undefined
   const dragRef = useRef<{
     key: string
@@ -176,7 +183,7 @@ export default function ListView<TData = any>({
   }, [onColumnResize, stopDrag])
 
   return (
-    <div className="listview">
+    <div className={scrollBody ? 'listview listview--body-scroll' : 'listview'} style={bodyScrollStyle}>
       <div className="listview__toolbar">
         <div className="listview__toolbar-left">
           <input

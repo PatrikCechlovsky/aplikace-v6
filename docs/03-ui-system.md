@@ -90,6 +90,11 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
                   └─ table (sticky header)
 ```
 
+**Varianta (scroll na `<tbody>`)**:
+- použij `scrollBody` na ListView
+- `tableWrapperMaxHeight` nastaví max výšku body scrollu
+- využívej pro seznamy uvnitř detailu, kde má toolbar zůstat fixní
+
 **Klíčová pravidla**:
 1. `.listview` má `flex: 1 1 0` a `height: 100%` v `.detail-view__content`
 2. `.listview__table-wrapper` má `flex: 1 1 0` a `overflow: auto`

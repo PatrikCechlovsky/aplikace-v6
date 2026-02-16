@@ -934,6 +934,8 @@ export default function PropertyDetailFrame({
                       }}
                       onColumnSettings={() => setUnitsColsOpen(true)}
                       emptyText="Nemovitost nemá žádné jednotky."
+                      tableWrapperMaxHeight="calc(100vh - 420px)"
+                      scrollBody
                     />
 
                     <ListViewColumnsDrawer
@@ -966,81 +968,85 @@ export default function PropertyDetailFrame({
             )}
 
             {unitsViewMode === 'detail' && (
-              <section className="detail-form__section">
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-                  <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail jednotky</h3>
-                  <div style={{ flex: 1 }} />
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!canGoPrevUnit) return
-                        const prev = unitsSorted[selectedUnitIndex - 1]
-                        if (prev) setSelectedUnitId(prev.id)
-                      }}
-                      disabled={!canGoPrevUnit}
-                      className="common-actions__btn"
-                      title="Předchozí jednotka"
-                    >
-                      <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
-                      <span className="common-actions__label">Předchozí</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!canGoNextUnit) return
-                        const next = unitsSorted[selectedUnitIndex + 1]
-                        if (next) setSelectedUnitId(next.id)
-                      }}
-                      disabled={!canGoNextUnit}
-                      className="common-actions__btn"
-                      title="Další jednotka"
-                    >
-                      <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
-                      <span className="common-actions__label">Další</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openUnitInModule('edit')}
-                      disabled={!selectedUnitId}
-                      className="common-actions__btn"
-                      title="Upravit v přehledu jednotek"
-                    >
-                      <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
-                      <span className="common-actions__label">Upravit</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUnitsViewMode('list')}
-                      className="common-actions__btn"
-                      title="Zpět na seznam"
-                    >
-                      <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-                      <span className="common-actions__label">Zpět</span>
-                    </button>
+              <section className="detail-form__section detail-form__section--scroll">
+                <div className="detail-subdetail">
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }} className="detail-subdetail__header">
+                    <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail jednotky</h3>
+                    <div style={{ flex: 1 }} />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!canGoPrevUnit) return
+                          const prev = unitsSorted[selectedUnitIndex - 1]
+                          if (prev) setSelectedUnitId(prev.id)
+                        }}
+                        disabled={!canGoPrevUnit}
+                        className="common-actions__btn"
+                        title="Předchozí jednotka"
+                      >
+                        <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
+                        <span className="common-actions__label">Předchozí</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!canGoNextUnit) return
+                          const next = unitsSorted[selectedUnitIndex + 1]
+                          if (next) setSelectedUnitId(next.id)
+                        }}
+                        disabled={!canGoNextUnit}
+                        className="common-actions__btn"
+                        title="Další jednotka"
+                      >
+                        <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
+                        <span className="common-actions__label">Další</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openUnitInModule('edit')}
+                        disabled={!selectedUnitId}
+                        className="common-actions__btn"
+                        title="Upravit v přehledu jednotek"
+                      >
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUnitsViewMode('list')}
+                        className="common-actions__btn"
+                        title="Zpět na seznam"
+                      >
+                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                        <span className="common-actions__label">Zpět</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="detail-subdetail__content">
+                    {selectedUnitLoading && <p style={{ color: 'var(--color-text-muted)', padding: '0.5rem 0' }}>Načítám detail…</p>}
+                    {!selectedUnitLoading && selectedUnitForm && (
+                      <UnitDetailForm
+                        unit={selectedUnitForm}
+                        readOnly={true}
+                        propertyAddress={{
+                          street: formValue.street || null,
+                          house_number: formValue.house_number || null,
+                          city: formValue.city || null,
+                          zip: formValue.zip || null,
+                        } as PropertyAddress}
+                        propertyLandlordId={formValue.landlord_id || null}
+                      />
+                    )}
+                    {!selectedUnitLoading && !selectedUnitForm && (
+                      <p style={{ color: 'var(--color-danger)', padding: '0.5rem 0' }}>
+                        Detail jednotky se nepodařilo načíst.
+                      </p>
+                    )}
                   </div>
                 </div>
-
-                {selectedUnitLoading && <p style={{ color: 'var(--color-text-muted)', padding: '0.5rem 0' }}>Načítám detail…</p>}
-                {!selectedUnitLoading && selectedUnitForm && (
-                  <UnitDetailForm
-                    unit={selectedUnitForm}
-                    readOnly={true}
-                    propertyAddress={{
-                      street: formValue.street || null,
-                      house_number: formValue.house_number || null,
-                      city: formValue.city || null,
-                      zip: formValue.zip || null,
-                    } as PropertyAddress}
-                    propertyLandlordId={formValue.landlord_id || null}
-                  />
-                )}
-                {!selectedUnitLoading && !selectedUnitForm && (
-                  <p style={{ color: 'var(--color-danger)', padding: '0.5rem 0' }}>
-                    Detail jednotky se nepodařilo načíst.
-                  </p>
-                )}
               </section>
             )}
           </div>
