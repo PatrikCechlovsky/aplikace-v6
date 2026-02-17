@@ -734,7 +734,7 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
     <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
         <>
-          <section className="detail-form__section">
+          <section className="detail-form__section detail-form__section--auto">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 className="detail-form__section-title">Seznam služeb</h3>
               <div style={{ display: 'flex', gap: 8 }}>
