@@ -134,6 +134,9 @@ export default function ListView<TData = any>({
   const tableWrapperStyle = typeof tableWrapperMaxHeight !== 'undefined'
     ? { maxHeight: typeof tableWrapperMaxHeight === 'number' ? `${tableWrapperMaxHeight}px` : tableWrapperMaxHeight }
     : undefined
+  const listViewClassName = ['listview', typeof tableWrapperMaxHeight !== 'undefined' ? 'listview--auto' : '']
+    .filter(Boolean)
+    .join(' ')
   const dragRef = useRef<{
     key: string
     startX: number
@@ -176,7 +179,7 @@ export default function ListView<TData = any>({
   }, [onColumnResize, stopDrag])
 
   return (
-    <div className="listview">
+    <div className={listViewClassName}>
       <div className="listview__toolbar">
         <div className="listview__toolbar-left">
           <input

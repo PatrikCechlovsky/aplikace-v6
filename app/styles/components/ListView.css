@@ -16,6 +16,12 @@
   overflow: hidden; /* Scroll je v table-wrapper */
 }
 
+/* Když je nastavený max-height tabulky, ListView se nemá roztahovat do prázdna */
+.listview--auto {
+  flex: 0 0 auto;
+  height: auto;
+}
+
 /* Horní lišta */
 .listview__toolbar {
   display: flex;
@@ -66,6 +72,10 @@
   max-height: calc(100vh - 250px); /* pevná výška místo flex: 1 */
 }
 
+.listview--auto .listview__table-wrapper {
+  flex: 0 0 auto;
+}
+
 /* Detail obsah: ListView vyplní dostupný prostor a table-wrapper scrolluje */
 .detail-view__content .listview,
 .detail-subdetail__content .listview {
@@ -75,11 +85,24 @@
   height: 100%; /* Vynutit omezení výšky */
 }
 
+.detail-view__content .listview.listview--auto,
+.detail-subdetail__content .listview.listview--auto {
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+}
+
 .detail-view__content .listview__table-wrapper,
 .detail-subdetail__content .listview__table-wrapper {
   flex: 1 1 0;
   min-height: 0;
   max-height: none; /* zruší viewport-based výšku */
+}
+
+.detail-view__content .listview.listview--auto .listview__table-wrapper,
+.detail-subdetail__content .listview.listview--auto .listview__table-wrapper {
+  flex: 0 0 auto;
+  max-height: none;
 }
 
 /* Jemnější tabulka (méně “krabic”) */
