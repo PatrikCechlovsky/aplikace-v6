@@ -33,3 +33,8 @@
   flex: 1 1 0;
   min-height: 0;
 }
+
+/* Pokud panel obsahuje ListView s auto výškou, nemá se roztahovat */
+.detail-view__content > [role="tabpanel"]:not([hidden]):has(.listview--auto) {
+  flex: 0 0 auto;
+}
