@@ -760,7 +760,7 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   }
 
   return (
-    <div className="detail-form detail-form--fill">
+    <div className={`detail-form detail-form--fill${viewMode === 'list' ? ' detail-form--auto' : ''}`}>
       {viewMode === 'list' && (
         <>
           <section className="detail-form__section detail-form__section--auto">

@@ -27,6 +27,12 @@
   min-height: 0;
 }
 
+/* Auto režim: nevyplňovat zbytek výšky */
+.detail-form--fill.detail-form--auto {
+  flex: 0 0 auto;
+  height: auto;
+}
+
 /* Když detail-form obsahuje ListView, musí se roztáhnout na plnou výšku */
 .detail-view__content .detail-form:has(.listview) {
   flex: 1 1 0;
