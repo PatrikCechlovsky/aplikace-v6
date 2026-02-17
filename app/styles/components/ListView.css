@@ -4,6 +4,8 @@
    ========================================= */
 
 .listview {
+  --listview-toolbar-h: 36px;
+  --listview-bottom-gap: 6px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -13,6 +15,7 @@
   gap: 8px;
   min-height: 0;
   flex: 1; /* Roztáhne se */
+  height: 100%;
   overflow: hidden; /* Scroll je v table-wrapper */
 }
 
@@ -69,7 +72,10 @@
   position: relative;
   overflow: auto; /* SCROLL TADY! */
   scrollbar-gutter: stable;
-  max-height: calc(100vh - 250px); /* pevná výška místo flex: 1 */
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  padding-bottom: var(--listview-bottom-gap);
 }
 
 .listview--auto .listview__table-wrapper {

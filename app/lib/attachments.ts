@@ -124,6 +124,8 @@ export type UpdateAttachmentMetadataArgs = {
 // 3) HELPERS
 // ==================================================
 const DOCS_BUCKET = 'documents'
+export const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024
+export const MAX_UPLOAD_SIZE_LABEL = '50 MB'
 
 function normalizeEntityType(entityType: string): string {
   const t = (entityType ?? '').trim().toLowerCase()
@@ -144,6 +146,18 @@ function safeFileName(name: string) {
   return (name ?? 'file').replace(/[^\w.\-]+/g, '_')
 }
 
+function formatFileSizeMb(bytes: number) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function getUploadSizeError(file: File): string | null {
+  if (!file) return 'Chybí soubor.'
+  if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+    return `Soubor je příliš velký (${formatFileSizeMb(file.size)}). Max ${MAX_UPLOAD_SIZE_LABEL}.`
+  }
+  return null
+}
+
 function buildStoragePath(params: {
   entityType: string
   entityId: string
@@ -159,6 +173,8 @@ function buildStoragePath(params: {
 }
 
 async function uploadToStorage(filePath: string, file: File) {
+  const sizeError = getUploadSizeError(file)
+  if (sizeError) throw new Error(sizeError)
   const { error } = await supabase.storage.from(DOCS_BUCKET).upload(filePath, file, { upsert: true })
   if (error) throw new Error(error.message)
 }

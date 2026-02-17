@@ -743,7 +743,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${orderedServices.length}` : null
-  const tableMaxHeight = 'calc(100vh - 420px)'
 
 
   if (!propertyId || propertyId === 'new') {
@@ -760,10 +759,10 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
   }
 
   return (
-    <div className={`detail-form detail-form--fill${viewMode === 'list' ? ' detail-form--auto' : ''}`}>
+    <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
         <>
-          <section className="detail-form__section detail-form__section--auto">
+          <section className="detail-form__section detail-form__section--scroll detail-form__section--fit">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 className="detail-form__section-title">Seznam služeb</h3>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -828,7 +827,6 @@ export default function PropertyServicesTab({ propertyId, readOnly = false, onCo
                 onSortChange={handleSortChange}
                 onColumnResize={handleColumnResize}
                 onColumnSettings={() => setColsOpen(true)}
-                tableWrapperMaxHeight={tableMaxHeight}
               />
             )}
           </section>

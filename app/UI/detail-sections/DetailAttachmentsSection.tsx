@@ -24,9 +24,11 @@ import {
   addAttachmentVersionWithUpload,
   createAttachmentWithUpload,
   getAttachmentSignedUrl,
+  getUploadSizeError,
   listAttachments,
   listAttachmentVersions,
   loadUserDisplayNames,
+  MAX_UPLOAD_SIZE_LABEL,
   updateAttachmentMetadata,
   type AttachmentRow,
   type AttachmentVersionRow,
@@ -646,6 +648,9 @@ export default function DetailAttachmentsSection({
     if (!title) return setErrorText('Chybí název přílohy.')
     if (!newFile) return setErrorText('Vyber soubor.')
 
+    const sizeError = getUploadSizeError(newFile)
+    if (sizeError) return setErrorText(sizeError)
+
     setSaving(true)
     try {
       await createAttachmentWithUpload({
@@ -724,6 +729,13 @@ export default function DetailAttachmentsSection({
     async (documentId: string, file: File | null) => {
       if (!isManager) return
       if (!file) return
+      const sizeError = getUploadSizeError(file)
+      if (sizeError) {
+        setErrorText(sizeError)
+        const el = versionInputRefs.current[documentId]
+        if (el) el.value = ''
+        return
+      }
       setErrorText(null)
 
       try {
@@ -1239,8 +1251,23 @@ export default function DetailAttachmentsSection({
 
                 <div className="detail-form__field detail-form__field--span-6">
                   <label className="detail-form__label">Soubor</label>
-                  <input className="detail-form__input" type="file" onChange={(e) => setNewFile(e.target.files?.[0] ?? null)} />
+                  <input
+                    className="detail-form__input"
+                    type="file"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null
+                      const sizeError = file ? getUploadSizeError(file) : null
+                      if (sizeError) {
+                        setErrorText(sizeError)
+                        setNewFile(null)
+                        e.currentTarget.value = ''
+                        return
+                      }
+                      setNewFile(file)
+                    }}
+                  />
                   {newFile && <div className="detail-form__hint">Vybráno: {newFile.name}</div>}
+                  <div className="detail-form__hint">Max velikost: {MAX_UPLOAD_SIZE_LABEL}.</div>
                 </div>
               </div>
 

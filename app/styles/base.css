@@ -131,6 +131,30 @@ body {
   background-color: var(--color-app-bg);
   color: var(--color-text);
 }
+
+/* =========================================
+   Scrollbary – jednotný vzhled napříč appkou
+   ========================================= */
+.layout * {
+  scrollbar-color: var(--color-text) var(--color-border-soft);
+  scrollbar-width: auto;
+}
+
+.layout *::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.layout *::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.layout *::-webkit-scrollbar-track {
+  background: var(--color-border-soft);
+}
 /* Vybraný řádek podle theme + accent */
 
 /* 🔵 Modrá */

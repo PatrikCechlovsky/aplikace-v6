@@ -715,7 +715,6 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   const canGoPrevious = selectedIndex > 0
   const canGoNext = selectedIndex >= 0 && selectedIndex < services.length - 1
   const positionLabel = selectedIndex >= 0 ? `${selectedIndex + 1}/${orderedServices.length}` : null
-  const tableMaxHeight = 'calc(100vh - 420px)'
 
   if (!unitId || unitId === 'new') {
     return (
@@ -731,10 +730,10 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
   }
 
   return (
-    <div className={`detail-form detail-form--fill${viewMode === 'list' ? ' detail-form--auto' : ''}`}>
+    <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
         <>
-          <section className="detail-form__section detail-form__section--auto">
+          <section className="detail-form__section detail-form__section--scroll detail-form__section--fit">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 className="detail-form__section-title">Seznam služeb</h3>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -802,7 +801,6 @@ export default function UnitServicesTab({ unitId, readOnly = false, onCountChang
                 onColumnSettings={() => setColsOpen(true)}
                 onColumnResize={handleColumnResize}
                 emptyText="Zatím nejsou přiřazeny žádné služby."
-                tableWrapperMaxHeight={tableMaxHeight}
               />
             )}
           </section>

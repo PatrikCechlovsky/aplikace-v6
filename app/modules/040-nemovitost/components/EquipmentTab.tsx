@@ -640,9 +640,9 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
   // =====================
   
   return (
-    <div className={`detail-form detail-form--fill${viewMode === 'list' ? ' detail-form--auto' : ''}`}>
+    <div className="detail-form detail-form--fill">
       {viewMode === 'list' && (
-        <section className="detail-form__section detail-form__section--scroll detail-form__section--auto">
+        <section className="detail-form__section detail-form__section--scroll detail-form__section--fit">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 className="detail-form__section-title">Seznam vybavení</h3>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -718,7 +718,6 @@ export default function EquipmentTab({ entityType, entityId, readOnly = false, o
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
               onColumnSettings={() => setColsOpen(true)}
-              tableWrapperMaxHeight="calc(100vh - 420px)"
             />
           )}
         </section>

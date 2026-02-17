@@ -10,6 +10,8 @@ import {
   updateAttachmentMetadata,
   getAttachmentSignedUrl,
   createAttachmentWithUpload,
+  getUploadSizeError,
+  MAX_UPLOAD_SIZE_LABEL,
   type AttachmentRow,
 } from '@/app/lib/attachments'
 import { useToast } from '@/app/UI/Toast'
@@ -91,6 +93,12 @@ export default function EquipmentAttachmentsModal({
 
       if (!uploadFile) {
         toast.showWarning('Vyberte soubor.')
+        return
+      }
+
+      const sizeError = getUploadSizeError(uploadFile)
+      if (sizeError) {
+        toast.showWarning(sizeError)
         return
       }
 
@@ -321,7 +329,17 @@ export default function EquipmentAttachmentsModal({
                 </label>
                 <input
                   type="file"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null
+                    const sizeError = file ? getUploadSizeError(file) : null
+                    if (sizeError) {
+                      toast.showWarning(sizeError)
+                      setUploadFile(null)
+                      e.currentTarget.value = ''
+                      return
+                    }
+                    setUploadFile(file)
+                  }}
                   style={{
                     display: 'block',
                     padding: '8px',
@@ -330,6 +348,9 @@ export default function EquipmentAttachmentsModal({
                     width: '100%',
                   }}
                 />
+                <div style={{ marginTop: 6, fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Max velikost: {MAX_UPLOAD_SIZE_LABEL}.
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button

@@ -8,6 +8,7 @@
   flex: 1 1 0;
   min-height: 0;
   min-width: 0;
+  padding-bottom: 6px; /* malé odsazení dole v rámci velkého okna */
 }
 
 .detail-view__content {
@@ -15,9 +16,10 @@
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
-  padding: 0 1.5rem 1rem 1.5rem; /* Horizontální padding + spodní, horní zajišťují sekce */
+  padding: 0 1.5rem 8px 1.5rem; /* Malá mezera dole v rámci velkého okna */
+  scrollbar-gutter: stable both-edges;
 }
 
 /* Když je uvnitř auto ListView, obsah se nemá roztahovat do prázdna */
@@ -26,11 +28,64 @@
   height: auto;
 }
 
-/* Když je uvnitř ListView, scroll je v tabulce a nechceme vlastní scroll */
-.detail-view__content:has(.listview) {
+/* Auto režim přes detail-form (např. seznamy v záložkách) */
+.detail-view__content:has(.detail-form--auto) {
+  flex: 0 0 auto;
+  height: auto;
+}
+
+/* =========================================================
+   DEBUG: barevné orámování bloků (detail layout)
+   ========================================================= */
+.detail-view {
+  outline: 2px solid #eb2f96; /* růžová */
+  outline-offset: -2px;
+}
+
+.tile-layout__content {
+  outline: 2px solid #fa541c; /* tmavě oranžová */
+  outline-offset: -2px;
+}
+
+.detail-view__content {
+  outline: 2px solid #faad14; /* oranžová */
+  outline-offset: -2px;
+}
+
+.detail-form {
+  outline: 2px solid #722ed1; /* fialová */
+  outline-offset: -2px;
+}
+
+.detail-form--fill {
+  outline: 2px solid #fadb14; /* žlutá */
+  outline-offset: -2px;
+  padding: 4px; /* minimální mezera mezi žlutým a zeleným */
+  box-sizing: border-box;
+}
+
+.detail-form__section {
+  outline: 2px solid #52c41a; /* zelená */
+  outline-offset: -2px;
+}
+
+.detail-subdetail {
+  outline: 2px solid #2f54eb; /* modrá */
+  outline-offset: -2px;
+}
+
+.detail-subdetail__content {
+  outline: 2px solid #722ed1; /* fialová */
+  outline-offset: -2px;
+}
+
+/* Když je v aktivní záložce ListView, scroll je v tabulce a nechceme vlastní scroll */
+.detail-view__content > [role="tabpanel"]:not([hidden]):has(.listview) {
   overflow: hidden;
   padding-bottom: 4px;
 }
+
+/* Scrollbar styling is global in base.css */
 
 /* Tabpanely musí vyplnit dostupnou výšku, jinak vzniká prázdné místo */
 .detail-view__content > [role="tabpanel"]:not([hidden]) {
@@ -38,6 +93,17 @@
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
+}
+
+/* Detail formuláře (bez ListView) má scroll uvnitř formuláře, ne na content */
+.detail-view__content > [role="tabpanel"]:not([hidden]):has(.detail-form--fill):not(:has(.listview)) {
+  overflow: hidden;
+}
+
+.detail-view__content > [role="tabpanel"]:not([hidden]) .detail-form--fill {
+  overflow-y: auto;
+  padding-bottom: 12px; /* malý spodní padding v detailu */
+  scrollbar-gutter: stable both-edges;
 }
 
 /* Pokud panel obsahuje ListView s auto výškou, nemá se roztahovat */

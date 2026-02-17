@@ -877,7 +877,7 @@ export default function PropertyDetailFrame({
         unitsContent: (
           <div className="detail-form detail-form--fill">
             {unitsViewMode === 'list' && (
-              <section className="detail-form__section detail-form__section--scroll">
+              <section className="detail-form__section detail-form__section--scroll detail-form__section--fit">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
                   {selectedUnitId && (
@@ -934,7 +934,6 @@ export default function PropertyDetailFrame({
                       }}
                       onColumnSettings={() => setUnitsColsOpen(true)}
                       emptyText="Nemovitost nemá žádné jednotky."
-                      tableWrapperMaxHeight="calc(100vh - 420px)"
                     />
 
                     <ListViewColumnsDrawer

@@ -100,7 +100,12 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 **Relevantní CSS soubory**:
 - `app/styles/components/ListView.css` - table scroll kontrola
 
-#### C) Relation detail (vazby entity)
+#### C) ListView v TileLayout
+- `.tile-layout__content` je flex container, ListView musí vyplnit výšku.
+- `.listview__table-wrapper` v tile nesmí používat viewport-based `max-height`.
+- `.listview__table-wrapper` má `flex: 1 1 auto` a malý spodní gap, aby byl vždy vidět horizontální scrollbar.
+
+#### D) Relation detail (vazby entity)
 
 **Princip**: Horní toolbar fixní, obsah vazby (formulář nebo seznam) scrolluje.
 
@@ -258,6 +263,7 @@ Uživatel může:
 - editovat metadata (název/popisek),
 - zobrazit historii verzí,
 - zavřít správu a vrátit se do detailu entity.
+- nahrávat soubory do max velikosti 50 MB.
 
 #### C) 🔗 v CommonActions → „Vazby“ (RELATIONS VIEW)
 Uživatel může:
