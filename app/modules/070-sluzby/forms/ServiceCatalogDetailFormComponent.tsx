@@ -98,7 +98,7 @@ export default function ServiceCatalogDetailFormComponent({
     : 'detail-form__input'
 
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       <section className="detail-form__section">
         <h3 className="detail-form__section-title">Základní údaje</h3>
         <div className="detail-form__grid detail-form__grid--narrow">

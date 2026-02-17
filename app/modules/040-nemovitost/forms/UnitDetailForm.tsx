@@ -215,7 +215,7 @@ export default function UnitDetailForm({
   const inputClass = readOnly ? 'detail-form__input detail-form__input--readonly' : 'detail-form__input'
   
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {/* Základní údaje */}
       <div className="detail-form__section">
         <h3 className="detail-form__section-title">Základní údaje</h3>

@@ -97,7 +97,7 @@ export default function EvidenceSheetDetailForm({
   }, [contractNumber, contractSignedAt])
 
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       <div className="detail-form__section">
         <h3 className="detail-form__section-title">Evidenční list</h3>
 

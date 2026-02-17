@@ -151,7 +151,7 @@ export default function PropertyDetailFormComponent({
   }, [onDirtyChange])
   
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {/* === ZÁKLADNÍ ÚDAJE === */}
       <section className="detail-form__section">
         <h3 className="detail-form__section-title">Základní údaje</h3>

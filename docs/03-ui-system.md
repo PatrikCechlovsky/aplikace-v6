@@ -69,6 +69,7 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 2. Když obsahuje ListView, musí mít `overflow: hidden` (scroll je uvnitř ListView)
 3. `.detail-form` v tomto kontextu musí mít `flex: 1 1 0` pokud obsahuje ListView
 4. `.detail-form__section` s ListView musí být flex container (`flex: 1 1 0`)
+5. V detailu držíme vnitřní mezery malé (např. `detail-form--fill` margin/padding) a sjednocujeme horizontální padding `DetailTabs` a `detail-view__content`.
 
 **Relevantní CSS soubory**:
 - `app/styles/components/DetailView.css` - hlavní scroll kontrola

@@ -432,7 +432,7 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
 
 
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {/* OSOBNÍ ÚDAJE (pro osoba, osvc, zastupce) */}
       {isPerson && (
         <div className="detail-form__section">
