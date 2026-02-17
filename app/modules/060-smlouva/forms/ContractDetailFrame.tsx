@@ -267,6 +267,7 @@ export default function ContractDetailFrame({
             id: p.id,
             label: p.display_name || '—',
             buildingArea: p.building_area ?? null,
+            landlordId: p.landlord_id ?? null,
           }))
         )
 

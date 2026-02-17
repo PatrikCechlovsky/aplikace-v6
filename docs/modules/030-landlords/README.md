@@ -33,7 +33,7 @@ Modul **030-pronajimatel** slouží pro:
    - Vazba na uživatelské účty (`is_landlord_user` flag)
 
 4. **🔗 Přehled vazeb (read-only)**
-   - Záložka **Vazby** zobrazuje seznamy: nemovitosti, jednotky, nájemníci
+   - Záložka **Vazby** zobrazuje seznamy: nemovitosti, jednotky, nájemníci, smlouvy
    - Detail vybrané entity se zobrazuje v plném detailu (včetně záložek)
 
 ---

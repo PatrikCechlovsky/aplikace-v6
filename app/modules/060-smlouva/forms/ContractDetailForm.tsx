@@ -51,6 +51,7 @@ export type PropertyLookupOption = {
   id: string
   label: string
   buildingArea: number | null
+  landlordId: string | null
 }
 
 export type ContractDetailFormProps = {
@@ -180,18 +181,55 @@ export default function ContractDetailForm({
 
     const patch: Partial<ContractFormValue> = {}
 
-    if (!formVal.propertyId) {
-      patch.propertyId = selectedUnit.propertyId ?? ''
+    if (selectedUnit.propertyId && selectedUnit.propertyId !== formVal.propertyId) {
+      patch.propertyId = selectedUnit.propertyId
     }
 
-    if (!formVal.landlordId) {
-      patch.landlordId = selectedUnit.landlordId ?? ''
+    if (selectedUnit.landlordId && selectedUnit.landlordId !== formVal.landlordId) {
+      patch.landlordId = selectedUnit.landlordId
     }
 
     if (Object.keys(patch).length) {
       update(patch)
     }
   }, [selectedUnit, formVal.propertyId, formVal.landlordId, update])
+
+  useEffect(() => {
+    if (!selectedProperty) return
+
+    const patch: Partial<ContractFormValue> = {}
+
+    if (selectedProperty.landlordId && selectedProperty.landlordId !== formVal.landlordId) {
+      patch.landlordId = selectedProperty.landlordId
+    }
+
+    if (formVal.unitId) {
+      if (!selectedUnit || selectedUnit.propertyId !== selectedProperty.id) {
+        patch.unitId = ''
+      }
+    }
+
+    if (Object.keys(patch).length) {
+      update(patch)
+    }
+  }, [selectedProperty, selectedUnit, formVal.unitId, formVal.landlordId, update])
+
+  useEffect(() => {
+    if (!formVal.landlordId) return
+
+    const patch: Partial<ContractFormValue> = {}
+
+    if (selectedProperty && selectedProperty.landlordId && selectedProperty.landlordId !== formVal.landlordId) {
+      patch.propertyId = ''
+      patch.unitId = ''
+    } else if (selectedUnit && selectedUnit.landlordId && selectedUnit.landlordId !== formVal.landlordId) {
+      patch.unitId = ''
+    }
+
+    if (Object.keys(patch).length) {
+      update(patch)
+    }
+  }, [formVal.landlordId, selectedProperty, selectedUnit, update])
 
   useEffect(() => {
     if (!selectedUnit || !selectedProperty) {

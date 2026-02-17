@@ -70,6 +70,7 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 3. `.detail-form` v tomto kontextu musí mít `flex: 1 1 0` pokud obsahuje ListView
 4. `.detail-form__section` s ListView musí být flex container (`flex: 1 1 0`)
 5. V detailu držíme vnitřní mezery malé (např. `detail-form--fill` margin/padding) a sjednocujeme horizontální padding `DetailTabs` a `detail-view__content`.
+6. Zarovnání záložek a obsahu drží proměnná `--detail-section-pad` (Tabs = `1rem + section pad`, sekce = `section pad`).
 
 **Relevantní CSS soubory**:
 - `app/styles/components/DetailView.css` - hlavní scroll kontrola
@@ -904,6 +905,7 @@ Například:
 - Nemovitost → Jednotky  
   nahoře EntityList (jednotky), dole detail jednotky  
 - Smlouva → Platby  
+- Detail smlouvy: výběr jednotky/nemovitosti/pronajímatele je vzájemně konzistentní (změna jedné vazby automaticky dorovnává ostatní).
   nahoře EntityList (platby), dole detail platby  
 
 ---

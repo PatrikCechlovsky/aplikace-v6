@@ -3,6 +3,7 @@
 /* NOTES: Udržuje stálou pozici záložek a akcí, scrolluje pouze obsah sekce. */
 
 .detail-view {
+  --detail-section-pad: 16px;
   display: grid;
   grid-template-rows: auto 1fr;
   flex: 1 1 0;

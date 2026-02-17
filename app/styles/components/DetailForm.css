@@ -53,7 +53,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 16px;
+  padding: var(--detail-section-pad, 16px);
 }
 
 /* Sekce s ListView - musí propagovat flex layout */

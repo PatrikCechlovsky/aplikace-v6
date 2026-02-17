@@ -17,6 +17,8 @@ import { getPropertyDetail, type PropertyDetailRow } from '@/app/lib/services/pr
 import { getUnitDetail, type UnitDetailRow } from '@/app/lib/services/units'
 import { getLandlordDetail, type LandlordDetailRow } from '@/app/lib/services/landlords'
 import { getTenantRelations, type TenantRelationProperty, type TenantRelationUnit, type TenantRelationLandlord } from '@/app/lib/services/tenantRelations'
+import { getContractDetail, listContracts, type ContractDetailRow, type ContractsListRow } from '@/app/lib/services/contracts'
+import { formatDate } from '@/app/lib/formatters/formatDateTime'
 import { renderUnitStatus } from '@/app/modules/040-nemovitost/unitsStatus'
 import { listByCategory, type GenericTypeRow } from '@/app/modules/900-nastaveni/services/genericTypes'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
@@ -25,11 +27,13 @@ import { LANDLORDS_BASE_COLUMNS } from '@/app/modules/030-pronajimatel/landlords
 import { PROPERTIES_BASE_COLUMNS } from '@/app/modules/040-nemovitost/propertiesColumns'
 import { UNITS_BASE_COLUMNS } from '@/app/modules/040-nemovitost/unitsColumns'
 import { TENANTS_BASE_COLUMNS } from '@/app/modules/050-najemnik/tenantsColumns'
+import { CONTRACTS_BASE_COLUMNS } from '@/app/modules/060-smlouva/contractsColumns'
 
 import LandlordDetailFrame, { type UiLandlord } from '@/app/modules/030-pronajimatel/forms/LandlordDetailFrame'
 import PropertyDetailFrame, { type UiProperty } from '@/app/modules/040-nemovitost/components/PropertyDetailFrame'
 import UnitDetailFrame, { type UiUnit } from '@/app/modules/040-nemovitost/components/UnitDetailFrame'
 import TenantDetailFrame, { type UiTenant } from '@/app/modules/050-najemnik/forms/TenantDetailFrame'
+import ContractDetailFrame, { type UiContract } from '@/app/modules/060-smlouva/forms/ContractDetailFrame'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
@@ -53,6 +57,7 @@ const TENANT_COLUMNS: ListViewColumn[] = TENANTS_BASE_COLUMNS
 const LANDLORD_COLUMNS: ListViewColumn[] = LANDLORDS_BASE_COLUMNS
 const PROPERTY_COLUMNS: ListViewColumn[] = PROPERTIES_BASE_COLUMNS
 const UNIT_COLUMNS: ListViewColumn[] = UNITS_BASE_COLUMNS
+const CONTRACT_COLUMNS: ListViewColumn[] = CONTRACTS_BASE_COLUMNS
 
 const MAX_RELATION_ROWS_HEIGHT = 'calc(var(--table-header-h) + (var(--table-row-h) * 5) + 2px)'
 
@@ -278,6 +283,98 @@ function mapLandlordDetailToUi(row: LandlordDetailRow): UiLandlord {
   }
 }
 
+type UiContractRow = {
+  id: string
+  contractNumber: string
+  status: string
+  tenantName: string
+  unitName: string
+  propertyName: string
+  validFrom: string | null
+  validTo: string | null
+  paymentState: string
+  isArchived: boolean
+}
+
+function mapContractRowToUi(row: ContractsListRow): UiContractRow {
+  return {
+    id: row.id,
+    contractNumber: row.cislo_smlouvy || '—',
+    status: row.stav || '—',
+    tenantName: row.tenant_name || '—',
+    unitName: row.unit_name || '—',
+    propertyName: row.property_name || '—',
+    validFrom: row.datum_zacatek || null,
+    validTo: row.doba_neurcita ? null : row.datum_konec || null,
+    paymentState: row.stav_plateb_smlouvy || '—',
+    isArchived: !!row.is_archived,
+  }
+}
+
+function getContractSortValue(c: UiContractRow, key: string): string | number {
+  switch (key) {
+    case 'contractNumber':
+      return normalizeText(c.contractNumber)
+    case 'status':
+      return normalizeText(c.status)
+    case 'tenantName':
+      return normalizeText(c.tenantName)
+    case 'unitName':
+      return normalizeText(c.unitName)
+    case 'propertyName':
+      return normalizeText(c.propertyName)
+    case 'validFrom':
+      return c.validFrom ? new Date(c.validFrom).getTime() : 0
+    case 'validTo':
+      return c.validTo ? new Date(c.validTo).getTime() : 0
+    case 'paymentState':
+      return normalizeText(c.paymentState)
+    default:
+      return ''
+  }
+}
+
+function mapContractDetailToUi(row: ContractDetailRow): UiContract {
+  return {
+    id: row.id,
+    cisloSmlouvy: row.cislo_smlouvy,
+    stav: row.stav,
+    landlordId: row.landlord_id,
+    tenantId: row.tenant_id,
+    landlordAccountId: row.landlord_account_id ?? null,
+    tenantAccountId: row.tenant_account_id ?? null,
+    landlordDelegateId: row.landlord_delegate_id ?? null,
+    tenantDelegateId: row.tenant_delegate_id ?? null,
+    pocetUzivatelu: row.pocet_uzivatelu ?? null,
+    propertyId: row.property_id,
+    unitId: row.unit_id,
+    pomerPlochyKNemovitosti: row.pomer_plochy_k_nemovitosti ?? null,
+    datumPodpisu: row.datum_podpisu ?? null,
+    datumZacatek: row.datum_zacatek ?? null,
+    datumKonec: row.datum_konec ?? null,
+    dobaNeurcita: row.doba_neurcita ?? null,
+    najemVyse: row.najem_vyse ?? null,
+    periodicitaNajmu: row.periodicita_najmu ?? null,
+    denPlatby: row.den_platby ?? null,
+    kaucePotreba: row.kauce_potreba ?? null,
+    kauceCastka: row.kauce_castka ?? null,
+    pozadovanyDatumKauce: row.pozadovany_datum_kauce ?? null,
+    stavKauce: row.stav_kauce ?? null,
+    stavNajmu: row.stav_najmu ?? null,
+    stavPlatebSmlouvy: row.stav_plateb_smlouvy ?? null,
+    poznamky: row.poznamky ?? null,
+    isArchived: row.is_archived ?? null,
+    createdAt: row.created_at ?? null,
+    createdBy: row.created_by ?? null,
+    updatedAt: row.updated_at ?? null,
+    updatedBy: row.updated_by ?? null,
+    landlord_name: row.landlord_name ?? null,
+    tenant_name: row.tenant_name ?? null,
+    property_name: row.property_name ?? null,
+    unit_name: row.unit_name ?? null,
+  }
+}
+
 function mapPropertyDetailToUi(row: PropertyDetailRow): UiProperty {
   return {
     id: row.id,
@@ -407,26 +504,31 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
   const [units, setUnits] = useState<TenantRelationUnit[]>([])
   const [properties, setProperties] = useState<TenantRelationProperty[]>([])
   const [landlords, setLandlords] = useState<TenantRelationLandlord[]>([])
+  const [contracts, setContracts] = useState<ContractsListRow[]>([])
 
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(tenantId)
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null)
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
   const [selectedLandlordId, setSelectedLandlordId] = useState<string | null>(null)
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null)
 
   const [selectedUnitDetail, setSelectedUnitDetail] = useState<UiUnit | null>(null)
   const [selectedPropertyDetail, setSelectedPropertyDetail] = useState<UiProperty | null>(null)
   const [selectedLandlordDetail, setSelectedLandlordDetail] = useState<UiLandlord | null>(null)
+  const [contractDetail, setContractDetail] = useState<UiContract | null>(null)
 
   const tenantsList = useRelationListPrefs('030.tenants.list', TENANT_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
   const unitsList = useRelationListPrefs('040.units.list', UNIT_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
   const propertiesList = useRelationListPrefs('040.properties.list', PROPERTY_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
   const landlordsList = useRelationListPrefs('030.landlords.list', LANDLORD_COLUMNS, { key: 'displayName', dir: 'asc' }, { readOnly: true })
+  const contractsList = useRelationListPrefs('060.contracts.list', CONTRACT_COLUMNS, { key: 'validFrom', dir: 'desc' }, { readOnly: true })
 
   const [tenantFilter, setTenantFilter] = useState('')
   const [unitsFilter, setUnitsFilter] = useState('')
   const [propertiesFilter, setPropertiesFilter] = useState('')
   const [landlordsFilter, setLandlordsFilter] = useState('')
-    const [placeholderFilter, setPlaceholderFilter] = useState('')
+  const [contractsFilter, setContractsFilter] = useState('')
+  const [placeholderFilter, setPlaceholderFilter] = useState('')
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   const [propertyTypes, setPropertyTypes] = useState<GenericTypeRow[]>([])
@@ -518,6 +620,36 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
 
   useEffect(() => {
     let active = true
+    if (!tenantId) {
+      setContracts([])
+      setSelectedContractId(null)
+      return () => {
+        active = false
+      }
+    }
+
+    ;(async () => {
+      try {
+        const rows = await listContracts({ tenantId, includeArchived: false, limit: 500 })
+        if (!active) return
+        setContracts(rows)
+        setSelectedContractId((prev) => prev ?? rows[0]?.id ?? null)
+      } catch (err) {
+        logger.error('Failed to load tenant contracts', { tenantId, err })
+        if (active) {
+          setContracts([])
+          setSelectedContractId(null)
+        }
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [tenantId])
+
+  useEffect(() => {
+    let active = true
     const unitId = selectedUnitId
     if (!unitId) {
       setSelectedUnitDetail(null)
@@ -593,6 +725,28 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
       active = false
     }
   }, [selectedLandlordId, landlords])
+
+  useEffect(() => {
+    let active = true
+    if (!selectedContractId) {
+      setContractDetail(null)
+      return
+    }
+
+    ;(async () => {
+      try {
+        const detail = await getContractDetail(selectedContractId)
+        if (!active) return
+        setContractDetail(mapContractDetailToUi(detail.contract))
+      } catch (err) {
+        if (active) setContractDetail(null)
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [selectedContractId])
 
   const tenantData = useMemo(() => (tenantDetail ? [tenantDetail] : []), [tenantDetail])
   const tenantFiltered = useMemo(() => {
@@ -845,17 +999,48 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
   }, [landlordsSorted, subjectTypeMap])
   const landlordNavItems = useMemo<RelationNavItem[]>(() => landlordsSorted.map((l) => ({ id: l.id, title: l.display_name || '—' })), [landlordsSorted])
 
+  const contractsUi = useMemo(() => contracts.map(mapContractRowToUi), [contracts])
+  const contractsFiltered = useMemo(() => {
+    const f = normalizeText(contractsFilter)
+    if (!f) return contractsUi
+    return contractsUi.filter((c) => {
+      const hay = normalizeText([c.contractNumber, c.status, c.tenantName, c.unitName, c.propertyName, c.paymentState].filter(Boolean).join(' '))
+      return hay.includes(f)
+    })
+  }, [contractsUi, contractsFilter])
+  const contractsSorted = useMemo(() => {
+    return sortItems(contractsFiltered, contractsList.sort, (c, key) => getContractSortValue(c, key))
+  }, [contractsFiltered, contractsList.sort])
+  const contractRows = useMemo<ListViewRow<UiContractRow>[]>(() => {
+    return contractsSorted.map((c) => ({
+      id: c.id,
+      data: {
+        contractNumber: c.contractNumber,
+        status: c.status,
+        tenantName: c.tenantName,
+        unitName: c.unitName,
+        propertyName: c.propertyName,
+        validFrom: formatDate(c.validFrom),
+        validTo: c.validTo ? formatDate(c.validTo) : '—',
+        paymentState: c.paymentState,
+      },
+      className: c.isArchived ? 'row--archived' : undefined,
+      raw: c,
+    }))
+  }, [contractsSorted])
+  const contractNavItems = useMemo<RelationNavItem[]>(() => contractsSorted.map((c) => ({ id: c.id, title: c.contractNumber || 'Smlouva' })), [contractsSorted])
+
   const tabs: DetailTabItem[] = useMemo(() => {
     return [
       { id: 'landlord', label: `Pronajímatel (${landlordsRows.length})` },
       { id: 'property', label: `Nemovitost (${propertiesRows.length})` },
       { id: 'units', label: `Jednotky (${unitsRows.length})` },
       { id: 'tenant', label: `Nájemník (${tenantRows.length})` },
-      { id: 'contracts', label: 'Smlouvy (0)' },
+      { id: 'contracts', label: `Smlouvy (${contractRows.length})` },
       { id: 'payments', label: 'Platby (0)' },
       { id: 'energy', label: 'Energie (0)' },
     ]
-  }, [landlordsRows.length, propertiesRows.length, unitsRows.length, tenantRows.length])
+  }, [landlordsRows.length, propertiesRows.length, unitsRows.length, tenantRows.length, contractRows.length])
 
   const headerTitle = tenantDetail?.displayName || tenantLabel || 'Nájemník'
 
@@ -1162,16 +1347,64 @@ export default function TenantRelationsHub({ tenantId, tenantLabel }: Props) {
           <div className="relation-pane">
             <div className="relation-pane__list">
               <ListView
-                columns={[{ key: 'name', label: 'Smlouva', width: 260 }]}
-                rows={[]}
-                filterValue={placeholderFilter}
-                onFilterChange={setPlaceholderFilter}
-                emptyText="Zatím nejsou žádné smlouvy."
+                columns={contractsList.columns}
+                rows={contractRows}
+                filterValue={contractsFilter}
+                onFilterChange={setContractsFilter}
+                selectedId={selectedContractId}
+                onRowClick={(row) => setSelectedContractId(String(row.id))}
+                sort={contractsList.sort}
+                onSortChange={contractsList.setSort}
+                onColumnResize={contractsList.handleColumnResize}
+                onColumnSettings={() => contractsList.setColsOpen(true)}
+                emptyText="Nájemník nemá žádné smlouvy."
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
+              />
+              <ListViewColumnsDrawer
+                open={contractsList.colsOpen}
+                onClose={() => contractsList.setColsOpen(false)}
+                columns={CONTRACT_COLUMNS}
+                fixedFirstKey="contractNumber"
+                requiredKeys={['contractNumber']}
+                value={{
+                  order: contractsList.colPrefs.colOrder ?? [],
+                  hidden: contractsList.colPrefs.colHidden ?? [],
+                }}
+                onChange={(next) => {
+                  contractsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: next.order,
+                    colHidden: next.hidden,
+                  }))
+                }}
+                onReset={() => {
+                  contractsList.setColPrefs((p) => ({
+                    ...p,
+                    colOrder: [],
+                    colHidden: [],
+                  }))
+                }}
               />
             </div>
             <div className="relation-pane__detail">
-              <div className="detail-form__hint">Detail smlouvy bude dostupný po doplnění vazeb.</div>
+              {contractRows.length === 0 && <div className="detail-form__hint">Žádná data k zobrazení.</div>}
+              {contractRows.length > 0 && selectedContractId == null && (
+                <div className="detail-form__hint">Vyber položku ze seznamu nahoře.</div>
+              )}
+              {contractRows.length > 0 && selectedContractId != null && (
+                <RelationDetailPanel
+                  title="Smlouvy"
+                  items={contractNavItems}
+                  selectedId={selectedContractId}
+                  onSelect={(id) => setSelectedContractId(String(id))}
+                >
+                  {contractDetail ? (
+                    <ContractDetailFrame contract={contractDetail} viewMode="read" embedded />
+                  ) : (
+                    <div className="detail-form__hint">Detail smlouvy se nepodařilo načíst.</div>
+                  )}
+                </RelationDetailPanel>
+              )}
             </div>
           </div>
         )}

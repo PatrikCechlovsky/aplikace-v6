@@ -15,6 +15,10 @@ export type ContractsListParams = {
   searchText?: string
   includeArchived?: boolean
   limit?: number
+  landlordId?: string | null
+  tenantId?: string | null
+  propertyId?: string | null
+  unitId?: string | null
 }
 
 export type ContractsListRow = {
@@ -77,6 +81,22 @@ export async function listContracts(params: ContractsListParams = {}): Promise<C
   if (search) {
     const s = `%${search}%`
     q = q.or([`cislo_smlouvy.ilike.${s}`, `stav.ilike.${s}`].join(','))
+  }
+
+  if (params.landlordId) {
+    q = q.eq('landlord_id', params.landlordId)
+  }
+
+  if (params.tenantId) {
+    q = q.eq('tenant_id', params.tenantId)
+  }
+
+  if (params.propertyId) {
+    q = q.eq('property_id', params.propertyId)
+  }
+
+  if (params.unitId) {
+    q = q.eq('unit_id', params.unitId)
   }
 
   const { data, error } = await q

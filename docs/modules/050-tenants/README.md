@@ -31,6 +31,10 @@ Modul **050-najemnik** slouží pro:
    - `osvc` – OSVČ nájemník
    - `firma` – právnická osoba jako nájemník
 
+4. **🔗 Přehled vazeb (read-only)**
+   - Záložka **Vazby** zobrazuje seznamy: pronajímatelé, nemovitosti, jednotky, smlouvy
+   - Detail vybrané entity se zobrazuje v plném detailu (včetně záložek)
+
 ---
 
 ## 🗄️ Databázové entity
