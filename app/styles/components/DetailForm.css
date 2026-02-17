@@ -33,6 +33,13 @@
   min-height: 0;
 }
 
+/* Pokud je ListView v auto režimu, detail-form se nemá roztahovat */
+.detail-form--fill:has(.listview--auto),
+.detail-view__content .detail-form:has(.listview--auto) {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
 /* ===== SEKCE FORMULÁŘE (Profil, Účet, …) ===== */
 
 .detail-form__section {
