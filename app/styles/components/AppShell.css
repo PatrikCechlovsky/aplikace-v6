@@ -60,6 +60,39 @@
   overflow: auto; /* ✅ jediný scroll v appce */
 }
 
+/* ListView v přehledu: scroll pouze uvnitř tabulky, ne na celém contentu */
+.layout__content:has(.listview) {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.layout__content:has(.listview) .content,
+.layout__content:has(.listview) .content__section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.layout__content:has(.listview) .tile-layout {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.layout__content:has(.listview) .tile-layout__content {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.layout__content:has(.listview) .listview {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+}
+
 /* DetailView: scroll pouze uvnitř detail-view__content (záložky zůstávají nahoře) */
 .layout__content.layout__content--detail-scroll {
   overflow: hidden;

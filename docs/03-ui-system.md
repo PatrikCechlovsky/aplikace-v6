@@ -105,6 +105,11 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 - `.listview__table-wrapper` v tile nesmí používat viewport-based `max-height`.
 - `.listview__table-wrapper` má `flex: 1 1 auto` a malý spodní gap, aby byl vždy vidět horizontální scrollbar.
 
+#### C2) ListView v přehledu (list mode)
+- `<main>` (`.layout__content`) nesmí scrollovat, pokud obsahuje ListView.
+- Scrolluje pouze `.listview__table-wrapper`, hlavička a toolbar zůstávají fixně nahoře.
+- `.content` a `.content__section` musí být flex kontejnery (`flex: 1 1 0`) pro propad výšky.
+
 #### D) Relation detail (vazby entity)
 
 **Princip**: Horní toolbar fixní, obsah vazby (formulář nebo seznam) scrolluje.
