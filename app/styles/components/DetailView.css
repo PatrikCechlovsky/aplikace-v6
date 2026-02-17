@@ -20,6 +20,12 @@
   padding: 0 1.5rem 1rem 1.5rem; /* Horizontální padding + spodní, horní zajišťují sekce */
 }
 
+/* Když je uvnitř auto ListView, obsah se nemá roztahovat do prázdna */
+.detail-view__content:has(.listview--auto) {
+  flex: 0 0 auto;
+  height: auto;
+}
+
 /* Když je uvnitř ListView, scroll je v tabulce a nechceme vlastní scroll */
 .detail-view__content:has(.listview) {
   overflow: hidden;
