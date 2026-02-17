@@ -60,6 +60,13 @@
   overflow: hidden;
 }
 
+/* Sekce se seznamem, která se nemá roztahovat do prázdna */
+.detail-form__section--auto {
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+}
+
 /* Pod-detail: fixní hlavička + scrollovatelný obsah */
 .detail-subdetail {
   display: flex;
