@@ -87,10 +87,12 @@
   min-height: 0;
 }
 
-.layout__content:has(.listview) .listview {
-  flex: 1 1 0;
+/* List mode: ListView se smršťuje na obsah (scrollbar hned pod tabulkou) */
+.layout__content:has(.tile-layout__content > .listview) .tile-layout__content > .listview {
+  flex: 0 1 auto;
   min-height: 0;
-  height: 100%;
+  height: auto;
+  max-height: 100%;
 }
 
 /* DetailView: scroll pouze uvnitř detail-view__content (záložky zůstávají nahoře) */

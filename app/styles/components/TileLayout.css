@@ -54,17 +54,22 @@
   overflow: hidden; /* Scroll je v table-wrapper nebo detail-view__content! */
 }
 
+/* ListView v list režimu: obsah se má smrštit k tabulce (scroll těsně pod ní) */
+.tile-layout__content:has(.listview) {
+  align-items: stretch;
+}
+
 /* ListView v tile content: roste do max výšky, ale při málu řádků se smrští */
 .tile-layout__content .listview {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
   max-height: 100%;
 }
 
 .tile-layout__content .listview__table-wrapper {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
-  max-height: none;
+  max-height: calc(100% - var(--listview-toolbar-h, 40px));
 }
 
 /* DetailView v content oblasti - dát padding na záložky a obsah, ne na wrapper */

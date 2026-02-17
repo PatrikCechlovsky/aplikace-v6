@@ -109,6 +109,8 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 - `<main>` (`.layout__content`) nesmí scrollovat, pokud obsahuje ListView.
 - Scrolluje pouze `.listview__table-wrapper`, hlavička a toolbar zůstávají fixně nahoře.
 - `.content` a `.content__section` musí být flex kontejnery (`flex: 1 1 0`) pro propad výšky.
+- V list režimu se ListView smršťuje na výšku tabulky (scrollbar je hned pod tabulkou).
+- ListView v list režimu nemá vynucenou `height: 100%` (jinak by vznikla prázdná plocha).
 
 #### D) Relation detail (vazby entity)
 
