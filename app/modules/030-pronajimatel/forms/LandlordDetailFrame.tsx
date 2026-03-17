@@ -34,6 +34,7 @@ export type UiLandlord = {
   subjectType: string | null
   isArchived: boolean | null
   createdAt: string
+  landlordSeq?: string | null
 
   // Person fields
   titleBefore?: string | null
@@ -344,6 +345,7 @@ export default function LandlordDetailFrame({
           subjectType: s.subject_type ?? landlord.subjectType ?? null,
           isArchived: !!(s.is_archived ?? landlord.isArchived),
           createdAt: String(s.created_at ?? landlord.createdAt ?? ''),
+          landlordSeq: s.landlord_seq ?? landlord.landlordSeq ?? null,
 
           titleBefore: s.title_before ?? landlord.titleBefore ?? null,
           firstName: s.first_name ?? landlord.firstName ?? null,
@@ -573,6 +575,7 @@ export default function LandlordDetailFrame({
           subjectType: saved.subject_type,
           isArchived: saved.is_archived ?? false,
           createdAt: saved.created_at ?? resolvedLandlord.createdAt,
+          landlordSeq: (saved as any).landlord_seq ?? resolvedLandlord.landlordSeq ?? null,
 
           titleBefore: saved.title_before ?? null,
           firstName: saved.first_name ?? null,
@@ -690,6 +693,16 @@ export default function LandlordDetailFrame({
                 className="detail-form__input detail-form__input--readonly"
                 type="text"
                 value={resolvedLandlord.id}
+                readOnly
+              />
+            </div>
+
+            <div className="detail-form__field">
+              <label className="detail-form__label">Pořadové číslo</label>
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                type="text"
+                value={resolvedLandlord.landlordSeq ? String(resolvedLandlord.landlordSeq) : '—'}
                 readOnly
               />
             </div>

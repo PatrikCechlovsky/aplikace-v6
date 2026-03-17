@@ -176,6 +176,7 @@ export type LandlordDetailRow = {
   is_archived: boolean | null
   created_at: string | null
   updated_at?: string | null
+  landlord_seq?: string | null
 
   // Person fields (osoba, osvc, zastupce)
   title_before?: string | null
@@ -232,6 +233,7 @@ export async function getLandlordDetail(subjectId: string): Promise<LandlordDeta
           is_archived,
           created_at,
           updated_at,
+          landlord_seq,
           
           title_before,
           first_name,
@@ -455,6 +457,7 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     is_archived,
     created_at,
     updated_at,
+    landlord_seq,
     
     title_before,
     first_name,

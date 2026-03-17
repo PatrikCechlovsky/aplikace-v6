@@ -45,6 +45,7 @@ Základní entita pro všechny osoby a firmy.
 - `ic`, `dic`
 - `email`, `phone`
 - `address_id` (FK na tabulku adres, pokud bude oddělená)
+- `landlord_seq` (pořadové číslo pronajímatele, 3 znaky)
 - `is_landlord`, `is_tenant`, `is_user`
 - `is_landlord_delegate`, `is_tenant_delegate`, `is_maintenance`, `is_maintenance_delegate`
 - `created_at`, `created_by`
