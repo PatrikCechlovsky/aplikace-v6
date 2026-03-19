@@ -182,6 +182,7 @@ export async function listSubjects(params: SubjectsListParams = {}): Promise<Sub
 export type SubjectDetailRow = {
   id: string
   subject_type: string | null
+  landlord_seq?: string | null
 
   display_name: string | null
   email: string | null
@@ -233,6 +234,7 @@ export async function getSubjectDetail(subjectId: string): Promise<{ subject: Su
       `
         id,
         subject_type,
+        landlord_seq,
         display_name,
         email,
         phone,

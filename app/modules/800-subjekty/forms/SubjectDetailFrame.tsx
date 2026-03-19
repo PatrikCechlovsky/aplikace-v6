@@ -35,6 +35,7 @@ export type UiSubject = {
   subjectType: string | null
   isArchived: boolean | null
   createdAt: string
+  landlordSeq?: string | null
 
   // Person fields
   titleBefore?: string | null
@@ -330,6 +331,7 @@ export default function SubjectDetailFrame({
           subjectType: s.subject_type ?? subject.subjectType ?? null,
           isArchived: !!(s.is_archived ?? subject.isArchived),
           createdAt: String(s.created_at ?? subject.createdAt ?? ''),
+          landlordSeq: s.landlord_seq ?? subject.landlordSeq ?? null,
 
           titleBefore: s.title_before ?? subject.titleBefore ?? null,
           firstName: s.first_name ?? subject.firstName ?? null,
