@@ -107,7 +107,7 @@ Reprezentuje budovy, domy, objekty.
 - `id`
 - `owner_id` (FK → subjects.id)
 - `name`
-- `code`
+- `internal_code` (pořadové číslo nemovitosti, např. 001)
 - `address_id` / `street`, `city`, `zip`
 - `property_type` (dům, bytový dům, areál…)
 - `note`
@@ -122,7 +122,7 @@ Reprezentuje bytové a nebytové jednotky v rámci nemovitosti.
 **Pole – příklad:**
 - `id`
 - `property_id` (FK → properties.id)
-- `unit_number` / `unit_code`
+- `internal_code` (pořadové číslo jednotky v rámci nemovitosti, např. 001)
 - `floor`
 - `area` (m²)
 - `unit_type` (byt, nebyt, kancelář, garáž…)
