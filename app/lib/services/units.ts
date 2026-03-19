@@ -60,6 +60,8 @@ export type UnitsListRow = {
   
   // joined data
   property_name?: string | null
+  landlord_name?: string | null
+  tenant_name?: string | null
   unit_type_name?: string | null
   unit_type_code?: string | null
   unit_type_icon?: string | null
@@ -110,6 +112,8 @@ export async function listUnits(params: UnitsListParams = {}): Promise<UnitsList
         created_at,
         updated_at,
         property:properties!units_property_id_fkey(display_name),
+        landlord:subjects!units_landlord_id_fkey(display_name),
+        tenant:subjects!units_tenant_id_fkey(display_name),
         unit_type:generic_types!fk_units_type_generic(name, code, icon, color)
       `
     )
@@ -152,11 +156,15 @@ export async function listUnits(params: UnitsListParams = {}): Promise<UnitsList
   // Transform joined data
   const rows = (data ?? []).map((row: any) => {
     const property = Array.isArray(row.property) ? row.property[0] : row.property
+    const landlord = Array.isArray(row.landlord) ? row.landlord[0] : row.landlord
+    const tenant = Array.isArray(row.tenant) ? row.tenant[0] : row.tenant
     const unitType = Array.isArray(row.unit_type) ? row.unit_type[0] : row.unit_type
 
     return {
       ...row,
       property_name: property?.display_name ?? null,
+      landlord_name: landlord?.display_name ?? null,
+      tenant_name: tenant?.display_name ?? null,
       unit_type_name: unitType?.name ?? null,
       unit_type_code: unitType?.code ?? null,
       unit_type_icon: unitType?.icon ?? null,

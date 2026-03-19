@@ -10,6 +10,8 @@ export const UNITS_BASE_COLUMNS: ListViewColumn[] = [
   { key: 'displayName', label: 'Název', width: 200, sortable: true },
   { key: 'internalCode', label: 'Interní kód', width: 140, sortable: true },
   { key: 'propertyName', label: 'Nemovitost', width: 200, sortable: true },
+  { key: 'landlordName', label: 'Pronajímatel', width: 200, sortable: true },
+  { key: 'tenantName', label: 'Nájemník', width: 200, sortable: true },
   { key: 'propertyId', label: 'ID nemovitosti', width: 200, sortable: true },
   { key: 'landlordId', label: 'ID pronajímatele', width: 200, sortable: true },
   { key: 'street', label: 'Ulice', width: 180, sortable: true },

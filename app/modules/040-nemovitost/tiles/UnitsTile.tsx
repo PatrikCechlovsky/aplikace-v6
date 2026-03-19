@@ -89,6 +89,8 @@ type UiUnitRow = {
   internalCode: string | null
   propertyId: string | null
   propertyName: string | null
+  landlordName: string | null
+  tenantName: string | null
   landlordId: string | null
   unitTypeId: string | null
   unitTypeName: string | null
@@ -129,6 +131,8 @@ export function mapUnitRowToUi(row: UnitsListRow): UiUnitRow {
     internalCode: row.internal_code ?? null,
     propertyId: row.property_id,
     propertyName: row.property_name || '—',
+    landlordName: row.landlord_name ?? null,
+    tenantName: row.tenant_name ?? null,
     landlordId: row.landlord_id ?? null,
     unitTypeId: row.unit_type_id,
     unitTypeName: row.unit_type_name || '—',
@@ -190,6 +194,8 @@ function toRow(u: UiUnitRow): ListViewRow<UiUnitRow> {
       displayName: u.displayName,
       internalCode: u.internalCode || '—',
       propertyName: u.propertyName || '—',
+      landlordName: u.landlordName || '—',
+      tenantName: u.tenantName || '—',
       propertyId: u.propertyId || '—',
       landlordId: u.landlordId || '—',
       street: u.street || '—',
@@ -748,6 +754,8 @@ export default function UnitsTile({
         u.displayName,
         u.internalCode,
         u.propertyName,
+        u.landlordName,
+        u.tenantName,
         u.propertyId,
         u.landlordId,
         u.street,
@@ -763,6 +771,7 @@ export default function UnitsTile({
         u.disposition,
         u.doorNumber,
         u.tenantId,
+        u.tenantName,
         u.managerName,
         u.cadastralArea,
         u.parcelNumber,
