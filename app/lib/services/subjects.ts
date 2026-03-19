@@ -24,6 +24,11 @@ export type SubjectsListRow = {
   subject_type: string | null
   is_archived: boolean | null
   created_at: string | null
+  landlord_seq?: string | null
+  birth_date?: string | null
+  personal_id_number?: string | null
+  id_doc_type?: string | null
+  id_doc_number?: string | null
 
   // ✅ person fields (pro osoba, osvc, zastupce)
   title_before?: string | null
@@ -74,6 +79,11 @@ export async function listSubjects(params: SubjectsListParams = {}): Promise<Sub
         subject_type,
         is_archived,
         created_at,
+        landlord_seq,
+        birth_date,
+        personal_id_number,
+        id_doc_type,
+        id_doc_number,
 
         title_before,
         first_name,

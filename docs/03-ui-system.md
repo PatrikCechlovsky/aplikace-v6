@@ -830,7 +830,9 @@ Vybraný řádek určuje:
 
 ## 3.11.5 Definice sloupců (Column Definition)
 
-Sloupce definuje modul.
+ Sloupce definuje modul. Modul má v `*Columns.ts` definovat všechny dostupné listové atributy entity, aby ColumnPicker umožnil plný výběr sloupců.
+
+ Příklad struktury:
 
 Příklad struktury:
 [

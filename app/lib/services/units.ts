@@ -47,14 +47,21 @@ export type UnitsListRow = {
   orientation_number: string | null
   year_renovated: number | null
   manager_name: string | null
+  cadastral_area?: string | null
+  parcel_number?: string | null
+  lv_number?: string | null
+  note?: string | null
+  origin_module?: string | null
   
   // metadata
   is_archived: boolean | null
   created_at: string | null
+  updated_at?: string | null
   
   // joined data
   property_name?: string | null
   unit_type_name?: string | null
+  unit_type_code?: string | null
   unit_type_icon?: string | null
   unit_type_color?: string | null
   user_count?: number
@@ -89,11 +96,21 @@ export async function listUnits(params: UnitsListParams = {}): Promise<UnitsList
         door_number,
         area,
         rooms,
+        disposition,
         status,
+        orientation_number,
+        year_renovated,
+        manager_name,
+        cadastral_area,
+        parcel_number,
+        lv_number,
+        note,
+        origin_module,
         is_archived,
         created_at,
+        updated_at,
         property:properties!units_property_id_fkey(display_name),
-        unit_type:generic_types!fk_units_type_generic(name, icon, color)
+        unit_type:generic_types!fk_units_type_generic(name, code, icon, color)
       `
     )
     .order('display_name', { ascending: true, nullsFirst: false })
@@ -141,6 +158,7 @@ export async function listUnits(params: UnitsListParams = {}): Promise<UnitsList
       ...row,
       property_name: property?.display_name ?? null,
       unit_type_name: unitType?.name ?? null,
+      unit_type_code: unitType?.code ?? null,
       unit_type_icon: unitType?.icon ?? null,
       unit_type_color: unitType?.color ?? null,
       user_count: 0, // TODO: count from subject_roles when unit_id field exists

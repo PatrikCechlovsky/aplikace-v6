@@ -19,6 +19,7 @@ import UnitDetailFrame, { type UiUnit } from '../components/UnitDetailFrame'
 import UnitRelationsHub from '../components/UnitRelationsHub'
 import type { DetailSectionId } from '@/app/UI/DetailView'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 import type { AttachmentsManagerUiState, AttachmentsManagerApi } from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import { 
@@ -88,14 +89,35 @@ type UiUnitRow = {
   internalCode: string | null
   propertyId: string | null
   propertyName: string | null
+  landlordId: string | null
   unitTypeId: string | null
   unitTypeName: string | null
+  unitTypeCode: string | null
   unitTypeIcon: string | null
   unitTypeColor: string | null
+  street: string | null
+  houseNumber: string | null
+  city: string | null
+  zip: string | null
+  country: string | null
+  region: string | null
   floor: number | null
+  doorNumber: string | null
   area: number | null
   rooms: number | null
+  disposition: string | null
   status: string | null
+  tenantId: string | null
+  orientationNumber: string | null
+  yearRenovated: number | null
+  managerName: string | null
+  cadastralArea: string | null
+  parcelNumber: string | null
+  lvNumber: string | null
+  note: string | null
+  originModule: string | null
+  createdAt: string | null
+  updatedAt: string | null
   isArchived: boolean
 }
 
@@ -107,14 +129,35 @@ export function mapUnitRowToUi(row: UnitsListRow): UiUnitRow {
     internalCode: row.internal_code ?? null,
     propertyId: row.property_id,
     propertyName: row.property_name || '—',
+    landlordId: row.landlord_id ?? null,
     unitTypeId: row.unit_type_id,
     unitTypeName: row.unit_type_name || '—',
+    unitTypeCode: row.unit_type_code ?? null,
     unitTypeIcon: row.unit_type_icon || null,
     unitTypeColor: row.unit_type_color || null,
+    street: row.street ?? null,
+    houseNumber: row.house_number ?? null,
+    city: row.city ?? null,
+    zip: row.zip ?? null,
+    country: row.country ?? null,
+    region: row.region ?? null,
     floor: row.floor,
+    doorNumber: row.door_number ?? null,
     area: row.area,
     rooms: row.rooms,
+    disposition: row.disposition ?? null,
     status: row.status,
+    tenantId: row.tenant_id ?? null,
+    orientationNumber: row.orientation_number ?? null,
+    yearRenovated: row.year_renovated ?? null,
+    managerName: row.manager_name ?? null,
+    cadastralArea: row.cadastral_area ?? null,
+    parcelNumber: row.parcel_number ?? null,
+    lvNumber: row.lv_number ?? null,
+    note: row.note ?? null,
+    originModule: row.origin_module ?? null,
+    createdAt: row.created_at ?? null,
+    updatedAt: row.updated_at ?? null,
     isArchived: !!row.is_archived,
   }
 }
@@ -143,11 +186,25 @@ function toRow(u: UiUnitRow): ListViewRow<UiUnitRow> {
       ) : (
         <span>{u.unitTypeName}</span>
       ),
+      unitTypeCode: u.unitTypeCode || '—',
       displayName: u.displayName,
+      internalCode: u.internalCode || '—',
       propertyName: u.propertyName || '—',
+      propertyId: u.propertyId || '—',
+      landlordId: u.landlordId || '—',
+      street: u.street || '—',
+      houseNumber: u.houseNumber || '—',
+      city: u.city || '—',
+      zip: u.zip || '—',
+      country: u.country || '—',
+      region: u.region || '—',
       floor: u.floor !== null ? u.floor.toString() : '—',
+      doorNumber: u.doorNumber || '—',
       area: u.area ? `${u.area.toFixed(2)} m²` : '—',
       rooms: u.rooms ? u.rooms.toString() : '—',
+      disposition: u.disposition || '—',
+      orientationNumber: u.orientationNumber || '—',
+      yearRenovated: u.yearRenovated ? u.yearRenovated.toString() : '—',
       status: statusInfo ? (
         <span className="status-badge" style={{ color: statusInfo.color }}>
           {statusInfo.icon} {statusInfo.label}
@@ -155,6 +212,16 @@ function toRow(u: UiUnitRow): ListViewRow<UiUnitRow> {
       ) : (
         <span>—</span>
       ),
+      tenantId: u.tenantId || '—',
+      managerName: u.managerName || '—',
+      cadastralArea: u.cadastralArea || '—',
+      parcelNumber: u.parcelNumber || '—',
+      lvNumber: u.lvNumber || '—',
+      note: u.note || '—',
+      originModule: u.originModule || '—',
+      createdAt: formatDateTime(u.createdAt),
+      updatedAt: formatDateTime(u.updatedAt),
+      isArchived: u.isArchived ? 'Ano' : 'Ne',
     },
     className: u.isArchived ? 'row--archived' : undefined,
     raw: u,
@@ -675,7 +742,32 @@ export default function UnitsTile({
     const f = normalizeText(filterInput)
     if (!f) return units
     return units.filter((u) => {
-      const hay = normalizeText([u.unitTypeName, u.displayName, u.internalCode, u.propertyName, u.status, u.floor, u.rooms, u.area]
+      const hay = normalizeText([
+        u.unitTypeName,
+        u.unitTypeCode,
+        u.displayName,
+        u.internalCode,
+        u.propertyName,
+        u.propertyId,
+        u.landlordId,
+        u.street,
+        u.houseNumber,
+        u.city,
+        u.zip,
+        u.country,
+        u.region,
+        u.status,
+        u.floor,
+        u.rooms,
+        u.area,
+        u.disposition,
+        u.doorNumber,
+        u.tenantId,
+        u.managerName,
+        u.cadastralArea,
+        u.parcelNumber,
+        u.lvNumber,
+      ]
         .filter(Boolean)
         .join(' '))
       return hay.includes(f)

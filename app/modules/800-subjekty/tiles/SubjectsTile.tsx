@@ -22,6 +22,7 @@ import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import { SkeletonTable } from '@/app/UI/SkeletonLoader'
 import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
+import { formatDate, formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import { fetchSubjectTypes, type SubjectType } from '@/app/modules/900-nastaveni/services/subjectTypes'
 import { getIcon, type IconKey } from '@/app/UI/icons'
 import { SUBJECTS_BASE_COLUMNS } from '../subjectsColumns'
@@ -72,6 +73,11 @@ export function mapSubjectRowToUi(row: SubjectsListRow, subjectTypeMap: Record<s
     phone: row.phone ?? null,
     createdAt: row.created_at ?? '',
     isArchived: !!row.is_archived,
+    landlordSeq: row.landlord_seq ?? null,
+    birthDate: row.birth_date ?? null,
+    personalIdNumber: row.personal_id_number ?? null,
+    idDocType: row.id_doc_type ?? null,
+    idDocNumber: row.id_doc_number ?? null,
 
     titleBefore: row.title_before ?? null,
     firstName: row.first_name ?? null,
@@ -81,6 +87,11 @@ export function mapSubjectRowToUi(row: SubjectsListRow, subjectTypeMap: Record<s
     ic: row.ic ?? null,
     dic: row.dic ?? null,
 
+    street: row.street ?? null,
+    houseNumber: row.house_number ?? null,
+    city: row.city ?? null,
+    zip: row.zip ?? null,
+    country: row.country ?? null,
     fullAddress: fullAddress || null,
 
     subjectTypeLabel: subjectTypeMeta?.name || row.subject_type_name || row.subject_type || '—',
@@ -122,6 +133,11 @@ function mapDetailSubjectToUi(detail: DetailUiSubject, subjectTypeMap: Record<st
     subjectType: detail.subjectType ?? null,
     isArchived: detail.isArchived ?? null,
     createdAt: detail.createdAt ?? '',
+    landlordSeq: detail.landlordSeq ?? null,
+    birthDate: detail.birthDate ?? null,
+    personalIdNumber: detail.personalIdNumber ?? null,
+    idDocType: detail.idDocType ?? null,
+    idDocNumber: detail.idDocNumber ?? null,
 
     titleBefore: detail.titleBefore ?? null,
     firstName: detail.firstName ?? null,
@@ -131,6 +147,11 @@ function mapDetailSubjectToUi(detail: DetailUiSubject, subjectTypeMap: Record<st
     ic: detail.ic ?? null,
     dic: detail.dic ?? null,
 
+    street: detail.street ?? null,
+    houseNumber: detail.houseNumber ?? null,
+    city: detail.city ?? null,
+    zip: detail.zip ?? null,
+    country: detail.country ?? null,
     fullAddress: fullAddress || null,
 
     subjectTypeLabel: subjectTypeMeta?.name || detail.subjectType || '—',
@@ -158,14 +179,35 @@ function toRow(l: UiSubject): ListViewRow<UiSubject> {
       ) : (
         <span className="generic-type__name-main">{l.subjectTypeLabel || '—'}</span>
       ),
+      subjectTypeCode: l.subjectType || '—',
       displayName: l.displayName || '—',
+      titleBefore: l.titleBefore || '—',
       fullAddress: l.fullAddress ?? '—',
+      street: l.street || '—',
+      houseNumber: l.houseNumber || '—',
+      city: l.city || '—',
+      zip: l.zip || '—',
+      country: l.country || '—',
       email: l.email ?? '—',
       phone: l.phone ?? '—',
       companyName: l.companyName ?? '—',
       ic: l.ic ?? '—',
+      dic: l.dic ?? '—',
       firstName: l.firstName ?? '—',
       lastName: l.lastName ?? '—',
+      birthDate: formatDate(l.birthDate),
+      personalIdNumber: l.personalIdNumber ?? '—',
+      idDocType: l.idDocType ?? '—',
+      idDocNumber: l.idDocNumber ?? '—',
+      landlordSeq: l.landlordSeq ?? '—',
+      isUser: l.isUser ? 'Ano' : 'Ne',
+      isLandlord: l.isLandlord ? 'Ano' : 'Ne',
+      isTenant: l.isTenant ? 'Ano' : 'Ne',
+      isLandlordDelegate: l.isLandlordDelegate ? 'Ano' : 'Ne',
+      isTenantDelegate: l.isTenantDelegate ? 'Ano' : 'Ne',
+      isMaintenance: l.isMaintenance ? 'Ano' : 'Ne',
+      isMaintenanceDelegate: l.isMaintenanceDelegate ? 'Ano' : 'Ne',
+      createdAt: formatDateTime(l.createdAt),
       isArchived: l.isArchived ? 'Ano' : 'Ne',
     },
     raw: l,
@@ -186,10 +228,24 @@ function getSortValue(l: UiSubject, key: string): string | number {
   switch (key) {
     case 'subjectTypeLabel':
       return l.subjectTypeOrderIndex ?? 999999
+    case 'subjectTypeCode':
+      return norm(l.subjectType)
     case 'displayName':
       return norm(l.displayName)
+    case 'titleBefore':
+      return norm(l.titleBefore)
     case 'fullAddress':
       return norm(l.fullAddress)
+    case 'street':
+      return norm(l.street)
+    case 'houseNumber':
+      return norm(l.houseNumber)
+    case 'city':
+      return norm(l.city)
+    case 'zip':
+      return norm(l.zip)
+    case 'country':
+      return norm(l.country)
     case 'email':
       return norm(l.email)
     case 'phone':
@@ -198,10 +254,38 @@ function getSortValue(l: UiSubject, key: string): string | number {
       return norm(l.companyName)
     case 'ic':
       return norm(l.ic)
+    case 'dic':
+      return norm(l.dic)
     case 'firstName':
       return norm(l.firstName)
     case 'lastName':
       return norm(l.lastName)
+    case 'birthDate':
+      return norm(l.birthDate)
+    case 'personalIdNumber':
+      return norm(l.personalIdNumber)
+    case 'idDocType':
+      return norm(l.idDocType)
+    case 'idDocNumber':
+      return norm(l.idDocNumber)
+    case 'landlordSeq':
+      return norm(l.landlordSeq)
+    case 'isUser':
+      return l.isUser ? 1 : 0
+    case 'isLandlord':
+      return l.isLandlord ? 1 : 0
+    case 'isTenant':
+      return l.isTenant ? 1 : 0
+    case 'isLandlordDelegate':
+      return l.isLandlordDelegate ? 1 : 0
+    case 'isTenantDelegate':
+      return l.isTenantDelegate ? 1 : 0
+    case 'isMaintenance':
+      return l.isMaintenance ? 1 : 0
+    case 'isMaintenanceDelegate':
+      return l.isMaintenanceDelegate ? 1 : 0
+    case 'createdAt':
+      return norm(l.createdAt)
     case 'isArchived':
       return l.isArchived ? 1 : 0
     default:
@@ -217,6 +301,11 @@ type UiSubject = {
   subjectType: string | null
   isArchived: boolean | null
   createdAt: string
+  landlordSeq?: string | null
+  birthDate?: string | null
+  personalIdNumber?: string | null
+  idDocType?: string | null
+  idDocNumber?: string | null
 
   // Person fields
   titleBefore?: string | null
@@ -229,6 +318,11 @@ type UiSubject = {
   dic?: string | null
 
   // Address
+  street?: string | null
+  houseNumber?: string | null
+  city?: string | null
+  zip?: string | null
+  country?: string | null
   fullAddress?: string | null
 
   // Metadata z subject_types
