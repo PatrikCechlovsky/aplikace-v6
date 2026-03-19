@@ -132,9 +132,20 @@ export async function getTenantRelations(tenantId: string, opts?: { includeArchi
           country,
           region,
           land_area,
+          built_up_area,
           building_area,
+          number_of_floors,
+          floors_above_ground,
+          floors_below_ground,
+          build_year,
+          reconstruction_year,
+          cadastral_area,
+          parcel_number,
+          lv_number,
+          note,
           is_archived,
           created_at,
+          updated_at,
           landlord:subjects!properties_landlord_id_fkey(display_name),
           property_type:generic_types!fk_properties_type_generic(name, icon, color, order_index)
         `
@@ -174,10 +185,22 @@ export async function getTenantRelations(tenantId: string, opts?: { includeArchi
         region: row.region ?? null,
 
         land_area: row.land_area ?? null,
+        built_up_area: row.built_up_area ?? null,
         building_area: row.building_area ?? null,
+        number_of_floors: row.number_of_floors ?? null,
+        floors_above_ground: row.floors_above_ground ?? null,
+        floors_below_ground: row.floors_below_ground ?? null,
+
+        build_year: row.build_year ?? null,
+        reconstruction_year: row.reconstruction_year ?? null,
+        cadastral_area: row.cadastral_area ?? null,
+        parcel_number: row.parcel_number ?? null,
+        lv_number: row.lv_number ?? null,
+        note: row.note ?? null,
 
         is_archived: row.is_archived ?? null,
         created_at: row.created_at ?? null,
+        updated_at: row.updated_at ?? null,
 
         landlord_name: landlord?.display_name ?? null,
         property_type_name: propertyType?.name ?? null,
