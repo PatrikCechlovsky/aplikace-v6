@@ -64,6 +64,7 @@ export type UiUnit = {
   disposition: string | null
   status: string | null
   tenantId: string | null
+  tenantName?: string | null
   orientationNumber: string | null
   yearRenovated: number | null
   managerName: string | null
@@ -322,6 +323,7 @@ export default function UnitDetailFrame({
           disposition: detail.unit.disposition,
           status: detail.unit.status,
           tenantId: detail.unit.tenant_id,
+          tenantName: (detail.unit as any).tenant_name ?? null,
           orientationNumber: detail.unit.orientation_number,
           yearRenovated: detail.unit.year_renovated,
           managerName: detail.unit.manager_name,
@@ -372,8 +374,6 @@ export default function UnitDetailFrame({
       area: formValue.area,
       rooms: formValue.rooms,
       disposition: formValue.disposition || null,
-      status: formValue.status || 'available',
-      tenant_id: formValue.tenantId || null,
       orientation_number: formValue.orientationNumber || null,
       year_renovated: formValue.yearRenovated,
       manager_name: formValue.managerName || null,
@@ -412,6 +412,7 @@ export default function UnitDetailFrame({
         disposition: savedRow.disposition,
         status: savedRow.status,
         tenantId: savedRow.tenant_id,
+        tenantName: (savedRow as any).tenant_name ?? null,
         orientationNumber: savedRow.orientation_number,
         yearRenovated: savedRow.year_renovated,
         managerName: savedRow.manager_name,
@@ -583,6 +584,7 @@ export default function UnitDetailFrame({
             readOnly={readOnly}
             propertyAddress={propertyAddress}
             propertyLandlordId={propertyLandlordId}
+            tenantName={resolvedUnit.tenantName ?? null}
             onDirtyChange={(dirty) => {
               if (dirty) {
                 markDirtyIfChanged(formValue)

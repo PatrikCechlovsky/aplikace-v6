@@ -7,6 +7,22 @@
 
 import { supabase } from '@/app/lib/supabaseClient'
 
+function parseDate(value: string | null | undefined): Date | null {
+  if (!value) return null
+  const d = new Date(`${value}T00:00:00`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function isActiveInRange(start: string | null, end: string | null, indefinite: boolean | null, reference: Date): boolean {
+  const startDate = parseDate(start)
+  if (!startDate) return false
+  if (startDate.getTime() > reference.getTime()) return false
+  if (indefinite) return true
+  const endDate = parseDate(end)
+  if (!endDate) return true
+  return endDate.getTime() > reference.getTime()
+}
+
 /* =========================
    LIST
    ========================= */
@@ -193,6 +209,114 @@ export async function getContractDetail(id: string): Promise<{ contract: Contrac
       property_name: property?.display_name ?? null,
       unit_name: unit?.display_name ?? null,
     } as ContractDetailRow,
+  }
+}
+
+export type TenantUnitAssignment = {
+  type: 'active' | 'future' | 'none'
+  contractId: string | null
+  unitId: string | null
+  unitName: string | null
+  propertyId: string | null
+  propertyName: string | null
+  landlordName: string | null
+  dateStart: string | null
+  dateEnd: string | null
+}
+
+export async function getTenantUnitAssignmentFromContracts(tenantId: string): Promise<TenantUnitAssignment> {
+  const now = new Date()
+
+  const { data, error } = await supabase
+    .from('contracts')
+    .select(
+      `
+        id,
+        tenant_id,
+        unit_id,
+        property_id,
+        landlord_id,
+        datum_zacatek,
+        datum_konec,
+        doba_neurcita,
+        is_archived,
+        unit:units!contracts_unit_id_fkey(display_name),
+        property:properties!contracts_property_id_fkey(display_name),
+        landlord:subjects!contracts_landlord_id_fkey(display_name)
+      `
+    )
+    .eq('tenant_id', tenantId)
+    .or('is_archived.is.null,is_archived.eq.false')
+
+  if (error) throw new Error(error.message)
+
+  const rows = (data ?? []) as Array<any>
+
+  const active = rows
+    .filter((row) => isActiveInRange(row.datum_zacatek ?? null, row.datum_konec ?? null, !!row.doba_neurcita, now))
+    .sort((a, b) => {
+      const sa = parseDate(a.datum_zacatek ?? null)?.getTime() ?? 0
+      const sb = parseDate(b.datum_zacatek ?? null)?.getTime() ?? 0
+      return sb - sa
+    })[0]
+
+  if (active) {
+    const unit = Array.isArray(active.unit) ? active.unit[0] : active.unit
+    const property = Array.isArray(active.property) ? active.property[0] : active.property
+    const landlord = Array.isArray(active.landlord) ? active.landlord[0] : active.landlord
+
+    return {
+      type: 'active',
+      contractId: active.id ?? null,
+      unitId: active.unit_id ?? null,
+      unitName: unit?.display_name ?? null,
+      propertyId: active.property_id ?? null,
+      propertyName: property?.display_name ?? null,
+      landlordName: landlord?.display_name ?? null,
+      dateStart: active.datum_zacatek ?? null,
+      dateEnd: active.datum_konec ?? null,
+    }
+  }
+
+  const future = rows
+    .filter((row) => {
+      const start = parseDate(row.datum_zacatek ?? null)
+      return !!start && start.getTime() > now.getTime()
+    })
+    .sort((a, b) => {
+      const sa = parseDate(a.datum_zacatek ?? null)?.getTime() ?? Number.MAX_SAFE_INTEGER
+      const sb = parseDate(b.datum_zacatek ?? null)?.getTime() ?? Number.MAX_SAFE_INTEGER
+      return sa - sb
+    })[0]
+
+  if (future) {
+    const unit = Array.isArray(future.unit) ? future.unit[0] : future.unit
+    const property = Array.isArray(future.property) ? future.property[0] : future.property
+    const landlord = Array.isArray(future.landlord) ? future.landlord[0] : future.landlord
+
+    return {
+      type: 'future',
+      contractId: future.id ?? null,
+      unitId: future.unit_id ?? null,
+      unitName: unit?.display_name ?? null,
+      propertyId: future.property_id ?? null,
+      propertyName: property?.display_name ?? null,
+      landlordName: landlord?.display_name ?? null,
+      dateStart: future.datum_zacatek ?? null,
+      dateEnd: future.datum_konec ?? null,
+    }
+  }
+
+  return {
+    type: 'none',
+    contractId: null,
+    unitId: null,
+    unitName: null,
+    propertyId: null,
+    propertyName: null,
+    landlordName: null,
+    dateStart: null,
+    dateEnd: null,
   }
 }
 

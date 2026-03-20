@@ -59,6 +59,7 @@ export type UnitDetailFormProps = {
   readOnly: boolean
   propertyAddress?: PropertyAddress | null
   propertyLandlordId?: string | null
+  tenantName?: string | null
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: UnitFormValue) => void
 }
@@ -86,6 +87,7 @@ export default function UnitDetailForm({
   readOnly,
   propertyAddress,
   propertyLandlordId,
+  tenantName = null,
   onDirtyChange,
   onValueChange,
 }: UnitDetailFormProps) {
@@ -94,7 +96,6 @@ export default function UnitDetailForm({
   const [properties, setProperties] = useState<Array<{ id: string; display_name: string }>>([])
   const [landlords, setLandlords] = useState<Array<{ id: string; display_name: string }>>([])
   const [dispositions, setDispositions] = useState<Array<{ code: string; name: string }>>([])
-  const [tenants, setTenants] = useState<Array<{ id: string; display_name: string }>>([])
   
   // Load properties
   useEffect(() => {
@@ -138,21 +139,6 @@ export default function UnitDetailForm({
       setDispositions(data || [])
     }
     loadDispositions()
-  }, [])
-  
-  // Load tenants (subjects where is_tenant = true)
-  useEffect(() => {
-    async function loadTenants() {
-      const { data } = await supabase
-        .from('subjects')
-        .select('id, display_name')
-        .eq('is_tenant', true)
-        .eq('is_archived', false)
-        .order('display_name')
-      
-      setTenants(data || [])
-    }
-    loadTenants()
   }, [])
   
   // Build current form value
@@ -410,37 +396,35 @@ export default function UnitDetailForm({
         
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">Stav jednotky *</label>
-            <select
-              className={inputClass}
-              value={formValue.status}
-              onChange={(e) => handleChange('status', e.target.value)}
-              disabled={readOnly}
-            >
-              <option value="available">🟢 Volná</option>
-              <option value="occupied">🔴 Obsazená</option>
-              <option value="reserved">🟡 Rezervovaná</option>
-              <option value="renovation">🟤 V rekonstrukci</option>
-            </select>
+            <label className="detail-form__label">Stav jednotky (ze smlouvy)</label>
+            <input
+              className="detail-form__input detail-form__input--readonly"
+              value={
+                formValue.status === 'occupied'
+                  ? '🔴 Obsazená'
+                  : formValue.status === 'reserved'
+                    ? '🟡 Rezervovaná'
+                    : formValue.status === 'renovation'
+                      ? '🟤 V rekonstrukci'
+                      : '🟢 Volná'
+              }
+              readOnly
+            />
           </div>
         </div>
         
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field detail-form__field--span-2">
-            <label className="detail-form__label">Nájemník</label>
-            <select
-              className={inputClass}
-              value={formValue.tenantId}
-              onChange={(e) => handleChange('tenantId', e.target.value)}
-              disabled={readOnly}
-            >
-              <option value="">— bez nájemníka —</option>
-              {tenants.map((t) => (
-                <option key={t.id} value={t.id}>{t.display_name}</option>
-              ))}
-            </select>
+            <label className="detail-form__label">Nájemník (z aktivní smlouvy)</label>
+            <input
+              className="detail-form__input detail-form__input--readonly"
+              value={tenantName || '—'}
+              readOnly
+            />
           </div>
         </div>
+
+        <div className="detail-form__hint">Obsazenost a nájemník se odvozují ze smluv. Ruční změna zde není dostupná.</div>
         
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">

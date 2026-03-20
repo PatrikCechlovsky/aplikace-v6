@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import InputWithHistory from '@/app/UI/InputWithHistory'
 import AddressAutocomplete from '@/app/UI/AddressAutocomplete'
 import { useToast } from '@/app/UI/Toast'
+import type { TenantUnitAssignment } from '@/app/lib/services/contracts'
 
 // =====================
 // 1) TYPES
@@ -83,6 +84,7 @@ export type TenantDetailFormProps = {
   unitInfo?: UnitInfo | null // Info o přiřazené jednotce
   propertyInfo?: PropertyInfo | null // Info o nemovitosti (přes jednotku)
   landlordName?: string | null // Jméno pronajimatele (přes nemovitost)
+  contractAssignment?: TenantUnitAssignment | null
   onFieldChange?: (field: keyof TenantFormValue, value: any) => void // Pro změnu jednotky
   onDirtyChange?: (dirty: boolean) => void
   onValueChange?: (val: TenantFormValue) => void
@@ -185,6 +187,7 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
     unitInfo, 
     propertyInfo, 
     landlordName, 
+    contractAssignment,
     onFieldChange,
     onDirtyChange, 
     onValueChange 
@@ -992,47 +995,25 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
         </div>
       </div>
 
-      {/* PŘIŘAZENÍ JEDNOTKY */}
+      {/* PŘIŘAZENÍ JEDNOTKY VE SMLOUVĚ */}
       <div className="detail-form__section">
-        <div className="detail-form__section-title">Přiřazení jednotky</div>
+        <div className="detail-form__section-title">Přiřazení jednotky ve smlouvě</div>
+
+        <div className="detail-form__hint">
+          Jednotka a nájemní vztah se řídí smlouvou. Změny prováděj v modulu Smlouvy.
+        </div>
 
         <div className="detail-form__grid detail-form__grid--narrow">
           <div className="detail-form__field">
             <label className="detail-form__label">Jednotka</label>
-            {readOnly ? (
-              unitInfo ? (
-                <input
-                  className="detail-form__input detail-form__input--readonly"
-                  value={`${unitInfo.display_name || '—'} ${unitInfo.property_name ? `(${unitInfo.property_name})` : ''}`}
-                  readOnly
-                />
-              ) : (
-                <div className="detail-form__hint">Jednotka není přiřazena</div>
-              )
+            {unitInfo ? (
+              <input
+                className="detail-form__input detail-form__input--readonly"
+                value={`${unitInfo.display_name || '—'} ${unitInfo.property_name ? `(${unitInfo.property_name})` : ''}`}
+                readOnly
+              />
             ) : (
-              <select
-                className="detail-form__input"
-                value={val.unitId || ''}
-                onChange={e => {
-                  const newValue = e.target.value || ''
-                  setVal(prev => ({ ...prev, unitId: newValue }))
-                  if (!dirtyRef.current) {
-                    dirtyRef.current = true
-                    onDirtyChange?.(true)
-                  }
-                  onValueChange?.({ ...val, unitId: newValue })
-                  if (onFieldChange) {
-                    onFieldChange('unitId', newValue)
-                  }
-                }}
-              >
-                <option value="">-- Bez jednotky --</option>
-                {units.map(unit => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.display_name || '?'} {unit.property_name ? `(${unit.property_name})` : ''}
-                  </option>
-                ))}
-              </select>
+              <div className="detail-form__hint">Jednotka není aktuálně přiřazena přes smlouvu.</div>
             )}
           </div>
 
@@ -1060,6 +1041,23 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
             </div>
           </div>
         )}
+
+        <div className="detail-form__grid detail-form__grid--narrow">
+          <div className="detail-form__field detail-form__field--span-2">
+            <label className="detail-form__label">Stav přiřazení ve smlouvě</label>
+            <input
+              className="detail-form__input detail-form__input--readonly"
+              value={
+                contractAssignment?.type === 'active'
+                  ? 'Aktivní smlouva'
+                  : contractAssignment?.type === 'future'
+                    ? 'Budoucí smlouva'
+                    : 'Bez smlouvy'
+              }
+              readOnly
+            />
+          </div>
+        </div>
       </div>
 
       {/* PŘIŘAZENÍ SUBJEKTU */}

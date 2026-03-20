@@ -19,7 +19,7 @@ import { listBankAccounts } from '@/app/lib/services/bankAccounts'
 import { getLandlordDelegates } from '@/app/lib/services/landlords'
 import { listTenantUsers } from '@/app/lib/services/tenantUsers'
 import { listAttachments } from '@/app/lib/attachments'
-import { supabase } from '@/app/lib/supabaseClient'
+import { getTenantUnitAssignmentFromContracts, type TenantUnitAssignment } from '@/app/lib/services/contracts'
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
 
@@ -97,7 +97,7 @@ const EXPECTED_SUBJECT_TYPES = ['osoba', 'osvc', 'firma', 'spolek', 'statni', 'z
 
 function buildInitialFormValue(l: UiTenant): TenantFormValue {
   return {
-    unitId: '', // Bude načteno z units.tenant_id
+    unitId: '', // Bude načteno ze smlouvy (aktivní/budoucí)
     
     displayName: (l.displayName ?? '').toString(),
     email: (l.email ?? '').toString(),
@@ -177,6 +177,17 @@ export default function TenantDetailFrame({
   const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null)
   const [propertyInfo, setPropertyInfo] = useState<PropertyInfo | null>(null)
   const [landlordName, setLandlordName] = useState<string | null>(null)
+  const [contractAssignment, setContractAssignment] = useState<TenantUnitAssignment>({
+    type: 'none',
+    contractId: null,
+    unitId: null,
+    unitName: null,
+    propertyId: null,
+    propertyName: null,
+    landlordName: null,
+    dateStart: null,
+    dateEnd: null,
+  })
 
   // Dirty state - wrapper který volá onDirtyChange callback
   const setDirtyAndNotify = useCallback(
@@ -221,43 +232,22 @@ export default function TenantDetailFrame({
     }
   }, [])
 
-  // Načíst seznam jednotek (volné + aktuální jednotka tohoto nájemníka)
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        // Načíst všechny jednotky s property_name
-        const { data, error } = await supabase
-          .from('units')
-          .select('id, display_name, property_id, property:properties!units_property_id_fkey(display_name)')
-          .eq('is_archived', false)
-          .or(`tenant_id.is.null,tenant_id.eq.${tenant.id}`)
-          .order('display_name', { ascending: true, nullsFirst: false })
-
-        if (error) throw error
-        if (!mounted) return
-
-        const unitsWithProperty = (data || []).map((u: any) => ({
-          id: u.id,
-          display_name: u.display_name,
-          property_id: u.property_id,
-          property_name: u.property?.display_name ?? null,
-        }))
-
-        setUnits(unitsWithProperty)
-      } catch (err) {
-        logger.error('Failed to load units', err)
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [tenant.id])
-
-  // Načíst aktuální jednotku nájemníka (pokud má přiřazenou)
+  // Načíst přiřazení jednotky nájemníka pouze ze smluv (aktivní/budoucí)
   useEffect(() => {
     let mounted = true
     if (isNewId(tenant.id)) {
+      setContractAssignment({
+        type: 'none',
+        contractId: null,
+        unitId: null,
+        unitName: null,
+        propertyId: null,
+        propertyName: null,
+        landlordName: null,
+        dateStart: null,
+        dateEnd: null,
+      })
+      setUnits([])
       setFormValue(prev => ({ ...prev, unitId: '' }))
       setUnitInfo(null)
       setPropertyInfo(null)
@@ -267,32 +257,35 @@ export default function TenantDetailFrame({
 
     ;(async () => {
       try {
-        // Najít jednotku kde tenant_id = tento nájemník
-        const { data, error } = await supabase
-          .from('units')
-          .select('id, display_name, property_id, property:properties!units_property_id_fkey(display_name)')
-          .eq('tenant_id', tenant.id)
-          .eq('is_archived', false)
-          .maybeSingle()
-
-        if (error && error.code !== 'PGRST116') throw error
+        const assignment = await getTenantUnitAssignmentFromContracts(tenant.id)
         if (!mounted) return
+        setContractAssignment(assignment)
+        setUnits([])
 
-        if (data) {
-          const unitId = data.id
+        if (assignment.unitId) {
+          const unitId = assignment.unitId
           setFormValue(prev => ({ ...prev, unitId }))
           setUnitInfo({
-            id: data.id,
-            display_name: data.display_name,
-            property_id: data.property_id,
-            property_name: (data.property as any)?.display_name ?? null,
+            id: assignment.unitId,
+            display_name: assignment.unitName,
+            property_id: assignment.propertyId,
+            property_name: assignment.propertyName,
           })
+          setPropertyInfo(assignment.propertyId ? {
+            id: assignment.propertyId,
+            display_name: assignment.propertyName,
+            landlord_id: null,
+            landlord_name: assignment.landlordName,
+          } : null)
+          setLandlordName(assignment.landlordName)
         } else {
           setFormValue(prev => ({ ...prev, unitId: '' }))
           setUnitInfo(null)
+          setPropertyInfo(null)
+          setLandlordName(null)
         }
       } catch (err) {
-        logger.error('Failed to load tenant unit', err)
+        logger.error('Failed to load tenant assignment from contracts', err)
       }
     })()
 
@@ -300,60 +293,6 @@ export default function TenantDetailFrame({
       mounted = false
     }
   }, [tenant.id])
-
-  // Načíst property a landlord info když se změní unitId
-  useEffect(() => {
-    let mounted = true
-    const currentUnitId = formValue.unitId?.trim()
-    
-    if (!currentUnitId) {
-      setPropertyInfo(null)
-      setLandlordName(null)
-      return
-    }
-
-    ;(async () => {
-      try {
-        // Najít property z unit
-        const unitFromList = units.find(u => u.id === currentUnitId)
-        if (!unitFromList || !unitFromList.property_id) {
-          if (mounted) {
-            setPropertyInfo(null)
-            setLandlordName(null)
-          }
-          return
-        }
-
-        // Načíst property s landlord
-        const { data, error } = await supabase
-          .from('properties')
-          .select('id, display_name, landlord_id, landlord:subjects!properties_landlord_id_fkey(display_name)')
-          .eq('id', unitFromList.property_id)
-          .single()
-
-        if (error) throw error
-        if (!mounted) return
-
-        setPropertyInfo({
-          id: data.id,
-          display_name: data.display_name,
-          landlord_id: data.landlord_id,
-          landlord_name: (data.landlord as any)?.display_name ?? null,
-        })
-        setLandlordName((data.landlord as any)?.display_name ?? null)
-      } catch (err) {
-        logger.error('Failed to load property and landlord', err)
-        if (mounted) {
-          setPropertyInfo(null)
-          setLandlordName(null)
-        }
-      }
-    })()
-
-    return () => {
-      mounted = false
-    }
-  }, [formValue.unitId, units])
 
   // Aktualizovat selectedSubjectType když se změní resolvedTenant.subjectType (při načtení dat)
   useEffect(() => {
@@ -694,34 +633,6 @@ export default function TenantDetailFrame({
         const saved = await saveTenant(input)
         logger.log('Tenant saved', { id: saved.id })
 
-        // Aktualizovat vazbu jednotka-nájemník
-        const newUnitId = v.unitId?.trim() || null
-        const oldUnitId = unitInfo?.id || null
-
-        // Pokud se unit_id změnil, aktualizovat units tabulku
-        if (newUnitId !== oldUnitId) {
-          try {
-            // Odebrat z staré jednotky
-            if (oldUnitId) {
-              await supabase
-                .from('units')
-                .update({ tenant_id: null })
-                .eq('id', oldUnitId)
-            }
-
-            // Přiřadit k nové jednotce
-            if (newUnitId) {
-              await supabase
-                .from('units')
-                .update({ tenant_id: saved.id })
-                .eq('id', newUnitId)
-            }
-          } catch (err) {
-            logger.error('Failed to update unit tenant_id', err)
-            toast.showWarning('Nájemník byl uložen, ale nepodařilo se aktualizovat přiřazení jednotky')
-          }
-        }
-
         toast.showSuccess('Nájemník byl úspěšně uložen')
 
         // Aktualizovat resolvedTenant s uloženými daty
@@ -776,7 +687,7 @@ export default function TenantDetailFrame({
         return null
       }
     })
-  }, [formValue, resolvedTenant, selectedSubjectType, toast, onRegisterSubmit, setDirtyAndNotify, onSaved])
+  }, [resolvedTenant, selectedSubjectType, toast, onRegisterSubmit, setDirtyAndNotify, onSaved])
 
   // =====================
   // 5) RENDER
@@ -955,6 +866,7 @@ export default function TenantDetailFrame({
               unitInfo={unitInfo}
               propertyInfo={propertyInfo}
               landlordName={landlordName}
+              contractAssignment={contractAssignment}
               onFieldChange={(field, value) => {
                 // Když se změní unitId, aktualizovat formValue
                 if (field === 'unitId') {
