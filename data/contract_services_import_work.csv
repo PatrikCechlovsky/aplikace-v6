@@ -1,0 +1,84 @@
+contract_number;tenant_name;unit_name;service_name;monthly_amount;currency;units_count;unit_price;note
+číslo smlouvy;jméno nájemce;jednotka;název služby;měsíční částka;měna;počet jednotek;cena za jednotku;poznámka
+Chybí;Pavel Olša;Byt 19;Nájemné;11500;CZK;1;11500;Příloha ze dne 20.12.2025 | VS 47719
+Chybí;Pavel Olša;Byt 19;Osvětlení;40;CZK;2;20;Příloha ze dne 20.12.2025
+Chybí;Pavel Olša;Byt 19;Užívání společných prostor;0;CZK;2;0;Příloha ze dne 20.12.2025
+Chybí;Pavel Olša;Byt 19;Úklid;0;CZK;1;0;Příloha ze dne 20.12.2025
+Chybí;Pavel Olša;Byt 19;Teplo;1400;CZK;1;1400;Příloha ze dne 20.12.2025
+Chybí;Pavel Olša;Byt 19;Vodné a stočné;800;CZK;1;800;Příloha ze dne 20.12.2025
+Chybí;Pavel Olša;Byt 19;Teplá voda;1200;CZK;1;1200;Příloha ze dne 20.12.2025
+Chybí;Pavel Olša;Byt 19;Elektrická energie;2060;CZK;1;2060;Příloha ze dne 20.12.2025
+Chybí;Pavel Olša;Byt 19;Administrativní poplatky;0;CZK;1;0;Příloha ze dne 20.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Nájemné;10000;CZK;1;10000;Příloha ze dne 30.12.2025 | VS 58832
+Chybí;Erika Sýkorová;Byt 588/32;Osvětlení;0;CZK;2;0;Příloha ze dne 30.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Užívání společných prostor;0;CZK;2;0;Příloha ze dne 30.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Úklid;150;CZK;1;150;Příloha ze dne 30.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Teplo;500;CZK;1;500;Příloha ze dne 30.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Vodné a stočné;350;CZK;1;350;Příloha ze dne 30.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Teplá voda;950;CZK;1;950;Příloha ze dne 30.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Elektrická energie;1300;CZK;1;1300;Příloha ze dne 30.12.2025
+Chybí;Erika Sýkorová;Byt 588/32;Administrativní poplatky;0;CZK;1;0;Příloha ze dne 30.12.2025
+Chybí;Lucie Kotlárová;Apartmán 2;Nájemné;19400;CZK;1;19400;Příloha č. 2 ze dne 20.05.2025, účinnost 10.11.2025 | VS 1002
+Chybí;Lucie Kotlárová;Apartmán 2;Užívání společných prostor;700;CZK;5;140;Příloha č. 2 ze dne 20.05.2025, účinnost 10.11.2025
+Chybí;Lucie Kotlárová;Apartmán 2;Televize, internet;1500;CZK;1;1500;Příloha č. 2 ze dne 20.05.2025, účinnost 10.11.2025
+Chybí;Lucie Kotlárová;Apartmán 2;Teplo;5350;CZK;1;5350;Příloha č. 2 ze dne 20.05.2025, účinnost 10.11.2025
+Chybí;Lucie Kotlárová;Apartmán 2;Vodné a stočné;750;CZK;1;750;Příloha č. 2 ze dne 20.05.2025, účinnost 10.11.2025
+Chybí;Lucie Kotlárová;Apartmán 2;Čerpadlo užitkové vody;200;CZK;1;200;Příloha č. 2 ze dne 20.05.2025, účinnost 10.11.2025
+Chybí;Lucie Kotlárová;Apartmán 2;Elektrická energie;8960;CZK;1;8960;Příloha č. 2 ze dne 20.05.2025, účinnost 10.11.2025
+Chybí;Natálie Kotlárová;Apartmán 5;Nájemné;16180;CZK;1;16180;Příloha ze dne 10.11.2025, účinnost 01.12.2025 | VS 1005
+Chybí;Natálie Kotlárová;Apartmán 5;Užívání společných prostor;140;CZK;1;140;Příloha ze dne 10.11.2025, účinnost 01.12.2025
+Chybí;Natálie Kotlárová;Apartmán 5;Televize, internet;800;CZK;1;800;Příloha ze dne 10.11.2025, účinnost 01.12.2025
+Chybí;Natálie Kotlárová;Apartmán 5;Teplo;2600;CZK;1;2600;Příloha ze dne 10.11.2025, účinnost 01.12.2025
+Chybí;Natálie Kotlárová;Apartmán 5;Vodné a stočné;600;CZK;1;600;Příloha ze dne 10.11.2025, účinnost 01.12.2025
+Chybí;Natálie Kotlárová;Apartmán 5;Čerpadlo užitkové vody;0;CZK;0;200;Příloha ze dne 10.11.2025, účinnost 01.12.2025
+Chybí;Natálie Kotlárová;Apartmán 5;Elektrická energie;1380;CZK;1;1380;Příloha ze dne 10.11.2025, účinnost 01.12.2025
+Chybí;Lenka Novotná;Mánesovka;Nájemné;10995;CZK;1;10995;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Osvětlení;5;CZK;1;5;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Užívání společných prostor;20;CZK;1;20;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Úklid;120;CZK;1;120;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Teplo;411;CZK;1;411;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Vodné a stočné;500;CZK;1;500;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Teplá voda;1100;CZK;1;1100;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Elektrická energie;650;CZK;1;650;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lenka Novotná;Mánesovka;Administrativní poplatky;186;CZK;1;186;MÁNESOVKA | Příloha č. 1 ke smlouvě o nájmu bytu ze dne 31.05.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Nájemné;14815;CZK;1;14815;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Osvětlení;15;CZK;1;15;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Užívání společných prostor;40;CZK;1;40;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Úklid;200;CZK;1;200;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Teplo;1000;CZK;1;1000;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Vodné a stočné;1200;CZK;1;1200;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Teplá voda;1500;CZK;1;1500;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Lucie Gragová;Byt 3+1/L;Elektrická energie;1600;CZK;1;1600;ČSA 514 | Příloha č. 1 ze dne 12.02.2025
+Chybí;Kevin Stojka;Apartmán 1;Nájemné;12200;CZK;1;12200;Příloha smlouvy o ubytování v apartmánu č. 1 ze dne 20.05.2025
+Chybí;Kevin Stojka;Apartmán 1;Užívání společných prostor;240;CZK;2;120;Příloha smlouvy o ubytování v apartmánu č. 1 ze dne 20.05.2025
+Chybí;Kevin Stojka;Apartmán 1;Televize, internet;800;CZK;1;800;Příloha smlouvy o ubytování v apartmánu č. 1 ze dne 20.05.2025
+Chybí;Kevin Stojka;Apartmán 1;Teplo;1500;CZK;1;1500;Příloha smlouvy o ubytování v apartmánu č. 1 ze dne 20.05.2025
+Chybí;Kevin Stojka;Apartmán 1;Vodné a stočné;200;CZK;1;200;Příloha smlouvy o ubytování v apartmánu č. 1 ze dne 20.05.2025
+Chybí;Kevin Stojka;Apartmán 1;Čerpadlo užitkové vody;100;CZK;1;100;Příloha smlouvy o ubytování v apartmánu č. 1 ze dne 20.05.2025
+Chybí;Kevin Stojka;Apartmán 1;Elektrická energie;3360;CZK;1;3360;Příloha smlouvy o ubytování v apartmánu č. 1 ze dne 20.05.2025
+Chybí;Miroslav Šredl;Apartmán 3;Nájemné;8400;CZK;1;8400;Příloha smlouvy o ubytování v apartmánu č. 3 ze dne 29.08.2025
+Chybí;Miroslav Šredl;Apartmán 3;Užívání společných prostor;120;CZK;1;120;Příloha smlouvy o ubytování v apartmánu č. 3 ze dne 29.08.2025
+Chybí;Miroslav Šredl;Apartmán 3;Televize, internet;800;CZK;1;800;Příloha smlouvy o ubytování v apartmánu č. 3 ze dne 29.08.2025
+Chybí;Miroslav Šredl;Apartmán 3;Teplo;2050;CZK;1;2050;Příloha smlouvy o ubytování v apartmánu č. 3 ze dne 29.08.2025
+Chybí;Miroslav Šredl;Apartmán 3;Vodné a stočné;410;CZK;1;410;Příloha smlouvy o ubytování v apartmánu č. 3 ze dne 29.08.2025
+Chybí;Miroslav Šredl;Apartmán 3;Čerpadlo užitkové vody;0;CZK;0;0;Příloha smlouvy o ubytování v apartmánu č. 3 ze dne 29.08.2025
+Chybí;Miroslav Šredl;Apartmán 3;Elektrická energie;2220;CZK;1;2220;Příloha smlouvy o ubytování v apartmánu č. 3 ze dne 29.08.2025
+Chybí;Oleksandr Diadyk;Apartmán 4;Nájemné;13500;CZK;1;13500;Příloha smlouvy o ubytování v apartmánu č. 4 ze dne 20.05.2025
+Chybí;Oleksandr Diadyk;Apartmán 4;Užívání společných prostor;480;CZK;4;120;Příloha smlouvy o ubytování v apartmánu č. 4 ze dne 20.05.2025
+Chybí;Oleksandr Diadyk;Apartmán 4;Televize, internet;800;CZK;1;800;Příloha smlouvy o ubytování v apartmánu č. 4 ze dne 20.05.2025
+Chybí;Oleksandr Diadyk;Apartmán 4;Teplo;1950;CZK;1;1950;Příloha smlouvy o ubytování v apartmánu č. 4 ze dne 20.05.2025
+Chybí;Oleksandr Diadyk;Apartmán 4;Vodné a stočné;1000;CZK;1;1000;Příloha smlouvy o ubytování v apartmánu č. 4 ze dne 20.05.2025
+Chybí;Oleksandr Diadyk;Apartmán 4;Čerpadlo užitkové vody;0;CZK;0;0;Příloha smlouvy o ubytování v apartmánu č. 4 ze dne 20.05.2025
+Chybí;Oleksandr Diadyk;Apartmán 4;Elektrická energie;3270;CZK;1;3270;Příloha smlouvy o ubytování v apartmánu č. 4 ze dne 20.05.2025
+Chybí;Karel Mareček;Apartmán 6;Nájemné;11600;CZK;1;11600;Příloha smlouvy o ubytování v apartmánu č. 6 ze dne 20.05.2025
+Chybí;Karel Mareček;Apartmán 6;Užívání společných prostor;120;CZK;1;120;Příloha smlouvy o ubytování v apartmánu č. 6 ze dne 20.05.2025
+Chybí;Karel Mareček;Apartmán 6;Televize, internet;800;CZK;1;800;Příloha smlouvy o ubytování v apartmánu č. 6 ze dne 20.05.2025
+Chybí;Karel Mareček;Apartmán 6;Teplo;1550;CZK;1;1550;Příloha smlouvy o ubytování v apartmánu č. 6 ze dne 20.05.2025
+Chybí;Karel Mareček;Apartmán 6;Vodné a stočné;500;CZK;1;500;Příloha smlouvy o ubytování v apartmánu č. 6 ze dne 20.05.2025
+Chybí;Karel Mareček;Apartmán 6;Čerpadlo užitkové vody;0;CZK;0;0;Příloha smlouvy o ubytování v apartmánu č. 6 ze dne 20.05.2025
+Chybí;Karel Mareček;Apartmán 6;Elektrická energie;1030;CZK;1;1030;Příloha smlouvy o ubytování v apartmánu č. 6 ze dne 20.05.2025
+Chybí;Lenka Kronová;Apartmán 8;Nájemné;12000;CZK;1;12000;Příloha č. 2 ke smlouvě o nájmu apartmánu č. 8 ze dne 09.02.2025
+Chybí;Lenka Kronová;Apartmán 8;Teplo;1560;CZK;1;1560;Příloha č. 2 ke smlouvě o nájmu apartmánu č. 8 ze dne 09.02.2025
+Chybí;Lenka Kronová;Apartmán 8;Televize, internet;800;CZK;1;800;Příloha č. 2 ke smlouvě o nájmu apartmánu č. 8 ze dne 09.02.2025
+Chybí;Lenka Kronová;Apartmán 8;Vodné a stočné;600;CZK;1;600;Příloha č. 2 ke smlouvě o nájmu apartmánu č. 8 ze dne 09.02.2025
+Chybí;Lenka Kronová;Apartmán 8;Elektrická energie;1600;CZK;1;1600;Příloha č. 2 ke smlouvě o nájmu apartmánu č. 8 ze dne 09.02.2025
