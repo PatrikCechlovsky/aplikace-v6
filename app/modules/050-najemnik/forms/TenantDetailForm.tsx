@@ -187,7 +187,6 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
     propertyInfo, 
     landlordName, 
     contractAssignment,
-    onFieldChange,
     onDirtyChange, 
     onValueChange 
   } = props
