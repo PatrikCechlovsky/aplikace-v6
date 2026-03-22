@@ -183,7 +183,6 @@ const TenantDetailForm = React.forwardRef<TenantDetailFormRef, TenantDetailFormP
     subjectType, 
     tenant, 
     readOnly = false, 
-    units = [],
     unitInfo, 
     propertyInfo, 
     landlordName, 
