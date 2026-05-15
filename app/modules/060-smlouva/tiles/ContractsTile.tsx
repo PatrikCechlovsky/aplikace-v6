@@ -604,6 +604,10 @@ export default function ContractsTile({
           onClose={() => {
             router.push(`${pathname}?t=contracts-list&id=${selectedId}&vm=read`)
           }}
+          onSheetCreated={(newSheetId) => {
+            // Refresh to new sheet
+            router.push(`${pathname}?t=contracts-list&id=${selectedId}&vm=read&es=${newSheetId}`)
+          }}
           onUpdated={() => {
             // Refresh contract if needed
           }}

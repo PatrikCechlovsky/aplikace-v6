@@ -128,6 +128,8 @@ export async function createEvidenceSheetDraft(params: {
   contractId: string
   rentAmount: number | null
   copyFromLatest?: boolean
+  validFrom?: string | null
+  validTo?: string | null
 }): Promise<EvidenceSheetRow> {
   logger.debug('createEvidenceSheetDraft', params)
 
@@ -154,8 +156,8 @@ export async function createEvidenceSheetDraft(params: {
     .insert({
       contract_id: params.contractId,
       sheet_number: nextNumber,
-      valid_from: null,
-      valid_to: null,
+      valid_from: params.validFrom ?? null,
+      valid_to: params.validTo ?? null,
       replaces_sheet_id: latest?.id ?? null,
       rent_amount: params.rentAmount,
       total_persons: 1,
@@ -172,59 +174,77 @@ export async function createEvidenceSheetDraft(params: {
     throw new Error(`Nepodařilo se vytvořit evidenční list: ${insertErr.message}`)
   }
 
+  // Kopírování proběhne asynchronně na pozadí (bez await)
   if (params.copyFromLatest && latest?.id) {
-    await copyEvidenceSheetData(latest.id, inserted.id)
+    copyEvidenceSheetData(latest.id, inserted.id)
+      .then(() => logger.info('Background copy completed'))
+      .catch((err) => logger.error('Background copy failed', err))
   }
 
   return inserted
 }
 
 async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
-  const [users, services, sheet] = await Promise.all([
-    listEvidenceSheetUsers(fromSheetId),
-    listEvidenceSheetServices(fromSheetId),
-    getEvidenceSheet(toSheetId),
-  ])
+  logger.debug('copyEvidenceSheetData', { fromSheetId, toSheetId })
 
-  const totalPersons = 1 + users.length
+  try {
+    const [users, services, sheet] = await Promise.all([
+      listEvidenceSheetUsers(fromSheetId),
+      listEvidenceSheetServices(fromSheetId),
+      getEvidenceSheet(toSheetId),
+    ])
 
-  await setEvidenceSheetUsers(
-    toSheetId,
-    users
-      .filter((u) => !!u.tenant_user_id)
-      .map((u) => ({
-        id: u.tenant_user_id as string,
-        first_name: u.first_name ?? '',
-        last_name: u.last_name ?? '',
-        birth_date: u.birth_date ?? '',
-        note: u.note ?? null,
-      }))
-  )
+    logger.debug('copyEvidenceSheetData loaded data', { usersCount: users.length, servicesCount: services.length })
 
-  const updatedServices = services.map((s, idx) => {
-    const quantity = s.unit_type === 'person' ? totalPersons : s.quantity
-    const total = Number(s.unit_price) * quantity
-    return {
-      service_id: s.service_id ?? null,
-      service_name: s.service_name,
-      unit_type: s.unit_type,
-      unit_price: Number(s.unit_price),
-      quantity,
-      total_amount: total,
-      order_index: idx,
-    }
-  })
+    const totalPersons = 1 + users.length
 
-  await saveEvidenceSheetServices(toSheetId, updatedServices)
+    await setEvidenceSheetUsers(
+      toSheetId,
+      users
+        .filter((u) => !!u.tenant_user_id)
+        .map((u) => ({
+          id: u.tenant_user_id as string,
+          first_name: u.first_name ?? '',
+          last_name: u.last_name ?? '',
+          birth_date: u.birth_date ?? '',
+          note: u.note ?? null,
+        }))
+    )
 
-  if (sheet) {
-    const servicesTotal = updatedServices.reduce((sum, s) => sum + s.total_amount, 0)
-    const totalAmount = (sheet.rent_amount ?? 0) + servicesTotal
-    await updateEvidenceSheet(toSheetId, {
-      total_persons: totalPersons,
-      services_total: servicesTotal,
-      total_amount: totalAmount,
+    logger.debug('copyEvidenceSheetData users set')
+
+    const updatedServices = services.map((s, idx) => {
+      const quantity = s.unit_type === 'person' ? totalPersons : s.quantity
+      const total = Number(s.unit_price) * quantity
+      return {
+        service_id: s.service_id ?? null,
+        service_name: s.service_name,
+        unit_type: s.unit_type,
+        unit_price: Number(s.unit_price),
+        quantity,
+        total_amount: total,
+        order_index: idx,
+      }
     })
+
+    await saveEvidenceSheetServices(toSheetId, updatedServices)
+
+    logger.debug('copyEvidenceSheetData services set')
+
+    if (sheet) {
+      const servicesTotal = updatedServices.reduce((sum, s) => sum + s.total_amount, 0)
+      const totalAmount = (sheet.rent_amount ?? 0) + servicesTotal
+      await updateEvidenceSheet(toSheetId, {
+        total_persons: totalPersons,
+        services_total: servicesTotal,
+        total_amount: totalAmount,
+      })
+    }
+
+    logger.info('copyEvidenceSheetData success')
+  } catch (err: any) {
+    logger.error('copyEvidenceSheetData failed', err)
+    throw new Error(`Nepodařilo se zkopírovat data evidenčního listu: ${err?.message ?? 'neznámá chyba'}`)
   }
 }
 
@@ -408,4 +428,64 @@ export async function setEvidenceSheetServiceArchived(id: string, isArchived: bo
     logger.error('setEvidenceSheetServiceArchived failed', error)
     throw new Error(`Nepodařilo se archivovat službu: ${error.message}`)
   }
+}
+
+/**
+ * Aktivuje evidence sheet (změní draft → active)
+ * a zarchivuje předchozí aktivní verzi
+ */
+export async function activateEvidenceSheet(draftSheetId: string): Promise<EvidenceSheetRow> {
+  logger.debug('activateEvidenceSheet', { draftSheetId })
+
+  // 1. Načti draft sheet
+  const draft = await getEvidenceSheet(draftSheetId)
+  if (!draft) {
+    throw new Error('Evidenční list nenalezen')
+  }
+
+  if (draft.status !== 'draft') {
+    throw new Error(`Nemůžeš aktivovat list se stavem '${draft.status}' (pouze 'draft')`)
+  }
+
+  // 2. Najdi současný aktivní list (na stejné smlouvě)
+  const { data: activeSheets, error: activeErr } = await supabase
+    .from('contract_evidence_sheets')
+    .select('id')
+    .eq('contract_id', draft.contract_id)
+    .eq('status', 'active')
+    .limit(1)
+
+  if (activeErr) {
+    logger.error('activateEvidenceSheet find active failed', activeErr)
+    throw new Error(`Nepodařilo se najít aktivní list: ${activeErr.message}`)
+  }
+
+  // 3. Archivuj předchozí aktivní list (pokud existuje)
+  if (activeSheets && activeSheets.length > 0) {
+    const { error: archiveErr } = await supabase
+      .from('contract_evidence_sheets')
+      .update({ status: 'archived' })
+      .eq('id', activeSheets[0].id)
+
+    if (archiveErr) {
+      logger.error('activateEvidenceSheet archive previous failed', archiveErr)
+      throw new Error(`Nepodařilo se archivovat starý list: ${archiveErr.message}`)
+    }
+  }
+
+  // 4. Aktivuj nový draft
+  const { data: activated, error: activateErr } = await supabase
+    .from('contract_evidence_sheets')
+    .update({ status: 'active' })
+    .eq('id', draftSheetId)
+    .select()
+    .single()
+
+  if (activateErr) {
+    logger.error('activateEvidenceSheet update draft failed', activateErr)
+    throw new Error(`Nepodařilo se aktivovat list: ${activateErr.message}`)
+  }
+
+  logger.info('activateEvidenceSheet success', { sheetId: draftSheetId })
+  return activated
 }

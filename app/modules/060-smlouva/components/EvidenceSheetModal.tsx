@@ -17,6 +17,8 @@ import {
   listEvidenceSheets,
   listEvidenceSheetServices,
   listEvidenceSheetUsers,
+  createEvidenceSheetDraft,
+  activateEvidenceSheet,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 
@@ -37,6 +39,7 @@ type Props = {
   readOnly?: boolean
   onClose: () => void
   onUpdated?: () => void
+  onSheetCreated?: (newSheetId: string) => void
   onRegisterCommonActions?: (actions: string[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: string; hasSelection: boolean; isDirty: boolean }) => void
 }
@@ -56,6 +59,8 @@ export default function EvidenceSheetModal({
   readOnly = false,
   onRegisterCommonActions,
   onRegisterCommonActionsState,
+  onClose,
+  onSheetCreated,
 }: Props) {
   const toast = useToast()
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
@@ -64,6 +69,7 @@ export default function EvidenceSheetModal({
   const [usersCount, setUsersCount] = useState(0)
   const [servicesCount, setServicesCount] = useState(0)
   const [pendingValue, setPendingValue] = useState<EvidenceSheetFormValue | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -142,6 +148,47 @@ export default function EvidenceSheetModal({
     }
   }, [sheetId, tenantId])
 
+  const handleCopySheet = async () => {
+    if (!sheet) return
+    try {
+      setIsProcessing(true)
+      const newSheet = await createEvidenceSheetDraft({
+        contractId,
+        rentAmount: sheet.rent_amount,
+        copyFromLatest: true,
+        validFrom: sheet.valid_from,
+        validTo: sheet.valid_to,
+      })
+      toast.showSuccess('Evidenční list kopírován. Otevírám novou verzi…')
+      if (onSheetCreated) {
+        onSheetCreated(newSheet.id)
+      }
+    } catch (err: any) {
+      logger.error('handleCopySheet failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se kopírovat evidenční list')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleActivateSheet = async () => {
+    if (!sheet || sheet.status !== 'draft') return
+    try {
+      setIsProcessing(true)
+      const activated = await activateEvidenceSheet(sheet.id)
+      setSheet(activated)
+      toast.showSuccess('Evidenční list aktivován. Staří verze byla archivována.')
+      if (onSheetCreated) {
+        onSheetCreated(activated.id)
+      }
+    } catch (err: any) {
+      logger.error('handleActivateSheet failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se aktivovat evidenční list')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   useEffect(() => {
     if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
 
@@ -191,8 +238,72 @@ export default function EvidenceSheetModal({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Modal Header */}
-      <div style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)' }}>
-        <h2 style={{ margin: 0 }}>Evidenční list č. {sheet.sheet_number}</h2>
+      <div style={{ 
+        padding: '1rem', 
+        borderBottom: '1px solid var(--color-border)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Evidenční list č. {sheet.sheet_number}</h2>
+          <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+            Stav: <strong>{sheet.status === 'draft' ? 'Rozpracovaná' : sheet.status === 'active' ? 'Aktivní' : 'Archivovaná'}</strong>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {sheet.status === 'active' && (
+            <button
+              onClick={handleCopySheet}
+              disabled={isProcessing}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: 'var(--color-primary)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isProcessing ? 'not-allowed' : 'pointer',
+                opacity: isProcessing ? 0.6 : 1,
+              }}
+              title="Vytvoří kopii aktivního listu s novou verzí"
+            >
+              {isProcessing ? 'Zpracovávám…' : '📋 Kopírovat'}
+            </button>
+          )}
+          {sheet.status === 'draft' && (
+            <button
+              onClick={handleActivateSheet}
+              disabled={isProcessing}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: 'var(--color-success)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isProcessing ? 'not-allowed' : 'pointer',
+                opacity: isProcessing ? 0.6 : 1,
+              }}
+              title="Aktivuje tuto verzi a archivuje předchozí"
+            >
+              {isProcessing ? 'Zpracovávám…' : '✅ Uvolnit'}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            disabled={isProcessing}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: 'var(--color-border)',
+              color: 'var(--color-text)',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isProcessing ? 'not-allowed' : 'pointer',
+              opacity: isProcessing ? 0.6 : 1,
+            }}
+          >
+            Zavřít
+          </button>
+        </div>
       </div>
 
       {/* Modal Content */}
