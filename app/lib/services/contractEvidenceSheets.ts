@@ -177,7 +177,7 @@ export async function createEvidenceSheetDraft(params: {
   // Kopírování proběhne asynchronně na pozadí (bez await)
   if (params.copyFromLatest && latest?.id) {
     copyEvidenceSheetData(latest.id, inserted.id)
-      .then(() => logger.info('Background copy completed'))
+      .then(() => logger.debug('Background copy completed'))
       .catch((err) => logger.error('Background copy failed', err))
   }
 
@@ -241,7 +241,7 @@ async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
       })
     }
 
-    logger.info('copyEvidenceSheetData success')
+    logger.debug('copyEvidenceSheetData success')
   } catch (err: any) {
     logger.error('copyEvidenceSheetData failed', err)
     throw new Error(`Nepodařilo se zkopírovat data evidenčního listu: ${err?.message ?? 'neznámá chyba'}`)
