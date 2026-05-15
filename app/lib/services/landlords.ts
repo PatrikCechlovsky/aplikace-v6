@@ -176,6 +176,7 @@ export type LandlordDetailRow = {
   is_archived: boolean | null
   created_at: string | null
   updated_at?: string | null
+  landlord_seq?: string | null
 
   // Person fields (osoba, osvc, zastupce)
   title_before?: string | null
@@ -203,6 +204,15 @@ export type LandlordDetailRow = {
   zip?: string | null
   house_number?: string | null
   country?: string | null
+
+  // Role flags
+  is_user?: boolean | null
+  is_landlord?: boolean | null
+  is_landlord_delegate?: boolean | null
+  is_tenant?: boolean | null
+  is_tenant_delegate?: boolean | null
+  is_maintenance?: boolean | null
+  is_maintenance_delegate?: boolean | null
 }
 
 /* =========================
@@ -223,6 +233,7 @@ export async function getLandlordDetail(subjectId: string): Promise<LandlordDeta
           is_archived,
           created_at,
           updated_at,
+          landlord_seq,
           
           title_before,
           first_name,
@@ -239,6 +250,14 @@ export async function getLandlordDetail(subjectId: string): Promise<LandlordDeta
           dic,
           ic_valid,
           dic_valid,
+
+          is_user,
+          is_landlord,
+          is_landlord_delegate,
+          is_tenant,
+          is_tenant_delegate,
+          is_maintenance,
+          is_maintenance_delegate,
           
         street,
         city,
@@ -371,6 +390,8 @@ async function assertEmailUnique(email: string | null, ignoreSubjectId?: string 
 export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDetailRow> {
   const isNew = !input.id || input.id === 'new'
 
+  const canBeDelegate = ['osoba', 'osvc', 'zastupce'].includes(String(input.subjectType || '').trim())
+
   const email = normalizeEmail(input.email)
 
   // kontrola duplicitního emailu
@@ -384,8 +405,14 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     phone: (input.phone ?? '').trim() || null,
     is_archived: input.isArchived ?? false,
 
-    // ✅ Role flags - pronajímatel je vždy is_landlord = true
-    is_landlord: true,
+    // ✅ Role flags
+    is_user: input.isUser ?? false,
+    is_landlord: input.isLandlord ?? true,
+    is_landlord_delegate: canBeDelegate ? (input.isLandlordDelegate ?? false) : false,
+    is_tenant: input.isTenant ?? false,
+    is_tenant_delegate: canBeDelegate ? (input.isTenantDelegate ?? false) : false,
+    is_maintenance: input.isMaintenance ?? false,
+    is_maintenance_delegate: canBeDelegate ? (input.isMaintenanceDelegate ?? false) : false,
 
     // PERSON fields
     title_before: (input.titleBefore ?? '').trim() || null,
@@ -430,6 +457,7 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     is_archived,
     created_at,
     updated_at,
+    landlord_seq,
     
     title_before,
     first_name,
@@ -451,7 +479,15 @@ export async function saveLandlord(input: SaveLandlordInput): Promise<LandlordDe
     city,
     zip,
     house_number,
-    country
+    country,
+
+    is_user,
+    is_landlord,
+    is_landlord_delegate,
+    is_tenant,
+    is_tenant_delegate,
+    is_maintenance,
+    is_maintenance_delegate
   `
 
   if (isNew) {
@@ -605,6 +641,7 @@ export type DelegateOption = {
 export async function getAvailableDelegates(searchText?: string): Promise<DelegateOption[]> {
   const search = (searchText ?? '').trim()
   const delegates: DelegateOption[] = []
+  const delegateIds = new Set<string>()
 
   // 1) Načíst zástupce ze seznamu pronajímatelů (typ "zastupce")
   try {
@@ -616,6 +653,7 @@ export async function getAvailableDelegates(searchText?: string): Promise<Delega
     })
 
     for (const landlord of landlords) {
+      delegateIds.add(landlord.id)
       delegates.push({
         id: landlord.id,
         displayName: landlord.display_name || '',
@@ -628,6 +666,47 @@ export async function getAvailableDelegates(searchText?: string): Promise<Delega
   } catch (err) {
     console.error('Failed to load delegates from landlords', err)
     // Pokračovat i při chybě
+  }
+
+  // 1b) Subjekty označené jako zástupce (is_landlord_delegate = true)
+  try {
+    let q = supabase
+      .from('subjects')
+      .select('id, display_name, email, phone, subject_type, first_name, last_name')
+      .eq('is_landlord_delegate', true)
+      .in('subject_type', ['osoba', 'osvc', 'zastupce'])
+
+    if (search) {
+      const s = `%${search}%`
+      q = q.or(
+        [
+          `display_name.ilike.${s}`,
+          `email.ilike.${s}`,
+          `phone.ilike.${s}`,
+          `first_name.ilike.${s}`,
+          `last_name.ilike.${s}`,
+        ].join(',')
+      )
+    }
+
+    const { data: subjects, error: subjectsError } = await q
+
+    if (subjectsError) throw new Error(subjectsError.message)
+
+    for (const subject of subjects ?? []) {
+      if (delegateIds.has(subject.id)) continue
+      delegateIds.add(subject.id)
+      delegates.push({
+        id: subject.id,
+        displayName: subject.display_name || '',
+        email: subject.email,
+        phone: subject.phone,
+        subjectType: subject.subject_type,
+        source: 'landlord',
+      })
+    }
+  } catch (err) {
+    console.error('Failed to load delegates from flag', err)
   }
 
   // 2) Načíst uživatele s rolí pronajimatel, manager, nebo správce

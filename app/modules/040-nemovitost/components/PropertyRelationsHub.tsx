@@ -421,6 +421,7 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
   const [unitsFilter, setUnitsFilter] = useState('')
   const [tenantsFilter, setTenantsFilter] = useState('')
   const [landlordsFilter, setLandlordsFilter] = useState('')
+  const [placeholderFilter, setPlaceholderFilter] = useState('')
 
   const [subjectTypes, setSubjectTypes] = useState<SubjectType[]>([])
   const [propertyTypes, setPropertyTypes] = useState<GenericTypeRow[]>([])
@@ -855,19 +856,9 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
                 sort={propertyList.sort}
                 onSortChange={propertyList.setSort}
                 onColumnResize={propertyList.handleColumnResize}
+                onColumnSettings={() => propertyList.setColsOpen(true)}
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
                 emptyText="Nemovitost nebyla nalezena."
-                toolbarRight={
-                  <button
-                    type="button"
-                    className="common-actions__btn"
-                    title="Nastavit sloupce"
-                    onClick={() => propertyList.setColsOpen(true)}
-                  >
-                    {getIcon('settings')}
-                    <span className="common-actions__label">Sloupce</span>
-                  </button>
-                }
               />
               <ListViewColumnsDrawer
                 open={propertyList.colsOpen}
@@ -931,19 +922,9 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
                 sort={unitsList.sort}
                 onSortChange={unitsList.setSort}
                 onColumnResize={unitsList.handleColumnResize}
+                onColumnSettings={() => unitsList.setColsOpen(true)}
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
                 emptyText="Nemovitost nemá žádné jednotky."
-                toolbarRight={
-                  <button
-                    type="button"
-                    className="common-actions__btn"
-                    title="Nastavit sloupce"
-                    onClick={() => unitsList.setColsOpen(true)}
-                  >
-                    {getIcon('settings')}
-                    <span className="common-actions__label">Sloupce</span>
-                  </button>
-                }
               />
               <ListViewColumnsDrawer
                 open={unitsList.colsOpen}
@@ -1007,19 +988,9 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
                 sort={tenantsList.sort}
                 onSortChange={tenantsList.setSort}
                 onColumnResize={tenantsList.handleColumnResize}
+                onColumnSettings={() => tenantsList.setColsOpen(true)}
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
                 emptyText="Nemovitost nemá žádné nájemníky."
-                toolbarRight={
-                  <button
-                    type="button"
-                    className="common-actions__btn"
-                    title="Nastavit sloupce"
-                    onClick={() => tenantsList.setColsOpen(true)}
-                  >
-                    {getIcon('settings')}
-                    <span className="common-actions__label">Sloupce</span>
-                  </button>
-                }
               />
               <ListViewColumnsDrawer
                 open={tenantsList.colsOpen}
@@ -1083,19 +1054,9 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
                 sort={landlordsList.sort}
                 onSortChange={landlordsList.setSort}
                 onColumnResize={landlordsList.handleColumnResize}
+                onColumnSettings={() => landlordsList.setColsOpen(true)}
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
                 emptyText="Nemovitost nemá pronajímatele."
-                toolbarRight={
-                  <button
-                    type="button"
-                    className="common-actions__btn"
-                    title="Nastavit sloupce"
-                    onClick={() => landlordsList.setColsOpen(true)}
-                  >
-                    {getIcon('settings')}
-                    <span className="common-actions__label">Sloupce</span>
-                  </button>
-                }
               />
               <ListViewColumnsDrawer
                 open={landlordsList.colsOpen}
@@ -1152,8 +1113,8 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
               <ListView
                 columns={[{ key: 'name', label: 'Smlouva', width: 260 }]}
                 rows={[]}
-                filterValue=""
-                onFilterChange={() => undefined}
+                filterValue={placeholderFilter}
+                onFilterChange={setPlaceholderFilter}
                 emptyText="Zatím nejsou žádné smlouvy."
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
               />
@@ -1170,8 +1131,8 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
               <ListView
                 columns={[{ key: 'name', label: 'Energie', width: 260 }]}
                 rows={[]}
-                filterValue=""
-                onFilterChange={() => undefined}
+                filterValue={placeholderFilter}
+                onFilterChange={setPlaceholderFilter}
                 emptyText="Zatím nejsou žádné vazby na energie."
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
               />
@@ -1188,8 +1149,8 @@ export default function PropertyRelationsHub({ propertyId, propertyLabel }: Prop
               <ListView
                 columns={[{ key: 'name', label: 'Platby', width: 260 }]}
                 rows={[]}
-                filterValue=""
-                onFilterChange={() => undefined}
+                filterValue={placeholderFilter}
+                onFilterChange={setPlaceholderFilter}
                 emptyText="Zatím nejsou žádné platby."
                 tableWrapperMaxHeight={MAX_RELATION_ROWS_HEIGHT}
               />

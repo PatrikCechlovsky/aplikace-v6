@@ -34,6 +34,7 @@ Tento modul dokumentuje **UI systém aplikace** – není to klasický funkční
    - DetailView – generický form renderer
    - InputWithHistory – input s historií
    - AddressAutocomplete – adresní autocomplete
+  - GenericTypeTile – nové položky se vytváří vždy jako aktivní
 
 4. **📎 Přílohy**
    - DetailAttachmentsSection – read-only tab

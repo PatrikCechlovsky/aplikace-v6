@@ -16,6 +16,15 @@ import PaymentTypesTile from './tiles/PaymentTypesTile'
 import RoomTypesTile from './tiles/RoomTypesTile'
 import EquipmentTypesTile from './tiles/EquipmentTypesTile'
 import AppViewSettingsTile from './tiles/AppViewSettingsTile'
+import ServiceTypesTile from './tiles/ServiceTypesTile'
+import ServiceBillingTypesTile from './tiles/ServiceBillingTypesTile'
+import VatRatesTile from './tiles/VatRatesTile'
+import ServiceUnitsTile from './tiles/ServiceUnitsTile'
+import ServicePeriodicitiesTile from './tiles/ServicePeriodicitiesTile'
+import ContractTypesTile from './tiles/ContractTypesTile'
+import ContractStatusesTile from './tiles/ContractStatusesTile'
+import HandoverProtocolTypesTile from './tiles/HandoverProtocolTypesTile'
+import HandoverProtocolStatusesTile from './tiles/HandoverProtocolStatusesTile'
 
 export default {
   id: '900-nastaveni',
@@ -109,6 +118,78 @@ export default {
       sectionId: 'types-settings',
       component: EquipmentTypesTile,
       order: 56,
+    },
+    {
+      id: 'service-types',
+      label: 'Kategorie služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServiceTypesTile,
+      order: 60,
+    },
+    {
+      id: 'service-billing-types',
+      label: 'Typy účtování služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServiceBillingTypesTile,
+      order: 61,
+    },
+    {
+      id: 'vat-rates',
+      label: 'DPH sazby',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: VatRatesTile,
+      order: 62,
+    },
+    {
+      id: 'service-units',
+      label: 'Jednotky služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServiceUnitsTile,
+      order: 63,
+    },
+    {
+      id: 'service-periodicities',
+      label: 'Periodicita služeb',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ServicePeriodicitiesTile,
+      order: 64,
+    },
+    {
+      id: 'contract-types',
+      label: 'Typy smluv',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ContractTypesTile,
+      order: 70,
+    },
+    {
+      id: 'contract-statuses',
+      label: 'Stavy smluv',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: ContractStatusesTile,
+      order: 71,
+    },
+    {
+      id: 'handover-protocol-types',
+      label: 'Typy předávacích protokolů',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: HandoverProtocolTypesTile,
+      order: 77,
+    },
+    {
+      id: 'handover-protocol-statuses',
+      label: 'Stavy předávacích protokolů',
+      icon: 'settings',
+      sectionId: 'types-settings',
+      component: HandoverProtocolStatusesTile,
+      order: 78,
     },
     {
       id: 'payment-types',

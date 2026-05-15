@@ -143,6 +143,20 @@ Poznámka:
   - Historie výměn a oprav
   - Notifikace pro upcoming revisions
 
+---
+
+## 10) Vazby – Průvodce a stavové checklisty
+
+- [ ] **Průvodce vazbami s částečným save**
+  - 1 řádkový model: Pronajímatel → Nemovitost → Jednotka → Nájemník → Smlouva → Finance
+  - částečné ukládání po krocích (rozpracováno / kompletní / nekompletní)
+- [ ] **Můj účet: seznam mých vazeb**
+  - číslování vazeb (např. R-YYYY-XXXX)
+  - filtr aktivní / částečné / nedokončené
+- [ ] **Checklisty a barvy záložek**
+  - zelená = vyplněno, žlutá = chybí vazba, červená = chybí data
+  - zahrnout předávací protokoly a stavy měřidel
+
 ### 📋 Dokumentace
 - [x] CHANGELOG-EQUIPMENT-CATALOG-CRUD-TILES.md vytvořen
 - [x] docs/modules/040-equipment-system-detailed.md aktualizován

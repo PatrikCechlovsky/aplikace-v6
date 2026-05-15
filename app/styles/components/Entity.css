@@ -57,6 +57,8 @@
   display: grid;
   grid-template-rows: 200px minmax(220px, 1fr);
   gap: 8px;
+  height: 100%; /* Omezit výškou containeru */
+  min-height: 0; /* Povolit zmenšení */
 }
 
 .relation-pane__list {
@@ -125,6 +127,8 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 8px;
+  min-height: 0; /* Povolit zmenšení */
+  height: 100%; /* Vyplnit grid cell */
 }
 
 .relation-detail__toolbar {
@@ -174,6 +178,9 @@
 
 .relation-detail__content {
   min-height: 120px;
+  overflow: auto; /* Obsah bude scrollovat */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Detail entity */

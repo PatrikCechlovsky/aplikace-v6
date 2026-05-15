@@ -48,6 +48,9 @@ Dokumentace jednotlivých modulů aplikace:
 Historie změn a implementací:
 - `CHANGELOG-ADDRESS-LOGIN-PERSONAL-FIELDS.md` – Adresní autocomplete a osobní pole
 - `CHANGELOG-TENANT-USERS-DEBOUNCE.md` – Uživatelé nájemníka a debounce vyhledávání
+- `CHANGELOG-NAVIGATION-PATTERN-LIST-TO-ADD.md` – Navigation pattern List→Add
+- `CHANGELOG-EQUIPMENT-CATALOG-CRUD-TILES.md` – Katalog vybavení (CRUD)
+- `CHANGELOG-RELATIONS-LIST-BADGES.md` – Vazby + barevné badge + statusy
 
 ### 📖 [guides/](guides/)
 Návody a setupy:
@@ -94,4 +97,4 @@ Archivované dokumenty (staré verze, kontext):
 
 ---
 
-**Poslední aktualizace:** 18. ledna 2026
+**Poslední aktualizace:** 7. února 2026

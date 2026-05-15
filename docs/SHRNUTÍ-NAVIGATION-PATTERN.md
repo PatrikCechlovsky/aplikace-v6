@@ -167,7 +167,7 @@ tiles: [
 6. ✅ CommonActions zůstávají viditelné
 
 ### URL state
-- Po navigaci: `/?m=module-id&t=create-entity`
+- Po navigaci: `/module-id?t=create-entity`
 - Refresh stránky → otevře se přímo create tile
 
 ---

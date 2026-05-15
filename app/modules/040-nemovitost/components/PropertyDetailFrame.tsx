@@ -5,20 +5,48 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
 import type { ViewMode } from '@/app/UI/CommonActions'
+import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
+import ListViewColumnsDrawer from '@/app/UI/ListViewColumnsDrawer'
 import PropertyDetailFormComponent, { type PropertyFormValue } from '../forms/PropertyDetailFormComponent'
+import UnitDetailForm, { type UnitFormValue, type PropertyAddress } from '../forms/UnitDetailForm'
 import { getPropertyDetail, saveProperty, type SavePropertyInput } from '@/app/lib/services/properties'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
 import { supabase } from '@/app/lib/supabaseClient'
+import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs, type ViewPrefsSortState } from '@/app/lib/services/viewPrefs'
 import EquipmentTab from './EquipmentTab'
+import PropertyServicesTab from './PropertyServicesTab'
+import { type UiUnit } from './UnitDetailFrame'
+import { listPropertyEquipment } from '@/app/lib/services/equipment'
+import { listPropertyServices } from '@/app/lib/services/propertyServices'
+import { listAttachments } from '@/app/lib/attachments'
+import { getUnitDetail, listUnits, type UnitDetailRow, type UnitsListRow } from '@/app/lib/services/units'
+import { UNITS_BASE_COLUMNS } from '@/app/modules/040-nemovitost/unitsColumns'
+import { getContrastTextColor } from '@/app/lib/colorUtils'
+import { renderUnitStatus } from '@/app/modules/040-nemovitost/unitsStatus'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
 
 const logger = createLogger('PropertyDetailFrame')
+
+function isServiceActive(today: Date, validFrom: string | null, validTo: string | null): boolean {
+  if (!validFrom && !validTo) return true
+  if (validFrom) {
+    const fromDate = new Date(validFrom)
+    if (today < fromDate) return false
+  }
+  if (validTo) {
+    const toDate = new Date(validTo)
+    if (today > toDate) return false
+  }
+  return true
+}
 
 // =====================
 // TYPES
@@ -63,6 +91,22 @@ export type UiProperty = {
   isArchived: boolean | null
   createdAt: string | null
   updatedAt: string | null
+}
+
+type UnitsListUiRow = {
+  id: string
+  displayName: string
+  internalCode: string | null
+  propertyId: string | null
+  propertyName: string | null
+  unitTypeId: string | null
+  unitTypeName: string | null
+  unitTypeColor: string | null
+  floor: number | null
+  area: number | null
+  rooms: number | null
+  status: string | null
+  isArchived: boolean
 }
 
 type Props = {
@@ -119,6 +163,107 @@ function isNewId(id: string | null | undefined) {
   return !s || s === 'new'
 }
 
+function mapUnitDetailToUi(row: UnitDetailRow): UiUnit {
+  return {
+    id: row.id,
+    propertyId: row.property_id ?? null,
+    unitTypeId: row.unit_type_id ?? null,
+    landlordId: row.landlord_id ?? null,
+    displayName: row.display_name ?? null,
+    internalCode: row.internal_code ?? null,
+
+    street: row.street ?? null,
+    houseNumber: row.house_number ?? null,
+    city: row.city ?? null,
+    zip: row.zip ?? null,
+    country: row.country ?? null,
+    region: row.region ?? null,
+
+    floor: row.floor ?? null,
+    doorNumber: row.door_number ?? null,
+    area: row.area ?? null,
+    rooms: row.rooms ?? null,
+    disposition: row.disposition ?? null,
+    status: row.status ?? null,
+    tenantId: row.tenant_id ?? null,
+    orientationNumber: row.orientation_number ?? null,
+    yearRenovated: row.year_renovated ?? null,
+    managerName: row.manager_name ?? null,
+
+    cadastralArea: row.cadastral_area ?? null,
+    parcelNumber: row.parcel_number ?? null,
+    lvNumber: row.lv_number ?? null,
+
+    note: row.note ?? null,
+    originModule: row.origin_module ?? null,
+    isArchived: row.is_archived ?? null,
+    createdAt: row.created_at ?? null,
+    updatedAt: row.updated_at ?? null,
+  }
+}
+
+function mapUnitRowToUi(row: UnitsListRow): UnitsListUiRow {
+  return {
+    id: row.id,
+    displayName: row.display_name || '—',
+    internalCode: row.internal_code ?? null,
+    propertyId: row.property_id ?? null,
+    propertyName: row.property_name ?? '—',
+    unitTypeId: row.unit_type_id ?? null,
+    unitTypeName: row.unit_type_name ?? '—',
+    unitTypeColor: row.unit_type_color ?? null,
+    floor: row.floor ?? null,
+    area: row.area ?? null,
+    rooms: row.rooms ?? null,
+    status: row.status ?? null,
+    isArchived: !!row.is_archived,
+  }
+}
+
+function buildUnitFormValue(u: UiUnit): UnitFormValue {
+  return {
+    displayName: u.displayName || '',
+    internalCode: u.internalCode || '',
+    propertyId: u.propertyId || '',
+    unitTypeId: u.unitTypeId || '',
+    landlordId: u.landlordId || '',
+
+    street: u.street || '',
+    houseNumber: u.houseNumber || '',
+    city: u.city || '',
+    zip: u.zip || '',
+    country: u.country || 'CZ',
+    region: u.region || '',
+
+    floor: u.floor ?? null,
+    doorNumber: u.doorNumber || '',
+    area: u.area ?? null,
+    rooms: u.rooms ?? null,
+    disposition: u.disposition || '',
+    status: u.status || 'available',
+    tenantId: u.tenantId || '',
+    orientationNumber: u.orientationNumber || '',
+    yearRenovated: u.yearRenovated ?? null,
+    managerName: u.managerName || '',
+
+    cadastralArea: u.cadastralArea || '',
+    parcelNumber: u.parcelNumber || '',
+    lvNumber: u.lvNumber || '',
+
+    note: u.note || '',
+    originModule: u.originModule || '040-nemovitost',
+    isArchived: !!u.isArchived,
+  }
+}
+
+function normalizeText(value: string) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 // =====================
 // COMPONENT
 // =====================
@@ -136,6 +281,7 @@ export default function PropertyDetailFrame({
   const [resolvedProperty, setResolvedProperty] = useState<UiProperty>(property)
   const resolveSeqRef = useRef(0)
 
+  const router = useRouter()
   const toast = useToast()
   const initialSnapshotRef = useRef<string>('')
   const firstRenderRef = useRef(true)
@@ -145,7 +291,25 @@ export default function PropertyDetailFrame({
 
   const [propertyTypes, setPropertyTypes] = useState<Array<{ id: string; name: string; icon?: string | null }>>([])
   const [selectedPropertyTypeId, setSelectedPropertyTypeId] = useState<string | null>(property.propertyTypeId ?? null)
-  const [units, setUnits] = useState<Array<{ id: string; display_name: string | null; internal_code: string | null; status: string | null }>>([])
+  const [units, setUnits] = useState<UnitsListUiRow[]>([])
+  const [unitsLoading, setUnitsLoading] = useState(false)
+  const [unitsFilter, setUnitsFilter] = useState('')
+  const [unitsShowArchived, setUnitsShowArchived] = useState(false)
+  const DEFAULT_UNITS_SORT: ListViewSortState = useMemo(() => ({ key: 'unitTypeName', dir: 'asc' }), [])
+  const [unitsSort, setUnitsSort] = useState<ListViewSortState>(DEFAULT_UNITS_SORT)
+  const [unitsColPrefs, setUnitsColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
+    colWidths: {},
+    colOrder: [],
+    colHidden: [],
+  })
+  const [unitsColsOpen, setUnitsColsOpen] = useState(false)
+  const [unitsViewMode, setUnitsViewMode] = useState<'list' | 'detail'>('list')
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null)
+  const [selectedUnitDetail, setSelectedUnitDetail] = useState<UiUnit | null>(null)
+  const [selectedUnitLoading, setSelectedUnitLoading] = useState(false)
+  const [equipmentCount, setEquipmentCount] = useState(0)
+  const [servicesCount, setServicesCount] = useState(0)
+  const [attachmentsCount, setAttachmentsCount] = useState(0)
 
   useEffect(() => {
     formValueRef.current = formValue
@@ -168,26 +332,202 @@ export default function PropertyDetailFrame({
     })()
   }, [])
 
-  useEffect(() => {
+  const reloadUnits = useCallback(async () => {
     if (isNewId(property.id)) {
       setUnits([])
+      setSelectedUnitId(null)
       return
     }
 
+    try {
+      setUnitsLoading(true)
+      const rows = await listUnits({
+        propertyId: property.id ?? undefined,
+        includeArchived: unitsShowArchived,
+      })
+      const mapped = rows.map(mapUnitRowToUi)
+      setUnits(mapped)
+      if (mapped.length === 0) {
+        setSelectedUnitId(null)
+      } else if (selectedUnitId && !mapped.some((u) => u.id === selectedUnitId)) {
+        setSelectedUnitId(null)
+      }
+    } catch (err) {
+      logger.error('Failed to load property units', err)
+    } finally {
+      setUnitsLoading(false)
+    }
+  }, [property.id, selectedUnitId, unitsShowArchived])
+
+  useEffect(() => {
+    void reloadUnits()
+  }, [reloadUnits])
+
+  useEffect(() => {
+    void (async () => {
+      const prefs = await loadViewPrefs('040.units.list', { v: 1, sort: null, colWidths: {}, colOrder: [], colHidden: [] })
+      setUnitsColPrefs({
+        colWidths: prefs.colWidths ?? {},
+        colOrder: prefs.colOrder ?? [],
+        colHidden: prefs.colHidden ?? [],
+      })
+      const loadedSort = prefs.sort ? { key: prefs.sort.key, dir: prefs.sort.dir } : null
+      setUnitsSort(loadedSort ?? DEFAULT_UNITS_SORT)
+    })()
+  }, [DEFAULT_UNITS_SORT])
+
+  useEffect(() => {
+    const prefs: ViewPrefs = {
+      v: 1,
+      colWidths: unitsColPrefs.colWidths ?? {},
+      colOrder: unitsColPrefs.colOrder ?? [],
+      colHidden: unitsColPrefs.colHidden ?? [],
+      sort: unitsSort && (unitsSort.key !== DEFAULT_UNITS_SORT.key || unitsSort.dir !== DEFAULT_UNITS_SORT.dir) ? (unitsSort as ViewPrefsSortState) : null,
+    }
+    void saveViewPrefs('040.units.list', prefs)
+  }, [DEFAULT_UNITS_SORT, unitsColPrefs, unitsSort])
+
+  useEffect(() => {
+    let active = true
+    const unitId = selectedUnitId?.trim()
+
+    if (!unitId) {
+      setSelectedUnitDetail(null)
+      return () => {
+        active = false
+      }
+    }
+
+    setSelectedUnitLoading(true)
+
     ;(async () => {
       try {
-        const { data } = await supabase
-          .from('units')
-          .select('id, display_name, internal_code, status')
-          .eq('property_id', property.id)
-          .order('display_name', { ascending: true, nullsFirst: false })
-
-        setUnits((data ?? []) as any)
+        const detail = await getUnitDetail(unitId)
+        if (!active) return
+        setSelectedUnitDetail(mapUnitDetailToUi(detail.unit))
       } catch (err) {
-        logger.error('Failed to load property units', err)
+        if (active) {
+          logger.error('Failed to load selected unit detail', err)
+          setSelectedUnitDetail(null)
+        }
+      } finally {
+        if (active) {
+          setSelectedUnitLoading(false)
+        }
       }
     })()
-  }, [property.id])
+
+    return () => {
+      active = false
+    }
+  }, [selectedUnitId])
+
+  const unitsColumns = useMemo(() => applyColumnPrefs(UNITS_BASE_COLUMNS, unitsColPrefs), [unitsColPrefs])
+
+  const unitsFiltered = useMemo(() => {
+    const f = normalizeText(unitsFilter)
+    if (!f) return units
+    return units.filter((u) => {
+      const hay = normalizeText(
+        [u.unitTypeName, u.displayName, u.internalCode, u.propertyName, u.status, u.floor, u.rooms, u.area]
+          .filter(Boolean)
+          .join(' ')
+      )
+      return hay.includes(f)
+    })
+  }, [units, unitsFilter])
+
+  const unitsSorted = useMemo(() => {
+    if (!unitsSort?.key) return unitsFiltered
+    const dir = unitsSort.dir === 'desc' ? -1 : 1
+    return [...unitsFiltered].sort((a, b) => {
+      const aVal = (a as any)[unitsSort.key]
+      const bVal = (b as any)[unitsSort.key]
+      if (typeof aVal === 'number' && typeof bVal === 'number') return (aVal - bVal) * dir
+      return String(aVal ?? '').localeCompare(String(bVal ?? ''), 'cs', { sensitivity: 'base' }) * dir
+    })
+  }, [unitsFiltered, unitsSort])
+
+  const unitsRows = useMemo<ListViewRow<UnitsListUiRow>[]>(() => {
+    return unitsSorted.map((u) => ({
+      id: u.id,
+      data: {
+        unitTypeName: u.unitTypeColor ? (
+          <span className="generic-type__name-badge" style={{ backgroundColor: u.unitTypeColor, color: getContrastTextColor(u.unitTypeColor) }}>
+            {u.unitTypeName}
+          </span>
+        ) : (
+          <span>{u.unitTypeName}</span>
+        ),
+        displayName: u.displayName,
+        propertyName: u.propertyName || '—',
+        floor: u.floor !== null ? u.floor.toString() : '—',
+        area: u.area ? `${u.area.toFixed(2)} m²` : '—',
+        rooms: u.rooms ? u.rooms.toString() : '—',
+        status: renderUnitStatus(u.status),
+      },
+      className: u.isArchived ? 'row--archived' : undefined,
+      raw: u,
+    }))
+  }, [unitsSorted])
+
+  const selectedUnitIndex = useMemo(() => (selectedUnitId ? unitsSorted.findIndex((u) => u.id === selectedUnitId) : -1), [selectedUnitId, unitsSorted])
+  const canGoPrevUnit = selectedUnitIndex > 0
+  const canGoNextUnit = selectedUnitIndex >= 0 && selectedUnitIndex < unitsSorted.length - 1
+
+  const selectedUnitForm = useMemo(() => (selectedUnitDetail ? buildUnitFormValue(selectedUnitDetail) : null), [selectedUnitDetail])
+
+  const hasUnsavedPropertyChanges = useCallback(() => {
+    const currentSnap = JSON.stringify(formValueRef.current)
+    return currentSnap !== initialSnapshotRef.current
+  }, [])
+
+  const refreshAttachmentsCount = useCallback(async () => {
+    if (isNewId(resolvedProperty.id)) {
+      setAttachmentsCount(0)
+      return
+    }
+
+    try {
+      const attachmentRows = await listAttachments({ entityType: 'properties', entityId: resolvedProperty.id, includeArchived: false })
+      setAttachmentsCount(attachmentRows.length)
+    } catch (err) {
+      logger.error('Failed to load property attachments count', err)
+    }
+  }, [resolvedProperty.id])
+
+  useEffect(() => {
+    if (isNewId(resolvedProperty.id)) {
+      setEquipmentCount(0)
+      setServicesCount(0)
+      setAttachmentsCount(0)
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const [equipmentRows, servicesRows] = await Promise.all([
+          listPropertyEquipment(resolvedProperty.id),
+          listPropertyServices(resolvedProperty.id),
+        ])
+
+        if (cancelled) return
+        setEquipmentCount(equipmentRows.length)
+        const today = new Date()
+        const activeCount = servicesRows.filter((row) => isServiceActive(today, row.valid_from ?? null, row.valid_to ?? null)).length
+        setServicesCount(activeCount)
+        void refreshAttachmentsCount()
+      } catch (err) {
+        logger.error('Failed to load property counts', err)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [refreshAttachmentsCount, resolvedProperty.id])
 
   useEffect(() => {
     if (isNewId(property.id)) {
@@ -365,6 +705,20 @@ export default function PropertyDetailFrame({
   useEffect(() => {
     onRegisterSubmit?.(handleSubmit)
   }, [handleSubmit, onRegisterSubmit])
+
+  const openUnitInModule = useCallback(async (mode: 'read' | 'edit' = 'read') => {
+    if (!selectedUnitId) return
+
+    if (hasUnsavedPropertyChanges()) {
+      const shouldSave = window.confirm('Máš neuložené změny v nemovitosti. Chceš je uložit před otevřením jednotky?')
+      if (shouldSave) {
+        const saved = await handleSubmit()
+        if (!saved) return
+      }
+    }
+
+    router.push(`/040-nemovitost?t=units-list&id=${selectedUnitId}&vm=${mode}`)
+  }, [handleSubmit, hasUnsavedPropertyChanges, router, selectedUnitId])
   
   // Convert ViewMode to DetailViewMode
   const detailViewMode: DetailViewMode = useMemo(() => {
@@ -455,7 +809,7 @@ export default function PropertyDetailFrame({
   
   const sectionIds: DetailSectionId[] = isNewId(resolvedProperty.id) 
     ? ['detail', 'attachments', 'system'] 
-    : ['detail', 'units', 'equipment', 'attachments', 'system']
+    : ['detail', 'units', 'equipment', 'services', 'attachments', 'system']
   
   // Dynamický title podle typu nemovitosti
   const propertyTypeName = useMemo(() => {
@@ -474,18 +828,32 @@ export default function PropertyDetailFrame({
     return propertyName
   }, [detailViewMode, propertyName, propertyTypeName])
 
+  const handleSectionChange = useCallback((id: DetailSectionId) => {
+    if (id !== 'units') {
+      setUnitsViewMode('list')
+    }
+    onActiveSectionChange?.(id)
+  }, [onActiveSectionChange])
+
   const content = (
     <DetailView
       mode={detailViewMode}
       sectionIds={sectionIds}
       initialActiveId={initialSectionId ?? 'detail'}
-      onActiveSectionChange={onActiveSectionChange}
+      onActiveSectionChange={handleSectionChange}
       ctx={{
         entityType: 'properties',
         entityId: resolvedProperty.id === 'new' ? 'new' : resolvedProperty.id || undefined,
         entityLabel: resolvedProperty.displayName ?? null,
         showSystemEntityHeader: false,
         mode: detailViewMode,
+          onAttachmentsCountChange: setAttachmentsCount,
+        sectionCounts: {
+          units: units.length,
+          equipment: equipmentCount,
+          services: servicesCount,
+          attachments: attachmentsCount,
+        },
 
         detailContent: (
           <PropertyDetailFormComponent
@@ -507,40 +875,178 @@ export default function PropertyDetailFrame({
         ),
 
         unitsContent: (
-          <div className="detail-form">
-            <section className="detail-form__section">
-              <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
-              {units.length === 0 ? (
-                <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
-                  Zatím nejsou přiřazeny žádné jednotky.
-                </p>
-              ) : (
-                <table className="data-table" style={{ width: '100%' }}>
-                  <thead>
-                    <tr>
-                      <th>Název</th>
-                      <th>Interní kód</th>
-                      <th>Stav</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {units.map((unit) => (
-                      <tr key={unit.id}>
-                        <td>{unit.display_name}</td>
-                        <td>{unit.internal_code || '—'}</td>
-                        <td>
-                          {unit.status === 'available' && '🟢 Volná'}
-                          {unit.status === 'occupied' && '🔴 Obsazená'}
-                          {unit.status === 'reserved' && '🟡 Rezervovaná'}
-                          {unit.status === 'renovation' && '🟤 V rekonstrukci'}
-                          {!unit.status && '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </section>
+          <div className="detail-form detail-form--fill">
+            {unitsViewMode === 'list' && (
+              <section className="detail-form__section detail-form__section--scroll detail-form__section--fit">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h3 className="detail-form__section-title">Přiřazené jednotky</h3>
+                  {selectedUnitId && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setUnitsViewMode('detail')}
+                        className="common-actions__btn"
+                        title="Číst vybranou jednotku"
+                      >
+                        <span className="common-actions__icon">{getIcon('view' as IconKey)}</span>
+                        <span className="common-actions__label">Číst</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openUnitInModule('edit')}
+                        className="common-actions__btn"
+                        title="Upravit v přehledu jednotek"
+                      >
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {unitsLoading && <div className="detail-form__hint">Načítám jednotky…</div>}
+
+                {!unitsLoading && unitsRows.length === 0 && (
+                  <p style={{ color: 'var(--color-text-muted)', padding: '1rem 0' }}>
+                    Zatím nejsou přiřazeny žádné jednotky.
+                  </p>
+                )}
+
+                {!unitsLoading && unitsRows.length > 0 && (
+                  <>
+                    <ListView
+                      columns={unitsColumns}
+                      rows={unitsRows}
+                      filterValue={unitsFilter}
+                      onFilterChange={setUnitsFilter}
+                      showArchived={unitsShowArchived}
+                      onShowArchivedChange={setUnitsShowArchived}
+                      selectedId={selectedUnitId}
+                      onRowClick={(row: ListViewRow<UnitsListUiRow>) => setSelectedUnitId(String(row.id))}
+                      onRowDoubleClick={(row: ListViewRow<UnitsListUiRow>) => {
+                        setSelectedUnitId(String(row.id))
+                        setUnitsViewMode('detail')
+                      }}
+                      sort={unitsSort}
+                      onSortChange={setUnitsSort}
+                      onColumnResize={(key, px) => {
+                        setUnitsColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
+                      }}
+                      onColumnSettings={() => setUnitsColsOpen(true)}
+                      emptyText="Nemovitost nemá žádné jednotky."
+                    />
+
+                    <ListViewColumnsDrawer
+                      open={unitsColsOpen}
+                      onClose={() => setUnitsColsOpen(false)}
+                      columns={UNITS_BASE_COLUMNS}
+                      fixedFirstKey="unitTypeName"
+                      requiredKeys={['displayName']}
+                      value={{
+                        order: unitsColPrefs.colOrder ?? [],
+                        hidden: unitsColPrefs.colHidden ?? [],
+                      }}
+                      sortBy={unitsSort ?? undefined}
+                      onChange={(next) => {
+                        setUnitsColPrefs((p) => ({
+                          ...p,
+                          colOrder: next.order,
+                          colHidden: next.hidden,
+                        }))
+                      }}
+                      onSortChange={(nextSort) => setUnitsSort(nextSort)}
+                      onReset={() => {
+                        setUnitsColPrefs({ colWidths: {}, colOrder: [], colHidden: [] })
+                        setUnitsSort(DEFAULT_UNITS_SORT)
+                      }}
+                    />
+                  </>
+                )}
+              </section>
+            )}
+
+            {unitsViewMode === 'detail' && (
+              <section className="detail-form__section detail-form__section--scroll">
+                <div className="detail-subdetail">
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }} className="detail-subdetail__header">
+                    <h3 className="detail-form__section-title" style={{ marginRight: 12 }}>Detail jednotky</h3>
+                    <div style={{ flex: 1 }} />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {selectedUnitIndex >= 0 && <span className="common-actions__counter">{`${selectedUnitIndex + 1}/${unitsSorted.length}`}</span>}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!canGoPrevUnit) return
+                          const prev = unitsSorted[selectedUnitIndex - 1]
+                          if (prev) setSelectedUnitId(prev.id)
+                        }}
+                        disabled={!canGoPrevUnit}
+                        className="common-actions__btn"
+                        title="Předchozí jednotka"
+                      >
+                        <span className="common-actions__icon">{getIcon('chevron-left' as IconKey)}</span>
+                        <span className="common-actions__label">Předchozí</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!canGoNextUnit) return
+                          const next = unitsSorted[selectedUnitIndex + 1]
+                          if (next) setSelectedUnitId(next.id)
+                        }}
+                        disabled={!canGoNextUnit}
+                        className="common-actions__btn"
+                        title="Další jednotka"
+                      >
+                        <span className="common-actions__icon">{getIcon('chevron-right' as IconKey)}</span>
+                        <span className="common-actions__label">Další</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openUnitInModule('edit')}
+                        disabled={!selectedUnitId}
+                        className="common-actions__btn"
+                        title="Upravit v přehledu jednotek"
+                      >
+                        <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
+                        <span className="common-actions__label">Upravit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUnitsViewMode('list')}
+                        className="common-actions__btn"
+                        title="Zpět na seznam"
+                      >
+                        <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                        <span className="common-actions__label">Zpět</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="detail-subdetail__content">
+                    {selectedUnitLoading && <p style={{ color: 'var(--color-text-muted)', padding: '0.5rem 0' }}>Načítám detail…</p>}
+                    {!selectedUnitLoading && selectedUnitForm && (
+                      <UnitDetailForm
+                        unit={selectedUnitForm}
+                        readOnly={true}
+                        propertyAddress={{
+                          street: formValue.street || null,
+                          house_number: formValue.house_number || null,
+                          city: formValue.city || null,
+                          zip: formValue.zip || null,
+                        } as PropertyAddress}
+                        propertyLandlordId={formValue.landlord_id || null}
+                      />
+                    )}
+                    {!selectedUnitLoading && !selectedUnitForm && (
+                      <p style={{ color: 'var(--color-danger)', padding: '0.5rem 0' }}>
+                        Detail jednotky se nepodařilo načíst.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
           </div>
         ),
 
@@ -549,6 +1055,17 @@ export default function PropertyDetailFrame({
             entityType="property"
             entityId={resolvedProperty.id}
             readOnly={readOnly}
+            onCountChange={setEquipmentCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
+          />
+        ),
+
+        servicesContent: (
+          <PropertyServicesTab
+            propertyId={resolvedProperty.id}
+            readOnly={readOnly}
+            onCountChange={setServicesCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
           />
         ),
 

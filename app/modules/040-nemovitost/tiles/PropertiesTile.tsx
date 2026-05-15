@@ -18,6 +18,7 @@ import { useToast } from '@/app/UI/Toast'
 import createLogger from '@/app/lib/logger'
 import { supabase } from '@/app/lib/supabaseClient'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import type { DetailSectionId } from '@/app/UI/DetailView'
 import AttachmentsManagerTile, {
   type AttachmentsManagerApi,
@@ -46,6 +47,7 @@ const BASE_COLUMNS = PROPERTIES_BASE_COLUMNS
 type UiProperty = {
   id: string
   displayName: string
+  internalCode: string | null
   propertyTypeId: string | null
   propertyTypeName: string
   propertyTypeIcon: string | null
@@ -53,9 +55,26 @@ type UiProperty = {
   propertyTypeOrderIndex: number | null
   landlordName: string | null
   fullAddress: string
+  street: string | null
+  houseNumber: string | null
+  city: string | null
+  zip: string | null
+  country: string | null
+  region: string | null
+  landArea: number | null
+  builtUpArea: number | null
   buildingArea: number | null
+  numberOfFloors: number | null
+  floorsAboveGround: number | null
+  floorsBelowGround: number | null
+  buildYear: number | null
+  reconstructionYear: number | null
+  cadastralArea: string | null
+  parcelNumber: string | null
+  lvNumber: string | null
   unitsCount: number
   isArchived: boolean
+  createdAt: string | null
 }
 
 // Export pro znovupoužití v EntityHub a ContractWizard
@@ -69,6 +88,7 @@ export function mapPropertyRowToUi(row: PropertiesListRow): UiProperty {
   return {
     id: row.id,
     displayName: row.display_name || '—',
+    internalCode: row.internal_code || null,
     propertyTypeId: row.property_type_id || null,
     propertyTypeName: row.property_type_name || '—',
     propertyTypeIcon: row.property_type_icon || null,
@@ -76,9 +96,26 @@ export function mapPropertyRowToUi(row: PropertiesListRow): UiProperty {
     propertyTypeOrderIndex: row.property_type_order_index ?? null,
     landlordName: row.landlord_name || '—',
     fullAddress: addressParts.join(', ') || '—',
+    street: row.street || null,
+    houseNumber: row.house_number || null,
+    city: row.city || null,
+    zip: row.zip || null,
+    country: row.country || null,
+    region: row.region || null,
+    landArea: row.land_area ?? null,
+    builtUpArea: row.built_up_area ?? null,
     buildingArea: row.building_area,
+    numberOfFloors: row.number_of_floors ?? null,
+    floorsAboveGround: row.floors_above_ground ?? null,
+    floorsBelowGround: row.floors_below_ground ?? null,
+    buildYear: row.build_year ?? null,
+    reconstructionYear: row.reconstruction_year ?? null,
+    cadastralArea: row.cadastral_area ?? null,
+    parcelNumber: row.parcel_number ?? null,
+    lvNumber: row.lv_number ?? null,
     unitsCount: row.units_count || 0,
     isArchived: !!row.is_archived,
+    createdAt: row.created_at ?? null,
   }
 }
 
@@ -97,10 +134,29 @@ function toRow(p: UiProperty): ListViewRow<UiProperty> {
         <span>{p.propertyTypeName}</span>
       ),
       displayName: p.displayName,
+      internalCode: p.internalCode || '—',
       fullAddress: p.fullAddress,
+      street: p.street || '—',
+      houseNumber: p.houseNumber || '—',
+      city: p.city || '—',
+      zip: p.zip || '—',
+      country: p.country || '—',
+      region: p.region || '—',
       landlordName: p.landlordName,
+      landArea: p.landArea !== null && p.landArea !== undefined ? `${p.landArea}` : '—',
+      builtUpArea: p.builtUpArea !== null && p.builtUpArea !== undefined ? `${p.builtUpArea}` : '—',
       buildingArea: p.buildingArea ? `${p.buildingArea.toFixed(2)} m²` : '—',
+      numberOfFloors: p.numberOfFloors !== null && p.numberOfFloors !== undefined ? `${p.numberOfFloors}` : '—',
+      floorsAboveGround: p.floorsAboveGround !== null && p.floorsAboveGround !== undefined ? `${p.floorsAboveGround}` : '—',
+      floorsBelowGround: p.floorsBelowGround !== null && p.floorsBelowGround !== undefined ? `${p.floorsBelowGround}` : '—',
+      buildYear: p.buildYear !== null && p.buildYear !== undefined ? `${p.buildYear}` : '—',
+      reconstructionYear: p.reconstructionYear !== null && p.reconstructionYear !== undefined ? `${p.reconstructionYear}` : '—',
+      cadastralArea: p.cadastralArea || '—',
+      parcelNumber: p.parcelNumber || '—',
+      lvNumber: p.lvNumber || '—',
       unitsCount: p.unitsCount.toString(),
+      createdAt: p.createdAt ? formatDateTime(p.createdAt) : '—',
+      isArchived: p.isArchived ? 'Ano' : 'Ne',
     },
     className: p.isArchived ? 'row--archived' : undefined,
     raw: p,
@@ -115,14 +171,52 @@ function getSortValue(p: UiProperty, key: string): string | number {
       return p.propertyTypeOrderIndex ?? 999999
     case 'displayName':
       return norm(p.displayName)
+    case 'internalCode':
+      return norm(p.internalCode)
     case 'fullAddress':
       return norm(p.fullAddress)
+    case 'street':
+      return norm(p.street)
+    case 'houseNumber':
+      return norm(p.houseNumber)
+    case 'city':
+      return norm(p.city)
+    case 'zip':
+      return norm(p.zip)
+    case 'country':
+      return norm(p.country)
+    case 'region':
+      return norm(p.region)
     case 'landlordName':
       return norm(p.landlordName)
+    case 'landArea':
+      return p.landArea ?? 0
+    case 'builtUpArea':
+      return p.builtUpArea ?? 0
     case 'buildingArea':
       return p.buildingArea ?? 0
+    case 'numberOfFloors':
+      return p.numberOfFloors ?? 0
+    case 'floorsAboveGround':
+      return p.floorsAboveGround ?? 0
+    case 'floorsBelowGround':
+      return p.floorsBelowGround ?? 0
+    case 'buildYear':
+      return p.buildYear ?? 0
+    case 'reconstructionYear':
+      return p.reconstructionYear ?? 0
+    case 'cadastralArea':
+      return norm(p.cadastralArea)
+    case 'parcelNumber':
+      return norm(p.parcelNumber)
+    case 'lvNumber':
+      return norm(p.lvNumber)
     case 'unitsCount':
       return p.unitsCount
+    case 'createdAt':
+      return p.createdAt ? new Date(p.createdAt).getTime() : 0
+    case 'isArchived':
+      return p.isArchived ? 1 : 0
     default:
       return ''
   }
@@ -150,6 +244,7 @@ export default function PropertiesTile({
   const [properties, setProperties] = useState<UiProperty[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchText, setSearchText] = useState('')
   
   const [showArchived, setShowArchived] = useState(false)
   const [propertyTypeId, setPropertyTypeId] = useState<string | null>(null)
@@ -278,7 +373,7 @@ export default function PropertiesTile({
       if (selectedId) {
         actions.push('view', 'edit', 'relations', 'attachments')
       }
-      actions.push('columnSettings', 'close')
+      actions.push('close')
     }
     // EDIT / CREATE MODE
     else if (viewMode === 'edit' || viewMode === 'create') {
@@ -498,10 +593,6 @@ export default function PropertiesTile({
           api.newVersion()
           return
         }
-        if (id === 'columnSettings') {
-          api.columnSettings()
-          return
-        }
       }
 
       // CLOSE (pro ostatní režimy)
@@ -534,10 +625,6 @@ export default function PropertiesTile({
       }
 
       // COLUMN SETTINGS
-      if (id === 'columnSettings') {
-        setColsOpen(true)
-        return
-      }
 
       // ATTACHMENTS open manager
       if (id === 'attachments') {
@@ -677,7 +764,21 @@ export default function PropertiesTile({
 
   // Filter, sort, map rows
   const rows = useMemo(() => {
+    const norm = (v: any) => String(v ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const q = norm(searchText)
+
     let filtered = properties.slice()
+
+    if (q) {
+      filtered = filtered.filter((p) => {
+        return (
+          norm(p.displayName).includes(q) ||
+          norm(p.fullAddress).includes(q) ||
+          norm(p.landlordName).includes(q) ||
+          norm(p.propertyTypeName).includes(q)
+        )
+      })
+    }
 
     // Sort
     if (sort) {
@@ -692,7 +793,7 @@ export default function PropertiesTile({
     }
 
     return filtered.map(toRow)
-  }, [properties, sort])
+  }, [properties, sort, searchText])
 
   const pageTitle = useMemo(() => {
     if (!propertyTypeCode) return 'Přehled nemovitostí'
@@ -729,10 +830,11 @@ export default function PropertiesTile({
             <ListView
               columns={columns}
               rows={rows}
-              filterValue=""
-              onFilterChange={() => {}}
+              filterValue={searchText}
+              onFilterChange={setSearchText}
               showArchived={showArchived}
               onShowArchivedChange={setShowArchived}
+              onColumnSettings={() => setColsOpen(true)}
               selectedId={selectedId ?? null}
               onRowClick={handleRowClick}
               onRowDoubleClick={handleRowDoubleClick}

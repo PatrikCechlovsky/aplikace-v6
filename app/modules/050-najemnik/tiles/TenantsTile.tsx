@@ -716,12 +716,12 @@ export default function TenantsTile({
       const mode = attachmentsManagerUi.mode ?? 'list'
       actions.push(...getAttachmentsManagerActions(mode, !!attachmentsManagerUi.hasSelection))
     } else if (viewMode === 'list') {
-      // Pořadí: add, (view/edit/attachments když je vybrán řádek), columnSettings, close
+      // Pořadí: add, (view/edit/attachments když je vybrán řádek), close
       actions.push('add')
       if (selectedId) {
         actions.push('view', 'edit', 'relations', 'attachments') // Všechny akce najednou když je vybrán řádek
       }
-      actions.push('columnSettings', 'close')
+      actions.push('close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
         actions.push('save', 'relations', 'attachments', 'close') // V edit mode: "Uložit", "Vazby", "Přílohy", "Zavřít"
@@ -799,10 +799,6 @@ export default function TenantsTile({
         }
         if (id === 'attachmentsNewVersion') {
           api?.newVersion?.()
-          return
-        }
-        if (id === 'columnSettings') {
-          api?.columnSettings?.()
           return
         }
         if (id === 'close') {
@@ -909,10 +905,6 @@ export default function TenantsTile({
       }
 
       // COLUMN SETTINGS
-      if (id === 'columnSettings') {
-        setColsOpen(true)
-        return
-      }
 
       // LIST ACTIONS
       if (viewMode === 'list') {
@@ -1088,6 +1080,26 @@ export default function TenantsTile({
           </div>
         ) : (
           <div className="tile-layout__content">
+            {!propSubjectTypeFilter && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
+                <select
+                  value={subjectTypeFilter || ''}
+                  onChange={(e) => {
+                    const val = e.target.value || null
+                    // Změnit URL na tenants-type-{typ} nebo tenants-list
+                    setUrl({ t: val ? `tenants-type-${val}` : 'tenants-list' })
+                  }}
+                  className="generic-type__filter-input"
+                >
+                  <option value="">Všechny typy</option>
+                  {subjectTypes.map((type) => (
+                    <option key={type.code} value={type.code}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <ListView
               columns={columns}
               rows={rows}
@@ -1095,6 +1107,7 @@ export default function TenantsTile({
               onFilterChange={setFilterInput}
               showArchived={showArchived}
               onShowArchivedChange={setShowArchived}
+              onColumnSettings={() => setColsOpen(true)}
               selectedId={selectedId ?? null}
               onRowClick={(row) => setSelectedId(String(row.id))}
               onRowDoubleClick={(row) => {
@@ -1105,26 +1118,6 @@ export default function TenantsTile({
               sort={sort}
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
-              toolbarRight={
-                !propSubjectTypeFilter ? (
-                  <select
-                    value={subjectTypeFilter || ''}
-                    onChange={(e) => {
-                      const val = e.target.value || null
-                      // Změnit URL na tenants-type-{typ} nebo tenants-list
-                      setUrl({ t: val ? `tenants-type-${val}` : 'tenants-list' })
-                    }}
-                    style={{ padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px' }}
-                  >
-                    <option value="">Všechny typy</option>
-                    {subjectTypes.map((type) => (
-                      <option key={type.code} value={type.code}>
-                        {type.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : null
-              }
               emptyText="Žádní nájemníké."
             />
           </div>

@@ -168,6 +168,21 @@ created_by uuid DEFAULT auth.uid()
 
 To umožňuje filtrovat přes RLS.
 
+### Specifické pravidlo: Bankovní účty
+
+Pro tabulku `bank_accounts` platí, že uživatel může číst/upravovat/vytvářet účet:
+
+- pokud je **vlastníkem subjektu** (auth_user_id),
+- nebo má **oprávnění** přes `subject_permissions` (admin/manage),
+- nebo je **zástupcem** subjektu přes vazbu `subject_delegates`.
+
+### Specifické pravidlo: Nemovitosti a jednotky
+
+Pro tabulky `properties` a `units` platí, že uživatel může číst/upravovat/vytvářet záznamy:
+
+- pokud je **vlastníkem pronajímatele** (auth_user_id / email),
+- nebo je **zástupcem pronajímatele** přes vazbu `subject_delegates`.
+
 ---
 
 ## 9. Doporučené RLS politiky

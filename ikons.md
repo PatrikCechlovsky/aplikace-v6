@@ -19,6 +19,7 @@
 | `delete` | 🗑️ | Smazat | Delete | Smazat záznam |
 | `archive` | 🗄️ | Archivovat | Archive | Přesunout do archivu |
 | `attach` | 📎 | Přílohy | Paperclip | Zobrazit přílohy |
+| `duplicate` | 📑 | Kopie | Duplicate | Vytvořit kopii záznamu |
 | `refresh` | 🔄 | Obnovit | Refresh | Obnovit data |
 | `search` | 🔍 | Hledat | Search | Hledat / filtrovat |
 | `save` | 💾 | Uložit | Save | Uložit změny |
@@ -57,6 +58,7 @@
 | `delete` | 🗑️ | Smazat | Delete | CRUD / ACTIONS |
 | `description` | 📝 | Popis | Description | NAV/FILE |
 | `detail` | 👁️ | Detail | Detail | CRUD / ACTIONS |
+| `duplicate` | 📑 | Kopie | Duplicate | CRUD / ACTIONS |
 | `draft` | 📝 | Koncept | Draft | NAV/FILE |
 | `edit` | ✏️ | Upravit | Edit | CRUD / ACTIONS |
 | `export` | 📤 | Exportovat | Export | MISC |
@@ -195,6 +197,7 @@
 | 🔓 | `unlock` | Odemknout | Unlock | otevřít, odemčení | open, unsecure |
 | 🔑 | `key` | Klíč | Key | odemčení, přístup | unlock, access |
 | ↩️ | `undo` | Zpět | Undo | vrátit, krok zpět | revert, back |
+| 📑 | `duplicate` | Kopie | Duplicate | kopie, duplikovat | duplicate, copy |
 
 ### DATA / CHARTS
 

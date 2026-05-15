@@ -17,6 +17,12 @@
   overflow: hidden; /* Zajistí že nepřeteče */
 }
 
+/* Když je aktivní vnitřní scroll detailu, tile musí být flex item */
+.layout__content--detail-scroll .tile-layout {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 .tile-layout__header {
   padding: 1rem 1.5rem;
   margin: 0;
@@ -40,16 +46,37 @@
 .tile-layout__content {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   background: var(--color-surface-subtle);
   padding: 1rem 1.5rem;
-  overflow: hidden; /* Scroll je v table-wrapper! */
+  overflow: hidden; /* Scroll je v table-wrapper nebo detail-view__content! */
 }
 
-/* DetailView v content oblasti - odstranit vlastní padding */
+/* ListView v list režimu: obsah se má smrštit k tabulce (scroll těsně pod ní) */
+.tile-layout__content:has(.listview) {
+  align-items: stretch;
+}
+
+/* ListView v tile content: roste do max výšky, ale při málu řádků se smrští */
+.tile-layout__content .listview {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.tile-layout__content .listview__table-wrapper {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: calc(100% - var(--listview-toolbar-h, 40px));
+}
+
+/* DetailView v content oblasti - dát padding na záložky a obsah, ne na wrapper */
 .tile-layout__content .detail-view {
   padding: 0;
-  margin: 0;
+  margin: -1rem -1.5rem; /* Vytečení z paddingu tile-layout__content */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 

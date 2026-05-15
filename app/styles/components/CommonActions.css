@@ -29,6 +29,17 @@
   color: var(--color-primary-strong);
 }
 
+.common-actions__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.common-actions__btn:disabled:hover {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border-soft);
+  color: var(--color-text);
+}
+
 /* hidden text by default */
 .common-actions__label {
   white-space: nowrap;
@@ -41,6 +52,12 @@
 .common-actions__btn:hover .common-actions__label {
   opacity: 1;
   max-width: 80px;
+}
+
+.common-actions__counter {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  padding: 0 4px;
 }
 /* SIDEBAR: dát CommonActions stejný vertikální rytmus jako TopMenu */
 .layout:not(.layout--topmenu) .layout__context .common-actions {

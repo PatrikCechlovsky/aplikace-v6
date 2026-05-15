@@ -21,13 +21,137 @@
   background: transparent; /* Žádné vlastní pozadí - respektuje pozadí z TileLayout */
 }
 
+/* Detail/tab vnořený do DetailView - vyplní dostupnou výšku */
+.detail-form--fill {
+  flex: 1 1 0;
+  min-height: 0;
+  margin: 0 1px 1px 1px; /* minimální mezera uvnitř detail content */
+}
+
+/* Auto režim: nevyplňovat zbytek výšky */
+.detail-form--fill.detail-form--auto {
+  flex: 0 0 auto;
+  height: auto;
+}
+
+/* Když detail-form obsahuje ListView, musí se roztáhnout na plnou výšku */
+.detail-view__content .detail-form:has(.listview) {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* Pokud je ListView v auto režimu, detail-form se nemá roztahovat */
+.detail-form--fill:has(.listview--auto),
+.detail-view__content .detail-form:has(.listview--auto) {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
 /* ===== SEKCE FORMULÁŘE (Profil, Účet, …) ===== */
 
 .detail-form__section {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 16px;
+  padding: var(--detail-section-pad, 16px);
+}
+
+/* Sekce s ListView - musí propagovat flex layout */
+.detail-form__section:has(.listview) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* Fit režim: přepiš defaultní flex chování u sekce s ListView */
+.detail-form__section--fit:has(.listview) {
+  flex: 0 1 auto;
+}
+
+/* Fit režim v DetailView: ListView se nesmí roztahovat na 100% výšky */
+.detail-view__content .detail-form__section--fit .listview {
+  flex: 0 1 auto;
+  height: auto;
+  max-height: 100%;
+}
+
+.detail-view__content .detail-form__section--fit .listview__table-wrapper {
+  max-height: calc(100% - var(--listview-toolbar-h, 40px));
+}
+
+/* Auto sekce s ListView se nemá roztahovat */
+.detail-form__section--auto:has(.listview) {
+  flex: 0 0 auto;
+}
+
+/* Volitelně: sekce s vnitřním scrollováním gridu (toolbar zůstane nahoře) */
+.detail-form__section--scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Sekce, která má růst do max výšky, ale při málu obsahu se smrštit */
+.detail-form__section--fit {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Kombinace scroll + fit: má růst jen do max výšky, ne vždy na 100% */
+.detail-form__section--scroll.detail-form__section--fit {
+  flex: 0 1 auto;
+}
+
+.detail-form__section--fit .listview {
+  flex: 0 1 auto;
+  height: auto;
+  max-height: 100%;
+}
+
+.detail-form__section--fit .listview__table-wrapper {
+  max-height: calc(100% - var(--listview-toolbar-h, 40px));
+}
+
+/* Sekce se seznamem, která se nemá roztahovat do prázdna */
+.detail-form__section--auto {
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+}
+
+/* Pod-detail: fixní hlavička + scrollovatelný obsah */
+.detail-subdetail {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.detail-subdetail__header,
+.detail-subdetail__tabs {
+  flex-shrink: 0;
+}
+
+.detail-subdetail__content {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.detail-form__section--scroll .detail-form__grid {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .detail-form__section-title {

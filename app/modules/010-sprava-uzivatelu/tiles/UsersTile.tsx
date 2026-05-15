@@ -829,11 +829,11 @@ export default function UsersTile({
   // CommonActions list
   // -------------------------
   const commonActions = useMemo<CommonActionId[]>(() => {
-    // Pořadí jako v pronajimatelích: add, detail, edit/uložit, sloupce, zavřít
+    // Pořadí jako v pronajimatelích: add, detail, edit/uložit, zavřít
     // Ale read/edit/invite jen když je vybrán řádek (selectedId)
     const LIST_BASE: CommonActionId[] = ['add']
     const LIST_SELECTED: CommonActionId[] = ['view', 'edit', 'invite'] // Detail, Edit, Odeslat pozvánku jen když je vybrán řádek
-    const LIST_ALWAYS: CommonActionId[] = ['columnSettings', 'close']
+    const LIST_ALWAYS: CommonActionId[] = ['close']
 
     const INVITE: CommonActionId[] = ['sendInvite', 'close']
     const READ_DEFAULT: CommonActionId[] = ['edit', 'invite', 'close']
@@ -851,7 +851,7 @@ export default function UsersTile({
     }
 
     if (viewMode === 'list') {
-      // V list mode: add, (view, edit, invite jen když je selectedId), columnSettings, close, attachments
+      // V list mode: add, (view, edit, invite jen když je selectedId), close, attachments
       const listActions: CommonActionId[] = [...LIST_BASE]
       if (selectedId) {
         listActions.push(...LIST_SELECTED)
@@ -941,11 +941,6 @@ export default function UsersTile({
       
           if (actionId === 'attachmentsNewVersion') {
             api.newVersion()
-            return
-          }
-      
-          if (actionId === 'columnSettings') {
-            api.columnSettings()
             return
           }
       
@@ -1053,10 +1048,6 @@ export default function UsersTile({
 
       // LIST actions
       if (viewMode === 'list') {
-        if (actionId === 'columnSettings') {
-          setColsOpen(true)
-          return
-        }
         if (actionId === 'add') {
           setViewMode('create')
 
@@ -1315,6 +1306,7 @@ export default function UsersTile({
           sort={sort}
           onSortChange={handleSortChange}
           onColumnResize={handleColumnResize}
+          onColumnSettings={() => setColsOpen(true)}
         />
           </div>
         )}

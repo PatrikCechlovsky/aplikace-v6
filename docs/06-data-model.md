@@ -45,6 +45,9 @@ Základní entita pro všechny osoby a firmy.
 - `ic`, `dic`
 - `email`, `phone`
 - `address_id` (FK na tabulku adres, pokud bude oddělená)
+- `landlord_seq` (pořadové číslo pronajímatele, 3 znaky)
+- `is_landlord`, `is_tenant`, `is_user`
+- `is_landlord_delegate`, `is_tenant_delegate`, `is_maintenance`, `is_maintenance_delegate`
 - `created_at`, `created_by`
 - `updated_at`, `updated_by`
 - `is_active`
@@ -104,7 +107,7 @@ Reprezentuje budovy, domy, objekty.
 - `id`
 - `owner_id` (FK → subjects.id)
 - `name`
-- `code`
+- `internal_code` (pořadové číslo nemovitosti, např. 001)
 - `address_id` / `street`, `city`, `zip`
 - `property_type` (dům, bytový dům, areál…)
 - `note`
@@ -119,7 +122,7 @@ Reprezentuje bytové a nebytové jednotky v rámci nemovitosti.
 **Pole – příklad:**
 - `id`
 - `property_id` (FK → properties.id)
-- `unit_number` / `unit_code`
+- `internal_code` (pořadové číslo jednotky v rámci nemovitosti, např. 001)
 - `floor`
 - `area` (m²)
 - `unit_type` (byt, nebyt, kancelář, garáž…)
@@ -146,19 +149,75 @@ Reprezentuje nájemní/podnájemní smlouvy.
 - `unit_id` (FK)
 - `landlord_id` (FK → subjects.id – pronajímatel)
 - `tenant_id` (FK → subjects.id – nájemník)
-- `contract_number`
-- `contract_type` (nájem, podnájem, krátkodobý pronájem…)
+- `landlord_account_id` (FK → bank_accounts.id)
+- `tenant_account_id` (FK → bank_accounts.id)
+- `landlord_delegate_id` (FK → subjects.id)
+- `tenant_delegate_id` (FK → subjects.id)
+- `cislo_smlouvy`
+- `stav` (koncept, aktivní, ukončená…)
 - `valid_from`
 - `valid_to`
-- `rent_amount`
-- `rent_currency`
-- `deposit_amount`
-- `deposit_currency`
-- `payment_day` (den v měsíci)
-- `state` (aktivní, ukončená, připravovaná, v prodlení…)
+- `doba_neurcita`
+- `periodicita_najmu`
+- `den_platby` (den v měsíci)
+- `kauce_potreba`, `kauce_castka`, `pozadovany_datum_kauce`
+- `stav_kauce`, `stav_najmu`, `stav_plateb_smlouvy`
 - `note`
 - `created_at`, `created_by`
 - `updated_at`, `updated_by`
+
+### 4.1.1 Tabulka `contract_users`
+
+Výběr uživatelů nájemníka pro konkrétní smlouvu.
+
+**Pole – příklad:**
+- `id`
+- `contract_id` (FK → contracts.id)
+- `tenant_user_id` (FK → tenant_users.id)
+- `is_archived`
+- `created_at`, `updated_at`
+
+### 4.1.2 Tabulka `contract_evidence_sheets`
+
+Verzované evidenční listy ke smlouvě (přílohy se službami a osobami).
+
+**Pole – příklad:**
+- `id`
+- `contract_id` (FK → contracts.id)
+- `sheet_number` (1,2,3…)
+- `valid_from`, `valid_to`
+- `replaces_sheet_id` (FK → contract_evidence_sheets.id)
+- `rent_amount`
+- `total_persons`
+- `services_total`
+- `total_amount`
+- `description`, `notes`
+- `pdf_document_id` (FK → attachments.id)
+- `created_at`, `updated_at`, `is_archived`
+
+### 4.1.3 Tabulka `contract_evidence_sheet_users`
+
+Snapshot spolubydlících pro konkrétní evidenční list.
+
+**Pole – příklad:**
+- `id`
+- `sheet_id` (FK → contract_evidence_sheets.id)
+- `tenant_user_id` (FK → tenant_users.id)
+- `first_name`, `last_name`, `birth_date`, `note`
+- `created_at`, `updated_at`, `is_archived`
+
+### 4.1.4 Tabulka `contract_evidence_sheet_services`
+
+Položky služeb evidenčního listu (byt/osoba).
+
+**Pole – příklad:**
+- `id`
+- `sheet_id` (FK → contract_evidence_sheets.id)
+- `service_name`
+- `unit_type` (flat|person)
+- `unit_price`, `quantity`, `total_amount`
+- `order_index`
+- `created_at`, `updated_at`, `is_archived`
 
 ### 4.2 Vazby smluv
 
@@ -186,6 +245,23 @@ Definuje, **co má nájemník platit** a v jakém intervalu.
 - `due_day`
 - `valid_from`, `valid_to`
 - `is_active`
+
+---
+
+## 4.3 Předávací protokoly
+
+Tabulka `handover_protocols` navazuje na smlouvy a uchovává předání/převzetí.
+
+**Pole – příklad:**
+- `id`
+- `contract_id` (FK → contracts)
+- `typ_protokolu` (předání, převzetí, ukončení)
+- `stav_protokolu` (koncept, podepsaný, archivovaný)
+- `datum_predani`, `cas_predani`, `misto_predani`
+- `meraky_stav`, `poznamky`
+- `predavajici_id`, `prebirajici_id` (FK → subjects)
+- `photo_attachments_id`, `podpis_predavajiciho_id`, `podpis_prebirajiciho_id`
+- `created_at`, `created_by`, `updated_at`, `updated_by`
 
 ### 5.2 Tabulka `payments` (skutečné platby)
 
@@ -517,3 +593,143 @@ Jsou ponechány kvůli historii projektu.
 ---
 
 # 📌 Konec historických částí 06B
+
+---
+## DOPLNĚNÍ (2026-02-08) – Modul Služby: katalog, vazby a generické typy
+
+### Cíl
+Zavést jednotný katalog služeb a dvě vazební vrstvy nákladů (na jednotku a na nemovitost),
+plus smluvní služby. Tím vznikají 4 datové vrstvy:
+
+1) **Katalog služeb** (definice)
+2) **Smluvní služby** (platí nájemník)
+3) **Owner cost – rozúčtovatelný**
+4) **Owner cost – nerozúčtovatelný**
+
+Rozdíl mezi (3) a (4) je vyjádřen příznakem `is_rebillable`.
+
+---
+### Navrhované tabulky
+
+#### 1) `service_catalog`
+Katalog služeb (výběr do smluv i nákladů pronajímatele).
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `code` (text, unique)
+- `name` (text)
+- `category_id` (FK → generic_types, category = `service_types`)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `unit_label` (text) *(nebo `unit_id` přes generic_types `service_units`)*
+- `base_price` (numeric)
+- `vat_rate_id` (FK → generic_types, category = `vat_rates`)
+- `description` (text)
+- `active` (bool)
+- `is_archived` (bool)
+- `note` (text)
+- `owner_id` (FK → subjects.id)
+- `created_at`, `created_by`, `updated_at`, `updated_by`
+
+---
+#### 2) `unit_services`
+Pravidelné služby vázané na jednotku (katalogové i vlastní).
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `unit_id` (FK → units.id)
+- `service_id` (FK → service_catalog.id, NULL = vlastní služba)
+- `name` (text, vlastní název služby)
+- `category_id` (FK → generic_types, category = `service_types`)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `service_unit_id` (FK → generic_types, category = `service_units`)
+- `vat_rate_id` (FK → generic_types, category = `vat_rates`)
+- `amount` (numeric)
+- `periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `billing_periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `payer_side` (enum: `tenant` | `landlord`) *(default: tenant)*
+- `is_rebillable` (bool)
+- `split_to_units` (bool)
+- `split_basis` (text, např. m² | osoby | jednotky)
+- `note` (text)
+- `valid_from` (date, platnost od)
+- `valid_to` (date, platnost do)
+- `created_at`, `updated_at`
+- `is_archived` (bool)
+
+Přílohy:
+- `entity_type = unit_service_binding`
+- `entity_id = unit_services.id`
+
+---
+#### 3) `property_services`
+Pravidelné služby vázané na nemovitost (náklady pronajímatele).
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `property_id` (FK → properties.id)
+- `service_id` (FK → service_catalog.id, NULL = vlastní služba)
+- `name` (text, vlastní název služby)
+- `category_id` (FK → generic_types, category = `service_types`)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `unit_id` (FK → generic_types, category = `service_units`)
+- `vat_rate_id` (FK → generic_types, category = `vat_rates`)
+- `amount` (numeric)
+- `periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `billing_periodicity_id` (FK → generic_types, category = `service_periodicities`)
+- `payer_side` (enum: `tenant` | `landlord`) *(default: tenant)*
+- `is_rebillable` (bool)
+- `split_to_units` (bool)
+- `split_basis` (text, např. m² | osoby | jednotky)
+- `note` (text)
+- `valid_from` (date, platnost od)
+- `valid_to` (date, platnost do)
+- `created_at`, `updated_at`
+- `is_archived` (bool)
+
+Přílohy:
+- `entity_type = property_service_binding`
+- `entity_id = property_services.id`
+
+Poznámky k view:
+- `v_property_services_list` a `v_unit_services_list` musí být po přidání sloupců znovu vytvořeny, aby zahrnovaly `valid_from`/`valid_to`.
+- Viewy nesmí filtrovat `is_archived`, protože UI umožňuje „Zobrazit neaktivní/archivní“.
+  - Migrace: `106_add_valid_dates_to_services.sql`, `107_update_services_views.sql`, `109_update_services_views_include_archived.sql`.
+
+---
+#### 4) `contract_services`
+Služby účtované nájemníkovi v rámci smlouvy.
+
+Pole – návrh:
+- `id` (uuid, PK)
+- `contract_id` (FK → contracts.id)
+- `service_id` (FK → service_catalog.id)
+- `billing_type_id` (FK → generic_types, category = `service_billing_types`)
+- `allocation_rule` (enum: m² | osoba | měřidlo | pevná | % nájmu | poměr plochy)
+- `periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `billing_periodicity` (enum: měsíčně | ročně | čtvrtletně…)
+- `amount` (numeric)
+- `currency` (text)
+- `meter_id` (FK → meters.id, volitelně)
+- `note` (text)
+- `owner_id` (FK → subjects.id)
+- `created_at`, `created_by`, `updated_at`, `updated_by`
+- `is_archived` (bool)
+
+---
+### Generic types (konfigurovatelné selecty)
+Použít generic_types s kategoriemi:
+
+- `settings.service_types` – kategorie služeb
+- `settings.service_billing_types` – typ účtování
+- `settings.vat_rates` – DPH sazby
+- `settings.service_units` – jednotky (volitelné)
+- `settings.service_units` – jednotky (volitelné)
+- `settings.service_periodicities` – periodicita (měsíčně, čtvrtletně, půlročně, ročně, 2–5 let)
+
+Startovní seed:
+- **service_types**: energie, voda, správní_poplatky, doplnkove_sluzby, najemne, jine_sluzby
+- **service_billing_types**: pevna_sazba, merena_spotreba, na_pocet_osob, na_m2, procento_z_najmu, pomer_plochy
+- **vat_rates**: 0.00, 0.10, 0.12, 0.15, 0.21
+- **service_units**: Kč, Kč/měsíc, Kč/čtvrtrok, Kč/půlrok, Kč/rok, Kč/m³, Kč/kWh, Kč/m², Kč/osoba, Kč/ks
+- **service_periodicities**: měsíčně, čtvrtletně, půlročně, ročně, dvouleté, tříleté, čtyřleté, pětileté
+

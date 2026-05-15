@@ -1,3 +1,7 @@
+// FILE: app/AppShell.tsx
+// PURPOSE: Hlavní aplikační shell se 6-sekčním layoutem, navigací modulů a URL stavem.
+// NOTES: URL stav používá cestu /[moduleId] + query parametry (s, t) bez duplicity m.
+
 'use client'
 
 import './styles/components/AppShell.css'
@@ -35,7 +39,14 @@ import { applyIconDisplayToLayout, loadIconDisplayFromLocalStorage } from '@/app
 
 import { getCurrentSession, onAuthStateChange, logout } from '@/app/lib/services/auth'
 import { getLandlordCountsByType } from '@/app/lib/services/landlords'
+import { getSubjectCountsByType } from '@/app/lib/services/subjects'
+import { getTenantCountsByType } from '@/app/lib/services/tenants'
+import { getPropertyCountsByType } from '@/app/lib/services/properties'
+import { getUnitCountsByType } from '@/app/lib/services/units'
+import { getServiceCatalogCountsByType } from '@/app/lib/services/serviceCatalog'
+import { getEquipmentCatalogCountsByType } from '@/app/lib/services/equipment'
 import { fetchSubjectTypes } from '@/app/modules/900-nastaveni/services/subjectTypes'
+import { listActiveByCategory } from '@/app/modules/900-nastaveni/services/genericTypes'
 
 import { MODULE_SOURCES } from '@/app/modules.index'
 import type { IconKey } from '@/app/UI/icons'
@@ -57,6 +68,7 @@ type ModuleTileConfig = {
   component: React.ComponentType<any>
   icon?: IconKey
   sectionId?: string
+  order?: number
   children?: ModuleTileConfig[]
 }
 
@@ -91,17 +103,20 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // URL state (MVP): /modules/010?m=010&s=...&t=...
+  // URL state (MVP): /010? s=...&t=...
   const urlState = useMemo(() => {
     const m = searchParams?.get('m')
     const s = searchParams?.get('s')
     const t = searchParams?.get('t')
+    const pathParts = (pathname ?? '').split('/').filter(Boolean)
+    const pathModuleId = pathParts.length ? (pathParts[0] === 'modules' ? pathParts[1] : pathParts[0]) : null
+    const moduleId = m && m.trim() ? m.trim() : pathModuleId
     return {
-      moduleId: m && m.trim() ? m.trim() : null,
+      moduleId: moduleId && moduleId.trim() ? moduleId.trim() : null,
       sectionId: s && s.trim() ? s.trim() : null,
       tileId: t && t.trim() ? t.trim() : null,
     }
-  }, [searchParams])
+  }, [pathname, searchParams])
 
   const setUrlState = useCallback(
     (
@@ -121,7 +136,8 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
         else sp.delete(key)
       }
 
-      setOrDelete('m', next.moduleId ?? null)
+      // ✅ Neuchovávej duplicitní modul v query parametru
+      sp.delete('m')
       setOrDelete('s', next.sectionId ?? null)
       setOrDelete('t', next.tileId ?? null)
 
@@ -137,6 +153,16 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
       if (mode === 'push') router.push(nextUrl)
       else router.replace(nextUrl)
+
+      if (typeof window !== 'undefined') {
+        const expected = nextUrl
+        setTimeout(() => {
+          const current = `${window.location.pathname}${window.location.search}`
+          if (current !== expected) {
+            window.location.assign(expected)
+          }
+        }, 200)
+      }
     },
     [pathname, router, searchParams]
   )
@@ -202,6 +228,40 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   const registerCommonActionHandler = useCallback((fn: (id: CommonActionId) => void) => {
     setCommonActionHandler(() => fn)
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const w = window as any
+    const getState = () => ({
+      commonActionsUi,
+      activeSelection,
+      urlState,
+      searchParams: Object.fromEntries(searchParams?.entries() || []),
+    })
+
+    w.__appDebug = {
+      getState,
+      dump: () => console.log('APP_DEBUG', getState()),
+      navigate: (selection: SidebarSelection) => handleModuleSelect(selection),
+    }
+
+    return () => {
+      if (w.__appDebug) delete w.__appDebug
+    }
+  }, [commonActionsUi, activeSelection, urlState, searchParams, handleModuleSelect])
+
+  const getDefaultTileId = useCallback(
+    (moduleId?: string | null) => {
+      if (!moduleId) return null
+      const module = modules.find((m) => m.id === moduleId)
+      const tiles = module?.tiles ?? []
+      if (!tiles.length) return null
+      const sorted = [...tiles].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+      return sorted[0]?.id ?? null
+    },
+    [modules]
+  )
 
   function resetCommonActions() {
     setCommonActions(undefined)
@@ -418,15 +478,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
             // Pro modul 030 (Pronajímatelé) načteme počty podle typů a aktualizujeme labels + ikony
             if (cfg.id === '030-pronajimatel' && Array.isArray(cfg.tiles)) {
               try {
-                // Načíst počty podle typů
                 const counts = await getLandlordCountsByType(false)
                 const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
 
-                // Načíst typy subjektů z modulu 900 pro ikony a barvy
                 const subjectTypes = await fetchSubjectTypes()
                 const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
 
-                // Mapování typů subjektů na názvy (fallback, pokud není v DB)
                 const typeLabels: Record<string, string> = {
                   osoba: 'Osoba',
                   osvc: 'OSVČ',
@@ -436,35 +493,37 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
                   zastupce: 'Zástupce',
                 }
 
-                // Aktualizovat tiles s počty, ikonami a filtrovat jen ty s počtem > 0
-                const updatedTiles = cfg.tiles
-                  .map((tile: any) => {
-                    // Pokud je tile pro typ subjektu, aktualizovat label s počtem a ikonu z modulu 900
-                    if (tile.dynamicLabel && tile.subjectType) {
-                      const count = countsMap.get(tile.subjectType) ?? 0
-                      const typeDef = typesMap.get(tile.subjectType)
-                      const typeLabel = typeDef?.name || typeLabels[tile.subjectType] || tile.subjectType
-                      const icon = typeDef?.icon || tile.icon || 'user' // Ikona z modulu 900 nebo fallback
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'landlords-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
 
-                      // Vrátit tile s aktualizovaným labelem a ikonou
-                      return {
-                        ...tile,
-                        label: `${typeLabel} (${count})`,
-                        icon: icon as IconKey,
-                        _count: count, // Uložit počet pro pozdější použití
-                        _color: typeDef?.color || null, // Uložit barvu pro pozdější použití
-                      }
+                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                          const count = countsMap.get(originalChild.subjectType) ?? 0
+                          const typeDef = typesMap.get(originalChild.subjectType)
+                          const typeLabel = typeDef?.name || typeLabels[originalChild.subjectType] || child.label
+                          const icon = typeDef?.icon || child.icon || 'user'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
                     }
-                    return tile
-                  })
-                  .filter((tile: any) => {
-                    // Filtrovat tiles s dynamicLabel - zobrazit jen pokud mají počet > 0
-                    if (tile.dynamicLabel && tile.subjectType) {
-                      const count = countsMap.get(tile.subjectType) ?? 0
-                      return count > 0
-                    }
-                    return true // Ostatní tiles zobrazit vždy (Přehled pronajímatelů, Přidat pronajimatele)
-                  })
+                  }
+
+                  return tile
+                })
 
                 loaded.push({
                   id: cfg.id,
@@ -480,6 +539,347 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
               } catch (countErr) {
                 console.error('Chyba při načítání počtů pronajímatelů:', countErr)
                 // Fallback na původní konfiguraci bez počtů
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else if (cfg.id === '800-subjekty' && Array.isArray(cfg.tiles)) {
+              try {
+                const counts = await getSubjectCountsByType(false)
+                const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+
+                const subjectTypes = await fetchSubjectTypes()
+                const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+
+                const typeLabels: Record<string, string> = {
+                  osoba: 'Osoba',
+                  osvc: 'OSVČ',
+                  firma: 'Firma',
+                  spolek: 'Spolek',
+                  statni: 'Státní',
+                  zastupce: 'Zástupce',
+                }
+
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'subjects-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+
+                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                          const count = countsMap.get(originalChild.subjectType) ?? 0
+                          const typeDef = typesMap.get(originalChild.subjectType)
+                          const typeLabel = typeDef?.name || typeLabels[originalChild.subjectType] || child.label
+                          const icon = typeDef?.icon || child.icon || 'user'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  return tile
+                })
+
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů subjektů:', countErr)
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else if (cfg.id === '040-nemovitost' && Array.isArray(cfg.tiles)) {
+              try {
+                const propertyCounts = await getPropertyCountsByType(false)
+                const propertyCountsMap = new Map(propertyCounts.map((c) => [c.property_type_id, c.count]))
+                const propertyTypes = await listActiveByCategory('property_types')
+
+                const unitCounts = await getUnitCountsByType(false)
+                const unitCountsMap = new Map(unitCounts.map((c) => [c.unit_type_id, c.count]))
+                const unitTypes = await listActiveByCategory('unit_types')
+
+                const equipmentCounts = await getEquipmentCatalogCountsByType(false)
+                const equipmentCountsMap = new Map(equipmentCounts.map((c) => [c.equipment_type_id, c.count]))
+                const equipmentTypes = await listActiveByCategory('equipment_types')
+
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'properties-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+                        if (originalChild?.dynamicLabel && originalChild?.propertyTypeCode) {
+                          const propertyType = propertyTypes.find((t) => t.code === originalChild.propertyTypeCode)
+                          const count = propertyType ? (propertyCountsMap.get(propertyType.id) ?? 0) : 0
+                          const typeLabel = propertyType?.name || child.label
+                          const icon = propertyType?.icon || child.icon || 'building'
+                          const color = propertyType?.color || null
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                              color: color,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  if (tile.id === 'units-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+                        if (originalChild?.dynamicLabel && originalChild?.unitTypeCode) {
+                          const unitType = unitTypes.find((t) => t.code === originalChild.unitTypeCode)
+                          const count = unitType ? (unitCountsMap.get(unitType.id) ?? 0) : 0
+                          const typeLabel = unitType?.name || child.label
+                          const icon = unitType?.icon || child.icon || 'building'
+                          const color = unitType?.color || null
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                              color: color,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  if (tile.id === 'equipment-catalog' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+                        if (originalChild?.dynamicLabel && originalChild?.equipmentTypeCode) {
+                          const equipmentType = equipmentTypes.find((t) => t.code === originalChild.equipmentTypeCode)
+                          const count = equipmentType ? (equipmentCountsMap.get(equipmentType.id) ?? 0) : 0
+                          const typeLabel = equipmentType?.name || child.label
+                          const icon = equipmentType?.icon || child.icon || 'wrench'
+                          const color = equipmentType?.color || null
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                              color: color,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  return tile
+                })
+
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů nemovitostí/jednotek:', countErr)
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else if (cfg.id === '050-najemnik' && Array.isArray(cfg.tiles)) {
+              try {
+                const counts = await getTenantCountsByType(false)
+                const countsMap = new Map(counts.map((c) => [c.subject_type, c.count]))
+
+                const subjectTypes = await fetchSubjectTypes()
+                const typesMap = new Map(subjectTypes.map((t) => [t.code, t]))
+
+                const typeLabels: Record<string, string> = {
+                  osoba: 'Osoba',
+                  osvc: 'OSVČ',
+                  firma: 'Firma',
+                  spolek: 'Spolek',
+                  statni: 'Státní',
+                  zastupce: 'Zástupce',
+                }
+
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'tenants-list' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+
+                        if (originalChild?.dynamicLabel && originalChild?.subjectType) {
+                          const count = countsMap.get(originalChild.subjectType) ?? 0
+                          const typeDef = typesMap.get(originalChild.subjectType)
+                          const typeLabel = typeDef?.name || typeLabels[originalChild.subjectType] || child.label
+                          const icon = typeDef?.icon || child.icon || 'user'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  return tile
+                })
+
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů nájemníků:', countErr)
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: cfg.tiles ?? [],
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              }
+            } else if (cfg.id === '070-sluzby' && Array.isArray(cfg.tiles)) {
+              try {
+                const counts = await getServiceCatalogCountsByType(false)
+                const countsMap = new Map(counts.map((c) => [c.category_id, c.count]))
+                const serviceTypes = await listActiveByCategory('service_types')
+
+                const updatedTiles = cfg.tiles.map((tile: any) => {
+                  if (tile.id === 'service-catalog' && Array.isArray(tile.children)) {
+                    return {
+                      ...tile,
+                      children: tile.children.reduce((acc: any[], child: any) => {
+                        const originalChild = tile.children.find((c: any) => c.id === child.id)
+
+                        if (originalChild?.dynamicLabel && originalChild?.serviceTypeCode) {
+                          const typeDef = serviceTypes.find((t) => t.code === originalChild.serviceTypeCode)
+                          const count = typeDef ? (countsMap.get(typeDef.id) ?? 0) : 0
+                          const typeLabel = typeDef?.name || child.label
+                          const icon = typeDef?.icon || child.icon || 'list'
+
+                          if (count > 0) {
+                            acc.push({
+                              ...child,
+                              label: `${typeLabel} (${count})`,
+                              icon: icon as IconKey,
+                            })
+                          }
+                          return acc
+                        }
+
+                        acc.push(child)
+                        return acc
+                      }, []),
+                    }
+                  }
+
+                  return tile
+                })
+
+                loaded.push({
+                  id: cfg.id,
+                  label: cfg.label ?? cfg.id,
+                  icon: cfg.icon,
+                  order: cfg.order ?? 9999,
+                  enabled: cfg.enabled ?? true,
+                  tiles: updatedTiles,
+                  sections: cfg.sections ?? [],
+                  introTitle: cfg.introTitle,
+                  introText: cfg.introText,
+                })
+              } catch (countErr) {
+                console.error('Chyba při načítání počtů katalogu služeb:', countErr)
                 loaded.push({
                   id: cfg.id,
                   label: cfg.label ?? cfg.id,
@@ -534,24 +934,33 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     // 1) URL-first
     if (urlState.moduleId && modules.some((m) => m.id === urlState.moduleId) && activeSelection?.moduleId !== urlState.moduleId) {
+      const defaultTileId = !urlState.sectionId && !urlState.tileId ? getDefaultTileId(urlState.moduleId) : null
+      const resolvedTileId = urlState.tileId ?? defaultTileId ?? undefined
+
       setActiveModuleId(urlState.moduleId)
       setActiveSelection({
         moduleId: urlState.moduleId,
         sectionId: urlState.sectionId ?? undefined,
-        tileId: urlState.tileId ?? undefined,
+        tileId: resolvedTileId,
       })
+
+      if (defaultTileId && !urlState.tileId) {
+        setUrlState({ moduleId: urlState.moduleId, sectionId: null, tileId: defaultTileId }, 'replace', true)
+      }
+
       resetCommonActions()
     }
 
     // 2) Fallback (legacy)
     if (initialModuleId && modules.some((m) => m.id === initialModuleId)) {
+      const defaultTileId = getDefaultTileId(initialModuleId)
       setActiveModuleId(initialModuleId)
-      setActiveSelection({ moduleId: initialModuleId })
+      setActiveSelection({ moduleId: initialModuleId, tileId: defaultTileId ?? undefined })
       resetCommonActions()
       // legacy init – OK to drop unknown params
-      setUrlState({ moduleId: initialModuleId, sectionId: null, tileId: null }, 'replace', false)
+      setUrlState({ moduleId: initialModuleId, sectionId: null, tileId: defaultTileId ?? null }, 'replace', false)
     }
-  }, [isAuthenticated, modules, activeModuleId, initialModuleId, urlState.moduleId, urlState.sectionId, urlState.tileId])
+  }, [activeModuleId, getDefaultTileId, initialModuleId, isAuthenticated, modules, setUrlState, urlState.moduleId, urlState.sectionId, urlState.tileId])
 
   // React to browser back/forward (URL -> state)
   useEffect(() => {
@@ -570,8 +979,19 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       tileId: urlState.tileId ?? null,
     }
 
+    const normalizedTarget = {
+      moduleId: target.moduleId,
+      sectionId: target.sectionId,
+      tileId:
+        !target.sectionId && !target.tileId && target.moduleId
+          ? getDefaultTileId(target.moduleId)
+          : target.tileId,
+    }
+
     const differs =
-      current.moduleId !== target.moduleId || current.sectionId !== target.sectionId || current.tileId !== target.tileId
+      current.moduleId !== normalizedTarget.moduleId ||
+      current.sectionId !== normalizedTarget.sectionId ||
+      current.tileId !== normalizedTarget.tileId
     if (!differs) return
 
     // ✅ FIX: Pokud změna přichází z home buttonu, přeskoč confirmIfDirty
@@ -586,23 +1006,31 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       }
     }
 
-    if (!target.moduleId) {
+    if (!normalizedTarget.moduleId) {
       setActiveModuleId(null)
       setActiveSelection(null)
       resetCommonActions()
       return
     }
 
-    if (!modules.some((m) => m.id === target.moduleId)) return
-    setActiveModuleId(target.moduleId)
+    if (!modules.some((m) => m.id === normalizedTarget.moduleId)) return
+    setActiveModuleId(normalizedTarget.moduleId)
     setActiveSelection({
-      moduleId: target.moduleId,
-      sectionId: target.sectionId ?? undefined,
-      tileId: target.tileId ?? undefined,
+      moduleId: normalizedTarget.moduleId,
+      sectionId: normalizedTarget.sectionId ?? undefined,
+      tileId: normalizedTarget.tileId ?? undefined,
     })
 
-    if ((activeSelection?.tileId ?? null) !== (target.tileId ?? null)) resetCommonActions()
-  }, [activeSelection, isAuthenticated, modules, modulesLoading, setUrlState, urlState.moduleId, urlState.sectionId, urlState.tileId])
+    if (!target.sectionId && !target.tileId && normalizedTarget.tileId) {
+      setUrlState(
+        { moduleId: normalizedTarget.moduleId, sectionId: null, tileId: normalizedTarget.tileId },
+        'replace',
+        true
+      )
+    }
+
+    if ((activeSelection?.tileId ?? null) !== (normalizedTarget.tileId ?? null)) resetCommonActions()
+  }, [activeSelection, getDefaultTileId, isAuthenticated, modules, modulesLoading, setUrlState, urlState.moduleId, urlState.sectionId, urlState.tileId])
 
   useEffect(() => {
     if (!activeSelection?.tileId) resetCommonActions()
@@ -620,13 +1048,19 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
   }
 
   function handleModuleSelect(selection: SidebarSelection) {
+    const finalSelection = { ...selection }
+    if (finalSelection.moduleId && !finalSelection.sectionId && !finalSelection.tileId) {
+      const defaultTileId = getDefaultTileId(finalSelection.moduleId)
+      if (defaultTileId) finalSelection.tileId = defaultTileId
+    }
+
     const sameSelection =
-      activeSelection?.moduleId === selection.moduleId &&
-      (activeSelection?.sectionId ?? null) === (selection.sectionId ?? null) &&
-      (activeSelection?.tileId ?? null) === (selection.tileId ?? null)
+      activeSelection?.moduleId === finalSelection.moduleId &&
+      (activeSelection?.sectionId ?? null) === (finalSelection.sectionId ?? null) &&
+      (activeSelection?.tileId ?? null) === (finalSelection.tileId ?? null)
 
     console.log('🔍 handleModuleSelect:', { 
-      selection, 
+      selection: finalSelection, 
       sameSelection, 
       tileRenderKey,
       searchParams: Object.fromEntries(searchParams?.entries() || [])
@@ -642,12 +1076,12 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       const hasTileSpecificParams = id || vm
       if (hasTileSpecificParams) {
         // Zavřeme detail - zahoďme tile-specifické parametry
-        // Použijeme keepOtherParams=false, což zahodí všechny parametry kromě m/s/t
+        // Použijeme keepOtherParams=false, což zahodí všechny parametry kromě s/t
         setUrlState(
           {
-            moduleId: selection.moduleId,
-            sectionId: selection.sectionId ?? null,
-            tileId: selection.tileId ?? null,
+            moduleId: finalSelection.moduleId,
+            sectionId: finalSelection.sectionId ?? null,
+            tileId: finalSelection.tileId ?? null,
           },
           'replace',
           false // keepOtherParams=false znamená zahodit tile-specifické parametry (id/vm/am/t)
@@ -658,7 +1092,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
       
       // ✅ FIX: Pokud klikneš na stejný tile znovu (bez detail params)
       // → force remount tile (aby se CommonActions znovu zaregistroval)
-      if (selection.tileId) {
+      if (finalSelection.tileId) {
         console.log('⚡ Force remount - incrementing tileRenderKey from', tileRenderKey, 'to', tileRenderKey + 1)
         setTileRenderKey(prev => prev + 1)
         // NEMAŽ CommonActions - nechej staré, tile se remountuje a přepíše je
@@ -670,8 +1104,7 @@ export default function AppShell({ initialModuleId = null }: AppShellProps) {
 
     if (!confirmIfDirty()) return
 
-    // Pokud klikneš na modul bez tileId → zobraz intro page (žádný AUTO-SELECT)
-    const finalSelection = { ...selection }
+    // Pokud klikneš na modul bez tileId → otevři výchozí tile (AUTO-SELECT)
 
     const prevModule = activeSelection?.moduleId ?? null
     const prevTile = activeSelection?.tileId ?? null

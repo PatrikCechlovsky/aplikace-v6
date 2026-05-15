@@ -33,6 +33,7 @@ export type TenantsListRow = {
   title_before?: string | null
   first_name?: string | null
   last_name?: string | null
+  birth_date?: string | null
 
   // ✅ company fields (pro firma, spolek, statni)
   company_name?: string | null
@@ -77,6 +78,7 @@ export async function listTenants(params: TenantsListParams = {}): Promise<Tenan
         title_before,
         first_name,
         last_name,
+        birth_date,
         
         company_name,
         ic,

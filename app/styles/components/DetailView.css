@@ -1,0 +1,72 @@
+/* FILE: app/styles/components/DetailView.css */
+/* PURPOSE: Řízení vnitřního scrollu v DetailView (tabs nahoře, scroll jen v obsahu) */
+/* NOTES: Udržuje stálou pozici záložek a akcí, scrolluje pouze obsah sekce. */
+
+.detail-view {
+  --detail-section-pad: 16px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  padding-bottom: 6px; /* malé odsazení dole v rámci velkého okna */
+}
+
+.detail-view__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 0 1rem 8px 1rem; /* Malá mezera dole v rámci velkého okna */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Když je uvnitř auto ListView, obsah se nemá roztahovat do prázdna */
+.detail-view__content:has(.listview--auto) {
+  flex: 0 0 auto;
+  height: auto;
+}
+
+/* Auto režim přes detail-form (např. seznamy v záložkách) */
+.detail-view__content:has(.detail-form--auto) {
+  flex: 0 0 auto;
+  height: auto;
+}
+
+/* =========================================================
+   DEBUG: barevné orámování bloků (detail layout)
+   ========================================================= */
+
+/* Když je v aktivní záložce ListView, scroll je v tabulce a nechceme vlastní scroll */
+.detail-view__content > [role="tabpanel"]:not([hidden]):has(.listview) {
+  overflow: hidden;
+  padding-bottom: 4px;
+}
+
+/* Scrollbar styling is global in base.css */
+
+/* Tabpanely musí vyplnit dostupnou výšku, jinak vzniká prázdné místo */
+.detail-view__content > [role="tabpanel"]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* Detail formuláře (bez ListView) má scroll uvnitř formuláře, ne na content */
+.detail-view__content > [role="tabpanel"]:not([hidden]):has(.detail-form--fill):not(:has(.listview)) {
+  overflow: hidden;
+}
+
+.detail-view__content > [role="tabpanel"]:not([hidden]) .detail-form--fill {
+  overflow-y: auto;
+  padding-bottom: 12px; /* malý spodní padding v detailu */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Pokud panel obsahuje ListView s auto výškou, nemá se roztahovat */
+.detail-view__content > [role="tabpanel"]:not([hidden]):has(.listview--auto) {
+  flex: 0 0 auto;
+}

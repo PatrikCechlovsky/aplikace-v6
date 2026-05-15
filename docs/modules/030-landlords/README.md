@@ -33,7 +33,7 @@ Modul **030-pronajimatel** slouží pro:
    - Vazba na uživatelské účty (`is_landlord_user` flag)
 
 4. **🔗 Přehled vazeb (read-only)**
-   - Záložka **Vazby** zobrazuje seznamy: nemovitosti, jednotky, nájemníci
+   - Záložka **Vazby** zobrazuje seznamy: nemovitosti, jednotky, nájemníci, smlouvy
    - Detail vybrané entity se zobrazuje v plném detailu (včetně záložek)
 
 ---
@@ -78,28 +78,33 @@ Sidebar → Pronajímatelé
         ├── Tab: Účty (AccountsSection) – bankovní účty
         ├── Tab: Dokumenty (AttachmentsSection)
         └── Tab: Historie (AuditLogSection)
+
+Poznámka:
+- Záložky se seznamy (Účty, Zástupci, Přílohy) zobrazují počty položek v názvu.
 ```
 
 ---
 
 ## ✅ Checkboxy pro role
 
-V detailu pronajímatele (TenantDetailForm):
+V detailu pronajímatele (LandlordDetailForm):
 
 **Řádek 1: Základní typ**
 - ☑️ Pronajímatel (`is_landlord`)
 
-**Řádek 2: Delegáti**
+**Řádek 2: Delegáti (pouze osoba/OSVČ/zástupce)**
 - ☑️ Zástupce pronajimatele (`is_landlord_delegate`)
-- ☑️ Má uživatelský účet (`is_landlord_user`)
 
 **Řádek 3: Další role**
 - ☑️ Nájemník (`is_tenant`)
-- ☑️ Zástupce nájemníka (`is_tenant_delegate`)
+- ☑️ Zástupce nájemníka (`is_tenant_delegate`) *(jen osoba/OSVČ/zástupce)*
 
 **Řádek 4: Údržba**
 - ☑️ Údržbář (`is_maintenance`)
-- ☑️ Zástupce údržby (`is_maintenance_delegate`)
+- ☑️ Zástupce údržby (`is_maintenance_delegate`) *(jen osoba/OSVČ/zástupce)*
+
+Poznámka:
+- Zaškrtnutí `is_landlord_delegate` zpřístupní subjekt v záložce **Zástupci** jako dostupného zástupce.
 
 ---
 

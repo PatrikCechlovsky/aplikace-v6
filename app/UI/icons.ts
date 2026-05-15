@@ -652,6 +652,14 @@ const data = {
     aliasesCZ: ["návrh","rozpracované"],
     aliasesEN: ["sketch","outline"]
   },
+  "duplicate": {
+    emoji: "📑",
+    nameCZ: "Kopie",
+    nameEN: "Duplicate",
+    category: "CRUD / ACTIONS",
+    aliasesCZ: ["kopie","duplikovat"],
+    aliasesEN: ["duplicate","copy"]
+  },
   "edit": {
     emoji: "✏️",
     nameCZ: "Upravit",

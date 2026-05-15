@@ -1,6 +1,11 @@
+// FILE: app/UI/DetailView.tsx
+// PURPOSE: DetailView s tabs a řízeným vnitřním scrollováním obsahu
+// NOTES: Při mountu dočasně vypne scroll na .layout__content
+
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import '@/app/styles/components/DetailView.css'
 import DetailTabs, { type DetailTabItem } from './DetailTabs'
 import { getIcon } from '@/app/UI/icons'
 import DetailAttachmentsSection from '@/app/UI/detail-sections/DetailAttachmentsSection'
@@ -16,7 +21,9 @@ export type DetailSectionId =
   | 'equipment'
   | 'accounts'
   | 'delegates'
+  | 'evidence'
   | 'units'
+  | 'services'
   | 'attachments'
   | 'system'
 
@@ -63,7 +70,17 @@ export type DetailViewCtx = {
   mode?: DetailViewMode
   showSystemEntityHeader?: boolean
 
+  onAttachmentsCountChange?: (count: number) => void
+
+  sectionCounts?: Partial<Record<DetailSectionId, number>>
+
   detailContent?: React.ReactNode
+
+  usersContent?: React.ReactNode
+  accountsContent?: React.ReactNode
+  delegatesContent?: React.ReactNode
+
+  evidenceContent?: React.ReactNode
 
   relationsContent?: React.ReactNode
 
@@ -75,6 +92,7 @@ export type DetailViewCtx = {
 
   unitsContent?: React.ReactNode
   equipmentContent?: React.ReactNode
+  servicesContent?: React.ReactNode
 
   systemBlocks?: { title: string; content: React.ReactNode; visible?: boolean }[]
   systemContent?: React.ReactNode
@@ -298,6 +316,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
           entityId={ctx.entityId}
           entityLabel={ctx.entityLabel ?? null}
           mode={ctx.mode ?? 'view'}
+          onCountChange={ctx.onAttachmentsCountChange}
         />
       )
     },
@@ -351,6 +370,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 30,
     // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
     visibleWhen: (ctx) => {
+      if ((ctx as any)?.usersContent) return true
       if (!ctx.entityType) return false
       // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
       if (ctx.mode === 'create' || ctx.mode === 'edit') return true
@@ -358,6 +378,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return !!(ctx as any)?.entityId
     },
     render: (ctx) => {
+      if ((ctx as any)?.usersContent) return (ctx as any).usersContent
       const entityId = (ctx as any)?.entityId
       // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
       if (!entityId || entityId === 'new') {
@@ -378,6 +399,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 50,
     // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
     visibleWhen: (ctx) => {
+      if ((ctx as any)?.accountsContent) return true
       if (!ctx.entityType) return false
       // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
       if (ctx.mode === 'create' || ctx.mode === 'edit') return true
@@ -385,6 +407,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return !!(ctx as any)?.entityId
     },
     render: (ctx) => {
+      if ((ctx as any)?.accountsContent) return (ctx as any).accountsContent
       const entityId = (ctx as any)?.entityId
       // Pro create mode (entityId === 'new' nebo undefined) zobrazit prázdnou zprávu
       if (!entityId || entityId === 'new') {
@@ -406,6 +429,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     order: 55,
     // Zobrazit záložku pokud máme entityType a (entityId nebo mode je create/edit)
     visibleWhen: (ctx) => {
+      if ((ctx as any)?.delegatesContent) return true
       if (!ctx.entityType) return false
       // Pro create/edit mode zobrazit i když entityId je 'new' nebo undefined
       if (ctx.mode === 'create' || ctx.mode === 'edit') return true
@@ -413,6 +437,7 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
       return !!(ctx as any)?.entityId
     },
     render: (ctx) => {
+      if ((ctx as any)?.delegatesContent) return (ctx as any).delegatesContent
       const entityId = (ctx as any)?.entityId
       const onCreateDelegateFromUser = (ctx as any)?.onCreateDelegateFromUser
       const onOpenNewDelegateForm = (ctx as any)?.onOpenNewDelegateForm
@@ -445,6 +470,22 @@ const DETAIL_SECTIONS: Record<DetailSectionId, DetailViewSection<any>> = {
     visibleWhen: (ctx) => !!ctx.entityType && !!ctx.entityId && ctx.entityId !== 'new',
     render: (ctx: any) => ctx?.equipmentContent ?? <div style={{ padding: '2rem' }}>Seznam vybavení (placeholder)</div>,
   },
+
+  services: {
+    id: 'services',
+    label: 'Služby',
+    order: 75,
+    visibleWhen: (ctx) => !!(ctx as any)?.servicesContent,
+    render: (ctx: any) => ctx?.servicesContent ?? null,
+  },
+
+  evidence: {
+    id: 'evidence',
+    label: 'Evidenční listy',
+    order: 72,
+    visibleWhen: (ctx) => !!(ctx as any)?.evidenceContent,
+    render: (ctx: any) => ctx?.evidenceContent ?? null,
+  },
 }
 
 export default function DetailView({
@@ -464,11 +505,14 @@ export default function DetailView({
     return sectionIds.map((id) => DETAIL_SECTIONS[id]).filter(Boolean).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   }, [sectionIds])
 
-  const tabs: DetailTabItem[] = useMemo(() => {
-    return sections
-      .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
-      .map((s) => ({ id: s.id, label: s.label, icon: s.icon }))
-  }, [sections, ctx])
+  const tabs: DetailTabItem[] = sections
+    .filter((s) => (s.always ? true : s.visibleWhen ? s.visibleWhen(ctx) : true))
+    .map((s) => ({
+      id: s.id,
+      label: s.label,
+      icon: s.icon,
+      count: ctx?.sectionCounts?.[s.id],
+    }))
 
   const firstTabId = (tabs[0]?.id as DetailSectionId | undefined) ?? 'detail'
   const [activeId, setActiveId] = useState<DetailSectionId>(initialActiveId ?? firstTabId)
@@ -488,12 +532,33 @@ export default function DetailView({
     onActiveSectionChange?.(activeId)
   }, [activeId, onActiveSectionChange])
 
-  const activeSection = sections.find((s) => s.id === activeId) ?? sections[0]
+  useEffect(() => {
+    const layoutContent = document.querySelector('.layout__content') as HTMLElement | null
+    if (!layoutContent) return
+
+    layoutContent.classList.add('layout__content--detail-scroll')
+
+    return () => {
+      layoutContent.classList.remove('layout__content--detail-scroll')
+    }
+  }, [])
 
   return (
     <div className="detail-view">
       <DetailTabs items={tabs} activeId={activeId} onChange={(id) => setActiveId(id as DetailSectionId)} />
-      <div className="detail-view__content">{activeSection?.render({ ...ctx, mode })}</div>
+      <div className="detail-view__content">
+        {sections.map((section) => (
+          <div
+            key={section.id}
+            id={`detail-section-${section.id}`}
+            role="tabpanel"
+            aria-labelledby={`detail-tab-${section.id}`}
+            hidden={section.id !== activeId}
+          >
+            {section.render({ ...ctx, mode })}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

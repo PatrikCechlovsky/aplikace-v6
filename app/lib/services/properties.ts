@@ -37,11 +37,22 @@ export type PropertiesListRow = {
   
   // area info
   land_area: number | null
+  built_up_area: number | null
   building_area: number | null
+  number_of_floors: number | null
+  floors_above_ground: number | null
+  floors_below_ground: number | null
   
   // metadata
   is_archived: boolean | null
   created_at: string | null
+  updated_at: string | null
+  build_year: number | null
+  reconstruction_year: number | null
+  cadastral_area: string | null
+  parcel_number: string | null
+  lv_number: string | null
+  note: string | null
   
   // joined data
   landlord_name?: string | null
@@ -76,9 +87,20 @@ export async function listProperties(params: PropertiesListParams = {}): Promise
         country,
         region,
         land_area,
+        built_up_area,
         building_area,
+        number_of_floors,
+        floors_above_ground,
+        floors_below_ground,
+        build_year,
+        reconstruction_year,
+        cadastral_area,
+        parcel_number,
+        lv_number,
+        note,
         is_archived,
         created_at,
+        updated_at,
         landlord:subjects!properties_landlord_id_fkey(display_name),
         property_type:generic_types!fk_properties_type_generic(name, icon, color, order_index)
       `
@@ -285,6 +307,11 @@ export type SavePropertyInput = {
 export async function saveProperty(input: SavePropertyInput): Promise<PropertyDetailRow> {
   const isUpdate = !!input.id
 
+  const normalizedZip = (input.zip ?? '')
+    .toString()
+    .replace(/\D+/g, '')
+    .trim() || null
+
   const payload: any = {
     landlord_id: input.landlord_id,
     property_type_id: input.property_type_id,
@@ -293,7 +320,7 @@ export async function saveProperty(input: SavePropertyInput): Promise<PropertyDe
     street: input.street ?? null,
     house_number: input.house_number ?? null,
     city: input.city ?? null,
-    zip: input.zip ?? null,
+    zip: normalizedZip,
     country: input.country ?? null,
     region: input.region ?? null,
     land_area: input.land_area ?? null,

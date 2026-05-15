@@ -158,7 +158,7 @@ export default function UserDetailForm({
   // =====================
   
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {/* PŘIHLAŠOVACÍ ÚDAJE */}
       <div className="detail-form__section">
         <div className="detail-form__section-title">Přihlašovací údaje</div>

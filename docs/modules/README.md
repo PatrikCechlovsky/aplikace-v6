@@ -15,6 +15,7 @@ Každý modul má číselnou předponu podle pořadí v aplikaci:
 | **030** | [030-landlords/](030-landlords/) | 🏢 Pronajímatelé (landlords) |
 | **030** | [030-landlords-alt/](030-landlords-alt/) | 🏢 Alternativní dokumentace pronajímatelů |
 | **050** | [050-tenants/](050-tenants/) | 🏠 Nájemníci (tenants) |
+| **060** | [060-contracts/](060-contracts/) | 📄 Smlouvy (contracts) |
 | **03** | [03-ui/](03-ui/) | 🎨 UI komponenty a design system |
 
 ---

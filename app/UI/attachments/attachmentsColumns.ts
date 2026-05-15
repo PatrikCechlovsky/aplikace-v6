@@ -10,14 +10,11 @@ export function getAttachmentsColumns(opts: {
   variant: AttachmentsColumnsVariant
   entityType?: string 
 }): ListViewColumn[] {
-  // Equipment sloupec jen pro nemovitosti a jednotky
-  const showEquipment = opts.entityType === 'property' || opts.entityType === 'properties' || 
-                        opts.entityType === 'unit' || opts.entityType === 'units'
-
   const base: ListViewColumn[] = [
     { key: 'title', label: 'Název', width: '220px', sortable: true },
     { key: 'description', label: 'Popis', width: '260px' },
-    ...(showEquipment ? [{ key: 'equipment', label: 'Vybavení', width: '180px', sortable: false }] : []),
+    { key: 'entityType', label: 'Typ entity', width: '160px', sortable: true },
+    { key: 'entityName', label: 'Entita', width: '220px', sortable: true },
     { key: 'file', label: 'Soubor (latest)', sortable: true },
     { key: 'ver', label: 'Verze', width: '90px', sortable: true },
     { key: 'uploaded', label: 'Nahráno', width: '220px', sortable: true },
@@ -31,7 +28,8 @@ export function getAttachmentsColumns(opts: {
       { key: 'ver', label: 'Verze', width: '90px', sortable: true },
       { key: 'title', label: 'Název', width: '220px', sortable: true },
       { key: 'description', label: 'Popis', width: '260px' },
-      ...(showEquipment ? [{ key: 'equipment', label: 'Vybavení', width: '180px', sortable: false }] : []),
+      { key: 'entityType', label: 'Typ entity', width: '160px', sortable: true },
+      { key: 'entityName', label: 'Entita', width: '220px', sortable: true },
     ]
   }
 

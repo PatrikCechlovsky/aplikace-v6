@@ -3,6 +3,7 @@
 
 .detail-tabs {
   margin: 6px 0 12px;
+  padding: 0 calc(1rem + var(--detail-section-pad, 16px)); /* Zarovnání s obsahem sekcí */
 }
 
 /* řádek s oušky */

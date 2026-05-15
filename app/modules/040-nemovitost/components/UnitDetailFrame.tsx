@@ -14,11 +14,27 @@ import createLogger from '@/app/lib/logger'
 import { useToast } from '@/app/UI/Toast'
 import { supabase } from '@/app/lib/supabaseClient'
 import EquipmentTab from './EquipmentTab'
+import UnitServicesTab from './UnitServicesTab'
+import { listAttachments } from '@/app/lib/attachments'
+import { listUnitServices } from '@/app/lib/services/unitServices'
 
 import '@/app/styles/components/TileLayout.css'
 import '@/app/styles/components/DetailForm.css'
 
 const logger = createLogger('UnitDetailFrame')
+
+function isServiceActive(today: Date, validFrom: string | null, validTo: string | null): boolean {
+  if (!validFrom && !validTo) return true
+  if (validFrom) {
+    const fromDate = new Date(validFrom)
+    if (today < fromDate) return false
+  }
+  if (validTo) {
+    const toDate = new Date(validTo)
+    if (today > toDate) return false
+  }
+  return true
+}
 
 // =====================
 // TYPES
@@ -48,6 +64,7 @@ export type UiUnit = {
   disposition: string | null
   status: string | null
   tenantId: string | null
+  tenantName?: string | null
   orientationNumber: string | null
   yearRenovated: number | null
   managerName: string | null
@@ -87,14 +104,14 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     propertyId: u.propertyId || '',
     unitTypeId: u.unitTypeId || '',
     landlordId: u.landlordId || '',
-    
+
     street: u.street || '',
     houseNumber: u.houseNumber || '',
     city: u.city || '',
     zip: u.zip || '',
     country: u.country || 'CZ',
     region: u.region || '',
-    
+
     floor: u.floor,
     doorNumber: u.doorNumber || '',
     area: u.area,
@@ -105,11 +122,11 @@ function buildInitialFormValue(u: UiUnit): UnitFormValue {
     orientationNumber: u.orientationNumber || '',
     yearRenovated: u.yearRenovated,
     managerName: u.managerName || '',
-    
+
     cadastralArea: u.cadastralArea || '',
     parcelNumber: u.parcelNumber || '',
     lvNumber: u.lvNumber || '',
-    
+
     note: u.note || '',
     originModule: u.originModule || '040-nemovitost',
     isArchived: u.isArchived || false,
@@ -148,7 +165,58 @@ export default function UnitDetailFrame({
   const [unitTypes, setUnitTypes] = useState<Array<{ id: string; code: string; name: string; icon: string | null }>>([])
   const [selectedUnitTypeId, setSelectedUnitTypeId] = useState<string | null>(unit.unitTypeId)
   const [propertyAddress, setPropertyAddress] = useState<PropertyAddress | null>(null)
+  const [equipmentCount, setEquipmentCount] = useState(0)
+  const [servicesCount, setServicesCount] = useState(0)
+  const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [propertyLandlordId, setPropertyLandlordId] = useState<string | null>(null)
+
+  const refreshAttachmentsCount = useCallback(async () => {
+    if (isNewId(resolvedUnit.id)) {
+      setAttachmentsCount(0)
+      return
+    }
+
+    try {
+      const attachmentRows = await listAttachments({ entityType: 'units', entityId: resolvedUnit.id, includeArchived: false })
+      setAttachmentsCount(attachmentRows.length)
+    } catch (err) {
+      logger.error('Failed to load unit attachments count', err)
+    }
+  }, [resolvedUnit.id])
+
+  useEffect(() => {
+    void refreshAttachmentsCount()
+  }, [refreshAttachmentsCount])
+
+  // Load counts for equipment, services, attachments
+  useEffect(() => {
+    if (isNewId(resolvedUnit.id)) {
+      setEquipmentCount(0)
+      setServicesCount(0)
+      setAttachmentsCount(0)
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const servicesRows = await listUnitServices(resolvedUnit.id)
+        if (!cancelled) {
+          const today = new Date()
+          const activeCount = servicesRows.filter((row) => isServiceActive(today, row.valid_from ?? null, row.valid_to ?? null)).length
+          setServicesCount(activeCount)
+        }
+        void refreshAttachmentsCount()
+      } catch (err) {
+        logger.error('Failed to load unit counts', err)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedUnit.id, refreshAttachmentsCount])
   
   // Load unit types from generic_types
   useEffect(() => {
@@ -255,6 +323,7 @@ export default function UnitDetailFrame({
           disposition: detail.unit.disposition,
           status: detail.unit.status,
           tenantId: detail.unit.tenant_id,
+          tenantName: (detail.unit as any).tenant_name ?? null,
           orientationNumber: detail.unit.orientation_number,
           yearRenovated: detail.unit.year_renovated,
           managerName: detail.unit.manager_name,
@@ -305,8 +374,6 @@ export default function UnitDetailFrame({
       area: formValue.area,
       rooms: formValue.rooms,
       disposition: formValue.disposition || null,
-      status: formValue.status || 'available',
-      tenant_id: formValue.tenantId || null,
       orientation_number: formValue.orientationNumber || null,
       year_renovated: formValue.yearRenovated,
       manager_name: formValue.managerName || null,
@@ -345,6 +412,7 @@ export default function UnitDetailFrame({
         disposition: savedRow.disposition,
         status: savedRow.status,
         tenantId: savedRow.tenant_id,
+        tenantName: (savedRow as any).tenant_name ?? null,
         orientationNumber: savedRow.orientation_number,
         yearRenovated: savedRow.year_renovated,
         managerName: savedRow.manager_name,
@@ -471,7 +539,7 @@ export default function UnitDetailFrame({
   
   const sectionIds: DetailSectionId[] = isNewId(resolvedUnit.id) 
     ? ['detail', 'attachments', 'system'] 
-    : ['detail', 'equipment', 'attachments', 'system']
+    : ['detail', 'equipment', 'services', 'attachments', 'system']
   
   // Dynamický title podle typu jednotky
   const unitTypeName = useMemo(() => {
@@ -502,6 +570,12 @@ export default function UnitDetailFrame({
         entityLabel: resolvedUnit.displayName ?? null,
         showSystemEntityHeader: false,
         mode: detailViewMode,
+          onAttachmentsCountChange: setAttachmentsCount,
+        sectionCounts: {
+          equipment: equipmentCount,
+          services: servicesCount,
+          attachments: attachmentsCount,
+        },
 
         detailContent: (
           <UnitDetailForm
@@ -510,6 +584,7 @@ export default function UnitDetailFrame({
             readOnly={readOnly}
             propertyAddress={propertyAddress}
             propertyLandlordId={propertyLandlordId}
+            tenantName={resolvedUnit.tenantName ?? null}
             onDirtyChange={(dirty) => {
               if (dirty) {
                 markDirtyIfChanged(formValue)
@@ -528,6 +603,17 @@ export default function UnitDetailFrame({
             entityType="unit"
             entityId={resolvedUnit.id}
             readOnly={readOnly}
+            onCountChange={setEquipmentCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
+          />
+        ),
+
+        servicesContent: (
+          <UnitServicesTab
+            unitId={resolvedUnit.id}
+            readOnly={readOnly}
+            onCountChange={setServicesCount}
+            onAttachmentsChanged={refreshAttachmentsCount}
           />
         ),
 

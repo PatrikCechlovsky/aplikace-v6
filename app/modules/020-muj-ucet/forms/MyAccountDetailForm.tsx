@@ -259,7 +259,7 @@ const MyAccountDetailForm = React.forwardRef<MyAccountDetailFormRef, MyAccountDe
   // =====================
 
   return (
-    <div className="detail-form">
+    <div className="detail-form detail-form--fill">
       {/* OSOBNÍ ÚDAJE */}
       <div className="detail-form__section">
         <div className="detail-form__section-title">Osobní údaje</div>

@@ -45,6 +45,194 @@ Aplikace je vystavěná na **přísném, neměnném layoutu** složeném ze šes
 │              │ 6: Footer / stavová lišta (volitelně)          │
 └──────────────┴───────────────────────────────────────────────┘
 
+### Scroll systém v detailu
+
+**Základní princip**: V detailu entity scrolluje **pouze obsah**, zatímco záložky, toolbar a CommonActions zůstávají **fixně viditelné nahoře**.
+
+#### A) Detail entity (formuláře a záložky)
+
+**Aktivace**: Třída `.layout__content--detail-scroll` na `<main>`
+
+**Struktura CSS**:
+```
+.layout__content--detail-scroll (overflow: hidden)
+  └─ .content (flex: 1 1 0, min-height: 0)
+      └─ .content__section (flex: 1 1 0, min-height: 0)
+          └─ .tile-layout__content (flex container)
+              └─ .detail-view (flex: 1 1 0)
+                  ├─ .detail-tabs (flex-shrink: 0) ← fixní
+                  └─ .detail-view__content (overflow-y: auto) ← scrolluje
+```
+
+**Klíčová pravidla**:
+1. `.detail-view__content` má `overflow-y: auto` a `flex: 1 1 0`
+2. Když obsahuje ListView, musí mít `overflow: hidden` (scroll je uvnitř ListView)
+3. `.detail-form` v tomto kontextu musí mít `flex: 1 1 0` pokud obsahuje ListView
+4. `.detail-form__section` s ListView musí být flex container (`flex: 1 1 0`)
+5. V detailu držíme vnitřní mezery malé (např. `detail-form--fill` margin/padding) a sjednocujeme horizontální padding `DetailTabs` a `detail-view__content`.
+6. Zarovnání záložek a obsahu drží proměnná `--detail-section-pad` (Tabs = `1rem + section pad`, sekce = `section pad`).
+
+**Relevantní CSS soubory**:
+- `app/styles/components/DetailView.css` - hlavní scroll kontrola
+- `app/styles/components/DetailForm.css` - flex propagace pro formuláře
+- `app/styles/components/AppShell.css` - layout structure
+
+#### B) ListView v detail tabech
+
+**Princip**: Toolbar + hlavička tabulky **fixní**, scrollují **pouze řádky tabulky**.
+
+**Struktura CSS**:
+```
+.detail-view__content
+  └─ .detail-form (flex: 1 1 0 když má ListView)
+      └─ .detail-form__section (flex: 1 1 0 když má ListView)
+          └─ .listview (flex: 1 1 0, height: 100%)
+              ├─ .listview__toolbar (flex-shrink: 0) ← fixní
+              └─ .listview__table-wrapper (overflow: auto) ← scrolluje
+                  └─ table (sticky header)
+```
+
+
+**Klíčová pravidla**:
+1. `.listview` má `flex: 1 1 0` a `height: 100%` v `.detail-view__content`
+2. `.listview__table-wrapper` má `flex: 1 1 0` a `overflow: auto`
+3. Toolbar a `<thead>` mají `position: sticky` nebo `flex-shrink: 0`
+4. `.detail-view__content:has(.listview)` má `overflow: hidden` (vypne vlastní scroll)
+
+**Relevantní CSS soubory**:
+- `app/styles/components/ListView.css` - table scroll kontrola
+
+#### C) ListView v TileLayout
+- `.tile-layout__content` je flex container, ListView musí vyplnit výšku.
+- `.listview__table-wrapper` v tile nesmí používat viewport-based `max-height`.
+- `.listview__table-wrapper` má `flex: 1 1 auto` a malý spodní gap, aby byl vždy vidět horizontální scrollbar.
+
+#### C2) ListView v přehledu (list mode)
+- `<main>` (`.layout__content`) nesmí scrollovat, pokud obsahuje ListView.
+- Scrolluje pouze `.listview__table-wrapper`, hlavička a toolbar zůstávají fixně nahoře.
+- `.content` a `.content__section` musí být flex kontejnery (`flex: 1 1 0`) pro propad výšky.
+- V list režimu se ListView smršťuje na výšku tabulky (scrollbar je hned pod tabulkou).
+- ListView v list režimu nemá vynucenou `height: 100%` (jinak by vznikla prázdná plocha).
+
+#### D) Relation detail (vazby entity)
+
+**Princip**: Horní toolbar fixní, obsah vazby (formulář nebo seznam) scrolluje.
+
+**Struktura CSS**:
+```
+.tile-layout__content (height constraint)
+  └─ .relation-pane (grid, height: 100%)
+      ├─ .relation-pane__list (200px) ← horní seznam
+      └─ .relation-pane__detail (minmax(220px, 1fr))
+          └─ .relation-detail (grid, height: 100%)
+              ├─ .relation-detail__toolbar (auto) ← fixní
+              └─ .relation-detail__content (overflow: auto) ← scrolluje
+```
+
+**Klíčová pravidla**:
+1. `.relation-pane` má `height: 100%` a `min-height: 0`
+2. `.relation-detail` má `height: 100%` a `grid-template-rows: auto 1fr`
+3. `.relation-detail__content` má `overflow: auto` a `display: flex; flex-direction: column`
+4. Vnořený `.detail-view__content` scrolluje samostatně
+
+**Relevantní CSS soubory**:
+- `app/styles/components/Entity.css` - relation pane layout
+
+#### D) Sub-detail záložky (služby, vybavení)
+
+**Princip**: Záložky sub-detailu fixní nahoře, scrolluje pouze obsah záložky.
+
+**Struktura CSS**:
+```
+.detail-view__content
+  └─ .detail-subdetail (flex: 1 1 0)
+      ├─ .detail-subdetail__header (flex-shrink: 0) ← fixní
+      ├─ .detail-subdetail__tabs (flex-shrink: 0) ← fixní
+      └─ .detail-subdetail__content (overflow: auto) ← scrolluje
+```
+
+**Klíčová pravidla**:
+1. `.detail-subdetail` má `flex: 1 1 0` a `min-height: 0`
+2. Header a tabs mají `flex-shrink: 0`
+3. Content má `overflow: auto` a obsahuje scrollovatelný wrapper
+
+**Relevantní CSS soubory**:
+- `app/styles/components/DetailForm.css` - sub-detail helpers
+
+#### F) Služby & Vybavení – seznam a detail (2026-02)
+
+**Seznam (ListView toolbar)**
+- Přepínač **Zobrazit neaktivní** je v toolbaru ListView (vedle filtru a nastavení sloupců).
+- Defaultně jsou vidět jen **aktivní** položky.
+- Počet v záložce se **řídí aktuálním filtrem** (aktivní vs. neaktivní).
+
+**Aktivita a archivace**
+- Aktivita služby se odvozuje z `valid_from`/`valid_to` (a `is_archived`).
+- Checkbox ve sloupci **Aktivní** slouží k **archivaci** (ruční), ne k přepnutí platnosti.
+- „Neaktivní“ zahrnuje **archivované** i **čekající** (platí od v budoucnu).
+
+**Detail služby**
+- Vyhledávání katalogu je dostupné **pouze při vytváření** (create). V read/edit je skryté.
+- Read‑only pole **Stav** je pod daty platnosti a zobrazuje: Aktivní / Čekající / Neaktivní / Archivováno.
+
+**Kopie služby**
+- Kopie může mít stejný název jako původní, ale **nesmí se časově překrývat** s původní službou.
+- Nová (nekopírovaná) služba musí mít **unikátní název** v rámci nemovitosti/jednotky.
+
+#### E) Evidenční list – osoby a služby (2026-02-15)
+
+**Cíl**: konzistentní UI chování v detailu evidenčního listu a správná data v tabulkách.
+
+**Osoby (EvidenceSheetUsersTab)**
+- Hlavní nájemník je **vždy započítán**.
+- Zobrazení jméno/firma se řídí `subject_type`:
+  - `osoba`, `osvc`, `zastupce` → vyplnit **Jméno + Příjmení**, **Název firmy** = `—`.
+  - `firma`, `spolek`, `statni` → **Název firmy** = `display_name`, **Jméno/Příjmení** = `—`.
+  - `osoba`, `osvc` → **Datum narození** se zobrazuje z `subjects.birth_date`.
+
+**Služby (EvidenceSheetServicesTab)**
+- Sloupec **Základní cena** používá `unit_price` z evidenčního listu (ne katalogovou cenu).
+- Ukládání služeb pracuje s **celým seznamem** (save nahrazuje všechny řádky).
+- Po načtení/uložení se **aktualizuje count** v záložce „Služby“.
+
+**Toolbar (detail služby)**
+- **Pořadí akcí je fixní**: předchozí → další → přidat → číst → upravit → uložit → přílohy → zavřít.
+- V režimu **read** se zobrazuje jen relevantní subset (read-only).
+- V režimu **edit/create** je dostupné Přidat/Upravit/Uložit dle stavu.
+
+**Režim čtení/zápisu (EvidenceSheetModal)**
+- `readOnly` se řídí režimem detailu (`vm=read`) nebo archivací.
+- V read režimu nejsou dostupné akce Přidat/Upravit.
+
+#### Diagnostika scroll problémů
+
+Pokud scroll nefunguje správně, zkontroluj v DevTools konzoli:
+
+```javascript
+// Najdi elementy s overflow: auto/scroll a zjisti, který má scrollHeight > clientHeight
+(() => {
+  const all = Array.from(document.querySelectorAll('*')).map(el => {
+    const style = getComputedStyle(el);
+    return {
+      el, tag: el.tagName.toLowerCase(), class: el.className,
+      overflowY: style.overflowY, h: el.clientHeight, sh: el.scrollHeight,
+      hasScroll: /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight
+    };
+  });
+  
+  const withAuto = all.filter(x => /(auto|scroll)/.test(x.overflowY));
+  console.table(withAuto.map(x => ({
+    tag: x.tag, class: x.class, overflowY: x.overflowY,
+    h: x.h, sh: x.sh, hasScroll: x.hasScroll
+  })));
+})();
+```
+
+**Typické problémy**:
+- Element má `overflow: auto` ale `scrollHeight === clientHeight` → chybí omezení výšky rodiče
+- Parent nemá `flex: 1 1 0` nebo `min-height: 0` → výška se nepropaguje dolů
+- Element má `height: auto` místo `flex: 1` → roztáhne se na celý obsah místo containeru
+
 ... (soubor pokračuje beze změn až k sekci Přílohy)
 
 ### (5) Sekce Přílohy (povinná součást každého detailu)
@@ -84,6 +272,7 @@ Uživatel může:
 - editovat metadata (název/popisek),
 - zobrazit historii verzí,
 - zavřít správu a vrátit se do detailu entity.
+- nahrávat soubory do max velikosti 50 MB.
 
 #### C) 🔗 v CommonActions → „Vazby“ (RELATIONS VIEW)
 Uživatel může:
@@ -362,6 +551,10 @@ V jedné sekci může být:
 
 Sekce mohou být dynamické a mohou obsahovat vlastní logiku.
 
+DetailTabs podporuje jednotný zápis počtů v záložkách:
+- `DetailTabItem.count` → label se automaticky zobrazí jako „{label} (count)“.
+- v DetailView lze počty předat přes `ctx.sectionCounts` (mapa `sectionId → count`).
+
 ---
 
 ## 3.10.5 Renderování polí
@@ -435,6 +628,10 @@ Funkce:
 - zobrazit archivované
 - stav nahrávání
 - možnost více souborů
+
+Poznámky k seznamu:
+- seznam příloh zobrazuje sloupce **Typ entity** a **Entita**
+- typy entit lze filtrovat pomocí checkboxů
 
 Přílohy patří **jen k této entitě**.  
 Nejde o globální modul dokumentů.
@@ -633,7 +830,9 @@ Vybraný řádek určuje:
 
 ## 3.11.5 Definice sloupců (Column Definition)
 
-Sloupce definuje modul.
+ Sloupce definuje modul. Modul má v `*Columns.ts` definovat všechny dostupné listové atributy entity, aby ColumnPicker umožnil plný výběr sloupců.
+
+ Příklad struktury:
 
 Příklad struktury:
 [
@@ -679,11 +878,18 @@ Paging (stránkování) řeší vyšší vrstva, ne EntityList.
 ### Kontext A: ListView (hlavní seznam)
 EntityList je obalen:
 
-- filtrem
-- archivovanými
+- filtrem (vlevo)
+- archivovanými (vpravo)
 - řazením (ListView řídí pořadí)
-- CommonActions
-- ColumnPicker
+- CommonActions (bez nastavení sloupců)
+- ColumnPicker (ikona sloupců je v tabulce hned za hledáním)
+
+Pozn.: U vazeb **služeb a vybavení** v detailu nemovitosti/jednotky se archivace provádí
+přímo v tabulce přes checkbox ve sloupci „Aktivní“ a archivované položky se v seznamu nezobrazují.
+
+Pozn.: Záložka **Jednotky** v detailu nemovitosti používá stejný ListView jako přehled jednotek
+(vyhledávání, sloupce, archivace). Detail vybrané jednotky je zde pouze read-only bez dalších záložek;
+editace se dělá v přehledu jednotek.
 
 EntityList zde vykresluje pouze tabulku.
 
@@ -701,6 +907,7 @@ Například:
 - Nemovitost → Jednotky  
   nahoře EntityList (jednotky), dole detail jednotky  
 - Smlouva → Platby  
+- Detail smlouvy: výběr jednotky/nemovitosti/pronajímatele je vzájemně konzistentní (změna jedné vazby automaticky dorovnává ostatní).
   nahoře EntityList (platby), dole detail platby  
 
 ---
@@ -802,6 +1009,9 @@ které sloupce chce v daném seznamu vidět.
 jeden společný technický seznam.
 
 ColumnPicker se používá nad **ListView** (hlavní přehledy a seznamy ve vazbách),
+aby si uživatel mohl nastavit pořadí a viditelnost sloupců.
+Pro sdílené tabulky (např. katalog ↔ vazby) používej sdílené list configy se stejným `VIEW_KEY`
+(`serviceCatalogListConfig`, `equipmentCatalogListConfig`). Zaručí stejné sloupce, pořadí a šířky.
 nikoliv uvnitř nízkoúrovňové komponenty EntityList.
 
 ---
@@ -1717,7 +1927,7 @@ AppShell předává všem tiles callback `onNavigate`:
 
 **Chování:**
 - Callback volá standardní `handleModuleSelect`
-- URL se aktualizuje: `/?m=module-id&t=target-tile-id`
+- URL se aktualizuje: `/module-id?t=target-tile-id`
 - Sidebar se automaticky synchronizuje (zavře children)
 - Force remount mechanismus funguje korektně
 
@@ -1796,6 +2006,8 @@ if (id === 'add') {
 6. ✅ Otevře se create tile "Přidat pronajímatele"
 7. ✅ Čistá obrazovka bez otevřených sekcí
 
+**Poznámka:** Třetí úroveň sidebaru (typové přehledy s počty) zobrazuje pouze položky s počtem ≥ 1.
+
 **Zpět na seznam:**
 - Klik na "Přehled pronajímatelů" v Sidebaru nebo breadcrumbs
 - Seznam se znovu načte (včetně filtrů s počty)
@@ -1845,3 +2057,41 @@ if (id === 'add') {
 **Commity:**
 - `2b892f1` - feat: tlačítko Přidat naviguje na create-landlord tile
 - `275b4a9` - feat: tlačítko Přidat naviguje na create-tenant tile + zavírá Sidebar přehledy
+
+---
+## DOPLNĚNÍ (2026-02-08) – Záložky „Služby“ pro Nemovitost a Jednotku
+
+### Cíl
+Sjednotit UI pro evidenci pravidelných služeb/nákladů na úrovni nemovitosti a jednotky
+v souladu se systémem List/Detail a CommonActions.
+
+---
+### Detail Nemovitosti → záložka „Služby“
+Použití **RelationListWithDetail**:
+- **Horní seznam**: služby přiřazené k nemovitosti
+- **Dolní detail**: detail vybrané služby
+
+**Standardní chování:**
+- Filtrace a hledání v horním seznamu
+- ColumnPicker aktivní
+- Správa příloh pouze přes 📎 (CommonActions)
+- Záložka Přílohy v detailu je read‑only
+
+---
+### Detail Jednotky → záložka „Služby“
+Použití **RelationListWithDetail**:
+- **Horní seznam**: služby přiřazené k jednotce
+- **Dolní detail**: detail vybrané služby
+
+**Standardní chování:**
+- Filtrace a hledání v horním seznamu
+- ColumnPicker aktivní
+- Správa příloh pouze přes 📎 (CommonActions)
+- Záložka Přílohy v detailu je read‑only
+
+---
+### Společné UI zásady
+- Záložky detailu vždy: **Detail / Přílohy / Systém**
+- Akce přes **CommonActions** (add/edit/archive/save/reject)
+- Žádné přímé mazání – pouze archivace
+

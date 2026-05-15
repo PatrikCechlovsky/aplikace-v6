@@ -132,6 +132,9 @@ Použití: bankovní účty subjektu.
 ### Popis  
 Číselník bank působících v ČR (dle registru ČNB).
 
+**Zdroj dat:** ČNB CSV – https://www.cnb.cz/cs/platebni-styk/.galleries/ucty_kody_bank/download/kody_bank_CR.csv  
+**Platnost seznamu:** 2026-02-01
+
 ### Hodnoty  
 Každý záznam obsahuje:  
 `bank_code`, `bank_name`, `swift`, `country`

@@ -5,7 +5,7 @@
 // URL state: t=units-list, id + vm (detail: read/edit/create), am=1 (attachments manager)
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ListView, { type ListViewRow, type ListViewSortState } from '@/app/UI/ListView'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import { listUnits, type UnitsListRow } from '@/app/lib/services/units'
@@ -19,6 +19,7 @@ import UnitDetailFrame, { type UiUnit } from '../components/UnitDetailFrame'
 import UnitRelationsHub from '../components/UnitRelationsHub'
 import type { DetailSectionId } from '@/app/UI/DetailView'
 import { getContrastTextColor } from '@/app/lib/colorUtils'
+import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import AttachmentsManagerFrame from '@/app/UI/attachments/AttachmentsManagerFrame'
 import type { AttachmentsManagerUiState, AttachmentsManagerApi } from '@/app/UI/detail-sections/DetailAttachmentsSection'
 import { 
@@ -85,16 +86,40 @@ function createMinimalUiUnit(partial: Partial<UiUnit>): UiUnit {
 type UiUnitRow = {
   id: string
   displayName: string
+  internalCode: string | null
   propertyId: string | null
   propertyName: string | null
+  landlordName: string | null
+  tenantName: string | null
+  landlordId: string | null
   unitTypeId: string | null
   unitTypeName: string | null
+  unitTypeCode: string | null
   unitTypeIcon: string | null
   unitTypeColor: string | null
+  street: string | null
+  houseNumber: string | null
+  city: string | null
+  zip: string | null
+  country: string | null
+  region: string | null
   floor: number | null
+  doorNumber: string | null
   area: number | null
   rooms: number | null
+  disposition: string | null
   status: string | null
+  tenantId: string | null
+  orientationNumber: string | null
+  yearRenovated: number | null
+  managerName: string | null
+  cadastralArea: string | null
+  parcelNumber: string | null
+  lvNumber: string | null
+  note: string | null
+  originModule: string | null
+  createdAt: string | null
+  updatedAt: string | null
   isArchived: boolean
 }
 
@@ -103,18 +128,50 @@ export function mapUnitRowToUi(row: UnitsListRow): UiUnitRow {
   return {
     id: row.id,
     displayName: row.display_name || '—',
+    internalCode: row.internal_code ?? null,
     propertyId: row.property_id,
     propertyName: row.property_name || '—',
+    landlordName: row.landlord_name ?? null,
+    tenantName: row.tenant_name ?? null,
+    landlordId: row.landlord_id ?? null,
     unitTypeId: row.unit_type_id,
     unitTypeName: row.unit_type_name || '—',
+    unitTypeCode: row.unit_type_code ?? null,
     unitTypeIcon: row.unit_type_icon || null,
     unitTypeColor: row.unit_type_color || null,
+    street: row.street ?? null,
+    houseNumber: row.house_number ?? null,
+    city: row.city ?? null,
+    zip: row.zip ?? null,
+    country: row.country ?? null,
+    region: row.region ?? null,
     floor: row.floor,
+    doorNumber: row.door_number ?? null,
     area: row.area,
     rooms: row.rooms,
+    disposition: row.disposition ?? null,
     status: row.status,
+    tenantId: row.tenant_id ?? null,
+    orientationNumber: row.orientation_number ?? null,
+    yearRenovated: row.year_renovated ?? null,
+    managerName: row.manager_name ?? null,
+    cadastralArea: row.cadastral_area ?? null,
+    parcelNumber: row.parcel_number ?? null,
+    lvNumber: row.lv_number ?? null,
+    note: row.note ?? null,
+    originModule: row.origin_module ?? null,
+    createdAt: row.created_at ?? null,
+    updatedAt: row.updated_at ?? null,
     isArchived: !!row.is_archived,
   }
+}
+
+function normalizeText(value: string) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
 // Local alias for internal use
@@ -133,11 +190,27 @@ function toRow(u: UiUnitRow): ListViewRow<UiUnitRow> {
       ) : (
         <span>{u.unitTypeName}</span>
       ),
+      unitTypeCode: u.unitTypeCode || '—',
       displayName: u.displayName,
+      internalCode: u.internalCode || '—',
       propertyName: u.propertyName || '—',
+      landlordName: u.landlordName || '—',
+      tenantName: u.tenantName || '—',
+      propertyId: u.propertyId || '—',
+      landlordId: u.landlordId || '—',
+      street: u.street || '—',
+      houseNumber: u.houseNumber || '—',
+      city: u.city || '—',
+      zip: u.zip || '—',
+      country: u.country || '—',
+      region: u.region || '—',
       floor: u.floor !== null ? u.floor.toString() : '—',
+      doorNumber: u.doorNumber || '—',
       area: u.area ? `${u.area.toFixed(2)} m²` : '—',
       rooms: u.rooms ? u.rooms.toString() : '—',
+      disposition: u.disposition || '—',
+      orientationNumber: u.orientationNumber || '—',
+      yearRenovated: u.yearRenovated ? u.yearRenovated.toString() : '—',
       status: statusInfo ? (
         <span className="status-badge" style={{ color: statusInfo.color }}>
           {statusInfo.icon} {statusInfo.label}
@@ -145,6 +218,16 @@ function toRow(u: UiUnitRow): ListViewRow<UiUnitRow> {
       ) : (
         <span>—</span>
       ),
+      tenantId: u.tenantId || '—',
+      managerName: u.managerName || '—',
+      cadastralArea: u.cadastralArea || '—',
+      parcelNumber: u.parcelNumber || '—',
+      lvNumber: u.lvNumber || '—',
+      note: u.note || '—',
+      originModule: u.originModule || '—',
+      createdAt: formatDateTime(u.createdAt),
+      updatedAt: formatDateTime(u.updatedAt),
+      isArchived: u.isArchived ? 'Ano' : 'Ne',
     },
     className: u.isArchived ? 'row--archived' : undefined,
     raw: u,
@@ -173,6 +256,7 @@ export default function UnitsTile({
   console.log('🔍 UnitsTile: Renderuji s filtry:', { propertyId, unitTypeCode, status })
   const toast = useToast()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [units, setUnits] = useState<UiUnitRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -220,6 +304,39 @@ export default function UnitsTile({
 
   const fixedFirstKey = 'unitTypeName'
   const requiredKeys = ['displayName']
+
+  useEffect(() => {
+    const id = searchParams?.get('id')?.trim() ?? null
+    const vm = (searchParams?.get('vm')?.trim() || 'list') as LocalViewMode
+
+    if (!id) return
+
+    setSelectedId(id)
+    setViewMode(vm)
+    if (vm === 'relations') {
+      setRelationsUnitId(id)
+      return
+    }
+
+    if (vm !== 'list') {
+      const found = units.find((u) => u.id === id)
+      const minimal = found
+        ? createMinimalUiUnit({
+            id: found.id,
+            propertyId: found.propertyId,
+            unitTypeId: found.unitTypeId,
+            displayName: found.displayName,
+            floor: found.floor,
+            area: found.area,
+            rooms: found.rooms,
+            status: found.status,
+            isArchived: found.isArchived,
+          })
+        : createMinimalUiUnit({ id })
+
+      setDetailUnit(minimal)
+    }
+  }, [searchParams, units])
 
   // Load view prefs
   useEffect(() => {
@@ -319,7 +436,7 @@ export default function UnitsTile({
       if (selectedId) {
         actions.push('view', 'edit', 'relations', 'attachments')
       }
-      actions.push('columnSettings', 'close')
+      actions.push('close')
     } else if (viewMode === 'edit' || viewMode === 'create') {
       if (viewMode === 'edit') {
         actions.push('save', 'relations', 'attachments', 'close')
@@ -562,9 +679,6 @@ export default function UnitsTile({
           }
           break
         
-        case 'columnSettings':
-          setColsOpen(true)
-          break
         
         default:
           logger.warn(`Unknown action: ${id}`)
@@ -582,6 +696,7 @@ export default function UnitsTile({
         propertyId: propertyId || undefined,
         unitTypeId: unitTypeId || undefined,
         status: status || undefined,
+        includeArchived: showArchived,
       })
       
       const mapped = rows.map(mapRowToUi)
@@ -594,7 +709,7 @@ export default function UnitsTile({
     } finally {
       setLoading(false)
     }
-  }, [propertyId, unitTypeId, status, toast])
+  }, [propertyId, unitTypeId, status, showArchived, toast])
 
   useEffect(() => {
     fetchUnits()
@@ -629,11 +744,50 @@ export default function UnitsTile({
     setColPrefs((p) => ({ ...p, colWidths: { ...(p.colWidths ?? {}), [key]: px } }))
   }, [])
 
+  const filteredUnits = useMemo(() => {
+    const f = normalizeText(filterInput)
+    if (!f) return units
+    return units.filter((u) => {
+      const hay = normalizeText([
+        u.unitTypeName,
+        u.unitTypeCode,
+        u.displayName,
+        u.internalCode,
+        u.propertyName,
+        u.landlordName,
+        u.tenantName,
+        u.propertyId,
+        u.landlordId,
+        u.street,
+        u.houseNumber,
+        u.city,
+        u.zip,
+        u.country,
+        u.region,
+        u.status,
+        u.floor,
+        u.rooms,
+        u.area,
+        u.disposition,
+        u.doorNumber,
+        u.tenantId,
+        u.tenantName,
+        u.managerName,
+        u.cadastralArea,
+        u.parcelNumber,
+        u.lvNumber,
+      ]
+        .filter(Boolean)
+        .join(' '))
+      return hay.includes(f)
+    })
+  }, [filterInput, units])
+
   // Sorted rows
   const sortedRows = useMemo(() => {
-    if (!sort) return units
+    if (!sort) return filteredUnits
 
-    return [...units].sort((a, b) => {
+    return [...filteredUnits].sort((a, b) => {
       const aVal = a[sort.key as keyof UiUnitRow]
       const bVal = b[sort.key as keyof UiUnitRow]
       
@@ -649,7 +803,7 @@ export default function UnitsTile({
       const bStr = String(bVal).toLowerCase()
       return sort.dir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
     })
-  }, [units, sort])
+  }, [filteredUnits, sort])
 
   const viewRows = sortedRows.map(toRow)
   
@@ -713,9 +867,10 @@ export default function UnitsTile({
               sort={sort}
               onSortChange={handleSortChange}
               onColumnResize={handleColumnResize}
+              onColumnSettings={() => setColsOpen(true)}
             />
             
-            {units.length === 0 && (
+            {filteredUnits.length === 0 && (
               <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
                 {filterInput ? 'Žádné jednotky nenalezeny' : 'Zatím nemáte žádné jednotky'}
               </div>
