@@ -486,6 +486,6 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
     throw new Error(`Nepodařilo se aktivovat list: ${activateErr.message}`)
   }
 
-  logger.info('activateEvidenceSheet success', { sheetId: draftSheetId })
+  logger.debug('activateEvidenceSheet success', { sheetId: draftSheetId })
   return activated
 }
