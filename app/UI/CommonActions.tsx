@@ -44,6 +44,7 @@ export type CommonActionId =
   | 'import'       // Import
   | 'export'       // Export
   | 'reject'       // Odmítnout
+  | 'release'      // Uvolnit / aktivovat koncept
   // Attachments Manager akce (ONLY)
   | 'attachmentsAdd'        // Přidat přílohu v manageru
   | 'attachmentsEdit'       // Editovat přílohu
@@ -133,6 +134,15 @@ const COMMON_ACTION_DEFS: Record<CommonActionId, CommonActionDefinition> = {
     description: { cs: 'Uložit změny.', en: 'Save changes.' },
     requiresDirty: true,
     hideWhen: ['list', 'read'],
+  },
+
+  release: {
+    id: 'release',
+    icon: 'approve',
+    label: { cs: 'Uvolnit', en: 'Release' },
+    description: { cs: 'Uvolnit koncept a udělat ho aktivním.', en: 'Release draft and make active.' },
+    requiresSelection: true,
+    hideWhen: ['list'],
   },
 
   cancel: {
