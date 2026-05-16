@@ -43,6 +43,7 @@ type Props = {
   onSheetCreated?: (newSheetId: string) => void
   onRegisterCommonActions?: (actions: string[]) => void
   onRegisterCommonActionsState?: (state: { viewMode: string; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionHandler?: (fn: ((id: string) => void) | null) => void
 }
 
 export default function EvidenceSheetModal({
@@ -61,6 +62,7 @@ export default function EvidenceSheetModal({
   readOnly = false,
   onRegisterCommonActions,
   onRegisterCommonActionsState,
+  onRegisterCommonActionHandler,
   onClose,
   onSheetCreated,
 }: Props) {
@@ -202,7 +204,9 @@ export default function EvidenceSheetModal({
     if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
 
     const isLocked = readOnly
-    const actions = ['close']
+    const actions: string[] = ['close']
+    if (!isLocked) actions.unshift('save')
+    if (sheet?.status === 'draft' && !isLocked) actions.unshift('release')
 
     onRegisterCommonActions(actions)
     onRegisterCommonActionsState({
@@ -210,7 +214,54 @@ export default function EvidenceSheetModal({
       hasSelection: !!sheet?.id,
       isDirty: !!pendingValue,
     })
+
+    // Register global handler for common actions (save, close, release)
+    if (onRegisterCommonActionHandler) {
+      onRegisterCommonActionHandler(async (id: string) => {
+        try {
+          if (id === 'save') {
+            if (!pendingValue || !sheet) return
+            // prepare patch
+            const patch: any = {
+              valid_from: pendingValue.validFrom || null,
+              valid_to: pendingValue.validTo || null,
+              replaces_sheet_id: pendingValue.replacesSheetId || null,
+              rent_amount: pendingValue.rentAmount ?? null,
+              description: pendingValue.description || null,
+              notes: pendingValue.notes || null,
+            }
+            await updateEvidenceSheet(sheet.id, patch)
+            toast.showSuccess('Evidenční list uložen')
+            void (async () => {
+              const refreshed = await getEvidenceSheet(sheet.id)
+              setSheet(refreshed)
+            })()
+            return
+          }
+
+          if (id === 'release') {
+            if (!sheet || sheet.status !== 'draft') return
+            await handleActivateSheet()
+            return
+          }
+
+          if (id === 'close') {
+            onClose()
+            return
+          }
+        } catch (err: any) {
+          logger.error('common action handler failed', err)
+          toast.showError(err?.message ?? 'Akce selhala')
+        }
+      })
+    }
   }, [sheet, pendingValue, readOnly, onRegisterCommonActions, onRegisterCommonActionsState])
+
+  useEffect(() => {
+    return () => {
+      if (onRegisterCommonActionHandler) onRegisterCommonActionHandler(null)
+    }
+  }, [onRegisterCommonActionHandler])
 
   if (!sheet) {
     return <div className="detail-form__hint">Načítám evidenční list…</div>
