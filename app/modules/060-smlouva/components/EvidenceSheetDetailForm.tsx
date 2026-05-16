@@ -50,6 +50,7 @@ export default function EvidenceSheetDetailForm({
   sheet,
   contractNumber,
   contractSignedAt,
+  contractValidTo,
   landlordName,
   propertyName,
   unitName,
