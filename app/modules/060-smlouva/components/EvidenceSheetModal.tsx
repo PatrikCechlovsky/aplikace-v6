@@ -212,7 +212,7 @@ export default function EvidenceSheetModal({
 
     onRegisterCommonActions(actions)
     onRegisterCommonActionsState({
-      viewMode: isLocked ? 'view' : 'edit',
+      viewMode: isLocked ? 'read' : 'edit',
       hasSelection: !!sheet?.id,
       isDirty: !!pendingValue,
     })
