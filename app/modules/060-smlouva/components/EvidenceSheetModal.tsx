@@ -10,7 +10,7 @@ import EvidenceSheetDetailForm, { type EvidenceSheetFormValue } from './Evidence
 import EvidenceSheetUsersTab from './EvidenceSheetUsersTab'
 import EvidenceSheetServicesTab from './EvidenceSheetServicesTab'
 import { useToast } from '@/app/UI/Toast'
-import type { CommonActionId } from '@/app/UI/CommonActions'
+import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import createLogger from '@/app/lib/logger'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
@@ -44,7 +44,7 @@ type Props = {
   onUpdated?: () => void
   onSheetCreated?: (newSheetId: string) => void
   onRegisterCommonActions?: (actions: CommonActionId[]) => void
-  onRegisterCommonActionsState?: (state: { viewMode: string; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
   onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
 }
 
