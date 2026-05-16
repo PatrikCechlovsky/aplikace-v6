@@ -206,7 +206,7 @@ export default function EvidenceSheetModal({
     if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
 
     const isLocked = readOnly
-    const actions: string[] = ['close']
+    const actions: CommonActionId[] = ['close']
     if (!isLocked) actions.unshift('save')
     if (sheet?.status === 'draft' && !isLocked) actions.unshift('release')
 
