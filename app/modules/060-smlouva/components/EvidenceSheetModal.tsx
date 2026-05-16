@@ -54,6 +54,7 @@ export default function EvidenceSheetModal({
   tenantBirthDate,
   contractNumber,
   contractSignedAt,
+  contractValidTo,
   landlordName,
   propertyName,
   unitName,
