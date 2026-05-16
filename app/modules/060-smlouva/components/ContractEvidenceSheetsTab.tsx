@@ -14,6 +14,7 @@ import { applyColumnPrefs, loadViewPrefs, saveViewPrefs, type ViewPrefs } from '
 import {
   listEvidenceSheets,
   createEvidenceSheetDraft,
+  deleteEvidenceSheetDraft,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 import {
@@ -36,6 +37,7 @@ type Props = {
   landlordName?: string | null
   propertyName?: string | null
   unitName?: string | null
+  contractValidTo?: string | null
   rentAmount: number | null
   readOnly?: boolean
   onCountChange?: (count: number) => void
@@ -103,6 +105,7 @@ export default function ContractEvidenceSheetsTab({
   contractId,
   contractNumber,
   contractSignedAt,
+  contractValidTo,
   tenantId,
   tenantLabel,
   tenantSubjectType,
@@ -123,6 +126,17 @@ export default function ContractEvidenceSheetsTab({
   const [sort, setSort] = useState<ListViewSortState>(EVIDENCE_SHEETS_DEFAULT_SORT)
   const [colsOpen, setColsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const hasDraft = rows.some((row) => row.status === 'draft')
+  const latestDraftId = rows.reduce<string | null>((current, next) => {
+    if (next.status !== 'draft') return current
+    if (!current) return next.id
+    const currentSheet = rows.find((row) => row.id === current)
+    if (!currentSheet) return next.id
+    return next.sheet_number > currentSheet.sheet_number ? next.id : current
+  }, null)
+  const selectedSheet = selectedId ? rows.find((row) => row.id === selectedId) ?? null : null
+  const selectedIsLastDraft = selectedSheet?.status === 'draft' && selectedSheet.id === latestDraftId
   const [colPrefs, setColPrefs] = useState<Pick<ViewPrefs, 'colWidths' | 'colOrder' | 'colHidden'>>({
     colWidths: {},
     colOrder: [],
@@ -186,11 +200,17 @@ export default function ContractEvidenceSheetsTab({
   }, [])
 
   const handleCreate = useCallback(async () => {
+    if (hasDraft) {
+      toast.showWarning('Nejprve smažte nebo uvolněte existující koncept.')
+      return
+    }
+
     try {
       const created = await createEvidenceSheetDraft({
         contractId,
         rentAmount,
         copyFromLatest: true,
+        contractValidTo: contractValidTo ?? null,
       })
       await load()
       setSelectedId(created.id)
@@ -200,7 +220,28 @@ export default function ContractEvidenceSheetsTab({
       logger.error('create evidence sheet failed', err)
       toast.showError(err?.message ?? 'Nepodařilo se vytvořit evidenční list')
     }
-  }, [contractId, rentAmount, load, toast])
+  }, [contractId, rentAmount, load, toast, hasDraft, contractValidTo])
+
+  const handleDeleteDraft = useCallback(async () => {
+    if (!selectedId || !selectedIsLastDraft) {
+      toast.showWarning('Nelze smazat vybraný evidenční list.')
+      return
+    }
+
+    const confirmed = confirm('Tento koncept bude trvale smazán. Není možné ho obnovit. Pokračovat?')
+    if (!confirmed) return
+
+    try {
+      await deleteEvidenceSheetDraft(selectedId)
+      await load()
+      setSelectedId(null)
+      setViewMode('list')
+      toast.showSuccess('Koncept byl trvale smazán.')
+    } catch (err: any) {
+      logger.error('delete evidence sheet draft failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se smazat koncept')
+    }
+  }, [deleteEvidenceSheetDraft, selectedId, selectedIsLastDraft, load, toast])
 
   const openDetailRead = useCallback((forcedId?: string) => {
     const resolvedId = forcedId ?? selectedId
@@ -324,7 +365,13 @@ export default function ContractEvidenceSheetsTab({
             <h3 className="detail-form__section-title">Seznam evidenčních listů</h3>
             <div style={{ display: 'flex', gap: 8 }}>
               {!readOnly && (
-                <button type="button" className="common-actions__btn" onClick={handleCreate}>
+                <button
+                  type="button"
+                  className="common-actions__btn"
+                  onClick={handleCreate}
+                  disabled={hasDraft}
+                  title={hasDraft ? 'Nejprve smažte nebo uvolněte existující koncept.' : undefined}
+                >
                   <span className="common-actions__icon">{getIcon('add' as IconKey)}</span>
                   <span className="common-actions__label">Nový</span>
                 </button>
@@ -417,10 +464,18 @@ export default function ContractEvidenceSheetsTab({
             <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
               Detail evidenčního listu
             </h3>
-            <button type="button" className="common-actions__btn" onClick={() => setViewMode('list')}>
-              <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
-              <span className="common-actions__label">Zavřít</span>
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {selectedIsLastDraft && !readOnly && (
+                <button type="button" className="common-actions__btn" onClick={handleDeleteDraft}>
+                  <span className="common-actions__icon">{getIcon('trash' as IconKey)}</span>
+                  <span className="common-actions__label">Smazat</span>
+                </button>
+              )}
+              <button type="button" className="common-actions__btn" onClick={() => setViewMode('list')}>
+                <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+                <span className="common-actions__label">Zavřít</span>
+              </button>
+            </div>
           </div>
 
           <EvidenceSheetDetailFrame
@@ -435,6 +490,7 @@ export default function ContractEvidenceSheetsTab({
             unitName={unitName}
             contractNumber={contractNumber}
             contractSignedAt={contractSignedAt}
+            contractValidTo={contractValidTo}
             readOnly={readOnly}
           />
         </section>

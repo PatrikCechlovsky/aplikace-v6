@@ -33,6 +33,7 @@ type Props = {
   tenantBirthDate?: string | null
   contractNumber: string | null
   contractSignedAt: string | null
+  contractValidTo?: string | null
   landlordName?: string | null
   propertyName?: string | null
   unitName?: string | null
@@ -150,6 +151,12 @@ export default function EvidenceSheetModal({
 
   const handleCopySheet = async () => {
     if (!sheet) return
+
+    if (contractValidTo && sheet.valid_to && sheet.valid_to > contractValidTo) {
+      toast.showWarning(`Platný do nesmí být později než konec smlouvy ${contractValidTo}.`)
+      return
+    }
+
     try {
       setIsProcessing(true)
       const newSheet = await createEvidenceSheetDraft({
@@ -158,6 +165,7 @@ export default function EvidenceSheetModal({
         copyFromLatest: true,
         validFrom: sheet.valid_from,
         validTo: sheet.valid_to,
+        contractValidTo: contractValidTo ?? null,
       })
       toast.showSuccess('Evidenční list kopírován. Otevírám novou verzi…')
       if (onSheetCreated) {
@@ -327,6 +335,7 @@ export default function EvidenceSheetModal({
                 sheet={sheet}
                 contractNumber={contractNumber}
                 contractSignedAt={contractSignedAt}
+                contractValidTo={contractValidTo}
                 landlordName={landlordName}
                 propertyName={propertyName}
                 unitName={unitName}

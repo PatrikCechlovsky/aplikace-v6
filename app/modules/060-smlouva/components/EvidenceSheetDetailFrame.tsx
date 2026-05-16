@@ -14,6 +14,7 @@ import createLogger from '@/app/lib/logger'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
   getEvidenceSheet,
+  listEvidenceSheets,
   listEvidenceSheetServices,
   listEvidenceSheetUsers,
   type EvidenceSheetRow,
@@ -30,6 +31,7 @@ type Props = {
   tenantBirthDate?: string | null
   contractNumber: string | null
   contractSignedAt: string | null
+  contractValidTo?: string | null
   landlordName?: string | null
   propertyName?: string | null
   unitName?: string | null
@@ -62,13 +64,22 @@ export default function EvidenceSheetDetailFrame({
 
     async function load() {
       try {
-        const current = await getEvidenceSheet(sheetId)
+        const [current, allSheets] = await Promise.all([
+          getEvidenceSheet(sheetId),
+          listEvidenceSheets(contractId, true),
+        ])
 
         if (!mounted) return
 
         setSheet(current)
-
-        setReplaceOptions([])
+        setReplaceOptions(
+          allSheets
+            .filter((s) => s.id !== sheetId)
+            .map((s) => ({
+              id: s.id,
+              label: `Evidenční list č. ${s.sheet_number}`,
+            }))
+        )
       } catch (err: any) {
         logger.error('load evidence sheet failed', err)
         toast.showError(err?.message ?? 'Nepodařilo se načíst evidenční list')

@@ -130,8 +130,25 @@ export async function createEvidenceSheetDraft(params: {
   copyFromLatest?: boolean
   validFrom?: string | null
   validTo?: string | null
+  contractValidTo?: string | null
 }): Promise<EvidenceSheetRow> {
   logger.debug('createEvidenceSheetDraft', params)
+
+  const { data: existingDraftRows, error: draftErr } = await supabase
+    .from('contract_evidence_sheets')
+    .select('id')
+    .eq('contract_id', params.contractId)
+    .eq('status', 'draft')
+    .limit(1)
+
+  if (draftErr) {
+    logger.error('createEvidenceSheet check existing draft failed', draftErr)
+    throw new Error(`Nepodařilo se ověřit existující koncept: ${draftErr.message}`)
+  }
+
+  if (existingDraftRows && existingDraftRows.length > 0) {
+    throw new Error('Existuje již koncept evidenčního listu. Nejprve ho dokončete nebo smažte.')
+  }
 
   const { data: latestRows, error: latestErr } = await supabase
     .from('contract_evidence_sheets')
@@ -151,13 +168,21 @@ export async function createEvidenceSheetDraft(params: {
     ? `Nahrazuje list č. ${latest.sheet_number}${latest.valid_from ? ` ze dne ${latest.valid_from}` : ''}`
     : null
 
+  const validFrom = params.copyFromLatest ? params.validFrom ?? latest?.valid_from ?? null : params.validFrom ?? null
+  const validTo = params.copyFromLatest ? params.validTo ?? latest?.valid_to ?? null : params.validTo ?? null
+
+  // Server-side validation: validTo must not be later than contract end date
+  if (params.contractValidTo && validTo && validTo > params.contractValidTo) {
+    throw new Error(`Platný do nesmí být později než konec smlouvy ${params.contractValidTo}.`)
+  }
+
   const { data: inserted, error: insertErr } = await supabase
     .from('contract_evidence_sheets')
     .insert({
       contract_id: params.contractId,
       sheet_number: nextNumber,
-      valid_from: params.validFrom ?? null,
-      valid_to: params.validTo ?? null,
+      valid_from: validFrom,
+      valid_to: validTo,
       replaces_sheet_id: latest?.id ?? null,
       rent_amount: params.rentAmount,
       total_persons: 1,
@@ -182,6 +207,46 @@ export async function createEvidenceSheetDraft(params: {
   }
 
   return inserted
+}
+
+export async function deleteEvidenceSheetDraft(sheetId: string): Promise<void> {
+  logger.debug('deleteEvidenceSheetDraft', { sheetId })
+
+  const sheet = await getEvidenceSheet(sheetId)
+  if (!sheet) {
+    throw new Error('Evidenční list nenalezen.')
+  }
+
+  if (sheet.status !== 'draft') {
+    throw new Error('Lze smazat pouze koncept evidenčního listu.')
+  }
+
+  const { data: latestRows, error: latestErr } = await supabase
+    .from('contract_evidence_sheets')
+    .select('id, sheet_number')
+    .eq('contract_id', sheet.contract_id)
+    .order('sheet_number', { ascending: false })
+    .limit(1)
+
+  if (latestErr) {
+    logger.error('deleteEvidenceSheetDraft load latest failed', latestErr)
+    throw new Error(`Nepodařilo se ověřit poslední list: ${latestErr.message}`)
+  }
+
+  const latest = latestRows?.[0] ?? null
+  if (!latest || latest.id !== sheetId) {
+    throw new Error('Lze smazat pouze poslední koncept evidenčního listu.')
+  }
+
+  const { error: deleteErr } = await supabase
+    .from('contract_evidence_sheets')
+    .delete()
+    .eq('id', sheetId)
+
+  if (deleteErr) {
+    logger.error('deleteEvidenceSheetDraft failed', deleteErr)
+    throw new Error(`Nepodařilo se smazat evidenční list: ${deleteErr.message}`)
+  }
 }
 
 async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {

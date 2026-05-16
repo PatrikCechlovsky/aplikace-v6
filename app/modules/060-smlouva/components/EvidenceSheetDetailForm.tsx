@@ -26,6 +26,7 @@ type Props = {
   sheet: EvidenceSheetRow
   contractNumber: string | null
   contractSignedAt: string | null
+  contractValidTo?: string | null
   landlordName?: string | null
   propertyName?: string | null
   unitName?: string | null
@@ -74,12 +75,27 @@ export default function EvidenceSheetDetailForm({
   )
 
   const [formVal, setFormVal] = useState<EvidenceSheetFormValue>(() => buildValue(sheet))
+  const [validToError, setValidToError] = useState('')
   const sheetRef = useRef(sheet)
 
   useEffect(() => {
     sheetRef.current = sheet
     setFormVal(buildValue(sheet))
   }, [sheet, buildValue])
+
+  useEffect(() => {
+    if (!contractValidTo || !formVal.validTo) {
+      setValidToError('')
+      return
+    }
+
+    if (formVal.validTo > contractValidTo) {
+      setValidToError(`Platný do nesmí být později než konec smlouvy ${contractValidTo}.`)
+      return
+    }
+
+    setValidToError('')
+  }, [contractValidTo, formVal.validTo])
 
   const update = useCallback((patch: Partial<EvidenceSheetFormValue>) => {
     setFormVal((prev) => {
@@ -132,6 +148,7 @@ export default function EvidenceSheetDetailForm({
               onChange={(e) => update({ validTo: e.target.value })}
               readOnly={readOnly}
             />
+            {validToError ? <div className="detail-form__hint detail-form__hint--error">{validToError}</div> : null}
           </div>
         </div>
 
