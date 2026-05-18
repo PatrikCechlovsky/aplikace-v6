@@ -601,6 +601,9 @@ export default function ContractsTile({
           propertyName={detailContract.property_name || null}
           unitName={detailContract.unit_name || null}
           readOnly={evidenceReadOnly}
+          onRegisterCommonActions={(acts) => onRegisterCommonActions && onRegisterCommonActions(acts)}
+          onRegisterCommonActionsState={(s) => onRegisterCommonActionsState && onRegisterCommonActionsState(s)}
+          onRegisterCommonActionHandler={onRegisterCommonActionHandler}
           onClose={() => {
             router.push(`${pathname}?t=contracts-list&id=${selectedId}&vm=read`)
           }}

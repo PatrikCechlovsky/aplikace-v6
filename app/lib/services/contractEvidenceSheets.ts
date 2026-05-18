@@ -8,6 +8,17 @@ import type { TenantUser } from './tenantUsers'
 
 const logger = createLogger('contractEvidenceSheets.service')
 
+function formatIsoDate(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
+
+function subtractOneDay(dateString: string): string | null {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return null
+  date.setDate(date.getDate() - 1)
+  return formatIsoDate(date)
+}
+
 export type EvidenceSheetStatus = 'draft' | 'active' | 'archived'
 
 export type EvidenceSheetRow = {
@@ -130,8 +141,25 @@ export async function createEvidenceSheetDraft(params: {
   copyFromLatest?: boolean
   validFrom?: string | null
   validTo?: string | null
+  contractValidTo?: string | null
 }): Promise<EvidenceSheetRow> {
   logger.debug('createEvidenceSheetDraft', params)
+
+  const { data: existingDraftRows, error: draftErr } = await supabase
+    .from('contract_evidence_sheets')
+    .select('id')
+    .eq('contract_id', params.contractId)
+    .eq('status', 'draft')
+    .limit(1)
+
+  if (draftErr) {
+    logger.error('createEvidenceSheet check existing draft failed', draftErr)
+    throw new Error(`Nepodařilo se ověřit existující koncept: ${draftErr.message}`)
+  }
+
+  if (existingDraftRows && existingDraftRows.length > 0) {
+    throw new Error('Existuje již koncept evidenčního listu. Nejprve ho dokončete nebo smažte.')
+  }
 
   const { data: latestRows, error: latestErr } = await supabase
     .from('contract_evidence_sheets')
@@ -151,13 +179,21 @@ export async function createEvidenceSheetDraft(params: {
     ? `Nahrazuje list č. ${latest.sheet_number}${latest.valid_from ? ` ze dne ${latest.valid_from}` : ''}`
     : null
 
+  const validFrom = params.copyFromLatest ? params.validFrom ?? latest?.valid_from ?? null : params.validFrom ?? null
+  const validTo = params.copyFromLatest ? params.validTo ?? latest?.valid_to ?? null : params.validTo ?? null
+
+  // Server-side validation: validTo must not be later than contract end date
+  if (params.contractValidTo && validTo && validTo > params.contractValidTo) {
+    throw new Error(`Platný do nesmí být později než konec smlouvy ${params.contractValidTo}.`)
+  }
+
   const { data: inserted, error: insertErr } = await supabase
     .from('contract_evidence_sheets')
     .insert({
       contract_id: params.contractId,
       sheet_number: nextNumber,
-      valid_from: params.validFrom ?? null,
-      valid_to: params.validTo ?? null,
+      valid_from: validFrom,
+      valid_to: validTo,
       replaces_sheet_id: latest?.id ?? null,
       rent_amount: params.rentAmount,
       total_persons: 1,
@@ -177,11 +213,51 @@ export async function createEvidenceSheetDraft(params: {
   // Kopírování proběhne asynchronně na pozadí (bez await)
   if (params.copyFromLatest && latest?.id) {
     copyEvidenceSheetData(latest.id, inserted.id)
-      .then(() => logger.info('Background copy completed'))
+      .then(() => logger.debug('Background copy completed'))
       .catch((err) => logger.error('Background copy failed', err))
   }
 
   return inserted
+}
+
+export async function deleteEvidenceSheetDraft(sheetId: string): Promise<void> {
+  logger.debug('deleteEvidenceSheetDraft', { sheetId })
+
+  const sheet = await getEvidenceSheet(sheetId)
+  if (!sheet) {
+    throw new Error('Evidenční list nenalezen.')
+  }
+
+  if (sheet.status !== 'draft') {
+    throw new Error('Lze smazat pouze koncept evidenčního listu.')
+  }
+
+  const { data: latestRows, error: latestErr } = await supabase
+    .from('contract_evidence_sheets')
+    .select('id, sheet_number')
+    .eq('contract_id', sheet.contract_id)
+    .order('sheet_number', { ascending: false })
+    .limit(1)
+
+  if (latestErr) {
+    logger.error('deleteEvidenceSheetDraft load latest failed', latestErr)
+    throw new Error(`Nepodařilo se ověřit poslední list: ${latestErr.message}`)
+  }
+
+  const latest = latestRows?.[0] ?? null
+  if (!latest || latest.id !== sheetId) {
+    throw new Error('Lze smazat pouze poslední koncept evidenčního listu.')
+  }
+
+  const { error: deleteErr } = await supabase
+    .from('contract_evidence_sheets')
+    .delete()
+    .eq('id', sheetId)
+
+  if (deleteErr) {
+    logger.error('deleteEvidenceSheetDraft failed', deleteErr)
+    throw new Error(`Nepodařilo se smazat evidenční list: ${deleteErr.message}`)
+  }
 }
 
 async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
@@ -241,7 +317,7 @@ async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
       })
     }
 
-    logger.info('copyEvidenceSheetData success')
+    logger.debug('copyEvidenceSheetData success')
   } catch (err: any) {
     logger.error('copyEvidenceSheetData failed', err)
     throw new Error(`Nepodařilo se zkopírovat data evidenčního listu: ${err?.message ?? 'neznámá chyba'}`)
@@ -450,7 +526,7 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
   // 2. Najdi současný aktivní list (na stejné smlouvě)
   const { data: activeSheets, error: activeErr } = await supabase
     .from('contract_evidence_sheets')
-    .select('id')
+    .select('id, valid_to')
     .eq('contract_id', draft.contract_id)
     .eq('status', 'active')
     .limit(1)
@@ -460,12 +536,22 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
     throw new Error(`Nepodařilo se najít aktivní list: ${activeErr.message}`)
   }
 
-  // 3. Archivuj předchozí aktivní list (pokud existuje)
+  // 3. Archivuj předchozí aktivní list (pokud existuje) a uprav jeho platnost
   if (activeSheets && activeSheets.length > 0) {
+    const previous = activeSheets[0]
+    const archivePatch: Record<string, string | null> = { status: 'archived' }
+
+    if (draft.valid_from) {
+      const adjustedValidTo = previous.valid_to && previous.valid_to >= draft.valid_from ? subtractOneDay(draft.valid_from) : null
+      if (adjustedValidTo) {
+        archivePatch.valid_to = adjustedValidTo
+      }
+    }
+
     const { error: archiveErr } = await supabase
       .from('contract_evidence_sheets')
-      .update({ status: 'archived' })
-      .eq('id', activeSheets[0].id)
+      .update(archivePatch)
+      .eq('id', previous.id)
 
     if (archiveErr) {
       logger.error('activateEvidenceSheet archive previous failed', archiveErr)
@@ -486,6 +572,6 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
     throw new Error(`Nepodařilo se aktivovat list: ${activateErr.message}`)
   }
 
-  logger.info('activateEvidenceSheet success', { sheetId: draftSheetId })
+  logger.debug('activateEvidenceSheet success', { sheetId: draftSheetId })
   return activated
 }
