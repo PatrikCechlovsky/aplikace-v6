@@ -4,9 +4,9 @@
 
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import DetailView, { type DetailSectionId, type DetailViewMode } from '@/app/UI/DetailView'
-import EvidenceSheetDetailForm from './EvidenceSheetDetailForm'
+import EvidenceSheetDetailForm, { type EvidenceSheetFormValue } from './EvidenceSheetDetailForm'
 import EvidenceSheetUsersTab from './EvidenceSheetUsersTab'
 import EvidenceSheetServicesTab from './EvidenceSheetServicesTab'
 import { useToast } from '@/app/UI/Toast'
@@ -17,6 +17,8 @@ import {
   listEvidenceSheets,
   listEvidenceSheetServices,
   listEvidenceSheetUsers,
+  updateEvidenceSheet,
+  activateEvidenceSheet,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 
@@ -36,6 +38,7 @@ type Props = {
   propertyName?: string | null
   unitName?: string | null
   readOnly?: boolean
+  onSheetUpdated?: () => Promise<void> | void
 }
 
 export default function EvidenceSheetDetailFrame({
@@ -47,10 +50,12 @@ export default function EvidenceSheetDetailFrame({
   tenantBirthDate,
   contractNumber,
   contractSignedAt,
+  contractValidTo,
   landlordName,
   propertyName,
   unitName,
   readOnly = false,
+  onSheetUpdated,
 }: Props) {
   const toast = useToast()
   const [sheet, setSheet] = useState<EvidenceSheetRow | null>(null)
@@ -58,6 +63,52 @@ export default function EvidenceSheetDetailFrame({
   const [attachmentsCount, setAttachmentsCount] = useState(0)
   const [usersCount, setUsersCount] = useState(0)
   const [servicesCount, setServicesCount] = useState(0)
+  const [pendingValue, setPendingValue] = useState<EvidenceSheetFormValue | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const handleSave = useCallback(async () => {
+    if (!sheet || !pendingValue) return
+
+    setIsProcessing(true)
+    try {
+      const patch: Partial<EvidenceSheetRow> = {
+        valid_from: pendingValue.validFrom || null,
+        valid_to: pendingValue.validTo || null,
+        replaces_sheet_id: pendingValue.replacesSheetId || null,
+        rent_amount: pendingValue.rentAmount ?? null,
+        description: pendingValue.description || null,
+        notes: pendingValue.notes || null,
+      }
+      const updated = await updateEvidenceSheet(sheet.id, patch)
+      setSheet(updated)
+      setPendingValue(null)
+      toast.showSuccess('Evidenční list uložen')
+      await onSheetUpdated?.()
+    } catch (err: any) {
+      logger.error('save evidence sheet failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se uložit evidenční list')
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [sheet, pendingValue, toast, onSheetUpdated])
+
+  const handleRelease = useCallback(async () => {
+    if (!sheet || sheet.status !== 'draft') return
+
+    setIsProcessing(true)
+    try {
+      const activated = await activateEvidenceSheet(sheet.id)
+      setSheet(activated)
+      setPendingValue(null)
+      toast.showSuccess('Evidenční list aktivován')
+      await onSheetUpdated?.()
+    } catch (err: any) {
+      logger.error('activate evidence sheet failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se aktivovat evidenční list')
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [sheet, toast, onSheetUpdated])
 
   useEffect(() => {
     let mounted = true
@@ -167,16 +218,30 @@ export default function EvidenceSheetDetailFrame({
 
   const isLocked = readOnly
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
-console.log('🎨 EvidenceSheetDetailFrame render:', {
-    usersCount,
-    servicesCount,
-    attachmentsCount,
-    sectionCounts: { users: usersCount, services: servicesCount, attachments: attachmentsCount }
-  })
 
-  
   return (
-    <DetailView
+    <div>
+      {!isLocked && sheet.status === 'draft' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
+          <button
+            type="button"
+            className="common-actions__btn"
+            onClick={handleSave}
+            disabled={isProcessing || !pendingValue}
+          >
+            <span className="common-actions__label">Uložit</span>
+          </button>
+          <button
+            type="button"
+            className="common-actions__btn"
+            onClick={handleRelease}
+            disabled={isProcessing}
+          >
+            <span className="common-actions__label">Uvolnit</span>
+          </button>
+        </div>
+      )}
+      <DetailView
       mode={detailViewMode}
       sectionIds={['detail', 'users', 'services', 'attachments', 'system'] as DetailSectionId[]}
       ctx={{
@@ -195,12 +260,14 @@ console.log('🎨 EvidenceSheetDetailFrame render:', {
             sheet={sheet}
             contractNumber={contractNumber}
             contractSignedAt={contractSignedAt}
+            contractValidTo={contractValidTo}
             landlordName={landlordName}
             propertyName={propertyName}
             unitName={unitName}
             tenantLabel={tenantLabel}
             readOnly={isLocked}
             replaceOptions={replaceOptions}
+            onValueChange={setPendingValue}
           />
         ),
         usersContent: (
@@ -226,5 +293,6 @@ console.log('🎨 EvidenceSheetDetailFrame render:', {
         systemBlocks,
       }}
     />
+    </div>
   )
 }

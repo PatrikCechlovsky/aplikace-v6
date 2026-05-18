@@ -492,6 +492,7 @@ export default function ContractEvidenceSheetsTab({
             contractSignedAt={contractSignedAt}
             contractValidTo={contractValidTo}
             readOnly={readOnly}
+            onSheetUpdated={load}
           />
         </section>
       )}

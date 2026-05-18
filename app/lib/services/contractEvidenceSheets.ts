@@ -8,6 +8,17 @@ import type { TenantUser } from './tenantUsers'
 
 const logger = createLogger('contractEvidenceSheets.service')
 
+function formatIsoDate(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
+
+function subtractOneDay(dateString: string): string | null {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return null
+  date.setDate(date.getDate() - 1)
+  return formatIsoDate(date)
+}
+
 export type EvidenceSheetStatus = 'draft' | 'active' | 'archived'
 
 export type EvidenceSheetRow = {
@@ -515,7 +526,7 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
   // 2. Najdi současný aktivní list (na stejné smlouvě)
   const { data: activeSheets, error: activeErr } = await supabase
     .from('contract_evidence_sheets')
-    .select('id')
+    .select('id, valid_to')
     .eq('contract_id', draft.contract_id)
     .eq('status', 'active')
     .limit(1)
@@ -525,12 +536,22 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
     throw new Error(`Nepodařilo se najít aktivní list: ${activeErr.message}`)
   }
 
-  // 3. Archivuj předchozí aktivní list (pokud existuje)
+  // 3. Archivuj předchozí aktivní list (pokud existuje) a uprav jeho platnost
   if (activeSheets && activeSheets.length > 0) {
+    const previous = activeSheets[0]
+    const archivePatch: Record<string, string | null> = { status: 'archived' }
+
+    if (draft.valid_from) {
+      const adjustedValidTo = previous.valid_to && previous.valid_to >= draft.valid_from ? subtractOneDay(draft.valid_from) : null
+      if (adjustedValidTo) {
+        archivePatch.valid_to = adjustedValidTo
+      }
+    }
+
     const { error: archiveErr } = await supabase
       .from('contract_evidence_sheets')
-      .update({ status: 'archived' })
-      .eq('id', activeSheets[0].id)
+      .update(archivePatch)
+      .eq('id', previous.id)
 
     if (archiveErr) {
       logger.error('activateEvidenceSheet archive previous failed', archiveErr)
