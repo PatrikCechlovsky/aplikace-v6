@@ -15,6 +15,7 @@ import {
   listEvidenceSheets,
   createEvidenceSheetDraft,
   deleteEvidenceSheetDraft,
+  activateEvidenceSheet,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 import {
@@ -243,6 +244,28 @@ export default function ContractEvidenceSheetsTab({
     }
   }, [deleteEvidenceSheetDraft, selectedId, selectedIsLastDraft, load, toast])
 
+  const handleReleaseFromList = useCallback(async () => {
+    if (!selectedId) {
+      toast.showWarning('Nejprve vyberte evidenční list')
+      return
+    }
+
+    const sheet = rows.find((r) => r.id === selectedId)
+    if (!sheet || sheet.status !== 'draft') {
+      toast.showWarning('Lze uvolnit pouze koncept')
+      return
+    }
+
+    try {
+      await activateEvidenceSheet(selectedId)
+      await load()
+      toast.showSuccess('Evidenční list byl aktivován')
+    } catch (err: any) {
+      logger.error('activate evidence sheet failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se aktivovat evidenční list')
+    }
+  }, [selectedId, rows, load, toast])
+
   const openDetailRead = useCallback((forcedId?: string) => {
     const resolvedId = forcedId ?? selectedId
     if (!resolvedId) {
@@ -386,6 +409,18 @@ export default function ContractEvidenceSheetsTab({
                     <button type="button" className="common-actions__btn" onClick={openDetailEdit}>
                       <span className="common-actions__icon">{getIcon('edit' as IconKey)}</span>
                       <span className="common-actions__label">Editovat</span>
+                    </button>
+                  )}
+                  {selectedSheet?.status === 'draft' && !readOnly && (
+                    <button type="button" className="common-actions__btn" onClick={handleReleaseFromList}>
+                      <span className="common-actions__icon">{getIcon('approve' as IconKey)}</span>
+                      <span className="common-actions__label">Uvolnit</span>
+                    </button>
+                  )}
+                  {selectedIsLastDraft && !readOnly && (
+                    <button type="button" className="common-actions__btn" onClick={handleDeleteDraft}>
+                      <span className="common-actions__icon">{getIcon('trash' as IconKey)}</span>
+                      <span className="common-actions__label">Smazat</span>
                     </button>
                   )}
                 </>
