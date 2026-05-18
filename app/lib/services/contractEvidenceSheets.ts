@@ -19,6 +19,89 @@ function subtractOneDay(dateString: string): string | null {
   return formatIsoDate(date)
 }
 
+function normalizeText(value: string | null | undefined): string {
+  return String(value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+}
+
+function isAreaUnit(value: string | null | undefined): boolean {
+  const normalized = normalizeText(value)
+  return normalized.includes('m2') || normalized.includes('m²') || normalized.includes('metru') || normalized.includes('metr')
+}
+
+function isPersonUnit(value: string | null | undefined): boolean {
+  const normalized = normalizeText(value)
+  return normalized.includes('osob') || normalized.includes('osoba') || normalized.includes('person') || normalized.includes('persons')
+}
+
+async function getContractUnitArea(contractId: string): Promise<number | null> {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('unit:units!contracts_unit_id_fkey(area)')
+    .eq('id', contractId)
+    .single()
+
+  if (error) {
+    logger.error('getContractUnitArea failed', { contractId, error })
+    return null
+  }
+
+  const unit = Array.isArray(data?.unit) ? data?.unit[0] : data?.unit
+  return unit?.area ?? null
+}
+
+async function loadServiceUnitInfo(serviceIds: string[]): Promise<Record<string, { unitName: string | null; billingTypeName: string | null }>> {
+  if (!serviceIds.length) return {}
+
+  const { data, error } = await supabase
+    .from('service_catalog')
+    .select('id, unit:unit_id(name), billing_type:billing_type_id(name)')
+    .in('id', serviceIds)
+
+  if (error) {
+    logger.error('loadServiceUnitInfo failed', { serviceIds, error })
+    return {}
+  }
+
+  return (data ?? []).reduce((acc: Record<string, { unitName: string | null; billingTypeName: string | null }>, row: any) => {
+    const unit = Array.isArray(row.unit) ? row.unit[0] : row.unit
+    const billingType = Array.isArray(row.billing_type) ? row.billing_type[0] : row.billing_type
+    acc[row.id] = {
+      unitName: unit?.name ?? null,
+      billingTypeName: billingType?.name ?? null,
+    }
+    return acc
+  }, {})
+}
+
+function resolveEvidenceSheetQuantity(
+  currentQuantity: number,
+  totalPersons: number,
+  unitArea: number | null,
+  unitName: string | null,
+  billingTypeName: string | null,
+  unitType: 'flat' | 'person'
+): number {
+  const referencedName = `${unitName ?? ''} ${billingTypeName ?? ''}`.trim()
+
+  if (isPersonUnit(referencedName) || unitType === 'person') {
+    return Math.max(1, totalPersons)
+  }
+
+  if (isAreaUnit(referencedName) && unitArea !== null) {
+    return Math.max(1, Math.round(unitArea))
+  }
+
+  return currentQuantity || 1
+}
+
+function resolveEvidenceSheetAmount(unitPrice: number, quantity: number): number {
+  return Number(unitPrice ?? 0) * quantity
+}
+
 export type EvidenceSheetStatus = 'draft' | 'active' | 'archived'
 
 export type EvidenceSheetRow = {
@@ -289,9 +372,23 @@ async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
 
     logger.debug('copyEvidenceSheetData users set')
 
+    const serviceIds = services.filter((s) => !!s.service_id).map((s) => s.service_id as string)
+    const serviceUnitInfo = await loadServiceUnitInfo(serviceIds)
+    const unitArea = sheet?.contract_id ? await getContractUnitArea(sheet.contract_id) : null
+
     const updatedServices = services.map((s, idx) => {
-      const quantity = s.unit_type === 'person' ? totalPersons : s.quantity
-      const total = Number(s.unit_price) * quantity
+      const serviceInfo = s.service_id ? serviceUnitInfo[s.service_id] : null
+      const unitName = serviceInfo?.unitName ?? null
+      const billingTypeName = serviceInfo?.billingTypeName ?? null
+      const quantity = resolveEvidenceSheetQuantity(
+        s.quantity,
+        totalPersons,
+        unitArea,
+        unitName,
+        billingTypeName,
+        s.unit_type
+      )
+      const total = resolveEvidenceSheetAmount(Number(s.unit_price), quantity)
       return {
         service_id: s.service_id ?? null,
         service_name: s.service_name,
@@ -460,18 +557,38 @@ export async function saveEvidenceSheetServices(sheetId: string, services: Evide
   }
 
   if (services.length) {
-    const payload = services.map((s, idx) => ({
-      sheet_id: sheetId,
-      service_id: s.service_id ?? null,
-      service_name: s.service_name,
-      unit_type: s.unit_type,
-      unit_price: s.unit_price,
-      quantity: s.quantity,
-      total_amount: s.total_amount,
-      order_index: s.order_index ?? idx,
-      valid_from: s.valid_from ?? null,
-      valid_to: s.valid_to ?? null,
-    }))
+    const sheet = await getEvidenceSheet(sheetId)
+    const serviceIds = services.filter((s) => !!s.service_id).map((s) => s.service_id as string)
+    const serviceUnitInfo = await loadServiceUnitInfo(serviceIds)
+    const unitArea = sheet?.contract_id ? await getContractUnitArea(sheet.contract_id) : null
+
+    const payload = services.map((s, idx) => {
+      const serviceInfo = s.service_id ? serviceUnitInfo[s.service_id] : null
+      const unitName = serviceInfo?.unitName ?? null
+      const billingTypeName = serviceInfo?.billingTypeName ?? null
+      const quantity = resolveEvidenceSheetQuantity(
+        s.quantity,
+        sheet?.total_persons ?? 1,
+        unitArea,
+        unitName,
+        billingTypeName,
+        s.unit_type
+      )
+      const total = resolveEvidenceSheetAmount(s.unit_price, quantity)
+
+      return {
+        sheet_id: sheetId,
+        service_id: s.service_id ?? null,
+        service_name: s.service_name,
+        unit_type: s.unit_type,
+        unit_price: s.unit_price,
+        quantity,
+        total_amount: total,
+        order_index: s.order_index ?? idx,
+        valid_from: s.valid_from ?? null,
+        valid_to: s.valid_to ?? null,
+      }
+    })
 
     const { error: insertErr } = await supabase
       .from('contract_evidence_sheet_services')
@@ -481,10 +598,19 @@ export async function saveEvidenceSheetServices(sheetId: string, services: Evide
       logger.error('saveEvidenceSheetServices insert failed', insertErr)
       throw new Error(`Nepodařilo se uložit služby evidenčního listu: ${insertErr.message}`)
     }
+
+    const servicesTotal = payload.reduce((sum, item) => sum + item.total_amount, 0)
+    const updatedSheet = await getEvidenceSheet(sheetId)
+    const totalAmount = (updatedSheet?.rent_amount ?? 0) + servicesTotal
+
+    if (updatedSheet) {
+      await updateEvidenceSheet(sheetId, { services_total: servicesTotal, total_amount: totalAmount })
+    }
+    return
   }
 
   const sheet = await getEvidenceSheet(sheetId)
-  const servicesTotal = services.reduce((sum, s) => sum + (s.total_amount || 0), 0)
+  const servicesTotal = 0
   const totalAmount = (sheet?.rent_amount ?? 0) + servicesTotal
 
   if (sheet) {
