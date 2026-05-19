@@ -151,7 +151,6 @@ export default function EvidenceSheetDetailFrame({
       try {
         const servicesRows = await listEvidenceSheetServices(sheetId)
         if (mounted) {
-          console.log('🔢 EvidenceSheetDetailFrame: Setting servicesCount =', servicesRows.length)
           setServicesCount(servicesRows.length)
         }
       } catch (err: any) {
@@ -174,7 +173,6 @@ export default function EvidenceSheetDetailFrame({
         if (mounted) {
           const baseCount = tenantId ? 1 : 0
           const finalCount = baseCount + usersRows.length
-          console.log('🔢 EvidenceSheetDetailFrame: Setting usersCount =', finalCount, '(tenant:', baseCount, '+ users:', usersRows.length, ')')
           setUsersCount(finalCount)
         }
       } catch (err: any) {
@@ -220,9 +218,9 @@ export default function EvidenceSheetDetailFrame({
   const detailViewMode: DetailViewMode = isLocked ? 'view' : 'edit'
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {!isLocked && sheet.status === 'draft' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12, flexShrink: 0 }}>
           <button
             type="button"
             className="common-actions__btn"
@@ -241,58 +239,60 @@ export default function EvidenceSheetDetailFrame({
           </button>
         </div>
       )}
-      <DetailView
-      mode={detailViewMode}
-      sectionIds={['detail', 'users', 'services', 'attachments', 'system'] as DetailSectionId[]}
-      ctx={{
-        entityType: 'contract_evidence_sheets',
-        entityId: sheet.id,
-        entityLabel: `Evidenční list č. ${sheet.sheet_number}`,
-        mode: detailViewMode,
-        onAttachmentsCountChange: setAttachmentsCount,
-        sectionCounts: {
-          users: usersCount,
-          services: servicesCount,
-          attachments: attachmentsCount,
-        },
-        detailContent: (
-          <EvidenceSheetDetailForm
-            sheet={sheet}
-            contractNumber={contractNumber}
-            contractSignedAt={contractSignedAt}
-            contractValidTo={contractValidTo}
-            landlordName={landlordName}
-            propertyName={propertyName}
-            unitName={unitName}
-            tenantLabel={tenantLabel}
-            readOnly={isLocked}
-            replaceOptions={replaceOptions}
-            onValueChange={setPendingValue}
-          />
-        ),
-        usersContent: (
-          <EvidenceSheetUsersTab
-            sheetId={sheet.id}
-            tenantId={tenantId}
-            tenantLabel={tenantLabel}
-            tenantSubjectType={tenantSubjectType}
-            tenantBirthDate={tenantBirthDate}
-            readOnly={isLocked}
-            onCountChange={setUsersCount}
-          />
-        ),
-        servicesContent: (
-          <EvidenceSheetServicesTab
-            sheetId={sheet.id}
-            validFrom={sheet.valid_from}
-            validTo={sheet.valid_to}
-            onCountChange={setServicesCount}
-            readOnly={isLocked}
-          />
-        ),
-        systemBlocks,
-      }}
-    />
+      <div style={{ flex: '1 1 0', minHeight: 0, overflow: 'hidden' }}>
+        <DetailView
+        mode={detailViewMode}
+        sectionIds={['detail', 'users', 'services', 'attachments', 'system'] as DetailSectionId[]}
+        ctx={{
+          entityType: 'contract_evidence_sheets',
+          entityId: sheet.id,
+          entityLabel: `Evidenční list č. ${sheet.sheet_number}`,
+          mode: detailViewMode,
+          onAttachmentsCountChange: setAttachmentsCount,
+          sectionCounts: {
+            users: usersCount,
+            services: servicesCount,
+            attachments: attachmentsCount,
+          },
+          detailContent: (
+            <EvidenceSheetDetailForm
+              sheet={sheet}
+              contractNumber={contractNumber}
+              contractSignedAt={contractSignedAt}
+              contractValidTo={contractValidTo}
+              landlordName={landlordName}
+              propertyName={propertyName}
+              unitName={unitName}
+              tenantLabel={tenantLabel}
+              readOnly={isLocked}
+              replaceOptions={replaceOptions}
+              onValueChange={setPendingValue}
+            />
+          ),
+          usersContent: (
+            <EvidenceSheetUsersTab
+              sheetId={sheet.id}
+              tenantId={tenantId}
+              tenantLabel={tenantLabel}
+              tenantSubjectType={tenantSubjectType}
+              tenantBirthDate={tenantBirthDate}
+              readOnly={isLocked}
+              onCountChange={setUsersCount}
+            />
+          ),
+          servicesContent: (
+            <EvidenceSheetServicesTab
+              sheetId={sheet.id}
+              validFrom={sheet.valid_from}
+              validTo={sheet.valid_to}
+              onCountChange={setServicesCount}
+              readOnly={isLocked}
+            />
+          ),
+          systemBlocks,
+        }}
+      />
+      </div>
     </div>
   )
 }

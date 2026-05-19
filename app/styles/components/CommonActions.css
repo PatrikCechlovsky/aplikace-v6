@@ -54,6 +54,16 @@
   max-width: 80px;
 }
 
+.common-actions__btn.common-actions__btn--icon-only .common-actions__label {
+  opacity: 0 !important;
+  max-width: 0 !important;
+}
+
+.common-actions__btn.common-actions__btn--icon-only:hover .common-actions__label {
+  opacity: 1 !important;
+  max-width: 80px !important;
+}
+
 .common-actions__counter {
   font-size: 0.78rem;
   color: var(--color-text-muted);

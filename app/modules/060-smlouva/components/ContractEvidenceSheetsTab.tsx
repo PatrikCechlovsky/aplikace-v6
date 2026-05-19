@@ -127,6 +127,7 @@ export default function ContractEvidenceSheetsTab({
   const [sort, setSort] = useState<ListViewSortState>(EVIDENCE_SHEETS_DEFAULT_SORT)
   const [colsOpen, setColsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const hasDraft = rows.some((row) => row.status === 'draft')
   const latestDraftId = rows.reduce<string | null>((current, next) => {
@@ -206,6 +207,7 @@ export default function ContractEvidenceSheetsTab({
       return
     }
 
+    setIsProcessing(true)
     try {
       const created = await createEvidenceSheetDraft({
         contractId,
@@ -220,6 +222,8 @@ export default function ContractEvidenceSheetsTab({
     } catch (err: any) {
       logger.error('create evidence sheet failed', err)
       toast.showError(err?.message ?? 'Nepodařilo se vytvořit evidenční list')
+    } finally {
+      setIsProcessing(false)
     }
   }, [contractId, rentAmount, load, toast, hasDraft, contractValidTo])
 
@@ -232,6 +236,7 @@ export default function ContractEvidenceSheetsTab({
     const confirmed = confirm('Tento koncept bude trvale smazán. Není možné ho obnovit. Pokračovat?')
     if (!confirmed) return
 
+    setIsProcessing(true)
     try {
       await deleteEvidenceSheetDraft(selectedId)
       await load()
@@ -241,8 +246,43 @@ export default function ContractEvidenceSheetsTab({
     } catch (err: any) {
       logger.error('delete evidence sheet draft failed', err)
       toast.showError(err?.message ?? 'Nepodařilo se smazat koncept')
+    } finally {
+      setIsProcessing(false)
     }
   }, [deleteEvidenceSheetDraft, selectedId, selectedIsLastDraft, load, toast])
+
+  const handleCopySheet = useCallback(async () => {
+    if (!selectedSheet) {
+      toast.showWarning('Nejprve vyberte evidenční list')
+      return
+    }
+
+    if (contractValidTo && selectedSheet.valid_to && selectedSheet.valid_to > contractValidTo) {
+      toast.showWarning(`Platný do nesmí být později než konec smlouvy ${contractValidTo}.`)
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const created = await createEvidenceSheetDraft({
+        contractId,
+        rentAmount,
+        copyFromLatest: true,
+        validFrom: selectedSheet.valid_from,
+        validTo: selectedSheet.valid_to,
+        contractValidTo: contractValidTo ?? null,
+      })
+      await load()
+      setSelectedId(created.id)
+      setViewMode('detail')
+      toast.showSuccess('Evidenční list zkopírován a otevřen.')
+    } catch (err: any) {
+      logger.error('copy evidence sheet failed', err)
+      toast.showError(err?.message ?? 'Nepodařilo se kopírovat evidenční list')
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [contractId, contractValidTo, load, rentAmount, selectedSheet, toast])
 
   const handleReleaseFromList = useCallback(async () => {
     if (!selectedId) {
@@ -256,6 +296,7 @@ export default function ContractEvidenceSheetsTab({
       return
     }
 
+    setIsProcessing(true)
     try {
       await activateEvidenceSheet(selectedId)
       await load()
@@ -263,6 +304,8 @@ export default function ContractEvidenceSheetsTab({
     } catch (err: any) {
       logger.error('activate evidence sheet failed', err)
       toast.showError(err?.message ?? 'Nepodařilo se aktivovat evidenční list')
+    } finally {
+      setIsProcessing(false)
     }
   }, [selectedId, rows, load, toast])
 
@@ -494,41 +537,75 @@ export default function ContractEvidenceSheetsTab({
       )}
 
       {viewMode === 'detail' && selectedId && (
-        <section className="detail-form__section detail-form__section--scroll">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <section style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
             <h3 className="detail-form__section-title" style={{ marginBottom: 0 }}>
               Detail evidenčního listu
             </h3>
             <div style={{ display: 'flex', gap: 8 }}>
+              {selectedSheet?.status === 'active' && !readOnly && (
+                <button
+                  type="button"
+                  className="common-actions__btn common-actions__btn--icon-only"
+                  onClick={handleCopySheet}
+                  disabled={isProcessing}
+                >
+                  <span className="common-actions__icon">{getIcon('duplicate' as IconKey)}</span>
+                  <span className="common-actions__label">Kopírovat</span>
+                </button>
+              )}
+              {selectedSheet?.status === 'draft' && !readOnly && (
+                <button
+                  type="button"
+                  className="common-actions__btn common-actions__btn--icon-only"
+                  onClick={handleReleaseFromList}
+                  disabled={isProcessing}
+                >
+                  <span className="common-actions__icon">{getIcon('approve' as IconKey)}</span>
+                  <span className="common-actions__label">Uvolnit</span>
+                </button>
+              )}
               {selectedIsLastDraft && !readOnly && (
-                <button type="button" className="common-actions__btn" onClick={handleDeleteDraft}>
+                <button
+                  type="button"
+                  className="common-actions__btn common-actions__btn--icon-only"
+                  onClick={handleDeleteDraft}
+                  disabled={isProcessing}
+                >
                   <span className="common-actions__icon">{getIcon('trash' as IconKey)}</span>
                   <span className="common-actions__label">Smazat</span>
                 </button>
               )}
-              <button type="button" className="common-actions__btn" onClick={() => setViewMode('list')}>
+              <button
+                type="button"
+                className="common-actions__btn common-actions__btn--icon-only"
+                onClick={() => setViewMode('list')}
+                disabled={isProcessing}
+              >
                 <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
                 <span className="common-actions__label">Zavřít</span>
               </button>
             </div>
           </div>
 
-          <EvidenceSheetDetailFrame
-            sheetId={selectedId}
-            contractId={contractId}
-            tenantId={tenantId}
-            tenantLabel={tenantLabel}
-            tenantSubjectType={tenantSubjectType}
-            tenantBirthDate={tenantBirthDate}
-            landlordName={landlordName}
-            propertyName={propertyName}
-            unitName={unitName}
-            contractNumber={contractNumber}
-            contractSignedAt={contractSignedAt}
-            contractValidTo={contractValidTo}
-            readOnly={readOnly}
-            onSheetUpdated={load}
-          />
+          <div style={{ flex: '1 1 0', minHeight: 0, overflow: 'hidden' }}>
+            <EvidenceSheetDetailFrame
+              sheetId={selectedId}
+              contractId={contractId}
+              tenantId={tenantId}
+              tenantLabel={tenantLabel}
+              tenantSubjectType={tenantSubjectType}
+              tenantBirthDate={tenantBirthDate}
+              landlordName={landlordName}
+              propertyName={propertyName}
+              unitName={unitName}
+              contractNumber={contractNumber}
+              contractSignedAt={contractSignedAt}
+              contractValidTo={contractValidTo}
+              readOnly={readOnly}
+              onSheetUpdated={load}
+            />
+          </div>
         </section>
       )}
     </div>
