@@ -10,6 +10,7 @@ import EvidenceSheetDetailForm, { type EvidenceSheetFormValue } from './Evidence
 import EvidenceSheetUsersTab from './EvidenceSheetUsersTab'
 import EvidenceSheetServicesTab from './EvidenceSheetServicesTab'
 import { useToast } from '@/app/UI/Toast'
+import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
 import createLogger from '@/app/lib/logger'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
@@ -19,6 +20,7 @@ import {
   listEvidenceSheetUsers,
   createEvidenceSheetDraft,
   activateEvidenceSheet,
+  updateEvidenceSheet,
   type EvidenceSheetRow,
 } from '@/app/lib/services/contractEvidenceSheets'
 
@@ -33,6 +35,7 @@ type Props = {
   tenantBirthDate?: string | null
   contractNumber: string | null
   contractSignedAt: string | null
+  contractValidTo?: string | null
   landlordName?: string | null
   propertyName?: string | null
   unitName?: string | null
@@ -40,8 +43,9 @@ type Props = {
   onClose: () => void
   onUpdated?: () => void
   onSheetCreated?: (newSheetId: string) => void
-  onRegisterCommonActions?: (actions: string[]) => void
-  onRegisterCommonActionsState?: (state: { viewMode: string; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActions?: (actions: CommonActionId[]) => void
+  onRegisterCommonActionsState?: (state: { viewMode: ViewMode; hasSelection: boolean; isDirty: boolean }) => void
+  onRegisterCommonActionHandler?: (fn: ((id: CommonActionId) => void) | null) => void
 }
 
 export default function EvidenceSheetModal({
@@ -53,12 +57,14 @@ export default function EvidenceSheetModal({
   tenantBirthDate,
   contractNumber,
   contractSignedAt,
+  contractValidTo,
   landlordName,
   propertyName,
   unitName,
   readOnly = false,
   onRegisterCommonActions,
   onRegisterCommonActionsState,
+  onRegisterCommonActionHandler,
   onClose,
   onSheetCreated,
 }: Props) {
@@ -150,6 +156,12 @@ export default function EvidenceSheetModal({
 
   const handleCopySheet = async () => {
     if (!sheet) return
+
+    if (contractValidTo && sheet.valid_to && sheet.valid_to > contractValidTo) {
+      toast.showWarning(`Platný do nesmí být později než konec smlouvy ${contractValidTo}.`)
+      return
+    }
+
     try {
       setIsProcessing(true)
       const newSheet = await createEvidenceSheetDraft({
@@ -158,6 +170,7 @@ export default function EvidenceSheetModal({
         copyFromLatest: true,
         validFrom: sheet.valid_from,
         validTo: sheet.valid_to,
+        contractValidTo: contractValidTo ?? null,
       })
       toast.showSuccess('Evidenční list kopírován. Otevírám novou verzi…')
       if (onSheetCreated) {
@@ -193,15 +206,64 @@ export default function EvidenceSheetModal({
     if (!onRegisterCommonActions || !onRegisterCommonActionsState) return
 
     const isLocked = readOnly
-    const actions = ['close']
+    const actions: CommonActionId[] = ['close']
+    if (!isLocked) actions.unshift('save')
+    if (sheet?.status === 'draft' && !isLocked) actions.unshift('release')
 
     onRegisterCommonActions(actions)
     onRegisterCommonActionsState({
-      viewMode: isLocked ? 'view' : 'edit',
+      viewMode: isLocked ? 'read' : 'edit',
       hasSelection: !!sheet?.id,
       isDirty: !!pendingValue,
     })
+
+    // Register global handler for common actions (save, close, release)
+    if (onRegisterCommonActionHandler) {
+      onRegisterCommonActionHandler(async (id: string) => {
+        try {
+          if (id === 'save') {
+            if (!pendingValue || !sheet) return
+            // prepare patch
+            const patch: any = {
+              valid_from: pendingValue.validFrom || null,
+              valid_to: pendingValue.validTo || null,
+              replaces_sheet_id: pendingValue.replacesSheetId || null,
+              rent_amount: pendingValue.rentAmount ?? null,
+              description: pendingValue.description || null,
+              notes: pendingValue.notes || null,
+            }
+            await updateEvidenceSheet(sheet.id, patch)
+            toast.showSuccess('Evidenční list uložen')
+            void (async () => {
+              const refreshed = await getEvidenceSheet(sheet.id)
+              setSheet(refreshed)
+            })()
+            return
+          }
+
+          if (id === 'release') {
+            if (!sheet || sheet.status !== 'draft') return
+            await handleActivateSheet()
+            return
+          }
+
+          if (id === 'close') {
+            onClose()
+            return
+          }
+        } catch (err: any) {
+          logger.error('common action handler failed', err)
+          toast.showError(err?.message ?? 'Akce selhala')
+        }
+      })
+    }
   }, [sheet, pendingValue, readOnly, onRegisterCommonActions, onRegisterCommonActionsState])
+
+  useEffect(() => {
+    return () => {
+      if (onRegisterCommonActionHandler) onRegisterCommonActionHandler(null)
+    }
+  }, [onRegisterCommonActionHandler])
 
   if (!sheet) {
     return <div className="detail-form__hint">Načítám evidenční list…</div>
@@ -327,6 +389,7 @@ export default function EvidenceSheetModal({
                 sheet={sheet}
                 contractNumber={contractNumber}
                 contractSignedAt={contractSignedAt}
+                contractValidTo={contractValidTo}
                 landlordName={landlordName}
                 propertyName={propertyName}
                 unitName={unitName}

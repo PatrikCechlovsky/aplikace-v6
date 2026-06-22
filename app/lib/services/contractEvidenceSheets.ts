@@ -8,6 +8,100 @@ import type { TenantUser } from './tenantUsers'
 
 const logger = createLogger('contractEvidenceSheets.service')
 
+function formatIsoDate(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
+
+function subtractOneDay(dateString: string): string | null {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return null
+  date.setDate(date.getDate() - 1)
+  return formatIsoDate(date)
+}
+
+function normalizeText(value: string | null | undefined): string {
+  return String(value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+}
+
+function isAreaUnit(value: string | null | undefined): boolean {
+  const normalized = normalizeText(value)
+  return normalized.includes('m2') || normalized.includes('m²') || normalized.includes('metru') || normalized.includes('metr')
+}
+
+function isPersonUnit(value: string | null | undefined): boolean {
+  const normalized = normalizeText(value)
+  return normalized.includes('osob') || normalized.includes('osoba') || normalized.includes('person') || normalized.includes('persons')
+}
+
+async function getContractUnitArea(contractId: string): Promise<number | null> {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('unit:units!contracts_unit_id_fkey(area)')
+    .eq('id', contractId)
+    .single()
+
+  if (error) {
+    logger.error('getContractUnitArea failed', { contractId, error })
+    return null
+  }
+
+  const unit = Array.isArray(data?.unit) ? data?.unit[0] : data?.unit
+  return unit?.area ?? null
+}
+
+async function loadServiceUnitInfo(serviceIds: string[]): Promise<Record<string, { unitName: string | null; billingTypeName: string | null }>> {
+  if (!serviceIds.length) return {}
+
+  const { data, error } = await supabase
+    .from('service_catalog')
+    .select('id, unit:unit_id(name), billing_type:billing_type_id(name)')
+    .in('id', serviceIds)
+
+  if (error) {
+    logger.error('loadServiceUnitInfo failed', { serviceIds, error })
+    return {}
+  }
+
+  return (data ?? []).reduce((acc: Record<string, { unitName: string | null; billingTypeName: string | null }>, row: any) => {
+    const unit = Array.isArray(row.unit) ? row.unit[0] : row.unit
+    const billingType = Array.isArray(row.billing_type) ? row.billing_type[0] : row.billing_type
+    acc[row.id] = {
+      unitName: unit?.name ?? null,
+      billingTypeName: billingType?.name ?? null,
+    }
+    return acc
+  }, {})
+}
+
+function resolveEvidenceSheetQuantity(
+  currentQuantity: number,
+  totalPersons: number,
+  unitArea: number | null,
+  unitName: string | null,
+  billingTypeName: string | null,
+  unitType: 'flat' | 'person'
+): number {
+  const referencedName = `${unitName ?? ''} ${billingTypeName ?? ''}`.trim()
+
+  if (isPersonUnit(referencedName) || unitType === 'person') {
+    return Math.max(1, totalPersons)
+  }
+
+  if (isAreaUnit(referencedName) && unitArea !== null) {
+    return Math.max(1, Math.round(unitArea))
+  }
+
+  return currentQuantity || 1
+}
+
+function resolveEvidenceSheetAmount(unitPrice: number, quantity: number): number {
+  return Number(unitPrice ?? 0) * quantity
+}
+
 export type EvidenceSheetStatus = 'draft' | 'active' | 'archived'
 
 export type EvidenceSheetRow = {
@@ -130,8 +224,25 @@ export async function createEvidenceSheetDraft(params: {
   copyFromLatest?: boolean
   validFrom?: string | null
   validTo?: string | null
+  contractValidTo?: string | null
 }): Promise<EvidenceSheetRow> {
   logger.debug('createEvidenceSheetDraft', params)
+
+  const { data: existingDraftRows, error: draftErr } = await supabase
+    .from('contract_evidence_sheets')
+    .select('id')
+    .eq('contract_id', params.contractId)
+    .eq('status', 'draft')
+    .limit(1)
+
+  if (draftErr) {
+    logger.error('createEvidenceSheet check existing draft failed', draftErr)
+    throw new Error(`Nepodařilo se ověřit existující koncept: ${draftErr.message}`)
+  }
+
+  if (existingDraftRows && existingDraftRows.length > 0) {
+    throw new Error('Existuje již koncept evidenčního listu. Nejprve ho dokončete nebo smažte.')
+  }
 
   const { data: latestRows, error: latestErr } = await supabase
     .from('contract_evidence_sheets')
@@ -151,13 +262,21 @@ export async function createEvidenceSheetDraft(params: {
     ? `Nahrazuje list č. ${latest.sheet_number}${latest.valid_from ? ` ze dne ${latest.valid_from}` : ''}`
     : null
 
+  const validFrom = params.copyFromLatest ? params.validFrom ?? latest?.valid_from ?? null : params.validFrom ?? null
+  const validTo = params.copyFromLatest ? params.validTo ?? latest?.valid_to ?? null : params.validTo ?? null
+
+  // Server-side validation: validTo must not be later than contract end date
+  if (params.contractValidTo && validTo && validTo > params.contractValidTo) {
+    throw new Error(`Platný do nesmí být později než konec smlouvy ${params.contractValidTo}.`)
+  }
+
   const { data: inserted, error: insertErr } = await supabase
     .from('contract_evidence_sheets')
     .insert({
       contract_id: params.contractId,
       sheet_number: nextNumber,
-      valid_from: params.validFrom ?? null,
-      valid_to: params.validTo ?? null,
+      valid_from: validFrom,
+      valid_to: validTo,
       replaces_sheet_id: latest?.id ?? null,
       rent_amount: params.rentAmount,
       total_persons: 1,
@@ -182,6 +301,46 @@ export async function createEvidenceSheetDraft(params: {
   }
 
   return inserted
+}
+
+export async function deleteEvidenceSheetDraft(sheetId: string): Promise<void> {
+  logger.debug('deleteEvidenceSheetDraft', { sheetId })
+
+  const sheet = await getEvidenceSheet(sheetId)
+  if (!sheet) {
+    throw new Error('Evidenční list nenalezen.')
+  }
+
+  if (sheet.status !== 'draft') {
+    throw new Error('Lze smazat pouze koncept evidenčního listu.')
+  }
+
+  const { data: latestRows, error: latestErr } = await supabase
+    .from('contract_evidence_sheets')
+    .select('id, sheet_number')
+    .eq('contract_id', sheet.contract_id)
+    .order('sheet_number', { ascending: false })
+    .limit(1)
+
+  if (latestErr) {
+    logger.error('deleteEvidenceSheetDraft load latest failed', latestErr)
+    throw new Error(`Nepodařilo se ověřit poslední list: ${latestErr.message}`)
+  }
+
+  const latest = latestRows?.[0] ?? null
+  if (!latest || latest.id !== sheetId) {
+    throw new Error('Lze smazat pouze poslední koncept evidenčního listu.')
+  }
+
+  const { error: deleteErr } = await supabase
+    .from('contract_evidence_sheets')
+    .delete()
+    .eq('id', sheetId)
+
+  if (deleteErr) {
+    logger.error('deleteEvidenceSheetDraft failed', deleteErr)
+    throw new Error(`Nepodařilo se smazat evidenční list: ${deleteErr.message}`)
+  }
 }
 
 async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
@@ -213,9 +372,23 @@ async function copyEvidenceSheetData(fromSheetId: string, toSheetId: string) {
 
     logger.debug('copyEvidenceSheetData users set')
 
+    const serviceIds = services.filter((s) => !!s.service_id).map((s) => s.service_id as string)
+    const serviceUnitInfo = await loadServiceUnitInfo(serviceIds)
+    const unitArea = sheet?.contract_id ? await getContractUnitArea(sheet.contract_id) : null
+
     const updatedServices = services.map((s, idx) => {
-      const quantity = s.unit_type === 'person' ? totalPersons : s.quantity
-      const total = Number(s.unit_price) * quantity
+      const serviceInfo = s.service_id ? serviceUnitInfo[s.service_id] : null
+      const unitName = serviceInfo?.unitName ?? null
+      const billingTypeName = serviceInfo?.billingTypeName ?? null
+      const quantity = resolveEvidenceSheetQuantity(
+        s.quantity,
+        totalPersons,
+        unitArea,
+        unitName,
+        billingTypeName,
+        s.unit_type
+      )
+      const total = resolveEvidenceSheetAmount(Number(s.unit_price), quantity)
       return {
         service_id: s.service_id ?? null,
         service_name: s.service_name,
@@ -384,18 +557,38 @@ export async function saveEvidenceSheetServices(sheetId: string, services: Evide
   }
 
   if (services.length) {
-    const payload = services.map((s, idx) => ({
-      sheet_id: sheetId,
-      service_id: s.service_id ?? null,
-      service_name: s.service_name,
-      unit_type: s.unit_type,
-      unit_price: s.unit_price,
-      quantity: s.quantity,
-      total_amount: s.total_amount,
-      order_index: s.order_index ?? idx,
-      valid_from: s.valid_from ?? null,
-      valid_to: s.valid_to ?? null,
-    }))
+    const sheet = await getEvidenceSheet(sheetId)
+    const serviceIds = services.filter((s) => !!s.service_id).map((s) => s.service_id as string)
+    const serviceUnitInfo = await loadServiceUnitInfo(serviceIds)
+    const unitArea = sheet?.contract_id ? await getContractUnitArea(sheet.contract_id) : null
+
+    const payload = services.map((s, idx) => {
+      const serviceInfo = s.service_id ? serviceUnitInfo[s.service_id] : null
+      const unitName = serviceInfo?.unitName ?? null
+      const billingTypeName = serviceInfo?.billingTypeName ?? null
+      const quantity = resolveEvidenceSheetQuantity(
+        s.quantity,
+        sheet?.total_persons ?? 1,
+        unitArea,
+        unitName,
+        billingTypeName,
+        s.unit_type
+      )
+      const total = resolveEvidenceSheetAmount(s.unit_price, quantity)
+
+      return {
+        sheet_id: sheetId,
+        service_id: s.service_id ?? null,
+        service_name: s.service_name,
+        unit_type: s.unit_type,
+        unit_price: s.unit_price,
+        quantity,
+        total_amount: total,
+        order_index: s.order_index ?? idx,
+        valid_from: s.valid_from ?? null,
+        valid_to: s.valid_to ?? null,
+      }
+    })
 
     const { error: insertErr } = await supabase
       .from('contract_evidence_sheet_services')
@@ -405,10 +598,19 @@ export async function saveEvidenceSheetServices(sheetId: string, services: Evide
       logger.error('saveEvidenceSheetServices insert failed', insertErr)
       throw new Error(`Nepodařilo se uložit služby evidenčního listu: ${insertErr.message}`)
     }
+
+    const servicesTotal = payload.reduce((sum, item) => sum + item.total_amount, 0)
+    const updatedSheet = await getEvidenceSheet(sheetId)
+    const totalAmount = (updatedSheet?.rent_amount ?? 0) + servicesTotal
+
+    if (updatedSheet) {
+      await updateEvidenceSheet(sheetId, { services_total: servicesTotal, total_amount: totalAmount })
+    }
+    return
   }
 
   const sheet = await getEvidenceSheet(sheetId)
-  const servicesTotal = services.reduce((sum, s) => sum + (s.total_amount || 0), 0)
+  const servicesTotal = 0
   const totalAmount = (sheet?.rent_amount ?? 0) + servicesTotal
 
   if (sheet) {
@@ -450,7 +652,7 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
   // 2. Najdi současný aktivní list (na stejné smlouvě)
   const { data: activeSheets, error: activeErr } = await supabase
     .from('contract_evidence_sheets')
-    .select('id')
+    .select('id, valid_to')
     .eq('contract_id', draft.contract_id)
     .eq('status', 'active')
     .limit(1)
@@ -460,12 +662,22 @@ export async function activateEvidenceSheet(draftSheetId: string): Promise<Evide
     throw new Error(`Nepodařilo se najít aktivní list: ${activeErr.message}`)
   }
 
-  // 3. Archivuj předchozí aktivní list (pokud existuje)
+  // 3. Archivuj předchozí aktivní list (pokud existuje) a uprav jeho platnost
   if (activeSheets && activeSheets.length > 0) {
+    const previous = activeSheets[0]
+    const archivePatch: Record<string, string | null> = { status: 'archived' }
+
+    if (draft.valid_from) {
+      const adjustedValidTo = previous.valid_to && previous.valid_to >= draft.valid_from ? subtractOneDay(draft.valid_from) : null
+      if (adjustedValidTo) {
+        archivePatch.valid_to = adjustedValidTo
+      }
+    }
+
     const { error: archiveErr } = await supabase
       .from('contract_evidence_sheets')
-      .update({ status: 'archived' })
-      .eq('id', activeSheets[0].id)
+      .update(archivePatch)
+      .eq('id', previous.id)
 
     if (archiveErr) {
       logger.error('activateEvidenceSheet archive previous failed', archiveErr)

@@ -122,6 +122,21 @@ function isNewId(id: string | null | undefined) {
   return !s || s === 'new'
 }
 
+function normalizeName(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+}
+
+function resolveMonthlyRentPeriodId(items: Array<{ id: string; label: string }>): string | null {
+  const preferred = ['měsíčně', 'mesicne', 'měsíční', 'mesicni']
+  const normalized = preferred.map(normalizeName)
+  const found = items.find((item) => normalized.includes(normalizeName(item.label)))
+  return found?.id ?? null
+}
+
 export default function ContractDetailFrame({
   contract,
   viewMode,
@@ -329,6 +344,20 @@ export default function ContractDetailFrame({
       mounted = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!isNewId(contract.id)) return
+    if (!rentPeriodOptions.length) return
+    if (formValue.periodicitaNajmu?.trim()) return
+
+    const monthlyId = resolveMonthlyRentPeriodId(rentPeriodOptions)
+    if (!monthlyId) return
+
+    setFormValue((prev) => ({
+      ...prev,
+      periodicitaNajmu: monthlyId,
+    }))
+  }, [contract.id, rentPeriodOptions, formValue.periodicitaNajmu])
 
   const tenantSubjectType = useMemo(
     () => tenants.find((t) => t.id === formValue.tenantId)?.subjectType ?? null,
