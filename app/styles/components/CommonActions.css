@@ -68,6 +68,17 @@
   font-size: 0.78rem;
   color: var(--color-text-muted);
   padding: 0 4px;
+
+/* Červené close/zavřít tlačítko */
+.common-actions__btn.common-actions__btn--close {
+  color: var(--color-danger, #dc2626);
+}
+
+.common-actions__btn.common-actions__btn--close:hover {
+  background: var(--color-danger-soft, #fee2e2);
+  border-color: var(--color-danger, #dc2626);
+  color: var(--color-danger, #dc2626);
+}
 }
 /* SIDEBAR: dát CommonActions stejný vertikální rytmus jako TopMenu */
 .layout:not(.layout--topmenu) .layout__context .common-actions {
