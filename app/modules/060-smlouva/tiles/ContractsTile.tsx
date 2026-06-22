@@ -445,6 +445,8 @@ export default function ContractsTile({
 
   useEffect(() => {
     if (!onRegisterCommonActionHandler) return
+    // Když je evidenční list otevřen, jeho handler (EvidenceSheetModal) má přednost
+    if (evidenceSheetId) return
 
     onRegisterCommonActionHandler(async (id: CommonActionId) => {
       if (viewMode === 'attachments-manager') {
@@ -547,6 +549,7 @@ export default function ContractsTile({
     })
   }, [
     onRegisterCommonActionHandler,
+    evidenceSheetId,
     viewMode,
     isDirty,
     selectedId,

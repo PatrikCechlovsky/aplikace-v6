@@ -331,8 +331,14 @@ export default function ContractEvidenceSheetsTab({
       return
     }
     if (readOnly) return
+    // Stejně jako openDetailRead - otevřít přes onNavigateToSheet pro konzistenci
+    if (onNavigateToSheet) {
+      onNavigateToSheet(selectedId)
+      return
+    }
+    // Fallback: inline detail view
     setViewMode('detail')
-  }, [selectedId, readOnly, toast])
+  }, [selectedId, readOnly, toast, onNavigateToSheet])
 
   const listItems = useMemo<EvidenceSheetListItem[]>(
     () =>

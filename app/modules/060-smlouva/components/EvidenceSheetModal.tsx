@@ -11,6 +11,7 @@ import EvidenceSheetUsersTab from './EvidenceSheetUsersTab'
 import EvidenceSheetServicesTab from './EvidenceSheetServicesTab'
 import { useToast } from '@/app/UI/Toast'
 import type { CommonActionId, ViewMode } from '@/app/UI/CommonActions'
+import { getIcon, type IconKey } from '@/app/UI/icons'
 import createLogger from '@/app/lib/logger'
 import { formatDateTime } from '@/app/lib/formatters/formatDateTime'
 import {
@@ -257,7 +258,7 @@ export default function EvidenceSheetModal({
         }
       })
     }
-  }, [sheet, pendingValue, readOnly, onRegisterCommonActions, onRegisterCommonActionsState])
+  }, [sheet, pendingValue, readOnly, onClose, onRegisterCommonActions, onRegisterCommonActionsState, onRegisterCommonActionHandler])
 
   useEffect(() => {
     return () => {
@@ -351,19 +352,13 @@ export default function EvidenceSheetModal({
             </button>
           )}
           <button
+            type="button"
+            className="common-actions__btn common-actions__btn--icon-only common-actions__btn--close"
             onClick={onClose}
-            disabled={isProcessing}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: 'var(--color-border)',
-              color: 'var(--color-text)',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isProcessing ? 'not-allowed' : 'pointer',
-              opacity: isProcessing ? 0.6 : 1,
-            }}
+            title="Zavřít"
           >
-            Zavřít
+            <span className="common-actions__icon">{getIcon('close' as IconKey)}</span>
+            <span className="common-actions__label">Zavřít</span>
           </button>
         </div>
       </div>
